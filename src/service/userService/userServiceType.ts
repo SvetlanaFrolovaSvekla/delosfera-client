@@ -1,0 +1,76 @@
+// --- Вложенные сущности
+// TODO: вложить в другие Service
+export interface PermissionResponse {
+    code: number;
+    key: string;
+    description: string;
+}
+
+export interface RoleResponse {
+    id: number;
+    name: string;
+    titleRu: string;
+    titleEn: string | null;
+    titleKg: string | null;
+    permissionCodes: number[];
+    permissions: PermissionResponse[];
+    createdAt: string;
+    updatedAt: string;
+}
+
+export interface PositionResponse {
+    id: number;
+    name: string;
+    titleRu: string;
+    titleEn: string | null;
+    titleKg: string | null;
+    createdAt: string;
+    updatedAt: string;
+}
+
+export interface OrganizationUnitResponse {
+    id: number;
+    name: string;
+    titleRu: string;
+    titleEn: string | null;
+    titleKg: string | null;
+    parentId: number | null;
+    createdAt: string;
+    updatedAt: string;
+}
+
+// --- Пользователь
+
+export type UserSortBy = "CreatedAtAsc" | "CreatedAtDesc" | "NameAsc" | "NameDesc";
+
+export interface UserResponse {
+    id: number;
+    fullName: string;
+    email: string;
+    position: PositionResponse | null;
+    orgUnit: OrganizationUnitResponse | null;
+    isActive: boolean;
+    lastLoginAt: string | null; // ISO datetime
+    roles: RoleResponse[];
+    createdAt: string;
+    updatedAt: string;
+}
+
+export interface CreateUserRequest {
+    fullName: string;
+    email: string;
+    password: string;
+    positionId?: number | null;
+    orgUnitId?: number | null;
+    roleIds?: number[];
+}
+
+export interface UpdateUserRequest {
+    fullName: string;
+    email: string;
+    password?: string; // если не передан — пароль не меняется
+    positionId?: number | null;
+    orgUnitId?: number | null;
+    isActive: boolean;
+    roleIds?: number[];
+}

@@ -1,0 +1,24 @@
+@import "./assets/fonts.css";
+@import "tailwindcss";
+
+:root {
+    --app-accent: #4e57d6;
+    --app-soft: #ececfc;
+    --app-bd: #d4d6f8;
+    --brand: #24a36b;
+    --brand-soft: #e4f5ec;
+}
+
+* { box-sizing: border-box; }
+html, body { margin: 0; padding: 0; }
+body { font-family: 'IBM Plex Sans', system-ui, sans-serif; -webkit-font-smoothing: antialiased; color: #0f1b2d; }
+a { color: #2f68f5; }
+a:hover { color: #1b4fd0; }
+
+::-webkit-scrollbar { width: 10px; height: 10px; }
+::-webkit-scrollbar-thumb { background: #d3dbe6; border-radius: 8px; border: 2px solid transparent; background-clip: padding-box; }
+::-webkit-scrollbar-thumb:hover { background: #b9c4d3; background-clip: padding-box; }
+
+@keyframes dsSpin { to { transform: rotate(360deg); } }
+@keyframes dsIn { from { opacity: 0; transform: translateY(7px); } to { opacity: 1; transform: none; } }
+@keyframes dsPop { from { opacity: 0; transform: translateY(6px) scale(.98); } to { opacity: 1; transform: none; } }

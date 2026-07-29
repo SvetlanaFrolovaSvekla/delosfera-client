@@ -1,0 +1,121 @@
+export type VndStatusKey = "draft" | "active" | "onact" | "review" | "consol" | "arch";
+
+export interface DateRangeFilter {
+    exact?: string | null;
+    from?: string | null;
+    to?: string | null;
+}
+
+// --- Период актуализации (для создания) ---
+export type ActualizationPeriod =
+    | "Quarterly"   // 3 месяца
+    | "HalfYear"    // 6 месяцев
+    | "Annual"      // 12 месяцев
+    | "Biennial"    // 24 месяца
+    | "Triennial"   // 36 месяцев
+    | "Custom";     // явная дата dueActualizationDate
+
+// --- Запрос на поиск ---
+export interface VndSearchRequest {
+    code?: string;
+    name?: string;
+    revisionText?: string;
+
+    statuses?: VndStatusKey[];
+    typeIds?: number[];
+    organIds?: number[];
+    developerIds?: number[];
+    responsibleExecutorIds?: number[];
+    keywordIds?: number[];
+    rubricIds?: number[];
+    secrecyLevelIds?: number[];
+    userGroupIds?: number[];
+
+    adoptionDate?: DateRangeFilter | null;
+    adoptionCode?: string;
+    effectiveDate?: DateRangeFilter | null;
+    requisitesChangedDate?: DateRangeFilter | null;
+    revisionChangedDate?: DateRangeFilter | null;
+    cancelDate?: DateRangeFilter | null;
+    cancelCode?: string;
+    dueActualizationDate?: DateRangeFilter | null;
+    lastActualizationDate?: DateRangeFilter | null;
+    archivedDate?: DateRangeFilter | null;
+}
+
+// --- Запрос на создание ---
+export interface CreateVndRequest {
+    typeId: number;
+    organId: number;
+
+    /** Разработчик (СП). Если не указан — берётся подразделение текущего пользователя */
+    developerId?: number | null;
+
+    /** Куратор разработчика. Если не указан — берётся куратор подразделения-разработчика */
+    curatorDeveloperId?: number | null;
+
+    /** Ответственные исполнители (СП). Если пусто — по умолчанию само подразделение-разработчик */
+    responsibleExecutorIds?: number[];
+
+    titleRu: string;
+    titleEn?: string | null;
+    titleKg?: string | null;
+
+    keywordIds?: number[];
+    rubricIds?: number[];
+    secrecyLevelId?: number | null;
+    userGroupIds?: number[];
+
+    period: ActualizationPeriod;
+
+    /** Обязательно, если period === "Custom" */
+    dueActualizationDate?: string | null; // "YYYY-MM-DD"
+}
+
+// --- Ответ (GET /vnd/{id}, элементы массива из POST /vnd/search, и результат POST /vnd) ---
+export interface VndResponse {
+    id: number;
+    code: string;
+    name: string;
+    titleRu: string;
+    titleEn: string | null;
+    titleKg: string | null;
+    status: VndStatusKey;
+
+    typeId: number;
+    typeName: string;
+
+    developerId: number;
+    developerName: string;
+    curatorDeveloperId: number | null;
+    curatorDeveloperName: string | null;
+
+    organId: number;
+    organName: string;
+
+    responsibleExecutorIds: number[];
+
+    adoptionDate: string | null; // "YYYY-MM-DD"
+    adoptionCode: string | null;
+    effectiveDate: string | null;
+    requisitesChangedDate: string | null;
+    revisionChangedDate: string | null;
+    cancelDate: string | null;
+    cancelCode: string | null;
+    cancelReason: string | null;
+    archivedDate: string | null;
+    dueActualizationDate: string | null;
+    lastActualizationDate: string | null;
+    lastActualizationHadChanges: boolean;
+    daysInArchive: number;
+
+    keywordIds: number[];
+    rubricIds: number[];
+    secrecyLevelId: number;
+    userGroupIds: number[];
+
+    redactionIds: number[];
+
+    createdAt: string; // ISO datetime
+    updatedAt: string;
+}

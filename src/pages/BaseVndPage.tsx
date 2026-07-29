@@ -70,10 +70,14 @@ const ALL_STATUS_OPTIONS: { key: VndStatusKey; label: string }[] = (
 
 const DEFAULT_VISIBLE_ALL_ACTIVE: string[] = ["act", "status"];
 const DEFAULT_VISIBLE_ARCH: string[] = ["status"];
+const DEFAULT_VISIBLE_DRAFT: string[] = ["status"];
 
 function buildDefaultVisibility(scope: VndScope): Record<string, boolean> {
     const toggleable = getToggleableColumns(scope);
-    const defaultVisible = scope === "arch" ? DEFAULT_VISIBLE_ARCH : DEFAULT_VISIBLE_ALL_ACTIVE;
+    const defaultVisible =
+        scope === "arch" ? DEFAULT_VISIBLE_ARCH :
+            scope === "draft" ? DEFAULT_VISIBLE_DRAFT :
+                DEFAULT_VISIBLE_ALL_ACTIVE;
 
     return Object.fromEntries(
         toggleable.map((c) => [c.key, defaultVisible.includes(c.key)])
@@ -147,6 +151,7 @@ export function BaseVndPage() {
     const [visibleColsByScope, setVisibleColsByScope] = useState<Record<VndScope, Record<string, boolean>>>({
         all: buildDefaultVisibility("all"),
         active: buildDefaultVisibility("active"),
+        draft: buildDefaultVisibility("draft"),
         arch: buildDefaultVisibility("arch"),
     });
 
@@ -169,8 +174,9 @@ export function BaseVndPage() {
         const statuses: VndStatusKey[] =
             scope === "active" ? ["active"] :
                 scope === "arch" ? ["arch"] :
-                    statusFilters.length > 0 ? (statusFilters as VndStatusKey[]) :
-                        ["active", "onact", "review", "consol"];
+                    scope === "draft" ? ["draft"] :
+                        statusFilters.length > 0 ? (statusFilters as VndStatusKey[]) :
+                            ["active", "onact", "review", "consol"];
 
         return {
             code: advSearchCode || undefined,
@@ -220,15 +226,17 @@ export function BaseVndPage() {
     }, [vndAll, search]);
 
     const counts = {
-        all: allForCounts.filter((r) => r.status !== "arch").length,
+        all: allForCounts.filter((r) => r.status !== "arch" && r.status !== "draft").length,
         active: allForCounts.filter((r) => r.status === "active").length,
         arch: allForCounts.filter((r) => r.status === "arch").length,
+        draft: allForCounts.filter((r) => r.status === "draft").length,
     };
 
     const scopeTabs = [
         {id: "all" as VndScope, label: "Все", n: counts.all},
         {id: "active" as VndScope, label: "Действующие", n: counts.active},
         {id: "arch" as VndScope, label: "Архивированные", n: counts.arch},
+        {id: "draft" as VndScope, label: "Черновики", n: counts.draft},
     ];
 
     const resetFilters = () => {
@@ -298,7 +306,12 @@ export function BaseVndPage() {
                 rubricFilters={rubricFilters}
                 onRubricFiltersChange={setRubricFilters}
                 resultCount={filteredRows.length}
-                totalCount={scope === "active" ? counts.active : counts.all}
+                totalCount={
+                    scope === "active" ? counts.active :
+                        scope === "draft" ? counts.draft :
+                            scope === "arch" ? counts.arch :
+                                counts.all
+                }
                 toggleableColumns={toggleableColumns}
                 visibleCols={visibleCols}
                 onToggleColumn={toggleColumn}

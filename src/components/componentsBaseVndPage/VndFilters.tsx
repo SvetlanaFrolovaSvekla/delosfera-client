@@ -20,6 +20,7 @@ import {
     type DateFilterValue,
     EMPTY_DATE_FILTER
 } from "@/components/componentsGeneral/DateFilterGroup.tsx";
+import {SCOPE_COUNT_LABELS} from "@/constants/vndStatus.ts";
 
 interface VndFiltersProps {
     scope: VndScope;
@@ -258,8 +259,6 @@ export function VndFilters(props: VndFiltersProps) {
         isDateActive(lastActualizationDateFilter) ||
         isDateActive(archivedDateFilter);
 
-    const showTotalOnly = scope === "all" && !hasActiveFilters;
-
     // --- Черновик: инициализация и синхронизация из применённых пропов.
     const buildDraftFromProps = (): AdvancedDraft => ({
         docTypeFilters,
@@ -417,16 +416,16 @@ export function VndFilters(props: VndFiltersProps) {
                 )}
 
                 <div className="text-[12.5px] text-[#8b97ab]">
-                    {showTotalOnly ? (
+                    {hasActiveFilters ? (
                         <>
-                            Всего документов:{" "}
-                            <b className="text-[#3a4560] font-mono">{totalCount}</b>
+                            {SCOPE_COUNT_LABELS[scope].found}:{" "}
+                            <b className="text-[#3a4560] font-mono">{resultCount}</b>{" "}из{" "}
+                            {totalCount}
                         </>
                     ) : (
                         <>
-                            Найдено:{" "}
-                            <b className="text-[#3a4560] font-mono">{resultCount}</b>{" "}документов из{" "}
-                            {totalCount}
+                            {SCOPE_COUNT_LABELS[scope].total}:{" "}
+                            <b className="text-[#3a4560] font-mono">{totalCount}</b>
                         </>
                     )}
                 </div>

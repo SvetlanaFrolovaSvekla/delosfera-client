@@ -1,4 +1,4 @@
-// Модалка с иерархический списком и множественным выбором
+// Модалка с иерархическим списком, множественным выбором
 import {useRef, useState} from "react";
 import {useTranslation} from "react-i18next";
 import {Check, ChevronRight, Minus, X} from "lucide-react";

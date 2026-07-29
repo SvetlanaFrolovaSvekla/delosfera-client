@@ -1,3 +1,4 @@
+// Модалка с иерархическим списком, одиночным выбором
 import {useRef, useState} from "react";
 import {useTranslation} from "react-i18next";
 import {ChevronRight, X} from "lucide-react";

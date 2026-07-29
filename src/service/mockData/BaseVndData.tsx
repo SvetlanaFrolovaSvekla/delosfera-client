@@ -8,9 +8,9 @@ import type {
 } from "@/service/mockData/DictionaryData.tsx";
 
 // статусы ВНД действующие, на актуализации, на согласовании, на консолидации, архивирован
-export type VndStatusKey = "active" | "onact" | "review" | "consol" | "arch";
-// статусы просмотра: все, действующие, архивированные
-export type VndScope = "all" | "active" | "arch";
+export type VndStatusKey = "active" | "onact" | "review" | "consol" | "arch" | "draft";;
+// статусы просмотра: все, действующие, архивированные, черновики
+export type VndScope = "all" | "active" | "arch" | "draft";
 // статусы последней актуализации: без изменений, с изменениями
 export type LastActualizationStatus = "no_changes" | "with_changes";
 

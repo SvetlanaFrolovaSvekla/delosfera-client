@@ -1,5 +1,5 @@
-import type {VndStatusKey} from "@/service/mockData/BaseVndData.tsx";
-import {Archive, Check, Clock, Layers} from "lucide-react";
+import type {VndScope, VndStatusKey} from "@/service/mockData/BaseVndData.tsx";
+import {Archive, Check, Clock, FileEdit, Layers} from "lucide-react";
 
 export const STATUS_META: Record<
     VndStatusKey,
@@ -10,4 +10,24 @@ export const STATUS_META: Record<
     review: {label: "На согласовании", color: "#2f68f5", bg: "#e9f0ff", icon: Clock},
     consol: {label: "Консолидация", color: "#7a5ce0", bg: "#efeafe", icon: Layers},
     arch: {label: "В архиве", color: "#c0392b", bg: "#fdecea", icon: Archive},
+    draft: {label: "Черновик", color: "#5b6472", bg: "#eef0f3", icon: FileEdit}
+};
+
+export const SCOPE_COUNT_LABELS: Record<VndScope, { total: string; found: string }> = {
+    all: {
+        total: "Всего ВНД",
+        found: "Найдено ВНД",
+    },
+    active: {
+        total: "Всего действующих ВНД",
+        found: "Найдено действующих ВНД",
+    },
+    draft: {
+        total: "Всего черновиков",
+        found: "Найдено черновиков",
+    },
+    arch: {
+        total: "Всего архивированных ВНД",
+        found: "Найдено архивированных ВНД",
+    },
 };

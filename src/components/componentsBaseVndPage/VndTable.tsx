@@ -1,8 +1,9 @@
-import {Clock, SearchX} from "lucide-react";
 import {useTranslation} from "react-i18next";
+import {Link} from "react-router-dom";
 import type {VndResponse} from "@/service/vndService/vndServiceType.ts";
 import {STATUS_META} from "@/constants/vndStatus.ts";
 import type {ColDef} from "@/constants/vndColumns.ts";
+import {Clock, SearchX} from "lucide-react";
 
 interface VndTableProps {
     columns: ColDef[];
@@ -37,6 +38,7 @@ export function VndTable({
                              rubricNames,
                          }: VndTableProps) {
     const {t} = useTranslation();
+
 
     if (rows.length === 0) {
         return (
@@ -82,9 +84,16 @@ export function VndTable({
                     const dot = days !== null ? rygColor(days) : "#a3adbd";
 
                     return (
-                        <button
-                            key={r.id}
-                            className="w-full grid gap-3 items-start px-5 py-3.5 border-none border-b border-[#f3f6f9] bg-transparent text-left cursor-pointer hover:bg-[#f8fafc]"
+                        <Link
+                            to={`/basevnd/${r.id}`}
+                            onClick={(e) => {
+                                // Не переходим, если пользователь выделял текст (копировал) обычным левым кликом
+                                const selection = window.getSelection();
+                                if (selection && selection.toString().length > 0) {
+                                    e.preventDefault();
+                                }
+                            }}
+                            className="group no-underline w-full grid gap-3 items-start px-5 py-3.5 border-b border-[#f3f6f9] bg-transparent text-left cursor-pointer hover:bg-[#f8fafc] select-text"
                             style={{gridTemplateColumns: gridTemplate}}
                         >
                             {columns.map((c) => {
@@ -112,15 +121,16 @@ export function VndTable({
                                     case "name":
                                         return (
                                             <div key={c.key} className="min-w-0">
-                                                <span className="block text-[13.5px] font-medium text-[#1c2740] whitespace-normal break-words line-clamp-5">
-                                                    {r.name}
-                                                </span>
+                                              <span className="block text-[13.5px] font-medium text-[#1c2740] whitespace-normal break-words line-clamp-5 group-hover:underline decoration-1 underline-offset-1">
+                                                  {r.name}
+                                              </span>
                                             </div>
                                         );
                                     case "type":
                                         return (
                                             <div key={c.key} className="min-w-0">
-                                                <span className="block text-[12.5px] text-[#55617a] capitalize whitespace-normal break-words line-clamp-5">
+                                                <span
+                                                    className="block text-[12.5px] text-[#55617a] capitalize whitespace-normal break-words line-clamp-5">
                                                     {r.typeName || "—"}
                                                 </span>
                                             </div>
@@ -128,7 +138,8 @@ export function VndTable({
                                     case "developer":
                                         return (
                                             <div key={c.key} className="min-w-0">
-                                                <span className="block text-[12.5px] text-[#55617a] whitespace-normal break-words line-clamp-5">
+                                                <span
+                                                    className="block text-[12.5px] text-[#55617a] whitespace-normal break-words line-clamp-5">
                                                     {r.developerName || "—"}
                                                 </span>
                                             </div>
@@ -136,7 +147,8 @@ export function VndTable({
                                     case "organ":
                                         return (
                                             <div key={c.key} className="min-w-0">
-                                                <span className="block text-[12.5px] text-[#55617a] whitespace-normal break-words line-clamp-5">
+                                                <span
+                                                    className="block text-[12.5px] text-[#55617a] whitespace-normal break-words line-clamp-5">
                                                     {r.organName || "—"}
                                                 </span>
                                             </div>
@@ -222,7 +234,8 @@ export function VndTable({
                                     case "responsibleExecutors":
                                         return (
                                             <div key={c.key} className="min-w-0">
-                                                <span className="block text-[12.5px] text-[#55617a] whitespace-normal break-words line-clamp-5">
+                                                <span
+                                                    className="block text-[12.5px] text-[#55617a] whitespace-normal break-words line-clamp-5">
                                                     {responsibleExecutorNames(r.responsibleExecutorIds)}
                                                 </span>
                                             </div>
@@ -303,7 +316,8 @@ export function VndTable({
                                     case "keywords":
                                         return (
                                             <div key={c.key} className="min-w-0">
-                                                <span className="block text-[12.5px] text-[#55617a] whitespace-normal break-words line-clamp-5">
+                                                <span
+                                                    className="block text-[12.5px] text-[#55617a] whitespace-normal break-words line-clamp-5">
                                                     {keywordNames(r.keywordIds)}
                                                 </span>
                                             </div>
@@ -318,7 +332,8 @@ export function VndTable({
                                     case "userGroups":
                                         return (
                                             <div key={c.key} className="min-w-0">
-                                                <span className="block text-[12.5px] text-[#55617a] whitespace-normal break-words line-clamp-5">
+                                                <span
+                                                    className="block text-[12.5px] text-[#55617a] whitespace-normal break-words line-clamp-5">
                                                     {userGroupNames(r.userGroupIds)}
                                                 </span>
                                             </div>
@@ -327,7 +342,7 @@ export function VndTable({
                                         return <div key={c.key}/>;
                                 }
                             })}
-                        </button>
+                        </Link>
                     );
                 })}
             </div>

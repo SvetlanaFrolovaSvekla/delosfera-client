@@ -1,4 +1,4 @@
-import type {VndScope} from "@/service/mockData/BaseVndData";
+import type {VndScope} from "@/service/mockData/BaseVndData.tsx";
 
 interface ScopeTab {
     id: VndScope;

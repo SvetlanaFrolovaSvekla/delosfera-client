@@ -76,7 +76,7 @@ const activity = [
 
 export function HomePage() {
     return (
-        <div className="w-full max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 xl:px-10 pt-5 sm:pt-[26px] pb-10 sm:pb-[60px]">
+        <div className="w-full max-w-[1700px] mx-auto px-4 sm:px-6 lg:px-8 xl:px-10 pt-5 sm:pt-[26px] pb-10 sm:pb-[60px]">
             {/* Заголовок */}
             <div className="mb-[22px] flex flex-wrap items-end justify-between gap-5">
                 <div>

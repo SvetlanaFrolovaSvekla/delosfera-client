@@ -12,7 +12,7 @@ import {
 import {SelectDropdown} from "@/components/componentsGeneral/SelectDropdown.tsx";
 import {SelectListField} from "@/components/componentsGeneral/SelectListField.tsx";
 import {TreeSelectField} from "@/components/componentsGeneral/TreeSelectField.tsx";
-import {formatDDMMYYYY, parseDDMMYYYY} from "@/utils/dateFilterMatch.ts";
+import {formatDDMMYYYY, parseDDMMYYYY} from "@/utils/dateUtils.ts";
 import {DatePickerInput} from "@/components/componentsGeneral/DatePickerInput.tsx";
 import {vndService} from "@/service/vndService/vndService.ts";
 import type {ActualizationPeriod, CreateVndRequest} from "@/service/vndService/vndServiceType.ts";
@@ -173,7 +173,7 @@ export function CreateVndPage() {
     };
 
     return (
-        <div className="w-full max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 pt-5 sm:pt-[26px] pb-5 sm:pb-4">
+        <div className="w-full max-w-[1700px] mx-auto px-4 sm:px-6 lg:px-8 pt-5 sm:pt-[26px] pb-5 sm:pb-4">
             <button
                 onClick={() => navigate("/basevnd")}
                 className="inline-flex items-center gap-[7px] border-none bg-transparent text-[#8b97ab] text-[13px] font-medium cursor-pointer p-0 mb-1 hover:text-[#4e57d6]"

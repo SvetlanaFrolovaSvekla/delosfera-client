@@ -13,7 +13,7 @@ import {
     USER_GROUPS
 } from "@/service/mockData/DictionaryData.tsx";
 import type {ColDef} from "@/constants/vndColumns.ts";
-import type {VndScope} from "@/service/mockData/BaseVndData";
+import type {VndScope} from "@/service/mockData/BaseVndData.tsx";
 import {SelectListField} from "@/components/componentsGeneral/SelectListField.tsx";
 import {
     DateFilterGroup,

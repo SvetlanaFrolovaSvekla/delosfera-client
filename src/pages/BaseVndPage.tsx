@@ -11,10 +11,10 @@ import {type VndScope, type VndStatusKey} from '@/service/mockData/BaseVndData';
 
 import {getColumnsForScope, getToggleableColumns} from "@/constants/vndColumns";
 import {STATUS_META} from "@/constants/vndStatus.ts";
-import {VndPageHeader} from "@/components/componentsBaseVndPage/VndPageHeader";
-import {VndScopeTabs} from "@/components/componentsBaseVndPage/VndScopeTabs";
-import {VndFilters} from "@/components/componentsBaseVndPage/VndFilters";
-import {VndTable} from "@/components/componentsBaseVndPage/VndTable";
+import {VndPageHeader} from "@/components/componentsVND/componentsBaseVndPage/VndPageHeader";
+import {VndScopeTabs} from "@/components/componentsVND/componentsBaseVndPage/VndScopeTabs";
+import {VndFilters} from "@/components/componentsVND/componentsBaseVndPage/VndFilters";
+import {VndTable} from "@/components/componentsVND/componentsBaseVndPage/VndTable";
 import {type DateFilterValue, EMPTY_DATE_FILTER} from "@/components/componentsGeneral/DateFilterGroup.tsx";
 import type {DateRangeFilter, VndSearchRequest} from "@/service/vndService/vndServiceType.ts";
 import {useVndSearch} from "@/hooks/useVndSearch.ts";
@@ -281,7 +281,7 @@ export function BaseVndPage() {
 
     return (
         <div
-            className="w-full max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 xl:px-10 pt-5 sm:pt-[26px] pb-10 sm:pb-[60px]">
+            className="w-full max-w-[1700px] mx-auto px-4 sm:px-6 lg:px-8 xl:px-10 pt-5 sm:pt-[26px] pb-10 sm:pb-[60px]">
             <VndPageHeader onCreateClick={() => navigate("/basevnd/new")}/>
 
             <VndScopeTabs tabs={scopeTabs} scope={scope} onChange={setScope}/>

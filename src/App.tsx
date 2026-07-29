@@ -20,7 +20,6 @@ import {RolesPermissionPage} from "@/pages/RolesPermissionPage.tsx";
 import {BaseVndPage} from "@/pages/BaseVndPage.tsx";
 import {CreateVndPage} from "@/pages/CreateVndPage.tsx";
 import {OpenVndPage} from "@/pages/OpenVndPage.tsx";
-import {OpenVndPageMock} from "@/pages/OpenVndPageMock.tsx";
 
 const MainLayout = () => (
     <div className="flex h-screen overflow-hidden">
@@ -50,7 +49,6 @@ function App() {
                             <Route path="/basevnd" element={<BaseVndPage/>}/>
                             <Route path="/basevnd/new" element={<CreateVndPage/>}/>
                             <Route path="/basevnd/:id" element={<OpenVndPage/>}/>
-                            <Route path="/basevndmock" element={<OpenVndPageMock/>}/>
 
                             <Route path="/roles" element={<RolesPermissionPage/>}/>
                             <Route path="/refs" element={<DictionariesPages/>}/>

@@ -4,7 +4,7 @@ import type {VndStatusKey} from "@/service/vndService/vndServiceType.ts";
 
 interface VndStatusBannerProps {
     status: VndStatusKey;
-    /** Клик по первичному действию (напр. «Открыть Два окна» / «Добавить первую редакцию») */
+    /** Клик по первичному действию (напр. «Открыть Два окна») */
     onPrimaryAction?: () => void;
     /** Клик по вторичному действию (напр. «Сформировать v4.0») */
     onSecondaryAction?: () => void;
@@ -57,8 +57,8 @@ const BANNER_CONFIG: Partial<Record<VndStatusKey, BannerConfig>> = {
         title: "Документ в статусе «Черновик»",
         textColor: "#55617a",
         text: "Добавьте реквизиты и первую редакцию документа, чтобы ВНД стал действующим.",
-        primaryLabel: "Добавить первую редакцию",
-        primaryIcon: <FilePlus2 className="w-4 h-4" strokeWidth={1.8}/>,
+        // Кнопок для черновика намеренно нет — primaryLabel/secondaryLabel не заданы,
+        // поэтому оба блока с кнопками ниже просто не отрендерятся.
         accentColor: "#5b6472",
     },
 };
@@ -91,22 +91,10 @@ export function VndStatusBanner({status, onPrimaryAction, onSecondaryAction}: Vn
                 </div>
             </div>
 
-            {/*TODO: цвет кнопки при hover*/}
             {config.primaryLabel && (
                 <button
                     onClick={onPrimaryAction}
-                    className="inline-flex items-center gap-2 h-[38px] px-[15px] rounded-[9px] bg-white font-semibold text-[12.5px] cursor-pointer flex-none hover:bg-[#f7f4ff]"
-                    style={{border: `1px solid ${config.borderColor}`, color: config.accentColor}}
-                >
-                    {config.primaryIcon}
-                    Изменить реквизиты
-                </button>
-            )}
-
-            {config.primaryLabel && (
-                <button
-                    onClick={onPrimaryAction}
-                    className="inline-flex items-center gap-2 h-[38px] px-[15px] rounded-[9px] bg-white font-semibold text-[12.5px] cursor-pointer flex-none hover:bg-[#f7f4ff]"
+                    className="inline-flex items-center gap-2 h-[38px] px-[15px] rounded-[9px] bg-white font-semibold text-[12.5px] cursor-pointer flex-none hover:bg-[#f6f8fb]"
                     style={{border: `1px solid ${config.borderColor}`, color: config.accentColor}}
                 >
                     {config.primaryIcon}

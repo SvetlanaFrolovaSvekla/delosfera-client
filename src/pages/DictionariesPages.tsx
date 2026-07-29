@@ -23,7 +23,7 @@ export function DictionariesPages() {
     }, [search]);
 
     return (
-        <div className="w-full max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 xl:px-10 pt-5 sm:pt-[26px] pb-10 sm:pb-[60px]">
+        <div className="w-full max-w-[1700px] mx-auto px-4 sm:px-6 lg:px-8 xl:px-10 pt-5 sm:pt-[26px] pb-10 sm:pb-[60px]">
             <div className="mb-[6px]">
                 <h1 className="m-0 text-[23px] font-bold tracking-[-0.02em] text-[#1c2740]">
                     Справочники

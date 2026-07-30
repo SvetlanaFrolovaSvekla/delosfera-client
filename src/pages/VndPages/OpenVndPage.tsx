@@ -8,6 +8,7 @@ import {VndStatusBanner} from "@/components/componentsGeneral/VndStatusBanner.ts
 import {VndTabPlaceholder} from "@/components/componentsGeneral/VndTabPlaceholder.tsx";
 import {formatDate} from "@/utils/dateUtils.ts";
 import {VndPassportTab} from "@/components/componentsVND/componentsOpenVndPage/VndPassportTab.tsx";
+import {VndEditionsTab} from "@/components/componentsVND/VndEditionsTab.tsx";
 
 export function OpenVndPage() {
     const {id} = useParams<{ id: string }>();
@@ -82,7 +83,7 @@ export function OpenVndPage() {
             </div>
 
             {activeTab === "passport" && <VndPassportTab vnd={vnd}/>}
-            {activeTab === "editions" && <VndTabPlaceholder/>}
+            {activeTab === "editions" && <VndEditionsTab vnd={vnd}/>}
             {activeTab === "actual" && <VndTabPlaceholder/>}
             {activeTab === "links" && <VndTabPlaceholder/>}
         </div>

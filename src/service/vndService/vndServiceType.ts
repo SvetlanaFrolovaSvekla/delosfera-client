@@ -1,5 +1,8 @@
 export type VndStatusKey = "draft" | "active" | "onact" | "review" | "consol" | "arch";
 
+export type RedactionApprovalStatus = "NotRequired" | "Draft" | "Pending" | "Approved" | "Rejected";
+
+
 export interface DateRangeFilter {
     exact?: string | null;
     from?: string | null;
@@ -118,4 +121,34 @@ export interface VndResponse {
 
     createdAt: string; // ISO datetime
     updatedAt: string;
+}
+
+// --- Редакции
+export interface VndRedactionResponse {
+    id: number;
+    code: string;
+    number: number;
+    description?: string | null;
+    isCurrent: boolean;
+
+    docFileRuId: number;
+    docFileKgId: number | null;
+    docFileEnId: number | null;
+
+    requiresApproval: boolean;
+    approvalStatus: RedactionApprovalStatus;
+
+    attachmentFileIds: number[];
+
+    createdAt: string; // ISO datetime
+}
+
+// --- Создание (загрузка) новой редакции
+export interface CreateVndRedactionRequest {
+    docRu: File;
+    docKg?: File | null;
+    docEn?: File | null;
+    attachments?: File[];
+    description?: string;
+    requiresApproval: boolean;
 }

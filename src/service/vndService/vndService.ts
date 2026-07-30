@@ -1,10 +1,12 @@
-import type {CreateVndRequest, VndResponse, VndSearchRequest} from "./vndServiceType.ts";
+import type {
+    CreateVndRedactionRequest,
+    CreateVndRequest,
+    VndRedactionResponse,
+    VndResponse,
+    VndSearchRequest
+} from "./vndServiceType.ts";
 
-// Подставь свой базовый URL/клиент — тут пример через fetch.
-// Если в проекте уже есть общий axios-инстанс (например, api из "@/service/apiClient.ts"),
-// замени fetch-вызовы на него — сигнатуры функций останутся такими же.
-// ВАЖНО: все методы этого сервиса требуют авторизации (Bearer-токен) —
-// не забудь передавать заголовок Authorization при интеграции с общим клиентом.
+// TODO: передавать заголовок Authorization при интеграции с общим клиентом.
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL ?? "http://localhost:5293";
 
@@ -57,5 +59,44 @@ export const vndService = {
             headers: authHeaders(),
         });
         return handleResponse<VndResponse>(response);
+    },
+
+    /**
+     * Получить редакции ВНД по id
+     */
+    async getRedactions(vndId: number): Promise<VndRedactionResponse[]> {
+        const response = await fetch(`${API_BASE}/vnd/${vndId}/redactions`, {
+            headers: authHeaders(),
+        });
+        return handleResponse<VndRedactionResponse[]>(response);
+    },
+
+    async addRedaction(vndId: number, request: CreateVndRedactionRequest): Promise<VndRedactionResponse> {
+        const formData = new FormData();
+        formData.append("DocRu", request.docRu);
+        if (request.docKg) formData.append("DocKg", request.docKg);
+        if (request.docEn) formData.append("DocEn", request.docEn);
+        if (request.description) formData.append("Description", request.description);
+        formData.append("RequiresApproval", String(request.requiresApproval));
+
+        for (const file of request.attachments ?? []) {
+            formData.append("Attachments", file);
+        }
+
+        const response = await fetch(`${API_BASE}/vnd/${vndId}/redactions`, {
+            method: "POST",
+            headers: authHeaders(),
+            body: formData,
+        });
+        return handleResponse<VndRedactionResponse>(response);
+    },
+
+
+    async submitRedaction(vndId: number, redactionId: number): Promise<VndRedactionResponse> {
+        const response = await fetch(`${API_BASE}/vnd/${vndId}/redactions/${redactionId}/submit`, {
+            method: "POST",
+            headers: authHeaders(),
+        });
+        return handleResponse<VndRedactionResponse>(response);
     },
 };

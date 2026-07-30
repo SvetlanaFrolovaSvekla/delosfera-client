@@ -1,3 +1,4 @@
+//
 import {useMemo, useState} from "react";
 import {useNavigate, useSearchParams} from "react-router-dom";
 
@@ -7,14 +8,13 @@ import {
     KEYWORDS, ORG_UNITS, type SecurityLevel, SECURITY_LEVELS, USER_GROUPS, type UserGroup, type Rubric, RUBRICS
 } from '@/service/mockData/DictionaryData.tsx';
 
-import {type VndScope, type VndStatusKey} from '@/service/mockData/BaseVndData';
-
-import {getColumnsForScope, getToggleableColumns} from "@/constants/vndColumns";
+import {type VndScope, type VndStatusKey} from '@/service/mockData/BaseVndData.tsx';
+import {getColumnsForScope, getToggleableColumns} from "@/constants/vndColumns.ts";
 import {STATUS_META} from "@/constants/vndStatus.ts";
-import {VndPageHeader} from "@/components/componentsVND/componentsBaseVndPage/VndPageHeader";
-import {VndScopeTabs} from "@/components/componentsVND/componentsBaseVndPage/VndScopeTabs";
-import {VndFilters} from "@/components/componentsVND/componentsBaseVndPage/VndFilters";
-import {VndTable} from "@/components/componentsVND/componentsBaseVndPage/VndTable";
+import {VndPageHeader} from "@/components/componentsVND/componentsBaseVndPage/VndPageHeader.tsx";
+import {VndScopeTabs} from "@/components/componentsVND/componentsBaseVndPage/VndScopeTabs.tsx";
+import {VndFilters} from "@/components/componentsVND/componentsBaseVndPage/VndFilters.tsx";
+import {VndTable} from "@/components/componentsVND/componentsBaseVndPage/VndTable.tsx";
 import {type DateFilterValue, EMPTY_DATE_FILTER} from "@/components/componentsGeneral/DateFilterGroup.tsx";
 import type {DateRangeFilter, VndSearchRequest} from "@/service/vndService/vndServiceType.ts";
 import {useVndSearch} from "@/hooks/useVndSearch.ts";

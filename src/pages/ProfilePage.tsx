@@ -1,0 +1,161 @@
+import { useMemo } from "react";
+import { Check, KeyRound, User as UserIcon } from "lucide-react";
+import { useAuth } from "@/context/AuthContext";
+
+// TODO: фото цвет, приоритет ролей цвет, главная панель с историей действий, ваши полномочия (взаимоисключающие), ваши роли, при клике на роль должны быть показаны полномочия, начальник СП, куратор СП;
+
+function getInitials(fullName: string) {
+    const parts = fullName.trim().split(/\s+/);
+    return parts.slice(0, 2).map((p) => p[0]?.toUpperCase() ?? "").join("");
+}
+
+function formatDateTime(value: string | null | undefined) {
+    if (!value) return "—";
+    return new Date(value).toLocaleString("ru-RU", {
+        day: "2-digit",
+        month: "2-digit",
+        year: "numeric",
+        hour: "2-digit",
+        minute: "2-digit",
+    });
+}
+
+export function ProfilePage() {
+    const { user } = useAuth();
+
+    const primaryRole = user?.roles[0];
+
+    // все права по всем ролям пользователя, без дублей
+    const permissions = useMemo(() => {
+        if (!user) return [];
+        const seen = new Map<number, string>();
+        user.roles.forEach((role) =>
+            role.permissions.forEach((p) => seen.set(p.code, p.description))
+        );
+        return Array.from(seen, ([code, label]) => ({ code, label }));
+    }, [user]);
+
+    if (!user) {
+        return (
+            <div className="max-w-[1200px] mx-auto px-[30px] py-[26px] pb-[60px]">
+                <div className="text-sm text-[#8b97ab]">Загрузка профиля…</div>
+            </div>
+        );
+    }
+
+    return (
+        <div className="max-w-[1700px] mx-auto px-[30px] pt-[26px] pb-[60px] animate-[dsIn_.22s_ease]">
+            {/* Шапка профиля */}
+            <div className="bg-white border border-[#e9edf3] rounded-2xl px-7 py-6 mb-[18px] flex items-center gap-[22px] flex-wrap">
+                <span className="w-[72px] h-[72px] flex-none rounded-[20px] bg-[var(--soft)] text-[var(--accent)] grid place-items-center font-bold text-[25px]">
+                    {getInitials(user.fullName)}
+                </span>
+                <div className="flex-1 min-w-[220px]">
+                    <h1 className="m-0 text-[23px] font-bold tracking-[-.02em]">{user.fullName}</h1>
+                    <div className="mt-[9px] flex items-center gap-[10px] flex-wrap">
+                        <span className="inline-flex items-center gap-[7px] px-[11px] py-[5px] rounded-lg bg-[var(--soft)] text-[var(--accent)] font-semibold text-[12.5px]">
+                            <UserIcon size={14} strokeWidth={1.9} />
+                            {primaryRole?.name ?? "Без роли"}
+                        </span>
+                        <span className="text-[13px] text-[#55617a]">
+                            {user.position?.name ?? "Должность не указана"} · {user.orgUnit?.name ?? "Подразделение не указано"}
+                        </span>
+                    </div>
+                </div>
+                <span
+                    className={`inline-flex items-center gap-[7px] h-[34px] px-[13px] rounded-[9px] text-[12.5px] font-semibold ${
+                        user.isActive ? "bg-[#e2f4ea] text-[#1c7a4d]" : "bg-[#fbe3e3] text-[#a12b2b]"
+                    }`}
+                >
+                    <span
+                        className={`w-[7px] h-[7px] rounded-full ${
+                            user.isActive ? "bg-[#1c7a4d]" : "bg-[#a12b2b]"
+                        }`}
+                    />
+                    {user.isActive ? "Учётная запись активна" : "Учётная запись деактивирована"}
+                </span>
+            </div>
+
+            <div className="grid grid-cols-1 lg:grid-cols-[1fr_360px] gap-[18px] items-start">
+                {/* Левая колонка — история действий */}
+                <div className="bg-white border border-[#e9edf3] rounded-2xl overflow-hidden">
+                    <div className="px-[22px] pt-[17px] pb-[14px] border-b border-[#eef2f7]">
+                        <h2 className="m-0 text-[15px] font-bold">История действий</h2>
+                    </div>
+                    <div className="px-[22px] pb-[18px] pt-[2px]">
+                        {/* TODO: подключить, когда появится эндпоинт GET /api/users/{id}/activity */}
+                        <div className="py-7 text-center text-[#a3adbd] text-[13px]">
+                            Журнал действий пока недоступен
+                        </div>
+                    </div>
+                </div>
+
+                {/* Правая колонка */}
+                <div className="flex flex-col gap-4">
+                    {/* Учётная запись */}
+                    <div className="bg-white border border-[#e9edf3] rounded-2xl px-5 py-[18px]">
+                        <h3 className="m-0 mb-[13px] text-[13.5px] font-bold">Учётная запись</h3>
+                        <div className="flex flex-col gap-[11px]">
+                            <Row label="Логин" value={user.email} />
+                            <Row label="Должность" value={user.position?.name ?? "—"} />
+                            <Row label="Структурная единица" value={user.orgUnit?.name ?? "—"} />
+                            <div className="pt-[10px] border-t border-[#f3f6f9]">
+                                <Row label="Последний вход" value={formatDateTime(user.lastLoginAt)} />
+                            </div>
+                            <Row label="В системе с" value={formatDateTime(user.createdAt)} />
+                        </div>
+                    </div>
+
+                    {/* Электронная подпись — данных пока нет в UserResponse */}
+                    <div className="bg-white border border-[#e9edf3] rounded-2xl px-5 py-[18px]">
+                        <div className="flex items-center gap-[9px] mb-[13px]">
+                            <span className="w-[30px] h-[30px] flex-none rounded-lg bg-[var(--soft)] text-[var(--accent)] grid place-items-center">
+                                <KeyRound size={17} strokeWidth={1.8} />
+                            </span>
+                            <h3 className="m-0 text-[13.5px] font-bold">Электронная подпись</h3>
+                        </div>
+                        <p className="m-0 text-[12.5px] text-[#55617a] leading-[1.55]">
+                           Недоступно
+                        </p>
+                    </div>
+
+                    {/* Полномочия роли */}
+                    <div className="bg-white border border-[#e9edf3] rounded-2xl px-5 py-[18px]">
+                        <h3 className="m-0 mb-3 text-[13.5px] font-bold">
+                            Полномочия роли · {permissions.length}
+                        </h3>
+                        <div className="flex flex-wrap gap-[7px]">
+                            {permissions.map((p) => (
+                                <span
+                                    key={p.code}
+                                    className="inline-flex items-center gap-[6px] text-[11.5px] font-semibold text-[#3a4560] bg-[#f2f5f9] px-[10px] py-[5px] rounded-lg"
+                                >
+                                    <Check size={12} strokeWidth={2.4} className="text-[#1c7a4d]" />
+                                    {p.label}
+                                </span>
+                            ))}
+                            {permissions.length === 0 && (
+                                <span className="text-[12px] text-[#a3adbd]">Прав не назначено</span>
+                            )}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    );
+}
+
+function Row({ label, value, mono }: { label: string; value: string; mono?: boolean }) {
+    return (
+        <div className="flex items-center justify-between gap-3">
+            <span className="text-[12px] text-[#8b97ab]">{label}</span>
+            <span
+                className={`text-[12.5px] font-semibold text-[#1c2740] text-right ml-auto ${
+                    mono ? "font-mono" : ""
+                }`}
+            >
+                {value}
+            </span>
+        </div>
+    );
+}

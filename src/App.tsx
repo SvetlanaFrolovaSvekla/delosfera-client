@@ -8,7 +8,7 @@ import {ProtectedRoute} from "@/context/ProtectedRoute.tsx";
 
 import {AuthorizationPage} from "@/pages/AuthorizationPage.tsx";
 import {HomePage} from "@/pages/HomePage.tsx";
-import {DictionariesPages} from "@/pages/DictionariesPages.tsx";
+import {DictionariesPages} from "@/pages/DictionariesPages/DictionariesPages.tsx";
 import {ApprovalBodyPage} from "@/pages/DictionariesPages/ApprovalBodyPage.tsx";
 import {OrganizationUnitPage} from "@/pages/DictionariesPages/OrganizationUnitPage.tsx";
 import {PositionPage} from "@/pages/DictionariesPages/PositionPage.tsx";
@@ -17,9 +17,10 @@ import {SecurityLevelPage} from "@/pages/DictionariesPages/SecurityLevelPage.tsx
 import {UserGroupPage} from "@/pages/DictionariesPages/UserGroupPage.tsx";
 import {RubricPage} from "@/pages/DictionariesPages/RubricPage.tsx";
 import {RolesPermissionPage} from "@/pages/RolesPermissionPage.tsx";
-import {BaseVndPage} from "@/pages/BaseVndPage.tsx";
-import {CreateVndPage} from "@/pages/CreateVndPage.tsx";
-import {OpenVndPage} from "@/pages/OpenVndPage.tsx";
+import {BaseVndPage} from "@/pages/VndPages/BaseVndPage.tsx";
+import {CreateVndPage} from "@/pages/VndPages/CreateVndPage.tsx";
+import {OpenVndPage} from "@/pages/VndPages/OpenVndPage.tsx";
+import {ProfilePage} from "@/pages/ProfilePage.tsx";
 
 const MainLayout = () => (
     <div className="flex h-screen overflow-hidden">
@@ -45,6 +46,8 @@ function App() {
                     <Route element={<ProtectedRoute/>}>
                         <Route element={<MainLayout/>}>
                             <Route path="/" element={<HomePage/>}/>
+
+                            <Route path="/profile" element={<ProfilePage/>}/>
 
                             <Route path="/basevnd" element={<BaseVndPage/>}/>
                             <Route path="/basevnd/new" element={<CreateVndPage/>}/>

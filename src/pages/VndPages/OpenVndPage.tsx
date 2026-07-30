@@ -1,7 +1,7 @@
 import {useNavigate, useParams} from "react-router-dom";
 import {useState} from "react";
 import {ArrowLeft} from "lucide-react";
-import {useVndById} from "@/hooks/useVndById.ts";
+import {useVndById} from "@/hooks/vndHooks/useVndById.ts";
 import {STATUS_META} from "@/constants/vndStatus.ts";
 import {getVndTabs, type VndTabId} from "@/constants/vndTabs.ts";
 import {VndStatusBanner} from "@/components/componentsGeneral/VndStatusBanner.tsx";

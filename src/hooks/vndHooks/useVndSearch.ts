@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { vndService } from "@/service/vndService/vndService.ts";
-import type { VndResponse, VndSearchRequest } from "@/service/vndService/vndServiceType";
+import type { VndResponse, VndSearchRequest } from "@/service/vndService/vndServiceType.ts";
 
 export function useVndSearch(request: VndSearchRequest, debounceMs = 300) {
     const [data, setData] = useState<VndResponse[]>([]);

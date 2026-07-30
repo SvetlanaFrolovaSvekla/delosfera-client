@@ -7,9 +7,9 @@ import type {
     UserGroup,
 } from "@/service/mockData/DictionaryData.tsx";
 
-// статусы ВНД действующие, на актуализации, на согласовании, на консолидации, архивирован
-export type VndStatusKey = "active" | "onact" | "review" | "consol" | "arch" | "draft";;
-// статусы просмотра: все, действующие, архивированные, черновики
+// статусы ВНД действующие, на актуализации, на согласовании, на консолидации, архивирован, черновик
+export type VndStatusKey = "active" | "onact" | "review" | "consol" | "arch" | "draft";
+// режимы просмотра: все, действующие, архивированные, черновики
 export type VndScope = "all" | "active" | "arch" | "draft";
 // статусы последней актуализации: без изменений, с изменениями
 export type LastActualizationStatus = "no_changes" | "with_changes";

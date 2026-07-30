@@ -1,37 +1,37 @@
 import type {DateFilterValue} from "@/components/componentsGeneral/DateFilterGroup.tsx";
+import type {DateRangeFilter} from "@/service/vndService/vndServiceType.ts";
 
-/**
- * Парсит строку "дд.мм.гггг" в timestamp (мс). Без валидации календарных
- * границ (в отличие от parseDDMMYYYY) — используется только для сравнения
- * дат внутри matchDateFilter, где скорость важнее строгости.
- * Возвращает null, если строку не удалось разобрать.
- */
-function parseDMY(str: string): number | null {
-    const [d, m, y] = str.split(".").map(Number);
-    if (!d || !m || !y) return null;
-    return new Date(y, m - 1, d).getTime();
+// Берем значение из UI (DatePicker/RangePicker), преобразуем в { exact, from, to } для фильтрации
+export function toDateRangeFilter(v: DateFilterValue): DateRangeFilter | null {
+    const exact = v.exact ? formatISO(v.exact) : null;
+    const from = v.from ? formatISO(v.from) : null;
+    const to = v.to ? formatISO(v.to) : null;
+    if (!exact && !from && !to) return null;
+    return {exact, from, to};
 }
 
-/**
- * Проверяет, попадает ли дата строки (в формате "дд.мм.гггг") под фильтр —
- * либо точное совпадение (filter.mode === "exact"), либо попадание в диапазон
- * [from, to]. Пустой фильтр (без exact/from/to) пропускает любую дату.
- * Используется в таблицах для клиентской фильтрации строк по датам.
- */
-export function matchDateFilter(rowDateStr: string, filter: DateFilterValue): boolean {
-    if (filter.mode === "exact") {
-        return !filter.exact.trim() || rowDateStr === filter.exact.trim();
-    }
+// Приводит любую переданную дату (Date или строку) к строгому текстовому формату ISO: YYYY-MM-DD
+export function formatISO(d: Date | string) {
+    const date = d instanceof Date ? d : new Date(d);
+    return date.toISOString().slice(0, 10);
+}
 
-    // диапазон
-    if (!filter.from.trim() && !filter.to.trim()) return true;
-    const rowTime = parseDMY(rowDateStr);
-    if (rowTime === null) return false;
+// Сервер отдаёт даты в формате "YYYY-MM-DD", парсим в объект JS Data,
+// Если строка пустая или некорректная, возвращает null
+export function parseDate(str: string | null | undefined): Date | null {
+    if (!str) return null;
+    const [y, m, d] = str.split("-").map(Number);
+    if (!d || !m || !y) return null;
+    return new Date(y, m - 1, d);
+}
 
-    const fromTime = filter.from.trim() ? parseDMY(filter.from.trim()) : null;
-    const toTime = filter.to.trim() ? parseDMY(filter.to.trim()) : null;
-
-    return !((fromTime !== null && rowTime < fromTime) || (toTime !== null && rowTime > toTime));
+// Подсчёт количества дней, оставшихся до указанной даты (или прошедших, если дата в прошлом) (для расчёта актуализации и др.)
+export function daysUntil(dateStr: string | null | undefined): number | null {
+    const date = parseDate(dateStr);
+    if (!date) return null;
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    return Math.round((date.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
 }
 
 /**

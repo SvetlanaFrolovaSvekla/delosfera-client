@@ -1,3 +1,6 @@
+// Формирование колонок таблицы, возможных колонок для отображения в зависимости
+// от выбранного Tab (VndScope -
+// действующие, на актуализации, на согласовании, на консолидации, архивирован, черновик)
 import type {VndScope} from "@/service/mockData/BaseVndData";
 
 export type ColKey =
@@ -32,7 +35,7 @@ export interface ColDef {
     key: ColKey;
     label: string;
     width: string;
-    fixed?: boolean; // нельзя скрыть через меню «Колонки»
+    fixed?: boolean; // нельзя будет скрыть через меню "Колонки" (код, наименование)
 }
 
 // --- Дополнительные колонки, общие для обоих scope
@@ -52,6 +55,7 @@ const EXTRA_COLUMNS: ColDef[] = [
     {key: "userGroups", label: "Группы доступа", width: "200px"},
 ];
 
+// Колонки для действующих
 export const ACTIVE_COLUMNS: ColDef[] = [
     {key: "statusIcon", label: "", width: "44px", fixed: true},
     {key: "code", label: "Код", width: "88px", fixed: true},
@@ -67,6 +71,7 @@ export const ACTIVE_COLUMNS: ColDef[] = [
     ...EXTRA_COLUMNS,
 ];
 
+// Колонки для архивированных
 export const ARCHIVE_COLUMNS: ColDef[] = [
     {key: "statusIcon", label: "", width: "44px", fixed: true},
     {key: "code", label: "Код", width: "88px", fixed: true},
@@ -76,8 +81,8 @@ export const ARCHIVE_COLUMNS: ColDef[] = [
     {key: "organ", label: "Орган утв.", width: "180px"},
     {key: "cancelDate", label: "Дата отмены", width: "140px", fixed: true},
     {key: "cancelCode", label: "№ отмены", width: "140px", fixed: true},
-    {key: "archivedDate", label: "Дата архивации", width: "140px", fixed: true}, // обязательна на "Архивированные"
-    {key: "daysInArchive", label: "В архиве", width: "110px", fixed: true},
+    {key: "archivedDate", label: "Дата архивации", width: "140px", fixed: true}, // спец. обязательна на "Архивированные"
+    {key: "daysInArchive", label: "В архиве", width: "110px", fixed: true}, // спец.
     {key: "status", label: "Статус", width: "134px"},
     ...EXTRA_COLUMNS,
 ];
@@ -93,6 +98,7 @@ const HIDDEN_ON_ARCH: ColKey[] = [
     "cancelInfo",
 ];
 
+// Возвращает итоговый список возможных колонок для таблицы в зависимости от Tab
 export function getColumnsForScope(scope: VndScope): ColDef[] {
     const base = scope === "arch" ? ARCHIVE_COLUMNS : ACTIVE_COLUMNS;
 
@@ -105,6 +111,7 @@ export function getColumnsForScope(scope: VndScope): ColDef[] {
     return base;
 }
 
+// Возвращает список колонок, которые пользователь может скрывать/отображать через выпадающий список
 export function getToggleableColumns(scope: VndScope): ColDef[] {
     return getColumnsForScope(scope).filter((c) => !c.fixed);
 }

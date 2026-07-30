@@ -1,7 +1,7 @@
 import { useMemo, useState } from "react";
 import { Columns2, Download, FileText, Loader2, Plus } from "lucide-react";
 import type { VndResponse } from "@/service/vndService/vndServiceType.ts";
-import { useVndRedactions } from "@/hooks/useVndRedactions.ts";
+import { useVndRedactions } from "@/hooks/vndHooks/useVndRedactions.ts";
 import { formatDate } from "@/utils/dateUtils.ts";
 import { downloadFile } from "@/utils/downloadFile.ts";
 import { VndUploadRedactionModal } from "@/components/componentsVND/VndUploadRedactionModal.tsx";

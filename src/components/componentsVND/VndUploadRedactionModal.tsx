@@ -1,3 +1,4 @@
+// Компонента загрузки новой редакции
 import { useState } from "react";
 import { createPortal } from "react-dom";
 import { FileUp, Loader2, Paperclip, Trash2, X } from "lucide-react";
@@ -46,7 +47,7 @@ function FileSlot({ label, required, file, onChange }: FileSlotProps) {
                     <button
                         type="button"
                         onClick={() => onChange(null)}
-                        className="flex-none text-[#8b97ab] hover:text-[#c0392b]"
+                        className="cursor-pointer flex-none text-[#8b97ab] hover:text-[#c0392b]"
                     >
                         <Trash2 size={15} />
                     </button>
@@ -120,7 +121,7 @@ export function VndUploadRedactionModal({ vndId, onClose, onUploaded }: VndUploa
             <div className="max-h-[90vh] w-full max-w-[520px] overflow-y-auto rounded-[16px] bg-white p-6 shadow-xl">
                 <div className="mb-5 flex items-center justify-between">
                     <h2 className="text-[16px] font-bold text-[#1c2740]">Загрузка новой редакции</h2>
-                    <button onClick={onClose} className="text-[#8b97ab] hover:text-[#3a4560]">
+                    <button onClick={onClose} className="cursor-pointer text-[#8b97ab] hover:text-[#3a4560]">
                         <X size={20} />
                     </button>
                 </div>
@@ -171,7 +172,7 @@ export function VndUploadRedactionModal({ vndId, onClose, onUploaded }: VndUploa
                                         <button
                                             type="button"
                                             onClick={() => removeAttachment(index)}
-                                            className="flex-none text-[#8b97ab] hover:text-[#c0392b]"
+                                            className="cursor-pointer flex-none text-[#8b97ab] hover:text-[#c0392b]"
                                         >
                                             <Trash2 size={14} />
                                         </button>
@@ -215,14 +216,14 @@ export function VndUploadRedactionModal({ vndId, onClose, onUploaded }: VndUploa
                     <button
                         onClick={onClose}
                         disabled={submitting}
-                        className="h-[38px] rounded-[10px] border border-[#e5e9f0] px-4 text-[13px] font-semibold text-[#3a4560] hover:bg-[#f6f8fb] disabled:opacity-60"
+                        className="cursor-pointer h-[38px] rounded-[10px] border border-[#e5e9f0] px-4 text-[13px] font-semibold text-[#3a4560] hover:bg-[#f6f8fb] disabled:opacity-60"
                     >
                         Отмена
                     </button>
                     <button
                         onClick={handleSubmit}
                         disabled={!canSubmit}
-                        className="flex h-[38px] items-center gap-2 rounded-[10px] bg-[#4e57d6] px-4 text-[13px] font-semibold text-white hover:bg-[#3f47bd] disabled:cursor-not-allowed disabled:opacity-50"
+                        className="cursor-pointer flex h-[38px] items-center gap-2 rounded-[10px] bg-[#4e57d6] px-4 text-[13px] font-semibold text-white hover:bg-[#3f47bd] disabled:cursor-not-allowed disabled:opacity-50"
                     >
                         {submitting && <Loader2 size={15} className="animate-spin" />}
                         Загрузить

@@ -10,20 +10,22 @@ import {
 
 import {daysUntil} from "@/utils/dateUtils.ts";
 import {getRygColorForActualization} from "@/utils/getRygColorForActualization.ts";
-
-import {type VndScope, type VndStatusKey} from '@/service/mockData/BaseVndData.tsx';
-import {STATUS_META} from "@/constants/vndStatus.ts";
-
-import {VndPageHeader} from "@/components/componentsVND/componentsBaseVndPage/VndPageHeader.tsx";
-import {VndScopeTabs} from "@/components/componentsVND/componentsBaseVndPage/VndScopeTabs.tsx";
-import {VndFilters} from "@/components/componentsVND/componentsBaseVndPage/VndFilters.tsx";
-import {VndTable} from "@/components/componentsVND/componentsBaseVndPage/VndTable.tsx";
-
 import {useVndFilters} from "@/hooks/vndHooks/useVndFilters.tsx";
 import {useRubricsFromUrl} from "@/hooks/vndHooks/useRubricsFromUrl.ts";
 import {useVndColumnVisibility} from "@/hooks/vndHooks/useVndColumnVisibility.tsx";
 import {useVndScopeCounts} from "@/hooks/vndHooks/useVndScopeCounts.tsx";
 import {useVndFilteredRows} from "@/hooks/vndHooks/useVndFilteredRows.tsx";
+
+import {type VndScope, type VndStatusKey} from '@/service/mockData/BaseVndData.tsx';
+import {STATUS_META} from "@/constants/vndStatus.ts";
+
+import {VndPageHeader} from "@/components/componentsVND/componentsBaseVndPage/VndPageHeader.tsx";
+import {VndFilters} from "@/components/componentsVND/componentsBaseVndPage/VndFilters.tsx";
+import {VndTable} from "@/components/componentsVND/componentsBaseVndPage/VndTable.tsx";
+
+import {Tabs} from "@/components/componentsGeneral/Tabs.tsx";
+import {Loader} from "@/components/componentsGeneral/Loader";
+import {EmptyState} from "@/components/componentsGeneral/EmptyState.tsx";
 
 // TODO: заглушка, надо настроить загрузку данных из справочников
 const orgUnitMap = new Map<string, OrganizationUnit>(ORG_UNITS.map((o) => [o.id, o]));
@@ -82,7 +84,7 @@ export function BaseVndPage() {
         <div className="w-full max-w-[1700px] mx-auto px-4 sm:px-6 lg:px-8 xl:px-10 pt-5 sm:pt-[26px] pb-10 sm:pb-[60px]">
             <VndPageHeader onCreateClick={() => navigate("/basevnd/new")}/>
 
-            <VndScopeTabs tabs={scopeTabs} scope={scope} onChange={setScope}/>
+            <Tabs<VndScope> tabs={scopeTabs} value={scope} onChange={setScope}/>
 
             <VndFilters
                 organFilters={filters.organFilters}
@@ -154,14 +156,14 @@ export function BaseVndPage() {
                 onResetFilters={filters.resetFilters}
             />
 
-            {error && (
-                <div className="my-4 rounded-md border border-[#f2c2c2] bg-[#fdf1f1] px-4 py-3 text-[13px] text-[#c0392b]">
-                    Не удалось загрузить данные: {error}
-                </div>
-            )}
-
             {loading ? (
-                <div className="py-10 text-center text-[13px] text-[#8b97ab]">Загрузка…</div>
+                <Loader label="Загрузка данных…"/>
+            ) : error ? (
+                <EmptyState
+                    variant="error"
+                    title="Не удалось загрузить данные"
+                    description={error}
+                />
             ) : (
                 <VndTable
                     columns={columns}

@@ -1,8 +1,8 @@
 import {Archive, CalendarCheck, FileText, History, Pencil, RotateCw, Tags, Type} from "lucide-react";
 import type {VndResponse} from "@/service/vndService/vndServiceType.ts";
 import {Section} from "@/components/componentsGeneral/Section.tsx";
-import {ReadOnlyField} from "@/components/componentsGeneral/ReadOnlyField.tsx";
-import {ChipsField} from "@/components/componentsGeneral/ChipsField.tsx";
+import {ReadOnlyField} from "@/components/componentsGeneral/readOnlySelects/ReadOnlyField.tsx";
+import {ReadOnlyChipsField} from "@/components/componentsGeneral/readOnlySelects/ReadOnlyChipsField.tsx";
 import {describePeriod, formatDate} from "@/utils/dateUtils.ts";
 import {
     keywordNames,
@@ -127,19 +127,19 @@ export function VndPassportTab({vnd, onEditRequisites}: VndPassportTabProps) {
                 {/* Классификаторы */}
                 <Section icon={<Tags className="w-[15px] h-[15px]" strokeWidth={1.9}/>} title="Классификаторы" noMarginBottom>
                     <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-                        <ChipsField
+                        <ReadOnlyChipsField
                             label="Ключевые слова"
                             items={vnd.keywordIds.length ? keywordNames(vnd.keywordIds).split(", ") : []}
                         />
-                        <ChipsField
+                        <ReadOnlyChipsField
                             label="Рубрикатор"
                             items={vnd.rubricIds.length ? rubricNames(vnd.rubricIds).split(", ") : []}
                         />
-                        <ChipsField
+                        <ReadOnlyChipsField
                             label="Группы доступа"
                             items={vnd.userGroupIds.length ? userGroupNames(vnd.userGroupIds).split(", ") : []}
                         />
-                        <ChipsField
+                        <ReadOnlyChipsField
                             label="Уровень секретности"
                             items={[secrecyLevelName(vnd.secrecyLevelId)]}
                         />

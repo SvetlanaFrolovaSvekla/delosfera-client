@@ -6,7 +6,7 @@ import {CountBadge} from "@/components/componentsSidebar/CountBadge.tsx";
 import {Icon} from "@/components/icons/Icon";
 import {navGroups} from "@/service/mockData/SidebarData.tsx";
 import {RUBRICS} from "@/service/mockData/DictionaryData.tsx";
-import {RubricTreeModal} from "@/components/componentsGeneral/RubricTreeModal.tsx";
+import {RubricTreeModal} from "@/components/componentsGeneral/selects/MultiSelects/RubricTreeModal.tsx";
 
 // Id пунктов, которые открывают модалку вместо перехода на страницу
 const MODAL_ITEM_IDS = ["vnd-rubric"];

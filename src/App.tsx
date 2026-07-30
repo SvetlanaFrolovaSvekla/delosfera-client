@@ -21,6 +21,7 @@ import {BaseVndPage} from "@/pages/VndPages/BaseVndPage.tsx";
 import {CreateVndPage} from "@/pages/VndPages/CreateVndPage.tsx";
 import {OpenVndPage} from "@/pages/VndPages/OpenVndPage.tsx";
 import {ProfilePage} from "@/pages/ProfilePage.tsx";
+import {ToastContainer} from "@/components/componentsGeneral/knowledgeBaseComponents/ToastContainer.tsx";
 
 const MainLayout = () => (
     <div className="flex h-screen overflow-hidden">
@@ -65,6 +66,7 @@ function App() {
                         </Route>
                     </Route>
                 </Routes>
+                <ToastContainer/>
             </AuthProvider>
         </BrowserRouter>
     )

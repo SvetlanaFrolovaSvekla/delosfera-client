@@ -1,8 +1,9 @@
-import {useEffect, useRef, useState} from "react";
+import {useRef, useState} from "react";
 import {useTranslation} from "react-i18next";
 import {Check, ChevronDown, Search, X} from "lucide-react";
 import {HighlightText} from "@/utils/HighlightText.tsx";
 import * as React from "react";
+import {useClickOutside} from "@/hooks/useClickOutside.ts";
 
 export interface MultiSelectOption {
     key: string;
@@ -48,6 +49,11 @@ export function MultiSelectDropdown({
     const [query, setQuery] = useState("");
     const rootRef = useRef<HTMLDivElement>(null);
 
+    useClickOutside(rootRef, open, () => {
+        setOpen(false);
+        setQuery("");
+    });
+
     const showSearch = searchable || options.length > searchThreshold;
 
     const filteredOptions = showSearch && query.trim()
@@ -56,18 +62,6 @@ export function MultiSelectDropdown({
 
     const allSelected = options.length > 0 && selectedKeys.length === options.length;
     const noneSelected = selectedKeys.length === 0;
-
-    useEffect(() => {
-        if (!open) return;
-        const handleClickOutside = (e: MouseEvent) => {
-            if (rootRef.current && !rootRef.current.contains(e.target as Node)) {
-                setOpen(false);
-                setQuery("");
-            }
-        };
-        document.addEventListener("mousedown", handleClickOutside);
-        return () => document.removeEventListener("mousedown", handleClickOutside);
-    }, [open]);
 
     return (
         <div ref={rootRef} className={`relative ${className}`}>

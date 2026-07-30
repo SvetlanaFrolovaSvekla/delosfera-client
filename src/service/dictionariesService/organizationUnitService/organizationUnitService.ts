@@ -1,13 +1,12 @@
 import type {
-    CreateUserRequest,
-    UpdateUserRequest,
-    UserResponse,
-    UserSortBy,
-} from "./userServiceType.ts";
+    CreateOrganizationUnitRequest,
+    OrganizationUnitResponse,
+    OrganizationUnitSortBy,
+    UpdateOrganizationUnitRequest,
+} from "./organizationUnitServiceType.ts";
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL ?? "http://localhost:5293";
 
-// Подставь свою реальную логику получения текущего языка (i18n) и токена авторизации.
 function getLanguage(): string {
     return localStorage.getItem("lang") ?? "ru";
 }
@@ -35,65 +34,55 @@ async function handleResponse<T>(response: Response): Promise<T> {
         const message = errorBody?.message ?? `Ошибка запроса: ${response.status}`;
         throw new Error(message);
     }
-    // Для DELETE (204 No Content) тела ответа нет
     if (response.status === 204) return undefined as T;
     return await response.json() as Promise<T>;
 }
 
-export const userService = {
+export const organizationUnitService = {
     /**
-     * Получить список пользователей.
+     * Получить список структурных подразделений.
      */
-    async getAll(params?: {sortBy?: UserSortBy; search?: string}): Promise<UserResponse[]> {
+    async getAll(params?: {sortBy?: OrganizationUnitSortBy; search?: string}): Promise<OrganizationUnitResponse[]> {
         const query = new URLSearchParams();
         if (params?.sortBy) query.set("sortBy", params.sortBy);
         if (params?.search) query.set("search", params.search);
 
-        const response = await fetch(`${API_BASE}/api/users?${query.toString()}`, {
-            headers: buildHeaders(),
-        });
-        return handleResponse<UserResponse[]>(response);
+        const response = await fetch(
+            `${API_BASE}/api/dictionaries/organization-unit?${query.toString()}`,
+            {headers: buildHeaders()}
+        );
+        return handleResponse<OrganizationUnitResponse[]>(response);
     },
 
     /**
-     * Получить информацию об авториз. пользователе
+     * Создать новое структурное подразделение.
      */
-    async getMe(): Promise<UserResponse> {
-        const response = await fetch(`${API_BASE}/api/users/me`, {
-            headers: buildHeaders(),
-        });
-        return handleResponse<UserResponse>(response);
-    },
-
-    /**
-     * Создать нового пользователя.
-     */
-    async create(request: CreateUserRequest): Promise<UserResponse> {
-        const response = await fetch(`${API_BASE}/api/users`, {
+    async create(request: CreateOrganizationUnitRequest): Promise<OrganizationUnitResponse> {
+        const response = await fetch(`${API_BASE}/api/dictionaries/organization-unit`, {
             method: "POST",
             headers: buildHeaders(true),
             body: JSON.stringify(request),
         });
-        return handleResponse<UserResponse>(response);
+        return handleResponse<OrganizationUnitResponse>(response);
     },
 
     /**
-     * Обновить существующего пользователя.
+     * Обновить структурное подразделение.
      */
-    async update(id: number, request: UpdateUserRequest): Promise<UserResponse> {
-        const response = await fetch(`${API_BASE}/api/users/${id}`, {
+    async update(id: number, request: UpdateOrganizationUnitRequest): Promise<OrganizationUnitResponse> {
+        const response = await fetch(`${API_BASE}/api/dictionaries/organization-unit/${id}`, {
             method: "PUT",
             headers: buildHeaders(true),
             body: JSON.stringify(request),
         });
-        return handleResponse<UserResponse>(response);
+        return handleResponse<OrganizationUnitResponse>(response);
     },
 
     /**
-     * Удалить пользователя.
+     * Удалить структурное подразделение.
      */
     async remove(id: number): Promise<void> {
-        const response = await fetch(`${API_BASE}/api/users/${id}`, {
+        const response = await fetch(`${API_BASE}/api/dictionaries/organization-unit/${id}`, {
             method: "DELETE",
             headers: buildHeaders(),
         });

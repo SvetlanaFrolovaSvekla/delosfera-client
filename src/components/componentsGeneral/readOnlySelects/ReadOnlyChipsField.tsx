@@ -1,5 +1,5 @@
 // Нередактируемое поле с лейблом и items-значениями, в обертке chips (серый, закругленные края)
-export function ChipsField({label, items}: { label: string; items: string[] }) {
+export function ReadOnlyChipsField({label, items}: { label: string; items: string[] }) {
     return (
         <div>
             <label className="block text-[12px] font-semibold text-[#3a4560] mb-1.5">{label}</label>

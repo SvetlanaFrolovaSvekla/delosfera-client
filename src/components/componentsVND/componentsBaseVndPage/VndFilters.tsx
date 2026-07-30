@@ -1,26 +1,17 @@
 // Расширенный поиск для реестра ВНД
-import {AlertTriangle, ChevronDown, ChevronUp, Filter, SlidersHorizontal} from "lucide-react";
-import {useState} from "react";
-import {SearchBar} from "@/components/componentsGeneral/SearchBar.tsx";
-import {MultiSelectDropdown} from "@/components/componentsGeneral/MultiSelectDropdown.tsx";
 import {
-    RUBRICS,
-    TYPE_VND,
-    ORGANS_APPROVAL,
-    ORG_UNITS,
-    KEYWORDS,
-    SECURITY_LEVELS,
-    USER_GROUPS
+    RUBRICS, TYPE_VND, ORGANS_APPROVAL, ORG_UNITS, KEYWORDS, SECURITY_LEVELS, USER_GROUPS
 } from "@/service/mockData/DictionaryData.tsx";
-import type {ColDef} from "@/constants/vndColumns.ts";
+import {useVndAdvancedFiltersDraft, type AdvancedDraft} from "@/hooks/vndHooks/useVndAdvancedFiltersDraft.ts";
+import {useVndHasActiveFilters} from "@/hooks/vndHooks/useVndHasActiveFilters.ts";
 import type {VndScope} from "@/service/mockData/BaseVndData.tsx";
-import {SelectListField} from "@/components/componentsGeneral/SelectListField.tsx";
-import {
-    DateFilterGroup,
-    type DateFilterValue,
-    EMPTY_DATE_FILTER
-} from "@/components/componentsGeneral/DateFilterGroup.tsx";
+import type {ColDef} from "@/constants/vndColumns.ts";
 import {SCOPE_COUNT_LABELS} from "@/constants/vndStatus.ts";
+import {MultiSelectField} from "@/components/componentsGeneral/selects/MultiSelects/MultiSelectField.tsx";
+import {DateFilterGroup, type DateFilterValue} from "@/components/componentsGeneral/datePickers/DateFilterGroup.tsx";
+import {SearchBar} from "@/components/componentsGeneral/SearchBar.tsx";
+import {MultiSelectDropdown} from "@/components/componentsGeneral/selects/MultiSelects/MultiSelectDropdown.tsx";
+import {AlertTriangle, ChevronDown, ChevronUp, Filter, SlidersHorizontal} from "lucide-react";
 
 interface VndFiltersProps {
     scope: VndScope;
@@ -47,7 +38,6 @@ interface VndFiltersProps {
 
     onResetFilters: () => void;
 
-    // --- Колонки
     toggleableColumns: ColDef[];
     visibleCols: Record<string, boolean>;
     onToggleColumn: (key: string) => void;
@@ -78,7 +68,6 @@ interface VndFiltersProps {
     advSearchRevisionText: string;
     onAdvSearchRevisionTextChange: (v: string) => void;
 
-    // --- Даты
     adoptionDateFilter: DateFilterValue;
     onAdoptionDateFilterChange: (v: DateFilterValue) => void;
     adoptionCodeFilter: string;
@@ -114,192 +103,51 @@ interface VndFiltersProps {
     onSecrecyLevelFiltersChange: (keys: string[]) => void;
 }
 
-interface AdvancedDraft {
-    docTypeFilters: string[];
-    organFilters: string[];
-    developerFilters: string[];
-    responsibleExecutorFilters: string[];
-    keywordFilters: string[];
-    rubricFilters: string[];
-    secrecyLevelFilters: string[];
-    userGroupFilters: string[];
-    advSearchName: string;
-    advSearchCode: string;
-    advSearchRevisionText: string;
-    adoptionDateFilter: DateFilterValue;
-    adoptionCodeFilter: string;
-    effectiveDateFilter: DateFilterValue;
-    requisitesChangedDateFilter: DateFilterValue;
-    revisionChangedDateFilter: DateFilterValue;
-    cancelDateFilter: DateFilterValue;
-    cancelCodeFilter: string;
-    dueActualizationDateFilter: DateFilterValue;
-    lastActualizationDateFilter: DateFilterValue;
-    archivedDateFilter: DateFilterValue;
-}
-
-const EMPTY_ADVANCED_DRAFT: AdvancedDraft = {
-    docTypeFilters: [],
-    organFilters: [],
-    developerFilters: [],
-    responsibleExecutorFilters: [],
-    keywordFilters: [],
-    rubricFilters: [],
-    secrecyLevelFilters: [],
-    userGroupFilters: [],
-    advSearchName: "",
-    advSearchCode: "",
-    advSearchRevisionText: "",
-    adoptionDateFilter: EMPTY_DATE_FILTER,
-    adoptionCodeFilter: "",
-    effectiveDateFilter: EMPTY_DATE_FILTER,
-    requisitesChangedDateFilter: EMPTY_DATE_FILTER,
-    revisionChangedDateFilter: EMPTY_DATE_FILTER,
-    cancelDateFilter: EMPTY_DATE_FILTER,
-    cancelCodeFilter: "",
-    dueActualizationDateFilter: EMPTY_DATE_FILTER,
-    lastActualizationDateFilter: EMPTY_DATE_FILTER,
-    archivedDateFilter: EMPTY_DATE_FILTER,
-};
-
 export function VndFilters(props: VndFiltersProps) {
     const {
-        scope,
-        isArchScope,
-        search,
-        onSearchChange,
-        statusOptions,
-        statusFilters,
-        onToggleStatus,
-        onSelectAllStatuses,
-        onDeselectAllStatuses,
-        advOpen,
-        onToggleAdv,
-        onCloseAdv,
-        rubricFilters,
-        onRubricFiltersChange,
-        resultCount,
-        totalCount,
-        onResetFilters,
-        toggleableColumns,
-        visibleCols,
-        onToggleColumn,
-        onSelectAllColumns,
-        onDeselectAllColumns,
-        onDocTypeFiltersChange,
-        docTypeFilters,
-        organFilters,
-        onOrganFiltersChange,
-        onDeveloperFiltersChange,
-        developerFilters,
-        keywordFilters,
-        onKeywordFiltersChange,
-        responsibleExecutorFilters,
-        onResponsibleExecutorFiltersChange,
-        advSearchName,
-        onAdvSearchNameChange,
-        advSearchCode,
-        onAdvSearchCodeChange,
-        advSearchRevisionText,
-        onAdvSearchRevisionTextChange,
-        adoptionDateFilter,
-        onAdoptionDateFilterChange,
-        adoptionCodeFilter,
-        onAdoptionCodeFilterChange,
-        effectiveDateFilter,
-        onEffectiveDateFilterChange,
-        requisitesChangedDateFilter,
-        onRequisitesChangedDateFilterChange,
-        revisionChangedDateFilter,
-        onRevisionChangedDateFilterChange,
-        cancelDateFilter,
-        onCancelDateFilterChange,
-        cancelCodeFilter,
-        onCancelCodeFilterChange,
-        dueActualizationDateFilter,
-        onDueActualizationDateFilterChange,
-        lastActualizationDateFilter,
-        onLastActualizationDateFilterChange,
-        archivedDateFilter,
-        onArchivedDateFilterChange,
-        userGroupFilters,
-        onUserGroupFiltersChange,
-        secrecyLevelFilters,
-        onSecrecyLevelFiltersChange,
+        scope, isArchScope, search, onSearchChange,
+        statusOptions, statusFilters, onToggleStatus, onSelectAllStatuses, onDeselectAllStatuses,
+        advOpen, onToggleAdv, onCloseAdv,
+        rubricFilters, onRubricFiltersChange,
+        resultCount, totalCount, onResetFilters,
+        toggleableColumns, visibleCols, onToggleColumn, onSelectAllColumns, onDeselectAllColumns,
+        onDocTypeFiltersChange, docTypeFilters,
+        organFilters, onOrganFiltersChange,
+        onDeveloperFiltersChange, developerFilters,
+        keywordFilters, onKeywordFiltersChange,
+        responsibleExecutorFilters, onResponsibleExecutorFiltersChange,
+        advSearchName, onAdvSearchNameChange,
+        advSearchCode, onAdvSearchCodeChange,
+        advSearchRevisionText, onAdvSearchRevisionTextChange,
+        adoptionDateFilter, onAdoptionDateFilterChange,
+        adoptionCodeFilter, onAdoptionCodeFilterChange,
+        effectiveDateFilter, onEffectiveDateFilterChange,
+        requisitesChangedDateFilter, onRequisitesChangedDateFilterChange,
+        revisionChangedDateFilter, onRevisionChangedDateFilterChange,
+        cancelDateFilter, onCancelDateFilterChange,
+        cancelCodeFilter, onCancelCodeFilterChange,
+        dueActualizationDateFilter, onDueActualizationDateFilterChange,
+        lastActualizationDateFilter, onLastActualizationDateFilterChange,
+        archivedDateFilter, onArchivedDateFilterChange,
+        userGroupFilters, onUserGroupFiltersChange,
+        secrecyLevelFilters, onSecrecyLevelFiltersChange,
     } = props;
 
     const selectedColumnKeys = toggleableColumns
         .filter((c) => visibleCols[c.key] !== false)
         .map((c) => c.key);
 
-    const isDateActive = (v: DateFilterValue) => Boolean(v.exact || v.from || v.to);
-
-    const hasActiveFilters =
-        search.trim() !== "" ||
-        statusFilters.length > 0 ||
-        rubricFilters.length > 0 ||
-        docTypeFilters.length > 0 ||
-        organFilters.length > 0 ||
-        developerFilters.length > 0 ||
-        keywordFilters.length > 0 ||
-        responsibleExecutorFilters.length > 0 ||
-        advSearchName.trim() !== "" ||
-        advSearchCode.trim() !== "" ||
-        advSearchRevisionText.trim() !== "" ||
-        adoptionCodeFilter.trim() !== "" ||
-        cancelCodeFilter.trim() !== "" ||
-        secrecyLevelFilters.length > 0 ||
-        userGroupFilters.length > 0 ||
-        isDateActive(adoptionDateFilter) ||
-        isDateActive(effectiveDateFilter) ||
-        isDateActive(requisitesChangedDateFilter) ||
-        isDateActive(revisionChangedDateFilter) ||
-        isDateActive(cancelDateFilter) ||
-        isDateActive(dueActualizationDateFilter) ||
-        isDateActive(lastActualizationDateFilter) ||
-        isDateActive(archivedDateFilter);
-
-    // --- Черновик: инициализация и синхронизация из применённых пропов.
-    const buildDraftFromProps = (): AdvancedDraft => ({
-        docTypeFilters,
-        organFilters,
-        developerFilters,
-        responsibleExecutorFilters,
-        keywordFilters,
-        rubricFilters,
-        secrecyLevelFilters,
-        userGroupFilters,
-        advSearchName,
-        advSearchCode,
-        advSearchRevisionText,
-        adoptionDateFilter,
-        adoptionCodeFilter,
-        effectiveDateFilter,
-        requisitesChangedDateFilter,
-        revisionChangedDateFilter,
-        cancelDateFilter,
-        cancelCodeFilter,
-        dueActualizationDateFilter,
-        lastActualizationDateFilter,
-        archivedDateFilter,
+    const hasActiveFilters = useVndHasActiveFilters({
+        search, statusFilters, rubricFilters, docTypeFilters, organFilters,
+        developerFilters, keywordFilters, responsibleExecutorFilters,
+        advSearchName, advSearchCode, advSearchRevisionText,
+        adoptionCodeFilter, cancelCodeFilter, secrecyLevelFilters, userGroupFilters,
+        adoptionDateFilter, effectiveDateFilter, requisitesChangedDateFilter,
+        revisionChangedDateFilter, cancelDateFilter, dueActualizationDateFilter,
+        lastActualizationDateFilter, archivedDateFilter,
     });
 
-    const [draft, setDraft] = useState<AdvancedDraft>(buildDraftFromProps);
-
-    // Синхронизация черновика с применёнными фильтрами в момент открытия панели
-    const [prevAdvOpen, setPrevAdvOpen] = useState(advOpen);
-    if (advOpen !== prevAdvOpen) {
-        setPrevAdvOpen(advOpen);
-        if (advOpen) {
-            setDraft(buildDraftFromProps());
-        }
-    }
-
-    const updateDraft = <K extends keyof AdvancedDraft>(key: K, value: AdvancedDraft[K]) =>
-        setDraft((prev) => ({...prev, [key]: value}));
-
-    // Применить черновик (один запрос)
-    const handleApplyAdvanced = () => {
+    const applyDraft = (draft: AdvancedDraft) => {
         onDocTypeFiltersChange(draft.docTypeFilters);
         onOrganFiltersChange(draft.organFilters);
         onDeveloperFiltersChange(draft.developerFilters);
@@ -321,18 +169,22 @@ export function VndFilters(props: VndFiltersProps) {
         onDueActualizationDateFilterChange(draft.dueActualizationDateFilter);
         onLastActualizationDateFilterChange(draft.lastActualizationDateFilter);
         onArchivedDateFilterChange(draft.archivedDateFilter);
-        onCloseAdv();
     };
 
-    // Свернуть без применения
-    const handleCollapse = () => {
-        onCloseAdv();
-    };
-
-    // Сбросить параметры в черновике
-    const handleResetAdvancedDraft = () => {
-        setDraft(EMPTY_ADVANCED_DRAFT);
-    };
+    const {draft, updateDraft, handleApply, handleCollapse, handleResetDraft} = useVndAdvancedFiltersDraft({
+        advOpen,
+        onCloseAdv,
+        appliedValues: {
+            docTypeFilters, organFilters, developerFilters, responsibleExecutorFilters,
+            keywordFilters, rubricFilters, secrecyLevelFilters, userGroupFilters,
+            advSearchName, advSearchCode, advSearchRevisionText,
+            adoptionDateFilter, adoptionCodeFilter, effectiveDateFilter,
+            requisitesChangedDateFilter, revisionChangedDateFilter,
+            cancelDateFilter, cancelCodeFilter,
+            dueActualizationDateFilter, lastActualizationDateFilter, archivedDateFilter,
+        },
+        onApply: applyDraft,
+    });
 
     return (
         <>
@@ -358,7 +210,6 @@ export function VndFilters(props: VndFiltersProps) {
                 </div>
             )}
 
-            {/* Фильтр статуса (только "Все") + расширенный поиск + колонки */}
             <div className="flex items-center gap-2.5 flex-wrap mb-[15px]">
                 <button
                     onClick={onToggleAdv}
@@ -376,7 +227,6 @@ export function VndFilters(props: VndFiltersProps) {
                     />
                 </button>
 
-                {/* Мультивыбор статусов - только на табе "Все" (применяется сразу, вне черновика) */}
                 {scope === "all" && (
                     <MultiSelectDropdown
                         triggerLabel="Статус"
@@ -431,22 +281,16 @@ export function VndFilters(props: VndFiltersProps) {
                 </div>
             </div>
 
-            {/* Панель расширенного поиска - значения черновика, применяются по кнопке "Найти" */}
             <div
                 className={`grid overflow-hidden transition-[grid-template-rows,opacity,margin-bottom] duration-300 ease-in-out ${
-                    advOpen
-                        ? "grid-rows-[1fr] opacity-100 mb-4"
-                        : "grid-rows-[0fr] opacity-0 mb-0"
+                    advOpen ? "grid-rows-[1fr] opacity-100 mb-4" : "grid-rows-[0fr] opacity-0 mb-0"
                 }`}
             >
                 <div className="overflow-hidden">
                     <div className="bg-white border border-[#e9edf3] rounded-2xl px-[22px] py-5">
                         <div className="flex flex-col gap-3.5 mb-[18px]">
-
                             <div
                                 className="grid [grid-template-columns:repeat(auto-fit,minmax(360px,1fr))] gap-x-[18px] gap-y-3.5 mb-[18px]">
-
-                                {/* Колонка 1 */}
                                 <div className="flex flex-col gap-3.5">
                                     <label>
                                         <span
@@ -481,7 +325,7 @@ export function VndFilters(props: VndFiltersProps) {
                                         />
                                     </label>
 
-                                    <SelectListField
+                                    <MultiSelectField
                                         label="Вид документа"
                                         modalTitle="Вид документа"
                                         options={TYPE_VND.map((t) => ({key: t.id, label: t.name}))}
@@ -491,9 +335,8 @@ export function VndFilters(props: VndFiltersProps) {
                                     />
                                 </div>
 
-                                {/* Колонка 2 */}
                                 <div className="flex flex-col gap-3.5">
-                                    <SelectListField
+                                    <MultiSelectField
                                         label="Разработчик"
                                         modalTitle="Разработчик (СП)"
                                         options={ORG_UNITS.map((o) => ({
@@ -506,7 +349,7 @@ export function VndFilters(props: VndFiltersProps) {
                                         searchPlaceholder="Поиск подразделения…"
                                         hierarchical
                                     />
-                                    <SelectListField
+                                    <MultiSelectField
                                         label="Орган утверждения"
                                         modalTitle="Орган утверждения"
                                         options={ORGANS_APPROVAL.map((o) => ({
@@ -519,7 +362,7 @@ export function VndFilters(props: VndFiltersProps) {
                                         searchPlaceholder="Поиск органа утверждения…"
                                         hierarchical
                                     />
-                                    <SelectListField
+                                    <MultiSelectField
                                         label="Ответственные исполнители"
                                         modalTitle="Ответственные исполнители"
                                         options={ORG_UNITS.map((o) => ({
@@ -533,10 +376,8 @@ export function VndFilters(props: VndFiltersProps) {
                                         hierarchical
                                     />
                                 </div>
-
                             </div>
 
-                            {/* Даты */}
                             <div className="flex flex-col gap-3">
                                 <div className="border border-[#eef2f7] rounded-xl p-3.5">
                                     <div
@@ -641,10 +482,9 @@ export function VndFilters(props: VndFiltersProps) {
                                 )}
                             </div>
 
-                            {/* Ключевые слова, Рубрикатор */}
                             <div
                                 className="grid [grid-template-columns:repeat(auto-fit,minmax(200px,1fr))] gap-x-[18px] gap-y-3.5">
-                                <SelectListField
+                                <MultiSelectField
                                     label="Ключевые слова"
                                     modalTitle="Ключевые слова"
                                     options={KEYWORDS.map((o) => ({key: o.id, label: o.name, parentId: o.parentId}))}
@@ -653,7 +493,7 @@ export function VndFilters(props: VndFiltersProps) {
                                     searchPlaceholder="Поиск ключевых слов…"
                                     hierarchical
                                 />
-                                <SelectListField
+                                <MultiSelectField
                                     label="Рубрикатор"
                                     modalTitle="Рубрикатор"
                                     options={RUBRICS.map((o) => ({key: o.id, label: o.name, parentId: o.parentId}))}
@@ -664,10 +504,9 @@ export function VndFilters(props: VndFiltersProps) {
                                 />
                             </div>
 
-                            {/* Уровень секретности, Группы доступа */}
                             <div
                                 className="grid [grid-template-columns:repeat(auto-fit,minmax(200px,1fr))] gap-x-[18px] gap-y-3.5">
-                                <SelectListField
+                                <MultiSelectField
                                     label="Уровень секретности"
                                     modalTitle="Уровень секретности"
                                     options={SECURITY_LEVELS.map((s) => ({key: s.id, label: s.name}))}
@@ -675,7 +514,7 @@ export function VndFilters(props: VndFiltersProps) {
                                     onChange={(v) => updateDraft("secrecyLevelFilters", v)}
                                     searchPlaceholder="Поиск уровня…"
                                 />
-                                <SelectListField
+                                <MultiSelectField
                                     label="Группы доступа"
                                     modalTitle="Группы доступа"
                                     options={USER_GROUPS.map((g) => ({key: g.id, label: g.name}))}
@@ -684,9 +523,7 @@ export function VndFilters(props: VndFiltersProps) {
                                     searchPlaceholder="Поиск группы…"
                                 />
                             </div>
-
                         </div>
-
 
                         <div className="flex justify-end gap-2.5">
                             <button
@@ -697,13 +534,13 @@ export function VndFilters(props: VndFiltersProps) {
                                 Свернуть
                             </button>
                             <button
-                                onClick={handleResetAdvancedDraft}
+                                onClick={handleResetDraft}
                                 className="h-10 px-4 rounded-[10px] border border-[#e5e9f0] bg-white text-[#55617a] font-semibold text-[12.5px] cursor-pointer hover:bg-[#f6f8fb]"
                             >
                                 Сбросить
                             </button>
                             <button
-                                onClick={handleApplyAdvanced}
+                                onClick={handleApply}
                                 className="h-10 px-5 rounded-[10px] border-none bg-[#4e57d6] text-white font-semibold text-[12.5px] cursor-pointer hover:brightness-[1.06]"
                             >
                                 Найти

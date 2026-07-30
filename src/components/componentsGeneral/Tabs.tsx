@@ -1,22 +1,21 @@
-import type {VndScope} from "@/service/mockData/BaseVndData.tsx";
-
-interface ScopeTab {
-    id: VndScope;
+// Компонента переключатель табов
+interface TabItem<T extends string> {
+    id: T;
     label: string;
     n: number;
 }
 
-interface VndScopeTabsProps {
-    tabs: ScopeTab[];
-    scope: VndScope;
-    onChange: (scope: VndScope) => void;
+interface TabsProps<T extends string> {
+    tabs: TabItem<T>[];
+    value: T;
+    onChange: (value: T) => void;
 }
 
-export function VndScopeTabs({tabs, scope, onChange}: VndScopeTabsProps) {
+export function Tabs<T extends string>({tabs, value, onChange}: TabsProps<T>) {
     return (
         <div className="flex items-center gap-[22px] border-b border-[#e9edf3] mb-4">
             {tabs.map((tab) => {
-                const active = tab.id === scope;
+                const active = tab.id === value;
                 return (
                     <button
                         key={tab.id}

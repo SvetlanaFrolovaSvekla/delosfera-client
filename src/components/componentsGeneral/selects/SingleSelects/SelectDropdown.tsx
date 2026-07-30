@@ -1,8 +1,9 @@
-// Плоский выпадающий список, есть поиск (не модалка)
-import {useEffect, useRef, useState} from "react";
+// Плоский выпадающий список, может быть поиск, лейбл и др. (не модалка)
+import {useRef, useState} from "react";
 import {useTranslation} from "react-i18next";
 import {Check, ChevronDown, Search, X} from "lucide-react";
 import {HighlightText} from "@/utils/HighlightText.tsx";
+import {useClickOutside} from "@/hooks/useClickOutside.ts";
 
 export interface SelectOption {
     value: string;
@@ -37,23 +38,16 @@ export function SelectDropdown({
     const [query, setQuery] = useState("");
     const rootRef = useRef<HTMLDivElement>(null);
 
+    useClickOutside(rootRef, open, () => {
+        setOpen(false);
+        setQuery("");
+    });
+
     const selected = options.find((o) => o.value === value);
 
     const filteredOptions = searchable && query.trim()
         ? options.filter((o) => o.label.toLowerCase().includes(query.trim().toLowerCase()))
         : options;
-
-    useEffect(() => {
-        if (!open) return;
-        const handleClickOutside = (e: MouseEvent) => {
-            if (rootRef.current && !rootRef.current.contains(e.target as Node)) {
-                setOpen(false);
-                setQuery("");
-            }
-        };
-        document.addEventListener("mousedown", handleClickOutside);
-        return () => document.removeEventListener("mousedown", handleClickOutside);
-    }, [open]);
 
     const handleSelect = (optionValue: string) => {
         onChange(optionValue);

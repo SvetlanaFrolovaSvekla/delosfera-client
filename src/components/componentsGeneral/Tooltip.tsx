@@ -1,3 +1,4 @@
+// Всплывающая подсказка
 import {useState, type ReactNode} from "react";
 
 type Side = "top" | "bottom" | "left" | "right";

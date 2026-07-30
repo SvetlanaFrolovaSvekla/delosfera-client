@@ -1,3 +1,4 @@
+// Может выводить и модалку с деревом с множественным выбором и плоский список (множественный выбор)
 import {useState} from "react";
 import {useTranslation} from "react-i18next";
 import {ChevronDown, X} from "lucide-react";
@@ -5,7 +6,7 @@ import {MultiSelectModal} from "./MultiSelectModal.tsx";
 import {TreeMultiSelectModal, type TreeSelectOption} from "./TreeMultiSelectModal.tsx";
 
 interface SelectListFieldProps {
-    label: string;
+    label?: string;
     modalTitle: string;
     options: TreeSelectOption[]; // parentId опционален — работает и как плоский список
     selectedKeys: string[];
@@ -18,7 +19,7 @@ interface SelectListFieldProps {
     showChevron?: boolean; // показывать ли стрелочку-шеврон справа в поле
 }
 
-export function SelectListField({
+export function MultiSelectField({
                                     label,
                                     modalTitle,
                                     options,

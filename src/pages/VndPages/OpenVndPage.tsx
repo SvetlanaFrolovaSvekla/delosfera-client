@@ -4,15 +4,15 @@ import {ArrowLeft} from "lucide-react";
 import {useVndById} from "@/hooks/vndHooks/useVndById.ts";
 import {STATUS_META} from "@/constants/vndStatus.ts";
 import {getVndTabs, type VndTabId} from "@/constants/vndTabs.ts";
-import {VndStatusBanner} from "@/components/componentsGeneral/VndStatusBanner.tsx";
+import {VndStatusBanner} from "@/components/componentsGeneral/knowledgeBaseComponents/VndStatusBanner.tsx";
 import {VndTabPlaceholder} from "@/components/componentsGeneral/VndTabPlaceholder.tsx";
 import {formatDate} from "@/utils/dateUtils.ts";
 import {VndPassportTab} from "@/components/componentsVND/componentsOpenVndPage/VndPassportTab.tsx";
-import {VndEditionsTab} from "@/components/componentsVND/VndEditionsTab.tsx";
+import {VndEditionsTab} from "@/components/componentsVND/componentsOpenVndPage/VndEditionsTab.tsx";
 
 export function OpenVndPage() {
     const {id} = useParams<{ id: string }>();
-    const {data: vnd, loading, error} = useVndById(id ? Number(id) : undefined);
+    const {data: vnd, loading, error, refetch} = useVndById(id ? Number(id) : undefined);
     const navigate = useNavigate();
     const [tab, setTab] = useState<VndTabId>("passport");
 
@@ -59,6 +59,7 @@ export function OpenVndPage() {
                     {meta.label}
                 </span>
             </div>
+
             <h1 className="m-0 mb-1 text-[23px] font-bold tracking-[-0.02em]">
                 {vnd.name}
             </h1>
@@ -83,7 +84,7 @@ export function OpenVndPage() {
             </div>
 
             {activeTab === "passport" && <VndPassportTab vnd={vnd}/>}
-            {activeTab === "editions" && <VndEditionsTab vnd={vnd}/>}
+            {activeTab === "editions" && <VndEditionsTab vnd={vnd} onVndChanged={refetch}/>}
             {activeTab === "actual" && <VndTabPlaceholder/>}
             {activeTab === "links" && <VndTabPlaceholder/>}
         </div>

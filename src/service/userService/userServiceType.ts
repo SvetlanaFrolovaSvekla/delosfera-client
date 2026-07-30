@@ -35,6 +35,10 @@ export interface OrganizationUnitResponse {
     titleEn: string | null;
     titleKg: string | null;
     parentId: number | null;
+    headUserId: number | null;
+    headUserName: string | null;
+    curatorUserId: number | null;
+    curatorUserName: string | null;
     createdAt: string;
     updatedAt: string;
 }

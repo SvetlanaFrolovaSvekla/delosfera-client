@@ -1,4 +1,4 @@
-import type {DateFilterValue} from "@/components/componentsGeneral/DateFilterGroup.tsx";
+import type {DateFilterValue} from "@/components/componentsGeneral/datePickers/DateFilterGroup.tsx";
 import type {DateRangeFilter} from "@/service/vndService/vndServiceType.ts";
 
 // Берем значение из UI (DatePicker/RangePicker), преобразуем в { exact, from, to } для фильтрации

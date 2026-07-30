@@ -3,7 +3,8 @@ import {Link} from "react-router-dom";
 import type {VndResponse} from "@/service/vndService/vndServiceType.ts";
 import {STATUS_META} from "@/constants/vndStatus.ts";
 import type {ColDef} from "@/constants/vndColumns.ts";
-import {Clock, SearchX} from "lucide-react";
+import {EmptyState} from "@/components/componentsGeneral/EmptyState.tsx";
+import {Clock} from "lucide-react";
 
 interface VndTableProps {
     columns: ColDef[];
@@ -39,27 +40,14 @@ export function VndTable({
                          }: VndTableProps) {
     const {t} = useTranslation();
 
-
     if (rows.length === 0) {
         return (
-            <div
-                className="bg-white border border-[#e9edf3] rounded-2xl py-20 px-6 flex flex-col items-center text-center">
-                <div className="w-14 h-14 rounded-2xl bg-[#f2f5f9] grid place-items-center mb-4">
-                    <SearchX className="w-6 h-6 text-[#a3adbd]" strokeWidth={1.6}/>
-                </div>
-                <h3 className="m-0 text-[15px] font-semibold text-[#26324a]">
-                    {t("vnd.emptyState.title")}
-                </h3>
-                <p className="mt-[6px] mb-5 text-[13px] text-[#8b97ab] max-w-[340px]">
-                    {t("vnd.emptyState.description")}
-                </p>
-                <button
-                    onClick={onResetFilters}
-                    className="h-9 px-4 rounded-[9px] border border-[#e5e9f0] bg-white text-[#3a4560] font-semibold text-[12.5px] cursor-pointer hover:bg-[#f6f8fb]"
-                >
-                    {t("vnd.emptyState.resetFilters")}
-                </button>
-            </div>
+            <EmptyState
+                title={t("vnd.emptyState.title")}
+                description={t("vnd.emptyState.description")}
+                actionLabel={t("vnd.emptyState.resetFilters")}
+                onAction={onResetFilters}
+            />
         );
     }
 

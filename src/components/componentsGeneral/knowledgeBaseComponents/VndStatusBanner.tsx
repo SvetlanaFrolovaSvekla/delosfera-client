@@ -8,6 +8,7 @@ interface VndStatusBannerProps {
     onPrimaryAction?: () => void;
     /** Клик по вторичному действию (напр. «Сформировать v4.0») */
     onSecondaryAction?: () => void;
+    compact?: boolean;
 }
 
 interface BannerConfig {
@@ -56,60 +57,68 @@ const BANNER_CONFIG: Partial<Record<VndStatusKey, BannerConfig>> = {
         titleColor: "#26324a",
         title: "Документ в статусе «Черновик»",
         textColor: "#55617a",
-        text: "Добавьте реквизиты и первую редакцию документа, чтобы ВНД стал действующим.",
+        text: "Добавьте первую редакцию документа, чтобы ВНД стал действующим! ",
         // Кнопок для черновика намеренно нет — primaryLabel/secondaryLabel не заданы,
         // поэтому оба блока с кнопками ниже просто не отрендерятся.
         accentColor: "#5b6472",
     },
 };
 
-export function VndStatusBanner({status, onPrimaryAction, onSecondaryAction}: VndStatusBannerProps) {
+export function VndStatusBanner({status, onPrimaryAction, onSecondaryAction, compact}: VndStatusBannerProps) {
     const config = BANNER_CONFIG[status];
     if (!config) return null;
 
+    const hasActions = config.primaryLabel || config.secondaryLabel;
+
     return (
         <div
-            className="flex items-center gap-[15px] px-[18px] py-[15px] rounded-[13px] mb-[18px]"
+            className={`rounded-[13px] ${compact ? "px-[15px] py-[14px]" : "flex items-center gap-[15px] px-[18px] py-[15px] mb-[18px]"}`}
             style={{
                 border: `1px solid ${config.borderColor}`,
                 background: `linear-gradient(90deg, ${config.gradientFrom}, ${config.gradientTo})`,
             }}
         >
-            <span
-                className="w-10 h-10 flex-none rounded-[11px] grid place-items-center"
-                style={{background: config.iconBg, color: config.iconColor}}
-            >
-                {config.icon}
-            </span>
+            <div className={compact ? "flex items-start gap-[12px]" : "contents"}>
+                <span
+                    className="w-10 h-10 flex-none rounded-[11px] grid place-items-center"
+                    style={{background: config.iconBg, color: config.iconColor}}
+                >
+                    {config.icon}
+                </span>
 
-            <div className="flex-1 min-w-0">
-                <div className="font-semibold text-[14px]" style={{color: config.titleColor}}>
-                    {config.title}
-                </div>
-                <div className="text-[12.5px] mt-0.5" style={{color: config.textColor}}>
-                    {config.text}
+                <div className="flex-1 min-w-0">
+                    <div className="font-semibold text-[14px]" style={{color: config.titleColor}}>
+                        {config.title}
+                    </div>
+                    <div className="text-[12.5px] mt-0.5" style={{color: config.textColor}}>
+                        {config.text}
+                    </div>
                 </div>
             </div>
 
-            {config.primaryLabel && (
-                <button
-                    onClick={onPrimaryAction}
-                    className="inline-flex items-center gap-2 h-[38px] px-[15px] rounded-[9px] bg-white font-semibold text-[12.5px] cursor-pointer flex-none hover:bg-[#f6f8fb]"
-                    style={{border: `1px solid ${config.borderColor}`, color: config.accentColor}}
-                >
-                    {config.primaryIcon}
-                    {config.primaryLabel}
-                </button>
-            )}
+            {hasActions && (
+                <div className={compact ? "flex flex-wrap gap-2 mt-3" : "contents"}>
+                    {config.primaryLabel && (
+                        <button
+                            onClick={onPrimaryAction}
+                            className={`inline-flex items-center gap-2 h-[38px] px-[15px] rounded-[9px] bg-white font-semibold text-[12.5px] cursor-pointer hover:bg-[#f6f8fb] ${compact ? "" : "flex-none"}`}
+                            style={{border: `1px solid ${config.borderColor}`, color: config.accentColor}}
+                        >
+                            {config.primaryIcon}
+                            {config.primaryLabel}
+                        </button>
+                    )}
 
-            {config.secondaryLabel && (
-                <button
-                    onClick={onSecondaryAction}
-                    className="h-[38px] px-[15px] border-none rounded-[9px] text-white font-semibold text-[12.5px] cursor-pointer flex-none hover:brightness-[1.06]"
-                    style={{background: config.accentColor}}
-                >
-                    {config.secondaryLabel}
-                </button>
+                    {config.secondaryLabel && (
+                        <button
+                            onClick={onSecondaryAction}
+                            className={`h-[38px] px-[15px] border-none rounded-[9px] text-white font-semibold text-[12.5px] cursor-pointer hover:brightness-[1.06] ${compact ? "" : "flex-none"}`}
+                            style={{background: config.accentColor}}
+                        >
+                            {config.secondaryLabel}
+                        </button>
+                    )}
+                </div>
             )}
         </div>
     );

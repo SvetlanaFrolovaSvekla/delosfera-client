@@ -1,4 +1,4 @@
-import {DatePickerInput} from "@/components/componentsGeneral/DatePickerInput.tsx";
+import {DatePickerInput} from "@/components/componentsGeneral/datePickers/DatePickerInput.tsx";
 
 export interface DateFilterValue {
     mode: "exact" | "range";

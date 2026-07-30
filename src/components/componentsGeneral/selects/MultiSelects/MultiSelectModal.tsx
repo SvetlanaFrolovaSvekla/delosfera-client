@@ -116,7 +116,7 @@ export function MultiSelectModal({
                     />
                 </div>
 
-                {/* Все / Снять все */}
+                {/* Все / снять все */}
                 <div className="flex items-center justify-between px-5 pb-2 flex-none">
                     <button
                         type="button"

@@ -1,3 +1,5 @@
+import {toast} from "@/service/toastService.ts";
+
 const API_BASE = import.meta.env.VITE_API_BASE_URL ?? "http://localhost:5293";
 
 function authHeaders(): HeadersInit {
@@ -34,4 +36,26 @@ export async function downloadFile(fileId: number, fallbackName = "файл"): P
     link.remove();
 
     URL.revokeObjectURL(url);
+}
+
+export async function downloadWithToast(fileId: number, name: string) {
+    const toastId = toast.loading("Загрузка…", name);
+    try {
+        await downloadFile(fileId, name);
+        toast.update(toastId, {
+            variant: "success",
+            title: "Скачано!",
+            description: name,
+            duration: 4500,
+        });
+    } catch (e) {
+        const message = e instanceof Error ? e.message : "Не удалось скачать файл";
+        toast.update(toastId, {
+            variant: "error",
+            title: "Не удалось скачать файл",
+            description: message,
+            duration: 5500,
+        });
+        throw e;
+    }
 }

@@ -1,9 +1,10 @@
+// Поле, открывающее модалку с деревом, с одиночным выбором
 import {useState} from "react";
 import {useTranslation} from "react-i18next";
 import {ChevronDown} from "lucide-react";
 import {TreeSingleSelectModal, type TreeSelectOption} from "./TreeSingleSelectModal.tsx";
 
-interface TreeSelectFieldProps {
+interface SingleSelectListFieldProps {
     label: string;
     modalTitle: string;
     options: TreeSelectOption[]; // parentId опционален — работает и как плоский список
@@ -16,7 +17,7 @@ interface TreeSelectFieldProps {
     showChevron?: boolean; // показывать ли стрелочку-шеврон справа в поле
 }
 
-export function TreeSelectField({
+export function SingleSelectListField({
                                     label,
                                     modalTitle,
                                     options,
@@ -27,7 +28,7 @@ export function TreeSelectField({
                                     boldLabel = true,
                                     required = false,
                                     showChevron = true,
-                                }: TreeSelectFieldProps) {
+                                }: SingleSelectListFieldProps) {
     const {t} = useTranslation();
     const [modalOpen, setModalOpen] = useState(false);
 

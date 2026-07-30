@@ -1,4 +1,4 @@
-import {useEffect, useState} from "react";
+import {useCallback, useEffect, useState} from "react";
 import {vndService} from "@/service/vndService/vndService.ts";
 import type {VndResponse} from "@/service/vndService/vndServiceType.ts";
 
@@ -6,6 +6,7 @@ interface UseVndByIdResult {
     data: VndResponse | null;
     loading: boolean;
     error: string | null;
+    refetch: () => void;
 }
 
 export function useVndById(id: number | undefined): UseVndByIdResult {
@@ -13,13 +14,12 @@ export function useVndById(id: number | undefined): UseVndByIdResult {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
 
-    useEffect(() => {
+    const fetchVnd = useCallback(() => {
         if (id === undefined || Number.isNaN(id)) {
-            // eslint-disable-next-line react-hooks/set-state-in-effect
             setData(null);
             setLoading(false);
             setError("Некорректный идентификатор документа");
-            return;
+            return () => {};
         }
 
         let cancelled = false;
@@ -42,5 +42,10 @@ export function useVndById(id: number | undefined): UseVndByIdResult {
         };
     }, [id]);
 
-    return {data, loading, error};
+    useEffect(() => {
+        // eslint-disable-next-line react-hooks/set-state-in-effect
+        return fetchVnd();
+    }, [fetchVnd]);
+
+    return {data, loading, error, refetch: fetchVnd};
 }

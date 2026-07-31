@@ -2,6 +2,8 @@ export type VndStatusKey = "draft" | "active" | "onact" | "review" | "consol" | 
 
 export type RedactionApprovalStatus = "NotRequired" | "Draft" | "Pending" | "Approved" | "Rejected";
 
+// --- Статус срока актуализации (вычисляется на бэке от dueActualizationDate) ---
+export type ActualizationBucketKey = "normal" | "approaching" | "critical" | "overdue";
 
 export interface DateRangeFilter {
     exact?: string | null;
@@ -33,6 +35,10 @@ export interface VndSearchRequest {
     rubricIds?: number[];
     secrecyLevelIds?: number[];
     userGroupIds?: number[];
+
+    /** Фильтр по статусу срока актуализации. Пусто = без фильтра
+     * (включая документы без даты актуализации). */
+    actualizationBuckets?: ActualizationBucketKey[];
 
     adoptionDate?: DateRangeFilter | null;
     adoptionCode?: string;
@@ -112,6 +118,9 @@ export interface VndResponse {
     lastActualizationHadChanges: boolean;
     daysInArchive: number;
 
+    /** "normal" | "approaching" | "critical" | "overdue" | null (нет даты актуализации) */
+    actualizationBucket: ActualizationBucketKey | null;
+
     keywordIds: number[];
     rubricIds: number[];
     secrecyLevelId: number;
@@ -151,4 +160,14 @@ export interface CreateVndRedactionRequest {
     attachments?: File[];
     description?: string;
     requiresApproval: boolean;
+}
+
+// --- Сводка по срокам актуализации (для дашборда планирования) ---
+export interface VndActualizationSummaryResponse {
+    normal: number;
+    approaching: number;
+    critical: number;
+    overdue: number;
+    /** normal + approaching + critical + overdue. Документы без даты актуализации сюда не входят. */
+    total: number;
 }

@@ -7,7 +7,7 @@ import type {
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL ?? "http://localhost:5293";
 
-// Подставь свою реальную логику получения текущего языка (i18n) и токена авторизации.
+// TODO: Подставить реальную логику получения текущего языка (i18n) + токены
 function getLanguage(): string {
     return localStorage.getItem("lang") ?? "ru";
 }

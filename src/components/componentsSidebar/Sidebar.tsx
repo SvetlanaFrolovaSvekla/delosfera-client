@@ -57,9 +57,10 @@ export function Sidebar() {
                 {navGroups.map((grp, i) => (
                     <div key={i} className="mb-1.5">
                         {grp.titleKey && !collapsed && (
-                            <div
-                                className="mb-1 mt-3 px-2.5 text-[11px] font-bold uppercase tracking-[0.05em] text-[#a3adbd]">
-                                {t(grp.titleKey)}
+                            <div className="mb-1 mt-3 px-2.5">
+                                <div className="text-[11px] font-bold uppercase tracking-[0.05em] text-[#a3adbd]">
+                                    {t(grp.titleKey)}
+                                </div>
                             </div>
                         )}
                         {grp.items.map((it) => {

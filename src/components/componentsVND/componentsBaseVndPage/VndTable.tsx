@@ -2,6 +2,7 @@ import {useTranslation} from "react-i18next";
 import {Link} from "react-router-dom";
 import type {VndResponse} from "@/service/vndService/vndServiceType.ts";
 import {STATUS_META} from "@/constants/vndStatus.ts";
+import {ACTUALIZATION_BUCKET_META} from "@/constants/actualizationBucket.ts";
 import type {ColDef} from "@/constants/vndColumns.ts";
 import {EmptyState} from "@/components/componentsGeneral/EmptyState.tsx";
 import {Clock} from "lucide-react";
@@ -11,7 +12,6 @@ interface VndTableProps {
     rows: VndResponse[];
     gridTemplate: string;
     daysUntil: (dateStr: string | null | undefined) => number | null;
-    rygColor: (days: number) => string;
     responsibleExecutorNames: (ids: number[]) => string;
     keywordNames: (ids: number[]) => string;
     secrecyLevelName: (id?: number) => string;
@@ -30,7 +30,6 @@ export function VndTable({
                              rows,
                              gridTemplate,
                              daysUntil,
-                             rygColor,
                              responsibleExecutorNames,
                              keywordNames,
                              secrecyLevelName,
@@ -69,7 +68,10 @@ export function VndTable({
                     const meta = STATUS_META[r.status];
                     const StatusIcon = meta.icon;
                     const days = daysUntil(r.dueActualizationDate);
-                    const dot = days !== null ? rygColor(days) : "#a3adbd";
+                    // Цвет — из готового статуса, который прислал бэк (единый источник правды
+                    // с страницей планирования актуализации), а не пересчитывается по days на фронте
+                    const bucketMeta = r.actualizationBucket ? ACTUALIZATION_BUCKET_META[r.actualizationBucket] : null;
+                    const dot = bucketMeta?.color ?? "#a3adbd";
 
                     return (
                         <Link

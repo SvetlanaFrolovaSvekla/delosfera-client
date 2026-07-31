@@ -1,0 +1,102 @@
+import clsx from "clsx";
+import { useNavigate } from "react-router-dom";
+import type { Notification } from "@/service/notificationsService/notificationsServiceType";
+import { Bell, ChevronRight, Star, Trash2 } from "lucide-react";
+
+interface NotificationItemProps {
+    notification: Notification;
+    onRead: (id: number) => void;
+    onToggleFavorite: (id: number) => void;
+    onDelete: (id: number) => void;
+}
+
+function formatTime(iso: string) {
+    const date = new Date(iso);
+    const now = new Date();
+    const isToday = date.toDateString() === now.toDateString();
+    return isToday
+        ? date.toLocaleTimeString("ru-RU", { hour: "2-digit", minute: "2-digit" })
+        : date.toLocaleDateString("ru-RU", { day: "2-digit", month: "2-digit", year: "2-digit" });
+}
+
+export function NotificationItem({
+                                     notification: n,
+                                     onRead,
+                                     onToggleFavorite,
+                                     onDelete,
+                                 }: NotificationItemProps) {
+    const navigate = useNavigate();
+
+    const handleClick = () => {
+        if (!n.isRead) onRead(n.id);
+        if (n.url) navigate(n.url);
+    };
+
+    return (
+        <div
+            onClick={handleClick}
+            className={clsx(
+                "group flex cursor-pointer gap-3 border-b border-slate-100 px-5 py-4 transition last:border-b-0 hover:bg-slate-50",
+                !n.isRead && "bg-[#f7f7fd]"
+            )}
+        >
+      <span
+          className="mt-2 h-2 w-2 flex-none rounded-full bg-[#4e57d6]"
+          style={{ visibility: n.isRead ? "hidden" : "visible" }}
+      />
+
+            <span className="mt-0.5 flex h-8 w-8 flex-none items-center justify-center rounded-lg bg-slate-100 text-slate-500">
+        <Bell className="h-4 w-4" />
+      </span>
+
+            <div className="min-w-0 flex-1">
+                <div className="flex items-center gap-2">
+          <span
+              className={clsx(
+                  "text-sm",
+                  n.isRead ? "font-medium text-slate-700" : "font-semibold text-slate-900"
+              )}
+          >
+            {n.title}
+          </span>
+                </div>
+                <p className="mt-1 text-[13px] leading-relaxed text-slate-500">{n.body}</p>
+                <div className="mt-2 flex items-center gap-3">
+                    <span className="text-[11px] text-slate-400">{formatTime(n.createdAt)}</span>
+                    {n.createdByName && (
+                        <span className="text-[11px] text-slate-400">· {n.createdByName}</span>
+                    )}
+                    {n.url && (
+                        <span className="inline-flex items-center gap-1 font-mono text-[11.5px] font-semibold text-[#4e57d6]">
+              Перейти
+              <ChevronRight className="h-3 w-3" />
+            </span>
+                    )}
+                </div>
+            </div>
+
+            <div className="flex flex-none items-start gap-1">
+                <button
+                    onClick={e => {
+                        e.stopPropagation();
+                        onToggleFavorite(n.id);
+                    }}
+                    className="rounded-md p-1.5 text-slate-300 transition hover:bg-slate-100 hover:text-amber-400"
+                    aria-label={n.isFavorite ? "Убрать из избранного" : "В избранное"}
+                >
+                    <Star className={clsx("h-4 w-4", n.isFavorite && "fill-amber-400 text-amber-400")} />
+                </button>
+                <button
+                    onClick={e => {
+                        e.stopPropagation();
+                        onDelete(n.id);
+                    }}
+                    className="rounded-md p-1.5 text-slate-300 opacity-0 transition group-hover:opacity-100 hover:bg-slate-100 hover:text-rose-500"
+                    aria-label="Удалить"
+                >
+                    <Trash2 className="h-4 w-4" />
+                </button>
+            </div>
+        </div>
+    );
+}

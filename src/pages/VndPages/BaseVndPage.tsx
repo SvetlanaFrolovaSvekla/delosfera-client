@@ -9,7 +9,6 @@ import {
 } from '@/service/mockData/DictionaryData.tsx'; // TODO: заглушка, надо настроить загрузку данных из справочников
 
 import {daysUntil} from "@/utils/dateUtils.ts";
-import {getRygColorForActualization} from "@/utils/getRygColorForActualization.ts";
 import {useVndFilters} from "@/hooks/vndHooks/useVndFilters.tsx";
 import {useRubricsFromUrl} from "@/hooks/vndHooks/useRubricsFromUrl.ts";
 import {useVndColumnVisibility} from "@/hooks/vndHooks/useVndColumnVisibility.tsx";
@@ -170,7 +169,6 @@ export function BaseVndPage() {
                     rows={filteredRows}
                     gridTemplate={gridTemplate}
                     daysUntil={daysUntil}
-                    rygColor={getRygColorForActualization}
                     responsibleExecutorNames={responsibleExecutorNames}
                     keywordNames={keywordNames}
                     secrecyLevelName={secrecyLevelName}

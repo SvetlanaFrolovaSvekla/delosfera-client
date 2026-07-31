@@ -29,7 +29,8 @@ export type ColKey =
     | "lastActualizationStatus"
     | "keywords"
     | "secrecyLevel"
-    | "userGroups";
+    | "userGroups"
+    | "actualizationBucket"; // статус срока актуализации (normal/approaching/critical/overdue) - для страницы планирования актуализации
 
 export interface ColDef {
     key: ColKey;

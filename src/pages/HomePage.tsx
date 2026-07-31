@@ -1,10 +1,12 @@
+import { useAuth } from "@/context/AuthContext";
 import { Icon } from "@/components/icons/Icon";
+import {useMemo} from "react";
+import {getTimeGreeting} from "@/utils/getTimeGreeting.ts";
+import {getFirstLastName} from "@/utils/userNaming.ts";
+import {Loader} from "@/components/componentsGeneral/Loader.tsx";
+import {getFormattedDate} from "@/utils/dateUtils.ts";
 
 // TODO: заменить моковые данные реальными из API (сейчас — дашборд роли "Отдел методологии")
-const roleLabel = "Отдел методологии";
-const roleDept = "Финальный контроль";
-const greeting = "Добрый день, Бермет";
-
 const kpis = [
     { label: "На финальном контроле", value: 4, col: "#7a5ce0", tint: "#efeafe", bd: "#ddd0fa" },
     { label: "Просроченные позиции плана", value: 3, col: "#c0392b", tint: "#fbe7e4", bd: "#f1c9c2" },
@@ -75,22 +77,40 @@ const activity = [
 ];
 
 export function HomePage() {
+    const { user, loading } = useAuth();
+    const roleDept = user?.orgUnit?.titleRu ?? ""; // СП
+    const rolePosition = user?.position?.name // Должность
+
+    // Текущая дата
+    const formattedDate = useMemo(() => getFormattedDate(), []);
+
+    // Приветствие
+    const greeting = useMemo(() => {
+        const firstLastName = getFirstLastName(user?.fullName);
+        const timeGreeting = getTimeGreeting();
+        return firstLastName ? `${timeGreeting}, ${firstLastName}!` : timeGreeting;
+    }, [user?.fullName]);
+
+    if (loading) {
+        return <Loader label="Загрузка главной страницы…" fullHeight={false}/>;
+    }
+
     return (
         <div className="w-full max-w-[1700px] mx-auto px-4 sm:px-6 lg:px-8 xl:px-10 pt-5 sm:pt-[26px] pb-10 sm:pb-[60px]">
             {/* Заголовок */}
             <div className="mb-[22px] flex flex-wrap items-end justify-between gap-5">
                 <div>
-                    <div className="text-[12.5px] font-medium text-[#8b97ab]">четверг, 23 июля</div>
+                    <div className="text-[12.5px] font-medium text-[#8b97ab]">{formattedDate}</div>
                     <h1 className="mt-[5px] text-[25px] font-bold tracking-[-0.02em]">{greeting}</h1>
                     <div className="mt-[9px] flex items-center gap-2.5">
                         <span className="inline-flex items-center gap-[7px] rounded-lg bg-[var(--app-soft,_#e9f0ff)] px-[11px] py-[5px] text-[12.5px] font-semibold text-[var(--app-accent,_#2f68f5)]">
                             <Icon name="user" width={14} height={14} />
-                            {roleLabel}
+                            {rolePosition}
                         </span>
                         <span className="text-[12.5px] text-[#8b97ab]">{roleDept}</span>
                     </div>
                 </div>
-                <button className="inline-flex h-[42px] items-center gap-2 rounded-[11px] bg-[var(--app-accent,_#2f68f5)] px-[18px] text-[13.5px] font-semibold text-white shadow-[0_6px_16px_-6px_var(--app-accent,_#2f68f5)] hover:brightness-[1.06]">
+                <button className="cursor-pointer inline-flex h-[42px] items-center gap-2 rounded-[11px] bg-[var(--app-accent,_#2f68f5)] px-[18px] text-[13.5px] font-semibold text-white shadow-[0_6px_16px_-6px_var(--app-accent,_#2f68f5)] hover:brightness-[1.06]">
                     <Icon name="plus" width={18} height={18} strokeWidth={2} />
                     Создать документ
                 </button>

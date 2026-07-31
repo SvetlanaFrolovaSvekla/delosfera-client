@@ -18,6 +18,7 @@
     "collapse": "Менюну жыйыштыруу",
     "groups": {
       "normotvorchestvo": "Ченем чыгаруу",
+      "normotvorchestvoSub": "Модуль работы с ВНД",
       "sz": "Кызматтык каттар",
       "purchases": "Сатып алуулар",
       "meetings": "Жыйындар",

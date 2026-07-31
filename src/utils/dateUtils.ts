@@ -114,3 +114,15 @@ export function describePeriod(fromISO: string | null | undefined, toISO: string
 
     return approxMonths < 1 ? `${days} дн.` : `≈ ${Math.round(approxMonths)} мес.`;
 }
+
+// Возвращает текущую дату и день недели
+export function getFormattedDate(): string {
+    const date = new Date();
+    const formatter = new Intl.DateTimeFormat("ru-RU", {
+        weekday: "long",
+        day: "numeric",
+        month: "long",
+    });
+    const formatted = formatter.format(date); // Например: "Четверг, 23 июля"
+    return formatted.charAt(0).toLowerCase() + formatted.slice(1);
+}

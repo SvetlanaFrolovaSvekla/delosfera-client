@@ -6,7 +6,6 @@ import {useRedactionSelection} from "@/hooks/vndHooks/useRedactionSelection.ts";
 import {useAsyncAction} from "@/hooks/useAsyncAction.ts";
 import {downloadWithToast} from "@/utils/downloadFile.ts";
 import {VndUploadRedactionModal} from "@/components/componentsVND/VndUploadRedactionModal.tsx";
-import {vndService} from "@/service/vndService/vndService.ts";
 import {getRedactionDisplayStatus, REDACTION_STATUS_META} from "@/utils/redactionStatus.ts";
 import {formatDate} from "@/utils/dateUtils.ts";
 import {EmptyState} from "@/components/componentsGeneral/EmptyState.tsx";
@@ -23,6 +22,7 @@ import {
 import {
     RedactionCompareView
 } from "@/components/componentsVND/componentsOpenVndPage/componentsEditionsTab/RedactionCompareView.tsx";
+import {VndStartApprovalModal} from "@/components/componentsCoordination/VndStartApprovalModal.tsx";
 
 
 interface VndEditionsTabProps {
@@ -42,20 +42,10 @@ export function VndEditionsTab({vnd, onVndChanged}: VndEditionsTabProps) {
     const download = useAsyncAction<number>();
     const submit = useAsyncAction<number>();
 
+    const [approvalModalOpen, setApprovalModalOpen] = useState(false);
+
     const handleDownload = (fileId: number, name: string) =>
         download.run(fileId, () => downloadWithToast(fileId, name), "Не удалось скачать файл");
-
-    const handleSubmitForApproval = (redactionId: number) =>
-        submit.run(
-            redactionId,
-            async () => {
-                await vndService.submitRedaction(vnd.id, redactionId);
-                refetch();
-                onVndChanged?.();
-                toast.info("Отправлено на согласование", "ВНД отправлен на согласование, ожидайте решения.");
-            },
-            "Не удалось отправить на согласование"
-        );
 
     const handleRedactionUploaded = (redaction: VndRedactionResponse) => {
         setUploadOpen(false);
@@ -142,8 +132,8 @@ export function VndEditionsTab({vnd, onVndChanged}: VndEditionsTabProps) {
                 <RedactionStatusBanner
                     status={selectedStatus}
                     currentNumber={current?.number}
-                    onSubmit={() => handleSubmitForApproval(selected.id)}
-                    isSubmitting={submit.isActive(selected.id)}
+                    isSubmitting={false}
+                    onSubmit={() => setApprovalModalOpen(true)}
                 />
 
                 {submit.error && (
@@ -188,6 +178,17 @@ export function VndEditionsTab({vnd, onVndChanged}: VndEditionsTabProps) {
                     vndId={vnd.id}
                     onClose={() => setUploadOpen(false)}
                     onUploaded={handleRedactionUploaded}
+                />
+            )}
+
+            {approvalModalOpen && (
+                <VndStartApprovalModal
+                    vndId={vnd.id}
+                    onClose={() => setApprovalModalOpen(false)}
+                    onStarted={() => {
+                        setApprovalModalOpen(false);
+                        onVndChanged?.();
+                    }}
                 />
             )}
         </div>

@@ -1,6 +1,7 @@
 import type {
     CreateVndRedactionRequest,
     CreateVndRequest,
+    VndActualizationSummaryResponse,
     VndRedactionResponse,
     VndResponse,
     VndSearchRequest
@@ -59,6 +60,17 @@ export const vndService = {
             headers: authHeaders(),
         });
         return handleResponse<VndResponse>(response);
+    },
+
+    /**
+     * Сводка по срокам актуализации: сколько документов в норме, с приближающимся сроком,
+     * критичных и просроченных. Для дашборда планирования актуализации.
+     */
+    async getActualizationSummary(): Promise<VndActualizationSummaryResponse> {
+        const response = await fetch(`${API_BASE}/vnd/actualization/summary`, {
+            headers: authHeaders(),
+        });
+        return handleResponse<VndActualizationSummaryResponse>(response);
     },
 
     /**

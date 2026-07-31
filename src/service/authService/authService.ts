@@ -1,4 +1,4 @@
-import {apiClient} from "@/service/apiClient.ts";
+import {apiClient, refreshSession} from "@/service/apiClient.ts";
 import type {LoginRequest, LoginResponse} from "@/service/authService/authServiceType.ts";
 
 class AuthService {
@@ -9,6 +9,16 @@ class AuthService {
         localStorage.setItem("refreshToken", refreshToken);
         localStorage.setItem("user", JSON.stringify(user));
         return response.data;
+    }
+
+    /**
+     * Обновляет пару токенов через ту же защищённую от гонки логику,
+     * что использует apiClient (navigator.locks). Возвращает новый accessToken —
+     * его ждёт axiosInstance, чтобы повторить упавший с 401 запрос.
+     */
+    async refresh(): Promise<string> {
+        const response = await refreshSession();
+        return response.token;
     }
 
     async logout(): Promise<void> {

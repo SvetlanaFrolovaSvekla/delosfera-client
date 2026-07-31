@@ -22,6 +22,10 @@ import {CreateVndPage} from "@/pages/VndPages/CreateVndPage.tsx";
 import {OpenVndPage} from "@/pages/VndPages/OpenVndPage.tsx";
 import {ProfilePage} from "@/pages/ProfilePage.tsx";
 import {ToastContainer} from "@/components/componentsGeneral/knowledgeBaseComponents/ToastContainer.tsx";
+import {NotificationsPage} from "@/pages/NotificationsPage.tsx";
+import {CoordinationPage} from "@/pages/CoordinationPage/CoordinationPage.tsx";
+import {ActualizationPage} from "@/pages/ActualizationPage/ActualizationPage.tsx";
+import {ReportVndPage} from "@/pages/ReportPages/ReportVndPages/ReportVndPage.tsx";
 
 const MainLayout = () => (
     <div className="flex h-screen overflow-hidden">
@@ -53,6 +57,13 @@ function App() {
                             <Route path="/basevnd" element={<BaseVndPage/>}/>
                             <Route path="/basevnd/new" element={<CreateVndPage/>}/>
                             <Route path="/basevnd/:id" element={<OpenVndPage/>}/>
+
+                            <Route path="/coordination" element={<CoordinationPage/>}/>
+                            <Route path="/actualization" element={<ActualizationPage/>}/>
+                            <Route path="/reportvnd" element={<ReportVndPage/>}/>
+
+                            <Route path="/roles" element={<RolesPermissionPage/>}/>
+                            <Route path="/notifications" element={<NotificationsPage/>}/>
 
                             <Route path="/roles" element={<RolesPermissionPage/>}/>
                             <Route path="/refs" element={<DictionariesPages/>}/>

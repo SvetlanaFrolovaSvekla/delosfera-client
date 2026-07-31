@@ -1,9 +1,9 @@
 // Компонента загрузки новой редакции
-import { useState } from "react";
-import { createPortal } from "react-dom";
-import { FileUp, Loader2, Paperclip, Trash2, X } from "lucide-react";
-import { vndService } from "@/service/vndService/vndService.ts";
-import type { VndRedactionResponse } from "@/service/vndService/vndServiceType.ts";
+import {useState} from "react";
+import {createPortal} from "react-dom";
+import {FileUp, Loader2, Paperclip, Trash2, X} from "lucide-react";
+import {vndService} from "@/service/vndService/vndService.ts";
+import type {VndRedactionResponse} from "@/service/vndService/vndServiceType.ts";
 
 interface VndUploadRedactionModalProps {
     vndId: number;
@@ -18,7 +18,7 @@ interface FileSlotProps {
     onChange: (file: File | null) => void;
 }
 
-function FileSlot({ label, required, file, onChange }: FileSlotProps) {
+function FileSlot({label, required, file, onChange}: FileSlotProps) {
     const inputId = `redaction-file-${label}`;
 
     return (
@@ -31,7 +31,7 @@ function FileSlot({ label, required, file, onChange }: FileSlotProps) {
                     htmlFor={inputId}
                     className="flex h-[70px] cursor-pointer flex-col items-center justify-center gap-1 rounded-[10px] border border-dashed border-[#d5dae3] bg-[#fbfcfe] text-[#8b97ab] transition-colors hover:border-[#4e57d6]/50 hover:bg-[#f6f8fb]"
                 >
-                    <FileUp size={18} />
+                    <FileUp size={18}/>
                     <span className="text-[11.5px]">Выбрать файл (DOC/DOCX/PDF)</span>
                     <input
                         id={inputId}
@@ -49,7 +49,7 @@ function FileSlot({ label, required, file, onChange }: FileSlotProps) {
                         onClick={() => onChange(null)}
                         className="cursor-pointer flex-none text-[#8b97ab] hover:text-[#c0392b]"
                     >
-                        <Trash2 size={15} />
+                        <Trash2 size={15}/>
                     </button>
                 </div>
             )}
@@ -65,7 +65,7 @@ function formatBytes(bytes: number): string {
 
 const MAX_FILE_SIZE = 50 * 1024 * 1024; // 50 МБ — совпадает с лимитом на бэке
 
-export function VndUploadRedactionModal({ vndId, onClose, onUploaded }: VndUploadRedactionModalProps) {
+export function VndUploadRedactionModal({vndId, onClose, onUploaded}: VndUploadRedactionModalProps) {
     const [docRu, setDocRu] = useState<File | null>(null);
     const [docKg, setDocKg] = useState<File | null>(null);
     const [docEn, setDocEn] = useState<File | null>(null);
@@ -122,18 +122,19 @@ export function VndUploadRedactionModal({ vndId, onClose, onUploaded }: VndUploa
                 <div className="mb-5 flex items-center justify-between">
                     <h2 className="text-[16px] font-bold text-[#1c2740]">Загрузка новой редакции</h2>
                     <button onClick={onClose} className="cursor-pointer text-[#8b97ab] hover:text-[#3a4560]">
-                        <X size={20} />
+                        <X size={20}/>
                     </button>
                 </div>
 
                 <div className="flex flex-col gap-4">
-                    <FileSlot label="Русский" required file={docRu} onChange={setDocRu} />
-                    <FileSlot label="Кыргызча" file={docKg} onChange={setDocKg} />
-                    <FileSlot label="English" file={docEn} onChange={setDocEn} />
+                    <FileSlot label="Русский" required file={docRu} onChange={setDocRu}/>
+                    <FileSlot label="Кыргызча" file={docKg} onChange={setDocKg}/>
+                    <FileSlot label="English" file={docEn} onChange={setDocEn}/>
 
                     <div>
                         <div className="mb-[6px] text-[12.5px] font-semibold text-[#26324a]">
-                            Вложения <span className="text-[#8b97ab] font-normal">(необязательно, можно несколько)</span>
+                            Вложения <span
+                            className="text-[#8b97ab] font-normal">(необязательно, можно несколько)</span>
                         </div>
 
                         <label
@@ -141,7 +142,7 @@ export function VndUploadRedactionModal({ vndId, onClose, onUploaded }: VndUploa
                             className="flex h-[56px] cursor-pointer flex-col items-center justify-center gap-1 rounded-[10px] border border-dashed border-[#d5dae3] bg-[#fbfcfe] text-[#8b97ab] transition-colors hover:border-[#4e57d6]/50 hover:bg-[#f6f8fb]"
                         >
                             <span className="flex items-center gap-2 text-[11.5px]">
-                                <Paperclip size={15} />
+                                <Paperclip size={15}/>
                                 Добавить файлы
                             </span>
                             <input
@@ -164,7 +165,7 @@ export function VndUploadRedactionModal({ vndId, onClose, onUploaded }: VndUploa
                                         key={`${file.name}-${index}`}
                                         className="flex items-center gap-2 rounded-[9px] border border-[#e5e9f0] bg-white px-3 py-[8px]"
                                     >
-                                        <Paperclip size={14} className="flex-none text-[#8b97ab]" />
+                                        <Paperclip size={14} className="flex-none text-[#8b97ab]"/>
                                         <span className="flex-1 truncate text-[12px] text-[#26324a]">{file.name}</span>
                                         <span className="flex-none text-[11px] text-[#a3adbd]">
                                             {formatBytes(file.size)}
@@ -174,7 +175,7 @@ export function VndUploadRedactionModal({ vndId, onClose, onUploaded }: VndUploa
                                             onClick={() => removeAttachment(index)}
                                             className="cursor-pointer flex-none text-[#8b97ab] hover:text-[#c0392b]"
                                         >
-                                            <Trash2 size={14} />
+                                            <Trash2 size={14}/>
                                         </button>
                                     </div>
                                 ))}
@@ -194,8 +195,8 @@ export function VndUploadRedactionModal({ vndId, onClose, onUploaded }: VndUploa
                             className="w-full resize-none rounded-[10px] border border-[#e5e9f0] bg-[#f9fafc] p-3 text-[13px] text-[#26324a] outline-none focus:border-[#4e57d6] focus:bg-white"
                         />
                     </div>
-
                     <label className="flex cursor-pointer items-center gap-2 text-[13px] text-[#26324a]">
+                        {/*TODO: эту функцию нужно будет настроить только дл главного методолога/может администратора*/}
                         <input
                             type="checkbox"
                             checked={requiresApproval}
@@ -206,7 +207,8 @@ export function VndUploadRedactionModal({ vndId, onClose, onUploaded }: VndUploa
                     </label>
 
                     {error && (
-                        <div className="rounded-md border border-[#f2c2c2] bg-[#fdf1f1] px-3 py-2 text-[12.5px] text-[#c0392b]">
+                        <div
+                            className="rounded-md border border-[#f2c2c2] bg-[#fdf1f1] px-3 py-2 text-[12.5px] text-[#c0392b]">
                             {error}
                         </div>
                     )}
@@ -225,7 +227,7 @@ export function VndUploadRedactionModal({ vndId, onClose, onUploaded }: VndUploa
                         disabled={!canSubmit}
                         className="cursor-pointer flex h-[38px] items-center gap-2 rounded-[10px] bg-[#4e57d6] px-4 text-[13px] font-semibold text-white hover:bg-[#3f47bd] disabled:cursor-not-allowed disabled:opacity-50"
                     >
-                        {submitting && <Loader2 size={15} className="animate-spin" />}
+                        {submitting && <Loader2 size={15} className="animate-spin"/>}
                         Загрузить
                     </button>
                 </div>

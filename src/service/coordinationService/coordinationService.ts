@@ -2,7 +2,9 @@ import type {
     StartApprovalRequest,
     ApprovalDecisionRequest,
     ResubmitAfterRevisionRequest,
+    AddDisagreementMatrixRowRequest,
     ApprovalProcessResponse,
+    DisagreementMatrixRowResponse,
 } from "./coordinationServiceTypes";
 import {axiosInstance} from "@/service/axiosInstance.ts";
 
@@ -39,7 +41,8 @@ class CoordinationService {
         return data;
     }
 
-    /** Инициатор отправляет исправленную редакцию на повторное согласование */
+    /** Инициатор отправляет исправленную редакцию на повторное согласование
+     * (или сразу на финальную выдержку, если agreesWithAllRemarks === false) */
     async resubmit(
         vndId: number,
         request: ResubmitAfterRevisionRequest,
@@ -48,6 +51,8 @@ class CoordinationService {
         if (request.docRu) formData.append("DocRu", request.docRu);
         if (request.docKg) formData.append("DocKg", request.docKg);
         if (request.docEn) formData.append("DocEn", request.docEn);
+        if (request.comment) formData.append("Comment", request.comment);
+        formData.append("AgreesWithAllRemarks", String(request.agreesWithAllRemarks));
 
         const { data } = await axiosInstance.post<ApprovalProcessResponse>(
             `${this.basePath(vndId)}/resubmit`,
@@ -55,6 +60,23 @@ class CoordinationService {
             { headers: { "Content-Type": "multipart/form-data" } },
         );
         return data;
+    }
+
+    /** Добавить строку в матрицу разногласий (только инициатор, только на доработке) */
+    async addDisagreementRow(
+        vndId: number,
+        request: AddDisagreementMatrixRowRequest,
+    ): Promise<DisagreementMatrixRowResponse> {
+        const { data } = await axiosInstance.post<DisagreementMatrixRowResponse>(
+            `${this.basePath(vndId)}/disagreement-matrix/rows`,
+            request,
+        );
+        return data;
+    }
+
+    /** Удалить строку из матрицы разногласий */
+    async deleteDisagreementRow(vndId: number, rowId: number): Promise<void> {
+        await axiosInstance.delete(`${this.basePath(vndId)}/disagreement-matrix/rows/${rowId}`);
     }
 }
 

@@ -143,6 +143,12 @@ const paths: Record<string, JSX.Element> = {
             <path d="m20 20-3.2-3.2" />
         </>
     ),
+    tasks: (
+        <>
+            <rect x="3" y="3" width="18" height="18" rx="3" />
+            <path d="m8 12.5 2.5 2.5L16 9" />
+        </>
+    ),
     plus: <path d="M12 5v14M5 12h14" />,
     chev: <path d="m6 9 6 6 6-6" />,
     chevr: <path d="m9 6 6 6-6 6" />,

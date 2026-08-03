@@ -5,7 +5,7 @@ import {useVndRedactions} from "@/hooks/vndHooks/useVndRedactions.ts";
 import {useRedactionSelection} from "@/hooks/vndHooks/useRedactionSelection.ts";
 import {useAsyncAction} from "@/hooks/useAsyncAction.ts";
 import {downloadWithToast} from "@/utils/downloadFile.ts";
-import {VndUploadRedactionModal} from "@/components/componentsVND/VndUploadRedactionModal.tsx";
+import {VndUploadRedactionModal} from "@/components/componentsVND/componentsOpenVndPage/componentsEditionsTab/VndUploadRedactionModal.tsx";
 import {getRedactionDisplayStatus, REDACTION_STATUS_META} from "@/utils/redactionStatus.ts";
 import {formatDate} from "@/utils/dateUtils.ts";
 import {EmptyState} from "@/components/componentsGeneral/EmptyState.tsx";
@@ -22,7 +22,7 @@ import {
 import {
     RedactionCompareView
 } from "@/components/componentsVND/componentsOpenVndPage/componentsEditionsTab/RedactionCompareView.tsx";
-import {VndStartApprovalModal} from "@/components/componentsCoordination/VndStartApprovalModal.tsx";
+import {VndStartApprovalModal} from "@/components/componentsCoordination/CoordinationRouteConstructor/functionalComponents/VndStartApprovalModal.tsx";
 
 
 interface VndEditionsTabProps {

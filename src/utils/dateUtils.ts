@@ -1,5 +1,117 @@
 import type {DateFilterValue} from "@/components/componentsGeneral/datePickers/DateFilterGroup.tsx";
 import type {DateRangeFilter} from "@/service/vndService/vndServiceType.ts";
+import type {DeadlineUrgencyKey} from "@/constants/vndStatus.ts";
+
+// Форматирование времени для уведомлений
+export function formatRelativeTime(iso: string): string {
+    const date = new Date(iso);
+    const diffSec = Math.floor((Date.now() - date.getTime()) / 1000);
+
+    if (diffSec < 60) return "только что";
+
+    const diffMin = Math.floor(diffSec / 60);
+    if (diffMin < 60) return `${diffMin} мин назад`;
+
+    const diffHour = Math.floor(diffMin / 60);
+    if (diffHour < 24) return `${diffHour} ч назад`;
+
+    const diffDay = Math.floor(diffHour / 24);
+    if (diffDay < 7) return `${diffDay} дн назад`;
+
+    return date.toLocaleDateString("ru-RU", { day: "2-digit", month: "2-digit" });
+}
+
+// Определяет срочность дедлайна по проценту оставшегося времени от норматива.
+// totalHours — норматив, выданный на согласование (напр. PrimaryDeadlineHours)
+export function getDeadlineUrgency(deadlineAt: string | null, totalHours: number | null): DeadlineUrgencyKey {
+    if (!deadlineAt || !totalHours || totalHours <= 0) return "normal";
+
+    const remainingMs = new Date(deadlineAt).getTime() - Date.now();
+    if (remainingMs <= 0) return "overdue";
+
+    const totalMs = totalHours * 60 * 60 * 1000;
+    const percentRemaining = (remainingMs / totalMs) * 100;
+
+    if (percentRemaining >= 50) return "normal";
+    if (percentRemaining >= 25) return "approaching";
+    return "critical";
+}
+
+// Сколько времени осталось до дедлайна, в формате "2 дня 5 часов" или "просрочено на 3 часа"
+export function getRemainingLabel(deadlineAt: string | null | undefined): string {
+    if (!deadlineAt) return "—";
+
+    const diffMs = new Date(deadlineAt).getTime() - Date.now();
+    const isOverdue = diffMs < 0;
+    const absMs = Math.abs(diffMs);
+
+    const totalMinutes = Math.floor(absMs / 60000);
+    const days = Math.floor(totalMinutes / (60 * 24));
+    const hours = Math.floor((totalMinutes % (60 * 24)) / 60);
+    const minutes = totalMinutes % 60;
+
+    let label: string;
+
+    if (days > 0) {
+        const daysLabel = `${days} ${pluralize(days, "день", "дня", "дней")}`;
+        label = hours > 0
+            ? `${daysLabel} ${hours} ${pluralize(hours, "час", "часа", "часов")}`
+            : daysLabel;
+    } else if (hours > 0) {
+        const hoursLabel = `${hours} ${pluralize(hours, "час", "часа", "часов")}`;
+        label = minutes > 0
+            ? `${hoursLabel} ${minutes} ${pluralize(minutes, "минута", "минуты", "минут")}`
+            : hoursLabel;
+    } else if (minutes > 0) {
+        label = `${minutes} ${pluralize(minutes, "минута", "минуты", "минут")}`;
+    } else {
+        label = "меньше минуты";
+    }
+
+    return isOverdue ? `просрочено на ${label}` : `осталось ${label}`;
+}
+
+// Русское склонение слова по числу (1 день, 2 дня, 5 дней)
+export function pluralize(count: number, one: string, few: string, many: string): string {
+    const mod10 = count % 10;
+    const mod100 = count % 100;
+    if (mod10 === 1 && mod100 !== 11) return one;
+    if (mod10 >= 2 && mod10 <= 4 && (mod100 < 12 || mod100 > 14)) return few;
+    return many;
+}
+
+// Сколько времени прошло с указанной даты, в формате "2 дня 5 часов + назад"
+export function getElapsedLabel(dateString: string): string {
+    const diffMs = Date.now() - new Date(dateString).getTime();
+    if (diffMs < 0) return "только что";
+
+    const totalMinutes = Math.floor(diffMs / 60000);
+    const days = Math.floor(totalMinutes / (60 * 24));
+    const hours = Math.floor((totalMinutes % (60 * 24)) / 60);
+    const minutes = totalMinutes % 60;
+
+    if (days > 0) {
+        const daysLabel = `${days} ${pluralize(days, "день", "дня", "дней")}`;
+        if (hours > 0) {
+            return `${daysLabel} ${hours} ${pluralize(hours, "час", "часа", "часов")}`;
+        }
+        return `${daysLabel}`;
+    }
+
+    if (hours > 0) {
+        const hoursLabel = `${hours} ${pluralize(hours, "час", "часа", "часов")}`;
+        if (minutes > 0) {
+            return `${hoursLabel} ${minutes} ${pluralize(minutes, "минута", "минуты", "минут")} назад`;
+        }
+        return `${hoursLabel}`;
+    }
+
+    if (minutes > 0) {
+        return `${minutes} ${pluralize(minutes, "минута", "минуты", "минут")}`;
+    }
+
+    return "только что";
+}
 
 // Берем значение из UI (DatePicker/RangePicker), преобразуем в { exact, from, to } для фильтрации
 export function toDateRangeFilter(v: DateFilterValue): DateRangeFilter | null {

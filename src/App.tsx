@@ -22,10 +22,12 @@ import {CreateVndPage} from "@/pages/VndPages/CreateVndPage.tsx";
 import {OpenVndPage} from "@/pages/VndPages/OpenVndPage.tsx";
 import {ProfilePage} from "@/pages/ProfilePage.tsx";
 import {ToastContainer} from "@/components/componentsGeneral/knowledgeBaseComponents/ToastContainer.tsx";
-import {NotificationsPage} from "@/pages/NotificationsPage.tsx";
+import {NotificationsPage} from "@/pages/NotificationsPage/NotificationsPage.tsx";
 import {CoordinationPage} from "@/pages/CoordinationPage/CoordinationPage.tsx";
 import {ActualizationPage} from "@/pages/ActualizationPage/ActualizationPage.tsx";
 import {ReportVndPage} from "@/pages/ReportPages/ReportVndPages/ReportVndPage.tsx";
+import {TasksVndPage} from "@/pages/TasksPages/TasksVndPage.tsx";
+import {OpenNotificationPage} from "@/pages/NotificationsPage/OpenNotificationPage.tsx";
 
 const MainLayout = () => (
     <div className="flex h-screen overflow-hidden">
@@ -59,11 +61,14 @@ function App() {
                             <Route path="/basevnd/:id" element={<OpenVndPage/>}/>
 
                             <Route path="/coordination" element={<CoordinationPage/>}/>
+                            <Route path="/tasks" element={<TasksVndPage/>}/>
                             <Route path="/actualization" element={<ActualizationPage/>}/>
                             <Route path="/reportvnd" element={<ReportVndPage/>}/>
 
                             <Route path="/roles" element={<RolesPermissionPage/>}/>
+
                             <Route path="/notifications" element={<NotificationsPage/>}/>
+                            <Route path="/notifications/:id" element={<OpenNotificationPage />} />
 
                             <Route path="/roles" element={<RolesPermissionPage/>}/>
                             <Route path="/refs" element={<DictionariesPages/>}/>

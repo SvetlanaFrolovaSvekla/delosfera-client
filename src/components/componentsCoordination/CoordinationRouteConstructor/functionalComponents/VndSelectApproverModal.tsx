@@ -1,10 +1,11 @@
 // Модал выбора согласующего: список пользователей с иерархическим фильтром по СП и поиском
-import { useEffect, useMemo, useState } from "react";
-import { createPortal } from "react-dom";
-import { Loader2, Search, ShieldCheck, User as UserIcon, X } from "lucide-react";
-import { axiosInstance } from "@/service/axiosInstance.ts";
-import { MultiSelectField } from "@/components/componentsGeneral/selects/MultiSelects/MultiSelectField.tsx";
-import type { TreeSelectOption } from "@/components/componentsGeneral/selects/MultiSelects/TreeMultiSelectModal.tsx";
+import {useEffect, useMemo, useState} from "react";
+import {createPortal} from "react-dom";
+import {Loader2, Search, ShieldCheck, User as UserIcon, X} from "lucide-react";
+import {axiosInstance} from "@/service/axiosInstance.ts";
+import {MultiSelectField} from "@/components/componentsGeneral/selects/MultiSelects/MultiSelectField.tsx";
+import type {TreeSelectOption} from "@/components/componentsGeneral/selects/MultiSelects/TreeMultiSelectModal.tsx";
+import {EmptyState} from "@/components/componentsGeneral/EmptyState.tsx";
 
 export interface ApproverOption {
     id: number;
@@ -38,7 +39,7 @@ interface RawOrgUnitResponse {
 }
 
 async function fetchAllUsers(): Promise<ApproverOption[]> {
-    const { data } = await axiosInstance.get<RawUserResponse[]>("api/users");
+    const {data} = await axiosInstance.get<RawUserResponse[]>("api/users");
     return data.map((u) => ({
         id: u.id,
         fullName: u.fullName,
@@ -51,14 +52,14 @@ async function fetchAllUsers(): Promise<ApproverOption[]> {
 }
 
 async function fetchOrgUnits(): Promise<OrgUnitOption[]> {
-    const { data } = await axiosInstance.get<RawOrgUnitResponse[]>("api/dictionaries/organization-unit");
-    return data.map((o) => ({ id: o.id, name: o.name, parentId: o.parentId }));
+    const {data} = await axiosInstance.get<RawOrgUnitResponse[]>("api/dictionaries/organization-unit");
+    return data.map((o) => ({id: o.id, name: o.name, parentId: o.parentId}));
 }
 
 interface VndSelectApproverModalProps {
-    /** Если задан — фильтр залочен на это СП (для фиксированных этапов маршрута), выбор СП скрыт */
+    /** Если задан - фильтр на это СП (для фиксированных этапов маршрута), выбор СП скрыт */
     lockedOrgUnitId?: number;
-    /** Подпись залоченного СП (используем название этапа, а не запрос к справочнику) */
+    /** Подпись СП (используем название этапа, а не запрос к справочнику) */
     lockedOrgUnitLabel?: string;
     /** id пользователей, уже занятых на других этапах — показываем как недоступные */
     excludedUserIds: Set<number>;
@@ -140,19 +141,21 @@ export function VndSelectApproverModal({
 
     return createPortal(
         <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/30 p-4">
-            <div className="flex h-[80vh] w-full max-w-[560px] flex-col overflow-hidden rounded-[16px] bg-white shadow-2xl">
+            <div
+                className="flex h-[80vh] w-full max-w-[560px] flex-col overflow-hidden rounded-[16px] bg-white shadow-2xl">
                 {/* Header */}
                 <div className="flex flex-none items-center justify-between border-b border-[#eef0f5] px-6 py-4">
                     <h2 className="text-[15px] font-bold text-[#1c2740]">Выбор согласующего</h2>
                     <button onClick={onClose} className="cursor-pointer text-[#8b97ab] hover:text-[#3a4560]">
-                        <X size={20} />
+                        <X size={20}/>
                     </button>
                 </div>
 
                 {/* Filters */}
                 <div className="flex flex-none flex-col gap-2 border-b border-[#eef0f5] px-6 py-4">
                     <div className="relative">
-                        <Search size={15} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-[#8b97ab]" />
+                        <Search size={15}
+                                className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-[#8b97ab]"/>
                         <input
                             autoFocus
                             value={search}
@@ -163,8 +166,9 @@ export function VndSelectApproverModal({
                     </div>
 
                     {lockedOrgUnitId ? (
-                        <div className="flex items-center gap-2 rounded-[10px] border border-[#d9ecdf] bg-[#f2faf5] px-3 py-2 text-[12px] text-[#2c7a4b]">
-                            <ShieldCheck size={14} className="flex-none" />
+                        <div
+                            className="flex items-center gap-2 rounded-[10px] border border-[#d9ecdf] bg-[#f2faf5] px-3 py-2 text-[12px] text-[#2c7a4b]">
+                            <ShieldCheck size={14} className="flex-none"/>
                             Фиксированное СП: <span className="font-semibold">{lockedOrgUnitLabel}</span>
                         </div>
                     ) : (
@@ -186,12 +190,10 @@ export function VndSelectApproverModal({
                 <div className="flex-1 overflow-y-auto px-3 py-2">
                     {loading ? (
                         <div className="flex h-full items-center justify-center text-[#8b97ab]">
-                            <Loader2 size={20} className="animate-spin" />
+                            <Loader2 size={20} className="animate-spin"/>
                         </div>
                     ) : error ? (
-                        <div className="mx-3 mt-3 rounded-md border border-[#f2c2c2] bg-[#fdf1f1] px-3 py-2 text-[12.5px] text-[#c0392b]">
-                            {error}
-                        </div>
+                        <EmptyState variant="error" title="Не удалось загрузить данные!" description={error}/>
                     ) : filteredUsers.length === 0 ? (
                         <div className="flex h-full items-center justify-center text-[12.5px] text-[#8b97ab]">
                             Никого не нашлось
@@ -212,8 +214,9 @@ export function VndSelectApproverModal({
                                                 : "cursor-pointer hover:bg-[#f6f8fb]"
                                         }`}
                                     >
-                                        <div className="flex h-9 w-9 flex-none items-center justify-center rounded-full bg-[#f0f1fb] text-[#4e57d6]">
-                                            <UserIcon size={16} />
+                                        <div
+                                            className="flex h-9 w-9 flex-none items-center justify-center rounded-full bg-[#f0f1fb] text-[#4e57d6]">
+                                            <UserIcon size={16}/>
                                         </div>
                                         <div className="min-w-0 flex-1">
                                             <div className="flex items-center gap-2">
@@ -221,12 +224,14 @@ export function VndSelectApproverModal({
                                                     {u.fullName}
                                                 </span>
                                                 {!u.isActive && (
-                                                    <span className="flex-none rounded-full bg-[#fdf1f1] px-2 py-[1px] text-[10px] font-medium text-[#c0392b]">
+                                                    <span
+                                                        className="flex-none rounded-full bg-[#fdf1f1] px-2 py-[1px] text-[10px] font-medium text-[#c0392b]">
                                                         неактивен
                                                     </span>
                                                 )}
                                                 {isExcluded && (
-                                                    <span className="flex-none rounded-full bg-[#f0f1f5] px-2 py-[1px] text-[10px] font-medium text-[#8b97ab]">
+                                                    <span
+                                                        className="flex-none rounded-full bg-[#f0f1f5] px-2 py-[1px] text-[10px] font-medium text-[#8b97ab]">
                                                         уже выбран
                                                     </span>
                                                 )}

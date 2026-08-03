@@ -83,11 +83,11 @@ export function Sidebar() {
                                     {!collapsed && (
                                         <>
                                             <span
-                                                className={`flex-1 truncate text-left ${isActive ? "font-bold" : "font-medium"}`}>
+                                                className={`flex-1 text-left whitespace-normal break-words leading-snug ${isActive ? "font-bold" : "font-medium"}`}>
                                                 {label}
                                             </span>
                                             {isModalItem ? (
-                                                <ChevronRight className="w-[16px] h-[16px] flex-none text-[#a3adbd]"
+                                                <ChevronRight className="w-[16px] h-[16px] flex-none text-[#a3adbd] mt-0.5"
                                                               strokeWidth={2}/>
                                             ) : (
                                                 !!it.badge && <CountBadge count={it.badge}/>
@@ -97,7 +97,7 @@ export function Sidebar() {
                                 </>
                             );
 
-                            const sharedClassName = `cursor-pointer relative mb-0.5 flex w-full items-center overflow-hidden whitespace-nowrap rounded-[9px] text-[13px] font-medium transition-all duration-200 ${
+                            const sharedClassName = `cursor-pointer relative mb-0.5 flex w-full items-start overflow-hidden rounded-[9px] text-[13px] font-medium transition-all duration-200 ${
                                 collapsed ? "justify-center gap-0 px-0 py-[10px]" : "gap-[11px] px-[11px] py-[9px]"
                             }`;
                             const sharedStyle = {

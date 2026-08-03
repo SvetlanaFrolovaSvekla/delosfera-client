@@ -8,6 +8,7 @@ import type {
 import { useNotificationTabs } from "@/hooks/notificationsHooks/useNotificationTabs.ts";
 import { useNotificationScopeCounts } from "@/hooks/notificationsHooks/useNotificationScopeCounts.ts";
 import { useNotificationRows } from "@/hooks/notificationsHooks/useNotificationRows.ts";
+import { useNotificationActions } from "@/hooks/notificationsHooks/useNotificationActions.ts";
 
 import { NotificationsPageHeader } from "@/components/componentsNotifications/NotificationsPageHeader.tsx";
 import { NotificationCategoryPanel } from "@/components/componentsNotifications/NotificationCategoryPanel.tsx";
@@ -15,7 +16,7 @@ import { NotificationSeverityFilter } from "@/components/componentsNotifications
 import { NotificationList } from "@/components/componentsNotifications/NotificationList.tsx";
 
 import { Tabs } from "@/components/componentsGeneral/Tabs.tsx";
-import { Loader } from "@/components/componentsGeneral/Loader";
+import { Loader } from "@/components/componentsGeneral/Loader.tsx";
 import { EmptyState } from "@/components/componentsGeneral/EmptyState.tsx";
 
 export function NotificationsPage() {
@@ -54,6 +55,13 @@ export function NotificationsPage() {
 
     const bumpReload = () => setReloadKey((k) => k + 1);
 
+    const { markAsRead, markAllAsRead, toggleFavorite, deleteNotification } = useNotificationActions({
+        rows,
+        setRows,
+        categoryTab,
+        onMutated: bumpReload,
+    });
+
     const resetFilters = () => {
         resetTabs();
         setSearch("");
@@ -65,56 +73,6 @@ export function NotificationsPage() {
         { id: "unread" as const, label: "Непрочитанные", n: counts.unread },
         { id: "favorites" as const, label: "Избранное", n: counts.favorites },
     ];
-
-    const markAsRead = async (id: number) => {
-        const target = rows.find((n) => n.id === id);
-        if (!target || target.isRead) return;
-
-        setRows((prev) => prev.map((n) => (n.id === id ? { ...n, isRead: true } : n)));
-        try {
-            await notificationsService.markAsRead(id);
-            bumpReload();
-        } catch {
-            setRows((prev) => prev.map((n) => (n.id === id ? { ...n, isRead: false } : n)));
-        }
-    };
-
-    const markAllAsRead = async () => {
-        const prevRows = rows;
-        setRows((prev) => prev.map((n) => ({ ...n, isRead: true })));
-        try {
-            const category = categoryTab !== "all" ? categoryTab : undefined;
-            await notificationsService.markAllAsRead(category);
-            bumpReload();
-        } catch {
-            setRows(prevRows);
-        }
-    };
-
-    const toggleFavorite = async (id: number) => {
-        const target = rows.find((n) => n.id === id);
-        if (!target) return;
-        const next = !target.isFavorite;
-
-        setRows((prev) => prev.map((n) => (n.id === id ? { ...n, isFavorite: next } : n)));
-        try {
-            await notificationsService.toggleFavorite(id);
-            bumpReload();
-        } catch {
-            setRows((prev) => prev.map((n) => (n.id === id ? { ...n, isFavorite: !next } : n)));
-        }
-    };
-
-    const deleteNotification = async (id: number) => {
-        const prevRows = rows;
-        setRows((prev) => prev.filter((n) => n.id !== id));
-        try {
-            await notificationsService.delete(id);
-            bumpReload();
-        } catch {
-            setRows(prevRows);
-        }
-    };
 
     return (
         <div className="w-full max-w-[1700px] mx-auto px-4 sm:px-6 lg:px-8 xl:px-10 pt-5 sm:pt-[26px] pb-10 sm:pb-[60px]">

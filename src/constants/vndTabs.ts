@@ -1,6 +1,6 @@
 import type {VndStatusKey} from "@/service/vndService/vndServiceType.ts";
 
-export const VND_TAB_IDS = ["passport", "editions", "actual", "links"] as const;
+export const VND_TAB_IDS = ["passport", "editions", "links", "approval", "actual"] as const;
 export type VndTabId = (typeof VND_TAB_IDS)[number];
 
 interface VndTabMeta {
@@ -11,8 +11,9 @@ interface VndTabMeta {
 const BASE_LABELS: Record<VndTabId, string> = {
     passport: "Реквизиты",
     editions: "Редакции",
-    actual: "Актуализация",
     links: "Связи и история",
+    approval: "Ход согласования",
+    actual: "Актуализация",
 };
 
 // Лейбл таба «editions» переопределяется для отдельных статусов — сам таб
@@ -27,12 +28,16 @@ const EDITIONS_LABEL_BY_STATUS: Partial<Record<VndStatusKey, string>> = {
 // в черновике. «Актуализация» и «Связи и история» для черновика скрыты —
 // актуализировать и связывать пока нечего: первый цикл начнётся только
 // после появления редакции.
+//
+// TODO: "review" — предположила по аналогии с memory (Draft → Review), сверь
+// с реальным значением VndStatusKey для статуса «На согласовании».
 const TABS_BY_STATUS: Partial<Record<VndStatusKey, VndTabId[]>> = {
     draft: ["passport", "editions"],
+    review: ["passport", "editions", "approval", "links"],
 };
 
 export function getVndTabs(status: VndStatusKey): VndTabMeta[] {
-    const allowedIds = TABS_BY_STATUS[status] ?? VND_TAB_IDS.slice();
+    const allowedIds = TABS_BY_STATUS[status] ?? VND_TAB_IDS.filter((id) => id !== "approval");
     return VND_TAB_IDS
         .filter((id) => allowedIds.includes(id))
         .map((id) => ({

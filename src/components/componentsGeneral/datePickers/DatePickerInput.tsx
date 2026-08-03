@@ -101,25 +101,53 @@ export function DatePickerInput({
     return (
         <div className="relative" ref={containerRef}>
             <div className="relative">
-                <input
-                    type="text"
-                    placeholder={placeholder}
-                    value={value}
-                    disabled={disabled}
-                    onChange={(e) => onChange(e.target.value)}
-                    onFocus={() => {
-                        if (!open) openCalendar();
-                    }}
-                    className={`h-[36px] px-2.5 pr-7 rounded-[8px] border border-[#e5e9f0] bg-white text-[12.5px] text-[#1c2740] outline-none box-border focus:border-[#4e57d6] w-full disabled:bg-[#f6f8fb] disabled:text-[#8b97ab] disabled:cursor-not-allowed ${className}`}
-                />
-                <button
-                    type="button"
-                    onClick={openCalendar}
-                    disabled={disabled}
-                    className="absolute right-2 top-1/2 -translate-y-1/2 text-[#a3adbd] hover:text-[#4e57d6] disabled:hover:text-[#a3adbd] disabled:cursor-not-allowed"
+                {modal ? (
+                    // В режиме модалки поле выглядит как кнопка: клик открывает календарь,
+                    // печатать вручную нельзя — только выбор даты через календарь.
+                    <button
+                        type="button"
+                        onClick={openCalendar}
+                        disabled={disabled}
+                        className={`h-[36px] px-2.5 pr-7 rounded-[8px] border border-[#e5e9f0] bg-white text-[12.5px] text-left outline-none box-border focus:border-[#4e57d6] w-full cursor-pointer disabled:bg-[#f6f8fb] disabled:text-[#8b97ab] disabled:cursor-not-allowed ${
+                            value ? "text-[#1c2740]" : "text-[#a3adbd]"
+                        } ${className}`}
+                    >
+                        {value || placeholder}
+                    </button>
+                ) : (
+                    <input
+                        type="text"
+                        placeholder={placeholder}
+                        value={value}
+                        disabled={disabled}
+                        onChange={(e) => onChange(e.target.value)}
+                        onFocus={() => {
+                            if (!open) openCalendar();
+                        }}
+                        className={`h-[36px] px-2.5 pr-7 rounded-[8px] border border-[#e5e9f0] bg-white text-[12.5px] text-[#1c2740] outline-none box-border focus:border-[#4e57d6] w-full disabled:bg-[#f6f8fb] disabled:text-[#8b97ab] disabled:cursor-not-allowed ${className}`}
+                    />
+                )}
+
+                {/* Иконка календаря — в модальном режиме клики уже обрабатывает кнопка-обёртка выше,
+                    поэтому иконка чисто декоративная (pointer-events-none), чтобы не перехватывать клик дважды */}
+                <span
+                    className={`absolute right-2 top-1/2 -translate-y-1/2 text-[#a3adbd] ${
+                        modal ? "pointer-events-none" : ""
+                    }`}
                 >
-                    <Calendar className="w-[13px] h-[13px]"/>
-                </button>
+                    {modal ? (
+                        <Calendar className="w-[13px] h-[13px]"/>
+                    ) : (
+                        <button
+                            type="button"
+                            onClick={openCalendar}
+                            disabled={disabled}
+                            className="text-[#a3adbd] hover:text-[#4e57d6] disabled:hover:text-[#a3adbd] disabled:cursor-not-allowed"
+                        >
+                            <Calendar className="w-[13px] h-[13px]"/>
+                        </button>
+                    )}
+                </span>
             </div>
 
             {open && (() => {

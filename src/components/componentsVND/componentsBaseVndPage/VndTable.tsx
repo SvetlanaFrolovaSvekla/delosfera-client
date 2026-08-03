@@ -6,6 +6,7 @@ import {ACTUALIZATION_BUCKET_META} from "@/constants/actualizationBucket.ts";
 import type {ColDef} from "@/constants/vndColumns.ts";
 import {EmptyState} from "@/components/componentsGeneral/EmptyState.tsx";
 import {Clock} from "lucide-react";
+import {HighlightText} from "@/utils/HighlightText.tsx";
 
 interface VndTableProps {
     columns: ColDef[];
@@ -18,6 +19,7 @@ interface VndTableProps {
     userGroupNames: (ids: number[]) => string;
     onResetFilters: () => void;
     rubricNames: (ids: number[]) => string;
+    searchQuery: string;
 }
 
 const LAST_ACT_STATUS_LABEL = {
@@ -36,6 +38,7 @@ export function VndTable({
                              userGroupNames,
                              onResetFilters,
                              rubricNames,
+                             searchQuery
                          }: VndTableProps) {
     const {t} = useTranslation();
 
@@ -104,7 +107,7 @@ export function VndTable({
                                         return (
                                             <div key={c.key} className="min-w-0">
                                                 <span className="font-mono text-[12px] font-semibold text-[#4e57d6]">
-                                                    {r.code}
+                                                    <HighlightText text={r.code} query={searchQuery} />
                                                 </span>
                                             </div>
                                         );
@@ -112,7 +115,7 @@ export function VndTable({
                                         return (
                                             <div key={c.key} className="min-w-0">
                                               <span className="block text-[13.5px] font-medium text-[#1c2740] whitespace-normal break-words line-clamp-5 group-hover:underline decoration-1 underline-offset-1">
-                                                  {r.name}
+                                                  <HighlightText text={r.name} query={searchQuery} />
                                               </span>
                                             </div>
                                         );

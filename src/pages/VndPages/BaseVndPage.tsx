@@ -165,6 +165,7 @@ export function BaseVndPage() {
                 />
             ) : (
                 <VndTable
+                    searchQuery={filters.search}
                     columns={columns}
                     rows={filteredRows}
                     gridTemplate={gridTemplate}

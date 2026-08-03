@@ -25,7 +25,8 @@ export const navGroups: NavGroup[] = [
             },
             { id: "vnd", icon: "vnd", labelKey: "sidebar.items.vnd", path: "/basevnd" },
             { id: "pln", icon: "pln", labelKey: "sidebar.items.pln", badge: 3, path: "/actualization" },
-            { id: "tid", icon: "tid", labelKey: "sidebar.items.tid", badge: 4, path: "/coordination" },
+            { id: "tasks", icon: "tasks", labelKey: "sidebar.items.tasks", badge: 4, path: "/tasks" },
+           /* { id: "tid", icon: "tid", labelKey: "sidebar.items.tid", badge: 4, path: "/coordination" },*/
             { id: "rpt", icon: "rpt", labelKey: "sidebar.items.rpt", path: "/reportvnd" },
         ],
     },

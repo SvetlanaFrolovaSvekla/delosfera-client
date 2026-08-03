@@ -2,7 +2,7 @@ export type ApprovalProcessStatus =
     | "primary"  // первичное согласование в процессе
     | "revision_needed" // на доработке - есть замечания/отклонения
     | "repeated" // повторное согласование (только по замечаниям)
-    | "final_hold" // финальная выдержка - ознакомление без решений
+    | "final_hold" // финальная выдержка (теперь тоже может быть с замечанием)
     | "approved"  // завершено, ВНД стал действующим
     | "cancelled" // отозван инициатором (на будущее, пока логики нет) // TODO: Пока логику не добавила
     | "rejected"; // Отклонен
@@ -21,7 +21,7 @@ export type ApprovalStageDecisionResponse =
     | "rejected" // отклонено
     | "auto_approved_timeout"; // просрочка - засчитано как согласование
 
-// ===== Request enums (то, что реально можно ОТПРАВИТЬ на бэк — уже, чем response-типы) =====
+// ===== Request enums (то, что реально можно ОТПРАВИТЬ на бэк - уже, чем response-типы) =====
 export const ApprovalStageKind = {
     Legal: "Legal",
     RiskManagement: "RiskManagement",
@@ -64,9 +64,27 @@ export interface ResubmitAfterRevisionRequest {
     docEn?: File;
     /** Комментарий инициатора о внесённых исправлениях */
     comment?: string;
+    /** Согласен ли инициатор со всеми замечаниями.
+     * false → нужна заполненная матрица разногласий, повторное согласование
+     * пропускается, процесс сразу переходит на финальную выдержку. */
+    agreesWithAllRemarks: boolean;
+}
+
+export interface AddDisagreementMatrixRowRequest {
+    developerPosition: string; // Редакция (позиция) разработчика
+    opponentPosition: string; // Редакция и комментарий оппонента
+    developerJustification?: string; // Комментарий (обоснование) разработчика
 }
 
 // ===== Response DTOs =====
+
+export interface DisagreementMatrixRowResponse {
+    id: number;
+    developerPosition: string;
+    opponentPosition: string;
+    developerJustification: string | null;
+    createdAt: string;
+}
 
 export interface ApprovalStageResponse {
     id: number;
@@ -83,6 +101,9 @@ export interface ApprovalStageResponse {
     repeatDecision: ApprovalStageDecisionResponse | null;
     repeatComment: string | null;
     repeatDecidedAt: string | null;
+    finalHoldDecision: ApprovalStageDecisionResponse | null;
+    finalHoldComment: string | null;
+    finalHoldDecidedAt: string | null;
 }
 
 export interface ApprovalProcessResponse {
@@ -104,6 +125,7 @@ export interface ApprovalProcessResponse {
     finalHoldStartedAt: string | null;
     finalHoldDeadlineAt: string | null;
     completedAt: string | null;
+    disagreementMatrixRows: DisagreementMatrixRowResponse[];
     stages: ApprovalStageResponse[];
     createdAt: string;
     updatedAt: string;

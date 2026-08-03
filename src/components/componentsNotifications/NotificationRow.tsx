@@ -37,7 +37,7 @@ export function NotificationRow({
 
     const handleClick = () => {
         if (!n.isRead) onRead(n.id);
-        if (n.url) navigate(n.url);
+        navigate(`/notifications/${n.id}`);
     };
 
     return (

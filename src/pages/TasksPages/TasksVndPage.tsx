@@ -1,17 +1,10 @@
 import { useState } from "react";
 import { useVndTasks } from "@/hooks/tasksVndHooks/useVndTasks.ts";
 import { useVndTaskCounts } from "@/hooks/tasksVndHooks/useVndTaskCounts.ts";
-import { TasksPageHeader } from "@/components/componentsTasks/TasksPageHeader.tsx";
 import { Tabs } from "@/components/componentsGeneral/Tabs.tsx";
 import { VndTaskList } from "@/pages/TasksPages/VndTaskList.tsx";
-
-type TasksScope = "coordination" | "actualization" | "consolidation";
-
-const emptyTextByScope: Record<TasksScope, string> = {
-    coordination: "Нет задач на согласование",
-    actualization: "Нет документов, ожидающих актуализации",
-    consolidation: "Нет документов на консолидации",
-};
+import {emptyTextByScope, type TasksScope} from "@/constants/tasksConst.ts";
+import {PageHeader} from "@/components/componentsGeneral/PageHeader.tsx";
 
 export function TasksVndPage() {
     const [scope, setScope] = useState<TasksScope>("coordination");
@@ -26,7 +19,10 @@ export function TasksVndPage() {
 
     return (
         <div className="w-full max-w-[1700px] mx-auto px-4 sm:px-6 lg:px-8 xl:px-10 pt-5 sm:pt-[26px] pb-10 sm:pb-[60px]">
-            <TasksPageHeader />
+            <PageHeader
+                title="Мои задачи"
+                description="Перечень задач по нормотворчеству: согласование редакций ВНД, консолидация редакций, актуализация ВНД."
+            />
 
             <Tabs<TasksScope> tabs={scopeTabs} value={scope} onChange={setScope} />
 

@@ -13,10 +13,10 @@ interface VndRevisionNeededPanelProps {
     onChanged: () => Promise<void>;
 }
 
-/** Собираем замечания по редакции — с любого этапа (первичный / повторный / финальная
+/** Собираем замечания по редакции - с любого этапа (первичный / повторный / финальная
  * выдержка), т.к. RevisionNeeded может наступить после любого из них. Замечанием
  * считается комментарий именно к решению "approved_with_comment" (отправлено на
- * устранение замечаний) — комментарий к простому "approved" сюда не попадает. */
+ * устранение замечаний) - комментарий к простому "approved" сюда не попадает. */
 function collectRemarks(process: ApprovalProcessResponse) {
     return process.stages.flatMap((stage) => {
         const remarks: { approverName: string; phase: string; comment: string }[] = [];
@@ -46,7 +46,7 @@ function collectRemarks(process: ApprovalProcessResponse) {
     });
 }
 
-/** Комментарии к простому согласованию ("approved") — не замечания, а просто
+/** Комментарии к простому согласованию ("approved") - не замечания, а просто
  * пояснения согласующего. Показываем отдельным блоком, и только если они есть. */
 function collectApprovalComments(process: ApprovalProcessResponse) {
     return process.stages.flatMap((stage) => {

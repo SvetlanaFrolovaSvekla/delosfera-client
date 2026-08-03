@@ -202,7 +202,7 @@ export function formatDate(iso: string | null | undefined): string {
  * Бэкенд не хранит исходно выбранный период (Quarterly/Annual/...) отдельно,
  * поэтому здесь период восстанавливается по количеству месяцев между датами
  * с допуском ±10% (чтобы 365 и 370 дней одинаково читались как "раз в год").
- * Если разница не попадает ни в один из известных периодов — возвращает
+ * Если разница не попадает ни в один из известных периодов - возвращает
  * приблизительное количество дней/месяцев. Возвращает "—", если даты нет
  * или интервал некорректен (to <= from).
  */
@@ -237,4 +237,12 @@ export function getFormattedDate(): string {
     });
     const formatted = formatter.format(date); // Например: "Четверг, 23 июля"
     return formatted.charAt(0).toLowerCase() + formatted.slice(1);
+}
+
+/**
+ * Преобразует строку "дд.мм.гггг" в ISO "YYYY-MM-DD" для отправки на бэк.
+ */
+export function parseDDMMYYYYToISO(display: string): string {
+    const date = parseDDMMYYYY(display);
+    return date ? formatISO(date) : "";
 }

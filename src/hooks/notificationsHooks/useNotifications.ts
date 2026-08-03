@@ -62,7 +62,7 @@ export function useNotifications() {
         setError(null);
         try {
             const res = await notificationsService.search(buildFilter());
-            if (id !== requestId.current) return; // отменённый запрос — игнорируем
+            if (id !== requestId.current) return;
             setItems(res.items);
             setTotalCount(res.totalCount);
         } catch {

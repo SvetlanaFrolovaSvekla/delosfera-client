@@ -1,0 +1,62 @@
+// Зеркало backend enum PermissionCode (Modules/Users/Models/PermissionCode.cs)
+export const PermissionCode = {
+    /* Просмотр страницы актуализации ВНД */
+    ViewVndActualizationPage: 1,
+
+    /* Взять любую ВНД в актуализацию с последующим согласованием (без запроса права) */
+    ActualizeAnyVndWithApproval: 2,
+
+    /* Взять любую ВНД в актуализацию без согласования (без запроса права) */
+    ActualizeAnyVndWithoutApproval: 3,
+
+    /* Взять ВНД в актуализацию с последующим согласованием (по запросу права) */
+    ActualizeVndWithApprovalByRequest: 4,
+
+    /* Взять ВНД в актуализацию без согласования (по запросу права) */
+    ActualizeVndWithoutApprovalByRequest: 5,
+
+    /* Создать новую ВНД с последующим согласованием */
+    CreateVndWithApproval: 6,
+
+    /* Создать новую ВНД без последующего согласования */
+    CreateVndWithoutApproval: 7,
+
+    /* Удалить ВНД */
+    DeleteVnd: 8,
+
+    /* Редактировать последнюю редакцию без согласования, без создания новой редакции и изменения даты актуализации */
+    EditLastRevisionDirectly: 9,
+
+    /* Управление группами */
+    ManageGroups: 10,
+
+    /* Управление справочниками */
+    ManageDictionaries: 11,
+
+    /* Просмотр ВНД */
+    ViewVnd: 12,
+
+    /* Экспорт ВНД */
+    ExportVnd: 13,
+
+    /* Управление пользователями */
+    ManageUsers: 14,
+
+    /* Управление ролями */
+    ManageRoles: 15,
+
+    /* Просмотр ограниченной статистики */
+    ViewLimitedStatistics: 16,
+
+    /* Экспорт отчёта по полной статистике */
+    ExportFullStatisticsReport: 17,
+
+    /* Просмотр полной статистики */
+    ViewFullStatistics: 18,
+
+    /* Возможность выступать в роли согласующего */
+    ActAsApprover: 19,
+
+    /* Возможность изменять маршрут согласования (удалять лишних пользователей) */
+    ModifyApprovalRoute: 20,
+} as const;

@@ -51,8 +51,7 @@ interface TaskStatusMeta {
     icon: ComponentType<{ size?: number; className?: string }>;
 }
 
-// Цвета фаз согласования — прогрессия по насыщенности одного (синего) оттенка:
-// primary — самый светлый этап, final_hold — самый насыщенный (ближе к завершению)
+// Цвета фаз согласования
 export const COORDINATION_STAGE_META: Record<"primary" | "repeat" | "final", TaskStatusMeta> = {
     primary: {
         label: "Первичное согласование",
@@ -74,7 +73,7 @@ export const COORDINATION_STAGE_META: Record<"primary" | "repeat" | "final", Tas
     },
 };
 
-// Цвета разделов задач — те же, что и статусы ВНД (review/onact/consol)
+// Цвета разделов задач - те же, что и статусы ВНД (review/onact/consol)
 export const TASK_SCOPE_META: Record<"coordination" | "actualization" | "consolidation", TaskStatusMeta> = {
     coordination: {
         label: "На согласовании",
@@ -97,8 +96,7 @@ export const TASK_SCOPE_META: Record<"coordination" | "actualization" | "consoli
 };
 
 
-// Цвета/иконки срочности дедлайна согласования — переиспользуем логику ACTUALIZATION_BUCKET_META,
-// но с формулировками под контекст "сколько времени осталось от норматива"
+// Цвета/иконки срочности дедлайна согласования
 export const DEADLINE_URGENCY_META = {
     normal: { label: "В пределах срока", color: "#1c7a4d", bg: "#e2f4ea", icon: CheckCircle2 },
     approaching: { label: "Срок приближается", color: "#2957c3", bg: "#e7eefc", icon: Clock },

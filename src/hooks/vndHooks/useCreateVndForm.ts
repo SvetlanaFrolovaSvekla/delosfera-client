@@ -32,12 +32,12 @@ export function useCreateVndForm() {
     const [secrecyLevelId, setSecrecyLevelId] = useState("");
     const [userGroupIds, setUserGroupIds] = useState<string[]>([]);
 
-    // --- Разработчик (СП) — теперь всегда = подразделение текущего пользователя, не редактируется ---
+    // --- Разработчик (СП)  = подразделение текущего пользователя, не редактируется ---
     const [orgUnits, setOrgUnits] = useState<OrganizationUnitResponse[]>([]);
     const [currentUser, setCurrentUser] = useState<UserResponse | null>(null);
     const [developerId, setDeveloperId] = useState("");
 
-    // Ответственные исполнители — редактируются пользователем
+    // Ответственные исполнители - редактируются пользователем
     const [responsibleExecutorIds, setResponsibleExecutorIdsState] = useState<string[]>([]);
     const executorsTouched = useRef(false);
 
@@ -75,7 +75,7 @@ export function useCreateVndForm() {
         [orgUnits, developerId]
     );
 
-    // Для MultiSelectField (ответственные исполнители) — весь список СП в формате {key, label}
+    // Для MultiSelectField (ответственные исполнители) - весь список СП в формате {key, label}
     const executorOptions = useMemo(
         () => orgUnits.map((u) => ({key: String(u.id), label: u.name})),
         [orgUnits]

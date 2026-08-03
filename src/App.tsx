@@ -49,7 +49,7 @@ function App() {
                     {/* Маршрут БЕЗ Sidebar и Header, доступен без авторизации */}
                     <Route path="/auth" element={<AuthorizationPage/>}/>
 
-                    {/* Всё остальное — защищено, требует авторизации */}
+                    {/* Всё остальное - защищено, требует авторизации */}
                     <Route element={<ProtectedRoute/>}>
                         <Route element={<MainLayout/>}>
                             <Route path="/" element={<HomePage/>}/>

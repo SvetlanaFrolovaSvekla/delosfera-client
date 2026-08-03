@@ -20,6 +20,39 @@ export type ActualizationPeriod =
     | "Triennial"   // 36 месяцев
     | "Custom";     // явная дата dueActualizationDate
 
+
+// --- Обновление реквизитов ---
+export interface UpdateVndRequisitesRequest {
+    typeId: number;
+    organId: number;
+    developerId?: number | null;
+    curatorDeveloperId?: number | null;
+    responsibleExecutorIds?: number[];
+
+    titleRu: string;
+    titleEn?: string | null;
+    titleKg?: string | null;
+
+    adoptionDate?: string | null;
+    adoptionCode?: string | null;
+    effectiveDate?: string | null;
+
+    dueActualizationDate?: string | null;
+    lastActualizationDate?: string | null;
+    lastActualizationHadChanges?: boolean;
+
+    cancelDate?: string | null;
+    cancelCode?: string | null;
+    cancelReason?: string | null;
+    archivedDate?: string | null;
+    daysInArchive?: number | null;
+
+    keywordIds?: number[];
+    rubricIds?: number[];
+    secrecyLevelId?: number | null;
+    userGroupIds?: number[];
+}
+
 // --- Запрос на поиск ---
 export interface VndSearchRequest {
     code?: string;

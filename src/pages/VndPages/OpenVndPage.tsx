@@ -10,6 +10,16 @@ import {formatDate} from "@/utils/dateUtils.ts";
 import {VndPassportTab} from "@/components/componentsVND/componentsOpenVndPage/VndPassportTab.tsx";
 import {VndEditionsTab} from "@/components/componentsVND/componentsOpenVndPage/VndEditionsTab.tsx";
 import {VndCoordinationTab} from "@/components/componentsVND/componentsOpenVndPage/VndCoordinationTab.tsx";
+import {
+    TYPE_VND,
+    ORGANS_APPROVAL,
+    ORG_UNITS,
+    KEYWORDS,
+    RUBRICS,
+    SECURITY_LEVELS,
+    USER_GROUPS,
+} from "@/service/mockData/DictionaryData.tsx";
+import {USERS} from "@/service/mockData/UserData.tsx";
 
 export function OpenVndPage() {
     const {id} = useParams<{ id: string }>();
@@ -67,7 +77,7 @@ export function OpenVndPage() {
 
             <VndStatusBanner status={vnd.status}/>
 
-            {/* Табы — состав зависит от статуса, «Реквизиты» есть всегда */}
+            {/* Табы - состав зависит от статуса, «Реквизиты» есть всегда */}
             <div className="flex items-center gap-6 border-b border-[#e9edf3] mb-5 overflow-x-auto">
                 {tabs.map((t) => (
                     <button
@@ -84,7 +94,21 @@ export function OpenVndPage() {
                 ))}
             </div>
 
-            {activeTab === "passport" && <VndPassportTab vnd={vnd}/>}
+            {activeTab === "passport" && (
+                <VndPassportTab
+                    vnd={vnd}
+                    onVndChanged={refetch}
+                    typeOptions={TYPE_VND.map((x) => ({key: String(x.id), label: x.name}))}
+                    organOptions={ORGANS_APPROVAL.map((x) => ({key: String(x.id), label: x.name}))}
+                    developerOptions={ORG_UNITS.map((x) => ({key: String(x.id), label: x.name}))}
+                    curatorOptions={USERS.map((x) => ({key: String(x.id), label: x.fullName}))}
+                    executorOptions={ORG_UNITS.map((x) => ({key: String(x.id), label: x.name}))}
+                    keywordOptions={KEYWORDS.map((k) => ({key: k.id, label: k.name, parentId: k.parentId}))}
+                    rubricOptions={RUBRICS.map((r) => ({key: r.id, label: r.name, parentId: r.parentId}))}
+                    secrecyOptions={SECURITY_LEVELS.map((x) => ({key: String(x.id), label: x.name}))}
+                    userGroupOptions={USER_GROUPS.map((g) => ({key: g.id, label: g.name}))}
+                />
+            )}
             {activeTab === "editions" && <VndEditionsTab vnd={vnd} onVndChanged={refetch}/>}
             {activeTab === "approval" && <VndCoordinationTab vnd={vnd}/>}
             {activeTab === "actual" && <VndTabPlaceholder/>}

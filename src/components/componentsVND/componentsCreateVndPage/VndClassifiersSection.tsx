@@ -25,7 +25,7 @@ export function VndClassifiersSection({
             <div className="text-[11px] font-bold tracking-[.04em] uppercase text-[#a3adbd] mb-2.5">
                 Классификаторы
             </div>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 [&>*]:min-w-0">
                 <MultiSelectField
                     label="Ключевые слова"
                     modalTitle="Ключевые слова"

@@ -15,22 +15,22 @@ export function useVndActualization() {
     const todayISO = useMemo(() => formatISO(today), [today]);
 
     const [actualizationMode, setActualizationMode] = useState<ActualizationMode>("year");
-    const [manualDueDate, setManualDueDate] = useState(""); // дд.мм.гггг — только в режиме "Ввод даты"
+    const [manualDueDate, setManualDueDate] = useState(""); // дд.мм.гггг - только в режиме "Ввод даты"
 
-    // ISO-версия введённой вручную даты (или "" если ещё не введена / некорректна) — то, что уйдёт на бэк
+    // ISO-версия введённой вручную даты (или "" если ещё не введена / некорректна) - то, что уйдёт на бэк
     const manualDueDateISO = useMemo(() => {
         const parsed = parseDDMMYYYY(manualDueDate);
         return parsed ? formatISO(parsed) : "";
     }, [manualDueDate]);
 
-    // Если выбран пресет — дата считается от сегодня и не редактируется вручную.
-    // Если выбран "Ввод даты" — используется то, что ввёл пользователь.
+    // Если выбран пресет - дата считается от сегодня и не редактируется вручную.
+    // Если выбран "Ввод даты" - используется то, что ввёл пользователь.
     const computedDueDate =
         actualizationMode === "date"
             ? manualDueDateISO
             : formatISO(addMonths(today, PERIOD_MONTHS[actualizationMode]));
 
-    // То же самое, но в формате дд.мм.гггг — для отображения в DatePickerInput
+    // То же самое, но в формате дд.мм.гггг - для отображения в DatePickerInput
     const computedDueDateDisplay =
         actualizationMode === "date"
             ? manualDueDate

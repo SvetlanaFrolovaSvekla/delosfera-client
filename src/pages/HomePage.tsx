@@ -5,56 +5,15 @@ import {getTimeGreeting} from "@/utils/getTimeGreeting.ts";
 import {getFirstLastName} from "@/utils/userNaming.ts";
 import {Loader} from "@/components/componentsGeneral/Loader.tsx";
 import {getFormattedDate} from "@/utils/dateUtils.ts";
+import {useVndTasks} from "@/hooks/tasksVndHooks/useVndTasks.ts";
+import {VndTaskCard} from "@/pages/TasksPages/VndTaskCard.tsx"; // поправь путь, если файл лежит в другом месте
 
-// TODO: заменить моковые данные реальными из API (сейчас — дашборд роли "Отдел методологии")
+// TODO: заменить моковые данные реальными из API (сейчас - дашборд роли "Отдел методологии")
 const kpis = [
     { label: "На финальном контроле", value: 4, col: "#7a5ce0", tint: "#efeafe", bd: "#ddd0fa" },
     { label: "Просроченные позиции плана", value: 3, col: "#c0392b", tint: "#fbe7e4", bd: "#f1c9c2" },
     { label: "Актуализации < 30 дней", value: 6, col: "#b3730a", tint: "#fdf3e0", bd: "#f0dcae" },
     { label: "ТИД в работе", value: 12, col: "var(--app-accent, #2f68f5)", tint: "var(--app-soft, #e9f0ff)", bd: "var(--app-bd, #cbddff)" },
-];
-
-const tasks = [
-    {
-        code: "ТИД-2026-014",
-        badge: "Финальный контроль",
-        badgeCol: "#7a5ce0",
-        badgeBg: "#efeafe",
-        title: "Финальный контроль — все этапы завершены",
-        meta: "Внесение правок → повторное согласование",
-        due: "Сегодня",
-        dueCol: "#c0392b",
-    },
-    {
-        code: "ПЛАН-2026",
-        badge: "На актуализации",
-        badgeCol: "#b3730a",
-        badgeBg: "#fbeecf",
-        title: "Просрочка: «Политика управления рисками» −4 дня",
-        meta: "Копия куратору — ЧП Э. Сыдыков",
-        due: "Просрочено",
-        dueCol: "#c0392b",
-    },
-    {
-        code: "ТИД-2026-011",
-        badge: "Черновик",
-        badgeCol: "#5b6675",
-        badgeBg: "#eef1f5",
-        title: "Процесс прерван по сроку Инициатора → «Черновик»",
-        meta: "Требует решения методолога",
-        due: "—",
-        dueCol: "#8b97ab",
-    },
-    {
-        code: "Маршруты",
-        badge: "На согласовании",
-        badgeCol: "#2f68f5",
-        badgeBg: "#e9f0ff",
-        title: "Обновить глобальные правила обязательных согласующих",
-        meta: "Авто-включение по Положению",
-        due: "—",
-        dueCol: "#8b97ab",
-    },
 ];
 
 const ryg = [
@@ -76,10 +35,26 @@ const activity = [
     { icon: "vnd" as const, col: "#7a5ce0", bg: "#efeafe", text: "ВНД-062 переведён в статус «Консолидация»", time: "2 ч назад" },
 ];
 
+// Сколько задач показывать в сводке на главной
+const HOME_TASKS_LIMIT = 4;
+
 export function HomePage() {
     const { user, loading } = useAuth();
     const roleDept = user?.orgUnit?.titleRu ?? ""; // СП
     const rolePosition = user?.position?.name // Должность
+
+    // Реальные задачи по всем скоупам (как на странице "Мои задачи"), объединённые в одну сводку
+    const coordination = useVndTasks("coordination");
+    const actualization = useVndTasks("actualization");
+    const consolidation = useVndTasks("consolidation");
+
+    const homeTasks = useMemo(
+        () => [...coordination.tasks, ...actualization.tasks, ...consolidation.tasks].slice(0, HOME_TASKS_LIMIT),
+        [coordination.tasks, actualization.tasks, consolidation.tasks]
+    );
+
+    const tasksTotalCount = coordination.tasks.length + actualization.tasks.length + consolidation.tasks.length;
+    const tasksLoading = coordination.isLoading || actualization.isLoading || consolidation.isLoading;
 
     // Текущая дата
     const formattedDate = useMemo(() => getFormattedDate(), []);
@@ -151,7 +126,7 @@ export function HomePage() {
                                 className="rounded-full bg-[var(--app-soft,_#e9f0ff)] px-2 py-[2px] text-[11.5px] font-bold text-[var(--app-accent,_#2f68f5)]"
                                 style={{ fontFamily: "'IBM Plex Mono', monospace" }}
                             >
-                                {tasks.length}
+                                {tasksTotalCount}
                             </span>
                         </div>
                         <button className="text-[12.5px] font-semibold text-[var(--app-accent,_#2f68f5)] hover:underline">
@@ -159,39 +134,17 @@ export function HomePage() {
                         </button>
                     </div>
                     <div>
-                        {tasks.map((t) => (
-                            <button
-                                key={t.code}
-                                className="flex w-full items-center gap-[13px] border-b border-[#f3f6f9] px-[18px] py-[13px] text-left hover:bg-[#f8fafc]"
-                            >
-                                <span className="grid h-9 w-9 flex-none place-items-center rounded-[10px]" style={{ background: t.badgeBg, color: t.badgeCol }}>
-                                    <Icon name="shield" width={18} height={18} />
-                                </span>
-                                <span className="min-w-0 flex-1">
-                                    <span className="flex items-center gap-2">
-                                        <span
-                                            className="text-[11.5px] font-semibold text-[var(--app-accent,_#2f68f5)]"
-                                            style={{ fontFamily: "'IBM Plex Mono', monospace" }}
-                                        >
-                                            {t.code}
-                                        </span>
-                                        <span
-                                            className="rounded-full px-[9px] py-[2px] text-[11px] font-semibold"
-                                            style={{ background: t.badgeBg, color: t.badgeCol }}
-                                        >
-                                            {t.badge}
-                                        </span>
-                                    </span>
-                                    <span className="mt-[3px] block truncate text-[13.5px] font-medium text-[#1c2740]">{t.title}</span>
-                                    <span className="mt-0.5 block text-[11.5px] text-[#8b97ab]">{t.meta}</span>
-                                </span>
-                                <span className="flex flex-none items-center gap-1.5 text-[11.5px] font-semibold" style={{ color: t.dueCol }}>
-                                    <Icon name="clock" width={14} height={14} />
-                                    {t.due}
-                                </span>
-                                <Icon name="chevr" width={17} height={17} className="flex-none text-[#c3ccd8]" />
-                            </button>
-                        ))}
+                        {tasksLoading ? (
+                            <Loader label="Загрузка задач…" fullHeight={false} />
+                        ) : homeTasks.length === 0 ? (
+                            <div className="px-[18px] py-6 text-center text-[13px] text-[#8b97ab]">
+                                Нет активных задач
+                            </div>
+                        ) : (
+                            homeTasks.map((task) => (
+                                <VndTaskCard key={task.vndId} task={task} />
+                            ))
+                        )}
                     </div>
                 </div>
 

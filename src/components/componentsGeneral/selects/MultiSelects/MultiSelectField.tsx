@@ -8,30 +8,30 @@ import {TreeMultiSelectModal, type TreeSelectOption} from "./TreeMultiSelectModa
 interface SelectListFieldProps {
     label?: string;
     modalTitle: string;
-    options: TreeSelectOption[]; // parentId опционален — работает и как плоский список
+    options: TreeSelectOption[];
     selectedKeys: string[];
     onChange: (keys: string[]) => void;
     searchPlaceholder?: string;
     selectedCountLabel?: string;
-    hierarchical?: boolean; // использовать TreeMultiSelectModal вместо плоского MultiSelectModal
+    hierarchical?: boolean;
     boldLabel?: boolean;
     required?: boolean;
-    showChevron?: boolean; // показывать ли стрелочку-шеврон справа в поле
+    showChevron?: boolean;
 }
 
 export function MultiSelectField({
-                                    label,
-                                    modalTitle,
-                                    options,
-                                    selectedKeys,
-                                    onChange,
-                                    searchPlaceholder,
-                                    selectedCountLabel,
-                                    hierarchical = false,
-                                    boldLabel = true,
-                                    required = false,
-                                    showChevron = true,
-                                }: SelectListFieldProps) {
+                                     label,
+                                     modalTitle,
+                                     options = [],
+                                     selectedKeys,
+                                     onChange,
+                                     searchPlaceholder,
+                                     selectedCountLabel,
+                                     hierarchical = false,
+                                     boldLabel = true,
+                                     required = false,
+                                     showChevron = true,
+                                 }: SelectListFieldProps) {
     const {t} = useTranslation();
     const [modalOpen, setModalOpen] = useState(false);
 
@@ -44,7 +44,7 @@ export function MultiSelectField({
 
     return (
         <>
-            <div>
+            <div className="min-w-0">
                  <span
                      className={
                          boldLabel
@@ -56,9 +56,9 @@ export function MultiSelectField({
                 </span>
                 <div
                     onClick={() => setModalOpen(true)}
-                    className="w-full min-h-[38px] px-2.5 py-[6px] rounded-[9px] border border-[#e5e9f0] bg-white outline-none box-border cursor-pointer flex items-center gap-[6px] hover:bg-[#f6f8fb]"
+                    className="w-full min-w-0 min-h-[38px] px-2.5 py-[6px] rounded-[9px] border border-[#e5e9f0] bg-white outline-none box-border cursor-pointer flex items-center gap-[6px] hover:bg-[#f6f8fb]"
                 >
-                    <div className="flex-1 flex flex-wrap items-center gap-[6px]">
+                    <div className="flex-1 min-w-0 flex flex-wrap items-center gap-[6px]">
                         {selectedOptions.length === 0 && (
                             <span className="text-[13px] text-[#a3adbd] px-[3px]">
                                 {t("general.openList")}
@@ -73,9 +73,9 @@ export function MultiSelectField({
                             selectedOptions.map((o) => (
                                 <span
                                     key={o.key}
-                                    className="inline-flex items-center gap-[6px] pl-[9px] pr-[6px] py-[3px] rounded-full bg-[#f2f5f9] text-[12px] text-[#3a4560] font-medium"
+                                    className="inline-flex min-w-0 max-w-full items-center gap-[6px] pl-[9px] pr-[6px] py-[3px] rounded-full bg-[#f2f5f9] text-[12px] text-[#3a4560] font-medium"
                                 >
-                                    <span className="truncate max-w-[160px] hover:underline cursor-pointer">
+                                    <span className="truncate min-w-0 max-w-[160px] hover:underline cursor-pointer">
                                         {o.label}
                                     </span>
                                     <button

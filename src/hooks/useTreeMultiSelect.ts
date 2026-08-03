@@ -27,7 +27,7 @@ export function useTreeMultiSelect<T extends BaseTreeOption>({
     const [collapsed, setCollapsed] = useState<Set<string>>(new Set());
     const [prevOpen, setPrevOpen] = useState(open);
 
-    // Сброс черновика при каждом открытии модалки — обновление state во время рендера
+    // Сброс черновика при каждом открытии модалки - обновление state во время рендера
     if (open !== prevOpen) {
         setPrevOpen(open);
         if (open) {

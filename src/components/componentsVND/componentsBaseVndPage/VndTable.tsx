@@ -71,8 +71,6 @@ export function VndTable({
                     const meta = STATUS_META[r.status];
                     const StatusIcon = meta.icon;
                     const days = daysUntil(r.dueActualizationDate);
-                    // Цвет — из готового статуса, который прислал бэк (единый источник правды
-                    // с страницей планирования актуализации), а не пересчитывается по days на фронте
                     const bucketMeta = r.actualizationBucket ? ACTUALIZATION_BUCKET_META[r.actualizationBucket] : null;
                     const dot = bucketMeta?.color ?? "#a3adbd";
 

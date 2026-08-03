@@ -21,7 +21,6 @@ export function useVndSearch(request: VndSearchRequest, debounceMs = 300) {
         }, debounceMs);
 
         return () => { cancelled = true; clearTimeout(timer); };
-        // JSON.stringify — самый простой способ не городить кучу зависимостей
     }, [JSON.stringify(request), debounceMs]);
 
     return { data, loading, error };

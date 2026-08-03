@@ -1,9 +1,10 @@
-import type { MouseEvent } from "react";
-import { Link } from "react-router-dom";
-import type { VndTaskResponse } from "@/service/tasksVndService/tasksServiceTypes.ts";
-import { COORDINATION_STAGE_META, DEADLINE_URGENCY_META, TASK_SCOPE_META } from "@/constants/vndStatus.ts";
-import { Icon } from "@/components/icons/Icon";
-import { getDeadlineUrgency, getRemainingLabel } from "@/utils/dateUtils.ts";
+import type {MouseEvent} from "react";
+import {Link} from "react-router-dom";
+import type {VndTaskResponse} from "@/service/tasksVndService/tasksServiceTypes.ts";
+import {COORDINATION_STAGE_META, TASK_SCOPE_META} from "@/constants/vndStatus.ts";
+import {getActionTitle, getDeadlineTone, getMetaText} from "@/utils/tasksUtils.ts";
+import {Icon} from "@/components/icons/Icon";
+
 
 interface VndTaskCardProps {
     task: VndTaskResponse;
@@ -16,52 +17,8 @@ const handleClick = (e: MouseEvent<HTMLAnchorElement>) => {
     }
 };
 
-function getDeadlineTone(deadlineAt: string | null, totalHours: number | null): { label: string; color: string } {
-    if (!deadlineAt) return { label: "—", color: "#8b97ab" };
 
-    const urgency = getDeadlineUrgency(deadlineAt, totalHours);
-    const label = getRemainingLabel(deadlineAt);
-
-    return { label, color: DEADLINE_URGENCY_META[urgency].color };
-}
-
-function getActionTitle(task: VndTaskResponse): string {
-    const vndTitle = `«${task.vndTitle}»`;
-
-    if (task.scope === "coordination") {
-        switch (task.stagePhase) {
-            case "primary":
-                return `Провести первичное согласование редакции ВНД ${vndTitle}`;
-            case "repeat":
-                return `Провести согласование после внесённых инициатором изменений по вашим правкам ВНД ${vndTitle}`;
-            case "final":
-                return `Проверить финальную версию редакции ВНД ${vndTitle}`;
-            default:
-                return `Согласовать редакцию ВНД ${vndTitle}`;
-        }
-    }
-
-    if (task.scope === "actualization") {
-        return `Актуализировать ВНД ${vndTitle}`;
-    }
-
-    return `Провести консолидацию ВНД ${vndTitle}`;
-}
-
-function getMetaText(task: VndTaskResponse): string {
-    if (task.scope === "coordination") {
-        const parts: string[] = [];
-
-        if (task.redactionCode) parts.push(`Редакция ${task.redactionCode}`);
-        if (task.initiatorName) parts.push(`Инициатор: ${task.initiatorName}`);
-        if (task.deadlineHours) parts.push(`Норматив: ${task.deadlineHours} ч`);
-
-        return parts.length > 0 ? parts.join(" · ") : "Ожидает вашего решения";
-    }
-    return "Требует внимания ответственного";
-}
-
-export function VndTaskCard({ task }: VndTaskCardProps) {
+export function VndTaskCard({task}: VndTaskCardProps) {
     const stageMeta = task.stagePhase
         ? COORDINATION_STAGE_META[task.stagePhase as keyof typeof COORDINATION_STAGE_META]
         : null;
@@ -85,22 +42,22 @@ export function VndTaskCard({ task }: VndTaskCardProps) {
         >
             <span
                 className="grid h-9 w-9 flex-none place-items-center rounded-[10px]"
-                style={{ background: badgeMeta.bg, color: badgeMeta.color }}
+                style={{background: badgeMeta.bg, color: badgeMeta.color}}
             >
-                <BadgeIcon size={18} />
+                <BadgeIcon size={18}/>
             </span>
 
             <span className="min-w-0 flex-1">
                 <span className="flex items-center gap-2">
                     <span
                         className="text-[11.5px] font-semibold text-[var(--app-accent,_#2f68f5)]"
-                        style={{ fontFamily: "'IBM Plex Mono', monospace" }}
+                        style={{fontFamily: "'IBM Plex Mono', monospace"}}
                     >
                         ВНД-{task.vndCode}
                     </span>
                     <span
                         className="rounded-full px-[9px] py-[2px] text-[11px] font-semibold"
-                        style={{ background: badgeMeta.bg, color: badgeMeta.color }}
+                        style={{background: badgeMeta.bg, color: badgeMeta.color}}
                     >
                         {badgeMeta.label}
                     </span>
@@ -113,12 +70,13 @@ export function VndTaskCard({ task }: VndTaskCardProps) {
                 </span>
             </span>
 
-            <span className="flex flex-none items-center gap-1.5 text-[11.5px] font-semibold" style={{ color: due.color }}>
-                <Icon name="clock" width={14} height={14} />
+            <span className="flex flex-none items-center gap-1.5 text-[11.5px] font-semibold"
+                  style={{color: due.color}}>
+                <Icon name="clock" width={14} height={14}/>
                 {due.label}
             </span>
 
-            <Icon name="chevr" width={17} height={17} className="flex-none text-[#c3ccd8]" />
+            <Icon name="chevr" width={17} height={17} className="flex-none text-[#c3ccd8]"/>
         </Link>
     );
 }

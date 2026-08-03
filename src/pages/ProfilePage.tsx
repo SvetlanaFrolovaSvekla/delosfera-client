@@ -77,7 +77,7 @@ export function ProfilePage() {
             </div>
 
             <div className="grid grid-cols-1 lg:grid-cols-[1fr_360px] gap-[18px] items-start">
-                {/* Левая колонка — история действий */}
+                {/* Левая колонка - история действий */}
                 <div className="bg-white border border-[#e9edf3] rounded-2xl overflow-hidden">
                     <div className="px-[22px] pt-[17px] pb-[14px] border-b border-[#eef2f7]">
                         <h2 className="m-0 text-[15px] font-bold">История действий</h2>
@@ -106,7 +106,7 @@ export function ProfilePage() {
                         </div>
                     </div>
 
-                    {/* Электронная подпись — данных пока нет в UserResponse */}
+                    {/* Электронная подпись - данных пока нет */}
                     <div className="bg-white border border-[#e9edf3] rounded-2xl px-5 py-[18px]">
                         <div className="flex items-center gap-[9px] mb-[13px]">
                             <span className="w-[30px] h-[30px] flex-none rounded-lg bg-[var(--soft)] text-[var(--accent)] grid place-items-center">

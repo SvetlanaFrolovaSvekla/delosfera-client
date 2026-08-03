@@ -12,7 +12,7 @@ interface DisagreementMatrixTableProps {
     disabled?: boolean;
 }
 
-/** Встраиваемая таблица матрицы разногласий — без собственной внешней карточки,
+/** Встраиваемая таблица матрицы разногласий - без собственной внешней карточки,
  * т.к. используется внутри блока "Согласны ли вы со всеми замечаниями?". */
 export function DisagreementMatrixTable({rows, onAddRow, onDeleteRow, disabled}: DisagreementMatrixTableProps) {
     const [developerPosition, setDeveloperPosition] = useState("");

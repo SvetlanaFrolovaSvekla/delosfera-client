@@ -1,9 +1,12 @@
 // Компонента загрузки новой редакции
-import {useState} from "react";
+import {useMemo, useState} from "react";
 import {createPortal} from "react-dom";
 import {FileUp, Loader2, Paperclip, Trash2, X} from "lucide-react";
 import {vndService} from "@/service/vndService/vndService.ts";
 import type {VndRedactionResponse} from "@/service/vndService/vndServiceType.ts";
+import {useAuth} from "@/context/AuthContext.ts";
+import {PermissionCode} from "@/constants/permissions.ts";
+import {Clue} from "@/components/componentsGeneral/knowledgeBaseComponents/Clue.tsx";
 
 interface VndUploadRedactionModalProps {
     vndId: number;
@@ -63,15 +66,27 @@ function formatBytes(bytes: number): string {
     return `${(bytes / (1024 * 1024)).toFixed(1)} МБ`;
 }
 
-const MAX_FILE_SIZE = 50 * 1024 * 1024; // 50 МБ — совпадает с лимитом на бэке
+const MAX_FILE_SIZE = 50 * 1024 * 1024; // 50 МБ
 
 export function VndUploadRedactionModal({vndId, onClose, onUploaded}: VndUploadRedactionModalProps) {
+    const {user, hasPermission} = useAuth();
+    // Право обойтись без согласования
+    const canSkipApproval = hasPermission(PermissionCode.CreateVndWithoutApproval);
+
+    // Роли пользователя, которые конкретно дают это право - чтобы показать в подсказке
+    const grantingRoleNames = useMemo(() => {
+        if (!canSkipApproval || !user) return [];
+        return user.roles
+            .filter((role) => role.permissionCodes.includes(PermissionCode.CreateVndWithoutApproval))
+            .map((role) => role.name);
+    }, [canSkipApproval, user]);
+
     const [docRu, setDocRu] = useState<File | null>(null);
     const [docKg, setDocKg] = useState<File | null>(null);
     const [docEn, setDocEn] = useState<File | null>(null);
     const [attachments, setAttachments] = useState<File[]>([]);
     const [description, setDescription] = useState("");
-    const [requiresApproval, setRequiresApproval] = useState(false);
+    const [requiresApproval, setRequiresApproval] = useState(!canSkipApproval);
     const [submitting, setSubmitting] = useState(false);
     const [error, setError] = useState<string | null>(null);
 
@@ -105,7 +120,8 @@ export function VndUploadRedactionModal({vndId, onClose, onUploaded}: VndUploadR
                 docKg,
                 docEn,
                 description: description.trim() || undefined,
-                requiresApproval,
+                // Если права нет - всегда true, независимо от локального состояния чекбокса
+                requiresApproval: canSkipApproval ? requiresApproval : true,
                 attachments,
             });
             onUploaded(result);
@@ -195,16 +211,38 @@ export function VndUploadRedactionModal({vndId, onClose, onUploaded}: VndUploadR
                             className="w-full resize-none rounded-[10px] border border-[#e5e9f0] bg-[#f9fafc] p-3 text-[13px] text-[#26324a] outline-none focus:border-[#4e57d6] focus:bg-white"
                         />
                     </div>
-                    <label className="flex cursor-pointer items-center gap-2 text-[13px] text-[#26324a]">
-                        {/*TODO: эту функцию нужно будет настроить только дл главного методолога/может администратора*/}
-                        <input
-                            type="checkbox"
-                            checked={requiresApproval}
-                            onChange={(e) => setRequiresApproval(e.target.checked)}
-                            className="h-4 w-4 rounded border-[#d5dae3] accent-[#4e57d6]"
-                        />
-                        Требуется согласование
-                    </label>
+
+                    {/* Чекбокс показываем только тем, у кого есть права на публикацию редакции без согласования */}
+                    {canSkipApproval && (
+                        <div className="flex flex-col gap-2">
+                            <label className="flex cursor-pointer items-center gap-2 text-[13px] text-[#26324a]">
+                                <input
+                                    type="checkbox"
+                                    checked={requiresApproval}
+                                    onChange={(e) => setRequiresApproval(e.target.checked)}
+                                    className="h-4 w-4 rounded border-[#d5dae3] accent-[#4e57d6]"
+                                />
+                                Требуется согласование
+                            </label>
+
+                            <Clue>
+                                <span className="flex flex-wrap items-center gap-x-1.5 gap-y-1.5">
+                                    <span>
+                                        Вы можете загрузить редакцию без согласования — это право Вам даёт
+                                        {grantingRoleNames.length === 1 ? " роль:" : " роли:"}
+                                    </span>
+                                    {grantingRoleNames.map((name) => (
+                                        <span
+                                            key={name}
+                                            className="inline-flex items-center px-[9px] py-[3px] rounded-full bg-[#ececfc] text-[11.5px] font-semibold text-[#4e57d6] whitespace-nowrap"
+                                        >
+                                            {name}
+                                        </span>
+                                    ))}
+                                </span>
+                            </Clue>
+                        </div>
+                    )}
 
                     {error && (
                         <div

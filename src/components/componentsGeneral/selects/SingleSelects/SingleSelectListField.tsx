@@ -7,7 +7,7 @@ import {TreeSingleSelectModal, type TreeSelectOption} from "./TreeSingleSelectMo
 interface SingleSelectListFieldProps {
     label: string;
     modalTitle: string;
-    options: TreeSelectOption[]; // parentId опционален — работает и как плоский список
+    options: TreeSelectOption[]; // parentId опционален - работает и как плоский список
     selectedKey: string | null;
     onChange: (key: string | null) => void;
     searchPlaceholder?: string;
@@ -18,17 +18,17 @@ interface SingleSelectListFieldProps {
 }
 
 export function SingleSelectListField({
-                                    label,
-                                    modalTitle,
-                                    options,
-                                    selectedKey,
-                                    onChange,
-                                    searchPlaceholder,
-                                    placeholder,
-                                    boldLabel = true,
-                                    required = false,
-                                    showChevron = true,
-                                }: SingleSelectListFieldProps) {
+                                          label,
+                                          modalTitle,
+                                          options = [],
+                                          selectedKey,
+                                          onChange,
+                                          searchPlaceholder,
+                                          placeholder,
+                                          boldLabel = true,
+                                          required = false,
+                                          showChevron = true,
+                                      }: SingleSelectListFieldProps) {
     const {t} = useTranslation();
     const [modalOpen, setModalOpen] = useState(false);
 
@@ -36,7 +36,7 @@ export function SingleSelectListField({
 
     return (
         <>
-            <div>
+            <div className="min-w-0">
                 <span
                     className={
                         boldLabel

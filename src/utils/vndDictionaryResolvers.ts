@@ -11,9 +11,6 @@ import {
     RUBRICS,
 } from "@/service/mockData/DictionaryData.tsx";
 
-// Справочники, которых нет готовыми в VndResponse — резолвим через моки,
-// пока бэкенд не отдаёт их отдельными эндпоинтами. Мок-id — строки, с сервера id — числа.
-
 const orgUnitMap = new Map<string, OrganizationUnit>(ORG_UNITS.map((o) => [o.id, o]));
 export const orgUnitName = (id: number) => orgUnitMap.get(String(id))?.name ?? "—";
 

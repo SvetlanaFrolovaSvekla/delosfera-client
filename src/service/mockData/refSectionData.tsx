@@ -94,6 +94,14 @@ export const REF_SECTIONS: RefSection[] = [
                 icon: Folder,
                 path: "/refs/rubric",
             },
+            {
+                key: "coordination-users",
+                code: "01",
+                title: "Обязательные участники процесса согласования",
+                subtitle: "Определение обязательных участников согласования каждого ВНД",
+                icon: FileText,
+                path: "/refs/coordination-users",
+            },
         ],
     },
     {

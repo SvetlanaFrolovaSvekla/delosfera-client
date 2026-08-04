@@ -6,6 +6,7 @@ import {axiosInstance} from "@/service/axiosInstance.ts";
 import {MultiSelectField} from "@/components/componentsGeneral/selects/MultiSelects/MultiSelectField.tsx";
 import type {TreeSelectOption} from "@/components/componentsGeneral/selects/MultiSelects/TreeMultiSelectModal.tsx";
 import {EmptyState} from "@/components/componentsGeneral/EmptyState.tsx";
+import {useAuth} from "@/context/AuthContext.ts";
 
 export interface ApproverOption {
     id: number;
@@ -74,6 +75,8 @@ export function VndSelectApproverModal({
                                            onClose,
                                            onSelect,
                                        }: VndSelectApproverModalProps) {
+    const {user: currentUser} = useAuth();
+
     const [users, setUsers] = useState<ApproverOption[]>([]);
     const [orgUnits, setOrgUnits] = useState<OrgUnitOption[]>([]);
     const [loading, setLoading] = useState(true);
@@ -135,6 +138,7 @@ export function VndSelectApproverModal({
 
     const handlePick = (user: ApproverOption) => {
         if (excludedUserIds.has(user.id)) return;
+        if (currentUser?.id === user.id) return; // инициатор не может согласовывать сам себя
         onSelect(user);
         onClose();
     };
@@ -201,7 +205,8 @@ export function VndSelectApproverModal({
                     ) : (
                         <div className="flex flex-col gap-1">
                             {filteredUsers.map((u) => {
-                                const isExcluded = excludedUserIds.has(u.id);
+                                const isSelf = currentUser?.id === u.id;
+                                const isExcluded = excludedUserIds.has(u.id) || isSelf;
                                 return (
                                     <button
                                         key={u.id}
@@ -229,7 +234,12 @@ export function VndSelectApproverModal({
                                                         неактивен
                                                     </span>
                                                 )}
-                                                {isExcluded && (
+                                                {isSelf ? (
+                                                    <span
+                                                        className="flex-none rounded-full bg-[#fdf3ea] px-2 py-[1px] text-[10px] font-medium text-[#b3701e]">
+                                                        это вы
+                                                    </span>
+                                                ) : excludedUserIds.has(u.id) && (
                                                     <span
                                                         className="flex-none rounded-full bg-[#f0f1f5] px-2 py-[1px] text-[10px] font-medium text-[#8b97ab]">
                                                         уже выбран

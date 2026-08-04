@@ -1,7 +1,14 @@
-import {useState} from "react";
+import {useEffect, useState} from "react";
 import {ApprovalStageKind} from "@/service/coordinationService/coordinationServiceTypes.ts";
 import {FIXED_KIND_ORDER, FIXED_STAGE_ORG_UNITS, MAX_STAGES} from "@/constants/coordinationParams.ts";
 import type {ApproverOption} from "@/components/componentsCoordination/CoordinationRouteConstructor/functionalComponents/VndSelectApproverModal.tsx";
+import {
+    coordinationDefaultApproverService
+} from "@/service/dictionariesService/coordinationDefaultApproverService/coordinationDefaultApproverService.ts";
+import type {
+    CoordinationStageKind
+} from "@/service/dictionariesService/coordinationDefaultApproverService/coordinationDefaultApproverServiceType.ts";
+import {useAuth} from "@/context/AuthContext.ts";
 
 export interface StageDraft {
     localId: string;
@@ -10,6 +17,16 @@ export interface StageDraft {
     approverUserId: number | null;
     approverName: string | null;
 }
+
+// Соответствие строковых kind из справочника (backend) значениям enum ApprovalStageKind (frontend).
+// ВАЖНО: сверь имена членов ApprovalStageKind в coordinationServiceTypes.ts — если они называются
+// иначе (например camelCase или другие имена), поправь этот маппинг.
+const KIND_STRING_TO_ENUM: Record<CoordinationStageKind, ApprovalStageKind> = {
+    legal: ApprovalStageKind.Legal,
+    risk_management: ApprovalStageKind.RiskManagement,
+    compliance: ApprovalStageKind.Compliance,
+    methodology: ApprovalStageKind.Methodology,
+};
 
 // Создание фиксированных этапов
 function createInitialStages(): StageDraft[] {
@@ -26,6 +43,50 @@ export function useStageDrafts() {
     const [stages, setStages] = useState<StageDraft[]>(createInitialStages);
     // Этап, для которого открыта VndSelectApproverModal (выбор согласующего)
     const [pickerStageId, setPickerStageId] = useState<string | null>(null);
+    const {user: currentUser} = useAuth();
+
+    // Подтягиваем дефолтных согласующих из справочника "Обязательные участники
+    // процесса согласования" и заполняем ими фиксированные этапы, если пользователь
+    // ещё не выбрал согласующего вручную
+    useEffect(() => {
+        let cancelled = false;
+
+        coordinationDefaultApproverService
+            .getAll()
+            .then((defaults) => {
+                if (cancelled) return;
+
+                setStages((prev) =>
+                    prev.map((stage) => {
+                        if (stage.approverUserId !== null) return stage; // пользователь уже выбрал вручную
+
+                        const enumKind = stage.kind;
+                        const defaultEntry = defaults.find((d) => KIND_STRING_TO_ENUM[d.kind] === enumKind);
+
+                        if (!defaultEntry?.approverUserId) return stage;
+
+                        // Инициатор не может согласовывать сам себя — если дефолт совпадает
+                        // с текущим пользователем, оставляем этап пустым, пусть выберет вручную
+                        if (defaultEntry.approverUserId === currentUser?.id) return stage;
+
+                        return {
+                            ...stage,
+                            approverUserId: defaultEntry.approverUserId,
+                            approverName: defaultEntry.approverName,
+                        };
+                    }),
+                );
+            })
+            .catch(() => {
+                // Не удалось подтянуть дефолты — не критично, просто оставляем поля пустыми,
+                // пользователь выберет согласующих вручную как раньше
+            });
+
+        return () => {
+            cancelled = true;
+        };
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [currentUser?.id]);
 
     const addCustomStage = () => {
         setStages((prev) => {

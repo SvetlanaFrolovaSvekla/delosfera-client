@@ -37,8 +37,7 @@ const EDITIONS_LABEL_BY_STATUS: Partial<Record<VndStatusKey, string>> = {
 // актуализировать и связывать пока нечего: первый цикл начнётся только
 // после появления редакции.
 //
-// TODO: "review" — предположила по аналогии с memory (Draft → Review), сверь
-// с реальным значением VndStatusKey для статуса «На согласовании».
+// С реальным значением VndStatusKey для статуса «На согласовании».
 const TABS_BY_STATUS: Partial<Record<VndStatusKey, VndTabId[]>> = {
     draft: ["passport", "editions"],
     review: ["passport", "editions", "approval", "links"],

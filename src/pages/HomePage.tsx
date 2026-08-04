@@ -6,7 +6,7 @@ import {getFirstLastName} from "@/utils/userNaming.ts";
 import {Loader} from "@/components/componentsGeneral/Loader.tsx";
 import {getFormattedDate} from "@/utils/dateUtils.ts";
 import {useVndTasks} from "@/hooks/tasksVndHooks/useVndTasks.ts";
-import {VndTaskCard} from "@/pages/TasksPages/VndTaskCard.tsx"; // поправь путь, если файл лежит в другом месте
+import {VndTaskCard} from "@/pages/TasksPages/VndTaskCard.tsx";
 
 // TODO: заменить моковые данные реальными из API (сейчас - дашборд роли "Отдел методологии")
 const kpis = [

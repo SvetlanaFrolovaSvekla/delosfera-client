@@ -1,5 +1,5 @@
 import {useState} from "react";
-import type {VndScope} from "@/service/mockData/BaseVndData.tsx";
+import type {VndScope} from "@/constants/vndTabs.ts";
 import {getColumnsForScope, getToggleableColumns} from "@/constants/vndColumns.ts";
 
 const DEFAULT_VISIBLE_ALL_ACTIVE: string[] = ["act", "status"];

@@ -76,7 +76,9 @@ export function VndStartApprovalModal({vndId, onClose, onStarted}: VndStartAppro
 
                 {/* Header */}
                 <div className="px-4 py-4 flex flex-none items-center justify-between border-b border-[#eef0f5]">
-                    <Clue/>
+                    <Clue>
+                        Добавьте согласующих на каждом этапе и задайте нормативы сроков! Зеленым выделены фиксированные этапы, которые нельзя открепить.
+                    </Clue>
                 </div>
 
                 {/* Контент */}

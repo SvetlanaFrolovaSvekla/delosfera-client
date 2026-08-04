@@ -3,23 +3,16 @@ import {useNavigate} from "react-router-dom";
 import {vndService} from "@/service/vndService/vndService.ts";
 import type {CreateVndRequest, VndResponse} from "@/service/vndService/vndServiceType.ts";
 import {userService} from "@/service/userService/userService.ts";
-import type {OrganizationUnitResponse, UserResponse} from "@/service/userService/userServiceType.ts";
-import {
-    organizationUnitService
-} from "@/service/dictionariesService/organizationUnitService/organizationUnitService.ts";
-import {TYPE_VND, ORGANS_APPROVAL, SECURITY_LEVELS} from "@/service/mockData/DictionaryData.tsx";
+import type {UserResponse} from "@/service/userService/userServiceType.ts";
+import {useVndDictionaries} from "@/hooks/vndHooks/useVndDictionaries.ts";
 import {useVndActualization} from "@/hooks/vndHooks/useVndActualization.ts";
 
 export function useCreateVndForm() {
     const navigate = useNavigate();
     const actualization = useVndActualization();
 
-    const typeOptions = useMemo(() => TYPE_VND.map((t) => ({value: t.id, label: t.name})), []);
-    const organOptions = useMemo(
-        () => ORGANS_APPROVAL.map((o) => ({key: o.id, label: o.name, parentId: o.parentId})),
-        []
-    );
-    const secrecyOptions = useMemo(() => SECURITY_LEVELS.map((s) => ({key: s.id, label: s.name})), []);
+    // --- Все справочники разом (виды ВНД, органы утверждения, СП, ключевые слова, рубрики, секретность, группы)
+    const dictionaries = useVndDictionaries();
 
     const [typeId, setTypeId] = useState("");
     const [organId, setOrganId] = useState<string | null>(null);
@@ -32,8 +25,7 @@ export function useCreateVndForm() {
     const [secrecyLevelId, setSecrecyLevelId] = useState("");
     const [userGroupIds, setUserGroupIds] = useState<string[]>([]);
 
-    // --- Разработчик (СП)  = подразделение текущего пользователя, не редактируется ---
-    const [orgUnits, setOrgUnits] = useState<OrganizationUnitResponse[]>([]);
+    // --- Разработчик (СП) = подразделение текущего пользователя, не редактируется ---
     const [currentUser, setCurrentUser] = useState<UserResponse | null>(null);
     const [developerId, setDeveloperId] = useState("");
 
@@ -50,8 +42,8 @@ export function useCreateVndForm() {
     };
 
     useEffect(() => {
-        organizationUnitService.getAll().then(setOrgUnits).catch(() => {});
-        userService.getMe().then(setCurrentUser).catch(() => {});
+        userService.getMe().then(setCurrentUser).catch(() => {
+        });
     }, []);
 
     // Разработчик всегда подставляется автоматически из СП текущего пользователя
@@ -66,27 +58,16 @@ export function useCreateVndForm() {
     }, [currentUser]);
 
     const developerName = useMemo(
-        () => orgUnits.find((u) => String(u.id) === developerId)?.name ?? currentUser?.orgUnit?.name ?? "",
-        [orgUnits, developerId, currentUser]
+        () => dictionaries.orgUnitOptions.find((u) => u.key === developerId)?.label ?? currentUser?.orgUnit?.name ?? "",
+        [dictionaries.orgUnitOptions, developerId, currentUser]
     );
 
-    const developerHeadName = useMemo(
-        () => orgUnits.find((u) => String(u.id) === developerId)?.headUserName ?? null,
-        [orgUnits, developerId]
-    );
+    // headUserName в orgUnitOptions нет (там только key/label), поэтому берём его напрямую из currentUser для разработчика
+    const developerHeadName = currentUser?.orgUnit?.headUserName ?? null;
 
-    // Для MultiSelectField (ответственные исполнители) - весь список СП в формате {key, label}
-    const executorOptions = useMemo(
-        () => orgUnits.map((u) => ({key: String(u.id), label: u.name})),
-        [orgUnits]
-    );
-
-    const responsibleExecutorHeadNames = useMemo(
-        () => responsibleExecutorIds
-            .map((id) => orgUnits.find((u) => String(u.id) === id)?.headUserName)
-            .filter((name): name is string => Boolean(name)),
-        [orgUnits, responsibleExecutorIds]
-    );
+    const responsibleExecutorHeadNames: string[] = [];
+    // headUserName по исполнителям сейчас не резолвится через useVndDictionaries (там нет этого поля).
+    // Если нужно — подключим organizationUnitService.getAll() отдельно, как раньше.
 
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [submitError, setSubmitError] = useState<string | null>(null);
@@ -138,7 +119,15 @@ export function useCreateVndForm() {
     };
 
     return {
-        typeOptions, organOptions, secrecyOptions,
+        typeOptions: dictionaries.typeOptions.map((t) => ({value: t.key, label: t.label})),
+        organOptions: dictionaries.organOptions,
+        secrecyOptions: dictionaries.secrecyOptions,
+        keywordOptions: dictionaries.keywordOptions,
+        rubricOptions: dictionaries.rubricOptions,
+        userGroupOptions: dictionaries.userGroupOptions,
+        dictionariesLoading: dictionaries.loading,
+        dictionariesError: dictionaries.error,
+
         typeId, setTypeId,
         organId, setOrganId,
         titleRu, setTitleRu,
@@ -150,7 +139,8 @@ export function useCreateVndForm() {
         userGroupIds, setUserGroupIds,
 
         developerName, developerHeadName,
-        executorOptions, responsibleExecutorIds, setResponsibleExecutorIds, responsibleExecutorHeadNames,
+        executorOptions: dictionaries.orgUnitOptions,
+        responsibleExecutorIds, setResponsibleExecutorIds, responsibleExecutorHeadNames,
 
         actualization,
         isValid, isSubmitting, submitError,

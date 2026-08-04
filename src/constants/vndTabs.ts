@@ -1,6 +1,13 @@
-import type {VndStatusKey} from "@/service/vndService/vndServiceType.ts";
+// статусы ВНД действующие, на актуализации, на согласовании, на консолидации, архивирован, черновик
+export type VndStatusKey = "active" | "onact" | "review" | "consol" | "arch" | "draft";
 
-export const VND_TAB_IDS = ["passport", "editions", "links", "approval", "actual"] as const;
+// статусы последней актуализации: без изменений, с изменениями
+export type LastActualizationStatus = "no_changes" | "with_changes";
+
+// Режимы просмотра реестра ВНД:: все, действующие, архивированные, черновики
+export type VndScope = "all" | "active" | "arch" | "draft";
+// Режимы открытого ВНД:
+export const VND_TAB_IDS = ["passport", "editions", "links", "history", "approval", "actual"] as const;
 export type VndTabId = (typeof VND_TAB_IDS)[number];
 
 interface VndTabMeta {
@@ -11,7 +18,8 @@ interface VndTabMeta {
 const BASE_LABELS: Record<VndTabId, string> = {
     passport: "Реквизиты",
     editions: "Редакции",
-    links: "Связи и история",
+    links: "Связи",
+    history: "История",
     approval: "Ход согласования",
     actual: "Актуализация",
 };

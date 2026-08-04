@@ -2,6 +2,7 @@ import {useNavigate, useParams} from "react-router-dom";
 import {useState} from "react";
 import {ArrowLeft} from "lucide-react";
 import {useVndById} from "@/hooks/vndHooks/useVndById.ts";
+import {useVndDictionaries} from "@/hooks/vndHooks/useVndDictionaries.ts";
 import {STATUS_META} from "@/constants/vndStatus.ts";
 import {getVndTabs, type VndTabId} from "@/constants/vndTabs.ts";
 import {VndStatusBanner} from "@/components/componentsGeneral/knowledgeBaseComponents/VndStatusBanner.tsx";
@@ -10,31 +11,34 @@ import {formatDate} from "@/utils/dateUtils.ts";
 import {VndPassportTab} from "@/components/componentsVND/componentsOpenVndPage/VndPassportTab.tsx";
 import {VndEditionsTab} from "@/components/componentsVND/componentsOpenVndPage/VndEditionsTab.tsx";
 import {VndCoordinationTab} from "@/components/componentsVND/componentsOpenVndPage/VndCoordinationTab.tsx";
-import {
-    TYPE_VND,
-    ORGANS_APPROVAL,
-    ORG_UNITS,
-    KEYWORDS,
-    RUBRICS,
-    SECURITY_LEVELS,
-    USER_GROUPS,
-} from "@/service/mockData/DictionaryData.tsx";
-import {USERS} from "@/service/mockData/UserData.tsx";
+import {Loader} from "@/components/componentsGeneral/Loader.tsx";
+import {EmptyState} from "@/components/componentsGeneral/EmptyState.tsx";
+import {VndLinksTab} from "@/components/componentsVND/componentsOpenVndPage/VndLinksTab.tsx";
+import {VndHistoryTab} from "@/components/componentsVND/componentsOpenVndPage/VndHistoryTab.tsx";
 
 export function OpenVndPage() {
     const {id} = useParams<{ id: string }>();
     const {data: vnd, loading, error, refetch} = useVndById(id ? Number(id) : undefined);
+    const dictionaries = useVndDictionaries();
     const navigate = useNavigate();
     const [tab, setTab] = useState<VndTabId>("passport");
 
-    if (loading) {
-        return <div className="py-10 text-center text-[13px] text-[#8b97ab]">Загрузка…</div>;
+    if (loading || dictionaries.loading) {
+        return <Loader label="Загрузка…" fullHeight={false}/>;
     }
 
     if (error) {
         return (
             <div className="my-4 mx-auto max-w-[1000px] rounded-md border border-[#f2c2c2] bg-[#fdf1f1] px-4 py-3 text-[13px] text-[#c0392b]">
                 Не удалось загрузить документ: {error}
+            </div>
+        );
+    }
+
+    if (dictionaries.error) {
+        return (
+            <div className="w-full max-w-[1700px] mx-auto px-4 sm:px-6 pt-5 sm:pt-[26px] pb-10 sm:pb-[60px]">
+                <EmptyState variant="error" title="Не удалось загрузить данные!" description={dictionaries.error}/>
             </div>
         );
     }
@@ -98,21 +102,22 @@ export function OpenVndPage() {
                 <VndPassportTab
                     vnd={vnd}
                     onVndChanged={refetch}
-                    typeOptions={TYPE_VND.map((x) => ({key: String(x.id), label: x.name}))}
-                    organOptions={ORGANS_APPROVAL.map((x) => ({key: String(x.id), label: x.name}))}
-                    developerOptions={ORG_UNITS.map((x) => ({key: String(x.id), label: x.name}))}
-                    curatorOptions={USERS.map((x) => ({key: String(x.id), label: x.fullName}))}
-                    executorOptions={ORG_UNITS.map((x) => ({key: String(x.id), label: x.name}))}
-                    keywordOptions={KEYWORDS.map((k) => ({key: k.id, label: k.name, parentId: k.parentId}))}
-                    rubricOptions={RUBRICS.map((r) => ({key: r.id, label: r.name, parentId: r.parentId}))}
-                    secrecyOptions={SECURITY_LEVELS.map((x) => ({key: String(x.id), label: x.name}))}
-                    userGroupOptions={USER_GROUPS.map((g) => ({key: g.id, label: g.name}))}
+                    typeOptions={dictionaries.typeOptions}
+                    organOptions={dictionaries.organOptions}
+                    developerOptions={dictionaries.orgUnitOptions}
+                    curatorOptions={dictionaries.curatorOptions}
+                    executorOptions={dictionaries.orgUnitOptions}
+                    keywordOptions={dictionaries.keywordOptions}
+                    rubricOptions={dictionaries.rubricOptions}
+                    secrecyOptions={dictionaries.secrecyOptions}
+                    userGroupOptions={dictionaries.userGroupOptions}
                 />
             )}
             {activeTab === "editions" && <VndEditionsTab vnd={vnd} onVndChanged={refetch}/>}
             {activeTab === "approval" && <VndCoordinationTab vnd={vnd}/>}
             {activeTab === "actual" && <VndTabPlaceholder/>}
-            {activeTab === "links" && <VndTabPlaceholder/>}
+            {activeTab === "links" && <VndLinksTab vndId={vnd.id}/>}
+            {activeTab === "history" && <VndHistoryTab/>}
         </div>
     );
 }

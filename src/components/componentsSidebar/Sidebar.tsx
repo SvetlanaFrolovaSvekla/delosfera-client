@@ -1,12 +1,12 @@
 import {useState} from "react";
 import {useTranslation} from "react-i18next";
 import {Link, useLocation, useNavigate} from "react-router-dom";
-import {ChevronRight} from "lucide-react";
+import {useDictionaries} from "@/context/DictionariesContext.tsx";
+import {navGroups} from "@/service/mockData/SidebarData.tsx";
 import {CountBadge} from "@/components/componentsSidebar/CountBadge.tsx";
 import {Icon} from "@/components/icons/Icon";
-import {navGroups} from "@/service/mockData/SidebarData.tsx";
-import {RUBRICS} from "@/service/mockData/DictionaryData.tsx";
 import {RubricTreeModal} from "@/components/componentsGeneral/selects/MultiSelects/RubricTreeModal.tsx";
+import {ChevronRight} from "lucide-react";
 
 // Id пунктов, которые открывают модалку вместо перехода на страницу
 const MODAL_ITEM_IDS = ["vnd-rubric"];
@@ -18,6 +18,9 @@ export function Sidebar() {
     const [collapsed, setCollapsed] = useState(false); // Свернутость панели
     const [rubricModalOpen, setRubricModalOpen] = useState(false);
     const [rubricSelection, setRubricSelection] = useState<string[]>([]);
+
+    // Рубрики берём из общего контекста справочников — грузятся один раз на всё приложение
+    const {rubricOptions} = useDictionaries();
 
     const goToVndWithRubrics = (keys: string[]) => {
         if (keys.length === 0) return;
@@ -163,12 +166,12 @@ export function Sidebar() {
                 open={rubricModalOpen}
                 onClose={() => setRubricModalOpen(false)}
                 title={t("sidebar.items.vndRubric")}
-                options={RUBRICS.map((r) => ({key: r.id, label: r.name, parentId: r.parentId}))}
+                options={rubricOptions}
                 selectedKeys={rubricSelection}
                 onApply={(keys) => {
-                                      setRubricSelection(keys);
-                                        goToVndWithRubrics(keys);
-                                  }}
+                    setRubricSelection(keys);
+                    goToVndWithRubrics(keys);
+                }}
                 searchPlaceholder="Поиск рубрики…"
                 onGoToRubric={(key) => goToVndWithRubrics([key])}
             />

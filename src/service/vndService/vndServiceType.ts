@@ -204,3 +204,16 @@ export interface VndActualizationSummaryResponse {
     /** normal + approaching + critical + overdue. Документы без даты актуализации сюда не входят. */
     total: number;
 }
+
+export interface VndLinkItem {
+    id: number;
+    vndId: number;
+    code: string;
+    title: string;
+    status: string; // "active" | "onact" | "review" | "consol" | "arch" | "draft"
+}
+
+export interface VndLinksResponse {
+    outgoing: VndLinkItem[];
+    incoming: VndLinkItem[];
+}

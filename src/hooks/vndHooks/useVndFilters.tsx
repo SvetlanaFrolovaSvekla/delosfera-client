@@ -1,6 +1,6 @@
 import {useMemo, useState} from "react";
 import type {VndSearchRequest} from "@/service/vndService/vndServiceType.ts";
-import type {VndScope, VndStatusKey} from "@/service/mockData/BaseVndData.tsx";
+import type {VndScope, VndStatusKey} from "@/constants/vndTabs.ts";
 import {type DateFilterValue, EMPTY_DATE_FILTER} from "@/components/componentsGeneral/datePickers/DateFilterGroup.tsx";
 import {toDateRangeFilter} from "@/utils/dateUtils.ts";
 

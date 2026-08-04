@@ -1,7 +1,7 @@
 // Формирование колонок таблицы, возможных колонок для отображения в зависимости
 // от выбранного Tab (VndScope -
 // действующие, на актуализации, на согласовании, на консолидации, архивирован, черновик)
-import type {VndScope} from "@/service/mockData/BaseVndData";
+import type {VndScope} from "@/constants/vndTabs.ts";
 
 export type ColKey =
     | "statusIcon"

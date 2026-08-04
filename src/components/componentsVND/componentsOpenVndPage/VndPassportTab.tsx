@@ -4,13 +4,7 @@ import {Section} from "@/components/componentsGeneral/Section.tsx";
 import {ReadOnlyField} from "@/components/componentsGeneral/readOnlySelects/ReadOnlyField.tsx";
 import {ReadOnlyChipsField} from "@/components/componentsGeneral/readOnlySelects/ReadOnlyChipsField.tsx";
 import {describePeriod, formatDate} from "@/utils/dateUtils.ts";
-import {
-    keywordNames,
-    responsibleExecutorNames,
-    rubricNames,
-    secrecyLevelName,
-    userGroupNames,
-} from "@/utils/vndDictionaryResolvers.ts";
+import { useVndDictionaryResolvers } from "@/hooks/vndHooks/useVndDictionaryResolvers.ts";
 import {useVndRequisitesForm} from "@/hooks/useVndRequisitesForm.ts";
 import {SingleSelectListField} from "@/components/componentsGeneral/selects/SingleSelects/SingleSelectListField.tsx";
 import {MultiSelectField} from "@/components/componentsGeneral/selects/MultiSelects/MultiSelectField.tsx";
@@ -60,6 +54,14 @@ export function VndPassportTab({
     const isCancelledOrArchived = Boolean(vnd.cancelDate || vnd.archivedDate);
     const periodFrom = vnd.lastActualizationDate || vnd.effectiveDate || vnd.adoptionDate;
     const periodLabel = describePeriod(periodFrom, vnd.dueActualizationDate);
+
+    const {
+        keywordNames,
+        responsibleExecutorNames,
+        rubricNames,
+        secrecyLevelName,
+        userGroupNames,
+    } = useVndDictionaryResolvers();
 
     const {
         isEditing, draft, saving, error, startEdit, cancelEdit, update, save,

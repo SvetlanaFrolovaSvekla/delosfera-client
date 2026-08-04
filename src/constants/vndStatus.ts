@@ -1,4 +1,4 @@
-import type {VndScope, VndStatusKey} from "@/service/mockData/BaseVndData.tsx";
+import type {VndScope, VndStatusKey} from "@/constants/vndTabs.ts";
 import {
     AlertOctagon,
     AlertTriangle,

@@ -1,10 +1,8 @@
 // Расширенный поиск для реестра ВНД
-import {
-    RUBRICS, TYPE_VND, ORGANS_APPROVAL, ORG_UNITS, KEYWORDS, SECURITY_LEVELS, USER_GROUPS
-} from "@/service/mockData/DictionaryData.tsx";
+import {useDictionaries} from "@/context/DictionariesContext.tsx";
 import {useVndAdvancedFiltersDraft, type AdvancedDraft} from "@/hooks/vndHooks/useVndAdvancedFiltersDraft.ts";
 import {useVndHasActiveFilters} from "@/hooks/vndHooks/useVndHasActiveFilters.ts";
-import type {VndScope} from "@/service/mockData/BaseVndData.tsx";
+import type {VndScope} from "@/constants/vndTabs.ts";
 import type {ColDef} from "@/constants/vndColumns.ts";
 import {SCOPE_COUNT_LABELS} from "@/constants/vndStatus.ts";
 import {MultiSelectField} from "@/components/componentsGeneral/selects/MultiSelects/MultiSelectField.tsx";
@@ -132,6 +130,9 @@ export function VndFilters(props: VndFiltersProps) {
         userGroupFilters, onUserGroupFiltersChange,
         secrecyLevelFilters, onSecrecyLevelFiltersChange,
     } = props;
+
+    // Справочники берём из общего контекста — грузятся один раз на всё приложение
+    const dictionaries = useDictionaries();
 
     const selectedColumnKeys = toggleableColumns
         .filter((c) => visibleCols[c.key] !== false)
@@ -328,7 +329,7 @@ export function VndFilters(props: VndFiltersProps) {
                                     <MultiSelectField
                                         label="Вид документа"
                                         modalTitle="Вид документа"
-                                        options={TYPE_VND.map((t) => ({key: t.id, label: t.name}))}
+                                        options={dictionaries.typeOptions}
                                         selectedKeys={draft.docTypeFilters}
                                         onChange={(v) => updateDraft("docTypeFilters", v)}
                                         searchPlaceholder="Поиск вида документа…"
@@ -339,11 +340,7 @@ export function VndFilters(props: VndFiltersProps) {
                                     <MultiSelectField
                                         label="Разработчик"
                                         modalTitle="Разработчик (СП)"
-                                        options={ORG_UNITS.map((o) => ({
-                                            key: o.id,
-                                            label: o.name,
-                                            parentId: o.parentId
-                                        }))}
+                                        options={dictionaries.orgUnitOptions}
                                         selectedKeys={draft.developerFilters}
                                         onChange={(v) => updateDraft("developerFilters", v)}
                                         searchPlaceholder="Поиск подразделения…"
@@ -352,11 +349,7 @@ export function VndFilters(props: VndFiltersProps) {
                                     <MultiSelectField
                                         label="Орган утверждения"
                                         modalTitle="Орган утверждения"
-                                        options={ORGANS_APPROVAL.map((o) => ({
-                                            key: o.id,
-                                            label: o.name,
-                                            parentId: o.parentId
-                                        }))}
+                                        options={dictionaries.organOptions}
                                         selectedKeys={draft.organFilters}
                                         onChange={(v) => updateDraft("organFilters", v)}
                                         searchPlaceholder="Поиск органа утверждения…"
@@ -365,11 +358,7 @@ export function VndFilters(props: VndFiltersProps) {
                                     <MultiSelectField
                                         label="Ответственные исполнители"
                                         modalTitle="Ответственные исполнители"
-                                        options={ORG_UNITS.map((o) => ({
-                                            key: o.id,
-                                            label: o.name,
-                                            parentId: o.parentId
-                                        }))}
+                                        options={dictionaries.orgUnitOptions}
                                         selectedKeys={draft.responsibleExecutorFilters}
                                         onChange={(v) => updateDraft("responsibleExecutorFilters", v)}
                                         searchPlaceholder="Поиск подразделения…"
@@ -487,7 +476,7 @@ export function VndFilters(props: VndFiltersProps) {
                                 <MultiSelectField
                                     label="Ключевые слова"
                                     modalTitle="Ключевые слова"
-                                    options={KEYWORDS.map((o) => ({key: o.id, label: o.name, parentId: o.parentId}))}
+                                    options={dictionaries.keywordOptions}
                                     selectedKeys={draft.keywordFilters}
                                     onChange={(v) => updateDraft("keywordFilters", v)}
                                     searchPlaceholder="Поиск ключевых слов…"
@@ -496,7 +485,7 @@ export function VndFilters(props: VndFiltersProps) {
                                 <MultiSelectField
                                     label="Рубрикатор"
                                     modalTitle="Рубрикатор"
-                                    options={RUBRICS.map((o) => ({key: o.id, label: o.name, parentId: o.parentId}))}
+                                    options={dictionaries.rubricOptions}
                                     selectedKeys={draft.rubricFilters}
                                     onChange={(v) => updateDraft("rubricFilters", v)}
                                     searchPlaceholder="Поиск рубрики…"
@@ -509,7 +498,7 @@ export function VndFilters(props: VndFiltersProps) {
                                 <MultiSelectField
                                     label="Уровень секретности"
                                     modalTitle="Уровень секретности"
-                                    options={SECURITY_LEVELS.map((s) => ({key: s.id, label: s.name}))}
+                                    options={dictionaries.secrecyOptions}
                                     selectedKeys={draft.secrecyLevelFilters}
                                     onChange={(v) => updateDraft("secrecyLevelFilters", v)}
                                     searchPlaceholder="Поиск уровня…"
@@ -517,7 +506,7 @@ export function VndFilters(props: VndFiltersProps) {
                                 <MultiSelectField
                                     label="Группы доступа"
                                     modalTitle="Группы доступа"
-                                    options={USER_GROUPS.map((g) => ({key: g.id, label: g.name}))}
+                                    options={dictionaries.userGroupOptions}
                                     selectedKeys={draft.userGroupFilters}
                                     onChange={(v) => updateDraft("userGroupFilters", v)}
                                     searchPlaceholder="Поиск группы…"

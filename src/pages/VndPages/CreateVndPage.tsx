@@ -9,10 +9,28 @@ import {VndCreateSuccessModal} from "@/components/componentsVND/componentsCreate
 import {MultiSelectField} from "@/components/componentsGeneral/selects/MultiSelects/MultiSelectField.tsx";
 import {ReadOnlyField} from "@/components/componentsGeneral/readOnlySelects/ReadOnlyField.tsx";
 import {ArrowLeft, Check} from "lucide-react";
+import {Loader} from "@/components/componentsGeneral/Loader.tsx";
+import {EmptyState} from "@/components/componentsGeneral/EmptyState.tsx";
 
 export function CreateVndPage() {
     const form = useCreateVndForm();
     const {actualization} = form;
+
+    if (form.dictionariesLoading) {
+        return (
+            <div className="w-full max-w-[1700px] mx-auto px-4 sm:px-6 lg:px-8 pt-5 sm:pt-[26px] pb-5 sm:pb-4">
+                <Loader label="Загрузка справочников…" fullHeight={false}/>
+            </div>
+        );
+    }
+
+    if (form.dictionariesError) {
+        return (
+            <div className="w-full max-w-[1700px] mx-auto px-4 sm:px-6 lg:px-8 pt-5 sm:pt-[26px] pb-5 sm:pb-4">
+                <EmptyState variant="error" title="Не удалось загрузить данные!" description={form.dictionariesError}/>
+            </div>
+        );
+    }
 
     return (
         <div className="w-full max-w-[1700px] mx-auto px-4 sm:px-6 lg:px-8 pt-5 sm:pt-[26px] pb-5 sm:pb-4">
@@ -106,17 +124,21 @@ export function CreateVndPage() {
                     <VndClassifiersSection
                         keywordIds={form.keywordIds}
                         onKeywordIdsChange={form.setKeywordIds}
+                        keywordOptions={form.keywordOptions}
                         rubricIds={form.rubricIds}
                         onRubricIdsChange={form.setRubricIds}
+                        rubricOptions={form.rubricOptions}
                         secrecyOptions={form.secrecyOptions}
                         secrecyLevelId={form.secrecyLevelId}
                         onSecrecyLevelIdChange={form.setSecrecyLevelId}
                         userGroupIds={form.userGroupIds}
                         onUserGroupIdsChange={form.setUserGroupIds}
+                        userGroupOptions={form.userGroupOptions}
                     />
 
                     {form.submitError && (
-                        <div className="mt-4 px-4 py-3 rounded-[9px] bg-[#fdecec] border border-[#f4c7c3] text-[#c0392b] text-[13px]">
+                        <div
+                            className="mt-4 px-4 py-3 rounded-[9px] bg-[#fdecec] border border-[#f4c7c3] text-[#c0392b] text-[13px]">
                             {form.submitError}
                         </div>
                     )}

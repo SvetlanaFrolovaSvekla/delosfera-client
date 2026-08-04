@@ -52,7 +52,7 @@ async function fetchAllUsers(): Promise<ApproverOption[]> {
 }
 
 async function fetchOrgUnits(): Promise<OrgUnitOption[]> {
-    const {data} = await axiosInstance.get<RawOrgUnitResponse[]>("api/dictionaries/organization-unit");
+    const {data} = await axiosInstance.get<RawOrgUnitResponse[]>("/dictionaries/organization-unit");
     return data.map((o) => ({id: o.id, name: o.name, parentId: o.parentId}));
 }
 

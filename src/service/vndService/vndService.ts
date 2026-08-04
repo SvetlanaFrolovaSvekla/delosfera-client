@@ -3,6 +3,7 @@ import type {
     CreateVndRequest,
     UpdateVndRequisitesRequest,
     VndActualizationSummaryResponse,
+    VndLinksResponse,
     VndRedactionResponse,
     VndResponse,
     VndSearchRequest
@@ -105,5 +106,35 @@ export const vndService = {
             body: JSON.stringify(request),
         });
         return handleResponse<VndResponse>(response);
+    },
+
+    /** Связи ВНД: ссылки на другие документы и документы, ссылающиеся на этот */
+    async getLinks(vndId: number): Promise<VndLinksResponse> {
+        const response = await fetch(`${API_BASE}/vnd/${vndId}/links`, {
+            headers: authHeaders(),
+        });
+        return handleResponse<VndLinksResponse>(response);
+    },
+
+    /** Добавить ссылку на другой (только действующий) ВНД */
+    async addLink(vndId: number, targetVndId: number): Promise<VndLinksResponse> {
+        const response = await fetch(`${API_BASE}/vnd/${vndId}/links`, {
+            method: "POST",
+            headers: {"Content-Type": "application/json", ...authHeaders()},
+            body: JSON.stringify({targetVndId}),
+        });
+        return handleResponse<VndLinksResponse>(response);
+    },
+
+    /** Удалить связь ВНД (можно с любой из сторон связи) */
+    async deleteLink(vndId: number, linkId: number): Promise<void> {
+        const response = await fetch(`${API_BASE}/vnd/${vndId}/links/${linkId}`, {
+            method: "DELETE",
+            headers: authHeaders(),
+        });
+        if (!response.ok) {
+            const errorBody = await response.json().catch(() => null);
+            throw new Error(errorBody?.message ?? `Ошибка запроса: ${response.status}`);
+        }
     },
 };

@@ -1,21 +1,16 @@
 // Страница "База ВНД"
 import {useState} from "react";
 import {useNavigate} from "react-router-dom";
-
-import {
-    type OrganizationUnit,
-    type Keyword,
-    KEYWORDS, ORG_UNITS, type SecurityLevel, SECURITY_LEVELS, USER_GROUPS, type UserGroup, type Rubric, RUBRICS
-} from '@/service/mockData/DictionaryData.tsx'; // TODO: заглушка, надо настроить загрузку данных из справочников
-
+import {useDictionaries} from "@/context/DictionariesContext.tsx";
 import {daysUntil} from "@/utils/dateUtils.ts";
 import {useVndFilters} from "@/hooks/vndHooks/useVndFilters.tsx";
 import {useRubricsFromUrl} from "@/hooks/vndHooks/useRubricsFromUrl.ts";
 import {useVndColumnVisibility} from "@/hooks/vndHooks/useVndColumnVisibility.tsx";
 import {useVndScopeCounts} from "@/hooks/vndHooks/useVndScopeCounts.tsx";
 import {useVndFilteredRows} from "@/hooks/vndHooks/useVndFilteredRows.tsx";
+import {useVndDictionaryResolvers} from "@/hooks/vndHooks/useVndDictionaryResolvers.ts";
 
-import {type VndScope, type VndStatusKey} from '@/service/mockData/BaseVndData.tsx';
+import {type VndScope, type VndStatusKey} from '@/constants/vndTabs.ts';
 import {STATUS_META} from "@/constants/vndStatus.ts";
 
 import {VndPageHeader} from "@/components/componentsVND/componentsBaseVndPage/VndPageHeader.tsx";
@@ -25,29 +20,6 @@ import {VndTable} from "@/components/componentsVND/componentsBaseVndPage/VndTabl
 import {Tabs} from "@/components/componentsGeneral/Tabs.tsx";
 import {Loader} from "@/components/componentsGeneral/Loader";
 import {EmptyState} from "@/components/componentsGeneral/EmptyState.tsx";
-
-// TODO: заглушка, надо настроить загрузку данных из справочников
-const orgUnitMap = new Map<string, OrganizationUnit>(ORG_UNITS.map((o) => [o.id, o]));
-const orgUnitName = (id: number) => orgUnitMap.get(String(id))?.name ?? "—";
-
-const keywordMap = new Map<string, Keyword>(KEYWORDS.map((k) => [k.id, k]));
-const securityLevelMap = new Map<string, SecurityLevel>(SECURITY_LEVELS.map((s) => [s.id, s]));
-const userGroupMap = new Map<string, UserGroup>(USER_GROUPS.map((g) => [g.id, g]));
-const rubricMap = new Map<string, Rubric>(RUBRICS.map((r) => [r.id, r]));
-
-const keywordNames = (ids: number[]) =>
-    ids.map((id) => keywordMap.get(String(id))?.name).filter(Boolean).join(", ") || "—";
-
-const secrecyLevelName = (id?: number) => (id != null ? securityLevelMap.get(String(id))?.name ?? "—" : "—");
-
-const userGroupNames = (ids: number[]) =>
-    ids.map((id) => userGroupMap.get(String(id))?.name).filter(Boolean).join(", ") || "—";
-
-const responsibleExecutorNames = (ids: number[]) =>
-    ids.map((id) => orgUnitName(id)).filter((n) => n !== "—").join(", ") || "—";
-
-const rubricNames = (ids: number[]) => ids.map((id) => rubricMap.get(String(id))?.name).filter(Boolean).join(", ") || "—";
-// TODO: заглушка, надо настроить загрузку данных из справочников
 
 const ALL_STATUS_OPTIONS: { key: VndStatusKey; label: string }[] = (
     Object.keys(STATUS_META) as VndStatusKey[]
@@ -66,6 +38,10 @@ export function BaseVndPage() {
 
     const counts = useVndScopeCounts();
     const {filteredRows, loading, error} = useVndFilteredRows(filters.searchRequest, filters.search);
+
+    const dictionaries = useDictionaries();
+    const {keywordNames, rubricNames, secrecyLevelName, userGroupNames, responsibleExecutorNames} =
+        useVndDictionaryResolvers();
 
     const isArchScope = scope === "arch";
 
@@ -155,13 +131,21 @@ export function BaseVndPage() {
                 onResetFilters={filters.resetFilters}
             />
 
-            {loading ? (
+            {loading || dictionaries.loading ? (
                 <Loader label="Загрузка данных…"/>
             ) : error ? (
                 <EmptyState
                     variant="error"
                     title="Не удалось загрузить данные"
                     description={error}
+                />
+            ) : dictionaries.error ? (
+                <EmptyState
+                    variant="error"
+                    title="Не удалось загрузить справочники"
+                    description={dictionaries.error}
+                    actionLabel="Повторить"
+                    onAction={dictionaries.refetch}
                 />
             ) : (
                 <VndTable

@@ -29,6 +29,8 @@ import {ReportVndPage} from "@/pages/ReportPages/ReportVndPages/ReportVndPage.ts
 import {TasksVndPage} from "@/pages/TasksPages/TasksVndPage.tsx";
 import {OpenNotificationPage} from "@/pages/NotificationsPage/OpenNotificationPage.tsx";
 import {DictionariesProvider} from "@/context/DictionariesContext.tsx";
+import {RequirePermission} from "@/context/RequirePermission.tsx";
+import {PermissionCode} from "@/constants/permissions.ts";
 
 const MainLayout = () => (
     <DictionariesProvider>
@@ -68,12 +70,12 @@ function App() {
                             <Route path="/actualization" element={<ActualizationPage/>}/>
                             <Route path="/reportvnd" element={<ReportVndPage/>}/>
 
-                            <Route path="/roles" element={<RolesPermissionPage/>}/>
-
                             <Route path="/notifications" element={<NotificationsPage/>}/>
                             <Route path="/notifications/:id" element={<OpenNotificationPage />} />
 
-                            <Route path="/roles" element={<RolesPermissionPage/>}/>
+                            <Route element={<RequirePermission code={PermissionCode.ManageRoles} />}>
+                                <Route path="/roles" element={<RolesPermissionPage/>}/>
+                            </Route>
                             <Route path="/refs" element={<DictionariesPages/>}/>
                             <Route path="/refs/approval-body" element={<ApprovalBodyPage/>}/>
                             <Route path="/refs/organization-unit" element={<OrganizationUnitPage/>}/>

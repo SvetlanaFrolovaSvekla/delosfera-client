@@ -1,8 +1,10 @@
 import {useEffect, useMemo, useState} from "react";
-import {Check, Plus, Shield} from "lucide-react";
+import {Check, Plus, Shield, User as UserIcon} from "lucide-react";
 import {rolesPermissionService} from "@/service/rolesPermissionService/rolesPermissionService.ts";
 import type {RoleResponse} from "@/service/rolesPermissionService/rolesPermissionTypeService.ts";
 import {useAuth} from "@/context/AuthContext.ts";
+import {CreateRoleModal, type CreateRoleData} from "@/components/componentsModal/CreateRoleModal.tsx";
+import {toast} from "@/service/toastService.ts";
 
 export function RolesPermissionPage() {
     const {user} = useAuth();
@@ -12,6 +14,7 @@ export function RolesPermissionPage() {
     const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState(false);
     const [justSaved, setJustSaved] = useState(false);
+    const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
 
     useEffect(() => {
         void loadRoles();
@@ -71,6 +74,7 @@ export function RolesPermissionPage() {
     async function handleSave() {
         if (!selectedRole) return;
         setSaving(true);
+        const toastId = toast.loading("Сохраняем изменения…", `Роль «${selectedRole.name}»`);
         try {
             const updated = await rolesPermissionService.update(selectedRole.id, {
                 titleRu: selectedRole.titleRu,
@@ -81,8 +85,51 @@ export function RolesPermissionPage() {
             setRoles((prev) => prev.map((r) => (r.id === updated.id ? updated : r)));
             setCheckedCodes(new Set(updated.permissionCodes));
             setJustSaved(true);
+            toast.update(toastId, {
+                variant: "success",
+                title: "Изменения сохранены",
+                description: `Роль «${updated.name}» обновлена`,
+                duration: 4500,
+            });
+        } catch (e) {
+            toast.update(toastId, {
+                variant: "error",
+                title: "Не удалось сохранить",
+                description: e instanceof Error ? e.message : "Попробуйте ещё раз",
+                duration: 4500,
+            });
         } finally {
             setSaving(false);
+        }
+    }
+
+    // Создание роли: только названия, права по умолчанию пустые —
+    // включаются потом в редакторе справа (уже готовый UI выше).
+    async function handleCreateRole(data: CreateRoleData) {
+        const toastId = toast.loading("Создаём роль…", data.titleRu);
+        try {
+            const created = await rolesPermissionService.create({
+                titleRu: data.titleRu,
+                titleEn: data.titleEn,
+                titleKg: data.titleKg,
+                permissionCodes: [],
+            });
+            setRoles((prev) => [...prev, created].sort((a, b) => a.name.localeCompare(b.name)));
+            selectRole(created);
+            toast.update(toastId, {
+                variant: "success",
+                title: "Роль создана",
+                description: `«${created.name}» — включите права в редакторе справа`,
+                duration: 4500,
+            });
+        } catch (e) {
+            toast.update(toastId, {
+                variant: "error",
+                title: "Не удалось создать роль",
+                description: e instanceof Error ? e.message : "Попробуйте ещё раз",
+                duration: 4500,
+            });
+            throw e; // пробрасываем, чтобы модалка осталась открытой и показала ошибку в форме
         }
     }
 
@@ -97,18 +144,19 @@ export function RolesPermissionPage() {
     }
 
     return (
-        <div className="max-w-[1200px] mx-auto px-[30px] pt-[26px] pb-[60px]">
+        <div className="w-full max-w-[1700px] mx-auto px-4 sm:px-6 lg:px-8 xl:px-10 pt-5 sm:pt-[26px] pb-10 sm:pb-[60px]">
             <div className="flex items-end justify-between gap-5 flex-wrap  mb-5">
                 <div>
                     <h1 className="m-0 text-[23px] font-bold tracking-[-0.02em] text-[#1c2740]">
                         Роли и права доступа
                     </h1>
                     <p className="mt-[7px] mb-0 text-[13px] text-[#8b97ab]">
-                        Настройка полномочий согласующих, подписантов и других ролей — доступ к модулям и типам подписи
+                        Настройка полномочий согласующих, подписантов и других ролей.
                     </p>
                 </div>
                 <div className="flex gap-2.5">
                     <button
+                        onClick={() => setIsCreateModalOpen(true)}
                         className="inline-flex items-center gap-2 h-10 px-[15px] rounded-[10px] border-none bg-[#4e57d6] text-white font-semibold text-[13px] cursor-pointer hover:brightness-[1.06] shadow-[0_6px_16px_-6px_#4e57d6]"
                     >
                         <Plus className="w-[18px] h-[18px]" strokeWidth={2}/>
@@ -119,18 +167,19 @@ export function RolesPermissionPage() {
 
             {/* Роли пользователя */}
             {user.roles.length > 0 && (
-                <div className="px-[15px] pb-3 flex flex-wrap gap-1.5">
-                            <span
-                                className="px-2 py-1 text-[11px] font-semibold"
-                            >
-                                    Роли моего профиля:
-                                </span>
+                <div className="pb-3 flex flex-wrap gap-1.5">
+                    <p
+                        className="py-1 text-[13px] text-[#8b97ab] text-[13px]"
+                    >
+                        Роли моего профиля:
+                    </p>
                     {user.roles.map((role) => (
                         <span
                             key={role.id}
-                            className="px-2 py-1 rounded-[7px] bg-[#f2f5f9] text-[11px] font-semibold text-[#55617a]"
+                            className="inline-flex items-center gap-[7px] px-[11px] py-[5px] rounded-lg bg-[#e2f4ea] text-[#1c7a4d] font-semibold text-[12.5px]"
                         >
-                                    {role.name}
+                                    <UserIcon size={14} strokeWidth={1.9} />
+                            {role.name}
                                 </span>
                     ))}
                 </div>
@@ -257,6 +306,12 @@ export function RolesPermissionPage() {
                     </div>
                 )}
             </div>
+
+            <CreateRoleModal
+                open={isCreateModalOpen}
+                onClose={() => setIsCreateModalOpen(false)}
+                onCreate={handleCreateRole}
+            />
         </div>
     );
 }

@@ -1,4 +1,5 @@
 import type {IconName} from "@/components/icons/Icon.tsx";
+import {PermissionCode} from "@/constants/permissions.ts";
 
 interface NavItem {
     id: string;
@@ -6,6 +7,7 @@ interface NavItem {
     labelKey: string;
     path?: string; // если задан - пункт становится ссылкой на реальный маршрут
     badge?: number; // Кол-во уведомлений
+    permission?: number; // Код права (PermissionCode), без которого пункт скрыт
 }
 
 interface NavGroup {
@@ -20,13 +22,12 @@ export const navGroups: NavGroup[] = [
         items: [
             {
                 id: "vnd-rubric",
-                labelKey: "sidebar.items.vndRubric", // например: "Рубрикатор ВНД"
+                labelKey: "sidebar.items.vndRubric",
                 icon: "folder",
             },
             { id: "vnd", icon: "vnd", labelKey: "sidebar.items.vnd", path: "/basevnd" },
             { id: "pln", icon: "pln", labelKey: "sidebar.items.pln", badge: 3, path: "/actualization" },
             { id: "tasks", icon: "tasks", labelKey: "sidebar.items.tasks", badge: 4, path: "/tasks" },
-           /* { id: "tid", icon: "tid", labelKey: "sidebar.items.tid", badge: 4, path: "/coordination" },*/
             { id: "rpt", icon: "rpt", labelKey: "sidebar.items.rpt", path: "/reportvnd" },
         ],
     },
@@ -34,12 +35,13 @@ export const navGroups: NavGroup[] = [
         titleKey: "sidebar.groups.admin",
         items: [
             { id: "adm-users", icon: "user", labelKey: "sidebar.items.admUsers" },
-            { id: "adm-roles", icon: "shield", labelKey: "sidebar.items.admRoles", path: "/roles" },
+            { id: "adm-roles", icon: "shield", labelKey: "sidebar.items.admRoles", path: "/roles", permission: PermissionCode.ManageRoles },
             { id: "adm-log", icon: "clock", labelKey: "sidebar.items.admLog" },
             { id: "adm-auth", icon: "lock", labelKey: "sidebar.items.admAuth" },
             { id: "refs", icon: "refs", labelKey: "sidebar.items.refs", path: "/refs" },
         ],
     },
+];
    /* {
         titleKey: "sidebar.groups.sz",
         items: [
@@ -89,7 +91,6 @@ export const navGroups: NavGroup[] = [
             { id: "adm-auth", icon: "lock", labelKey: "sidebar.items.admAuth" },
         ],
     },*/
-];
 
 /*
 export const navGroups: NavGroup[] = [

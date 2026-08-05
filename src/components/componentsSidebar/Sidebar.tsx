@@ -7,19 +7,19 @@ import {CountBadge} from "@/components/componentsSidebar/CountBadge.tsx";
 import {Icon} from "@/components/icons/Icon";
 import {RubricTreeModal} from "@/components/componentsGeneral/selects/MultiSelects/RubricTreeModal.tsx";
 import {ChevronRight} from "lucide-react";
+import {useAuth} from "@/context/AuthContext.ts";
 
-// Id пунктов, которые открывают модалку вместо перехода на страницу
 const MODAL_ITEM_IDS = ["vnd-rubric"];
 
 export function Sidebar() {
     const {t} = useTranslation();
     const {pathname} = useLocation();
     const navigate = useNavigate();
-    const [collapsed, setCollapsed] = useState(false); // Свернутость панели
+    const {hasPermission} = useAuth();
+    const [collapsed, setCollapsed] = useState(false);
     const [rubricModalOpen, setRubricModalOpen] = useState(false);
     const [rubricSelection, setRubricSelection] = useState<string[]>([]);
 
-    // Рубрики берём из общего контекста справочников — грузятся один раз на всё приложение
     const {rubricOptions} = useDictionaries();
 
     const goToVndWithRubrics = (keys: string[]) => {
@@ -28,6 +28,14 @@ export function Sidebar() {
         navigate(`/basevnd?${params.toString()}`);
         setRubricModalOpen(false);
     };
+
+    // Группы с уже отфильтрованными по правам пунктами
+    const visibleGroups = navGroups
+        .map((grp) => ({
+            ...grp,
+            items: grp.items.filter((it) => it.permission === undefined || hasPermission(it.permission)),
+        }))
+        .filter((grp) => grp.items.length > 0); // прячем группу целиком, если в ней не осталось пунктов
 
     return (
         <aside
@@ -57,7 +65,7 @@ export function Sidebar() {
 
             {/* Навигация */}
             <nav className="flex-1 overflow-y-auto overflow-x-hidden px-3 pb-5 pt-3">
-                {navGroups.map((grp, i) => (
+                {visibleGroups.map((grp, i) => (
                     <div key={i} className="mb-1.5">
                         {grp.titleKey && !collapsed && (
                             <div className="mb-1 mt-3 px-2.5">

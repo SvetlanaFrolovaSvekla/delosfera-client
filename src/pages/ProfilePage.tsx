@@ -1,8 +1,11 @@
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { Check, KeyRound, User as UserIcon } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
+import { Tabs } from "@/components/componentsGeneral/Tabs";
 
-// TODO: фото цвет, приоритет ролей цвет, главная панель с историей действий, ваши полномочия (взаимоисключающие), ваши роли, при клике на роль должны быть показаны полномочия, начальник СП, куратор СП;
+// TODO: фото цвет, приоритет ролей цвет, главная панель с историей действий, начальник СП, куратор СП;
+
+const ALL_TAB = "all";
 
 function getInitials(fullName: string) {
     const parts = fullName.trim().split(/\s+/);
@@ -22,11 +25,10 @@ function formatDateTime(value: string | null | undefined) {
 
 export function ProfilePage() {
     const { user } = useAuth();
+    const [activeTab, setActiveTab] = useState<string>(ALL_TAB);
 
-    const primaryRole = user?.roles[0];
-
-    // все права по всем ролям пользователя, без дублей
-    const permissions = useMemo(() => {
+    // все права по всем ролям пользователя, без дублей (по code)
+    const allPermissions = useMemo(() => {
         if (!user) return [];
         const seen = new Map<number, string>();
         user.roles.forEach((role) =>
@@ -34,6 +36,33 @@ export function ProfilePage() {
         );
         return Array.from(seen, ([code, label]) => ({ code, label }));
     }, [user]);
+
+    // если роль ровно одна — табы вообще не нужны
+    const hasSingleRole = (user?.roles.length ?? 0) === 1;
+
+    // вкладки для Tabs: "Все мои полномочия" + по одной на каждую роль
+    const permissionTabs = useMemo(() => {
+        if (!user || hasSingleRole) return [];
+        return [
+            { id: ALL_TAB, label: "Все мои полномочия", n: allPermissions.length },
+            ...user.roles.map((role) => ({
+                id: String(role.id),
+                label: role.name,
+                n: role.permissions.length,
+            })),
+        ];
+    }, [user, allPermissions, hasSingleRole]);
+
+    // права текущей выбранной вкладки (или права единственной роли)
+    const activePermissions = useMemo(() => {
+        if (!user) return [];
+        if (hasSingleRole) return allPermissions;
+        if (activeTab === ALL_TAB) return allPermissions;
+        const role = user.roles.find((r) => String(r.id) === activeTab);
+        return role
+            ? role.permissions.map((p) => ({ code: p.code, label: p.description }))
+            : [];
+    }, [user, activeTab, allPermissions, hasSingleRole]);
 
     if (!user) {
         return (
@@ -53,10 +82,22 @@ export function ProfilePage() {
                 <div className="flex-1 min-w-[220px]">
                     <h1 className="m-0 text-[23px] font-bold tracking-[-.02em]">{user.fullName}</h1>
                     <div className="mt-[9px] flex items-center gap-[10px] flex-wrap">
-                        <span className="inline-flex items-center gap-[7px] px-[11px] py-[5px] rounded-lg bg-[var(--soft)] text-[var(--accent)] font-semibold text-[12.5px]">
-                            <UserIcon size={14} strokeWidth={1.9} />
-                            {primaryRole?.name ?? "Без роли"}
-                        </span>
+                        {user.roles.length > 0 ? (
+                            user.roles.map((role) => (
+                                <span
+                                    key={role.id}
+                                    className="inline-flex items-center gap-[7px] px-[11px] py-[5px] rounded-lg bg-[#e2f4ea] text-[#1c7a4d] font-semibold text-[12.5px]"
+                                >
+                                    <UserIcon size={14} strokeWidth={1.9} />
+                                    {role.name}
+                                </span>
+                            ))
+                        ) : (
+                            <span className="inline-flex items-center gap-[7px] px-[11px] py-[5px] rounded-lg bg-[var(--soft)] text-[var(--accent)] font-semibold text-[12.5px]">
+                                <UserIcon size={14} strokeWidth={1.9} />
+                                Без роли
+                            </span>
+                        )}
                         <span className="text-[13px] text-[#55617a]">
                             {user.position?.name ?? "Должность не указана"} · {user.orgUnit?.name ?? "Подразделение не указано"}
                         </span>
@@ -115,17 +156,27 @@ export function ProfilePage() {
                             <h3 className="m-0 text-[13.5px] font-bold">Электронная подпись</h3>
                         </div>
                         <p className="m-0 text-[12.5px] text-[#55617a] leading-[1.55]">
-                           Недоступно
+                            Недоступно
                         </p>
                     </div>
 
-                    {/* Полномочия роли */}
+                    {/* Полномочия */}
                     <div className="bg-white border border-[#e9edf3] rounded-2xl px-5 py-[18px]">
-                        <h3 className="m-0 mb-3 text-[13.5px] font-bold">
-                            Полномочия роли · {permissions.length}
-                        </h3>
+                        {hasSingleRole ? (
+                            <h3 className="m-0 mb-3 text-[13.5px] font-bold">
+                                Полномочия моей моей роли «{user.roles[0].name}»:
+                            </h3>
+                        ) : (
+                            <>
+                                <h3 className="m-0 text-[13.5px] font-bold">Полномочия</h3>
+                                <div className="overflow-x-auto -mx-1 px-1 mb-4">
+                                    <Tabs tabs={permissionTabs} value={activeTab} onChange={setActiveTab} />
+                                </div>
+                            </>
+                        )}
+
                         <div className="flex flex-wrap gap-[7px]">
-                            {permissions.map((p) => (
+                            {activePermissions.map((p) => (
                                 <span
                                     key={p.code}
                                     className="inline-flex items-center gap-[6px] text-[11.5px] font-semibold text-[#3a4560] bg-[#f2f5f9] px-[10px] py-[5px] rounded-lg"
@@ -134,7 +185,7 @@ export function ProfilePage() {
                                     {p.label}
                                 </span>
                             ))}
-                            {permissions.length === 0 && (
+                            {activePermissions.length === 0 && (
                                 <span className="text-[12px] text-[#a3adbd]">Прав не назначено</span>
                             )}
                         </div>
@@ -147,7 +198,7 @@ export function ProfilePage() {
 
 function Row({ label, value, mono }: { label: string; value: string; mono?: boolean }) {
     return (
-        <div className="flex items-center justify-between gap-3">
+        <div className="flex items-center justify-between gap-4">
             <span className="text-[12px] text-[#8b97ab]">{label}</span>
             <span
                 className={`text-[12.5px] font-semibold text-[#1c2740] text-right ml-auto ${

@@ -114,7 +114,7 @@ export function VndApprovalRouteView({process, highlightStageId}: VndApprovalRou
                         <div className="relative w-full">
                             <NormBlockView
                                 label="Первичное согласование"
-                                value={process.primaryDeadlineHours}
+                                value={process.primaryDeadlineMinutes}
                                 phaseStatus={primaryPhaseStatus}
                                 blockRef={targetRef}
                             />
@@ -131,7 +131,7 @@ export function VndApprovalRouteView({process, highlightStageId}: VndApprovalRou
                         <div className="relative w-full">
                             <NormBlockView
                                 label="Согласование после внесённых изменений"
-                                value={process.repeatDeadlineHours}
+                                value={process.repeatDeadlineMinutes}
                                 phaseStatus={repeatPhaseStatus}
                             />
                             {repeatPhaseStatus === "current" && (
@@ -147,7 +147,7 @@ export function VndApprovalRouteView({process, highlightStageId}: VndApprovalRou
                         <div className="relative w-full">
                             <NormBlockView
                                 label="Финальная выдержка"
-                                value={process.finalHoldDeadlineHours}
+                                value={process.finalHoldDeadlineMinutes}
                                 phaseStatus={finalHoldPhaseStatus}
                             />
                             {finalHoldPhaseStatus === "current" && (

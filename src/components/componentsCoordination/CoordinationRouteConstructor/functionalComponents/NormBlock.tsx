@@ -3,12 +3,39 @@ import React from "react";
 
 interface NormBlockProps {
     label: string;
+    /** Суммарное значение норматива в минутах */
     value: number | "";
     onChange: (value: number | "") => void;
     blockRef?: React.Ref<HTMLDivElement>;
 }
 
 export function NormBlock({label, value, onChange, blockRef}: NormBlockProps) {
+    const totalMinutes = value === "" ? 0 : value;
+    const hours = Math.floor(totalMinutes / 60);
+    const minutes = totalMinutes % 60;
+
+    const handleHoursChange = (raw: string) => {
+        if (raw === "") {
+            onChange(minutes > 0 ? minutes : "");
+            return;
+        }
+        const newHours = Math.max(0, Math.floor(Number(raw)));
+        const next = newHours * 60 + minutes;
+        onChange(next > 0 ? next : "");
+    };
+
+    const handleMinutesChange = (raw: string) => {
+        if (raw === "") {
+            onChange(hours > 0 ? hours * 60 : "");
+            return;
+        }
+        // Специально не ограничиваем сверху 59 - если ввели 90, normalize произойдёт
+        // сам собой на следующем рендере (hours/minutes пересчитаются из totalMinutes).
+        const newMinutes = Math.max(0, Math.floor(Number(raw)));
+        const next = hours * 60 + newMinutes;
+        onChange(next > 0 ? next : "");
+    };
+
     return (
         <div
             ref={blockRef}
@@ -18,12 +45,22 @@ export function NormBlock({label, value, onChange, blockRef}: NormBlockProps) {
             <div className="flex flex-none items-center gap-1">
                 <input
                     type="number"
-                    min={1}
-                    value={value}
-                    onChange={(e) => onChange(e.target.value ? Number(e.target.value) : "")}
-                    className="h-[32px] w-[64px] rounded-[8px] border border-[#e5e9f0] bg-white text-center text-[12.5px] text-[#26324a] outline-none focus:border-[#4e57d6]"
+                    min={0}
+                    value={hours || ""}
+                    onChange={(e) => handleHoursChange(e.target.value)}
+                    placeholder="0"
+                    className="h-[32px] w-[46px] rounded-[8px] border border-[#e5e9f0] bg-white text-center text-[12.5px] text-[#26324a] outline-none focus:border-[#4e57d6]"
                 />
                 <span className="text-[11px] text-[#8b97ab]">ч.</span>
+                <input
+                    type="number"
+                    min={0}
+                    value={minutes || ""}
+                    onChange={(e) => handleMinutesChange(e.target.value)}
+                    placeholder="0"
+                    className="h-[32px] w-[46px] rounded-[8px] border border-[#e5e9f0] bg-white text-center text-[12.5px] text-[#26324a] outline-none focus:border-[#4e57d6]"
+                />
+                <span className="text-[11px] text-[#8b97ab]">м.</span>
             </div>
         </div>
     );

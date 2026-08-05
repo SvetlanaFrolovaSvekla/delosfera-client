@@ -34,12 +34,12 @@ export function VndStartApprovalModal({vndId, onClose, onStarted}: VndStartAppro
     } = useStageDrafts(); // Логика с настройкой этапов согласования
 
     const {
-        primaryHours,
-        setPrimaryHours,
-        repeatHours,
-        setRepeatHours,
-        finalHoldHours,
-        setFinalHoldHours,
+        primaryMinutes,
+        setPrimaryMinutes,
+        repeatMinutes,
+        setRepeatMinutes,
+        finalHoldMinutes,
+        setFinalHoldMinutes,
         normsValid,
     } = useApprovalNorms(); // Логика с настройкой нормативов согласования
 
@@ -48,9 +48,9 @@ export function VndStartApprovalModal({vndId, onClose, onStarted}: VndStartAppro
         stages,
         allApproversSelected,
         normsValid,
-        primaryHours,
-        repeatHours,
-        finalHoldHours,
+        primaryMinutes,
+        repeatMinutes,
+        finalHoldMinutes,
         onStarted,
     });
 
@@ -130,18 +130,18 @@ export function VndStartApprovalModal({vndId, onClose, onStarted}: VndStartAppro
                         <div className="mx-auto mt-10 flex w-[280px] flex-col items-center gap-4">
                             <NormBlock
                                 label="Первичное согласование"
-                                value={primaryHours}
-                                onChange={setPrimaryHours}
+                                value={primaryMinutes}
+                                onChange={setPrimaryMinutes}
                                 blockRef={targetRef}
                             />
                             <ArrowDown size={16} className="flex-none text-[#c3c9d4]"/>
                             <NormBlock
                                 label="Согласование после внесённых изменений"
-                                value={repeatHours}
-                                onChange={setRepeatHours}
+                                value={repeatMinutes}
+                                onChange={setRepeatMinutes}
                             />
                             <ArrowDown size={16} className="flex-none text-[#c3c9d4]"/>
-                            <NormBlock label="Финальная выдержка" value={finalHoldHours} onChange={setFinalHoldHours}/>
+                            <NormBlock label="Финальная выдержка" value={finalHoldMinutes} onChange={setFinalHoldMinutes}/>
                         </div>
                     </div>
 

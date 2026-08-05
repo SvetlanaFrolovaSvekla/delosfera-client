@@ -43,9 +43,9 @@ function logProcessDebug(process: ApprovalProcessResponse) {
     console.groupCollapsed(`[VndCoordinationTab] Согласование по ВНД: process.id=${process.id}, статус=${process.status}`);
 
     console.log("Статус:", process.status);
-    console.log("Норматив первичного согласования (ч):", process.primaryDeadlineHours);
-    console.log("Норматив повторного согласования (ч):", process.repeatDeadlineHours);
-    console.log("Норматив финальной выдержки (ч):", process.finalHoldDeadlineHours);
+    console.log("Норматив первичного согласования (ч):", process.primaryDeadlineMinutes);
+    console.log("Норматив повторного согласования (ч):", process.repeatDeadlineMinutes);
+    console.log("Норматив финальной выдержки (ч):", process.finalHoldDeadlineMinutes);
     console.log("Первичное согласование начато:", process.primaryStartedAt);
     console.log("Дедлайн первичного согласования:", process.primaryDeadlineAt);
     console.log("Повторное согласование начато:", process.repeatStartedAt ?? "—");

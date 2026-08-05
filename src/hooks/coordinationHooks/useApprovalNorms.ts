@@ -1,19 +1,19 @@
 import {useState} from "react";
 
 export function useApprovalNorms() {
-    const [primaryHours, setPrimaryHours] = useState<number | "">(72);
-    const [repeatHours, setRepeatHours] = useState<number | "">(48);
-    const [finalHoldHours, setFinalHoldHours] = useState<number | "">(24);
+    const [primaryMinutes, setPrimaryMinutes] = useState<number | "">(72 * 60);
+    const [repeatMinutes, setRepeatMinutes] = useState<number | "">(48 * 60);
+    const [finalHoldMinutes, setFinalHoldMinutes] = useState<number | "">(24 * 60);
 
-    const normsValid = Number(primaryHours) > 0 && Number(repeatHours) > 0 && Number(finalHoldHours) > 0;
+    const normsValid = Number(primaryMinutes) > 0 && Number(repeatMinutes) > 0 && Number(finalHoldMinutes) > 0;
 
     return {
-        primaryHours,
-        setPrimaryHours,
-        repeatHours,
-        setRepeatHours,
-        finalHoldHours,
-        setFinalHoldHours,
+        primaryMinutes,
+        setPrimaryMinutes,
+        repeatMinutes,
+        setRepeatMinutes,
+        finalHoldMinutes,
+        setFinalHoldMinutes,
         normsValid,
     };
 }

@@ -47,9 +47,9 @@ export interface ApprovalStageRequest {
 
 export interface StartApprovalRequest {
     stages: ApprovalStageRequest[];  // Список этапов согласования
-    primaryDeadlineHours: number; // Норматив первичного согласования
-    repeatDeadlineHours: number; // Норматив согласования после исправленных замечаний
-    finalHoldDeadlineHours: number; // Норматив финальной выдержки
+    primaryDeadlineMinutes: number; // Норматив первичного согласования, в минутах
+    repeatDeadlineMinutes: number; // Норматив согласования после исправленных замечаний, в минутах
+    finalHoldDeadlineMinutes: number; // Норматив финальной выдержки, в минутах
 }
 
 export interface ApprovalDecisionRequest {
@@ -113,9 +113,9 @@ export interface ApprovalProcessResponse {
     initiatorUserId: number;
     initiatorName: string;
     status: ApprovalProcessStatus;
-    primaryDeadlineHours: number;
-    repeatDeadlineHours: number;
-    finalHoldDeadlineHours: number;
+    primaryDeadlineMinutes: number;
+    repeatDeadlineMinutes: number;
+    finalHoldDeadlineMinutes: number;
     primaryStartedAt: string;
     primaryDeadlineAt: string;
     repeatStartedAt: string | null;

@@ -9,9 +9,9 @@ interface UseStartApprovalParams {
     stages: StageDraft[];
     allApproversSelected: boolean;
     normsValid: boolean;
-    primaryHours: number | "";
-    repeatHours: number | "";
-    finalHoldHours: number | "";
+    primaryMinutes: number | "";
+    repeatMinutes: number | "";
+    finalHoldMinutes: number | "";
     onStarted: (process: ApprovalProcessResponse) => void;
 }
 
@@ -20,9 +20,9 @@ export function useStartApproval({
                                      stages,
                                      allApproversSelected,
                                      normsValid,
-                                     primaryHours,
-                                     repeatHours,
-                                     finalHoldHours,
+                                     primaryMinutes,
+                                     repeatMinutes,
+                                     finalHoldMinutes,
                                      onStarted,
                                  }: UseStartApprovalParams) {
     const [submitting, setSubmitting] = useState(false);
@@ -40,9 +40,9 @@ export function useStartApproval({
                     kind: s.kind,
                     approverUserId: s.approverUserId as number,
                 })),
-                primaryDeadlineHours: Number(primaryHours),
-                repeatDeadlineHours: Number(repeatHours),
-                finalHoldDeadlineHours: Number(finalHoldHours),
+                primaryDeadlineMinutes: Number(primaryMinutes),
+                repeatDeadlineMinutes: Number(repeatMinutes),
+                finalHoldDeadlineMinutes: Number(finalHoldMinutes),
             };
             const result = await coordinationService.start(vndId, request);
 

@@ -2,6 +2,15 @@ import type {DateFilterValue} from "@/components/componentsGeneral/datePickers/D
 import type {DateRangeFilter} from "@/service/vndService/vndServiceType.ts";
 import type {DeadlineUrgencyKey} from "@/constants/vndStatus.ts";
 
+// Формат минут/часов для отображения дедлайнов нормативов
+export function formatMinutesAsHm(totalMinutes: number): string {
+    const h = Math.floor(totalMinutes / 60);
+    const m = totalMinutes % 60;
+    if (h === 0) return `${m} мин.`;
+    if (m === 0) return `${h} ч.`;
+    return `${h} ч. ${m} мин.`;
+}
+
 // Форматирование времени для уведомлений
 export function formatRelativeTime(iso: string): string {
     const date = new Date(iso);
@@ -22,7 +31,7 @@ export function formatRelativeTime(iso: string): string {
 }
 
 // Определяет срочность дедлайна по проценту оставшегося времени от норматива.
-// totalHours — норматив, выданный на согласование (напр. PrimaryDeadlineHours)
+// totalHours — норматив, выданный на согласование (напр. PrimaryDeadlineMinutes)
 export function getDeadlineUrgency(deadlineAt: string | null, totalHours: number | null): DeadlineUrgencyKey {
     if (!deadlineAt || !totalHours || totalHours <= 0) return "normal";
 

@@ -20,17 +20,31 @@ import {VndTable} from "@/components/componentsVND/componentsBaseVndPage/VndTabl
 import {Tabs} from "@/components/componentsGeneral/Tabs.tsx";
 import {Loader} from "@/components/componentsGeneral/Loader";
 import {EmptyState} from "@/components/componentsGeneral/EmptyState.tsx";
+import {useAuth} from "@/context/AuthContext.ts";
+import {PermissionCode} from "@/constants/permissions.ts";
+import {FileEdit} from "lucide-react";
+
 
 const ALL_STATUS_OPTIONS: { key: VndStatusKey; label: string }[] = (
     Object.keys(STATUS_META) as VndStatusKey[]
 ).map((key) => ({key, label: STATUS_META[key].label}));
 
+type DraftOwnerScope = "mine" | "others" | "allDraft";
+
 export function BaseVndPage() {
     const navigate = useNavigate();
+    const {hasPermission} = useAuth();
+    const canViewOtherUsersDrafts = hasPermission(PermissionCode.ViewOtherUsersDrafts);
+
     const [scope, setScope] = useState<VndScope>("all");
+    const [draftOwnerScope, setDraftOwnerScope] = useState<DraftOwnerScope>("allDraft");
     const [advOpen, setAdvOpen] = useState(false);
 
-    const filters = useVndFilters(scope);
+    const filters = useVndFilters(
+        scope,
+        scope === "draft" && draftOwnerScope !== "allDraft" ? draftOwnerScope : undefined
+    );
+
     useRubricsFromUrl(filters.setRubricFilters, setAdvOpen);
 
     const {visibleCols, toggleColumn, selectAllColumns, deselectAllColumns, columns, gridTemplate, toggleableColumns} =
@@ -52,7 +66,7 @@ export function BaseVndPage() {
         {id: "all" as VndScope, label: "Все", n: counts.all},
         {id: "active" as VndScope, label: "Действующие", n: counts.active},
         {id: "arch" as VndScope, label: "Архивированные", n: counts.arch},
-        {id: "draft" as VndScope, label: "Черновики", n: counts.draft},
+        {id: "draft" as VndScope, label: "Черновики", n: counts.draft, alignRight: true, icon: <FileEdit size={14}/>},
     ];
 
     return (
@@ -61,6 +75,31 @@ export function BaseVndPage() {
 
             <Tabs<VndScope> tabs={scopeTabs} value={scope} onChange={setScope}/>
 
+            {scope === "draft" && canViewOtherUsersDrafts && (
+                <div className="flex items-center gap-2 mb-3.5">
+                    {([
+                        {key: "allDraft" as const, label: "Все черновики"},
+                        {key: "mine" as const, label: "Мои черновики"},
+                        {key: "others" as const, label: "Черновики других пользователей"},
+                    ]).map((t) => {
+                        const active = draftOwnerScope === t.key;
+                        return (
+                            <button
+                                key={t.key}
+                                onClick={() => setDraftOwnerScope(t.key)}
+                                className={`inline-flex items-center h-8 px-3 rounded-lg border font-semibold text-[12.5px] cursor-pointer ${
+                                    active
+                                        ? "border-[#4e57d6] bg-[#f6f8fb] text-[#4e57d6]"
+                                        : "border-[#e5e9f0] bg-white text-[#55617a] hover:bg-[#f6f8fb]"
+                                }`}
+                            >
+                                {t.label}
+                            </button>
+                        );
+                    })}
+                </div>
+            )}
+
             <VndFilters
                 organFilters={filters.organFilters}
                 onOrganFiltersChange={filters.setOrganFilters}
@@ -68,6 +107,8 @@ export function BaseVndPage() {
                 onDocTypeFiltersChange={filters.setDocTypeFilters}
                 scope={scope}
                 isArchScope={isArchScope}
+                linkedToMeOnly={filters.linkedToMeOnly}
+                onLinkedToMeOnlyChange={filters.setLinkedToMeOnly}
                 search={filters.search}
                 onSearchChange={filters.setSearch}
                 statusOptions={ALL_STATUS_OPTIONS}
@@ -98,6 +139,8 @@ export function BaseVndPage() {
                 onKeywordFiltersChange={filters.setKeywordFilters}
                 responsibleExecutorFilters={filters.responsibleExecutorFilters}
                 onResponsibleExecutorFiltersChange={filters.setResponsibleExecutorFilters}
+                initiatorFilters={filters.initiatorFilters}
+                onInitiatorFiltersChange={filters.setInitiatorFilters}
                 advSearchName={filters.advSearchName}
                 onAdvSearchNameChange={filters.setAdvSearchName}
                 advSearchCode={filters.advSearchCode}

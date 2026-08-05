@@ -52,6 +52,7 @@ export function VndPassportTab({
                                    userGroupOptions,
                                }: VndPassportTabProps) {
     const isCancelledOrArchived = Boolean(vnd.cancelDate || vnd.archivedDate);
+    const isDraft = vnd.status === "draft";
     const periodFrom = vnd.lastActualizationDate || vnd.effectiveDate || vnd.adoptionDate;
     const periodLabel = describePeriod(periodFrom, vnd.dueActualizationDate);
 
@@ -68,14 +69,14 @@ export function VndPassportTab({
         setActualizationMode, updateDueDateManually,
     } = useVndRequisitesForm(vnd, onVndChanged);
 
-     function isoToDisplayDate(iso: string): string {
+    function isoToDisplayDate(iso: string): string {
         if (!iso) return "";
         const [y, m, d] = iso.split("-");
         if (!y || !m || !d) return "";
         return `${d}.${m}.${y}`;
     }
 
-     function displayToIsoDate(display: string): string {
+    function displayToIsoDate(display: string): string {
         if (!display) return "";
         const [d, m, y] = display.split(".");
         if (!d || !m || !y || y.length !== 4) return "";
@@ -137,6 +138,20 @@ export function VndPassportTab({
 
                 {/* Основная информация */}
                 <Section icon={<FileText className="w-[15px] h-[15px]" strokeWidth={1.9}/>} title="Основная информация">
+                    {/* Инициатор и ответственный за актуализацию — всегда read-only,
+                        независимо от режима редактирования: проставляются автоматически системой.
+                        Ответственного за актуализацию не показываем для черновиков — там его
+                        просто не может быть (документ ещё ни разу не проходил цикл актуализации). */}
+                    <div className={`grid grid-cols-1 gap-4 mb-4 ${isDraft ? "" : "sm:grid-cols-2"}`}>
+                        <ReadOnlyField label="Инициатор" value={vnd.createdByUserName || "—"}/>
+                        {!isDraft && (
+                            <ReadOnlyField
+                                label="Ответственный за последнюю актуализацию"
+                                value={vnd.actualizationResponsibleUserName || "—"}
+                            />
+                        )}
+                    </div>
+
                     {isEditing ? (
                         <>
                             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4 [&>*]:min-w-0">

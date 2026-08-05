@@ -32,6 +32,11 @@ import {ChevronDown, ChevronUp, Filter, SlidersHorizontal} from "lucide-react";
 import {
     ActualizationPageHeader
 } from "@/components/componentsVND/componentsActualizationPage/ActualizationPageHeader.tsx";
+import {
+    ActualizationRequestsPanel
+} from "@/components/componentsVND/componentsActualizationPage/ActualizationRequestsPanel.tsx";
+import {useAuth} from "@/context/AuthContext.ts";
+import {PermissionCode} from "@/constants/permissions.ts";
 
 // TODO: заглушка, надо настроить загрузку данных из справочников
 const orgUnitMap = new Map<string, OrganizationUnit>(ORG_UNITS.map((o) => [o.id, o]));
@@ -64,6 +69,11 @@ function toDateRangeFilter(v: DateFilterValue): VndSearchRequest["dueActualizati
 }
 
 export function ActualizationPage() {
+    const {hasPermission} = useAuth();
+    const isChiefEditor =
+        hasPermission(PermissionCode.ActualizeAnyVndWithApproval) ||
+        hasPermission(PermissionCode.ActualizeAnyVndWithoutApproval);
+
     const [search, setSearch] = useState("");
     const [bucketFilter, setBucketFilter] = useState<ActualizationFilterValue>("all");
 
@@ -113,7 +123,7 @@ export function ActualizationPage() {
         <div className="w-full max-w-[1700px] mx-auto px-4 sm:px-6 lg:px-8 xl:px-10 pt-5 sm:pt-[26px] pb-10 sm:pb-[60px]">
            <ActualizationPageHeader/>
 
-
+            {isChiefEditor && <ActualizationRequestsPanel/>}
 
             <ActualizationSummaryCards
                 summary={summary}

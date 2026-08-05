@@ -69,6 +69,9 @@ export interface VndSearchRequest {
     secrecyLevelIds?: number[];
     userGroupIds?: number[];
 
+    /** Фильтр по инициатору (пользователь, создавший документ) */
+    createdByUserIds?: number[];
+
     /** Фильтр по статусу срока актуализации. Пусто = без фильтра
      * (включая документы без даты актуализации). */
     actualizationBuckets?: ActualizationBucketKey[];
@@ -83,6 +86,14 @@ export interface VndSearchRequest {
     dueActualizationDate?: DateRangeFilter | null;
     lastActualizationDate?: DateRangeFilter | null;
     archivedDate?: DateRangeFilter | null;
+
+    /** Только ВНД, где текущий пользователь — инициатор, согласующий, либо
+     * ответственный за актуализацию/консолидацию */
+    linkedToMeOnly?: boolean;
+
+    /** Для вкладки "Черновики": "mine" — только свои, "others" — черновики других
+     * пользователей (требует право ViewOtherUsersDrafts) */
+    draftOwnerScope?: "mine" | "others";
 }
 
 // --- Запрос на создание ---
@@ -137,6 +148,15 @@ export interface VndResponse {
 
     responsibleExecutorIds: number[];
 
+    /** Инициатор — пользователь, создавший документ. Только для отображения, не редактируется. */
+    createdByUserId: number | null;
+    createdByUserName: string | null;
+
+    /** Ответственный за текущий/последний цикл актуализации. Только для отображения, не редактируется. */
+    actualizationResponsibleUserId: number | null;
+    actualizationResponsibleUserName: string | null;
+
+    // --- Даты
     adoptionDate: string | null; // "YYYY-MM-DD"
     adoptionCode: string | null;
     effectiveDate: string | null;
@@ -203,6 +223,27 @@ export interface VndActualizationSummaryResponse {
     overdue: number;
     /** normal + approaching + critical + overdue. Документы без даты актуализации сюда не входят. */
     total: number;
+}
+
+// --- История циклов актуализации (GET /vnd/{vndId}/actualization/history)
+export interface VndActualizationRecordResponse {
+    id: number;
+
+    responsibleUserId: number;
+    responsibleUserName: string;
+
+    requiresApproval: boolean;
+    shiftNextPeriod: boolean;
+
+    startedAt: string; // ISO datetime
+    /** null, пока цикл ещё не завершён (см. isCompleted) */
+    publishedAt: string | null;
+    hadChanges: boolean | null;
+    dueActualizationDateBefore: string | null; // "YYYY-MM-DD"
+    dueActualizationDateAfter: string | null;
+
+    /** false — цикл ещё в процессе (документ сейчас в OnActualization/Consolidation) */
+    isCompleted: boolean;
 }
 
 export interface VndLinkItem {

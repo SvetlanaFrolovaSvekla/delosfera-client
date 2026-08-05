@@ -4,7 +4,8 @@ import type {VndScope, VndStatusKey} from "@/constants/vndTabs.ts";
 import {type DateFilterValue, EMPTY_DATE_FILTER} from "@/components/componentsGeneral/datePickers/DateFilterGroup.tsx";
 import {toDateRangeFilter} from "@/utils/dateUtils.ts";
 
-export function useVndFilters(scope: VndScope) {
+export function useVndFilters(scope: VndScope, draftOwnerScope?: "mine" | "others") {
+    const [linkedToMeOnly, setLinkedToMeOnly] = useState(false);
     const [docTypeFilters, setDocTypeFilters] = useState<string[]>([]);
     const [developerFilters, setDeveloperFilters] = useState<string[]>([]);
     const [search, setSearch] = useState("");
@@ -12,6 +13,7 @@ export function useVndFilters(scope: VndScope) {
     const [rubricFilters, setRubricFilters] = useState<string[]>([]);
     const [keywordFilters, setKeywordFilters] = useState<string[]>([]);
     const [responsibleExecutorFilters, setResponsibleExecutorFilters] = useState<string[]>([]);
+    const [initiatorFilters, setInitiatorFilters] = useState<string[]>([]);
     const [advSearchName, setAdvSearchName] = useState("");
     const [advSearchCode, setAdvSearchCode] = useState("");
     const [advSearchRevisionText, setAdvSearchRevisionText] = useState("");
@@ -53,6 +55,7 @@ export function useVndFilters(scope: VndScope) {
             organIds: organFilters.length ? organFilters.map(Number) : undefined,
             developerIds: developerFilters.length ? developerFilters.map(Number) : undefined,
             responsibleExecutorIds: responsibleExecutorFilters.length ? responsibleExecutorFilters.map(Number) : undefined,
+            createdByUserIds: initiatorFilters.length ? initiatorFilters.map(Number) : undefined,
             keywordIds: keywordFilters.length ? keywordFilters.map(Number) : undefined,
             rubricIds: rubricFilters.length ? rubricFilters.map(Number) : undefined,
             secrecyLevelIds: secrecyLevelFilters.length ? secrecyLevelFilters.map(Number) : undefined,
@@ -67,18 +70,22 @@ export function useVndFilters(scope: VndScope) {
             dueActualizationDate: toDateRangeFilter(dueActualizationDateFilter),
             lastActualizationDate: toDateRangeFilter(lastActualizationDateFilter),
             archivedDate: toDateRangeFilter(archivedDateFilter),
+            linkedToMeOnly: linkedToMeOnly || undefined,
+            draftOwnerScope: scope === "draft" ? draftOwnerScope : undefined,
         };
     }, [
         scope, statusFilters, advSearchCode, advSearchName, advSearchRevisionText,
-        docTypeFilters, organFilters, developerFilters, responsibleExecutorFilters,
+        docTypeFilters, organFilters, developerFilters, responsibleExecutorFilters, initiatorFilters,
         keywordFilters, rubricFilters, secrecyLevelFilters, userGroupFilters,
         adoptionDateFilter, adoptionCodeFilter, effectiveDateFilter,
         requisitesChangedDateFilter, revisionChangedDateFilter,
         cancelDateFilter, cancelCodeFilter,
         dueActualizationDateFilter, lastActualizationDateFilter, archivedDateFilter,
+        linkedToMeOnly, draftOwnerScope,
     ]);
 
     const resetFilters = () => {
+        setLinkedToMeOnly(false);
         setSearch("");
         setStatusFilters([]);
         setRubricFilters([]);
@@ -87,6 +94,7 @@ export function useVndFilters(scope: VndScope) {
         setDeveloperFilters([]);
         setKeywordFilters([]);
         setResponsibleExecutorFilters([]);
+        setInitiatorFilters([]);
         setAdvSearchName("");
         setAdvSearchCode("");
         setAdvSearchRevisionText("");
@@ -105,6 +113,7 @@ export function useVndFilters(scope: VndScope) {
     };
 
     return {
+        linkedToMeOnly, setLinkedToMeOnly,
         docTypeFilters, setDocTypeFilters,
         developerFilters, setDeveloperFilters,
         search, setSearch,
@@ -112,6 +121,7 @@ export function useVndFilters(scope: VndScope) {
         rubricFilters, setRubricFilters,
         keywordFilters, setKeywordFilters,
         responsibleExecutorFilters, setResponsibleExecutorFilters,
+        initiatorFilters, setInitiatorFilters,
         advSearchName, setAdvSearchName,
         advSearchCode, setAdvSearchCode,
         advSearchRevisionText, setAdvSearchRevisionText,

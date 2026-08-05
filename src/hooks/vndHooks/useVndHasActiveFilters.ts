@@ -6,6 +6,7 @@ const isDateActive = (v: DateFilterValue) => Boolean(v.exact || v.from || v.to);
 
 interface UseVndHasActiveFiltersParams {
     search: string;
+    linkedToMeOnly?: boolean;
     statusFilters: string[];
     rubricFilters: string[];
     docTypeFilters: string[];
@@ -13,6 +14,7 @@ interface UseVndHasActiveFiltersParams {
     developerFilters: string[];
     keywordFilters: string[];
     responsibleExecutorFilters: string[];
+    initiatorFilters: string[];
     advSearchName: string;
     advSearchCode: string;
     advSearchRevisionText: string;
@@ -32,8 +34,8 @@ interface UseVndHasActiveFiltersParams {
 
 export function useVndHasActiveFilters(params: UseVndHasActiveFiltersParams): boolean {
     const {
-        search, statusFilters, rubricFilters, docTypeFilters, organFilters,
-        developerFilters, keywordFilters, responsibleExecutorFilters,
+        search, linkedToMeOnly, statusFilters, rubricFilters, docTypeFilters, organFilters,
+        developerFilters, keywordFilters, responsibleExecutorFilters, initiatorFilters,
         advSearchName, advSearchCode, advSearchRevisionText,
         adoptionCodeFilter, cancelCodeFilter, secrecyLevelFilters, userGroupFilters,
         adoptionDateFilter, effectiveDateFilter, requisitesChangedDateFilter,
@@ -43,6 +45,7 @@ export function useVndHasActiveFilters(params: UseVndHasActiveFiltersParams): bo
 
     return useMemo(() =>
             search.trim() !== "" ||
+            Boolean(linkedToMeOnly) ||
             statusFilters.length > 0 ||
             rubricFilters.length > 0 ||
             docTypeFilters.length > 0 ||
@@ -50,6 +53,7 @@ export function useVndHasActiveFilters(params: UseVndHasActiveFiltersParams): bo
             developerFilters.length > 0 ||
             keywordFilters.length > 0 ||
             responsibleExecutorFilters.length > 0 ||
+            initiatorFilters.length > 0 ||
             advSearchName.trim() !== "" ||
             advSearchCode.trim() !== "" ||
             advSearchRevisionText.trim() !== "" ||
@@ -66,8 +70,8 @@ export function useVndHasActiveFilters(params: UseVndHasActiveFiltersParams): bo
             isDateActive(lastActualizationDateFilter) ||
             isDateActive(archivedDateFilter),
         [
-            search, statusFilters, rubricFilters, docTypeFilters, organFilters,
-            developerFilters, keywordFilters, responsibleExecutorFilters,
+            search, linkedToMeOnly, statusFilters, rubricFilters, docTypeFilters, organFilters,
+            developerFilters, keywordFilters, responsibleExecutorFilters, initiatorFilters,
             advSearchName, advSearchCode, advSearchRevisionText,
             adoptionCodeFilter, cancelCodeFilter, secrecyLevelFilters, userGroupFilters,
             adoptionDateFilter, effectiveDateFilter, requisitesChangedDateFilter,

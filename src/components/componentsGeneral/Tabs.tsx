@@ -1,8 +1,12 @@
 // Компонента переключатель табов
+import {type ReactNode} from "react";
+
 interface TabItem<T extends string> {
     id: T;
     label: string;
     n: number;
+    alignRight?: boolean;
+    icon?: ReactNode;
 }
 
 interface TabsProps<T extends string> {
@@ -20,8 +24,15 @@ export function Tabs<T extends string>({tabs, value, onChange}: TabsProps<T>) {
                     <button
                         key={tab.id}
                         onClick={() => onChange(tab.id)}
-                        className="relative inline-flex items-center gap-2 py-[9px] px-1 border-none bg-transparent text-[14px] cursor-pointer whitespace-nowrap"
+                        className={`relative inline-flex items-center gap-2 py-[9px] px-1 border-none bg-transparent text-[14px] cursor-pointer whitespace-nowrap ${
+                            tab.alignRight ? "ml-auto" : ""
+                        }`}
                     >
+                        {tab.icon && (
+                            <span className={`inline-flex items-center ${active ? "text-[#4e57d6]" : "text-[#8b97ab]"}`}>
+                                {tab.icon}
+                            </span>
+                        )}
                         <span className={active ? "text-[#4e57d6] font-bold" : "text-[#8b97ab] font-medium"}>
                             {tab.label}
                         </span>

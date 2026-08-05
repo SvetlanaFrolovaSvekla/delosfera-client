@@ -3,25 +3,55 @@ import {useState} from "react";
 import {ArrowLeft} from "lucide-react";
 import {useVndById} from "@/hooks/vndHooks/useVndById.ts";
 import {useVndDictionaries} from "@/hooks/vndHooks/useVndDictionaries.ts";
+import {useVndRedactions} from "@/hooks/vndHooks/useVndRedactions.ts";
 import {STATUS_META} from "@/constants/vndStatus.ts";
 import {getVndTabs, type VndTabId} from "@/constants/vndTabs.ts";
 import {VndStatusBanner} from "@/components/componentsGeneral/knowledgeBaseComponents/VndStatusBanner.tsx";
-import {VndTabPlaceholder} from "@/components/componentsGeneral/VndTabPlaceholder.tsx";
 import {formatDate} from "@/utils/dateUtils.ts";
 import {VndPassportTab} from "@/components/componentsVND/componentsOpenVndPage/VndPassportTab.tsx";
 import {VndEditionsTab} from "@/components/componentsVND/componentsOpenVndPage/VndEditionsTab.tsx";
 import {VndCoordinationTab} from "@/components/componentsVND/componentsOpenVndPage/VndCoordinationTab.tsx";
+import {ConsolidateVndModal} from "@/components/componentsVND/componentsOpenVndPage/ConsolidateVndModal.tsx";
+import {VndActualizationTab} from "@/components/componentsVND/componentsOpenVndPage/VndActualizationTab.tsx";
 import {Loader} from "@/components/componentsGeneral/Loader.tsx";
 import {EmptyState} from "@/components/componentsGeneral/EmptyState.tsx";
 import {VndLinksTab} from "@/components/componentsVND/componentsOpenVndPage/VndLinksTab.tsx";
 import {VndHistoryTab} from "@/components/componentsVND/componentsOpenVndPage/VndHistoryTab.tsx";
+import {actualizationService} from "@/service/actualizationService/actualizationService.ts";
+import {toast} from "@/service/toastService.ts";
 
 export function OpenVndPage() {
     const {id} = useParams<{ id: string }>();
     const {data: vnd, loading, error, refetch} = useVndById(id ? Number(id) : undefined);
     const dictionaries = useVndDictionaries();
+    const {data: redactions} = useVndRedactions(id ? Number(id) : undefined);
     const navigate = useNavigate();
     const [tab, setTab] = useState<VndTabId>("passport");
+
+    const [consolidateOpen, setConsolidateOpen] = useState(false);
+    const [consolidating, setConsolidating] = useState(false);
+    const [consolidateError, setConsolidateError] = useState<string | null>(null);
+
+    const lastRedactionNumber = redactions.reduce((max, r) => Math.max(max, r.number), 0);
+    const isFirstRedaction = lastRedactionNumber <= 1;
+
+    const handleConsolidate = async (hadChanges: boolean) => {
+        if (!vnd) return;
+        setConsolidating(true);
+        setConsolidateError(null);
+        try {
+            await actualizationService.publish(vnd.id, {hadChanges});
+            setConsolidateOpen(false);
+            toast.success("ВНД консолидирован", "Документ теперь в статусе «Действующий»");
+            refetch();
+        } catch (err) {
+            setConsolidateError(
+                err instanceof Error ? err.message : "Не удалось консолидировать документ",
+            );
+        } finally {
+            setConsolidating(false);
+        }
+    };
 
     if (loading || dictionaries.loading) {
         return <Loader label="Загрузка…" fullHeight={false}/>;
@@ -79,7 +109,7 @@ export function OpenVndPage() {
                 {vnd.name}
             </h1>
 
-            <VndStatusBanner status={vnd.status}/>
+            <VndStatusBanner status={vnd.status} onSecondaryAction={() => setConsolidateOpen(true)}/>
 
             {/* Табы - состав зависит от статуса, «Реквизиты» есть всегда */}
             <div className="flex items-center gap-6 border-b border-[#e9edf3] mb-5 overflow-x-auto">
@@ -115,9 +145,25 @@ export function OpenVndPage() {
             )}
             {activeTab === "editions" && <VndEditionsTab vnd={vnd} onVndChanged={refetch}/>}
             {activeTab === "approval" && <VndCoordinationTab vnd={vnd}/>}
-            {activeTab === "actual" && <VndTabPlaceholder/>}
+            {activeTab === "actual" && (
+                <VndActualizationTab vnd={vnd} onVndChanged={refetch} onGoToEditions={() => setTab("editions")}/>
+            )}
             {activeTab === "links" && <VndLinksTab vndId={vnd.id}/>}
             {activeTab === "history" && <VndHistoryTab/>}
+
+            {consolidateOpen && (
+                <ConsolidateVndModal
+                    isFirstRedaction={isFirstRedaction}
+                    submitting={consolidating}
+                    error={consolidateError}
+                    onClose={() => {
+                        if (consolidating) return;
+                        setConsolidateOpen(false);
+                        setConsolidateError(null);
+                    }}
+                    onConfirm={handleConsolidate}
+                />
+            )}
         </div>
     );
 }

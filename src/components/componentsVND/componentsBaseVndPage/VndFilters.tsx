@@ -10,10 +10,14 @@ import {DateFilterGroup, type DateFilterValue} from "@/components/componentsGene
 import {SearchBar} from "@/components/componentsGeneral/SearchBar.tsx";
 import {MultiSelectDropdown} from "@/components/componentsGeneral/selects/MultiSelects/MultiSelectDropdown.tsx";
 import {AlertTriangle, ChevronDown, ChevronUp, Filter, SlidersHorizontal} from "lucide-react";
+import {useInitiatorOptions} from "@/hooks/useInitiatorOptions.ts";
 
 interface VndFiltersProps {
     scope: VndScope;
     isArchScope: boolean;
+
+    linkedToMeOnly: boolean;
+    onLinkedToMeOnlyChange: (v: boolean) => void;
 
     search: string;
     onSearchChange: (v: string) => void;
@@ -56,6 +60,10 @@ interface VndFiltersProps {
 
     responsibleExecutorFilters: string[];
     onResponsibleExecutorFiltersChange: (keys: string[]) => void;
+
+    /** Фильтр по инициатору (id пользователей, создавших документ) */
+    initiatorFilters: string[];
+    onInitiatorFiltersChange: (keys: string[]) => void;
 
     advSearchName: string;
     onAdvSearchNameChange: (v: string) => void;
@@ -103,7 +111,7 @@ interface VndFiltersProps {
 
 export function VndFilters(props: VndFiltersProps) {
     const {
-        scope, isArchScope, search, onSearchChange,
+        scope, isArchScope, linkedToMeOnly, onLinkedToMeOnlyChange, search, onSearchChange,
         statusOptions, statusFilters, onToggleStatus, onSelectAllStatuses, onDeselectAllStatuses,
         advOpen, onToggleAdv, onCloseAdv,
         rubricFilters, onRubricFiltersChange,
@@ -114,6 +122,7 @@ export function VndFilters(props: VndFiltersProps) {
         onDeveloperFiltersChange, developerFilters,
         keywordFilters, onKeywordFiltersChange,
         responsibleExecutorFilters, onResponsibleExecutorFiltersChange,
+        initiatorFilters, onInitiatorFiltersChange,
         advSearchName, onAdvSearchNameChange,
         advSearchCode, onAdvSearchCodeChange,
         advSearchRevisionText, onAdvSearchRevisionTextChange,
@@ -134,13 +143,17 @@ export function VndFilters(props: VndFiltersProps) {
     // Справочники берём из общего контекста — грузятся один раз на всё приложение
     const dictionaries = useDictionaries();
 
+    // Список пользователей для фильтра "Инициатор" — отдельный лёгкий хук (не часть
+    // общего DictionariesContext, т.к. пользователи — не совсем справочник)
+    const initiatorOptions = useInitiatorOptions();
+
     const selectedColumnKeys = toggleableColumns
         .filter((c) => visibleCols[c.key] !== false)
         .map((c) => c.key);
 
     const hasActiveFilters = useVndHasActiveFilters({
-        search, statusFilters, rubricFilters, docTypeFilters, organFilters,
-        developerFilters, keywordFilters, responsibleExecutorFilters,
+        search, linkedToMeOnly, statusFilters, rubricFilters, docTypeFilters, organFilters,
+        developerFilters, keywordFilters, responsibleExecutorFilters, initiatorFilters,
         advSearchName, advSearchCode, advSearchRevisionText,
         adoptionCodeFilter, cancelCodeFilter, secrecyLevelFilters, userGroupFilters,
         adoptionDateFilter, effectiveDateFilter, requisitesChangedDateFilter,
@@ -153,6 +166,7 @@ export function VndFilters(props: VndFiltersProps) {
         onOrganFiltersChange(draft.organFilters);
         onDeveloperFiltersChange(draft.developerFilters);
         onResponsibleExecutorFiltersChange(draft.responsibleExecutorFilters);
+        onInitiatorFiltersChange(draft.initiatorFilters);
         onKeywordFiltersChange(draft.keywordFilters);
         onRubricFiltersChange(draft.rubricFilters);
         onSecrecyLevelFiltersChange(draft.secrecyLevelFilters);
@@ -176,7 +190,7 @@ export function VndFilters(props: VndFiltersProps) {
         advOpen,
         onCloseAdv,
         appliedValues: {
-            docTypeFilters, organFilters, developerFilters, responsibleExecutorFilters,
+            docTypeFilters, organFilters, developerFilters, responsibleExecutorFilters, initiatorFilters,
             keywordFilters, rubricFilters, secrecyLevelFilters, userGroupFilters,
             advSearchName, advSearchCode, advSearchRevisionText,
             adoptionDateFilter, adoptionCodeFilter, effectiveDateFilter,
@@ -254,6 +268,18 @@ export function VndFilters(props: VndFiltersProps) {
                     searchThreshold={8}
                     searchPlaceholder="Поиск колонки…"
                 />
+
+                {scope !== "draft" && (
+                    <label className="inline-flex items-center gap-2 h-9 px-3 rounded-[9px] border border-[#e5e9f0] bg-white text-[#3a4560] font-semibold text-[12.5px] cursor-pointer hover:bg-[#f6f8fb] select-none">
+                        <input
+                            type="checkbox"
+                            checked={linkedToMeOnly}
+                            onChange={(e) => onLinkedToMeOnlyChange(e.target.checked)}
+                            className="h-4 w-4 accent-[#4e57d6]"
+                        />
+                        Только связанные со мной
+                    </label>
+                )}
 
                 <div className="flex-1"/>
 
@@ -363,6 +389,15 @@ export function VndFilters(props: VndFiltersProps) {
                                         onChange={(v) => updateDraft("responsibleExecutorFilters", v)}
                                         searchPlaceholder="Поиск подразделения…"
                                         hierarchical
+                                    />
+                                    <MultiSelectField
+                                        label="Инициатор"
+                                        modalTitle="Инициатор"
+                                        options={initiatorOptions.options}
+                                        selectedKeys={draft.initiatorFilters}
+                                        onChange={(v) => updateDraft("initiatorFilters", v)}
+                                        searchPlaceholder="Поиск по ФИО…"
+                                        searchThreshold={8}
                                     />
                                 </div>
                             </div>

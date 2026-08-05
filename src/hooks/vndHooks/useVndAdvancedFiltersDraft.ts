@@ -7,6 +7,7 @@ export interface AdvancedDraft {
     organFilters: string[];
     developerFilters: string[];
     responsibleExecutorFilters: string[];
+    initiatorFilters: string[];
     keywordFilters: string[];
     rubricFilters: string[];
     secrecyLevelFilters: string[];
@@ -31,6 +32,7 @@ export const EMPTY_ADVANCED_DRAFT: AdvancedDraft = {
     organFilters: [],
     developerFilters: [],
     responsibleExecutorFilters: [],
+    initiatorFilters: [],
     keywordFilters: [],
     rubricFilters: [],
     secrecyLevelFilters: [],

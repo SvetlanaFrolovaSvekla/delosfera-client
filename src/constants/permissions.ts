@@ -59,4 +59,7 @@ export const PermissionCode = {
 
     /* Возможность изменять маршрут согласования (удалять лишних пользователей) */
     ModifyApprovalRoute: 20,
+
+    /* Возможность просматривать черновики других пользователей */
+    ViewOtherUsersDrafts: 21,
 } as const;

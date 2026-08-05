@@ -1,12 +1,12 @@
 import type {ReactNode} from "react";
-import {Copy, FilePlus2, Layers} from "lucide-react";
+import {FilePlus2, Layers} from "lucide-react";
 import type {VndStatusKey} from "@/service/vndService/vndServiceType.ts";
 
 interface VndStatusBannerProps {
     status: VndStatusKey;
-    /** Клик по первичному действию (напр. «Открыть Два окна») */
+    /** Клик по первичному действию */
     onPrimaryAction?: () => void;
-    /** Клик по вторичному действию (напр. «Сформировать v4.0») */
+    /** Клик по вторичному действию (напр. «Консолидировать согласованную версию») */
     onSecondaryAction?: () => void;
     compact?: boolean;
 }
@@ -39,12 +39,8 @@ const BANNER_CONFIG: Partial<Record<VndStatusKey, BannerConfig>> = {
         titleColor: "#2a2352",
         title: "Документ в статусе «Консолидация»",
         textColor: "#6b6494",
-        text: (
-            <>После утверждения <b>ТИД-2026-014</b> внесите правки Ответственным редактором и сформируйте версию v4.0.</>
-        ),
-        primaryLabel: "Открыть «Два окна»",
-        primaryIcon: <Copy className="w-4 h-4" strokeWidth={1.8}/>,
-        secondaryLabel: "Сформировать v4.0",
+        text: "Согласование завершено. Дождитесь решения руководства и подтвердите консолидацию — после этого ВНД станет действующим.",
+        secondaryLabel: "Консолидировать согласованную версию",
         accentColor: "#7a5ce0",
     },
     draft: {

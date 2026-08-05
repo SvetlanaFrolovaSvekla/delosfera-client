@@ -138,7 +138,12 @@ export function VndSelectApproverModal({
 
     const handlePick = (user: ApproverOption) => {
         if (excludedUserIds.has(user.id)) return;
-        if (currentUser?.id === user.id) return; // инициатор не может согласовывать сам себя
+
+        const isSelf = currentUser?.id === user.id;
+        // На фиксированном этапе (lockedOrgUnitId задан) себя выбрать можно - согласование
+        // на этом этапе засчитается автоматически. На дополнительном этапе - нельзя.
+        if (isSelf && !lockedOrgUnitId) return;
+
         onSelect(user);
         onClose();
     };
@@ -206,7 +211,9 @@ export function VndSelectApproverModal({
                         <div className="flex flex-col gap-1">
                             {filteredUsers.map((u) => {
                                 const isSelf = currentUser?.id === u.id;
-                                const isExcluded = excludedUserIds.has(u.id) || isSelf;
+                                const selfAllowed = Boolean(lockedOrgUnitId) && isSelf;
+                                const isExcluded = excludedUserIds.has(u.id) || (isSelf && !selfAllowed);
+
                                 return (
                                     <button
                                         key={u.id}
@@ -225,25 +232,30 @@ export function VndSelectApproverModal({
                                         </div>
                                         <div className="min-w-0 flex-1">
                                             <div className="flex items-center gap-2">
-                                                <span className="truncate text-[13px] font-semibold text-[#26324a]">
-                                                    {u.fullName}
-                                                </span>
+                    <span className="truncate text-[13px] font-semibold text-[#26324a]">
+                        {u.fullName}
+                    </span>
                                                 {!u.isActive && (
                                                     <span
                                                         className="flex-none rounded-full bg-[#fdf1f1] px-2 py-[1px] text-[10px] font-medium text-[#c0392b]">
-                                                        неактивен
-                                                    </span>
+                            неактивен
+                        </span>
                                                 )}
                                                 {isSelf ? (
                                                     <span
-                                                        className="flex-none rounded-full bg-[#fdf3ea] px-2 py-[1px] text-[10px] font-medium text-[#b3701e]">
-                                                        это вы
-                                                    </span>
+                                                        className={`flex-none rounded-full px-2 py-[1px] text-[10px] font-medium ${
+                                                            selfAllowed
+                                                                ? "bg-[#f2faf5] text-[#2c7a4b]"
+                                                                : "bg-[#fdf3ea] text-[#b3701e]"
+                                                        }`}
+                                                    >
+                            {selfAllowed ? "это вы · авто-согласование" : "это вы"}
+                        </span>
                                                 ) : excludedUserIds.has(u.id) && (
                                                     <span
                                                         className="flex-none rounded-full bg-[#f0f1f5] px-2 py-[1px] text-[10px] font-medium text-[#8b97ab]">
-                                                        уже выбран
-                                                    </span>
+                            уже выбран
+                        </span>
                                                 )}
                                             </div>
                                             <div className="truncate text-[11.5px] text-[#8b97ab]">{u.email}</div>

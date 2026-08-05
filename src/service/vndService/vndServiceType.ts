@@ -258,3 +258,10 @@ export interface VndLinksResponse {
     outgoing: VndLinkItem[];
     incoming: VndLinkItem[];
 }
+
+export interface EditLastRevisionDirectlyRequest {
+    docRu?: File;
+    docKg?: File;
+    docEn?: File;
+    description?: string;
+}

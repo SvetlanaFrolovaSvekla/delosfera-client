@@ -228,7 +228,7 @@ export function VndUploadRedactionModal({vndId, onClose, onUploaded}: VndUploadR
                             <Clue>
                                 <span className="flex flex-wrap items-center gap-x-1.5 gap-y-1.5">
                                     <span>
-                                        Вы можете загрузить редакцию без согласования — это право Вам даёт
+                                        Вы можете загрузить редакцию без согласования — это право Вам дают
                                         {grantingRoleNames.length === 1 ? " роль:" : " роли:"}
                                     </span>
                                     {grantingRoleNames.map((name) => (

@@ -1,3 +1,4 @@
+// Таб "Редакции" открытой страницы ВНД
 import {useState} from "react";
 import type {VndRedactionResponse, VndResponse} from "@/service/vndService/vndServiceType.ts";
 import {toast} from "@/service/toastService.ts";
@@ -24,6 +25,11 @@ import {
 } from "@/components/componentsVND/componentsOpenVndPage/componentsEditionsTab/RedactionCompareView.tsx";
 import {VndStartApprovalModal} from "@/components/componentsCoordination/CoordinationRouteConstructor/functionalComponents/VndStartApprovalModal.tsx";
 
+import {useAuth} from "@/context/AuthContext.ts";
+import {PermissionCode} from "@/constants/permissions.ts";
+import {
+    VndEditLastRevisionModal
+} from "@/components/componentsVND/componentsOpenVndPage/componentsEditionsTab/VndEditLastRevisionModal.tsx";
 
 interface VndEditionsTabProps {
     vnd: VndResponse;
@@ -43,6 +49,10 @@ export function VndEditionsTab({vnd, onVndChanged}: VndEditionsTabProps) {
     const submit = useAsyncAction<number>();
 
     const [approvalModalOpen, setApprovalModalOpen] = useState(false);
+
+    const {hasPermission} = useAuth();
+    const [editOpen, setEditOpen] = useState(false);
+    const isTrueLast = sortedDesc[0]?.id === selected?.id;
 
     const handleDownload = (fileId: number, name: string) =>
         download.run(fileId, () => downloadWithToast(fileId, name), "Не удалось скачать файл");
@@ -127,6 +137,15 @@ export function VndEditionsTab({vnd, onVndChanged}: VndEditionsTabProps) {
                         {selectedMeta.label}
                     </span>
                     <div className="flex-1"/>
+
+                    {hasPermission(PermissionCode.EditLastRevisionDirectly) && isTrueLast && (
+                        <button
+                            onClick={() => setEditOpen(true)}
+                            className="cursor-pointer inline-flex items-center gap-1.5 h-8 px-3 rounded-[8px] border border-[#e5e9f0] text-[12.5px] font-semibold text-[#3a4560] hover:bg-[#f6f8fb]"
+                        >
+                            Редактировать
+                        </button>
+                    )}
                 </div>
 
                 <RedactionStatusBanner
@@ -173,6 +192,7 @@ export function VndEditionsTab({vnd, onVndChanged}: VndEditionsTabProps) {
                 )}
             </div>
 
+            {/* Загрузка новой редакции */}
             {uploadOpen && (
                 <VndUploadRedactionModal
                     vndId={vnd.id}
@@ -181,6 +201,7 @@ export function VndEditionsTab({vnd, onVndChanged}: VndEditionsTabProps) {
                 />
             )}
 
+            {/* Запуск согласования */}
             {approvalModalOpen && (
                 <VndStartApprovalModal
                     vndId={vnd.id}
@@ -188,6 +209,20 @@ export function VndEditionsTab({vnd, onVndChanged}: VndEditionsTabProps) {
                     onStarted={() => {
                         setApprovalModalOpen(false);
                         onVndChanged?.();
+                    }}
+                />
+            )}
+
+            {editOpen && selected && (
+                <VndEditLastRevisionModal
+                    vndId={vnd.id}
+                    redaction={selected}
+                    onClose={() => setEditOpen(false)}
+                    onSaved={() => {
+                        setEditOpen(false);
+                        refetch();
+                        onVndChanged?.();
+                        toast.success("Редакция обновлена", `Изменения в редакции ${selected.code} сохранены.`);
                     }}
                 />
             )}

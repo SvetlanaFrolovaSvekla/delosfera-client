@@ -397,7 +397,6 @@ export function VndFilters(props: VndFiltersProps) {
                                         selectedKeys={draft.initiatorFilters}
                                         onChange={(v) => updateDraft("initiatorFilters", v)}
                                         searchPlaceholder="Поиск по ФИО…"
-                                        searchThreshold={8}
                                     />
                                 </div>
                             </div>

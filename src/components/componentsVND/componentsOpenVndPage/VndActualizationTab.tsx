@@ -13,6 +13,7 @@ import {StartActualizationModal} from "./componentsActualizationTab/StartActuali
 import {
     RequestActualizationAccessModal,
 } from "./componentsActualizationTab/RequestActualizationAccessModal.tsx";
+import {Loader} from "@/components/componentsGeneral/Loader.tsx";
 
 interface VndActualizationTabProps {
     vnd: VndResponse;
@@ -22,6 +23,7 @@ interface VndActualizationTabProps {
 
 export function VndActualizationTab({vnd, onVndChanged, onGoToEditions}: VndActualizationTabProps) {
     const {hasPermission} = useAuth();
+    const {user} = useAuth();
 
     const canWithoutApproval = hasPermission(PermissionCode.ActualizeAnyVndWithoutApproval);
     const canWithApproval = hasPermission(PermissionCode.ActualizeAnyVndWithApproval);
@@ -34,16 +36,16 @@ export function VndActualizationTab({vnd, onVndChanged, onGoToEditions}: VndActu
     const [startOpen, setStartOpen] = useState(false);
     const [requestOpen, setRequestOpen] = useState(false);
     const [submitting, setSubmitting] = useState(false);
-    const [confirming, setConfirming] = useState(false);
     const [error, setError] = useState<string | null>(null);
 
-    const handleStart = async (data: {requiresApproval: boolean; shiftNextPeriod: boolean}) => {
+    const handleStart = async (data: {requiresApproval: boolean; shiftNextPeriod: boolean; responsibleUserId: number}) => {
         setSubmitting(true);
         setError(null);
         try {
             await actualizationService.start(vnd.id, {
                 shiftNextPeriod: data.shiftNextPeriod,
                 requiresApproval: data.requiresApproval,
+                responsibleUserId: data.responsibleUserId,
             });
             setStartOpen(false);
             toast.success("Актуализация начата", "Загрузите новую редакцию во вкладке «Редакции»");
@@ -66,22 +68,6 @@ export function VndActualizationTab({vnd, onVndChanged, onGoToEditions}: VndActu
             setError(err instanceof Error ? err.message : "Не удалось отправить заявку");
         } finally {
             setSubmitting(false);
-        }
-    };
-
-    const handleConfirmStart = async () => {
-        setConfirming(true);
-        try {
-            await actualizationService.confirmStart(vnd.id, {shiftNextPeriod: true});
-            toast.success("Актуализация начата", "Загрузите новую редакцию во вкладке «Редакции»");
-            onVndChanged();
-        } catch (err) {
-            toast.error(
-                "Не удалось подтвердить старт",
-                err instanceof Error ? err.message : "Возможно, одобренной заявки ещё нет",
-            );
-        } finally {
-            setConfirming(false);
         }
     };
 
@@ -134,6 +120,14 @@ export function VndActualizationTab({vnd, onVndChanged, onGoToEditions}: VndActu
                 <div className="rounded-[14px] border border-[#e9edf3] bg-white px-5 py-6 text-center text-[13px] text-[#8b97ab]">
                     Актуализация доступна только для действующего документа.
                 </div>
+            </div>
+        );
+    }
+
+    if (!user) {
+        return (
+            <div className="w-full max-w-[1700px] mx-auto px-4 sm:px-6 lg:px-8 pt-5 sm:pt-[26px] pb-5 sm:pb-4">
+                <Loader label="Загрузка…" fullHeight={false}/>
             </div>
         );
     }
@@ -197,8 +191,7 @@ export function VndActualizationTab({vnd, onVndChanged, onGoToEditions}: VndActu
                 <div className="mb-3 overflow-hidden rounded-[14px] border border-[#e9edf3] bg-white px-5 py-4">
                     <div className="mb-1 text-[13.5px] font-bold text-[#1c2740]">Доступ по запросу</div>
                     <p className="mb-3 text-[13px] leading-[1.6] text-[#55617a]">
-                        Запросите доступ к актуализации у главного редактора ВНД. После одобрения
-                        заявки подтвердите старт кнопкой ниже.
+                        Запросите доступ к актуализации у главного редактора ВНД!
                     </p>
                     <div className="flex flex-wrap gap-2">
                         <button
@@ -208,14 +201,6 @@ export function VndActualizationTab({vnd, onVndChanged, onGoToEditions}: VndActu
                         >
                             <Send size={14} strokeWidth={1.8}/>
                             Запросить доступ
-                        </button>
-                        <button
-                            type="button"
-                            onClick={handleConfirmStart}
-                            disabled={confirming}
-                            className="cursor-pointer inline-flex h-9 items-center gap-2 rounded-[9px] border border-[#e5e9f0] bg-white px-3.5 text-[12.5px] font-semibold text-[#3a4560] hover:bg-[#f6f8fb] disabled:opacity-50"
-                        >
-                            Подтвердить старт (после одобрения)
                         </button>
                     </div>
                 </div>
@@ -233,11 +218,8 @@ export function VndActualizationTab({vnd, onVndChanged, onGoToEditions}: VndActu
                     canWithApproval={canWithApproval}
                     submitting={submitting}
                     error={error}
-                    onClose={() => {
-                        if (submitting) return;
-                        setStartOpen(false);
-                        setError(null);
-                    }}
+                    currentUserId={user.id}
+                    onClose={() => { if (submitting) return; setStartOpen(false); setError(null); }}
                     onConfirm={handleStart}
                 />
             )}

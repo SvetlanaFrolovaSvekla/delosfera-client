@@ -1,3 +1,4 @@
+// Панель с перечнем редакций документа
 import {Calendar, Columns2, Paperclip, Plus} from "lucide-react";
 import type {VndRedactionResponse} from "@/service/vndService/vndServiceType.ts";
 import {formatDate} from "@/utils/dateUtils.ts";

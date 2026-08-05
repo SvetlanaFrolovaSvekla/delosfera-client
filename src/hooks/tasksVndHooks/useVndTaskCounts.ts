@@ -7,6 +7,7 @@ const EMPTY_COUNTS: VndTaskCountsResponse = {
     coordination: 0,
     actualization: 0,
     consolidation: 0,
+    myVndApproval: 0,
 };
 
 export function useVndTaskCounts() {

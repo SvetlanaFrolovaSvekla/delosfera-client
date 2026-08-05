@@ -74,7 +74,7 @@ export const COORDINATION_STAGE_META: Record<"primary" | "repeat" | "final", Tas
 };
 
 // Цвета разделов задач - те же, что и статусы ВНД (review/onact/consol)
-export const TASK_SCOPE_META: Record<"coordination" | "actualization" | "consolidation", TaskStatusMeta> = {
+export const TASK_SCOPE_META: Record<"coordination" | "actualization" | "consolidation" | "myVndApproval", TaskStatusMeta> = {
     coordination: {
         label: "На согласовании",
         color: "#2f68f5",
@@ -92,6 +92,12 @@ export const TASK_SCOPE_META: Record<"coordination" | "actualization" | "consoli
         color: "#7a5ce0",
         bg: "#efeafe",
         icon: Layers,
+    },
+    myVndApproval: {
+        label: "Мои ВНД на согласовании",
+        color: "#2f68f5",
+        bg: "#e9f0ff",
+        icon: Clock,
     },
 };
 

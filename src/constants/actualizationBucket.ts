@@ -16,3 +16,11 @@ export const ACTUALIZATION_BUCKET_META: Record<ActualizationBucketKey, {
 export const ACTUALIZATION_BUCKET_ORDER: ActualizationBucketKey[] = [
     "normal", "approaching", "critical", "overdue",
 ];
+
+/*
+На беке:
+    Normal = 0,       // > 30 дней до срока
+    Approaching = 1,  // от 6 до 30 дней
+    Critical = 2,     // от 0 до 5 дней
+    Overdue = 3        // срок уже прошёл
+*/

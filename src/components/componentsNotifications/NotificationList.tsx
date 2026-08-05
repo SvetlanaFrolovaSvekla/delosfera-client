@@ -38,7 +38,7 @@ export function NotificationList({
             <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white">
                 <EmptyState
                     icon={Bell}
-                    title="Здесь пока пусто"
+                    title="Здесь пока пусто!"
                     description="В этой категории нет уведомлений — попробуйте изменить фильтры или поиск"
                     actionLabel="Сбросить фильтры"
                     onAction={onResetFilters}

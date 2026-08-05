@@ -1,6 +1,6 @@
 import type {
     CreateVndRedactionRequest,
-    CreateVndRequest,
+    CreateVndRequest, EditLastRevisionDirectlyRequest,
     UpdateVndRequisitesRequest,
     VndActualizationSummaryResponse,
     VndLinksResponse,
@@ -136,5 +136,20 @@ export const vndService = {
             const errorBody = await response.json().catch(() => null);
             throw new Error(errorBody?.message ?? `Ошибка запроса: ${response.status}`);
         }
+    },
+
+    async editLastRevisionDirectly(vndId: number, request: EditLastRevisionDirectlyRequest): Promise<VndRedactionResponse> {
+        const formData = new FormData();
+        if (request.docRu) formData.append("DocRu", request.docRu);
+        if (request.docKg) formData.append("DocKg", request.docKg);
+        if (request.docEn) formData.append("DocEn", request.docEn);
+        if (request.description !== undefined) formData.append("Description", request.description);
+
+        const response = await fetch(`${API_BASE}/vnd/${vndId}/redactions/last`, {
+            method: "PUT",
+            headers: authHeaders(),
+            body: formData,
+        });
+        return handleResponse<VndRedactionResponse>(response);
     },
 };

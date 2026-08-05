@@ -14,6 +14,12 @@ export function getDeadlineTone(deadlineAt: string | null, totalHours: number | 
 export function getActionTitle(task: VndTaskResponse): string {
     const vndTitle = `«${task.vndTitle}»`;
 
+    // Для myVndApproval и (если пришёл) consolidation бэкенд уже отдаёт готовый
+    // человекочитаемый статус — используем его вместо старой производной формулировки.
+    if (task.statusLabel) {
+        return task.statusLabel;
+    }
+
     if (task.scope === "coordination") {
         switch (task.stagePhase) {
             case "primary":
@@ -44,5 +50,10 @@ export function getMetaText(task: VndTaskResponse): string {
 
         return parts.length > 0 ? parts.join(" · ") : "Ожидает вашего решения";
     }
+
+    if (task.scope === "myVndApproval") {
+        return task.redactionCode ? `Редакция ${task.redactionCode}` : "Отслеживайте ход согласования";
+    }
+
     return "Требует внимания ответственного";
 }

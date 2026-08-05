@@ -28,7 +28,7 @@ export function VndTaskCard({task}: VndTaskCardProps) {
     const BadgeIcon = badgeMeta.icon;
 
     const due = task.scope === "coordination"
-        ? getDeadlineTone(task.deadlineAt, task.deadlineHours)
+        ? getDeadlineTone(task.deadlineAt, task.deadlineMinutes)
         : getDeadlineTone(task.dueActualizationDate, null);
 
     return (

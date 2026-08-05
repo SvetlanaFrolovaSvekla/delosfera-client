@@ -197,6 +197,10 @@ export interface VndRedactionResponse {
     docFileKgId: number | null;
     docFileEnId: number | null;
 
+    /** Таблица изменений и дополнений (ТИД) — null, если для этой редакции ТИД не требовался
+     * (это первая редакция документа, number === 1) */
+    tidFileId: number | null;
+
     requiresApproval: boolean;
     approvalStatus: RedactionApprovalStatus;
 
@@ -210,6 +214,10 @@ export interface CreateVndRedactionRequest {
     docRu: File;
     docKg?: File | null;
     docEn?: File | null;
+    /** Таблица изменений и дополнений (ТИД). Обязателен на бэке, если у ВНД уже есть предыдущая
+     * редакция (то есть документ актуализируется, а не создаётся впервые) — форма загрузки
+     * должна проверить это сама, ориентируясь на наличие уже существующих редакций у ВНД. */
+    tid?: File | null;
     attachments?: File[];
     description?: string;
     requiresApproval: boolean;

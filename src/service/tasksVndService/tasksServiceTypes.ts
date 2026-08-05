@@ -24,7 +24,7 @@ export interface VndTaskResponse {
     deadlineAt: string | null;
 
     initiatorName: string | null;
-    deadlineHours: number | null;
+    deadlineMinutes: number | null;
 
     dueActualizationDate: string | null;
 

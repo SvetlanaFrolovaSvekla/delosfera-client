@@ -9,6 +9,10 @@ interface VndStatusBannerProps {
     /** Клик по вторичному действию (напр. «Консолидировать согласованную версию») */
     onSecondaryAction?: () => void;
     compact?: boolean;
+    /** Может ли текущий пользователь выполнить консолидацию — актуально только для статуса "Консолидация".
+     * Если не передано (undefined), баннер считает, что действие доступно (обратная совместимость),
+     * поэтому для статуса "consol" это значение обязательно нужно вычислять и передавать явно. */
+    canConsolidate?: boolean;
 }
 
 interface BannerConfig {
@@ -60,11 +64,23 @@ const BANNER_CONFIG: Partial<Record<VndStatusKey, BannerConfig>> = {
     },
 };
 
-export function VndStatusBanner({status, onPrimaryAction, onSecondaryAction, compact}: VndStatusBannerProps) {
+// Текст для тех, кто видит статус "Консолидация", но не имеет права её подтвердить
+// (согласующие, рядовые пользователи и т.д.)
+const CONSOL_READONLY_TEXT =
+    "Согласование завершено. Дождитесь решения руководства по консолидации.";
+
+export function VndStatusBanner({status, onPrimaryAction, onSecondaryAction, compact, canConsolidate}: VndStatusBannerProps) {
     const config = BANNER_CONFIG[status];
     if (!config) return null;
 
-    const hasActions = config.primaryLabel || config.secondaryLabel;
+    // Право действовать по консолидации проверяется только для статуса "consol";
+    // canConsolidate === false — единственный случай, когда прячем кнопку и меняем текст
+    const isConsolWithoutRights = status === "consol" && canConsolidate === false;
+
+    const displayText = isConsolWithoutRights ? CONSOL_READONLY_TEXT : config.text;
+    const secondaryLabel = isConsolWithoutRights ? undefined : config.secondaryLabel;
+
+    const hasActions = config.primaryLabel || secondaryLabel;
 
     return (
         <div
@@ -87,7 +103,7 @@ export function VndStatusBanner({status, onPrimaryAction, onSecondaryAction, com
                         {config.title}
                     </div>
                     <div className="text-[12.5px] mt-0.5" style={{color: config.textColor}}>
-                        {config.text}
+                        {displayText}
                     </div>
                 </div>
             </div>
@@ -105,13 +121,13 @@ export function VndStatusBanner({status, onPrimaryAction, onSecondaryAction, com
                         </button>
                     )}
 
-                    {config.secondaryLabel && (
+                    {secondaryLabel && (
                         <button
                             onClick={onSecondaryAction}
                             className={`h-[38px] px-[15px] border-none rounded-[9px] text-white font-semibold text-[12.5px] cursor-pointer hover:brightness-[1.06] ${compact ? "" : "flex-none"}`}
                             style={{background: config.accentColor}}
                         >
-                            {config.secondaryLabel}
+                            {secondaryLabel}
                         </button>
                     )}
                 </div>

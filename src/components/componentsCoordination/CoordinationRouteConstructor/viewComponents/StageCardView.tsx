@@ -6,6 +6,7 @@ import {
     STAGE_KIND_RESPONSE_TO_REQUEST,
     STAGE_LABELS,
 } from "@/constants/coordinationParams.ts";
+import {formatDateTime} from "@/utils/dateUtils.ts";
 
 interface StageCardViewProps {
     stage: ApprovalStageResponse;
@@ -19,13 +20,23 @@ export function StageCardView({stage, cardRef, isCurrentUserStage}: StageCardVie
     const Icon = STAGE_ICONS[kind];
     const isCustom = kind === "Custom";
 
-    // Показываем актуальное решение: если есть повторное — берём его, иначе первичное
-    const decision = stage.repeatDecision ?? stage.primaryDecision;
+    // Показываем самое актуальное решение по фазам: финальная выдержка > повторное > первичное
+    const decision = stage.finalHoldDecision ?? stage.repeatDecision ?? stage.primaryDecision;
     const decisionMeta = STAGE_DECISION_META[decision];
-    const comment = stage.repeatDecision ? stage.repeatComment : stage.primaryComment;
+    const comment = stage.finalHoldDecision
+        ? stage.finalHoldComment
+        : stage.repeatDecision
+            ? stage.repeatComment
+            : stage.primaryComment;
+    const decidedAt = stage.finalHoldDecision
+        ? stage.finalHoldDecidedAt
+        : stage.repeatDecision
+            ? stage.repeatDecidedAt
+            : stage.primaryDecidedAt;
 
     // Пока решение не принято, а это этап текущего пользователя — показываем отдельный жёлтый статус
     const isPendingForCurrentUser = isCurrentUserStage && decision === "pending";
+    const isAutoTimeout = decision === "auto_approved_timeout";
 
     const badgeLabel = isPendingForCurrentUser ? "В рассмотрении (мой этап)" : decisionMeta.label;
     const badgeClass = isPendingForCurrentUser
@@ -63,6 +74,12 @@ export function StageCardView({stage, cardRef, isCurrentUserStage}: StageCardVie
             <span className={`inline-flex w-fit items-center rounded-full px-[9px] py-0.5 text-[11px] font-semibold ${badgeClass}`}>
                 {badgeLabel}
             </span>
+
+            {isAutoTimeout && decidedAt && (
+                <div className="text-[11px] text-[#8b97ab]">
+                    Автоматически {formatDateTime(decidedAt)} — согласующий не отреагировал в срок
+                </div>
+            )}
 
             {comment && (
                 <div className="text-[11.5px] leading-snug text-[#6b7488]">

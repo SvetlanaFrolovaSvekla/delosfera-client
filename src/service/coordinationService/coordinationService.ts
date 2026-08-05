@@ -42,7 +42,9 @@ class CoordinationService {
     }
 
     /** Инициатор отправляет исправленную редакцию на повторное согласование
-     * (или сразу на финальную выдержку, если agreesWithAllRemarks === false) */
+     * (или сразу на финальную выдержку, если agreesWithAllRemarks === false).
+     * ТИД (tid) обязателен на бэке, если редакция не первая для этого ВНД —
+     * компонент вызова обязан проверить это перед отправкой (см. redaction.number). */
     async resubmit(
         vndId: number,
         request: ResubmitAfterRevisionRequest,
@@ -51,6 +53,7 @@ class CoordinationService {
         if (request.docRu) formData.append("DocRu", request.docRu);
         if (request.docKg) formData.append("DocKg", request.docKg);
         if (request.docEn) formData.append("DocEn", request.docEn);
+        if (request.tid) formData.append("Tid", request.tid);
         if (request.comment) formData.append("Comment", request.comment);
         formData.append("AgreesWithAllRemarks", String(request.agreesWithAllRemarks));
 

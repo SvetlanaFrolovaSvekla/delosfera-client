@@ -10,6 +10,10 @@ import {Clue} from "@/components/componentsGeneral/knowledgeBaseComponents/Clue.
 
 interface VndUploadRedactionModalProps {
     vndId: number;
+    /** Обязателен ли файл ТИД (Таблица изменений и дополнений) — true, если у ВНД уже есть
+     * хотя бы одна предыдущая редакция, то есть документ актуализируется, а не создаётся впервые.
+     * Родитель вычисляет это по vnd.redactionIds.length > 0. */
+    requiresTid: boolean;
     onClose: () => void;
     onUploaded: (redaction: VndRedactionResponse) => void;
 }
@@ -17,11 +21,13 @@ interface VndUploadRedactionModalProps {
 interface FileSlotProps {
     label: string;
     required?: boolean;
+    hint?: string;
+    accept?: string;
     file: File | null;
     onChange: (file: File | null) => void;
 }
 
-function FileSlot({label, required, file, onChange}: FileSlotProps) {
+function FileSlot({label, required, hint, accept = ".doc,.docx,.pdf,.xls,.xlsx,.ppt,.pptx", file, onChange}: FileSlotProps) {
     const inputId = `redaction-file-${label}`;
 
     return (
@@ -29,17 +35,20 @@ function FileSlot({label, required, file, onChange}: FileSlotProps) {
             <div className="mb-[6px] text-[12.5px] font-semibold text-[#26324a]">
                 {label} {required && <span className="text-[#c0392b]">*</span>}
             </div>
+            {hint && <div className="mb-[6px] text-[11.5px] text-[#8b97ab]">{hint}</div>}
             {!file ? (
                 <label
                     htmlFor={inputId}
-                    className="flex h-[70px] cursor-pointer flex-col items-center justify-center gap-1 rounded-[10px] border border-dashed border-[#d5dae3] bg-[#fbfcfe] text-[#8b97ab] transition-colors hover:border-[#4e57d6]/50 hover:bg-[#f6f8fb]"
+                    className={`flex h-[70px] cursor-pointer flex-col items-center justify-center gap-1 rounded-[10px] border border-dashed text-[#8b97ab] transition-colors hover:border-[#4e57d6]/50 hover:bg-[#f6f8fb] ${
+                        required ? "border-[#e8b4b4] bg-[#fdf1f1]" : "border-[#d5dae3] bg-[#fbfcfe]"
+                    }`}
                 >
                     <FileUp size={18}/>
                     <span className="text-[11.5px]">Выбрать файл (DOC/DOCX/PDF)</span>
                     <input
                         id={inputId}
                         type="file"
-                        accept=".doc,.docx,.pdf,.xls,.xlsx,.ppt,.pptx"
+                        accept={accept}
                         className="hidden"
                         onChange={(e) => onChange(e.target.files?.[0] ?? null)}
                     />
@@ -68,7 +77,7 @@ function formatBytes(bytes: number): string {
 
 const MAX_FILE_SIZE = 50 * 1024 * 1024; // 50 МБ
 
-export function VndUploadRedactionModal({vndId, onClose, onUploaded}: VndUploadRedactionModalProps) {
+export function VndUploadRedactionModal({vndId, requiresTid, onClose, onUploaded}: VndUploadRedactionModalProps) {
     const {user, hasPermission} = useAuth();
     // Право обойтись без согласования
     const canSkipApproval = hasPermission(PermissionCode.CreateVndWithoutApproval);
@@ -84,13 +93,15 @@ export function VndUploadRedactionModal({vndId, onClose, onUploaded}: VndUploadR
     const [docRu, setDocRu] = useState<File | null>(null);
     const [docKg, setDocKg] = useState<File | null>(null);
     const [docEn, setDocEn] = useState<File | null>(null);
+    const [tid, setTid] = useState<File | null>(null);
     const [attachments, setAttachments] = useState<File[]>([]);
     const [description, setDescription] = useState("");
     const [requiresApproval, setRequiresApproval] = useState(!canSkipApproval);
     const [submitting, setSubmitting] = useState(false);
     const [error, setError] = useState<string | null>(null);
 
-    const canSubmit = docRu !== null && !submitting;
+    const tidMissing = requiresTid && !tid;
+    const canSubmit = docRu !== null && !tidMissing && !submitting;
 
     const handleAddAttachments = (files: FileList | null) => {
         if (!files) return;
@@ -112,6 +123,10 @@ export function VndUploadRedactionModal({vndId, onClose, onUploaded}: VndUploadR
 
     const handleSubmit = async () => {
         if (!docRu) return;
+        if (tidMissing) {
+            setError("Приложите файл ТИД (Таблица изменений и дополнений) — он обязателен при актуализации ВНД");
+            return;
+        }
         setSubmitting(true);
         setError(null);
         try {
@@ -119,6 +134,7 @@ export function VndUploadRedactionModal({vndId, onClose, onUploaded}: VndUploadR
                 docRu,
                 docKg,
                 docEn,
+                tid,
                 description: description.trim() || undefined,
                 // Если права нет - всегда true, независимо от локального состояния чекбокса
                 requiresApproval: canSkipApproval ? requiresApproval : true,
@@ -146,6 +162,17 @@ export function VndUploadRedactionModal({vndId, onClose, onUploaded}: VndUploadR
                     <FileSlot label="Русский" required file={docRu} onChange={setDocRu}/>
                     <FileSlot label="Кыргызча" file={docKg} onChange={setDocKg}/>
                     <FileSlot label="English" file={docEn} onChange={setDocEn}/>
+
+                    {requiresTid && (
+                        <FileSlot
+                            label="ТИД (Таблица изменений и дополнений)"
+                            required
+                            hint="Обязательна при актуализации ВНД — документ уже имеет предыдущую редакцию"
+                            accept=".doc,.docx"
+                            file={tid}
+                            onChange={setTid}
+                        />
+                    )}
 
                     <div>
                         <div className="mb-[6px] text-[12.5px] font-semibold text-[#26324a]">

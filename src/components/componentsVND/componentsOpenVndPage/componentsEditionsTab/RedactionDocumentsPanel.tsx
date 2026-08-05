@@ -35,6 +35,10 @@ export function RedactionDocumentsPanel({
             displayTitle: resolveVndDocTitle(vnd, d.lang),
         }));
 
+    // ТИД не привязан к языку — один файл на редакцию. Имя файла собираем отдельно,
+    // не через buildRedactionFileName (та функция заточена под языковые варианты документа).
+    const tidFileName = `${selected.code}_ТИД.docx`;
+
     return (
         <div className="p-[20px]">
             <SectionLabel>Документы редакции</SectionLabel>
@@ -55,6 +59,28 @@ export function RedactionDocumentsPanel({
                     </DownloadRow>
                 ))}
             </div>
+
+            {selected.tidFileId !== null && (
+                <>
+                    <SectionLabel className="mt-5">ТИД</SectionLabel>
+                    <div className="flex flex-col gap-2">
+                        <DownloadRow
+                            icon={<FileText size={16} className="flex-none text-[#4e57d6]"/>}
+                            isDownloading={downloadingId === selected.tidFileId}
+                            onClick={() => onDownload(selected.tidFileId as number, tidFileName)}
+                        >
+                            <span className="flex min-w-0 flex-1 flex-col">
+                                <span className="text-[9.5px] font-bold uppercase tracking-[0.04em] text-[#a3adbd]">
+                                    ТИД
+                                </span>
+                                <span className="truncate text-[13px] text-[#26324a]">
+                                    Таблица изменений и дополнений
+                                </span>
+                            </span>
+                        </DownloadRow>
+                    </div>
+                </>
+            )}
 
             {selected.attachmentFileIds.length > 0 && (
                 <>

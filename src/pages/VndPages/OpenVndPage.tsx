@@ -1,5 +1,5 @@
 import {useLocation, useNavigate, useParams} from "react-router-dom";
-import {useState} from "react";
+import {useEffect, useState} from "react";
 import {ArrowLeft} from "lucide-react";
 import {useVndById} from "@/hooks/vndHooks/useVndById.ts";
 import {useVndDictionaries} from "@/hooks/vndHooks/useVndDictionaries.ts";
@@ -18,7 +18,10 @@ import {EmptyState} from "@/components/componentsGeneral/EmptyState.tsx";
 import {VndLinksTab} from "@/components/componentsVND/componentsOpenVndPage/VndLinksTab.tsx";
 import {VndHistoryTab} from "@/components/componentsVND/componentsOpenVndPage/VndHistoryTab.tsx";
 import {actualizationService} from "@/service/actualizationService/actualizationService.ts";
+import {coordinationService} from "@/service/coordinationService/coordinationService.ts";
 import {toast} from "@/service/toastService.ts";
+import {useAuth} from "@/context/AuthContext.ts";
+import {PermissionCode} from "@/constants/permissions.ts";
 
 export function OpenVndPage() {
     const {id} = useParams<{ id: string }>();
@@ -27,6 +30,7 @@ export function OpenVndPage() {
     const dictionaries = useVndDictionaries();
     const {data: redactions} = useVndRedactions(id ? Number(id) : undefined);
     const navigate = useNavigate();
+    const {user, hasPermission} = useAuth();
 
     const initialTab = (location.state as { tab?: VndTabId } | null)?.tab ?? "passport";
     const [tab, setTab] = useState<VndTabId>(initialTab);
@@ -35,8 +39,52 @@ export function OpenVndPage() {
     const [consolidating, setConsolidating] = useState(false);
     const [consolidateError, setConsolidateError] = useState<string | null>(null);
 
+    // Инициатор согласования нужен только как fallback права на консолидацию — когда у ВНД
+    // нет открытого цикла актуализации (ActualizationResponsibleUserId пуст). Подгружаем только
+    // для статуса "Консолидация", чтобы не дёргать эндпоинт согласования лишний раз.
+    const [approvalInitiatorId, setApprovalInitiatorId] = useState<number | null>(null);
+
+    useEffect(() => {
+        if (!vnd || vnd.status !== "consol") {
+            // eslint-disable-next-line react-hooks/set-state-in-effect
+            setApprovalInitiatorId(null);
+            return;
+        }
+
+        let cancelled = false;
+        coordinationService
+            .getByVndId(vnd.id)
+            .then((process) => {
+                if (!cancelled) setApprovalInitiatorId(process.initiatorUserId);
+            })
+            .catch(() => {
+                // Согласования могло не быть вовсе (например, редакция без RequiresApproval,
+                // но в рамках цикла актуализации) — тогда единственный путь консолидации это
+                // ActualizationResponsibleUserId или главный редактор, инициатора просто нет
+                if (!cancelled) setApprovalInitiatorId(null);
+            });
+
+        return () => {
+            cancelled = true;
+        };
+    }, [vnd?.id, vnd?.status]);
+
     const lastRedactionNumber = redactions.reduce((max, r) => Math.max(max, r.number), 0);
     const isFirstRedaction = lastRedactionNumber <= 1;
+
+    // Зеркалит право публикации из VndActualizationService.PublishAsync на бэке:
+    // - если есть открытый цикл актуализации — только назначенный ответственный или главред;
+    // - если цикла нет — только инициатор согласования или главред.
+    const isChiefEditor =
+        hasPermission(PermissionCode.ActualizeAnyVndWithApproval) ||
+        hasPermission(PermissionCode.ActualizeAnyVndWithoutApproval);
+
+    const canConsolidate = vnd
+        ? isChiefEditor ||
+        (vnd.actualizationResponsibleUserId
+            ? vnd.actualizationResponsibleUserId === user?.id
+            : approvalInitiatorId !== null && approvalInitiatorId === user?.id)
+        : false;
 
     const handleConsolidate = async (hadChanges: boolean) => {
         if (!vnd) return;
@@ -112,7 +160,11 @@ export function OpenVndPage() {
                 {vnd.name}
             </h1>
 
-            <VndStatusBanner status={vnd.status} onSecondaryAction={() => setConsolidateOpen(true)}/>
+            <VndStatusBanner
+                status={vnd.status}
+                onSecondaryAction={() => setConsolidateOpen(true)}
+                canConsolidate={canConsolidate}
+            />
 
             {/* Табы - состав зависит от статуса, «Реквизиты» есть всегда */}
             <div className="flex items-center gap-6 border-b border-[#e9edf3] mb-5 overflow-x-auto">

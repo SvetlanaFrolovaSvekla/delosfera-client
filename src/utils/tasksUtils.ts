@@ -46,7 +46,7 @@ export function getMetaText(task: VndTaskResponse): string {
 
         if (task.redactionCode) parts.push(`Редакция ${task.redactionCode}`);
         if (task.initiatorName) parts.push(`Инициатор: ${task.initiatorName}`);
-        if (task.deadlineHours) parts.push(`Норматив: ${task.deadlineHours} ч`);
+        if (task.deadlineMinutes) parts.push(`Норматив: ${task.deadlineMinutes} ч`);
 
         return parts.length > 0 ? parts.join(" · ") : "Ожидает вашего решения";
     }

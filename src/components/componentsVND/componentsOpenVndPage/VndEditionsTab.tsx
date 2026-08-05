@@ -102,6 +102,7 @@ export function VndEditionsTab({vnd, onVndChanged}: VndEditionsTabProps) {
                 {uploadOpen && (
                     <VndUploadRedactionModal
                         vndId={vnd.id}
+                        requiresTid={vnd.redactionIds.length > 0}
                         onClose={() => setUploadOpen(false)}
                         onUploaded={handleRedactionUploaded}
                     />
@@ -196,6 +197,7 @@ export function VndEditionsTab({vnd, onVndChanged}: VndEditionsTabProps) {
             {uploadOpen && (
                 <VndUploadRedactionModal
                     vndId={vnd.id}
+                    requiresTid={vnd.redactionIds.length > 0}
                     onClose={() => setUploadOpen(false)}
                     onUploaded={handleRedactionUploaded}
                 />

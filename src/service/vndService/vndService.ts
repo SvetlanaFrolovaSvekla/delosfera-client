@@ -72,6 +72,7 @@ export const vndService = {
         formData.append("DocRu", request.docRu);
         if (request.docKg) formData.append("DocKg", request.docKg);
         if (request.docEn) formData.append("DocEn", request.docEn);
+        if (request.tid) formData.append("Tid", request.tid);
         if (request.description) formData.append("Description", request.description);
         formData.append("RequiresApproval", String(request.requiresApproval));
 

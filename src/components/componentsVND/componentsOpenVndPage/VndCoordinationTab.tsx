@@ -176,21 +176,29 @@ export function VndCoordinationTab({vnd}: VndCoordinationTabProps) {
 
     const isPrimaryPhase = process.status === "primary";
     const isRepeatedPhase = process.status === "repeated";
+    const isFinalHoldPhase = process.status === "final_hold";
     const isRevisionNeeded = process.status === "revision_needed";
 
+    // На финальной выдержке решение может принять ЛЮБОЙ согласующий маршрута (participatesInRepeat
+    // здесь не фильтрует — бэк на этом этапе открывает FinalHoldDecision всем этапам сразу)
     const myStage = process.stages.find((s) => {
         if (isPrimaryPhase) return s.approverUserId === currentUserId;
         if (isRepeatedPhase) return s.approverUserId === currentUserId && s.participatesInRepeat;
+        if (isFinalHoldPhase) return s.approverUserId === currentUserId;
         return false;
     });
 
     const isInitiator = process.initiatorUserId === currentUserId;
     const isApprover = !isInitiator && !!myStage;
 
+    // На финальной выдержке участие добровольное: дедлайна как такового нет, "pending" здесь
+    // означает лишь "ещё не высказался", а не "просрочил" — просрочка на этом этапе не считается
+    // нарушением и обрабатывается на бэке отдельно (см. ProcessTimeoutsAsync)
     const isPendingForMe =
         !!myStage &&
         ((isPrimaryPhase && myStage.primaryDecision === "pending") ||
-            (isRepeatedPhase && (myStage.repeatDecision === null || myStage.repeatDecision === "pending")));
+            (isRepeatedPhase && (myStage.repeatDecision === null || myStage.repeatDecision === "pending")) ||
+            (isFinalHoldPhase && (myStage.finalHoldDecision === null || myStage.finalHoldDecision === "pending")));
 
     const handleResolutionSubmit = async (choice: ResolutionChoice, comment: string) => {
         if (!myStage) return;
@@ -259,10 +267,17 @@ export function VndCoordinationTab({vnd}: VndCoordinationTabProps) {
 
                 {isPendingForMe && (
                     <div className="mt-6">
+                        {isFinalHoldPhase && (
+                            <div className="mb-3 rounded-[10px] border border-[#e0e6ef] bg-[#f6f8fb] px-4 py-[10px] text-[12.5px] text-[#5c6779]">
+                                Финальная выдержка — этап ознакомления. Оставлять решение по нему необязательно:
+                                если у вас нет замечаний, можно ничего не делать, документ пройдёт дальше сам.
+                            </div>
+                        )}
                         <VndApproverResolutionPanel
                             onSubmit={handleResolutionSubmit}
                             submitting={submitting}
                             error={decisionError}
+                            phase={isFinalHoldPhase ? "finalHold" : isRepeatedPhase ? "repeated" : "primary"}
                         />
                     </div>
                 )}
@@ -318,7 +333,12 @@ export function VndCoordinationTab({vnd}: VndCoordinationTabProps) {
             <VndApprovalRouteView process={process}/>
 
             {isRevisionNeeded && isInitiator && (
-                <VndRevisionNeededPanel vndId={vnd.id} process={process} onChanged={loadProcess}/>
+                <VndRevisionNeededPanel
+                    vndId={vnd.id}
+                    process={process}
+                    requiresTid={!!redaction && redaction.number > 1}
+                    onChanged={loadProcess}
+                />
             )}
         </div>
     );

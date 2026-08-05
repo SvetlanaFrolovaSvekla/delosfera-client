@@ -2,6 +2,16 @@ import type {DateFilterValue} from "@/components/componentsGeneral/datePickers/D
 import type {DateRangeFilter} from "@/service/vndService/vndServiceType.ts";
 import type {DeadlineUrgencyKey} from "@/constants/vndStatus.ts";
 
+export function formatDateTime(iso: string): string {
+    return new Date(iso).toLocaleString("ru-RU", {
+        day: "2-digit",
+        month: "2-digit",
+        year: "numeric",
+        hour: "2-digit",
+        minute: "2-digit",
+    });
+}
+
 // Формат минут/часов для отображения дедлайнов нормативов
 export function formatMinutesAsHm(totalMinutes: number): string {
     const h = Math.floor(totalMinutes / 60);

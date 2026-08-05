@@ -1,7 +1,7 @@
 import {useState} from "react";
 import {coordinationService} from "@/service/coordinationService/coordinationService.ts";
 import type {ApprovalProcessResponse} from "@/service/coordinationService/coordinationServiceTypes.ts";
-import {AlertCircle, Paperclip, Trash2} from "lucide-react";
+import {AlertCircle, FileCheck2, Paperclip, Trash2} from "lucide-react";
 import {VndUploadRevisionFilesModal} from "./VndUploadRevisionFilesModal.tsx";
 import {DisagreementMatrixTable} from "./DisagreementMatrixTable.tsx";
 
@@ -9,6 +9,10 @@ import {DisagreementMatrixTable} from "./DisagreementMatrixTable.tsx";
 interface VndRevisionNeededPanelProps {
     vndId: number;
     process: ApprovalProcessResponse;
+    /** Требуется ли обязательно приложить ТИД вместе с исправленной редакцией — true, если
+     * у ВНД уже была предыдущая редакция (см. VndRedactionResponse.number > 1 на родительской
+     * странице). Для первой редакции нового ВНД ТИД не нужен. */
+    requiresTid: boolean;
     /** Вызывается после успешной отправки (resubmit) или изменения матрицы, чтобы перезагрузить процесс */
     onChanged: () => Promise<void>;
 }
@@ -77,10 +81,11 @@ function collectApprovalComments(process: ApprovalProcessResponse) {
     });
 }
 
-export function VndRevisionNeededPanel({vndId, process, onChanged}: VndRevisionNeededPanelProps) {
+export function VndRevisionNeededPanel({vndId, process, requiresTid, onChanged}: VndRevisionNeededPanelProps) {
     const [docRu, setDocRu] = useState<File | null>(null);
     const [docKg, setDocKg] = useState<File | null>(null);
     const [docEn, setDocEn] = useState<File | null>(null);
+    const [tid, setTid] = useState<File | null>(null);
     const [comment, setComment] = useState("");
     const [agreesWithAllRemarks, setAgreesWithAllRemarks] = useState<boolean | null>(null);
 
@@ -92,9 +97,12 @@ export function VndRevisionNeededPanel({vndId, process, onChanged}: VndRevisionN
     const approvalComments = collectApprovalComments(process);
     const rows = process.disagreementMatrixRows;
 
+    const tidMissing = requiresTid && !tid;
+
     const canSubmit =
         agreesWithAllRemarks !== null &&
         (agreesWithAllRemarks === true || rows.length > 0) &&
+        !tidMissing &&
         !submitting;
 
     const handleAddRow = async (row: {
@@ -111,8 +119,18 @@ export function VndRevisionNeededPanel({vndId, process, onChanged}: VndRevisionN
         await onChanged();
     };
 
+    const handleTidChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0] ?? null;
+        setTid(file);
+        e.target.value = "";
+    };
+
     const handleSubmit = async () => {
         if (agreesWithAllRemarks === null) return;
+        if (tidMissing) {
+            setError("Приложите файл ТИД (Таблица изменений и дополнений) — он обязателен при актуализации ВНД");
+            return;
+        }
         setSubmitting(true);
         setError(null);
         try {
@@ -120,6 +138,7 @@ export function VndRevisionNeededPanel({vndId, process, onChanged}: VndRevisionN
                 docRu: docRu ?? undefined,
                 docKg: docKg ?? undefined,
                 docEn: docEn ?? undefined,
+                tid: tid ?? undefined,
                 comment: comment.trim() || undefined,
                 agreesWithAllRemarks,
             });
@@ -223,6 +242,58 @@ export function VndRevisionNeededPanel({vndId, process, onChanged}: VndRevisionN
                     )}
                 </div>
             </div>
+
+            {requiresTid && (
+                <div className="overflow-hidden rounded-[14px] border border-[#e9edf3] bg-white">
+                    <div className="border-b border-[#eef2f7] px-5 py-[13px] text-[13.5px] font-bold text-[#1c2740]">
+                        Таблица изменений и дополнений (ТИД)
+                    </div>
+                    <div className="px-5 py-4">
+                        <p className="mb-3 text-[12.5px] leading-[1.5] text-[#8b97ab]">
+                            Обязательна при актуализации ВНД — прикладывайте обновлённый ТИД на каждом круге
+                            доработки вместе с исправленной редакцией.
+                        </p>
+
+                        {!tid ? (
+                            <label
+                                className={`flex h-10 w-fit cursor-pointer items-center gap-2 rounded-[10px] border px-[15px] text-[13px] font-semibold transition-colors ${
+                                    tidMissing
+                                        ? "border-[#e8b4b4] bg-[#fdf1f1] text-[#c0392b] hover:bg-[#fbe4e4]"
+                                        : "border-[#e5e9f0] bg-white text-[#3a4560] hover:bg-[#f6f8fb]"
+                                }`}
+                            >
+                                <Paperclip size={14}/>
+                                Загрузить ТИД
+                                <input
+                                    type="file"
+                                    accept=".doc,.docx"
+                                    className="hidden"
+                                    onChange={handleTidChange}
+                                />
+                            </label>
+                        ) : (
+                            <div className="flex items-center gap-2 rounded-[9px] border border-[#e5e9f0] bg-[#fbfcfe] px-3 py-[8px]">
+                                <FileCheck2 size={14} className="flex-none text-[#2f9e5c]"/>
+                                <span className="flex-1 truncate text-[12.5px] text-[#26324a]">{tid.name}</span>
+                                <button
+                                    type="button"
+                                    onClick={() => setTid(null)}
+                                    className="cursor-pointer flex-none text-[#8b97ab] hover:text-[#c0392b]"
+                                >
+                                    <Trash2 size={14}/>
+                                </button>
+                            </div>
+                        )}
+
+                        {tidMissing && (
+                            <div className="mt-2 flex items-start gap-1.5 text-[11.5px] text-[#d62815]">
+                                <AlertCircle className="mt-[1px] h-3.5 w-3.5 shrink-0"/>
+                                <span>Файл ТИД обязателен для отправки</span>
+                            </div>
+                        )}
+                    </div>
+                </div>
+            )}
 
             {isUploadModalOpen && (
                 <VndUploadRevisionFilesModal

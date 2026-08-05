@@ -1,21 +1,26 @@
-// src/components/componentsVND/componentsOpenVndPage/componentsCoordinationTab/VndApproverResolutionPanel.tsx
-
 import {useState} from "react";
 import {Check, AlertCircle} from "lucide-react";
 
 export type ResolutionChoice = "approve" | "approveWithComment" | "reject";
 
+/** Этап согласования, на котором отображается панель — влияет только на подписи под опциями */
+export type ResolutionPhase = "primary" | "repeated" | "finalHold";
+
 interface VndApproverResolutionPanelProps {
     onSubmit: (choice: ResolutionChoice, comment: string) => Promise<void> | void;
     submitting?: boolean;
     error?: string | null;
+    /** По умолчанию "primary" — как было раньше */
+    phase?: ResolutionPhase;
 }
 
-const OPTIONS: Array<{
+interface OptionConfig {
     id: ResolutionChoice;
     title: string;
     subtitle: string;
-}> = [
+}
+
+const DEFAULT_OPTIONS: OptionConfig[] = [
     {
         id: "approve",
         title: "Согласовать",
@@ -33,6 +38,33 @@ const OPTIONS: Array<{
     },
 ];
 
+// На финальной выдержке замечание/отклонение НЕ создают новую редакцию — инициатор дорабатывает
+// ту же самую и отправляет заново, минуя финальную выдержку, сразу на повторное согласование
+// (т.к. финальная выдержка идёт только после круга с замечаниями)
+const FINAL_HOLD_OPTIONS: OptionConfig[] = [
+    {
+        id: "approve",
+        title: "Согласовать",
+        subtitle: "Замечаний нет. Этот шаг необязателен — если ничего не сделать, документ пройдёт дальше сам.",
+    },
+    {
+        id: "approveWithComment",
+        title: "Согласовать с замечаниями",
+        subtitle: "Текст замечания/комментариев является обязательным. Документ вернётся инициатору на доработку — той же редакции, без создания новой — и после исправлений снова придёт вам на повторное согласование.",
+    },
+    {
+        id: "reject",
+        title: "Отклонить",
+        subtitle: "Причина отклонения является обязательной. Документ вернётся инициатору на доработку той же редакции и после исправлений снова придёт на повторное согласование.",
+    },
+];
+
+const OPTIONS_BY_PHASE: Record<ResolutionPhase, OptionConfig[]> = {
+    primary: DEFAULT_OPTIONS,
+    repeated: DEFAULT_OPTIONS,
+    finalHold: FINAL_HOLD_OPTIONS,
+};
+
 const SUBMIT_LABEL: Record<ResolutionChoice, string> = {
     approve: "Согласовать и подписать (ЭП)",
     approveWithComment: "Согласовать с замечаниями (ЭП)",
@@ -45,9 +77,16 @@ const COMMENT_PLACEHOLDER: Record<ResolutionChoice, string> = {
     reject: "Причина отклонения…",
 };
 
-export function VndApproverResolutionPanel({onSubmit, submitting, error}: VndApproverResolutionPanelProps) {
+export function VndApproverResolutionPanel({
+                                               onSubmit,
+                                               submitting,
+                                               error,
+                                               phase = "primary",
+                                           }: VndApproverResolutionPanelProps) {
     const [choice, setChoice] = useState<ResolutionChoice>("approve");
     const [comment, setComment] = useState("");
+
+    const options = OPTIONS_BY_PHASE[phase];
 
     const commentRequired = choice !== "approve";
     const commentMissing = commentRequired && comment.trim().length === 0;
@@ -66,7 +105,7 @@ export function VndApproverResolutionPanel({onSubmit, submitting, error}: VndApp
             </div>*/}
 
             <div className="mt-4 flex flex-col gap-2.5">
-                {OPTIONS.map((opt) => {
+                {options.map((opt) => {
                     const selected = choice === opt.id;
                     return (
                         <button

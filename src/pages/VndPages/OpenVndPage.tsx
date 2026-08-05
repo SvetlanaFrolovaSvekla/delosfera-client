@@ -1,4 +1,4 @@
-import {useNavigate, useParams} from "react-router-dom";
+import {useLocation, useNavigate, useParams} from "react-router-dom";
 import {useState} from "react";
 import {ArrowLeft} from "lucide-react";
 import {useVndById} from "@/hooks/vndHooks/useVndById.ts";
@@ -22,11 +22,14 @@ import {toast} from "@/service/toastService.ts";
 
 export function OpenVndPage() {
     const {id} = useParams<{ id: string }>();
+    const location = useLocation();
     const {data: vnd, loading, error, refetch} = useVndById(id ? Number(id) : undefined);
     const dictionaries = useVndDictionaries();
     const {data: redactions} = useVndRedactions(id ? Number(id) : undefined);
     const navigate = useNavigate();
-    const [tab, setTab] = useState<VndTabId>("passport");
+
+    const initialTab = (location.state as { tab?: VndTabId } | null)?.tab ?? "passport";
+    const [tab, setTab] = useState<VndTabId>(initialTab);
 
     const [consolidateOpen, setConsolidateOpen] = useState(false);
     const [consolidating, setConsolidating] = useState(false);

@@ -162,10 +162,16 @@ export function OpenNotificationPage() {
                 {notification.url && (
                     <div className="border-t border-slate-100 px-6 py-4">
                         <button
-                            onClick={() => navigate(notification.url!)}
-                            className="inline-flex items-center gap-1.5 rounded-lg bg-[#4e57d6] px-4 py-2 text-sm font-semibold text-white transition hover:bg-[#3d45c0]"
+                            onClick={() =>
+                                navigate(notification.url!, {
+                                    state: notification.url!.startsWith("/basevnd/")
+                                        ? {tab: "approval"}
+                                        : undefined,
+                                })
+                            }
+                            className="cursor-pointer inline-flex items-center gap-1.5 rounded-lg bg-[#4e57d6] px-4 py-2 text-sm font-semibold text-white transition hover:bg-[#3d45c0]"
                         >
-                            Перейти к объекту
+                            Перейти к задаче
                             <ChevronRight className="h-4 w-4"/>
                         </button>
                     </div>

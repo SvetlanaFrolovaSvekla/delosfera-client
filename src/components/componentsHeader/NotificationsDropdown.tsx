@@ -80,9 +80,7 @@ export function NotificationsDropdown() {
             }
         }
 
-        if (n.url) {
-            navigate(n.url);
-        }
+        navigate(`/notifications/${n.id}`);
     };
 
     return (

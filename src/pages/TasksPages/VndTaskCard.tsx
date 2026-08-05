@@ -34,6 +34,7 @@ export function VndTaskCard({task}: VndTaskCardProps) {
     return (
         <Link
             to={`/basevnd/${task.vndId}`}
+            state={task.scope === "coordination" ? {tab: "approval"} : undefined}
             draggable={false}
             onClick={handleClick}
             className="cursor-pointer flex w-full items-center gap-[13px] rounded-[14px] border border-[#e9edf3]

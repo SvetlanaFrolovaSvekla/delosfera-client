@@ -8,6 +8,7 @@ import {keywordService} from "@/service/dictionariesService/keywordService/keywo
 import {rubricService} from "@/service/dictionariesService/rubricService/rubricService.ts";
 import {securityLevelService} from "@/service/dictionariesService/securityLevelService/securityLevelService.ts";
 import {userGroupService} from "@/service/dictionariesService/userGroupService/userGroupService.ts";
+import {positionService} from "@/service/dictionariesService/positionService/positionService.ts";
 import type {TypeVndResponse} from "@/service/dictionariesService/typeVndService/typeVndServiceType.ts";
 import type {ApprovalBodyResponse} from "@/service/dictionariesService/approvalBodyService/approvalBodyServiceType.ts";
 import type {
@@ -19,6 +20,7 @@ import type {
     SecurityLevelResponse
 } from "@/service/dictionariesService/securityLevelService/securityLevelServiceType.ts";
 import type {UserGroupResponse} from "@/service/dictionariesService/userGroupService/userGroupServiceType.ts";
+import type {PositionResponse} from "@/service/dictionariesService/positionService/positionServiceType.ts";
 
 interface DictOption {
     key: string;
@@ -27,7 +29,6 @@ interface DictOption {
 }
 
 interface DictionariesContextValue {
-    // "Сырые" данные с бэка — для резолверов имён по id и т.п.
     types: TypeVndResponse[];
     organs: ApprovalBodyResponse[];
     orgUnits: OrganizationUnitResponse[];
@@ -35,8 +36,8 @@ interface DictionariesContextValue {
     rubrics: RubricResponse[];
     secrecyLevels: SecurityLevelResponse[];
     userGroups: UserGroupResponse[];
+    positions: PositionResponse[];
 
-    // Готовые options для селектов ({key, label, parentId?})
     typeOptions: DictOption[];
     organOptions: DictOption[];
     orgUnitOptions: DictOption[];
@@ -44,6 +45,7 @@ interface DictionariesContextValue {
     rubricOptions: DictOption[];
     secrecyOptions: DictOption[];
     userGroupOptions: DictOption[];
+    positionOptions: DictOption[];
 
     loading: boolean;
     error: string | null;
@@ -69,6 +71,7 @@ export function DictionariesProvider({children}: { children: ReactNode }) {
     const [rubrics, setRubrics] = useState<RubricResponse[]>([]);
     const [secrecyLevels, setSecrecyLevels] = useState<SecurityLevelResponse[]>([]);
     const [userGroups, setUserGroups] = useState<UserGroupResponse[]>([]);
+    const [positions, setPositions] = useState<PositionResponse[]>([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
     const [reloadKey, setReloadKey] = useState(0);
@@ -89,8 +92,9 @@ export function DictionariesProvider({children}: { children: ReactNode }) {
             rubricService.getAll(),
             securityLevelService.getAll(),
             userGroupService.getAll(),
+            positionService.getAll(),
         ])
-            .then(([typesRes, organsRes, orgUnitsRes, keywordsRes, rubricsRes, secrecyRes, userGroupsRes]) => {
+            .then(([typesRes, organsRes, orgUnitsRes, keywordsRes, rubricsRes, secrecyRes, userGroupsRes, positionsRes]) => {
                 if (cancelled) return;
                 setTypes(typesRes);
                 setOrgans(organsRes);
@@ -99,6 +103,7 @@ export function DictionariesProvider({children}: { children: ReactNode }) {
                 setRubrics(rubricsRes);
                 setSecrecyLevels(secrecyRes);
                 setUserGroups(userGroupsRes);
+                setPositions(positionsRes);
             })
             .catch(() => {
                 if (!cancelled) setError("Не удалось загрузить справочники");
@@ -113,7 +118,7 @@ export function DictionariesProvider({children}: { children: ReactNode }) {
     }, [reloadKey]);
 
     const value = useMemo<DictionariesContextValue>(() => ({
-        types, organs, orgUnits, keywords, rubrics, secrecyLevels, userGroups,
+        types, organs, orgUnits, keywords, rubrics, secrecyLevels, userGroups, positions,
         typeOptions: toOptions(types),
         organOptions: toOptions(organs),
         orgUnitOptions: toOptions(orgUnits),
@@ -121,8 +126,9 @@ export function DictionariesProvider({children}: { children: ReactNode }) {
         rubricOptions: toOptions(rubrics),
         secrecyOptions: toOptions(secrecyLevels),
         userGroupOptions: toOptions(userGroups),
+        positionOptions: positions.map((x) => ({key: String(x.id), label: x.titleRu})),
         loading, error, refetch,
-    }), [types, organs, orgUnits, keywords, rubrics, secrecyLevels, userGroups, loading, error]);
+    }), [types, organs, orgUnits, keywords, rubrics, secrecyLevels, userGroups, positions, loading, error]);
 
     return (
         <DictionariesContext.Provider value={value}>

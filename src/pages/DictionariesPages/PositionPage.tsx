@@ -1,5 +1,21 @@
-export function PositionPage(){
+import {useAuth} from "@/context/AuthContext.ts";
+import {usePositionList} from "@/hooks/dictionariesHooks/usePositionList.ts";
+import {FlatDictListPage} from "@/components/componentsDictionaries/FlatDictListPage.tsx";
+import {PermissionCode} from "@/constants/permissions.ts";
+import {Briefcase} from "lucide-react";
+
+export function PositionPage() {
+    const {hasPermission} = useAuth();
+    const list = usePositionList();
+
     return (
-        <div>PositionPage</div>
-    )
+        <FlatDictListPage
+            list={list}
+            canManage={hasPermission(PermissionCode.ManageGeneralDictionaries)}
+            pageKey="positionPage"
+            icon={Briefcase}
+            backTo="/refs"
+            backLabelKey="dictionaries.navigateGeneral"
+        />
+    );
 }

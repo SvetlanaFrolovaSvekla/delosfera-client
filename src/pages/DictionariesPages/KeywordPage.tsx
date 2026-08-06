@@ -1,19 +1,19 @@
 import {useAuth} from "@/context/AuthContext.ts";
-import {useOrganizationUnitTree} from "@/hooks/dictionariesHooks/useOrganizationUnitTree.ts";
+import {useKeywordTree} from "@/hooks/dictionariesHooks/useKeywordTree.ts";
 import {DictionaryTreePage} from "@/components/componentsDictionaries/DictionaryTreePage.tsx";
 import {PermissionCode} from "@/constants/permissions.ts";
-import {Building2} from "lucide-react";
+import {Tag} from "lucide-react";
 
-export function OrganizationUnitPage() {
+export function KeywordPage() {
     const {hasPermission} = useAuth();
-    const tree = useOrganizationUnitTree();
+    const tree = useKeywordTree();
 
     return (
         <DictionaryTreePage
             tree={tree}
-            canManage={hasPermission(PermissionCode.ManageGeneralDictionaries)}
-            pageKey="organizationUnitPage"
-            icon={Building2}
+            canManage={hasPermission(PermissionCode.ManageVndDictionaries)}
+            pageKey="keywordPage"
+            icon={Tag}
             backTo="/refs"
             backLabelKey="dictionaries.navigateGeneral"
         />

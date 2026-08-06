@@ -1,10 +1,14 @@
 import './App.css'
 import {BrowserRouter, Routes, Route, Outlet} from 'react-router-dom';
-import {Sidebar} from "@/components/componentsSidebar/Sidebar.tsx";
-import {Header} from "@/components/componentsHeader/Header.tsx";
-
 import {AuthProvider} from "@/context/AuthProvider.tsx";
 import {ProtectedRoute} from "@/context/ProtectedRoute.tsx";
+import {RequirePermission} from "@/context/RequirePermission.tsx";
+import {PermissionCode} from "@/constants/permissions.ts";
+import {DictionariesProvider} from "@/context/DictionariesContext.tsx";
+import {ToastContainer} from "@/components/componentsGeneral/knowledgeBaseComponents/ToastContainer.tsx";
+
+import {Sidebar} from "@/components/componentsSidebar/Sidebar.tsx";
+import {Header} from "@/components/componentsHeader/Header.tsx";
 
 import {AuthorizationPage} from "@/pages/AuthorizationPage.tsx";
 import {HomePage} from "@/pages/HomePage.tsx";
@@ -21,16 +25,13 @@ import {BaseVndPage} from "@/pages/VndPages/BaseVndPage.tsx";
 import {CreateVndPage} from "@/pages/VndPages/CreateVndPage.tsx";
 import {OpenVndPage} from "@/pages/VndPages/OpenVndPage.tsx";
 import {ProfilePage} from "@/pages/ProfilePage.tsx";
-import {ToastContainer} from "@/components/componentsGeneral/knowledgeBaseComponents/ToastContainer.tsx";
 import {NotificationsPage} from "@/pages/NotificationsPage/NotificationsPage.tsx";
-import {CoordinationPage} from "@/pages/CoordinationPage/CoordinationPage.tsx";
 import {ActualizationPage} from "@/pages/ActualizationPage/ActualizationPage.tsx";
 import {ReportVndPage} from "@/pages/ReportPages/ReportVndPages/ReportVndPage.tsx";
 import {TasksVndPage} from "@/pages/TasksPages/TasksVndPage.tsx";
 import {OpenNotificationPage} from "@/pages/NotificationsPage/OpenNotificationPage.tsx";
-import {DictionariesProvider} from "@/context/DictionariesContext.tsx";
-import {RequirePermission} from "@/context/RequirePermission.tsx";
-import {PermissionCode} from "@/constants/permissions.ts";
+import {KeywordPage} from "@/pages/DictionariesPages/KeywordPage.tsx";
+import {CoordinationApproversPage} from "@/pages/DictionariesPages/CoordinationApproversPage.tsx";
 
 const MainLayout = () => (
     <DictionariesProvider>
@@ -39,7 +40,7 @@ const MainLayout = () => (
             <main className="flex-1 flex flex-col min-w-0 overflow-hidden bg-[#edecf5]">
                 <Header/>
                 <div className="flex-1 overflow-y-auto overflow-x-hidden">
-                    <Outlet/>
+                    <Outlet/> {/* Место для вложенных маршрутов */}
                 </div>
             </main>
         </div>
@@ -65,7 +66,6 @@ function App() {
                             <Route path="/basevnd/new" element={<CreateVndPage/>}/>
                             <Route path="/basevnd/:id" element={<OpenVndPage/>}/>
 
-                            <Route path="/coordination" element={<CoordinationPage/>}/>
                             <Route path="/tasks" element={<TasksVndPage/>}/>
                             <Route path="/actualization" element={<ActualizationPage/>}/>
                             <Route path="/reportvnd" element={<ReportVndPage/>}/>
@@ -80,10 +80,12 @@ function App() {
                             <Route path="/refs/approval-body" element={<ApprovalBodyPage/>}/>
                             <Route path="/refs/organization-unit" element={<OrganizationUnitPage/>}/>
                             <Route path="/refs/position" element={<PositionPage/>}/>
+                            <Route path="/refs/keyword" element={<KeywordPage/>}/>
                             <Route path="/refs/type-vnd" element={<TypeVndPage/>}/>
                             <Route path="/refs/security-level" element={<SecurityLevelPage/>}/>
                             <Route path="/refs/user-group" element={<UserGroupPage/>}/>
                             <Route path="/refs/rubric" element={<RubricPage/>}/>
+                            <Route path="/refs/coordination-users" element={<CoordinationApproversPage/>}/>
                         </Route>
                     </Route>
                 </Routes>

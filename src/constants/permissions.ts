@@ -30,7 +30,7 @@ export const PermissionCode = {
     /* Управление группами */
     ManageGroups: 10,
 
-    /* Управление справочниками */
+    /* Управление справочниками (устарело — используй ManageVndDictionaries / ManageGeneralDictionaries / ManageSzDictionaries / ManageProcurementDictionaries) */
     ManageDictionaries: 11,
 
     /* Просмотр ВНД */
@@ -62,4 +62,16 @@ export const PermissionCode = {
 
     /* Возможность просматривать черновики других пользователей */
     ViewOtherUsersDrafts: 21,
+
+    /* Управление справочниками ВНД (Виды ВНД, Уровни секретности, Группы пользователей, Рубрикатор, Обязательные участники согласования) */
+    ManageVndDictionaries: 22,
+
+    /* Управление общими справочниками (Органы утверждения, Структурные подразделения, Должности) */
+    ManageGeneralDictionaries: 23,
+
+    /* Управление справочниками служебных записок (Категории СЗ) */
+    ManageSzDictionaries: 24,
+
+    /* Управление справочниками закупок (Чёрный список контрагентов, Пороги закупок) */
+    ManageProcurementDictionaries: 25,
 } as const;

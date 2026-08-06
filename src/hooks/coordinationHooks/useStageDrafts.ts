@@ -1,14 +1,18 @@
 import {useEffect, useState} from "react";
-import {ApprovalStageKind} from "@/service/coordinationService/coordinationServiceTypes.ts";
 import {FIXED_KIND_ORDER, FIXED_STAGE_ORG_UNITS, MAX_STAGES} from "@/constants/coordinationParams.ts";
 import type {ApproverOption} from "@/components/componentsCoordination/CoordinationRouteConstructor/functionalComponents/VndSelectApproverModal.tsx";
+
+import {ApprovalStageKind} from "@/service/coordinationService/coordinationServiceTypes.ts";
 import {
-    coordinationDefaultApproverService
+    coordinationApproverService
 } from "@/service/dictionariesService/coordinationDefaultApproverService/coordinationDefaultApproverService.ts";
+
+
 import type {
     CoordinationStageKind
 } from "@/service/dictionariesService/coordinationDefaultApproverService/coordinationDefaultApproverServiceType.ts";
 import {useAuth} from "@/context/AuthContext.ts";
+
 
 export interface StageDraft {
     localId: string;
@@ -18,9 +22,7 @@ export interface StageDraft {
     approverName: string | null;
 }
 
-// Соответствие строковых kind из справочника (backend) значениям enum ApprovalStageKind (frontend).
-// ВАЖНО: сверь имена членов ApprovalStageKind в coordinationServiceTypes.ts — если они называются
-// иначе (например camelCase или другие имена), поправь этот маппинг.
+// Соответствие строковых kind из справочника (backend) значениям enum ApprovalStageKind (frontend)
 const KIND_STRING_TO_ENUM: Record<CoordinationStageKind, ApprovalStageKind> = {
     legal: ApprovalStageKind.Legal,
     risk_management: ApprovalStageKind.RiskManagement,
@@ -51,7 +53,7 @@ export function useStageDrafts() {
     useEffect(() => {
         let cancelled = false;
 
-        coordinationDefaultApproverService
+        coordinationApproverService
             .getAll()
             .then((defaults) => {
                 if (cancelled) return;

@@ -1,3 +1,4 @@
+// Всплывающее уведомление при успехе, загрузки, предупреждении и др.
 import { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
 import { CheckCircle2, Info, Loader2, X, XCircle } from "lucide-react";

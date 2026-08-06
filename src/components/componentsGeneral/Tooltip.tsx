@@ -9,6 +9,7 @@ interface TooltipProps {
     side?: Side;
     delay?: number;
     disabled?: boolean;
+    className?: string;
 }
 
 const sideClasses: Record<Side, string> = {
@@ -25,7 +26,7 @@ const arrowClasses: Record<Side, string> = {
     right: "right-full top-1/2 -translate-y-1/2 border-r-[#0f1b2d] border-y-transparent border-l-transparent",
 };
 
-export function Tooltip({content, children, side = "bottom", delay = 300, disabled = false}: TooltipProps) {
+export function Tooltip({content, children, side = "bottom", delay = 300, disabled = false, className = ""}: TooltipProps) {
     const [visible, setVisible] = useState(false);
     const [mounted, setMounted] = useState(false);
     const [timer, setTimer] = useState<ReturnType<typeof setTimeout> | null>(null);
@@ -60,7 +61,7 @@ export function Tooltip({content, children, side = "bottom", delay = 300, disabl
 
     return (
         <div
-            className="relative inline-flex"
+            className={`relative inline-flex ${className}`}
             onMouseEnter={handleEnter}
             onMouseLeave={handleLeave}
             onClick={handleClick}

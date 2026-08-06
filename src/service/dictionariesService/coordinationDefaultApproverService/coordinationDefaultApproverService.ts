@@ -1,29 +1,29 @@
 import { axiosInstance } from "@/service/axiosInstance.ts";
 import type {
-    CoordinationDefaultApproverResponse,
-    UpdateCoordinationDefaultApproverRequest,
-} from "./coordinationDefaultApproverServiceType.ts";
+    CoordinationDefaultApproverResponse, UpdateCoordinationDefaultApproverRequest
+} from "@/service/dictionariesService/coordinationDefaultApproverService/coordinationDefaultApproverServiceType.ts";
 
-class CoordinationDefaultApproverService {
+
+class CoordinationApproverService {
     private readonly basePath = "/dictionaries/coordination-users";
 
-    /** Дефолтные согласующие по всем фиксированным этапам (Юр. управление, Риск-менеджмент, Комплаенс, Методология) */
+    /** Дефолтные согласующие по всем фиксированным этапам */
     async getAll(): Promise<CoordinationDefaultApproverResponse[]> {
         const response = await axiosInstance.get<CoordinationDefaultApproverResponse[]>(this.basePath);
         return response.data;
     }
 
-    /** Изменить согласующего по умолчанию для одного из этапов. approverUserId: null — сбросить дефолт */
+    /** Изменить согласующего по умолчанию для одного из этапов */
     async update(
         id: number,
-        request: UpdateCoordinationDefaultApproverRequest,
+        request: UpdateCoordinationDefaultApproverRequest
     ): Promise<CoordinationDefaultApproverResponse> {
         const response = await axiosInstance.put<CoordinationDefaultApproverResponse>(
             `${this.basePath}/${id}`,
-            request,
+            request
         );
         return response.data;
     }
 }
 
-export const coordinationDefaultApproverService = new CoordinationDefaultApproverService();
+export const coordinationApproverService = new CoordinationApproverService();

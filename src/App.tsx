@@ -32,6 +32,7 @@ import {TasksVndPage} from "@/pages/TasksPages/TasksVndPage.tsx";
 import {OpenNotificationPage} from "@/pages/NotificationsPage/OpenNotificationPage.tsx";
 import {KeywordPage} from "@/pages/DictionariesPages/KeywordPage.tsx";
 import {CoordinationApproversPage} from "@/pages/DictionariesPages/CoordinationApproversPage.tsx";
+import {UsersPage} from "@/pages/UsersPages/UsersPage.tsx";
 
 const MainLayout = () => (
     <DictionariesProvider>
@@ -73,9 +74,12 @@ function App() {
                             <Route path="/notifications" element={<NotificationsPage/>}/>
                             <Route path="/notifications/:id" element={<OpenNotificationPage />} />
 
+                            <Route path="/users" element={<UsersPage/>}/>
+
                             <Route element={<RequirePermission code={PermissionCode.ManageRoles} />}>
                                 <Route path="/roles" element={<RolesPermissionPage/>}/>
                             </Route>
+
                             <Route path="/refs" element={<DictionariesPages/>}/>
                             <Route path="/refs/approval-body" element={<ApprovalBodyPage/>}/>
                             <Route path="/refs/organization-unit" element={<OrganizationUnitPage/>}/>

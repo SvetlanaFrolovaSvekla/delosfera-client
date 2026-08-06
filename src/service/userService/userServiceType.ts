@@ -1,5 +1,5 @@
-// --- Вложенные сущности
-// TODO: вложить в другие Service
+export type UserSource = "Local" | "Ldap";
+
 export interface PermissionResponse {
     code: number;
     key: string;
@@ -43,8 +43,6 @@ export interface OrganizationUnitResponse {
     updatedAt: string;
 }
 
-// --- Пользователь
-
 export type UserSortBy = "CreatedAtAsc" | "CreatedAtDesc" | "NameAsc" | "NameDesc";
 
 export interface UserResponse {
@@ -54,7 +52,12 @@ export interface UserResponse {
     position: PositionResponse | null;
     orgUnit: OrganizationUnitResponse | null;
     isActive: boolean;
-    lastLoginAt: string | null; // ISO datetime
+    lastLoginAt: string | null;
+    source: UserSource;
+    isBlocked: boolean;
+    blockedAt: string | null;
+    blockedByUserName: string | null;
+    blockReason: string | null;
     roles: RoleResponse[];
     createdAt: string;
     updatedAt: string;
@@ -72,9 +75,23 @@ export interface CreateUserRequest {
 export interface UpdateUserRequest {
     fullName: string;
     email: string;
-    password?: string; // если не передан — пароль не меняется
+    password?: string;
     positionId?: number | null;
     orgUnitId?: number | null;
     isActive: boolean;
     roleIds?: number[];
+}
+
+export interface BlockUserRequest {
+    reason?: string;
+}
+
+export interface GetUsersParams {
+    sortBy?: UserSortBy;
+    search?: string;
+    orgUnitIds?: number[];
+    positionIds?: number[];
+    roleIds?: number[];
+    source?: UserSource;
+    isBlocked?: boolean;
 }

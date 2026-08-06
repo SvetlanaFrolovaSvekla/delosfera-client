@@ -1,7 +1,7 @@
 // Колонки таблицы для страницы "Планирование актуализации".
 // Обязательные (fixed) колонки идут первыми и не скрываются через меню "Колонки",
 // остальные - те же доп. колонки, что и в базе ВНД, переключаемые.
-import type {ColDef} from "@/constants/vndColumns.ts";
+import type {ColDef} from "@/constants/columnsFilters/vndColumns.ts";
 
 const EXTRA_TOGGLEABLE_COLUMNS: ColDef[] = [
     {key: "type", label: "Вид", width: "160px"},

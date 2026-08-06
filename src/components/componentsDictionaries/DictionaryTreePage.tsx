@@ -2,18 +2,18 @@
 import type {LucideIcon} from "lucide-react";
 import {useTranslation} from "react-i18next";
 import {useNavigate} from "react-router-dom";
-import {ArrowLeft, Plus} from "lucide-react";
+import {AlertTriangle, ArrowLeft, Plus} from "lucide-react";
 
 import {DictionaryFormModal} from "@/components/componentsDictionaries/DictionaryFormModal.tsx";
 import {DictionaryTreeNode} from "@/components/componentsDictionaries/DictionaryTreeNode.tsx";
 
-import {ConfirmDeleteModal} from "@/components/componentsGeneral/modal/ConfirmDeleteModal.tsx";
 import {SearchBar} from "@/components/componentsGeneral/SearchBar.tsx";
 import {Loader} from "@/components/componentsGeneral/Loader.tsx";
 import {EmptyState} from "@/components/componentsGeneral/EmptyState.tsx";
 
 import type {TreeDictItem} from "@/utils/dictionaries/hierarchicalDictTree.ts";
 import type {HierarchicalDictTreeResult} from "@/hooks/dictionariesHooks/useHierarchicalDictTree.ts";
+import {ConfirmActionModal} from "@/components/componentsGeneral/modal/ConfirmActionModal.tsx";
 
 interface DictionaryTreePageProps<T extends TreeDictItem> {
     // Данные и колбэки - прокидываются из конкретного хука (useApprovalBodyTree и т.п.)
@@ -148,15 +148,18 @@ export function DictionaryTreePage<T extends TreeDictItem>({
             )}
 
             {deleteTarget && (
-                <ConfirmDeleteModal
+                <ConfirmActionModal
                     open
                     onClose={closeDelete}
                     onConfirm={confirmDelete}
                     loading={deleting}
                     error={deleteError}
+                    variant="danger"
+                    icon={AlertTriangle}
                     title={t(`${pageKey}.deleteConfirmTitle`)}
                     message={t("dictionaries.deleteConfirmMessage", {name: deleteTarget.titleRu})}
-
+                    confirmLabel={t("general.delete")}
+                    loadingLabel={t("general.deleting")}
                 />
             )}
         </div>

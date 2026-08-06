@@ -34,10 +34,10 @@ export const navGroups: NavGroup[] = [
     {
         titleKey: "sidebar.groups.admin",
         items: [
-            { id: "adm-users", icon: "user", labelKey: "sidebar.items.admUsers" },
+            { id: "adm-users", icon: "user", labelKey: "sidebar.items.admUsers", path: "/users" },
             { id: "adm-roles", icon: "shield", labelKey: "sidebar.items.admRoles", path: "/roles", permission: PermissionCode.ManageRoles },
-            { id: "adm-log", icon: "clock", labelKey: "sidebar.items.admLog" },
-            { id: "adm-auth", icon: "lock", labelKey: "sidebar.items.admAuth" },
+        /*    { id: "adm-log", icon: "clock", labelKey: "sidebar.items.admLog" },
+            { id: "adm-auth", icon: "lock", labelKey: "sidebar.items.admAuth" },*/
             { id: "refs", icon: "refs", labelKey: "sidebar.items.refs", path: "/refs" },
         ],
     },

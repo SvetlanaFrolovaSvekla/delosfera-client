@@ -3,7 +3,7 @@ import {useDictionaries} from "@/context/DictionariesContext.tsx";
 import {useVndAdvancedFiltersDraft, type AdvancedDraft} from "@/hooks/vndHooks/useVndAdvancedFiltersDraft.ts";
 import {useVndHasActiveFilters} from "@/hooks/vndHooks/useVndHasActiveFilters.ts";
 import type {VndScope} from "@/constants/vndTabs.ts";
-import type {ColDef} from "@/constants/vndColumns.ts";
+import type {ColDef} from "@/constants/columnsFilters/vndColumns.ts";
 import {SCOPE_COUNT_LABELS} from "@/constants/vndStatus.ts";
 import {MultiSelectField} from "@/components/componentsGeneral/selects/MultiSelects/MultiSelectField.tsx";
 import {DateFilterGroup, type DateFilterValue} from "@/components/componentsGeneral/datePickers/DateFilterGroup.tsx";

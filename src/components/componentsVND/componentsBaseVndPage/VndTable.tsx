@@ -3,7 +3,7 @@ import {Link} from "react-router-dom";
 import type {VndResponse} from "@/service/vndService/vndServiceType.ts";
 import {STATUS_META} from "@/constants/vndStatus.ts";
 import {ACTUALIZATION_BUCKET_META} from "@/constants/actualizationBucket.ts";
-import type {ColDef} from "@/constants/vndColumns.ts";
+import type {ColDef} from "@/constants/columnsFilters/vndColumns.ts";
 import {EmptyState} from "@/components/componentsGeneral/EmptyState.tsx";
 import {Clock} from "lucide-react";
 import {HighlightText} from "@/utils/HighlightText.tsx";

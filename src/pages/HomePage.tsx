@@ -11,21 +11,9 @@ import {VndTaskCard} from "@/pages/TasksPages/VndTaskCard.tsx";
 import {useActualizationSummary} from "@/hooks/vndHooks/useActualizationSummary.ts";
 import {ACTUALIZATION_BUCKET_META, ACTUALIZATION_BUCKET_ORDER} from "@/constants/actualizationBucket.ts";
 import {CreateDocumentModal} from "@/components/CreateDocumentModal.tsx";
+import {useVndHomeSummary} from "@/hooks/analyticsHooks/useVndHomeSummary.ts";
 
 // TODO: заменить моковые данные реальными из API (сейчас - дашборд роли "Отдел методологии")
-const kpis = [
-    {label: "На актуализации под моей ответственностью", value: 4, col: "#7a5ce0", tint: "#efeafe", bd: "#ddd0fa"},
-    {label: "Просроченные мной согласования в этом месяце", value: 3, col: "#c0392b", tint: "#fbe7e4", bd: "#f1c9c2"},
-    {label: "Мои ВНД, ожидающие согласования", value: 6, col: "#b3730a", tint: "#fdf3e0", bd: "#f0dcae"},
-    {
-        label: "ВНД, которые мне необходимо согласовать",
-        value: 12,
-        col: "var(--app-accent, #2f68f5)",
-        tint: "var(--app-soft, #e9f0ff)",
-        bd: "var(--app-bd, #cbddff)"
-    },
-];
-
 const activity = [
     {
         icon: "check" as const,
@@ -58,7 +46,7 @@ const activity = [
 ];
 
 // Сколько задач показывать в сводке на главной
-const HOME_TASKS_LIMIT = 4;
+const HOME_TASKS_LIMIT = 25;
 
 export function HomePage() {
     const {user, loading} = useAuth();
@@ -72,6 +60,33 @@ export function HomePage() {
     const actualization = useVndTasks("actualization");
     const consolidation = useVndTasks("consolidation");
     const {summary: actualizationSummary, isLoading: actualizationLoading} = useActualizationSummary();
+    const {summary: homeSummary} = useVndHomeSummary();
+
+
+    const kpis = [
+        {
+            label: "На актуализации под моей ответственностью",
+            value: homeSummary?.myResponsibleActualizations ?? 0,
+            col: "#7a5ce0", tint: "#efeafe", bd: "#ddd0fa"
+        },
+        {
+            label: "Просроченные мной согласования в этом месяце",
+            value: homeSummary?.myTimeoutApprovalsThisMonth ?? 0,
+            col: "#c0392b", tint: "#fbe7e4", bd: "#f1c9c2"
+        },
+        {
+            label: "Мои ВНД, ожидающие согласования",
+            value: homeSummary?.myVndAwaitingApproval ?? 0,
+            col: "#b3730a", tint: "#fdf3e0", bd: "#f0dcae"
+        },
+        {
+            label: "ВНД, которые мне необходимо согласовать",
+            value: homeSummary?.pendingMyApproval ?? 0,
+            col: "var(--app-accent, #2f68f5)",
+            tint: "var(--app-soft, #e9f0ff)",
+            bd: "var(--app-bd, #cbddff)"
+        },
+    ];
 
     const homeTasks = useMemo(
         () => [...coordination.tasks, ...actualization.tasks, ...consolidation.tasks].slice(0, HOME_TASKS_LIMIT),

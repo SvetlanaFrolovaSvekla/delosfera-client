@@ -1,10 +1,5 @@
 import {useMemo, useState} from "react";
 
-import {
-    KEYWORDS, ORG_UNITS, ORGANS_APPROVAL, SECURITY_LEVELS, TYPE_VND, USER_GROUPS, RUBRICS,
-    type OrganizationUnit, type Keyword, type SecurityLevel, type UserGroup, type Rubric,
-} from '@/service/mockData/DictionaryData.tsx'; // TODO: заглушка, надо настроить загрузку данных из справочников
-
 import type {VndSearchRequest} from "@/service/vndService/vndServiceType.ts";
 import {
     DateFilterGroup,
@@ -37,28 +32,8 @@ import {
 } from "@/components/componentsVND/componentsActualizationPage/ActualizationRequestsPanel.tsx";
 import {useAuth} from "@/context/AuthContext.ts";
 import {PermissionCode} from "@/constants/permissions.ts";
+import {useDictionaries} from "@/context/DictionariesContext.tsx";
 
-// TODO: заглушка, надо настроить загрузку данных из справочников
-const orgUnitMap = new Map<string, OrganizationUnit>(ORG_UNITS.map((o) => [o.id, o]));
-const orgUnitName = (id: number) => orgUnitMap.get(String(id))?.name ?? "—";
-const keywordMap = new Map<string, Keyword>(KEYWORDS.map((k) => [k.id, k]));
-const securityLevelMap = new Map<string, SecurityLevel>(SECURITY_LEVELS.map((s) => [s.id, s]));
-const userGroupMap = new Map<string, UserGroup>(USER_GROUPS.map((g) => [g.id, g]));
-const rubricMap = new Map<string, Rubric>(RUBRICS.map((r) => [r.id, r]));
-
-const keywordNames = (ids: number[]) =>
-    ids.map((id) => keywordMap.get(String(id))?.name).filter(Boolean).join(", ") || "—";
-const secrecyLevelName = (id?: number) => (id != null ? securityLevelMap.get(String(id))?.name ?? "—" : "—");
-const userGroupNames = (ids: number[]) =>
-    ids.map((id) => userGroupMap.get(String(id))?.name).filter(Boolean).join(", ") || "—";
-const responsibleExecutorNames = (ids: number[]) =>
-    ids.map((id) => orgUnitName(id)).filter((n) => n !== "—").join(", ") || "—";
-const rubricNames = (ids: number[]) =>
-    ids.map((id) => rubricMap.get(String(id))?.name).filter(Boolean).join(", ") || "—";
-// TODO: заглушка, надо настроить загрузку данных из справочников
-
-// DateFilterValue хранит "" как признак пустого поля (см. DateFilterGroup.tsx),
-// а VndSearchRequest ждёт DateRangeFilter с undefined/null. Конвертируем явно.
 function toDateRangeFilter(v: DateFilterValue): VndSearchRequest["dueActualizationDate"] {
     if (v.mode === "exact") {
         return v.exact ? {exact: v.exact} : undefined;
@@ -73,6 +48,34 @@ export function ActualizationPage() {
     const isChiefEditor =
         hasPermission(PermissionCode.ActualizeAnyVndWithApproval) ||
         hasPermission(PermissionCode.ActualizeAnyVndWithoutApproval);
+
+    const {
+        types, organs, orgUnits, keywords, rubrics, secrecyLevels, userGroups,
+        typeOptions, organOptions, orgUnitOptions,
+        loading: dictLoading,
+    } = useDictionaries();
+
+    // Мапы для расшифровки id → имя в таблице (id из бэка приходят как number)
+    const orgUnitMap = useMemo(() => new Map(orgUnits.map((o) => [o.id, o])), [orgUnits]);
+    const keywordMap = useMemo(() => new Map(keywords.map((k) => [k.id, k])), [keywords]);
+    const securityLevelMap = useMemo(() => new Map(secrecyLevels.map((s) => [s.id, s])), [secrecyLevels]);
+    const userGroupMap = useMemo(() => new Map(userGroups.map((g) => [g.id, g])), [userGroups]);
+    const rubricMap = useMemo(() => new Map(rubrics.map((r) => [r.id, r])), [rubrics]);
+    // types/organs пока используются только через *Options ниже, но оставила деструктуризацию
+    // на случай если понадобится расшифровка вида документа / органа утверждения в таблице
+    void types;
+    void organs;
+
+    const orgUnitName = (id: number) => orgUnitMap.get(id)?.name ?? "—";
+    const keywordNames = (ids: number[]) =>
+        ids.map((id) => keywordMap.get(id)?.name).filter(Boolean).join(", ") || "—";
+    const secrecyLevelName = (id?: number) => (id != null ? securityLevelMap.get(id)?.name ?? "—" : "—");
+    const userGroupNames = (ids: number[]) =>
+        ids.map((id) => userGroupMap.get(id)?.name).filter(Boolean).join(", ") || "—";
+    const responsibleExecutorNames = (ids: number[]) =>
+        ids.map((id) => orgUnitName(id)).filter((n) => n !== "—").join(", ") || "—";
+    const rubricNames = (ids: number[]) =>
+        ids.map((id) => rubricMap.get(id)?.name).filter(Boolean).join(", ") || "—";
 
     const [search, setSearch] = useState("");
     const [bucketFilter, setBucketFilter] = useState<ActualizationFilterValue>("all");
@@ -121,7 +124,7 @@ export function ActualizationPage() {
 
     return (
         <div className="w-full max-w-[1700px] mx-auto px-4 sm:px-6 lg:px-8 xl:px-10 pt-5 sm:pt-[26px] pb-10 sm:pb-[60px]">
-           <ActualizationPageHeader/>
+            <ActualizationPageHeader/>
 
             {isChiefEditor && <ActualizationRequestsPanel/>}
 
@@ -201,7 +204,7 @@ export function ActualizationPage() {
                             <MultiSelectField
                                 label="Вид документа"
                                 modalTitle="Вид документа"
-                                options={TYPE_VND.map((t) => ({key: t.id, label: t.name}))}
+                                options={typeOptions}
                                 selectedKeys={typeFilters}
                                 onChange={setTypeFilters}
                                 searchPlaceholder="Поиск вида документа…"
@@ -209,7 +212,7 @@ export function ActualizationPage() {
                             <MultiSelectField
                                 label="Разработчик"
                                 modalTitle="Разработчик (СП)"
-                                options={ORG_UNITS.map((o) => ({key: o.id, label: o.name, parentId: o.parentId}))}
+                                options={orgUnitOptions}
                                 selectedKeys={developerFilters}
                                 onChange={setDeveloperFilters}
                                 searchPlaceholder="Поиск подразделения…"
@@ -218,7 +221,7 @@ export function ActualizationPage() {
                             <MultiSelectField
                                 label="Орган утверждения"
                                 modalTitle="Орган утверждения"
-                                options={ORGANS_APPROVAL.map((o) => ({key: o.id, label: o.name, parentId: o.parentId}))}
+                                options={organOptions}
                                 selectedKeys={organFilters}
                                 onChange={setOrganFilters}
                                 searchPlaceholder="Поиск органа утверждения…"
@@ -266,7 +269,7 @@ export function ActualizationPage() {
                 </div>
             </div>
 
-            {loading ? (
+            {(loading || dictLoading) ? (
                 <Loader label="Загрузка данных…"/>
             ) : error ? (
                 <EmptyState variant="error" title="Не удалось загрузить данные" description={error}/>

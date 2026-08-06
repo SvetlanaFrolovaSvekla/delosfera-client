@@ -1,13 +1,14 @@
 import type {
+    BlockUserRequest,
     CreateUserRequest,
+    GetUsersParams,
     UpdateUserRequest,
     UserResponse,
-    UserSortBy,
 } from "./userServiceType.ts";
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL ?? "http://localhost:5293";
-
 // TODO: Подставить реальную логику получения текущего языка (i18n) + токены
+
 function getLanguage(): string {
     return localStorage.getItem("lang") ?? "ru";
 }
@@ -35,29 +36,33 @@ async function handleResponse<T>(response: Response): Promise<T> {
         const message = errorBody?.message ?? `Ошибка запроса: ${response.status}`;
         throw new Error(message);
     }
-    // Для DELETE (204 No Content) тела ответа нет
     if (response.status === 204) return undefined as T;
     return await response.json() as Promise<T>;
 }
 
-export const userService = {
-    /**
-     * Получить список пользователей.
-     */
-    async getAll(params?: {sortBy?: UserSortBy; search?: string}): Promise<UserResponse[]> {
-        const query = new URLSearchParams();
-        if (params?.sortBy) query.set("sortBy", params.sortBy);
-        if (params?.search) query.set("search", params.search);
+function buildQuery(params?: GetUsersParams): string {
+    const query = new URLSearchParams();
+    if (!params) return query.toString();
 
-        const response = await fetch(`${API_BASE}/api/users?${query.toString()}`, {
+    if (params.sortBy) query.set("sortBy", params.sortBy);
+    if (params.search) query.set("search", params.search);
+    if (params.source) query.set("source", params.source);
+    if (params.isBlocked !== undefined) query.set("isBlocked", String(params.isBlocked));
+    params.orgUnitIds?.forEach((id) => query.append("orgUnitIds", String(id)));
+    params.positionIds?.forEach((id) => query.append("positionIds", String(id)));
+    params.roleIds?.forEach((id) => query.append("roleIds", String(id)));
+
+    return query.toString();
+}
+
+export const userService = {
+    async getAll(params?: GetUsersParams): Promise<UserResponse[]> {
+        const response = await fetch(`${API_BASE}/api/users?${buildQuery(params)}`, {
             headers: buildHeaders(),
         });
         return handleResponse<UserResponse[]>(response);
     },
 
-    /**
-     * Получить информацию об авториз. пользователе
-     */
     async getMe(): Promise<UserResponse> {
         const response = await fetch(`${API_BASE}/api/users/me`, {
             headers: buildHeaders(),
@@ -65,9 +70,6 @@ export const userService = {
         return handleResponse<UserResponse>(response);
     },
 
-    /**
-     * Создать нового пользователя.
-     */
     async create(request: CreateUserRequest): Promise<UserResponse> {
         const response = await fetch(`${API_BASE}/api/users`, {
             method: "POST",
@@ -77,9 +79,6 @@ export const userService = {
         return handleResponse<UserResponse>(response);
     },
 
-    /**
-     * Обновить существующего пользователя.
-     */
     async update(id: number, request: UpdateUserRequest): Promise<UserResponse> {
         const response = await fetch(`${API_BASE}/api/users/${id}`, {
             method: "PUT",
@@ -89,9 +88,23 @@ export const userService = {
         return handleResponse<UserResponse>(response);
     },
 
-    /**
-     * Удалить пользователя.
-     */
+    async block(id: number, request: BlockUserRequest = {}): Promise<UserResponse> {
+        const response = await fetch(`${API_BASE}/api/users/${id}/block`, {
+            method: "POST",
+            headers: buildHeaders(true),
+            body: JSON.stringify(request),
+        });
+        return handleResponse<UserResponse>(response);
+    },
+
+    async unblock(id: number): Promise<UserResponse> {
+        const response = await fetch(`${API_BASE}/api/users/${id}/unblock`, {
+            method: "POST",
+            headers: buildHeaders(),
+        });
+        return handleResponse<UserResponse>(response);
+    },
+
     async remove(id: number): Promise<void> {
         const response = await fetch(`${API_BASE}/api/users/${id}`, {
             method: "DELETE",

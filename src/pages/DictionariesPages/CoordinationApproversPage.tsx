@@ -4,7 +4,7 @@ import {useNavigate} from "react-router-dom";
 import {useTranslation} from "react-i18next";
 import {ArrowLeft, Pencil, UserCheck} from "lucide-react";
 import {useAuth} from "@/context/AuthContext.ts";
-import {PermissionCode} from "@/constants/permissions.ts";
+import {PermissionCode} from "@/constants/permissions/permissions.ts";
 
 import {Loader} from "@/components/componentsGeneral/Loader.tsx";
 import {EmptyState} from "@/components/componentsGeneral/EmptyState.tsx";

@@ -1,7 +1,7 @@
 import {useAuth} from "@/context/AuthContext.ts";
 import {useTypeVndList} from "@/hooks/dictionariesHooks/useTypeVndList.ts";
 import {FlatDictListPage} from "@/components/componentsDictionaries/FlatDictListPage.tsx";
-import {PermissionCode} from "@/constants/permissions.ts";
+import {PermissionCode} from "@/constants/permissions/permissions.ts";
 import {FileText} from "lucide-react";
 
 export function TypeVndPage() {

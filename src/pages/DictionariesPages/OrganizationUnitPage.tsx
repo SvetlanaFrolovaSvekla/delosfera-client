@@ -1,7 +1,7 @@
 import {useAuth} from "@/context/AuthContext.ts";
 import {useOrganizationUnitTree} from "@/hooks/dictionariesHooks/useOrganizationUnitTree.ts";
 import {DictionaryTreePage} from "@/components/componentsDictionaries/DictionaryTreePage.tsx";
-import {PermissionCode} from "@/constants/permissions.ts";
+import {PermissionCode} from "@/constants/permissions/permissions.ts";
 import {Building2} from "lucide-react";
 
 export function OrganizationUnitPage() {

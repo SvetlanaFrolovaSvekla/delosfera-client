@@ -13,7 +13,7 @@ import {
     Users as UsersIcon,
 } from "lucide-react";
 import {useAuth} from "@/context/AuthContext.ts";
-import {PermissionCode} from "@/constants/permissions.ts";
+import {PermissionCode} from "@/constants/permissions/permissions.ts";
 import {STATUS_META} from "@/constants/vndStatus.ts";
 import {colorAt} from "@/constants/reportPalette.ts";
 import {Loader} from "@/components/componentsGeneral/Loader.tsx";

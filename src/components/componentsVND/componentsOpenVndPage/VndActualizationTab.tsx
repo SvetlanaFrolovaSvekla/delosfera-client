@@ -6,7 +6,7 @@ import {ClipboardList, RefreshCw, Send} from "lucide-react";
 import type {VndResponse} from "@/service/vndService/vndServiceType.ts";
 import {actualizationService} from "@/service/actualizationService/actualizationService.ts";
 import {useAuth} from "@/context/AuthContext.ts";
-import {PermissionCode} from "@/constants/permissions.ts";
+import {PermissionCode} from "@/constants/permissions/permissions.ts";
 import {toast} from "@/service/toastService.ts";
 import {formatDate} from "@/utils/dateUtils.ts";
 import {StartActualizationModal} from "./componentsActualizationTab/StartActualizationModal.tsx";

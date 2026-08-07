@@ -5,7 +5,7 @@ import {FileUp, Loader2, Paperclip, Trash2, X} from "lucide-react";
 import {vndService} from "@/service/vndService/vndService.ts";
 import type {VndRedactionResponse} from "@/service/vndService/vndServiceType.ts";
 import {useAuth} from "@/context/AuthContext.ts";
-import {PermissionCode} from "@/constants/permissions.ts";
+import {PermissionCode} from "@/constants/permissions/permissions.ts";
 import {Clue} from "@/components/componentsGeneral/knowledgeBaseComponents/Clue.tsx";
 
 interface VndUploadRedactionModalProps {

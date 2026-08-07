@@ -164,7 +164,7 @@ export function OpenNotificationPage() {
                         <button
                             onClick={() =>
                                 navigate(notification.url!, {
-                                    state: notification.url!.startsWith("/basevnd/")
+                                    state: notification.url!.startsWith("/base-vnd/")
                                         ? {tab: "approval"}
                                         : undefined,
                                 })

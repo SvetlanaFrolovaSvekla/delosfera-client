@@ -1,4 +1,5 @@
 import {useState} from "react";
+import {useAuth} from "@/context/AuthContext.ts";
 import {useTranslation} from "react-i18next";
 import {Link, useLocation, useNavigate} from "react-router-dom";
 import {useDictionaries} from "@/context/DictionariesContext.tsx";
@@ -7,7 +8,6 @@ import {CountBadge} from "@/components/componentsSidebar/CountBadge.tsx";
 import {Icon} from "@/components/icons/Icon";
 import {RubricTreeModal} from "@/components/componentsGeneral/selects/MultiSelects/RubricTreeModal.tsx";
 import {ChevronRight} from "lucide-react";
-import {useAuth} from "@/context/AuthContext.ts";
 
 const MODAL_ITEM_IDS = ["vnd-rubric"];
 
@@ -25,7 +25,7 @@ export function Sidebar() {
     const goToVndWithRubrics = (keys: string[]) => {
         if (keys.length === 0) return;
         const params = new URLSearchParams({rubrics: keys.join(",")});
-        navigate(`/basevnd?${params.toString()}`);
+        navigate(`/base-vnd?${params.toString()}`);
         setRubricModalOpen(false);
     };
 

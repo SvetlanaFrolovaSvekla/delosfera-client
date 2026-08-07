@@ -1,4 +1,4 @@
-// Проверка конкретного права доступа роли (permission)
+// Проверка конкретного права доступа роли (перечень в constants -> permission)
 import {Navigate, Outlet} from "react-router-dom";
 import {useAuth} from "@/context/AuthContext.ts";
 import {Loader} from "@/components/componentsGeneral/Loader";

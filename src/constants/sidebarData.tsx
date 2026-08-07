@@ -1,5 +1,5 @@
 import type {IconName} from "@/components/icons/Icon.tsx";
-import {PermissionCode} from "@/constants/permissions.ts";
+import {PermissionCode} from "@/constants/permissions/permissions.ts";
 
 interface NavItem {
     id: string;
@@ -25,7 +25,7 @@ export const navGroups: NavGroup[] = [
                 labelKey: "sidebar.items.vndRubric",
                 icon: "folder",
             },
-            { id: "vnd", icon: "vnd", labelKey: "sidebar.items.vnd", path: "/basevnd" },
+            { id: "vnd", icon: "vnd", labelKey: "sidebar.items.vnd", path: "/base-vnd" },
             { id: "pln", icon: "pln", labelKey: "sidebar.items.pln", badge: 3, path: "/actualization" },
             { id: "tasks", icon: "tasks", labelKey: "sidebar.items.tasks", badge: 4, path: "/tasks" },
             { id: "rpt", icon: "rpt", labelKey: "sidebar.items.rpt", path: "/reportvnd" },

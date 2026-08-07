@@ -1,7 +1,7 @@
 import {useAuth} from "@/context/AuthContext.ts";
 import {useKeywordTree} from "@/hooks/dictionariesHooks/useKeywordTree.ts";
 import {DictionaryTreePage} from "@/components/componentsDictionaries/DictionaryTreePage.tsx";
-import {PermissionCode} from "@/constants/permissions.ts";
+import {PermissionCode} from "@/constants/permissions/permissions.ts";
 import {Tag} from "lucide-react";
 
 export function KeywordPage() {

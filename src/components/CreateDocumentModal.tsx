@@ -30,7 +30,7 @@ export function CreateDocumentModal({onClose}: CreateDocumentModalProps) {
 
     const handleConfirm = () => {
         if (selected === "vnd") {
-            navigate("/basevnd/new");
+            navigate("/base-vnd/new");
         }
     };
 

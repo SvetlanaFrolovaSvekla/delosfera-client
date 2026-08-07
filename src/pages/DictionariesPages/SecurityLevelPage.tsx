@@ -1,7 +1,7 @@
 import {useAuth} from "@/context/AuthContext.ts";
 import {useSecurityLevelList} from "@/hooks/dictionariesHooks/useSecurityLevelList.ts";
 import {FlatDictListPage} from "@/components/componentsDictionaries/FlatDictListPage.tsx";
-import {PermissionCode} from "@/constants/permissions.ts";
+import {PermissionCode} from "@/constants/permissions/permissions.ts";
 import {ShieldCheck} from "lucide-react";
 
 export function SecurityLevelPage() {

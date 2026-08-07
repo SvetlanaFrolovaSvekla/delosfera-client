@@ -21,7 +21,7 @@ import {Tabs} from "@/components/componentsGeneral/Tabs.tsx";
 import {Loader} from "@/components/componentsGeneral/Loader";
 import {EmptyState} from "@/components/componentsGeneral/EmptyState.tsx";
 import {useAuth} from "@/context/AuthContext.ts";
-import {PermissionCode} from "@/constants/permissions.ts";
+import {PermissionCode} from "@/constants/permissions/permissions.ts";
 import {FileEdit} from "lucide-react";
 
 
@@ -71,7 +71,7 @@ export function BaseVndPage() {
 
     return (
         <div className="w-full max-w-[1700px] mx-auto px-4 sm:px-6 lg:px-8 xl:px-10 pt-5 sm:pt-[26px] pb-10 sm:pb-[60px]">
-            <VndPageHeader onCreateClick={() => navigate("/basevnd/new")}/>
+            <VndPageHeader onCreateClick={() => navigate("/base-vnd/new")}/>
 
             <Tabs<VndScope> tabs={scopeTabs} value={scope} onChange={setScope}/>
 

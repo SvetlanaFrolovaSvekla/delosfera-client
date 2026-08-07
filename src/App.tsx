@@ -3,7 +3,7 @@ import {BrowserRouter, Routes, Route, Outlet} from 'react-router-dom';
 import {AuthProvider} from "@/context/AuthProvider.tsx";
 import {ProtectedRoute} from "@/context/ProtectedRoute.tsx";
 import {RequirePermission} from "@/context/RequirePermission.tsx";
-import {PermissionCode} from "@/constants/permissions.ts";
+import {PermissionCode} from "@/constants/permissions/permissions.ts";
 import {DictionariesProvider} from "@/context/DictionariesContext.tsx";
 import {ToastContainer} from "@/components/componentsGeneral/knowledgeBaseComponents/ToastContainer.tsx";
 
@@ -63,20 +63,24 @@ function App() {
 
                             <Route path="/profile" element={<ProfilePage/>}/>
 
-                            <Route path="/basevnd" element={<BaseVndPage/>}/>
-                            <Route path="/basevnd/new" element={<CreateVndPage/>}/>
-                            <Route path="/basevnd/:id" element={<OpenVndPage/>}/>
+                            <Route path="/base-vnd" element={<BaseVndPage/>}/>
+                            <Route path="/base-vnd/new" element={<CreateVndPage/>}/>
+                            <Route path="/base-vnd/:id" element={<OpenVndPage/>}/>
 
                             <Route path="/tasks" element={<TasksVndPage/>}/>
-                            <Route path="/actualization" element={<ActualizationPage/>}/>
+
+                            <Route element={<RequirePermission code={PermissionCode.ViewVndActualizationPage}/>}>
+                                <Route path="/actualization" element={<ActualizationPage/>}/>
+                            </Route>
+
                             <Route path="/reportvnd" element={<ReportVndPage/>}/>
 
                             <Route path="/notifications" element={<NotificationsPage/>}/>
-                            <Route path="/notifications/:id" element={<OpenNotificationPage />} />
+                            <Route path="/notifications/:id" element={<OpenNotificationPage/>}/>
 
                             <Route path="/users" element={<UsersPage/>}/>
 
-                            <Route element={<RequirePermission code={PermissionCode.ManageRoles} />}>
+                            <Route element={<RequirePermission code={PermissionCode.ManageRoles}/>}>
                                 <Route path="/roles" element={<RolesPermissionPage/>}/>
                             </Route>
 

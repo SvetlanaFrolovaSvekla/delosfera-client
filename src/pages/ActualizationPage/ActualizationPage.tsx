@@ -31,7 +31,7 @@ import {
     ActualizationRequestsPanel
 } from "@/components/componentsVND/componentsActualizationPage/ActualizationRequestsPanel.tsx";
 import {useAuth} from "@/context/AuthContext.ts";
-import {PermissionCode} from "@/constants/permissions.ts";
+import {PermissionCode} from "@/constants/permissions/permissions.ts";
 import {useDictionaries} from "@/context/DictionariesContext.tsx";
 
 function toDateRangeFilter(v: DateFilterValue): VndSearchRequest["dueActualizationDate"] {

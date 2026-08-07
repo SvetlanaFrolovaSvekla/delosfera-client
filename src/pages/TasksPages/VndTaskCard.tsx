@@ -33,7 +33,7 @@ export function VndTaskCard({task}: VndTaskCardProps) {
 
     return (
         <Link
-            to={`/basevnd/${task.vndId}`}
+            to={`/base-vnd/${task.vndId}`}
             state={task.scope === "coordination" || task.scope === "myVndApproval" ? {tab: "approval"} : undefined}
             draggable={false}
             onClick={handleClick}

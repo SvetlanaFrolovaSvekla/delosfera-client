@@ -62,7 +62,7 @@ export function ActualizationTable({
                     return (
                         <Link
                             key={r.id}
-                            to={`/basevnd/${r.id}`}
+                            to={`/base-vnd/${r.id}`}
                             onClick={(e) => {
                                 const selection = window.getSelection();
                                 if (selection && selection.toString().length > 0) {

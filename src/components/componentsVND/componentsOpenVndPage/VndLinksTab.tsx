@@ -126,7 +126,7 @@ function LinkRow({
           className="w-9 h-9 flex-none rounded-[9px] bg-[#f2f5f9] text-[#55617a] grid place-items-center font-mono text-[10px] font-semibold">
         {item.code.slice(0, 3)}
       </span>
-            <a href={`/basevnd/${item.vndId}`} className="flex-1 min-w-0">
+            <a href={`/base-vnd/${item.vndId}`} className="flex-1 min-w-0">
         <span className="flex items-center gap-2">
           <span className="font-mono text-[11.5px] font-semibold text-[#4e57d6]">{item.code}</span>
           <span

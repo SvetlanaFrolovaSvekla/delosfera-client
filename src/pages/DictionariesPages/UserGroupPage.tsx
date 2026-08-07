@@ -3,7 +3,7 @@ import {useTranslation} from "react-i18next";
 import {ArrowLeft, Plus, Users} from "lucide-react";
 import {useAuth} from "@/context/AuthContext.ts";
 import {useUserGroupList} from "@/hooks/dictionariesHooks/useUserGroupList.ts";
-import {PermissionCode} from "@/constants/permissions.ts";
+import {PermissionCode} from "@/constants/permissions/permissions.ts";
 
 import {UserGroupFormModal} from "@/components/componentsDictionaries/UserGroupFormModal.tsx";
 import {UserGroupRow} from "@/components/componentsDictionaries/UserGroupRow.tsx";

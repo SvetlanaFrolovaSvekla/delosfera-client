@@ -114,7 +114,7 @@ export function useCreateVndForm() {
 
     const handleSuccessModalDone = () => {
         if (createdVnd) {
-            navigate(`/basevnd/${createdVnd.id}`, {state: {vnd: createdVnd}});
+            navigate(`/base-vnd/${createdVnd.id}`, {state: {vnd: createdVnd}});
         }
     };
 
@@ -146,6 +146,6 @@ export function useCreateVndForm() {
         isValid, isSubmitting, submitError,
         handleSubmit,
         createdVnd, handleSuccessModalDone,
-        goBack: () => navigate("/basevnd"),
+        goBack: () => navigate("/base-vnd"),
     };
 }

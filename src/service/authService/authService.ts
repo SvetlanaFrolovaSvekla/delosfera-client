@@ -3,7 +3,7 @@ import type {LoginRequest, LoginResponse} from "@/service/authService/authServic
 
 class AuthService {
     async login(request: LoginRequest): Promise<LoginResponse> {
-        const response = await apiClient.post<LoginResponse>("/api/auth/login", request);
+        const response = await apiClient.post<LoginResponse>("/auth/login", request);
         const {token, refreshToken, user} = response.data;
         localStorage.setItem("accessToken", token);
         localStorage.setItem("refreshToken", refreshToken);
@@ -28,7 +28,7 @@ class AuthService {
         localStorage.removeItem("user");
 
         if (refreshToken) {
-            await apiClient.post("/api/auth/logout", {refreshToken}).catch(() => {});
+            await apiClient.post("/auth/logout", {refreshToken}).catch(() => {});
         }
     }
 }

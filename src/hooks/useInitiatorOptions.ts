@@ -1,6 +1,6 @@
 // TODO: можно брать хук Options с почтой, для справочник а с группой пользователей
 // Список пользователей для фильтра "Инициатор" — грузится один раз при монтировании
-// VndFilters. Использует тот же эндпоинт, что и VndSelectApproverModal (GET api/users),
+// VndFilters. Использует тот же эндпоинт, что и VndSelectApproverModal (GET /users),
 // но не тянет orgUnit/position — для фильтра нужны только id и ФИО.
 import {useEffect, useState} from "react";
 import {axiosInstance} from "@/service/axiosInstance.ts";
@@ -24,7 +24,7 @@ export function useInitiatorOptions() {
         let cancelled = false;
 
         axiosInstance
-            .get<RawUserResponse[]>("api/users")
+            .get<RawUserResponse[]>("/users")
             .then(({data}) => {
                 if (cancelled) return;
                 setOptions(

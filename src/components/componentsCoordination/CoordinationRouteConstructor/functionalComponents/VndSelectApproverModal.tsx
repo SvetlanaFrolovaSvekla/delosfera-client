@@ -40,7 +40,7 @@ interface RawOrgUnitResponse {
 }
 
 async function fetchAllUsers(): Promise<ApproverOption[]> {
-    const {data} = await axiosInstance.get<RawUserResponse[]>("api/users");
+    const {data} = await axiosInstance.get<RawUserResponse[]>("/users");
     return data.map((u) => ({
         id: u.id,
         fullName: u.fullName,

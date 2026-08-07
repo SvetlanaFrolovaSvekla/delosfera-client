@@ -57,21 +57,21 @@ function buildQuery(params?: GetUsersParams): string {
 
 export const userService = {
     async getAll(params?: GetUsersParams): Promise<UserResponse[]> {
-        const response = await fetch(`${API_BASE}/api/users?${buildQuery(params)}`, {
+        const response = await fetch(`${API_BASE}/users?${buildQuery(params)}`, {
             headers: buildHeaders(),
         });
         return handleResponse<UserResponse[]>(response);
     },
 
     async getMe(): Promise<UserResponse> {
-        const response = await fetch(`${API_BASE}/api/users/me`, {
+        const response = await fetch(`${API_BASE}/users/me`, {
             headers: buildHeaders(),
         });
         return handleResponse<UserResponse>(response);
     },
 
     async create(request: CreateUserRequest): Promise<UserResponse> {
-        const response = await fetch(`${API_BASE}/api/users`, {
+        const response = await fetch(`${API_BASE}/users`, {
             method: "POST",
             headers: buildHeaders(true),
             body: JSON.stringify(request),
@@ -80,7 +80,7 @@ export const userService = {
     },
 
     async update(id: number, request: UpdateUserRequest): Promise<UserResponse> {
-        const response = await fetch(`${API_BASE}/api/users/${id}`, {
+        const response = await fetch(`${API_BASE}/users/${id}`, {
             method: "PUT",
             headers: buildHeaders(true),
             body: JSON.stringify(request),
@@ -89,7 +89,7 @@ export const userService = {
     },
 
     async block(id: number, request: BlockUserRequest = {}): Promise<UserResponse> {
-        const response = await fetch(`${API_BASE}/api/users/${id}/block`, {
+        const response = await fetch(`${API_BASE}/users/${id}/block`, {
             method: "POST",
             headers: buildHeaders(true),
             body: JSON.stringify(request),
@@ -98,7 +98,7 @@ export const userService = {
     },
 
     async unblock(id: number): Promise<UserResponse> {
-        const response = await fetch(`${API_BASE}/api/users/${id}/unblock`, {
+        const response = await fetch(`${API_BASE}/users/${id}/unblock`, {
             method: "POST",
             headers: buildHeaders(),
         });
@@ -106,7 +106,7 @@ export const userService = {
     },
 
     async remove(id: number): Promise<void> {
-        const response = await fetch(`${API_BASE}/api/users/${id}`, {
+        const response = await fetch(`${API_BASE}/users/${id}`, {
             method: "DELETE",
             headers: buildHeaders(),
         });

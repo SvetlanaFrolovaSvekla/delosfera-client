@@ -19,7 +19,7 @@ function buildHeaders(): HeadersInit {
 
 export const roleService = {
     async getAll(): Promise<RoleResponse[]> {
-        const response = await fetch(`${API_BASE}/api/users/roles`, {headers: buildHeaders()});
+        const response = await fetch(`${API_BASE}/users/roles`, {headers: buildHeaders()});
         if (!response.ok) throw new Error(`Ошибка запроса: ${response.status}`);
         return response.json();
     },

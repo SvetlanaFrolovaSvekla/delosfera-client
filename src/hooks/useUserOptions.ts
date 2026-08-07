@@ -22,7 +22,7 @@ export function useUserOptions() {
         let cancelled = false;
 
         axiosInstance
-            .get<RawUserResponse[]>("api/users")
+            .get<RawUserResponse[]>("users")
             .then(({data}) => {
                 if (cancelled) return;
                 setOptions(

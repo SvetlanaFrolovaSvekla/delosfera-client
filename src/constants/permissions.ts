@@ -30,48 +30,48 @@ export const PermissionCode = {
     /* Управление группами */
     ManageGroups: 10,
 
-    /* Управление справочниками (устарело — используй ManageVndDictionaries / ManageGeneralDictionaries / ManageSzDictionaries / ManageProcurementDictionaries) */
-    ManageDictionaries: 11,
-
     /* Просмотр ВНД */
-    ViewVnd: 12,
+    ViewVnd: 11,
 
     /* Экспорт ВНД */
-    ExportVnd: 13,
+    ExportVnd: 12,
 
     /* Управление пользователями */
-    ManageUsers: 14,
+    ManageUsers: 13,
 
     /* Управление ролями */
-    ManageRoles: 15,
+    ManageRoles: 14,
 
     /* Просмотр ограниченной статистики */
-    ViewLimitedStatistics: 16,
+    ViewLimitedStatistics: 15,
 
     /* Экспорт отчёта по полной статистике */
-    ExportFullStatisticsReport: 17,
+    ExportFullStatisticsReport: 16,
 
     /* Просмотр полной статистики */
-    ViewFullStatistics: 18,
+    ViewFullStatistics: 17,
 
     /* Возможность выступать в роли согласующего */
-    ActAsApprover: 19,
+    ActAsApprover: 18,
 
     /* Возможность изменять маршрут согласования (удалять лишних пользователей) */
-    ModifyApprovalRoute: 20,
+    ModifyApprovalRoute: 19,
 
     /* Возможность просматривать черновики других пользователей */
-    ViewOtherUsersDrafts: 21,
+    ViewOtherUsersDrafts: 20,
 
     /* Управление справочниками ВНД (Виды ВНД, Уровни секретности, Группы пользователей, Рубрикатор, Обязательные участники согласования) */
-    ManageVndDictionaries: 22,
+    ManageVndDictionaries: 21,
 
     /* Управление общими справочниками (Органы утверждения, Структурные подразделения, Должности) */
-    ManageGeneralDictionaries: 23,
+    ManageGeneralDictionaries: 22,
 
     /* Управление справочниками служебных записок (Категории СЗ) */
-    ManageSzDictionaries: 24,
+    ManageSzDictionaries: 23,
 
     /* Управление справочниками закупок (Чёрный список контрагентов, Пороги закупок) */
-    ManageProcurementDictionaries: 25,
+    ManageProcurementDictionaries: 24,
+
+    /* Изменение реквизитов существующей ВНД и её связей с другими документами */
+    EditVndRequisites: 25,
 } as const;

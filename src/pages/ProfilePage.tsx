@@ -124,7 +124,7 @@ export function ProfilePage() {
                         <h2 className="m-0 text-[15px] font-bold">История действий</h2>
                     </div>
                     <div className="px-[22px] pb-[18px] pt-[2px]">
-                        {/* TODO: подключить, когда появится эндпоинт GET /api/users/{id}/activity */}
+                        {/* TODO: подключить, когда появится эндпоинт GET /users/{id}/activity */}
                         <div className="py-7 text-center text-[#a3adbd] text-[13px]">
                             Журнал действий пока недоступен
                         </div>

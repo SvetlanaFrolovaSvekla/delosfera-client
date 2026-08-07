@@ -24,7 +24,7 @@ async function doRefresh(): Promise<LoginResponse> {
     const refreshToken = localStorage.getItem("refreshToken");
     if (!refreshToken) throw new Error("No refresh token");
 
-    const response = await axios.post<LoginResponse>(`${API_BASE_URL}/api/auth/refresh`, {refreshToken});
+    const response = await axios.post<LoginResponse>(`${API_BASE_URL}/auth/refresh`, {refreshToken});
     localStorage.setItem("accessToken", response.data.token);
     localStorage.setItem("refreshToken", response.data.refreshToken);
     localStorage.setItem("user", JSON.stringify(response.data.user));
@@ -33,7 +33,7 @@ async function doRefresh(): Promise<LoginResponse> {
 /**
  * Единая точка обновления сессии. Лок через navigator.locks гарантирует,
  * что даже несколько ОТКРЫТЫХ ВКЛАДОК одного сайта не смогут одновременно
- * вызвать /api/auth/refresh — выполнение сериализуется на уровне браузера.
+ * вызвать /auth/refresh — выполнение сериализуется на уровне браузера.
  */
 export async function refreshSession(): Promise<LoginResponse> {
     if (refreshPromise) return refreshPromise; // защита внутри текущей вкладки
@@ -61,7 +61,7 @@ apiClient.interceptors.response.use(
     (response) => response,
     async (error) => {
         const originalRequest = error.config;
-        const isRefreshCall = originalRequest?.url?.includes("/api/auth/refresh");
+        const isRefreshCall = originalRequest?.url?.includes("/auth/refresh");
 
         if (error.response?.status !== 401 || originalRequest._retry || isRefreshCall) {
             if (error.response?.status === 401 && isRefreshCall) {

@@ -1,10 +1,7 @@
 import type {RoleResponse} from "./userServiceType.ts";
+import {getLanguage} from "@/utils/getLanguage.ts";
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL ?? "http://localhost:5293";
-
-function getLanguage(): string {
-    return localStorage.getItem("lang") ?? "ru";
-}
 
 function getAuthToken(): string | null {
     return localStorage.getItem("accessToken");

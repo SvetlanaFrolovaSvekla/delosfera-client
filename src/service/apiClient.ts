@@ -1,15 +1,12 @@
 import axios, {type InternalAxiosRequestConfig} from "axios";
 import type {LoginResponse} from "@/service/authService/authServiceType.ts";
+import {getLanguage} from "@/utils/getLanguage.ts";
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL ?? "http://localhost:5293";
 
 export const apiClient = axios.create({
     baseURL: API_BASE_URL,
 });
-
-function getLanguage(): string {
-    return localStorage.getItem("lang") ?? "ru";
-}
 
 apiClient.interceptors.request.use((config: InternalAxiosRequestConfig) => {
     const token = localStorage.getItem("accessToken");

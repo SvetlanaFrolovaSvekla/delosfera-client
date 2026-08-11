@@ -14,6 +14,7 @@ import {useActualizationSummary} from "@/hooks/vndHooks/useActualizationSummary.
 import {ACTUALIZATION_BUCKET_META, ACTUALIZATION_BUCKET_ORDER} from "@/constants/actualizationBucket.ts";
 import {CreateDocumentModal} from "@/components/CreateDocumentModal.tsx";
 import {useVndHomeSummary} from "@/hooks/analyticsHooks/useVndHomeSummary.ts";
+import {dashboardService, type DashboardSummary} from "@/service/dashboardService/dashboardService.ts";
 
 // Сколько задач показывать в сводке на главной
 const HOME_TASKS_LIMIT = 25;
@@ -50,6 +51,13 @@ export function HomePage() {
     const consolidation = useVndTasks("consolidation");
     const {summary: actualizationSummary, isLoading: actualizationLoading} = useActualizationSummary();
     const {summary: homeSummary} = useVndHomeSummary();
+
+    // Сводка по остальным контурам (СЗ, закупки) и активные замещения (GEN-14/15)
+    const [dashboard, setDashboard] = useState<DashboardSummary | null>(null);
+    useEffect(() => {
+        if (!user) return;
+        dashboardService.summary().then(setDashboard).catch(() => undefined);
+    }, [user]);
 
     // Лента последней активности текущего пользователя (реальные данные)
     const [activity, setActivity] = useState<UserActivityItem[]>([]);
@@ -138,6 +146,32 @@ export function HomePage() {
                 </button>
             </div>
 
+            {/* Замещение (GEN-14): пока период идёт, задачи отсутствующего приходят сюда */}
+            {dashboard && dashboard.actingFor.length > 0 && (
+                <div className="mb-5 rounded-[14px] border border-[#f0c98a] bg-[#fffaf0] px-4 py-3">
+                    <div className="text-[13px] font-semibold text-[#8a5a00]">Активно замещение</div>
+                    {dashboard.actingFor.map(s => (
+                        <div key={s.id} className="mt-1 text-[12.5px] leading-[1.6] text-[#8a5a00]">
+                            Вы замещаете: <b>{s.userName}</b> — задачи перенаправлены вам автоматически
+                            с сохранением сроков. Период: {s.startsOn} — {s.endsOn}
+                            {s.reason ? ` · ${s.reason}` : ""}
+                        </div>
+                    ))}
+                </div>
+            )}
+
+            {/* На время отсутствия задачи ведёт замещающий — показываем, кто именно */}
+            {dashboard && dashboard.replacedBy.length > 0 && (
+                <div className="mb-5 rounded-[14px] border border-[#cbddff] bg-[#e9f0ff] px-4 py-3">
+                    {dashboard.replacedBy.map(s => (
+                        <div key={s.id} className="text-[12.5px] leading-[1.6] text-[#2f68f5]">
+                            Вас замещает <b>{s.userName}</b> до {s.endsOn}
+                            {s.reason ? ` · ${s.reason}` : ""}
+                        </div>
+                    ))}
+                </div>
+            )}
+
             {/* KPI */}
             <div className="mb-5 grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-4">
                 {kpis.map((k) => (
@@ -163,6 +197,49 @@ export function HomePage() {
                     </button>
                 ))}
             </div>
+
+            {/* Сводка по остальным контурам: записки и закупки (GEN-15).
+                Тон плитки задаётся срочностью — просрочка краснеет независимо от контура. */}
+            {dashboard && dashboard.kpis.length > 0 && (
+                <div className="mb-5 grid grid-cols-2 lg:grid-cols-5 gap-4">
+                    {dashboard.kpis.map(k => {
+                        const tone = k.tone === "danger"
+                            ? {col: "#c0392b", tint: "#fdeeec", bd: "#f3c9c2"}
+                            : k.tone === "warning"
+                                ? {col: "#c77700", tint: "#fffaf0", bd: "#f0c98a"}
+                                : {col: "#2f68f5", tint: "#f6f8fb", bd: "#e5e9f0"};
+
+                        const target = k.code.startsWith("sz")
+                            ? "/sz"
+                            : k.code.startsWith("prc")
+                                ? "/prc"
+                                : "/tasks";
+
+                        return (
+                            <button
+                                key={k.code}
+                                onClick={() => navigate(target)}
+                                className="cursor-pointer relative overflow-hidden rounded-[14px] border p-4 pb-[17px] text-left transition-transform hover:-translate-y-0.5"
+                                style={{background: tone.tint, borderColor: tone.bd}}
+                            >
+                                <span className="absolute inset-y-0 left-0 w-1" style={{background: tone.col}}/>
+                                <span className="block min-h-8 text-[12px] font-medium leading-[1.35] text-[#5b6675]">
+                                    {k.label}
+                                </span>
+                                <span
+                                    className="mt-1.5 block text-[28px] font-bold tracking-[-0.02em]"
+                                    style={{color: tone.col, fontFamily: "'IBM Plex Mono', monospace"}}
+                                >
+                                    {k.value}
+                                </span>
+                                {k.note && (
+                                    <span className="mt-0.5 block text-[11px] text-[#8b97ab]">{k.note}</span>
+                                )}
+                            </button>
+                        );
+                    })}
+                </div>
+            )}
 
             <div className="grid grid-cols-1 xl:grid-cols-[1.65fr_1fr] gap-[18px]">
                 {/* Мои задачи */}

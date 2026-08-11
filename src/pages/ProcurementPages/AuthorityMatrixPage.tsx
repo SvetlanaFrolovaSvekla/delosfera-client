@@ -2,6 +2,7 @@ import {useCallback, useEffect, useMemo, useState} from "react";
 import {colors} from "@/design/tokens";
 import {
     authorityMatrixService,
+    type ApprovalAuthority,
     type MatrixResolveResult,
     type MatrixRule,
     type MatrixTable,
@@ -44,11 +45,17 @@ function shortMoney(value: number | null): string {
 }
 
 /** Цвет результата: чем выше орган утверждения, тем «тяжелее» закупка. */
-function toneByAuthority(authority: number): { fg: string; bg: string } {
-    if (authority >= 4) return colors.status.arch;
-    if (authority === 3) return colors.status.onact;
-    if (authority === 2) return colors.status.review;
-    return colors.status.active;
+function toneByAuthority(authority: ApprovalAuthority): { fg: string; bg: string } {
+    switch (authority) {
+        case "Shareholders":
+            return colors.status.arch;
+        case "SupervisoryBoard":
+            return colors.status.onact;
+        case "Board":
+            return colors.status.review;
+        default:
+            return colors.status.active;
+    }
 }
 
 export const AuthorityMatrixPage = () => {

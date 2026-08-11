@@ -1,15 +1,18 @@
 import {apiClient} from "@/service/apiClient.ts";
 
-/** Стадия протокола закупки. */
-export type ProtocolStatus = 1 | 2 | 3;
+/**
+ * Стадия протокола закупки. Сервер сериализует перечисления строками:
+ * сравнение с числами молча не срабатывало и подписи выглядели непоставленными.
+ */
+export type ProtocolStatus = "Draft" | "Signing" | "Approved";
 
 /** Кто подписывает протокол (подвал печатной формы). */
-export type ProtocolSignerRole = 1 | 2 | 3;
+export type ProtocolSignerRole = "Initiator" | "OrganizerCurator" | "Approver";
 
 export const SIGNER_ROLE_LABEL: Record<ProtocolSignerRole, string> = {
-    1: "Инициатор",
-    2: "Куратор организатора закупки",
-    3: "Заместитель Председателя Правления",
+    Initiator: "Инициатор",
+    OrganizerCurator: "Куратор организатора закупки",
+    Approver: "Заместитель Председателя Правления",
 };
 
 export interface ProtocolRow {
@@ -97,6 +100,7 @@ export const protocolService = {
         return data;
     },
 
+    /** level: 0 — ПЭП (виза), 1 — КЭП. */
     async sign(requestId: number, role: ProtocolSignerRole, level = 1): Promise<Protocol> {
         const {data} = await apiClient.post<Protocol>(`${BASE}/requests/${requestId}/protocol/sign`, {role, level});
         return data;

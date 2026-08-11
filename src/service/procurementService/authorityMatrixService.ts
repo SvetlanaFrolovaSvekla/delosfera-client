@@ -1,7 +1,10 @@
 import {apiClient} from "@/service/apiClient.ts";
 
-/** Орган, утверждающий расход по итогам закупки. */
-export type ApprovalAuthority = 0 | 1 | 2 | 3 | 4;
+/**
+ * Орган, утверждающий расход по итогам закупки.
+ * Сервер сериализует перечисления строками, а не числами.
+ */
+export type ApprovalAuthority = "None" | "Curator" | "Board" | "SupervisoryBoard" | "Shareholders";
 
 /** Строка-факт под карточкой результата: порог, по которому сработало правило. */
 export interface MatrixFact {

@@ -22,16 +22,25 @@ export const PROCUREMENT_STATUS_LABEL: Record<ProcurementStatusCode, string> = {
     Cancelled: "Отозвана",
 };
 
-/** Тип предмета закупки — от него зависит ветвление маршрута (PRC-08). */
-export type SubjectKind = 1 | 2 | 3 | 4 | 5 | 6;
+/**
+ * Тип предмета закупки — от него зависит ветвление маршрута (PRC-08).
+ * Сервер сериализует перечисления строками.
+ */
+export type SubjectKind =
+    | "Goods"
+    | "HouseholdGoods"
+    | "SpecificGoods"
+    | "GoodsWithInstallation"
+    | "Works"
+    | "Services";
 
 export const SUBJECT_KIND_LABEL: Record<SubjectKind, string> = {
-    1: "Товары",
-    2: "Хозяйственные товары",
-    3: "Специфичный товар",
-    4: "Товар с установкой",
-    5: "Работы",
-    6: "Услуги",
+    Goods: "Товары",
+    HouseholdGoods: "Хозяйственные товары",
+    SpecificGoods: "Специфичный товар",
+    GoodsWithInstallation: "Товар с установкой",
+    Works: "Работы",
+    Services: "Услуги",
 };
 
 export interface ProcurementListItem {

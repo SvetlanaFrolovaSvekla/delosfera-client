@@ -10,6 +10,8 @@ import {
     authorityMatrixService,
     type MatrixResolveResult,
 } from "@/service/procurementService/authorityMatrixService.ts";
+import {organizationUnitService} from "@/service/dictionariesService/organizationUnitService/organizationUnitService.ts";
+import type {OrganizationUnitResponse} from "@/service/dictionariesService/organizationUnitService/organizationUnitServiceType.ts";
 
 /**
  * Мастер новой заявки на закупку (экран v8 isPrcNew), три шага:
@@ -22,7 +24,9 @@ import {
 
 const STEPS = ["Предмет закупки", "Обоснование и бюджет", "Маршрут согласования"];
 
-const SUBJECT_KINDS: SubjectKind[] = [1, 2, 3, 4, 5, 6];
+const SUBJECT_KINDS: SubjectKind[] = [
+    "Goods", "HouseholdGoods", "SpecificGoods", "GoodsWithInstallation", "Works", "Services",
+];
 
 export const ProcurementNewPage = () => {
     const navigate = useNavigate();
@@ -31,11 +35,12 @@ export const ProcurementNewPage = () => {
     const [saving, setSaving] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const [resolved, setResolved] = useState<MatrixResolveResult | null>(null);
+    const [units, setUnits] = useState<OrganizationUnitResponse[]>([]);
 
     const [form, setForm] = useState<ProcurementCreateRequest>({
         subject: "",
         justification: "",
-        subjectKind: 1,
+        subjectKind: "Goods",
         amount: 0,
         isAffiliated: false,
         hasBudget: true,
@@ -46,6 +51,16 @@ export const ProcurementNewPage = () => {
     });
 
     const patch = (p: Partial<ProcurementCreateRequest>) => setForm(prev => ({...prev, ...p}));
+
+    useEffect(() => {
+        organizationUnitService.getAll().then(setUnits).catch(() => undefined);
+    }, []);
+
+    /** Куратор подразделения — тот же, что и куратор закупки по умолчанию (PRC-01). */
+    const selectUnit = (unitId: number) => {
+        const unit = units.find(u => u.id === unitId);
+        patch({initiatorUnitId: unitId, curatorUserId: unit?.curatorUserId ?? undefined});
+    };
 
     // Матрица пересчитывается на каждое изменение суммы и аффилированности —
     // экран должен показывать способ до того, как заявка создана.
@@ -210,6 +225,23 @@ export const ProcurementNewPage = () => {
                                 </span>
                             </label>
 
+                            <label style={{...fieldLabel, marginTop: 14}}>Инициирующее подразделение</label>
+                            <select
+                                value={form.initiatorUnitId ?? ""}
+                                onChange={e => selectUnit(Number(e.target.value))}
+                                style={input}
+                            >
+                                <option value="">— выберите подразделение —</option>
+                                {units.map(u => (
+                                    <option key={u.id} value={u.id}>{u.titleRu}</option>
+                                ))}
+                            </select>
+                            {form.curatorUserId && (
+                                <div style={{marginTop: 5, fontSize: 11.5, color: "#8b97ab"}}>
+                                    Куратор подразделения подставлен как куратор закупки
+                                </div>
+                            )}
+
                             <label style={{...fieldLabel, marginTop: 14}}>Позиция Плана закупок</label>
                             <input
                                 value={form.planItem}
@@ -312,6 +344,10 @@ export const ProcurementNewPage = () => {
                     <Row label="Сумма" value={form.amount ? `${form.amount.toLocaleString("ru-RU")} сом` : "—"}/>
                     <Row label="Аффилированное лицо" value={form.isAffiliated ? "да" : "нет"}/>
                     <Row label="Бюджет" value={form.hasBudget ? "предусмотрено" : "вне бюджета"}/>
+                    <Row
+                        label="Инициирующее СП"
+                        value={units.find(u => u.id === form.initiatorUnitId)?.titleRu ?? "—"}
+                    />
                     <Row label="ТЗ приложено" value={form.hasSpecification ? "да" : "нет"}/>
                     <Row label="Способ" value={resolved?.methodShortTitle ?? "—"}/>
                     <Row label="Утверждает" value={resolved?.approvalAuthorityTitle ?? "—"}/>

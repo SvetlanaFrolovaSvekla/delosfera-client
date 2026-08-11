@@ -14,7 +14,7 @@ import {
  * что не входит в документ, а сам лист верстается под A4.
  */
 
-const SIGNER_ROLES: ProtocolSignerRole[] = [1, 2, 3];
+const SIGNER_ROLES: ProtocolSignerRole[] = ["Initiator", "OrganizerCurator", "Approver"];
 
 function money(value: number | null): string {
     return value === null ? "—" : `${value.toLocaleString("ru-RU")} сом`;
@@ -107,8 +107,8 @@ export const ProcurementProtocolPage = () => {
                 <div style={{flex: 1}}/>
                 <span style={{
                     padding: "4px 10px", borderRadius: 7, fontSize: 12, fontWeight: 600,
-                    color: protocol.status === 3 ? "#1f8a4c" : "#55617a",
-                    background: protocol.status === 3 ? "#eefaf1" : "#f2f5f9",
+                    color: protocol.status === "Approved" ? "#1f8a4c" : "#55617a",
+                    background: protocol.status === "Approved" ? "#eefaf1" : "#f2f5f9",
                 }}>
                     {protocol.statusTitle}
                 </span>
@@ -305,7 +305,7 @@ export const ProcurementProtocolPage = () => {
                     <div style={{marginTop: 6}}>
                         Заместитель Председателя Правления (курирующий сектор закупок) —{" "}
                         {(() => {
-                            const sign = protocol.signatures.find(s => s.role === 3 && !s.revoked);
+                            const sign = protocol.signatures.find(s => s.role === "Approver" && !s.revoked);
                             return sign
                                 ? <b>{sign.userName} · {sign.levelTitle} · {formatDate(sign.at)}</b>
                                 : <span>________________</span>;

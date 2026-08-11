@@ -48,6 +48,7 @@ const AuthorityMatrixPage = lazy(() => import("@/pages/ProcurementPages/Authorit
 const ProcurementRegistryPage = lazy(() => import("@/pages/ProcurementPages/ProcurementRegistryPage.tsx").then(m => ({default: m.ProcurementRegistryPage})));
 const ProcurementNewPage = lazy(() => import("@/pages/ProcurementPages/ProcurementNewPage.tsx").then(m => ({default: m.ProcurementNewPage})));
 const ProcurementCardPage = lazy(() => import("@/pages/ProcurementPages/ProcurementCardPage.tsx").then(m => ({default: m.ProcurementCardPage})));
+const ProcurementProtocolPage = lazy(() => import("@/pages/ProcurementPages/ProcurementProtocolPage.tsx").then(m => ({default: m.ProcurementProtocolPage})));
 
 const MainLayout = () => (
     <DictionariesProvider>
@@ -101,6 +102,7 @@ function App() {
                                 <Route path="/prc/new" element={<ProcurementNewPage/>}/>
                                 <Route path="/prc/matrix" element={<AuthorityMatrixPage/>}/>
                                 <Route path="/prc/:id" element={<ProcurementCardPage/>}/>
+                                <Route path="/prc/:id/protocol" element={<ProcurementProtocolPage/>}/>
 
                                 <Route path="/sz" element={<SzRegistryPage/>}/>
                                 <Route path="/sz/new" element={<SzCardPage/>}/>

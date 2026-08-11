@@ -160,10 +160,23 @@ export const ProcurementCardPage = () => {
                         </>
                     )}
 
+                    {card.protocolRequired && (
+                        <button
+                            onClick={() => navigate(`/prc/${card.id}/protocol`)}
+                            style={{
+                                marginTop: 16, width: "100%", height: 34, border: "none", borderRadius: 9,
+                                background: "#2f68f5", color: "#fff", font: "inherit", fontSize: 12.5, fontWeight: 600,
+                                cursor: "pointer",
+                            }}
+                        >
+                            Протокол закупки
+                        </button>
+                    )}
+
                     <button
                         onClick={() => navigate("/prc/matrix")}
                         style={{
-                            marginTop: 16, width: "100%", height: 34, border: "1px solid #e5e9f0", borderRadius: 9,
+                            marginTop: 8, width: "100%", height: 34, border: "1px solid #e5e9f0", borderRadius: 9,
                             background: "#fff", color: "#55617a", font: "inherit", fontSize: 12.5, fontWeight: 600,
                             cursor: "pointer",
                         }}

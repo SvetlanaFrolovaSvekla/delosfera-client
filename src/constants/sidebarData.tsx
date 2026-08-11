@@ -26,7 +26,7 @@ export const navGroups: NavGroup[] = [
                 icon: "folder",
             },
             { id: "vnd", icon: "vnd", labelKey: "sidebar.items.vnd", path: "/base-vnd" },
-            { id: "pln", icon: "pln", labelKey: "sidebar.items.pln", badge: 3, path: "/actualization" },
+            { id: "pln", icon: "pln", labelKey: "sidebar.items.pln", badge: 3, path: "/actualization", permission: PermissionCode.ViewVndActualizationPage },
             { id: "tasks", icon: "tasks", labelKey: "sidebar.items.tasks", badge: 4, path: "/tasks" },
             { id: "rpt", icon: "rpt", labelKey: "sidebar.items.rpt", path: "/reportvnd" },
         ],

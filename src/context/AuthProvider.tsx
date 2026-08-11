@@ -2,7 +2,7 @@ import React, {useCallback, useEffect, useMemo, useRef, useState} from "react";
 import {AuthContext} from "./AuthContext.ts";
 import {refreshSession} from "@/service/apiClient.ts";
 import {authService} from "@/service/authService/authService.ts";
-import {isTokenExpired} from "@/utils/isTokenExpired.ts";
+import {setAccessToken} from "@/service/tokenStore.ts";
 import type {UserResponse} from "@/service/userService/userServiceType.ts";
 
 export const AuthProvider = ({children}: {children: React.ReactNode}) => {
@@ -10,33 +10,14 @@ export const AuthProvider = ({children}: {children: React.ReactNode}) => {
     const [loading, setLoading] = useState(true);
     const hasFetchedRef = useRef(false);
 
+    // Access-токен живёт только в памяти и теряется при перезагрузке, поэтому сессию
+    // всегда восстанавливаем через /auth/refresh (httpOnly-cookie). Нет cookie → 401 → гость.
     const fetchUser = useCallback(async () => {
-        const accessToken = localStorage.getItem("accessToken");
-        const storedUser = localStorage.getItem("user");
-
-        if (accessToken && storedUser && !isTokenExpired(accessToken)) {
-            try {
-                setUser(JSON.parse(storedUser));
-                setLoading(false);
-                return;
-            } catch {
-                // повреждённый JSON в localStorage - падает в обычный сценарий ниже
-            }
-        }
-
-        if (!localStorage.getItem("refreshToken")) {
-            setUser(null);
-            setLoading(false);
-            return;
-        }
-
         try {
             const data = await refreshSession();
             setUser(data.user);
         } catch {
-            localStorage.removeItem("accessToken");
-            localStorage.removeItem("refreshToken");
-            localStorage.removeItem("user");
+            setAccessToken(null);
             setUser(null);
         } finally {
             setLoading(false);

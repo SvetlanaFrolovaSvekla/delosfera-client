@@ -38,62 +38,6 @@ const DECISION_MAP: Record<ResolutionChoice, ApprovalDecisionType> = {
     reject: ApprovalDecisionType.Reject,
 };
 
-// Дебажный вывод process в консоль с подписями по-русски, чтобы удобно было смотреть в devtools
-function logProcessDebug(process: ApprovalProcessResponse) {
-    console.groupCollapsed(`[VndCoordinationTab] Согласование по ВНД: process.id=${process.id}, статус=${process.status}`);
-
-    console.log("Статус:", process.status);
-    console.log("Норматив первичного согласования (ч):", process.primaryDeadlineMinutes);
-    console.log("Норматив повторного согласования (ч):", process.repeatDeadlineMinutes);
-    console.log("Норматив финальной выдержки (ч):", process.finalHoldDeadlineMinutes);
-    console.log("Первичное согласование начато:", process.primaryStartedAt);
-    console.log("Дедлайн первичного согласования:", process.primaryDeadlineAt);
-    console.log("Повторное согласование начато:", process.repeatStartedAt ?? "—");
-    console.log("Дедлайн повторного согласования:", process.repeatDeadlineAt ?? "—");
-    console.log("Комментарий инициатора при повторной отправке:", process.repeatInitiatorComment ?? "—");
-    console.log("Финальная выдержка начата:", process.finalHoldStartedAt ?? "—");
-    console.log("Дедлайн финальной выдержки:", process.finalHoldDeadlineAt ?? "—");
-    console.log("Завершено:", process.completedAt ?? "—");
-    console.log("Создано:", process.createdAt);
-    console.log("Обновлено:", process.updatedAt);
-
-    if (process.disagreementMatrixRows.length > 0) {
-        console.group("Матрица разногласий:");
-        process.disagreementMatrixRows.forEach((row) => {
-            console.log(`Строка id=${row.id}`, {
-                "Редакция разработчика": row.developerPosition,
-                "Редакция и комментарий оппонента": row.opponentPosition,
-                "Обоснование": row.developerJustification ?? "—",
-            });
-        });
-        console.groupEnd();
-    }
-
-    console.group("Этапы согласования:");
-    if (process.stages.length === 0) {
-        console.log("Этапов нет");
-    }
-    process.stages.forEach((stage) => {
-        console.log(`Этап #${stage.order} (id: ${stage.id})`, {
-            "Тип": stage.kind,
-            "Подразделение": `${stage.orgUnitName} (id: ${stage.orgUnitId})`,
-            "Согласующий": `${stage.approverName} (id: ${stage.approverUserId})`,
-            "Первичное решение": stage.primaryDecision,
-            "Комментарий (первично)": stage.primaryComment ?? "—",
-            "Дата решения (первично)": stage.primaryDecidedAt ?? "—",
-            "Участвует в повторном": stage.participatesInRepeat ? "да" : "нет",
-            "Повторное решение": stage.repeatDecision ?? "—",
-            "Комментарий (повторно)": stage.repeatComment ?? "—",
-            "Дата решения (повторно)": stage.repeatDecidedAt ?? "—",
-            "Решение (финальная выдержка)": stage.finalHoldDecision ?? "—",
-            "Комментарий (финальная выдержка)": stage.finalHoldComment ?? "—",
-            "Дата решения (финальная выдержка)": stage.finalHoldDecidedAt ?? "—",
-        });
-    });
-    console.groupEnd();
-
-    console.groupEnd();
-}
 
 export function VndCoordinationTab({vnd}: VndCoordinationTabProps) {
     const {user} = useAuth();
@@ -139,13 +83,6 @@ export function VndCoordinationTab({vnd}: VndCoordinationTabProps) {
             cancelled = true;
         };
     }, [vnd.id]);
-
-    // Логируем process в консоль каждый раз, когда он обновляется
-    useEffect(() => {
-        if (process) {
-            logProcessDebug(process);
-        }
-    }, [process]);
 
     // Редакции ВНД грузим, чтобы достать ту, что связана с process.redactionId
     const {data: redactions, loading: redactionsLoading, error: redactionsError} = useVndRedactions(vnd.id);

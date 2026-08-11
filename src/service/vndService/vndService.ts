@@ -9,12 +9,12 @@ import type {
     VndSearchRequest
 } from "./vndServiceType.ts";
 
-// TODO: передавать заголовок Authorization при интеграции с общим клиентом.
+import {getAccessToken} from "@/service/tokenStore.ts";
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL ?? "http://localhost:5293";
 
 function authHeaders(): HeadersInit {
-    const token = localStorage.getItem("accessToken");
+    const token = getAccessToken();
     return token ? {Authorization: `Bearer ${token}`} : {};
 }
 

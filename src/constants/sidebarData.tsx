@@ -51,6 +51,13 @@ export const navGroups: NavGroup[] = [
         ],
     },
     {
+        titleKey: "sidebar.groups.purchases",
+        items: [
+            // Матрица определяет способ закупки, состав согласования и орган утверждения
+            { id: "matrix", icon: "matrix", labelKey: "sidebar.items.matrix", path: "/prc/matrix" },
+        ],
+    },
+    {
         titleKey: "Система",
         items: [
             { id: "adm-users", icon: "user", labelKey: "sidebar.items.admUsers", path: "/users" },

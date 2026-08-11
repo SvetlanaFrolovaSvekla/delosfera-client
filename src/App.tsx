@@ -43,6 +43,9 @@ const SzRegistryPage = lazy(() => import("@/pages/SzRegistryPage.tsx").then(m =>
 const SzCardPage = lazy(() => import("@/pages/SzCardPage.tsx").then(m => ({default: m.SzCardPage})));
 const SzPrintPage = lazy(() => import("@/pages/SzPrintPage.tsx").then(m => ({default: m.SzPrintPage})));
 
+// Контур закупок (контур 6 ТЗ)
+const AuthorityMatrixPage = lazy(() => import("@/pages/ProcurementPages/AuthorityMatrixPage.tsx").then(m => ({default: m.AuthorityMatrixPage})));
+
 const MainLayout = () => (
     <DictionariesProvider>
         <div className="flex h-screen overflow-hidden">
@@ -90,6 +93,8 @@ function App() {
 
                                 <Route path="/notifications" element={<NotificationsPage/>}/>
                                 <Route path="/notifications/:id" element={<OpenNotificationPage/>}/>
+
+                                <Route path="/prc/matrix" element={<AuthorityMatrixPage/>}/>
 
                                 <Route path="/sz" element={<SzRegistryPage/>}/>
                                 <Route path="/sz/new" element={<SzCardPage/>}/>

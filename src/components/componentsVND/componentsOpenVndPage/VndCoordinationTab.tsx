@@ -26,10 +26,15 @@ import {
     type ResolutionChoice,
 } from "./componentsCoordinationTab/VndApproverResolutionPanel.tsx";
 import {VndRevisionNeededPanel} from "./componentsCoordinationTab/VndRevisionNeededPanel.tsx";
+import {toast} from "@/service/toastService.ts";
 
 interface VndCoordinationTabProps {
     vnd: VndResponse;
+    onVndChanged?: () => void;
 }
+
+// Статусы, из которых инициатор ещё может отозвать согласование
+const CANCELLABLE_STATUSES = ["primary", "repeated", "final_hold", "revision_needed"];
 
 
 const DECISION_MAP: Record<ResolutionChoice, ApprovalDecisionType> = {
@@ -39,9 +44,10 @@ const DECISION_MAP: Record<ResolutionChoice, ApprovalDecisionType> = {
 };
 
 
-export function VndCoordinationTab({vnd}: VndCoordinationTabProps) {
+export function VndCoordinationTab({vnd, onVndChanged}: VndCoordinationTabProps) {
     const {user} = useAuth();
     const currentUserId = user?.id;
+    const [cancelling, setCancelling] = useState(false);
 
     const [process, setProcess] = useState<ApprovalProcessResponse | null>(null);
     const [loading, setLoading] = useState(true);
@@ -151,6 +157,21 @@ export function VndCoordinationTab({vnd}: VndCoordinationTabProps) {
             setDecisionError(err instanceof Error ? err.message : "Не удалось отправить резолюцию");
         } finally {
             setSubmitting(false);
+        }
+    };
+
+    const handleCancel = async () => {
+        if (!window.confirm(
+            "Отозвать согласование? Редакция и документ вернутся в черновик, задача у согласующих будет снята.")) return;
+        setCancelling(true);
+        try {
+            await coordinationService.cancel(vnd.id);
+            toast.success("Согласование отозвано", "Документ возвращён в черновик");
+            onVndChanged?.();
+        } catch (err) {
+            toast.error("Не удалось отозвать", err instanceof Error ? err.message : undefined);
+        } finally {
+            setCancelling(false);
         }
     };
 
@@ -276,6 +297,21 @@ export function VndCoordinationTab({vnd}: VndCoordinationTabProps) {
                     requiresTid={!!redaction && redaction.number > 1}
                     onChanged={loadProcess}
                 />
+            )}
+
+            {isInitiator && CANCELLABLE_STATUSES.includes(process.status) && (
+                <div className="mt-6 flex items-center justify-between gap-3 rounded-[12px] border border-[#f0dede] bg-[#fdf6f5] px-4 py-3">
+                    <span className="text-[12.5px] text-[#8b6a68]">
+                        Можно отозвать согласование — документ вернётся в черновик для правок.
+                    </span>
+                    <button
+                        onClick={handleCancel}
+                        disabled={cancelling}
+                        className="shrink-0 rounded-[9px] border border-[#e0b4ae] bg-white px-[14px] py-[8px] text-[12.5px] font-semibold text-[#c0392b] cursor-pointer hover:bg-[#fbecea] disabled:opacity-60"
+                    >
+                        {cancelling ? "Отзываю…" : "Отозвать согласование"}
+                    </button>
+                </div>
             )}
         </div>
     );

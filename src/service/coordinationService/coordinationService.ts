@@ -81,6 +81,12 @@ class CoordinationService {
     async deleteDisagreementRow(vndId: number, rowId: number): Promise<void> {
         await axiosInstance.delete(`${this.basePath(vndId)}/disagreement-matrix/rows/${rowId}`);
     }
+
+    /** Инициатор отзывает согласование — редакция и документ возвращаются в черновик */
+    async cancel(vndId: number): Promise<ApprovalProcessResponse> {
+        const { data } = await axiosInstance.post<ApprovalProcessResponse>(`${this.basePath(vndId)}/cancel`);
+        return data;
+    }
 }
 
 export const coordinationService = new CoordinationService();

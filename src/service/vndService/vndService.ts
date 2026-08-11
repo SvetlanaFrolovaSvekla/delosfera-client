@@ -127,6 +127,18 @@ export const vndService = {
         return handleResponse<VndLinksResponse>(response);
     },
 
+    /** Удалить ВНД (только черновик; проверка прав и статуса — на бэке) */
+    async remove(id: number): Promise<void> {
+        const response = await fetch(`${API_BASE}/vnd/${id}`, {
+            method: "DELETE",
+            headers: authHeaders(),
+        });
+        if (!response.ok) {
+            const errorBody = await response.json().catch(() => null);
+            throw new Error(errorBody?.message ?? `Ошибка запроса: ${response.status}`);
+        }
+    },
+
     /** Удалить связь ВНД (можно с любой из сторон связи) */
     async deleteLink(vndId: number, linkId: number): Promise<void> {
         const response = await fetch(`${API_BASE}/vnd/${vndId}/links/${linkId}`, {

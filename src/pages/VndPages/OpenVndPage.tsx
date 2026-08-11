@@ -19,6 +19,7 @@ import {VndLinksTab} from "@/components/componentsVND/componentsOpenVndPage/VndL
 import {VndHistoryTab} from "@/components/componentsVND/componentsOpenVndPage/VndHistoryTab.tsx";
 import {actualizationService} from "@/service/actualizationService/actualizationService.ts";
 import {coordinationService} from "@/service/coordinationService/coordinationService.ts";
+import {vndService} from "@/service/vndService/vndService.ts";
 import {toast} from "@/service/toastService.ts";
 import {useAuth} from "@/context/AuthContext.ts";
 import {PermissionCode} from "@/constants/permissions/permissions.ts";
@@ -38,6 +39,21 @@ export function OpenVndPage() {
     const [consolidateOpen, setConsolidateOpen] = useState(false);
     const [consolidating, setConsolidating] = useState(false);
     const [consolidateError, setConsolidateError] = useState<string | null>(null);
+    const [deleting, setDeleting] = useState(false);
+
+    const handleDelete = async () => {
+        if (!vnd) return;
+        if (!window.confirm(`Удалить черновик ВНД «${vnd.name}»? Действие необратимо.`)) return;
+        setDeleting(true);
+        try {
+            await vndService.remove(vnd.id);
+            toast.success("ВНД удалён", `«${vnd.name}» удалён`);
+            navigate("/base-vnd");
+        } catch (err) {
+            toast.error("Не удалось удалить", err instanceof Error ? err.message : undefined);
+            setDeleting(false);
+        }
+    };
 
     // Инициатор согласования нужен только как fallback права на консолидацию — когда у ВНД
     // нет открытого цикла актуализации (ActualizationResponsibleUserId пуст). Подгружаем только
@@ -156,9 +172,20 @@ export function OpenVndPage() {
                 </span>
             </div>
 
-            <h1 className="m-0 mb-1 text-[23px] font-bold tracking-[-0.02em]">
-                {vnd.name}
-            </h1>
+            <div className="flex items-start justify-between gap-4">
+                <h1 className="m-0 mb-1 text-[23px] font-bold tracking-[-0.02em]">
+                    {vnd.name}
+                </h1>
+                {vnd.status === "draft" && hasPermission(PermissionCode.DeleteVnd) && (
+                    <button
+                        onClick={handleDelete}
+                        disabled={deleting}
+                        className="mt-1 shrink-0 rounded-[9px] border border-[#e0b4ae] bg-white px-[14px] py-[8px] text-[12.5px] font-semibold text-[#c0392b] cursor-pointer hover:bg-[#fbecea] disabled:opacity-60"
+                    >
+                        {deleting ? "Удаляю…" : "Удалить черновик"}
+                    </button>
+                )}
+            </div>
 
             <VndStatusBanner
                 status={vnd.status}
@@ -199,7 +226,7 @@ export function OpenVndPage() {
                 />
             )}
             {activeTab === "editions" && <VndEditionsTab vnd={vnd} onVndChanged={refetch}/>}
-            {activeTab === "approval" && <VndCoordinationTab vnd={vnd}/>}
+            {activeTab === "approval" && <VndCoordinationTab vnd={vnd} onVndChanged={refetch}/>}
             {activeTab === "actual" && (
                 <VndActualizationTab vnd={vnd} onVndChanged={refetch} onGoToEditions={() => setTab("editions")}/>
             )}

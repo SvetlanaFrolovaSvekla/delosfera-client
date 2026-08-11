@@ -1,7 +1,9 @@
 import {useAuth} from "@/context/AuthContext";
 import {useNavigate} from "react-router-dom";
 import {Icon} from "@/components/icons/Icon";
-import {useMemo, useState} from "react";
+import {useEffect, useMemo, useState} from "react";
+import {userService} from "@/service/userService/userService.ts";
+import type {UserActivityItem} from "@/service/userService/userServiceType.ts";
 import {getTimeGreeting} from "@/utils/getTimeGreeting.ts";
 import {getFirstLastName} from "@/utils/userNaming.ts";
 import {Loader} from "@/components/componentsGeneral/Loader.tsx";
@@ -13,40 +15,27 @@ import {ACTUALIZATION_BUCKET_META, ACTUALIZATION_BUCKET_ORDER} from "@/constants
 import {CreateDocumentModal} from "@/components/CreateDocumentModal.tsx";
 import {useVndHomeSummary} from "@/hooks/analyticsHooks/useVndHomeSummary.ts";
 
-// TODO: заменить моковые данные реальными из API (сейчас - дашборд роли "Отдел методологии")
-const activity = [
-    {
-        icon: "check" as const,
-        col: "#1c7a4d",
-        bg: "#e2f4ea",
-        text: "Б. Токтосунова подписала протокол утверждения ВНД-084",
-        time: "12 мин назад"
-    },
-    {
-        icon: "x" as const,
-        col: "#c0392b",
-        bg: "#fbe7e4",
-        text: "ТИД-2026-011 прерван: нарушен срок доработки Инициатором",
-        time: "52 мин назад"
-    },
-    {
-        icon: "check" as const,
-        col: "#2f68f5",
-        bg: "#e9f0ff",
-        text: "Согласование заявки на закупку PRC-2026-047 завершено",
-        time: "1 ч назад"
-    },
-    {
-        icon: "vnd" as const,
-        col: "#7a5ce0",
-        bg: "#efeafe",
-        text: "ВНД-062 переведён в статус «Консолидация»",
-        time: "2 ч назад"
-    },
-];
-
 // Сколько задач показывать в сводке на главной
 const HOME_TASKS_LIMIT = 25;
+
+// Иконка/цвет карточки активности по типу действия
+const ACTIVITY_STYLE: Record<UserActivityItem["type"], { icon: "check" | "vnd"; col: string; bg: string }> = {
+    vnd_created: {icon: "vnd", col: "#7a5ce0", bg: "#efeafe"},
+    approval_decided: {icon: "check", col: "#1c7a4d", bg: "#e2f4ea"},
+    approval_initiated: {icon: "check", col: "#2f68f5", bg: "#e9f0ff"},
+};
+
+// Относительное время ("12 мин назад") для ленты активности
+function formatRelative(iso: string): string {
+    const diffMs = Date.now() - new Date(iso).getTime();
+    const min = Math.floor(diffMs / 60000);
+    if (min < 1) return "только что";
+    if (min < 60) return `${min} мин назад`;
+    const hours = Math.floor(min / 60);
+    if (hours < 24) return `${hours} ч назад`;
+    const days = Math.floor(hours / 24);
+    return `${days} дн назад`;
+}
 
 export function HomePage() {
     const {user, loading} = useAuth();
@@ -61,6 +50,21 @@ export function HomePage() {
     const consolidation = useVndTasks("consolidation");
     const {summary: actualizationSummary, isLoading: actualizationLoading} = useActualizationSummary();
     const {summary: homeSummary} = useVndHomeSummary();
+
+    // Лента последней активности текущего пользователя (реальные данные)
+    const [activity, setActivity] = useState<UserActivityItem[]>([]);
+    const [activityLoading, setActivityLoading] = useState(true);
+    useEffect(() => {
+        if (!user) return;
+        let cancelled = false;
+        setActivityLoading(true);
+        userService
+            .getActivity(user.id)
+            .then((data) => { if (!cancelled) setActivity(data.recent.slice(0, 6)); })
+            .catch(() => { if (!cancelled) setActivity([]); })
+            .finally(() => { if (!cancelled) setActivityLoading(false); });
+        return () => { cancelled = true; };
+    }, [user]);
 
 
     const kpis = [
@@ -249,21 +253,34 @@ export function HomePage() {
                             <h2 className="text-[15px] font-semibold">Последняя активность</h2>
                         </div>
                         <div className="px-[18px] pb-[14px] pt-1.5">
-                            {activity.map((a, i) => (
-                                <div key={i}
-                                     className="flex gap-[11px] border-t border-[#f3f6f9] py-[9px] first:border-t-0">
-                                    <span
-                                        className="grid h-[26px] w-[26px] flex-none place-items-center rounded-[7px]"
-                                        style={{background: a.bg, color: a.col}}
-                                    >
-                                        <Icon name={a.icon} width={14} height={14}/>
-                                    </span>
-                                    <div className="min-w-0">
-                                        <div className="text-[12.5px] leading-[1.4] text-[#26324a]">{a.text}</div>
-                                        <div className="mt-0.5 text-[11px] text-[#8b97ab]">{a.time}</div>
-                                    </div>
-                                </div>
-                            ))}
+                            {activityLoading ? (
+                                <div className="py-6 text-center text-[12.5px] text-[#8b97ab]">Загрузка…</div>
+                            ) : activity.length === 0 ? (
+                                <div className="py-6 text-center text-[12.5px] text-[#8b97ab]">Действий пока нет</div>
+                            ) : (
+                                activity.map((a, i) => {
+                                    const style = ACTIVITY_STYLE[a.type];
+                                    const text = a.vndCode ? `${a.description} · ${a.vndCode}` : a.description;
+                                    return (
+                                        <div key={i}
+                                             className="flex gap-[11px] border-t border-[#f3f6f9] py-[9px] first:border-t-0">
+                                            <span
+                                                className="grid h-[26px] w-[26px] flex-none place-items-center rounded-[7px]"
+                                                style={{background: style.bg, color: style.col}}
+                                            >
+                                                <Icon name={style.icon} width={14} height={14}/>
+                                            </span>
+                                            <div className="min-w-0">
+                                                <div className="text-[12.5px] leading-[1.4] text-[#26324a]">{text}</div>
+                                                {a.vndTitle && (
+                                                    <div className="truncate text-[11.5px] text-[#8b97ab]">{a.vndTitle}</div>
+                                                )}
+                                                <div className="mt-0.5 text-[11px] text-[#8b97ab]">{formatRelative(a.timestamp)}</div>
+                                            </div>
+                                        </div>
+                                    );
+                                })
+                            )}
                         </div>
                     </div>
                 </div>

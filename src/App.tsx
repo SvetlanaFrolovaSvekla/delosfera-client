@@ -45,6 +45,9 @@ const SzPrintPage = lazy(() => import("@/pages/SzPrintPage.tsx").then(m => ({def
 
 // Контур закупок (контур 6 ТЗ)
 const AuthorityMatrixPage = lazy(() => import("@/pages/ProcurementPages/AuthorityMatrixPage.tsx").then(m => ({default: m.AuthorityMatrixPage})));
+const ProcurementRegistryPage = lazy(() => import("@/pages/ProcurementPages/ProcurementRegistryPage.tsx").then(m => ({default: m.ProcurementRegistryPage})));
+const ProcurementNewPage = lazy(() => import("@/pages/ProcurementPages/ProcurementNewPage.tsx").then(m => ({default: m.ProcurementNewPage})));
+const ProcurementCardPage = lazy(() => import("@/pages/ProcurementPages/ProcurementCardPage.tsx").then(m => ({default: m.ProcurementCardPage})));
 
 const MainLayout = () => (
     <DictionariesProvider>
@@ -94,7 +97,10 @@ function App() {
                                 <Route path="/notifications" element={<NotificationsPage/>}/>
                                 <Route path="/notifications/:id" element={<OpenNotificationPage/>}/>
 
+                                <Route path="/prc" element={<ProcurementRegistryPage/>}/>
+                                <Route path="/prc/new" element={<ProcurementNewPage/>}/>
                                 <Route path="/prc/matrix" element={<AuthorityMatrixPage/>}/>
+                                <Route path="/prc/:id" element={<ProcurementCardPage/>}/>
 
                                 <Route path="/sz" element={<SzRegistryPage/>}/>
                                 <Route path="/sz/new" element={<SzCardPage/>}/>

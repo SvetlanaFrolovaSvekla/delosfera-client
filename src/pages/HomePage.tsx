@@ -247,7 +247,7 @@ export function HomePage() {
                     <div
                         className="flex items-center justify-between border-b border-[#eef2f7] px-[18px] py-4 pb-[13px]">
                         <div className="flex items-center gap-2.5">
-                            <h2 className="text-[15px] font-semibold">Мои задачи</h2>
+                            <h2 className="text-[15px] font-semibold">Мои задачи · нормотворчество</h2>
                             <span
                                 className="rounded-full bg-[var(--app-soft,_#e9f0ff)] px-2 py-[2px] text-[11.5px] font-bold text-[var(--app-accent,_#2f68f5)]"
                                 style={{fontFamily: "'IBM Plex Mono', monospace"}}

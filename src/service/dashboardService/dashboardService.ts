@@ -14,6 +14,8 @@ export interface DashboardKpi {
 /** Активное замещение (GEN-14). */
 export interface ActiveSubstitution {
     id: number;
+    /** Id замещаемого (в actingFor) либо замещающего (в replacedBy). */
+    userId: number;
     userName: string;
     startsOn: string;
     endsOn: string;

@@ -8,6 +8,7 @@ import {
     type ProcurementStatusCode,
 } from "@/service/procurementService/procurementService.ts";
 import {ProposalsPanel} from "@/components/procurement/ProposalsPanel.tsx";
+import {ProcurementRoutePanel} from "@/components/procurement/ProcurementRoutePanel.tsx";
 
 /**
  * Карточка закупки (экран v8 isPrcCard): параметры заявки, решение Матрицы полномочий
@@ -185,6 +186,11 @@ export const ProcurementCardPage = () => {
                     </button>
                 </aside>
             </div>
+
+            {/* Маршрут появляется после отправки заявки на согласование */}
+            {card.routeInstanceId && (
+                <ProcurementRoutePanel routeInstanceId={card.routeInstanceId} onResolved={load}/>
+            )}
 
             {/* Сбор предложений идёт после согласования заявки, но черновик тоже показываем —
                 Сектор закупок нередко собирает КП параллельно с визированием. */}

@@ -101,6 +101,9 @@ export interface ProcurementCard {
     sourceSzRegNumber: string | null;
     sourceSzId: number | null;
 
+    /** Запущенный маршрут согласования (PRC-08); null — заявка ещё черновик. */
+    routeInstanceId: number | null;
+
     createdAt: string;
     updatedAt: string;
 

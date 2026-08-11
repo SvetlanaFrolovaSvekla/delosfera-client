@@ -38,6 +38,11 @@ const ReportVndPage = lazy(() => import("@/pages/ReportPages/ReportVndPages/Repo
 const TasksVndPage = lazy(() => import("@/pages/TasksPages/TasksVndPage.tsx").then(m => ({default: m.TasksVndPage})));
 const UsersPage = lazy(() => import("@/pages/UsersPages/UsersPage.tsx").then(m => ({default: m.UsersPage})));
 
+// Контур служебных записок (контур 4 ТЗ)
+const SzRegistryPage = lazy(() => import("@/pages/SzRegistryPage.tsx").then(m => ({default: m.SzRegistryPage})));
+const SzCardPage = lazy(() => import("@/pages/SzCardPage.tsx").then(m => ({default: m.SzCardPage})));
+const SzPrintPage = lazy(() => import("@/pages/SzPrintPage.tsx").then(m => ({default: m.SzPrintPage})));
+
 const MainLayout = () => (
     <DictionariesProvider>
         <div className="flex h-screen overflow-hidden">
@@ -63,6 +68,9 @@ function App() {
 
                         {/* Всё остальное - защищено, требует авторизации */}
                         <Route element={<ProtectedRoute/>}>
+                            {/* Печатная форма идёт без бокового меню и шапки — лист уходит на A4 как есть. */}
+                            <Route path="/sz/:id/print" element={<SzPrintPage/>}/>
+
                             <Route element={<MainLayout/>}>
                                 <Route path="/" element={<HomePage/>}/>
 
@@ -82,6 +90,10 @@ function App() {
 
                                 <Route path="/notifications" element={<NotificationsPage/>}/>
                                 <Route path="/notifications/:id" element={<OpenNotificationPage/>}/>
+
+                                <Route path="/sz" element={<SzRegistryPage/>}/>
+                                <Route path="/sz/new" element={<SzCardPage/>}/>
+                                <Route path="/sz/:id" element={<SzCardPage/>}/>
 
                                 <Route path="/users" element={<UsersPage/>}/>
 

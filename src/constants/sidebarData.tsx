@@ -44,6 +44,13 @@ export const navGroups: NavGroup[] = [
         ],
     },
     {
+        titleKey: "sidebar.groups.sz",
+        items: [
+            // Реестр служебных записок: карточка, согласование, исполнение, архив, закупка
+            { id: "sz", icon: "sz", labelKey: "sidebar.items.sz", path: "/sz" },
+        ],
+    },
+    {
         titleKey: "Система",
         items: [
             { id: "adm-users", icon: "user", labelKey: "sidebar.items.admUsers", path: "/users" },
@@ -51,6 +58,7 @@ export const navGroups: NavGroup[] = [
         ],
     },
 ];
+
    /* {
         titleKey: "sidebar.groups.sz",
         items: [
@@ -59,6 +67,7 @@ export const navGroups: NavGroup[] = [
             { id: "notifs", icon: "bell", labelKey: "sidebar.items.notifs", badge: 4 },
         ],
     },
+    {
     {
         titleKey: "sidebar.groups.purchases",
         items: [

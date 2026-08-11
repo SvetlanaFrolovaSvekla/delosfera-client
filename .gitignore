@@ -27,3 +27,6 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# oh-my-claudecode session state (не коммитить)
+.omc/

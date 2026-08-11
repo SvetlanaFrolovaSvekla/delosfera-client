@@ -41,6 +41,11 @@ export const AuthProvider = ({children}: {children: React.ReactNode}) => {
         setUser(data.user);
     }, []);
 
+    const loginDomain = useCallback(async () => {
+        const data = await authService.loginDomain();
+        setUser(data.user);
+    }, []);
+
     const logout = useCallback(async () => {
         await authService.logout();
         setUser(null);
@@ -59,7 +64,7 @@ export const AuthProvider = ({children}: {children: React.ReactNode}) => {
 
     return (
         <AuthContext.Provider
-            value={{user, loading, permissionCodes, hasPermission, login, logout, refetch: fetchUser}}
+            value={{user, loading, permissionCodes, hasPermission, login, loginDomain, logout, refetch: fetchUser}}
         >
             {children}
         </AuthContext.Provider>

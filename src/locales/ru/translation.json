@@ -133,7 +133,6 @@
     "addChildAction": "Добавить дочерний элемент",
     "editAction": "Изменить",
     "deleteAction": "Удалить",
-
     "fieldTitleRu": "Название (рус.)",
     "fieldTitleEn": "Название (англ.)",
     "fieldTitleKg": "Название (кырг.)",
@@ -143,7 +142,6 @@
     "saveError": "Не удалось сохранить. Попробуйте ещё раз.",
     "deleteError": "Не удалось удалить. Возможно, элемент используется в других данных.",
     "deleteConfirmMessage": "Вы уверены, что хотите удалить «{{name}}»? Это действие нельзя отменить.",
-
     "sectionSubtitleGeneral": "Справочники Общее",
     "sectionSubtitleVnd": "Справочники ВНД"
   },
@@ -286,5 +284,31 @@
     "fieldApprover": "Согласующий",
     "orgUnitHint": "Подразделение: {{orgUnitName}}",
     "noApprover": "— Не назначен —"
+  },
+  "auth": {
+    "brandName": "Делосфера",
+    "brandSub": "СЭД БАНКА",
+    "heroTitle": "Электронный документооборот банка",
+    "heroSubtitle": "Согласование, подписание и хранение внутренних нормативных документов — от инициации до архива, в едином маршруте.",
+    "title": "Вход в систему",
+    "subtitle": "Выберите способ авторизации",
+    "tabPassword": "Логин и пароль",
+    "tabDomain": "Доменный вход",
+    "loginLabel": "Логин",
+    "loginPlaceholder": "ivanov.ii@bank.kg",
+    "passwordLabel": "Пароль",
+    "showPassword": "Показать пароль",
+    "hidePassword": "Скрыть пароль",
+    "remember": "Запомнить меня",
+    "forgotPassword": "Забыли пароль?",
+    "signIn": "Войти",
+    "signingIn": "Вход…",
+    "errorCredentials": "Неверный логин или пароль",
+    "domainHint": "Вход выполняется автоматически по вашей учётной записи Active Directory, под которой вы вошли в рабочую станцию.",
+    "domainSignIn": "Войти через домен",
+    "domainChecking": "Проверка учётной записи…",
+    "errorDomain": "Не удалось войти через домен. Обратитесь в поддержку.",
+    "footerVersion": "Делосфера СЭД · v8.2",
+    "support": "Поддержка"
   }
 }

@@ -11,6 +11,17 @@ class AuthService {
     }
 
     /**
+     * Вход по доменной (LDAP/AD) учётной записи. Учётные данные не передаются:
+     * сервер определяет пользователя по интегрированной аутентификации рабочей станции.
+     * Пока эндпоинт не включён на сервере, вызов вернёт 404/501 — UI покажет ошибку.
+     */
+    async loginDomain(): Promise<LoginResponse> {
+        const response = await apiClient.post<LoginResponse>("/auth/login-domain", {});
+        setAccessToken(response.data.token);
+        return response.data;
+    }
+
+    /**
      * Обновляет сессию по httpOnly refresh-cookie (через защищённую от гонки логику
      * apiClient с navigator.locks). Возвращает новый access-токен.
      */

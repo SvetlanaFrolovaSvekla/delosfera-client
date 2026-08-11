@@ -3,6 +3,7 @@ import type {
     CreateUserRequest,
     GetUsersParams,
     UpdateUserRequest,
+    UserActivityResponse,
     UserResponse,
 } from "./userServiceType.ts";
 
@@ -62,6 +63,13 @@ export const userService = {
             headers: buildHeaders(),
         });
         return handleResponse<UserResponse>(response);
+    },
+
+    async getActivity(id: number): Promise<UserActivityResponse> {
+        const response = await fetch(`${API_BASE}/users/${id}/activity`, {
+            headers: buildHeaders(),
+        });
+        return handleResponse<UserActivityResponse>(response);
     },
 
     async create(request: CreateUserRequest): Promise<UserResponse> {

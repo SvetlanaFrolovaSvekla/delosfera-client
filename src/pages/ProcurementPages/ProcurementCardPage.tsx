@@ -7,6 +7,7 @@ import {
     type ProcurementCard,
     type ProcurementStatusCode,
 } from "@/service/procurementService/procurementService.ts";
+import {ProposalsPanel} from "@/components/procurement/ProposalsPanel.tsx";
 
 /**
  * Карточка закупки (экран v8 isPrcCard): параметры заявки, решение Матрицы полномочий
@@ -171,6 +172,10 @@ export const ProcurementCardPage = () => {
                     </button>
                 </aside>
             </div>
+
+            {/* Сбор предложений идёт после согласования заявки, но черновик тоже показываем —
+                Сектор закупок нередко собирает КП параллельно с визированием. */}
+            <ProposalsPanel requestId={card.id} onChanged={load}/>
         </div>
     );
 };

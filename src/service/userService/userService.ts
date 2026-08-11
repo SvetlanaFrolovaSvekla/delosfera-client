@@ -7,12 +7,9 @@ import type {
 } from "./userServiceType.ts";
 
 import {getLanguage} from "@/utils/getLanguage.ts";
+import {getAccessToken} from "@/service/tokenStore.ts";
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL ?? "http://localhost:5293";
-
-function getAuthToken(): string | null {
-    return localStorage.getItem("accessToken");
-}
 
 function buildHeaders(withJson = false): HeadersInit {
     const headers: Record<string, string> = {
@@ -21,7 +18,7 @@ function buildHeaders(withJson = false): HeadersInit {
 
     if (withJson) headers["Content-Type"] = "application/json";
 
-    const token = getAuthToken();
+    const token = getAccessToken();
     if (token) headers["Authorization"] = `Bearer ${token}`;
 
     return headers;

@@ -5,12 +5,9 @@ export interface LoginRequest {
     password: string;
 }
 
-export interface RefreshTokenRequest {
-    refreshToken: string;
-}
-
+// Refresh-токен приходит/уходит через httpOnly-cookie и в JS недоступен —
+// в теле ответа его больше нет.
 export interface LoginResponse {
     token: string;
-    refreshToken: string;
     user: UserResponse;
 }

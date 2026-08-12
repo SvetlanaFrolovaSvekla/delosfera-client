@@ -1,4 +1,5 @@
 import {useState} from "react";
+import {useNavigate} from "react-router-dom";
 import {SearchBar} from "@/components/componentsGeneral/SearchBar.tsx";
 import {LanguageSwitcher} from "@/components/componentsHeader/LanguageSwitcher.tsx";
 import {NotificationsDropdown} from "@/components/componentsHeader/NotificationsDropdown.tsx";
@@ -7,6 +8,7 @@ import {useTranslation} from "react-i18next";
 
 export function Header() {
     const {t} = useTranslation();
+    const navigate = useNavigate();
     const [search, setSearch] = useState("");
 
     return (
@@ -15,6 +17,9 @@ export function Header() {
                 placeholder={t("header.search")}
                 value={search}
                 onChange={setSearch}
+                // Строка в шапке до сих пор никуда не вела: набранное оседало в состоянии
+                // компонента. Enter отправляет запрос на страницу поиска.
+                onSubmit={(value) => navigate(`/search?q=${encodeURIComponent(value)}`)}
             />
             <LanguageSwitcher/>
             <NotificationsDropdown/>

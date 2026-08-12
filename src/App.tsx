@@ -53,6 +53,9 @@ const ProcurementProtocolPage = lazy(() => import("@/pages/ProcurementPages/Proc
 // Сводный реестр задач по всем контурам (GEN-11)
 const TaskInboxPage = lazy(() => import("@/pages/TasksPages/TaskInboxPage.tsx").then(m => ({default: m.TaskInboxPage})));
 
+// Поиск по документам: реквизиты и текстовые поля карточек (GEN-02/04)
+const SearchPage = lazy(() => import("@/pages/SearchPage/SearchPage.tsx").then(m => ({default: m.SearchPage})));
+
 // Заседания Правления, КПА и комитетов: журнал и карточка с повесткой
 const MeetingRegistryPage = lazy(() => import("@/pages/MeetingsPages/MeetingRegistryPage.tsx").then(m => ({default: m.MeetingRegistryPage})));
 const MeetingCardPage = lazy(() => import("@/pages/MeetingsPages/MeetingCardPage.tsx").then(m => ({default: m.MeetingCardPage})));
@@ -116,6 +119,8 @@ function App() {
                                 <Route path="/prc/plan" element={<ProcurementPlanPage/>}/>
                                 <Route path="/prc/:id" element={<ProcurementCardPage/>}/>
                                 <Route path="/prc/:id/protocol" element={<ProcurementProtocolPage/>}/>
+
+                                <Route path="/search" element={<SearchPage/>}/>
 
                                 <Route path="/meetings" element={<MeetingRegistryPage/>}/>
                                 <Route path="/meetings/:id" element={<MeetingCardPage/>}/>

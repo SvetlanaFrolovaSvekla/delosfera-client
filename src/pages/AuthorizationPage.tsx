@@ -23,6 +23,8 @@ export function AuthorizationPage() {
     const [error, setError] = useState<string | null>(null);
     const [submitting, setSubmitting] = useState(false);
     const [domainLoading, setDomainLoading] = useState(false);
+    const [domainLogin, setDomainLogin] = useState("");
+    const [domainPassword, setDomainPassword] = useState("");
 
     // Смена вкладки сбрасывает ошибку предыдущего способа входа
     const switchTab = (next: Tab) => {
@@ -55,10 +57,14 @@ export function AuthorizationPage() {
         setError(null);
         setDomainLoading(true);
         try {
-            await loginDomain();
+            await loginDomain(domainLogin.trim(), domainPassword);
             navigate("/", {replace: true});
-        } catch {
-            setError(t("auth.errorDomain"));
+        } catch (e) {
+            // Причину отказа знает только каталог: нет учётной записи, неверный пароль
+            // или сотрудник ещё не заведён в системе. Показываем ответ сервера, иначе
+            // «доменный вход не удался» не подсказывает, к кому идти.
+            const message = (e as {response?: {data?: {message?: string}}}).response?.data?.message;
+            setError(message ?? t("auth.errorDomain"));
         } finally {
             setDomainLoading(false);
         }
@@ -234,10 +240,34 @@ export function AuthorizationPage() {
                                 <div className="text-[13px] leading-[1.5] text-[#5b6478]">{t("auth.domainHint")}</div>
                             </div>
 
+                            <div className="flex flex-col gap-1.5">
+                                <div className="text-[13px] font-medium text-[#5b6478]">Доменный логин</div>
+                                <input
+                                    value={domainLogin}
+                                    onChange={e => setDomainLogin(e.target.value)}
+                                    placeholder="ivanov.ii"
+                                    autoComplete="username"
+                                    className={inputClass}
+                                />
+                            </div>
+
+                            <div className="flex flex-col gap-1.5">
+                                <div className="text-[13px] font-medium text-[#5b6478]">Доменный пароль</div>
+                                <input
+                                    type="password"
+                                    value={domainPassword}
+                                    onChange={e => setDomainPassword(e.target.value)}
+                                    onKeyDown={e => e.key === "Enter" && handleDomainLogin()}
+                                    placeholder="••••••••"
+                                    autoComplete="current-password"
+                                    className={inputClass}
+                                />
+                            </div>
+
                             <button
                                 type="button"
                                 onClick={handleDomainLogin}
-                                disabled={domainLoading}
+                                disabled={domainLoading || !domainLogin.trim() || !domainPassword}
                                 className="flex h-[46px] cursor-pointer items-center justify-center gap-2 rounded-[11px] border-none bg-[#0f1b2d] text-[14.5px] font-semibold text-white hover:bg-[#1a2a44] disabled:cursor-default disabled:opacity-70"
                             >
                                 <svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor"

@@ -11,12 +11,11 @@ class AuthService {
     }
 
     /**
-     * Вход по доменной (LDAP/AD) учётной записи. Учётные данные не передаются:
-     * сервер определяет пользователя по интегрированной аутентификации рабочей станции.
-     * Пока эндпоинт не включён на сервере, вызов вернёт 404/501 — UI покажет ошибку.
+     * Вход по доменной учётной записи (INT-01): пароль проверяет служба каталогов,
+     * привязываясь к ней от имени самого сотрудника. Система пароль не хранит.
      */
-    async loginDomain(): Promise<LoginResponse> {
-        const response = await apiClient.post<LoginResponse>("/auth/login-domain", {});
+    async loginDomain(login: string, password: string): Promise<LoginResponse> {
+        const response = await apiClient.post<LoginResponse>("/auth/login-domain", {login, password});
         setAccessToken(response.data.token);
         return response.data;
     }

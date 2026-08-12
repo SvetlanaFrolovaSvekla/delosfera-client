@@ -41,8 +41,8 @@ export const AuthProvider = ({children}: {children: React.ReactNode}) => {
         setUser(data.user);
     }, []);
 
-    const loginDomain = useCallback(async () => {
-        const data = await authService.loginDomain();
+    const loginDomain = useCallback(async (login: string, password: string) => {
+        const data = await authService.loginDomain(login, password);
         setUser(data.user);
     }, []);
 

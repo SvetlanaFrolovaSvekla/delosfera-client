@@ -8,7 +8,7 @@ interface AuthContextType {
     hasPermission: (code: number) => boolean;
     login: (email: string, password: string) => Promise<void>;
     /** Вход по доменной (LDAP) учётной записи рабочей станции */
-    loginDomain: () => Promise<void>;
+    loginDomain: (login: string, password: string) => Promise<void>;
     logout: () => Promise<void>;
     refetch: () => Promise<void>;
 }

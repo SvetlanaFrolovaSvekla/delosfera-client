@@ -1,11 +1,7 @@
 import {useMemo, useState} from "react";
 
 import type {VndSearchRequest} from "@/service/vndService/vndServiceType.ts";
-import {
-    DateFilterGroup,
-    EMPTY_DATE_FILTER,
-    type DateFilterValue,
-} from "@/components/componentsGeneral/datePickers/DateFilterGroup.tsx";
+import {EMPTY_DATE_FILTER, type DateFilterValue} from "@/components/componentsGeneral/datePickers/DateFilterGroup.tsx";
 
 import {
     ActualizationFilterPills,
@@ -13,17 +9,14 @@ import {
 } from "@/components/componentsVND/componentsActualizationPage/ActualizationFilterPills.tsx";
 import {ActualizationSummaryCards} from "@/components/componentsVND/componentsActualizationPage/ActualizationSummaryCards.tsx";
 import {ActualizationTable} from "@/components/componentsVND/componentsActualizationPage/ActualizationTable.tsx";
+import {ActualizationFilters} from "@/components/componentsVND/componentsActualizationPage/ActualizationFilters.tsx";
 
 import {useVndActualizationSummary} from "@/hooks/vndHooks/useVndActualizationSummary.tsx";
 import {useVndActualizationFilteredRows} from "@/hooks/vndHooks/useVndActualizationFilteredRows.tsx";
 import {useVndActualizationColumnVisibility} from "@/hooks/vndHooks/useVndActualizationColumnVisibility.tsx";
 
-import {SearchBar} from "@/components/componentsGeneral/SearchBar.tsx";
-import {MultiSelectDropdown} from "@/components/componentsGeneral/selects/MultiSelects/MultiSelectDropdown.tsx";
-import {MultiSelectField} from "@/components/componentsGeneral/selects/MultiSelects/MultiSelectField.tsx";
 import {Loader} from "@/components/componentsGeneral/Loader";
 import {EmptyState} from "@/components/componentsGeneral/EmptyState.tsx";
-import {ChevronDown, ChevronUp, Filter, SlidersHorizontal} from "lucide-react";
 import {
     ActualizationPageHeader
 } from "@/components/componentsVND/componentsActualizationPage/ActualizationPageHeader.tsx";
@@ -51,7 +44,6 @@ export function ActualizationPage() {
 
     const {
         types, organs, orgUnits, keywords, rubrics, secrecyLevels, userGroups,
-        typeOptions, organOptions, orgUnitOptions,
         loading: dictLoading,
     } = useDictionaries();
 
@@ -61,8 +53,8 @@ export function ActualizationPage() {
     const securityLevelMap = useMemo(() => new Map(secrecyLevels.map((s) => [s.id, s])), [secrecyLevels]);
     const userGroupMap = useMemo(() => new Map(userGroups.map((g) => [g.id, g])), [userGroups]);
     const rubricMap = useMemo(() => new Map(rubrics.map((r) => [r.id, r])), [rubrics]);
-    // types/organs пока используются только через *Options ниже, но оставила деструктуризацию
-    // на случай если понадобится расшифровка вида документа / органа утверждения в таблице
+    // types/organs пока используются только внутри ActualizationFilters через свой useDictionaries(),
+    // но оставила деструктуризацию тут на случай если понадобится расшифровка в таблице
     void types;
     void organs;
 
@@ -81,6 +73,8 @@ export function ActualizationPage() {
     const [bucketFilter, setBucketFilter] = useState<ActualizationFilterValue>("all");
 
     const [advOpen, setAdvOpen] = useState(false);
+    // Применённые значения расширенного поиска — обновляются только по кнопке "Найти"
+    // внутри ActualizationFilters (через draft-логику useVndActualizationFiltersDraft)
     const [typeFilters, setTypeFilters] = useState<string[]>([]);
     const [developerFilters, setDeveloperFilters] = useState<string[]>([]);
     const [organFilters, setOrganFilters] = useState<string[]>([]);
@@ -118,10 +112,6 @@ export function ActualizationPage() {
         setDueDateFilter(EMPTY_DATE_FILTER);
     };
 
-    const selectedColumnKeys = toggleableColumns
-        .filter((c) => visibleCols[c.key] !== false)
-        .map((c) => c.key);
-
     return (
         <div className="w-full max-w-[1700px] mx-auto px-4 sm:px-6 lg:px-8 xl:px-10 pt-5 sm:pt-[26px] pb-10 sm:pb-[60px]">
             <ActualizationPageHeader/>
@@ -137,137 +127,29 @@ export function ActualizationPage() {
 
             <ActualizationFilterPills value={bucketFilter} onChange={setBucketFilter} summary={summary}/>
 
-            <div className="flex items-center gap-2.5 flex-wrap mb-3.5">
-                <SearchBar
-                    variant="white"
-                    value={search}
-                    onChange={setSearch}
-                    placeholder="Поиск по коду или наименованию…"
-                    className="min-w-[280px]"
-                />
-            </div>
-
-            <div className="flex items-center gap-2.5 flex-wrap mb-[15px]">
-                <button
-                    onClick={() => setAdvOpen((v) => !v)}
-                    className={`inline-flex items-center gap-2 h-9 px-3 rounded-[9px] border text-[#3a4560] font-semibold text-[12.5px] cursor-pointer hover:bg-[#f6f8fb] ${
-                        advOpen
-                            ? "border-[#4e57d6] ring-[3px] ring-[#ececfc] bg-[#f6f8fb]"
-                            : "border-[#e5e9f0] bg-white"
-                    }`}
-                >
-                    <SlidersHorizontal className="w-[15px] h-[15px]" strokeWidth={1.8}/>
-                    Расширенный поиск
-                    <ChevronDown
-                        className={`w-[15px] h-[15px] flex-none text-[#a3adbd] transition-transform ${advOpen ? "rotate-180" : ""}`}
-                        strokeWidth={2}
-                    />
-                </button>
-
-                <MultiSelectDropdown
-                    icon={<Filter className="w-[15px] h-[15px]" strokeWidth={1.8}/>}
-                    triggerLabel="Колонки"
-                    label="Отображение колонок"
-                    options={toggleableColumns.map((c) => ({key: c.key, label: c.label}))}
-                    selectedKeys={selectedColumnKeys}
-                    onToggle={toggleColumn}
-                    onSelectAll={selectAllColumns}
-                    onDeselectAll={deselectAllColumns}
-                    searchThreshold={8}
-                    searchPlaceholder="Поиск колонки…"
-                />
-
-                <div className="flex-1"/>
-
-                {(hasAdvancedFilters || search || bucketFilter !== "all") && (
-                    <button
-                        onClick={resetFilters}
-                        className="inline-flex items-center h-9 px-3 rounded-[9px] border border-[#e5e9f0] bg-white text-[#55617a] font-semibold text-[12.5px] cursor-pointer hover:bg-[#f6f8fb]"
-                    >
-                        Сбросить фильтры
-                    </button>
-                )}
-
-                <div className="text-[12.5px] text-[#8b97ab]">
-                    Найдено: <b className="text-[#3a4560] font-mono">{rows.length}</b>
-                </div>
-            </div>
-
-            <div
-                className={`grid overflow-hidden transition-[grid-template-rows,opacity,margin-bottom] duration-300 ease-in-out ${
-                    advOpen ? "grid-rows-[1fr] opacity-100 mb-4" : "grid-rows-[0fr] opacity-0 mb-0"
-                }`}
-            >
-                <div className="overflow-hidden">
-                    <div className="bg-white border border-[#e9edf3] rounded-2xl px-[22px] py-5">
-                        <div className="grid [grid-template-columns:repeat(auto-fit,minmax(240px,1fr))] gap-x-[18px] gap-y-3.5 mb-[18px]">
-                            <MultiSelectField
-                                label="Вид документа"
-                                modalTitle="Вид документа"
-                                options={typeOptions}
-                                selectedKeys={typeFilters}
-                                onChange={setTypeFilters}
-                                searchPlaceholder="Поиск вида документа…"
-                            />
-                            <MultiSelectField
-                                label="Разработчик"
-                                modalTitle="Разработчик (СП)"
-                                options={orgUnitOptions}
-                                selectedKeys={developerFilters}
-                                onChange={setDeveloperFilters}
-                                searchPlaceholder="Поиск подразделения…"
-                                hierarchical
-                            />
-                            <MultiSelectField
-                                label="Орган утверждения"
-                                modalTitle="Орган утверждения"
-                                options={organOptions}
-                                selectedKeys={organFilters}
-                                onChange={setOrganFilters}
-                                searchPlaceholder="Поиск органа утверждения…"
-                                hierarchical
-                            />
-                        </div>
-
-                        <div className="border border-[#eef2f7] rounded-xl p-3.5 mb-[18px] max-w-[380px]">
-                            <div className="text-[11px] font-bold tracking-[.04em] uppercase text-[#a3adbd] mb-2.5">
-                                Срок актуализации
-                            </div>
-                            <DateFilterGroup
-                                rows={[
-                                    {
-                                        key: "dueActualization",
-                                        label: "Срок актуализации",
-                                        value: dueDateFilter,
-                                        onChange: setDueDateFilter,
-                                    },
-                                ]}
-                            />
-                        </div>
-
-                        <div className="flex justify-end gap-2.5">
-                            <button
-                                onClick={() => setAdvOpen(false)}
-                                className="inline-flex items-center gap-1.5 h-10 px-4 rounded-[10px] border border-[#e5e9f0] bg-white text-[#55617a] font-semibold text-[12.5px] cursor-pointer hover:bg-[#f6f8fb]"
-                            >
-                                <ChevronUp className="w-[15px] h-[15px]" strokeWidth={2}/>
-                                Свернуть
-                            </button>
-                            <button
-                                onClick={() => {
-                                    setTypeFilters([]);
-                                    setDeveloperFilters([]);
-                                    setOrganFilters([]);
-                                    setDueDateFilter(EMPTY_DATE_FILTER);
-                                }}
-                                className="h-10 px-4 rounded-[10px] border border-[#e5e9f0] bg-white text-[#55617a] font-semibold text-[12.5px] cursor-pointer hover:bg-[#f6f8fb]"
-                            >
-                                Сбросить
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            </div>
+            <ActualizationFilters
+                search={search}
+                onSearchChange={setSearch}
+                advOpen={advOpen}
+                onToggleAdv={() => setAdvOpen((v) => !v)}
+                onCloseAdv={() => setAdvOpen(false)}
+                typeFilters={typeFilters}
+                onTypeFiltersChange={setTypeFilters}
+                developerFilters={developerFilters}
+                onDeveloperFiltersChange={setDeveloperFilters}
+                organFilters={organFilters}
+                onOrganFiltersChange={setOrganFilters}
+                dueDateFilter={dueDateFilter}
+                onDueDateFilterChange={setDueDateFilter}
+                resultCount={rows.length}
+                showResetButton={hasAdvancedFilters || Boolean(search) || bucketFilter !== "all"}
+                onResetFilters={resetFilters}
+                toggleableColumns={toggleableColumns}
+                visibleCols={visibleCols}
+                onToggleColumn={toggleColumn}
+                onSelectAllColumns={selectAllColumns}
+                onDeselectAllColumns={deselectAllColumns}
+            />
 
             {(loading || dictLoading) ? (
                 <Loader label="Загрузка данных…"/>

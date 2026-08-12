@@ -3,7 +3,7 @@ import type {
     CreateVndRequest, EditLastRevisionDirectlyRequest,
     UpdateVndRequisitesRequest,
     VndActualizationSummaryResponse,
-    VndLinksResponse,
+    VndLinksResponse, VndQuickSearchResult,
     VndRedactionResponse,
     VndResponse,
     VndSearchRequest
@@ -152,5 +152,14 @@ export const vndService = {
             body: formData,
         });
         return handleResponse<VndRedactionResponse>(response);
+    },
+
+    async quickSearch(query: string, limit = 8, signal?: AbortSignal): Promise<VndQuickSearchResult[]> {
+        const params = new URLSearchParams({q: query, limit: String(limit)});
+        const response = await fetch(`${API_BASE}/vnd/quick-search?${params}`, {
+            headers: authHeaders(),
+            signal,
+        });
+        return handleResponse<VndQuickSearchResult[]>(response);
     },
 };

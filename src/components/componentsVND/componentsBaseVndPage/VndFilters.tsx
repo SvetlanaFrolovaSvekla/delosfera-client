@@ -161,6 +161,17 @@ export function VndFilters(props: VndFiltersProps) {
         lastActualizationDateFilter, archivedDateFilter,
     });
 
+    const hasAdvancedActive = useVndHasActiveFilters({
+        search: "", linkedToMeOnly: false, statusFilters: [],
+        rubricFilters, docTypeFilters, organFilters,
+        developerFilters, keywordFilters, responsibleExecutorFilters, initiatorFilters,
+        advSearchName, advSearchCode, advSearchRevisionText,
+        adoptionCodeFilter, cancelCodeFilter, secrecyLevelFilters, userGroupFilters,
+        adoptionDateFilter, effectiveDateFilter, requisitesChangedDateFilter,
+        revisionChangedDateFilter, cancelDateFilter, dueActualizationDateFilter,
+        lastActualizationDateFilter, archivedDateFilter,
+    });
+
     const applyDraft = (draft: AdvancedDraft) => {
         onDocTypeFiltersChange(draft.docTypeFilters);
         onOrganFiltersChange(draft.organFilters);
@@ -187,7 +198,6 @@ export function VndFilters(props: VndFiltersProps) {
     };
 
     const {draft, updateDraft, handleApply, handleCollapse, handleResetDraft} = useVndAdvancedFiltersDraft({
-        advOpen,
         onCloseAdv,
         appliedValues: {
             docTypeFilters, organFilters, developerFilters, responsibleExecutorFilters, initiatorFilters,
@@ -228,7 +238,7 @@ export function VndFilters(props: VndFiltersProps) {
             <div className="flex items-center gap-2.5 flex-wrap mb-[15px]">
                 <button
                     onClick={onToggleAdv}
-                    className={`inline-flex items-center gap-2 h-9 px-3 rounded-[9px] border text-[#3a4560] font-semibold text-[12.5px] cursor-pointer hover:bg-[#f6f8fb] ${
+                    className={`relative inline-flex items-center gap-2 h-9 px-3 rounded-[9px] border text-[#3a4560] font-semibold text-[12.5px] cursor-pointer hover:bg-[#f6f8fb] ${
                         advOpen
                             ? "border-[#4e57d6] ring-[3px] ring-[#ececfc] bg-[#f6f8fb]"
                             : "border-[#e5e9f0] bg-white"
@@ -240,20 +250,28 @@ export function VndFilters(props: VndFiltersProps) {
                         className={`w-[15px] h-[15px] flex-none text-[#a3adbd] transition-transform ${advOpen ? "rotate-180" : ""}`}
                         strokeWidth={2}
                     />
+                    {hasAdvancedActive && (
+                        <span className="absolute -top-1 -right-1 w-2.5 h-2.5 rounded-full bg-[#3fb36c] ring-2 ring-white" />
+                    )}
                 </button>
 
                 {scope === "all" && (
-                    <MultiSelectDropdown
-                        triggerLabel="Статус"
-                        label="Статус документа"
-                        options={statusOptions}
-                        selectedKeys={statusFilters}
-                        onToggle={onToggleStatus}
-                        onSelectAll={onSelectAllStatuses}
-                        onDeselectAll={onDeselectAllStatuses}
-                        searchable={false}
-                        searchThreshold={Infinity}
-                    />
+                    <div className="relative">
+                        <MultiSelectDropdown
+                            triggerLabel="Статус"
+                            label="Статус документа"
+                            options={statusOptions}
+                            selectedKeys={statusFilters}
+                            onToggle={onToggleStatus}
+                            onSelectAll={onSelectAllStatuses}
+                            onDeselectAll={onDeselectAllStatuses}
+                            searchable={false}
+                            searchThreshold={Infinity}
+                        />
+                        {statusFilters.length > 0 && (
+                            <span className="absolute -top-1 -right-1 w-2.5 h-2.5 rounded-full bg-[#3fb36c] ring-2 ring-white pointer-events-none" />
+                        )}
+                    </div>
                 )}
 
                 <MultiSelectDropdown

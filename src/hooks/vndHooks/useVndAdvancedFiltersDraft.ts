@@ -53,30 +53,22 @@ export const EMPTY_ADVANCED_DRAFT: AdvancedDraft = {
 };
 
 interface UseVndAdvancedFiltersDraftParams {
-    advOpen: boolean;
     onCloseAdv: () => void;
-    /* Актуальные применённые значения (из пропов страницы) */
+    /* Актуальные применённые значения (из пропов страницы) — используются только
+       как начальное значение черновика при первом монтировании компонента */
     appliedValues: AdvancedDraft;
     /* Применить черновик - вызывает соответствующие onXChange из пропов */
     onApply: (draft: AdvancedDraft) => void;
 }
 
 export function useVndAdvancedFiltersDraft({
-                                               advOpen,
                                                onCloseAdv,
                                                appliedValues,
                                                onApply,
                                            }: UseVndAdvancedFiltersDraftParams) {
+    // Черновик инициализируется применёнными значениями один раз и дальше живёт
+    // независимо — сворачивание/разворачивание панели его не трогает
     const [draft, setDraft] = useState<AdvancedDraft>(appliedValues);
-
-    // Синхронизация черновика с применёнными фильтрами в момент открытия панели
-    const [prevAdvOpen, setPrevAdvOpen] = useState(advOpen);
-    if (advOpen !== prevAdvOpen) {
-        setPrevAdvOpen(advOpen);
-        if (advOpen) {
-            setDraft(appliedValues);
-        }
-    }
 
     const updateDraft = <K extends keyof AdvancedDraft>(key: K, value: AdvancedDraft[K]) =>
         setDraft((prev) => ({...prev, [key]: value}));
@@ -92,6 +84,7 @@ export function useVndAdvancedFiltersDraft({
 
     const handleResetDraft = () => {
         setDraft(EMPTY_ADVANCED_DRAFT);
+        onApply(EMPTY_ADVANCED_DRAFT);
     };
 
     return {draft, updateDraft, handleApply, handleCollapse, handleResetDraft};

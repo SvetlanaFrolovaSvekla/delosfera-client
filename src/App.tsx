@@ -33,6 +33,7 @@ import {OpenNotificationPage} from "@/pages/NotificationsPage/OpenNotificationPa
 import {KeywordPage} from "@/pages/DictionariesPages/KeywordPage.tsx";
 import {CoordinationApproversPage} from "@/pages/DictionariesPages/CoordinationApproversPage.tsx";
 import {UsersPage} from "@/pages/UsersPages/UsersPage.tsx";
+import {BaseKnowPage} from "@/pages/BaseKnowPages/BaseKnowPage.tsx";
 
 const MainLayout = () => (
     <DictionariesProvider>
@@ -83,6 +84,8 @@ function App() {
                             <Route element={<RequirePermission code={PermissionCode.ManageRoles}/>}>
                                 <Route path="/roles" element={<RolesPermissionPage/>}/>
                             </Route>
+
+                            <Route path="/base-know" element={<BaseKnowPage/>}/>
 
                             <Route path="/refs" element={<DictionariesPages/>}/>
                             <Route path="/refs/approval-body" element={<ApprovalBodyPage/>}/>

@@ -76,7 +76,7 @@ export function VndTable({
 
                     return (
                         <Link
-                            to={`/base=vnd/${r.id}`}
+                            to={`/base-vnd/${r.id}`}
                             onClick={(e) => {
                                 // Не переходим, если пользователь выделял текст (копировал) обычным левым кликом
                                 const selection = window.getSelection();

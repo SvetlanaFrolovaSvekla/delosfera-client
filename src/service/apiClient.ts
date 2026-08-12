@@ -54,9 +54,14 @@ apiClient.interceptors.response.use(
     (response) => response,
     async (error) => {
         const originalRequest = error.config;
-        const isRefreshCall = originalRequest?.url?.includes("/auth/refresh");
+        const requestUrl = originalRequest?.url ?? "";
+        const isRefreshCall = requestUrl.includes("/auth/refresh");
+        // 401 от самих эндпоинтов входа (/auth/login, /auth/login-domain) означает неверные
+        // учётные данные, а не протухший access-токен. Не пытаемся обновлять сессию —
+        // иначе форма получит ошибку refresh ("Refresh-токен отсутствует") вместо ошибки входа.
+        const isLoginCall = requestUrl.includes("/auth/login");
 
-        if (error.response?.status !== 401 || originalRequest._retry || isRefreshCall) {
+        if (error.response?.status !== 401 || originalRequest._retry || isRefreshCall || isLoginCall) {
             if (error.response?.status === 401 && isRefreshCall) {
                 setAccessToken(null);
                 window.dispatchEvent(new Event("auth-change"));

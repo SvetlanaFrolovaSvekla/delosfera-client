@@ -58,10 +58,16 @@ export function ReportVndPage() {
 
     const [exporting, setExporting] = useState(false);
 
-    const handleExport = async () => {
+    const handleExport = async (format: "csv" | "xlsx") => {
         setExporting(true);
         try {
-            await vndAnalyticsService.downloadExportCsv();
+            if (format === "xlsx") {
+                // Шаг группировки берём тот же, что выбран на странице: иначе
+                // «Динамика» в файле разошлась бы с графиком на экране.
+                await vndAnalyticsService.downloadExportXlsx({granularity});
+            } else {
+                await vndAnalyticsService.downloadExportCsv();
+            }
         } catch {
             toast.error("Не удалось скачать отчёт", "Попробуйте ещё раз чуть позже");
         } finally {
@@ -126,14 +132,23 @@ export function ReportVndPage() {
                     </p>
                 </div>
                 {canExport && (
-                    <button
-                        onClick={handleExport}
-                        disabled={exporting}
-                        className="inline-flex items-center gap-2 h-10 px-4 rounded-[10px] bg-[#4e57d6] text-white text-[13px] font-semibold cursor-pointer border-none hover:bg-[#3f47c4] disabled:opacity-60 disabled:cursor-default transition-colors"
-                    >
-                        <Download className="w-4 h-4" strokeWidth={2}/>
-                        {exporting ? "Формируем…" : "Скачать отчёт (CSV)"}
-                    </button>
+                    <div className="flex items-center gap-2">
+                        <button
+                            onClick={() => handleExport("xlsx")}
+                            disabled={exporting}
+                            className="inline-flex items-center gap-2 h-10 px-4 rounded-[10px] bg-[#4e57d6] text-white text-[13px] font-semibold cursor-pointer border-none hover:bg-[#3f47c4] disabled:opacity-60 disabled:cursor-default transition-colors"
+                        >
+                            <Download className="w-4 h-4" strokeWidth={2}/>
+                            {exporting ? "Формируем…" : "Скачать Excel"}
+                        </button>
+                        <button
+                            onClick={() => handleExport("csv")}
+                            disabled={exporting}
+                            className="inline-flex items-center gap-2 h-10 px-4 rounded-[10px] border border-[#e5e9f0] bg-white text-[#55617a] text-[13px] font-semibold cursor-pointer hover:bg-[#f6f8fb] disabled:opacity-60 disabled:cursor-default transition-colors"
+                        >
+                            CSV
+                        </button>
+                    </div>
                 )}
             </div>
 

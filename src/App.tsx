@@ -33,6 +33,7 @@ const OpenVndPage = lazy(() => import("@/pages/VndPages/OpenVndPage.tsx").then(m
 const ProfilePage = lazy(() => import("@/pages/ProfilePage.tsx").then(m => ({default: m.ProfilePage})));
 const NotificationsPage = lazy(() => import("@/pages/NotificationsPage/NotificationsPage.tsx").then(m => ({default: m.NotificationsPage})));
 const OpenNotificationPage = lazy(() => import("@/pages/NotificationsPage/OpenNotificationPage.tsx").then(m => ({default: m.OpenNotificationPage})));
+const ActualizationPlanPage = lazy(() => import("@/pages/ActualizationPage/ActualizationPlanPage.tsx").then(m => ({default: m.ActualizationPlanPage})));
 const ActualizationPage = lazy(() => import("@/pages/ActualizationPage/ActualizationPage.tsx").then(m => ({default: m.ActualizationPage})));
 const ReportVndPage = lazy(() => import("@/pages/ReportPages/ReportVndPages/ReportVndPage.tsx").then(m => ({default: m.ReportVndPage})));
 const TasksVndPage = lazy(() => import("@/pages/TasksPages/TasksVndPage.tsx").then(m => ({default: m.TasksVndPage})));
@@ -103,6 +104,7 @@ function App() {
 
                                 <Route element={<RequirePermission code={PermissionCode.ViewVndActualizationPage}/>}>
                                     <Route path="/actualization" element={<ActualizationPage/>}/>
+                                    <Route path="/actualization/plan" element={<ActualizationPlanPage/>}/>
                                 </Route>
 
                                 <Route path="/reportvnd" element={<ReportVndPage/>}/>

@@ -80,7 +80,8 @@ export const navGroups: NavGroup[] = [
         titleKey: "Система",
         items: [
             { id: "adm-users", icon: "user", labelKey: "sidebar.items.admUsers", path: "/users" },
-            { id: "kb", icon: "kb", labelKey: "База знаний", path: "/base-know\n" },
+            // База знаний (KB-01..03) ещё не реализована: пункт вёл на несуществующий
+            // маршрут и ронял пользователя на пустой экран. Вернём вместе с разделом.
         ],
     },
 ];

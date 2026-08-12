@@ -52,6 +52,7 @@ const ProcurementProtocolPage = lazy(() => import("@/pages/ProcurementPages/Proc
 
 // Сводный реестр задач по всем контурам (GEN-11)
 const TaskInboxPage = lazy(() => import("@/pages/TasksPages/TaskInboxPage.tsx").then(m => ({default: m.TaskInboxPage})));
+const SupplierRegistryPage = lazy(() => import("@/pages/ProcurementPages/SupplierRegistryPage.tsx").then(m => ({default: m.SupplierRegistryPage})));
 
 const MainLayout = () => (
     <DictionariesProvider>
@@ -106,6 +107,7 @@ function App() {
                                 <Route path="/prc" element={<ProcurementRegistryPage/>}/>
                                 <Route path="/prc/new" element={<ProcurementNewPage/>}/>
                                 <Route path="/prc/matrix" element={<AuthorityMatrixPage/>}/>
+                                <Route path="/prc/suppliers" element={<SupplierRegistryPage/>}/>
                                 <Route path="/prc/:id" element={<ProcurementCardPage/>}/>
                                 <Route path="/prc/:id/protocol" element={<ProcurementProtocolPage/>}/>
 

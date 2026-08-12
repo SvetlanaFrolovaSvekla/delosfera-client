@@ -9,6 +9,8 @@ import {
 } from "@/service/procurementService/procurementService.ts";
 import {ProposalsPanel} from "@/components/procurement/ProposalsPanel.tsx";
 import {ProcurementRoutePanel} from "@/components/procurement/ProcurementRoutePanel.tsx";
+import {TenderPanel} from "@/components/procurement/TenderPanel.tsx";
+import {ContractPanel} from "@/components/procurement/ContractPanel.tsx";
 
 /**
  * Карточка закупки (экран v8 isPrcCard): параметры заявки, решение Матрицы полномочий
@@ -195,6 +197,14 @@ export const ProcurementCardPage = () => {
             {/* Сбор предложений идёт после согласования заявки, но черновик тоже показываем —
                 Сектор закупок нередко собирает КП параллельно с визированием. */}
             <ProposalsPanel requestId={card.id} onChanged={load}/>
+
+            {/* Конкурс показывается только для конкурсных способов: у простой закупки
+                отбор идёт по коммерческим предложениям выше. */}
+            {card.methodShortTitle.startsWith("Конкурс") && (
+                <TenderPanel requestId={card.id} onChanged={load}/>
+            )}
+
+            <ContractPanel requestId={card.id} onChanged={load}/>
         </div>
     );
 };

@@ -58,6 +58,13 @@ export const navGroups: NavGroup[] = [
         ],
     },
     {
+        titleKey: "Заседания",
+        items: [
+            // Журнал заседаний Правления, КПА и комитетов: повестка, протоколы, исполнение решений
+            { id: "meetings", icon: "committee", labelKey: "Решения комитетов", path: "/meetings", permission: PermissionCode.ViewMeetings },
+        ],
+    },
+    {
         titleKey: "sidebar.groups.purchases",
         items: [
             { id: "prc", icon: "prc", labelKey: "sidebar.items.prc", path: "/prc" },

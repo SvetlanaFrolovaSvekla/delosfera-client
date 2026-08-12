@@ -44,6 +44,13 @@ export const navGroups: NavGroup[] = [
         ],
     },
     {
+        titleKey: "Задачи",
+        items: [
+            // Согласования по всем контурам в одном месте, включая задачи по замещению
+            { id: "inbox", icon: "check", labelKey: "Мои задачи (все контуры)", path: "/inbox" },
+        ],
+    },
+    {
         titleKey: "sidebar.groups.sz",
         items: [
             // Реестр служебных записок: карточка, согласование, исполнение, архив, закупка

@@ -50,6 +50,9 @@ const ProcurementNewPage = lazy(() => import("@/pages/ProcurementPages/Procureme
 const ProcurementCardPage = lazy(() => import("@/pages/ProcurementPages/ProcurementCardPage.tsx").then(m => ({default: m.ProcurementCardPage})));
 const ProcurementProtocolPage = lazy(() => import("@/pages/ProcurementPages/ProcurementProtocolPage.tsx").then(m => ({default: m.ProcurementProtocolPage})));
 
+// Сводный реестр задач по всем контурам (GEN-11)
+const TaskInboxPage = lazy(() => import("@/pages/TasksPages/TaskInboxPage.tsx").then(m => ({default: m.TaskInboxPage})));
+
 const MainLayout = () => (
     <DictionariesProvider>
         <div className="flex h-screen overflow-hidden">
@@ -97,6 +100,8 @@ function App() {
 
                                 <Route path="/notifications" element={<NotificationsPage/>}/>
                                 <Route path="/notifications/:id" element={<OpenNotificationPage/>}/>
+
+                                <Route path="/inbox" element={<TaskInboxPage/>}/>
 
                                 <Route path="/prc" element={<ProcurementRegistryPage/>}/>
                                 <Route path="/prc/new" element={<ProcurementNewPage/>}/>

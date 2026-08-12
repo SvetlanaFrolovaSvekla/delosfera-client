@@ -2,6 +2,7 @@ import {useCallback, useEffect, useState} from "react";
 import {Trophy} from "lucide-react";
 import {tenderService, type Tender} from "@/service/procurementService/tenderService.ts";
 import {userService} from "@/service/userService/userService.ts";
+import {publicationService, type PublicationPackage} from "@/service/procurementService/guaranteeService.ts";
 
 /**
  * Конкурс по закупке (PRC-13..16) на карточке: комиссия, публикация, заявки,
@@ -35,6 +36,8 @@ export const TenderPanel = ({requestId, onChanged}: Props) => {
     const [memberForm, setMemberForm] = useState({userId: 0, role: "Member", board: false, accountant: false});
     const [deadline, setDeadline] = useState("");
     const [bidForm, setBidForm] = useState({title: "", inn: "", price: 0, submittedOn: ""});
+    /** Пакет публикации (INT-05): текст объявления собирается из карточки конкурса. */
+    const [publication, setPublication] = useState<PublicationPackage | null>(null);
 
     const load = useCallback(async () => {
         try {
@@ -314,6 +317,32 @@ export const TenderPanel = ({requestId, onChanged}: Props) => {
                             </button>
                         </>
                     )}
+
+                    <div style={{marginTop: 12}}>
+                        <button
+                            onClick={() => publication
+                                ? setPublication(null)
+                                : publicationService.get(tender.id).then(setPublication).catch(() => undefined)}
+                            style={secondaryButton}
+                        >
+                            {publication ? "Скрыть объявление" : "Пакет публикации"}
+                        </button>
+
+                        {publication && (
+                            <div style={{marginTop: 10, padding: 14, borderRadius: 11, background: "#f6f8fb"}}>
+                                <div style={{fontSize: 11.5, color: "#8b97ab", marginBottom: 8}}>
+                                    Размещение: {publication.channels.join(" · ")}
+                                    {publication.blockers.length > 0 && ` · ${publication.blockers.join("; ")}`}
+                                </div>
+                                <pre style={{
+                                    margin: 0, whiteSpace: "pre-wrap", font: "inherit", fontSize: 12.5,
+                                    lineHeight: 1.7, color: "#26324a",
+                                }}>
+                                    {publication.announcement}
+                                </pre>
+                            </div>
+                        )}
+                    </div>
 
                     {tender.status === "Opened" && (
                         <div style={{marginTop: 12, fontSize: 12.5, color: tender.hasQuorum ? "#1f8a4c" : "#c0392b"}}>

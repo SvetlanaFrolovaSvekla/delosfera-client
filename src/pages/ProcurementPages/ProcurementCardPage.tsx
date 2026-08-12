@@ -11,6 +11,7 @@ import {ProposalsPanel} from "@/components/procurement/ProposalsPanel.tsx";
 import {ProcurementRoutePanel} from "@/components/procurement/ProcurementRoutePanel.tsx";
 import {TenderPanel} from "@/components/procurement/TenderPanel.tsx";
 import {ContractPanel} from "@/components/procurement/ContractPanel.tsx";
+import {GuaranteeClaimPanel} from "@/components/procurement/GuaranteeClaimPanel.tsx";
 
 /**
  * Карточка закупки (экран v8 isPrcCard): параметры заявки, решение Матрицы полномочий
@@ -205,6 +206,9 @@ export const ProcurementCardPage = () => {
             )}
 
             <ContractPanel requestId={card.id} onChanged={load}/>
+
+            {/* Обеспечения и претензии появляются, когда есть конкурс или договор */}
+            <GuaranteeClaimPanel tenderId={card.tenderId} contractId={card.contractId} onChanged={load}/>
         </div>
     );
 };

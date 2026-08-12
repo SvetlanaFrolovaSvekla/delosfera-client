@@ -61,6 +61,8 @@ export const navGroups: NavGroup[] = [
         titleKey: "sidebar.groups.purchases",
         items: [
             { id: "prc", icon: "prc", labelKey: "sidebar.items.prc", path: "/prc" },
+            // Годовой План закупок с отчётом об исполнении (PRC-22)
+            { id: "prc-plan", icon: "pln", labelKey: "План закупок", path: "/prc/plan" },
             // Матрица определяет способ закупки, состав согласования и орган утверждения
             { id: "matrix", icon: "matrix", labelKey: "sidebar.items.matrix", path: "/prc/matrix" },
             // Благонадёжность и чёрный список недобросовестных (PRC-07/17)

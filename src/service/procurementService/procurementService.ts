@@ -104,6 +104,11 @@ export interface ProcurementCard {
     /** Запущенный маршрут согласования (PRC-08); null — заявка ещё черновик. */
     routeInstanceId: number | null;
 
+    /** Действующий конкурс — к нему относится ГОКЗ. */
+    tenderId: number | null;
+    /** Действующий договор — к нему относятся ГОИД и претензии. */
+    contractId: number | null;
+
     createdAt: string;
     updatedAt: string;
 

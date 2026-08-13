@@ -1,10 +1,12 @@
+import {useTranslation} from "react-i18next";
 import {Link} from "react-router-dom";
+import {useActualizationBucketMeta} from "@/hooks/actualizationHooks/useActualizationBucketMeta.ts";
+import {daysUntil} from "@/utils/dateUtils.ts";
 import type {VndResponse} from "@/service/vndService/vndServiceType.ts";
 import type {ColDef} from "@/constants/columnsFilters/vndColumns.ts";
-import {ACTUALIZATION_BUCKET_META} from "@/constants/actualizationBucket.ts";
 import {STATUS_META} from "@/constants/vndStatus.ts";
 import {EmptyState} from "@/components/componentsGeneral/EmptyState.tsx";
-import {daysUntil} from "@/utils/dateUtils.ts";
+
 
 interface ActualizationTableProps {
     columns: ColDef[];
@@ -18,22 +20,25 @@ interface ActualizationTableProps {
     onResetFilters: () => void;
 }
 
-const LAST_ACT_STATUS_LABEL = {
-    true: "С изменениями",
-    false: "Без изменений",
-} as const;
-
 export function ActualizationTable({
                                        columns, rows, gridTemplate,
                                        responsibleExecutorNames, keywordNames, secrecyLevelName, userGroupNames, rubricNames,
                                        onResetFilters,
                                    }: ActualizationTableProps) {
+    const {t} = useTranslation();
+    const bucketMetaMap = useActualizationBucketMeta();
+
+    const lastActualizationStatusLabel = (hadChanges: boolean) =>
+        hadChanges
+            ? t("vnd.lastActualizationStatus.withChanges")
+            : t("vnd.lastActualizationStatus.withoutChanges");
+
     if (rows.length === 0) {
         return (
             <EmptyState
-                title="Ничего не найдено"
-                description="Попробуйте изменить фильтры или поисковый запрос."
-                actionLabel="Сбросить фильтры"
+                title={t("vnd.emptyState.title")}
+                description={t("vnd.emptyState.description")}
+                actionLabel={t("vnd.emptyState.resetFilters")}
                 onAction={onResetFilters}
             />
         );
@@ -54,7 +59,7 @@ export function ActualizationTable({
                 {rows.map((r) => {
                     const meta = STATUS_META[r.status];
                     const StatusIcon = meta.icon;
-                    const bucketMeta = r.actualizationBucket ? ACTUALIZATION_BUCKET_META[r.actualizationBucket] : null;
+                    const bucketMeta = r.actualizationBucket ? bucketMetaMap[r.actualizationBucket] : null;
                     const days = daysUntil(r.dueActualizationDate);
                     // Последняя актуализация или дата создания, если актуализаций ещё не было
                     const lastActDisplay = r.lastActualizationDate ?? r.createdAt?.slice(0, 10) ?? null;
@@ -206,7 +211,9 @@ export function ActualizationTable({
                                                                 className="block text-[11px] font-semibold mt-0.5"
                                                                 style={{color: bucketMeta?.color ?? "#a3adbd"}}
                                                             >
-                                                                {days < 0 ? `−${Math.abs(days)} дн` : `через ${days} дн`}
+                                                                {days < 0
+                                                                    ? t("vnd.overdueByDays", {count: Math.abs(days)})
+                                                                    : t("vnd.dueInDays", {count: days})}
                                                             </span>
                                                         )}
                                                     </>
@@ -220,7 +227,7 @@ export function ActualizationTable({
                                             <div key={c.key} className="min-w-0">
                                                 <span className="text-[12px] text-[#55617a]">{lastActDisplay || "—"}</span>
                                                 {!r.lastActualizationDate && lastActDisplay && (
-                                                    <span className="block text-[10.5px] text-[#a3adbd] mt-0.5">дата создания</span>
+                                                    <span className="block text-[10.5px] text-[#a3adbd] mt-0.5">{t("vnd.createdDateHint")}</span>
                                                 )}
                                             </div>
                                         );
@@ -235,7 +242,7 @@ export function ActualizationTable({
                                                                 : "text-[12px] text-[#55617a]"
                                                         }
                                                     >
-                                                        {LAST_ACT_STATUS_LABEL[String(r.lastActualizationHadChanges) as "true" | "false"]}
+                                                        {lastActualizationStatusLabel(r.lastActualizationHadChanges)}
                                                     </span>
                                                 ) : (
                                                     <span className="text-[12px] text-[#55617a]">—</span>

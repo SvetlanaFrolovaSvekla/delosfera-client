@@ -1,12 +1,14 @@
 import {useMemo, useState} from "react";
+import {useTranslation} from "react-i18next";
 import {useAuth} from "@/context/AuthContext";
 import {useVndHomeSummary} from "@/hooks/analyticsHooks/useVndHomeSummary.ts";
 import {useVndTasks} from "@/hooks/tasksVndHooks/useVndTasks.ts";
 import {useActualizationSummary} from "@/hooks/vndHooks/useActualizationSummary.ts";
-import {getTimeGreeting} from "@/utils/getTimeGreeting.ts";
+import {useTimeGreeting} from "@/hooks/generalHooks/useTimeGreeting.ts";
+import {useFormattedDate} from "@/hooks/generalHooks/useFormattedDate.ts";
 import {getFirstLastName} from "@/utils/userNaming.ts";
-import {getFormattedDate} from "@/utils/dateUtils.ts";
-
+import {transliterate} from "@/utils/transliterate.ts";
+import {HOME_TASKS_LIMIT} from "@/constants/validation/HomeTasksLimit.ts";
 import {Loader} from "@/components/componentsGeneral/Loader.tsx";
 import {CreateDocumentModal} from "@/components/CreateDocumentModal.tsx";
 import {HomePageHeader} from "@/components/componentsHome/HomePageHeader.tsx";
@@ -15,14 +17,21 @@ import {MyTasksCard} from "@/components/componentsHome/MyTasksCard.tsx";
 import {ActualizationPlanCard} from "@/components/componentsHome/ActualizationPlanCard.tsx";
 import {RecentActivityCard} from "@/components/componentsHome/RecentActivityCard.tsx";
 
-// Сколько задач показывать в сводке на главной
-const HOME_TASKS_LIMIT = 25;
-
 export function HomePage() {
+    const {t, i18n} = useTranslation();
     const {user, loading} = useAuth();
     const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
-    const roleDept = user?.orgUnit?.titleRu ?? ""; // СП
-    const rolePosition = user?.position?.name; // Должность
+
+    // ФИО/должность/подразделение
+    const isLatin = i18n.language === "en";
+    const roleDept = useMemo(() => {
+        const dept = user?.orgUnit?.titleRu ?? "";
+        return isLatin ? transliterate(dept) : dept;
+    }, [user?.orgUnit?.titleRu, isLatin]);
+    const rolePosition = useMemo(() => {
+        const position = user?.position?.name ?? "";
+        return isLatin ? transliterate(position) : position;
+    }, [user?.position?.name, isLatin]);
 
     // Реальные задачи по всем скоупам (как на странице "Мои задачи"), объединённые в одну сводку
     const coordination = useVndTasks("coordination");
@@ -39,18 +48,20 @@ export function HomePage() {
     const tasksTotalCount = coordination.tasks.length + actualization.tasks.length + consolidation.tasks.length;
     const tasksLoading = coordination.isLoading || actualization.isLoading || consolidation.isLoading;
 
-    // Текущая дата
-    const formattedDate = useMemo(() => getFormattedDate(), []);
+    // Текущая дата - локализуется под текущий язык
+    const formattedDate = useFormattedDate();
 
     // Приветствие
+    const timeGreeting = useTimeGreeting();
     const greeting = useMemo(() => {
-        const firstLastName = getFirstLastName(user?.fullName);
-        const timeGreeting = getTimeGreeting();
+        const firstLastNameRaw = getFirstLastName(user?.fullName);
+        const firstLastName = isLatin ? transliterate(firstLastNameRaw) : firstLastNameRaw;
         return firstLastName ? `${timeGreeting}, ${firstLastName}!` : timeGreeting;
-    }, [user?.fullName]);
+    }, [user?.fullName, timeGreeting, isLatin]);
 
     if (loading) {
-        return <Loader label="Загрузка главной страницы…" fullHeight={false}/>;
+        /* Загрузка главной страницы */
+        return <Loader label={t("home.loadingPage")} fullHeight={false}/>;
     }
 
     return (
@@ -63,17 +74,20 @@ export function HomePage() {
                 onCreateClick={() => setIsCreateModalOpen(true)}
             />
 
+            {/* Сетка с карточками с информацией об активности деятельности */}
             <HomeKpiGrid summary={homeSummary}/>
 
             <div className="grid grid-cols-1 xl:grid-cols-[1.65fr_1fr] gap-[18px]">
+                {/* Виджет последних задач */}
                 <MyTasksCard tasks={homeTasks} totalCount={tasksTotalCount} isLoading={tasksLoading}/>
 
+                {/* Виджет плана актуализации и журнал действий */}
                 <div className="flex flex-col gap-[18px]">
                     <ActualizationPlanCard summary={actualizationSummary} isLoading={actualizationLoading}/>
                     <RecentActivityCard limit={8}/>
                 </div>
             </div>
-
+            {/* Создание документа */}
             {isCreateModalOpen && (
                 <CreateDocumentModal onClose={() => setIsCreateModalOpen(false)}/>
             )}

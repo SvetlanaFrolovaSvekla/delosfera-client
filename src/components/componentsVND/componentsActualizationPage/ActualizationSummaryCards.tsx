@@ -1,4 +1,5 @@
-import {ACTUALIZATION_BUCKET_META, ACTUALIZATION_BUCKET_ORDER} from "@/constants/actualizationBucket.ts";
+import {useTranslation} from "react-i18next";
+import {ACTUALIZATION_BUCKET_ORDER, useActualizationBucketMeta} from "@/hooks/actualizationHooks/useActualizationBucketMeta.ts";
 import type {ActualizationBucketKey, VndActualizationSummaryResponse} from "@/service/vndService/vndServiceType.ts";
 
 interface ActualizationSummaryCardsProps {
@@ -9,10 +10,13 @@ interface ActualizationSummaryCardsProps {
 }
 
 export function ActualizationSummaryCards({summary, loading, activeBucket, onSelectBucket}: ActualizationSummaryCardsProps) {
+    const {t} = useTranslation();
+    const bucketMetaMap = useActualizationBucketMeta();
+
     return (
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3.5 mb-5">
             {ACTUALIZATION_BUCKET_ORDER.map((key) => {
-                const meta = ACTUALIZATION_BUCKET_META[key];
+                const meta = bucketMetaMap[key];
                 const Icon = meta.icon;
                 const isActive = activeBucket === key;
                 const count = summary ? summary[key] : null;
@@ -39,7 +43,7 @@ export function ActualizationSummaryCards({summary, loading, activeBucket, onSel
                             <span className="text-[28px] font-extrabold leading-none" style={{color: meta.color}}>
                                 {loading ? "—" : count ?? 0}
                             </span>
-                            <span className="text-[12px] text-[#a3adbd]">докум.</span>
+                            <span className="text-[12px] text-[#a3adbd]">{t("vnd.documentsUnit")}</span>
                         </div>
                     </button>
                 );

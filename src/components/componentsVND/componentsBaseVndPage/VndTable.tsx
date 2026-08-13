@@ -1,12 +1,12 @@
 import {useTranslation} from "react-i18next";
 import {Link} from "react-router-dom";
+import {useActualizationBucketMeta} from "@/hooks/actualizationHooks/useActualizationBucketMeta.ts";
+import {HighlightText} from "@/utils/HighlightText.tsx";
 import type {VndResponse} from "@/service/vndService/vndServiceType.ts";
 import {STATUS_META} from "@/constants/vndStatus.ts";
-import {ACTUALIZATION_BUCKET_META} from "@/constants/actualizationBucket.ts";
 import type {ColDef} from "@/constants/columnsFilters/vndColumns.ts";
 import {EmptyState} from "@/components/componentsGeneral/EmptyState.tsx";
 import {Clock} from "lucide-react";
-import {HighlightText} from "@/utils/HighlightText.tsx";
 
 interface VndTableProps {
     columns: ColDef[];
@@ -22,11 +22,6 @@ interface VndTableProps {
     searchQuery: string;
 }
 
-const LAST_ACT_STATUS_LABEL = {
-    true: "С изменениями",
-    false: "Без изменений",
-} as const;
-
 export function VndTable({
                              columns,
                              rows,
@@ -41,6 +36,12 @@ export function VndTable({
                              searchQuery
                          }: VndTableProps) {
     const {t} = useTranslation();
+    const bucketMetaMap = useActualizationBucketMeta();
+
+    const lastActualizationStatusLabel = (hadChanges: boolean) =>
+        hadChanges
+            ? t("vnd.lastActualizationStatus.withChanges")
+            : t("vnd.lastActualizationStatus.withoutChanges");
 
     if (rows.length === 0) {
         return (
@@ -71,7 +72,7 @@ export function VndTable({
                     const meta = STATUS_META[r.status];
                     const StatusIcon = meta.icon;
                     const days = daysUntil(r.dueActualizationDate);
-                    const bucketMeta = r.actualizationBucket ? ACTUALIZATION_BUCKET_META[r.actualizationBucket] : null;
+                    const bucketMeta = r.actualizationBucket ? bucketMetaMap[r.actualizationBucket] : null;
                     const dot = bucketMeta?.color ?? "#a3adbd";
 
                     return (
@@ -174,8 +175,8 @@ export function VndTable({
                                                                 style={{color: dot}}
                                                             >
                                                                 {days < 0
-                                                                    ? `−${Math.abs(days)} дн`
-                                                                    : `через ${days} дн`}
+                                                                    ? t("vnd.overdueByDays", {count: Math.abs(days)})
+                                                                    : t("vnd.dueInDays", {count: days})}
                                                             </span>
                                                         )}
                                                     </>
@@ -200,7 +201,7 @@ export function VndTable({
                                             <div key={c.key} className="min-w-0 flex items-center gap-[7px]">
                                                 <Clock className="w-[14px] h-[14px] text-[#a3adbd]" strokeWidth={1.9}/>
                                                 <span className="font-mono text-[12px] text-[#55617a]">
-                                                    {r.daysInArchive ?? "—"} дн
+                                                    {r.daysInArchive ?? "—"} {t("vnd.daysUnit")}
                                                 </span>
                                             </div>
                                         );
@@ -299,7 +300,7 @@ export function VndTable({
                                             <div key={c.key} className="min-w-0">
                                                 <span className="text-[12px] text-[#55617a]">
                                                     {r.lastActualizationDate
-                                                        ? LAST_ACT_STATUS_LABEL[String(r.lastActualizationHadChanges) as "true" | "false"]
+                                                        ? lastActualizationStatusLabel(r.lastActualizationHadChanges)
                                                         : "—"}
                                                 </span>
                                             </div>

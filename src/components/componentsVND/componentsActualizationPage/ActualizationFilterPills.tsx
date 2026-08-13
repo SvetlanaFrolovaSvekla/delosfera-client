@@ -1,4 +1,5 @@
-import {ACTUALIZATION_BUCKET_META, ACTUALIZATION_BUCKET_ORDER} from "@/constants/actualizationBucket.ts";
+import {useTranslation} from "react-i18next";
+import {ACTUALIZATION_BUCKET_ORDER, useActualizationBucketMeta} from "@/hooks/actualizationHooks/useActualizationBucketMeta.ts";
 import type {ActualizationBucketKey, VndActualizationSummaryResponse} from "@/service/vndService/vndServiceType.ts";
 
 export type ActualizationFilterValue = ActualizationBucketKey | "all";
@@ -10,13 +11,16 @@ interface ActualizationFilterPillsProps {
 }
 
 export function ActualizationFilterPills({value, onChange, summary}: ActualizationFilterPillsProps) {
+    const {t} = useTranslation();
+    const bucketMetaMap = useActualizationBucketMeta();
+
     const pills: { key: ActualizationFilterValue; label: string; count: number | null; dot?: string }[] = [
-        {key: "all", label: "Все", count: summary?.total ?? null},
+        {key: "all", label: t("general.selectAll"), count: summary?.total ?? null},
         ...ACTUALIZATION_BUCKET_ORDER.map((key) => ({
             key,
-            label: ACTUALIZATION_BUCKET_META[key].label,
+            label: bucketMetaMap[key].label,
             count: summary ? summary[key] : null,
-            dot: ACTUALIZATION_BUCKET_META[key].color,
+            dot: bucketMetaMap[key].color,
         })),
     ];
 

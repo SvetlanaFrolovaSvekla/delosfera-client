@@ -1,0 +1,343 @@
+{
+  "general": {
+    "search": "Search...",
+    "notFound": "Nothing found!",
+    "selectAll": "All",
+    "deselectAll": "Deselect all",
+    "openList": "Open list…",
+    "filter": "Filter",
+    "clearFilter": "Clear filter",
+    "cancel": "Cancel",
+    "ok": "OK",
+    "selectedCount": "Selected:",
+    "save": "Save",
+    "loading": "Loading…",
+    "deleting": "Deleting…",
+    "delete": "Delete",
+    "saving": "Saving…"
+  },
+  "sidebar": {
+    "badgeTooltips": {
+      "planning": "Overdue and critical VND: {{count}}",
+      "tasks": "Tasks requiring attention: {{count}}"
+    },
+    "appName": "Delosfera",
+    "appSub": "EDMS",
+    "collapse": "Collapse menu",
+    "groups": {
+      "normotvorchestvo": "Rulemaking (VND)",
+      "sz": "Memos",
+      "purchases": "Procurement",
+      "meetings": "Meetings",
+      "hr": "HR Document Flow",
+      "system": "System",
+      "admin": "Administration"
+    },
+    "items": {
+      "home": "Dashboard",
+      "vndRubric": "Rubricator",
+      "vnd": "VND Registry",
+      "pln": "Actualization Planning",
+      "tid": "Approval",
+      "tasks": "My Tasks",
+      "rpt": "Reporting",
+      "sz": "Memo Registry",
+      "szAnalytics": "Memo Analytics",
+      "notifs": "Notifications",
+      "prc": "Requests & Procurement",
+      "matrix": "Authority Matrix",
+      "prcPlan": "Procurement Planning",
+      "prcBlacklist": "Blacklist",
+      "prcAppraisers": "Appraisers",
+      "kom": "Committee Decisions",
+      "hr": "HR Documents",
+      "hrAck": "Acknowledgment",
+      "mobile": "Mobile Signature",
+      "refs": "Directories",
+      "kb": "Knowledge Base",
+      "future": "Roadmap",
+      "org": "Org Structure",
+      "admUsers": "Users",
+      "admRoles": "Roles & Permissions",
+      "admSub": "Substitutions",
+      "admLog": "Action Log",
+      "admAuth": "Authentication"
+    }
+  },
+  "header": {
+    "searching": "Searching…",
+    "noResultsFor": "No results for \"{{query}}\"",
+    "profileTooltip": "Go to my profile",
+    "langRu": "Russian",
+    "langKy": "Kyrgyz",
+    "notifTooltip": "Notifications",
+    "allNotifs": "All notifications",
+    "search": "Search documents: VND, memos, procurement…",
+    "roleGate": "Role permissions",
+    "notif": "Notifications",
+    "readAll": "Mark all as read",
+    "switchRole": "View as role",
+    "myProfile": "My Profile",
+    "myRoles": "My roles:",
+    "logout": "Log out"
+  },
+  "home": {
+    "recentActivity": {
+      "title": "Recent Activity",
+      "loading": "Loading activity…",
+      "empty": "No events yet"
+    },
+    "kpi": {
+      "myResponsibleActualizations": "Actualizations under my responsibility",
+      "myTimeoutApprovalsThisMonth": "My overdue approvals this month",
+      "myVndAwaitingApproval": "My VND awaiting approval",
+      "pendingMyApproval": "VND requiring my approval"
+    },
+    "planActualizationTitle": "VND Actualization Plan",
+    "seeActualization": "View plan",
+    "createDocument": "Create document",
+    "loadingPage": "Loading dashboard…",
+    "greeting": {
+      "morning": "Good morning",
+      "day": "Good afternoon",
+      "evening": "Good evening",
+      "night": "Good night"
+    },
+    "myTasks": "My tasks",
+    "allTasks": "All tasks",
+    "planTitle": "VND Actualization Plan",
+    "activity": "Recent activity",
+    "today": "Today",
+    "overdue": "Overdue",
+    "ryg": {
+      "over30": "> 30 days",
+      "under30": "< 30 days",
+      "late": "overdue"
+    }
+  },
+  "notifications": {
+    "n1": "Document No. SZ-1245 approved by E. Sydykov",
+    "n2": "TID-88 returned for revision",
+    "n3": "New procurement request requires your approval",
+    "title": "No notifications!"
+  },
+  "notificationsTime": {
+    "n1": "5 minutes ago",
+    "n2": "1 hour ago",
+    "n3": "3 hours ago"
+  },
+  "roles": {
+    "methodist": "Methodology Department",
+    "initiator": "Initiator",
+    "clerk": "Registry Office"
+  },
+  "vnd": {
+    "shortLabel": "VND",
+    "status": "Status",
+    "emptyState": {
+      "title": "No VND found!",
+      "description": "No results found for the specified search parameters. Try changing your query or resetting the filters.",
+      "resetFilters": "Reset filters"
+    },
+    "actualizationBuckets": {
+      "normal": "On track",
+      "approaching": "Due soon",
+      "critical": "Due imminently",
+      "overdue": "Overdue"
+    },
+    "daysUnit": "d",
+    "dueInDays": "in {{count}} d",
+    "overdueByDays": "−{{count}} d",
+    "createdDateHint": "creation date",
+    "documentsUnit": "docs",
+    "lastActualizationStatus": {
+      "withChanges": "Changed",
+      "withoutChanges": "Unchanged"
+    }
+  },
+  "dictionaries": {
+    "maxDepthTag": "max. depth",
+    "maxDepthReason": "Cannot select — maximum nesting depth exceeded ({{max}} levels)",
+    "multiParentHint": "The item will be added as a separate record under each of the selected parents",
+    "navigateGeneral": "Directories · General",
+    "navigateVnd": "Directories · VND",
+    "navigateZakup": "Directories · Procurement",
+    "navigateSZ": "Directories · Memos",
+    "title": "Directories",
+    "subtitle": "System directories configured by the administrator",
+    "searchPlaceholder": "Search directories…",
+    "notFound": "Nothing found",
+    "inDevelopment": "Directory under development!",
+    "addRoot": "Add value",
+    "addChildAction": "Add child item",
+    "editAction": "Edit",
+    "deleteAction": "Delete",
+
+    "fieldTitleRu": "Name (Russian)",
+    "fieldTitleEn": "Name (English)",
+    "fieldTitleKg": "Name (Kyrgyz)",
+    "fieldParentNone": "— No parent (root level) —",
+    "empty": "Directory is empty",
+    "loadError": "Failed to load directory",
+    "saveError": "Failed to save. Please try again.",
+    "deleteError": "Failed to delete. The item may be in use elsewhere.",
+    "deleteConfirmMessage": "Are you sure you want to delete \"{{name}}\"? This action cannot be undone.",
+
+    "sectionSubtitleGeneral": "General Directories",
+    "sectionSubtitleVnd": "VND Directories"
+  },
+  "refSections": {
+    "general": {
+      "title": "General",
+      "approvalBody": {
+        "title": "Approval Bodies",
+        "subtitle": "Board, Board of Directors and other approving bodies"
+      },
+      "organizationUnit": {
+        "title": "Organizational Units",
+        "subtitle": "Bank's organizational structure — divisions, departments"
+      },
+      "position": {
+        "title": "Positions",
+        "subtitle": "List of bank employee positions"
+      },
+      "keyword": {
+        "title": "Keywords",
+        "subtitle": "Tags for topical search and document classification"
+      }
+    },
+    "vnd": {
+      "title": "VND",
+      "typeVnd": {
+        "title": "VND Types",
+        "subtitle": "Regulation, Procedure, Policy and other document types"
+      },
+      "securityLevel": {
+        "title": "Security Levels",
+        "subtitle": "Open access, confidential, secret"
+      },
+      "userGroup": {
+        "title": "User Groups",
+        "subtitle": "Access groups for viewing and approving documents"
+      },
+      "rubric": {
+        "title": "Rubricator",
+        "subtitle": "Topical classification of documents by area"
+      },
+      "coordinationUsers": {
+        "title": "Mandatory Approval Process Participants",
+        "subtitle": "Defining mandatory participants for the approval of each VND"
+      }
+    },
+    "procurement": {
+      "title": "Procurement",
+      "counterpartyBlacklist": {
+        "title": "Counterparty Blacklist",
+        "subtitle": "Suppliers and contractors that are prohibited from cooperation"
+      },
+      "procurementThreshold": {
+        "title": "Procurement Thresholds",
+        "subtitle": "Amount thresholds determining the procedure and approval level"
+      }
+    },
+    "memos": {
+      "title": "Memos",
+      "memoCategory": {
+        "title": "Memo Categories",
+        "subtitle": "Thematic categories of memos"
+      }
+    }
+  },
+  "approvalBodyPage": {
+    "title": "Approval Bodies",
+    "searchPlaceholder": "Search approval bodies…",
+    "emptyAction": "Add first body",
+    "formTitleCreate": "New Approval Body",
+    "formTitleEdit": "Edit Approval Body",
+    "fieldParent": "Parent item",
+    "deleteConfirmTitle": "Delete approval body?"
+  },
+  "organizationUnitPage": {
+    "title": "Organizational Units",
+    "searchPlaceholder": "Search organizational units…",
+    "emptyAction": "Add first unit",
+    "formTitleCreate": "New Organizational Unit",
+    "formTitleEdit": "Edit Organizational Unit",
+    "fieldParent": "Parent unit",
+    "deleteConfirmTitle": "Delete organizational unit?"
+  },
+  "positionPage": {
+    "title": "Positions",
+    "searchPlaceholder": "Search positions…",
+    "emptyAction": "Add first position",
+    "formTitleCreate": "New Position",
+    "formTitleEdit": "Edit Position",
+    "deleteConfirmTitle": "Delete position?"
+  },
+  "typeVndPage": {
+    "title": "VND Types",
+    "searchPlaceholder": "Search VND types…",
+    "emptyAction": "Add first type",
+    "formTitleCreate": "New VND Type",
+    "formTitleEdit": "Edit VND Type",
+    "deleteConfirmTitle": "Delete VND type?",
+    "deleteError": "Failed to delete. This VND type may be in use in other documents."
+  },
+  "securityLevelPage": {
+    "title": "Security Levels",
+    "searchPlaceholder": "Search security levels…",
+    "emptyAction": "Add first level",
+    "formTitleCreate": "New Security Level",
+    "formTitleEdit": "Edit Security Level",
+    "deleteConfirmTitle": "Delete security level?"
+  },
+  "rubricPage": {
+    "title": "Rubricator",
+    "searchPlaceholder": "Search rubrics…",
+    "emptyAction": "Add first rubric",
+    "formTitleCreate": "New Rubric",
+    "formTitleEdit": "Edit Rubric",
+    "fieldParent": "Parent rubric",
+    "deleteConfirmTitle": "Delete rubric?"
+  },
+  "rubricTreeModal": {
+    "helpTooltip": "Select one or more rubrics to filter the registry",
+    "goToRubric": "Go to the registry filtered by this rubric",
+    "selectedCount": "Selected:",
+    "apply": "Go"
+  },
+  "keywordPage": {
+    "title": "Keywords",
+    "searchPlaceholder": "Search keywords…",
+    "emptyAction": "Add first word",
+    "formTitleCreate": "New Keyword",
+    "formTitleEdit": "Edit Keyword",
+    "fieldParent": "Parent word",
+    "deleteConfirmTitle": "Delete keyword?"
+  },
+  "userGroupPage": {
+    "title": "User Groups",
+    "searchPlaceholder": "Search groups…",
+    "emptyAction": "Add first group",
+    "formTitleCreate": "New User Group",
+    "formTitleEdit": "Edit User Group",
+    "fieldUsers": "Group members",
+    "deleteConfirmTitle": "Delete user group?"
+  },
+  "coordinationApproversPage": {
+    "title": "Mandatory Approval Participants",
+    "description": "The set of stages is fixed — Legal Department, Risk Management, Compliance Control, and Methodology. Only the default approver for each stage is configured here.",
+    "formTitle": "Approver: {{kind}}",
+    "fieldApprover": "Approver",
+    "orgUnitHint": "Unit: {{orgUnitName}}",
+    "noApprover": "— Not assigned —"
+  },
+  "tasks": {
+    "myTasks": {
+      "title": "My Tasks",
+      "allTasks": "All tasks",
+      "loading": "Loading tasks…",
+      "empty": "No active tasks"
+    }
+  }
+}

@@ -65,6 +65,8 @@
     }
   },
   "header": {
+    "searching": "Поиск…",
+    "noResultsFor": "Ничего не найдено по «{{query}}»",
     "profileTooltip": "Перейти в мой профиль",
     "langRu": "Русский",
     "langKy": "Кыргызча",
@@ -75,7 +77,9 @@
     "notif": "Уведомления",
     "readAll": "Прочитать все",
     "switchRole": "Просмотр от роли",
-    "myProfile": "Мой профиль"
+    "myProfile": "Мой профиль",
+    "myRoles": "Мои роли:",
+    "logout": "Выход"
   },
   "home": {
     "recentActivity": {
@@ -92,6 +96,13 @@
     "planActualizationTitle": "План актуализации ВНД",
     "seeActualization": "Смотреть план",
     "createDocument": "Создать документ",
+    "loadingPage": "Загрузка главной страницы…",
+    "greeting": {
+      "morning": "Доброе утро",
+      "day": "Добрый день",
+      "evening": "Добрый вечер",
+      "night": "Доброй ночи"
+    },
     "myTasks": "Мои задачи",
     "allTasks": "Все задачи",
     "planTitle": "План актуализации ВНД",
@@ -107,7 +118,8 @@
   "notifications": {
     "n1": "Документ №СЗ-1245 согласован Э. Сыдыковым",
     "n2": "ТИД-88 возвращён на доработку",
-    "n3": "Новая заявка на закупку требует вашей визы"
+    "n3": "Новая заявка на закупку требует вашей визы",
+    "title": "Уведомлений нет!"
   },
   "notificationsTime": {
     "n1": "5 мин назад",
@@ -120,11 +132,27 @@
     "clerk": "Канцелярия"
   },
   "vnd": {
+    "shortLabel": "ВНД",
     "status": "Статус",
     "emptyState": {
       "title": "ВНД не найдены!",
       "description": "По заданным параметрам поиска ничего не найдено. Попробуйте изменить запрос или сбросить фильтры.",
       "resetFilters": "Сбросить фильтры"
+    },
+    "actualizationBuckets": {
+      "normal": "В норме",
+      "approaching": "Приближается срок",
+      "critical": "Критичный срок",
+      "overdue": "Просрочено"
+    },
+    "daysUnit": "дн",
+    "dueInDays": "через {{count}} дн",
+    "overdueByDays": "−{{count}} дн",
+    "createdDateHint": "дата создания",
+    "documentsUnit": "докум.",
+    "lastActualizationStatus": {
+      "withChanges": "С изменениями",
+      "withoutChanges": "Без изменений"
     }
   },
   "dictionaries": {

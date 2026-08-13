@@ -11,6 +11,8 @@ import {
     type MatrixResolveResult,
 } from "@/service/procurementService/authorityMatrixService.ts";
 import {organizationUnitService} from "@/service/dictionariesService/organizationUnitService/organizationUnitService.ts";
+import {AttachmentsPanel} from "@/components/attachments/AttachmentsPanel.tsx";
+import {attachmentService} from "@/service/documentService/attachmentService.ts";
 import type {OrganizationUnitResponse} from "@/service/dictionariesService/organizationUnitService/organizationUnitServiceType.ts";
 
 /**
@@ -36,6 +38,9 @@ export const ProcurementNewPage = () => {
     const [error, setError] = useState<string | null>(null);
     const [resolved, setResolved] = useState<MatrixResolveResult | null>(null);
     const [units, setUnits] = useState<OrganizationUnitResponse[]>([]);
+
+    // Обоснование и ТЗ приходят файлами, но заявки ещё нет — файлы ждут её создания.
+    const [files, setFiles] = useState<File[]>([]);
 
     const [form, setForm] = useState<ProcurementCreateRequest>({
         subject: "",
@@ -94,7 +99,23 @@ export const ProcurementNewPage = () => {
                 planItem: form.planItem?.trim() || undefined,
                 methodJustification: form.methodJustification?.trim() || undefined,
             });
-            navigate(`/prc/${card.id}`);
+            // Заявка создана — файлы, собранные в мастере, цепляются к её карточке.
+            // Сбой загрузки заявку не отменяет: недостающий файл прикладывается на
+            // карточке, и туда мы пользователя и уводим, назвав, что не прошло.
+            const failed: string[] = [];
+            for (const file of files) {
+                try {
+                    await attachmentService.upload(card.documentId, file);
+                } catch {
+                    failed.push(file.name);
+                }
+            }
+
+            navigate(`/prc/${card.id}`, {
+                state: failed.length
+                    ? {attachmentError: `Не приложились файлы: ${failed.join(", ")}`}
+                    : undefined,
+            });
         } catch (e) {
             const message = (e as { response?: { data?: { message?: string } } }).response?.data?.message;
             setError(message ?? "Не удалось создать заявку");
@@ -197,6 +218,15 @@ export const ProcurementNewPage = () => {
                                 placeholder="Цель приобретения, риски при непринятии решения, ожидаемая эффективность, наличие в бюджете…"
                                 rows={5}
                                 style={{...input, height: "auto", padding: "10px 12px", resize: "vertical"}}
+                            />
+
+                            <AttachmentsPanel
+                                documentId={null}
+                                editable
+                                title="Вложения к обоснованию"
+                                hint="необязательно"
+                                pending={files}
+                                onPendingChange={setFiles}
                             />
 
                             <label style={{...checkboxRow, marginTop: 14}}>

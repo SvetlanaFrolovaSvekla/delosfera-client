@@ -1,5 +1,5 @@
 import {useCallback, useEffect, useState} from "react";
-import {Link, useNavigate, useParams} from "react-router-dom";
+import {Link, useLocation, useNavigate, useParams} from "react-router-dom";
 import {colors} from "@/design/tokens";
 import {
     PROCUREMENT_STATUS_LABEL,
@@ -12,6 +12,7 @@ import {ProcurementRoutePanel} from "@/components/procurement/ProcurementRoutePa
 import {TenderPanel} from "@/components/procurement/TenderPanel.tsx";
 import {ContractPanel} from "@/components/procurement/ContractPanel.tsx";
 import {GuaranteeClaimPanel} from "@/components/procurement/GuaranteeClaimPanel.tsx";
+import {AttachmentsPanel} from "@/components/attachments/AttachmentsPanel.tsx";
 
 /**
  * Карточка закупки (экран v8 isPrcCard): параметры заявки, решение Матрицы полномочий
@@ -33,6 +34,11 @@ const STATUS_TONE: Partial<Record<ProcurementStatusCode, { fg: string; bg: strin
 export const ProcurementCardPage = () => {
     const {id} = useParams<{ id: string }>();
     const navigate = useNavigate();
+
+    // Мастер создания сообщает сюда, если какой-то файл не приложился: заявка
+    // уже создана, и терять это сообщение при переходе нельзя.
+    const location = useLocation();
+    const attachmentError = (location.state as { attachmentError?: string } | null)?.attachmentError;
 
     const [card, setCard] = useState<ProcurementCard | null>(null);
     const [error, setError] = useState<string | null>(null);
@@ -114,6 +120,11 @@ export const ProcurementCardPage = () => {
             </div>
 
             {error && <div style={{color: "#e0483d", fontSize: 13}}>{error}</div>}
+            {attachmentError && (
+                <div style={{color: "#c77700", fontSize: 13}}>
+                    {attachmentError}. Приложите их здесь.
+                </div>
+            )}
 
             {card.blockers.length > 0 && (
                 <section style={{...cardStyle, borderColor: "#f0c98a", background: "#fffaf0"}}>
@@ -146,6 +157,14 @@ export const ProcurementCardPage = () => {
                             <div style={{fontSize: 13, color: "#26324a", lineHeight: 1.7}}>{card.justification}</div>
                         </>
                     )}
+
+                    {/* Файлы обоснования и ТЗ — здесь же, где само обоснование и бюджет. */}
+                    <AttachmentsPanel
+                        documentId={card.documentId}
+                        editable={canSubmit}
+                        title="Вложения к обоснованию"
+                        hint="необязательно"
+                    />
                 </section>
 
                 <aside style={cardStyle}>

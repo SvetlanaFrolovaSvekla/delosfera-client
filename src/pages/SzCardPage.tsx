@@ -9,6 +9,9 @@ import {SzExecutionPanel} from "@/components/sz/SzExecutionPanel.tsx";
 import {SzOriginalPanel} from "@/components/sz/SzOriginalPanel.tsx";
 import {SzArchivePanel} from "@/components/sz/SzArchivePanel.tsx";
 import {SzProcurementPanel} from "@/components/sz/SzProcurementPanel.tsx";
+import {SzApproversField} from "@/components/sz/SzApproversField.tsx";
+import {SzAddresseeDecisionPanel} from "@/components/sz/SzAddresseeDecisionPanel.tsx";
+import {AttachmentsPanel} from "@/components/attachments/AttachmentsPanel.tsx";
 import {
     PARTICIPANT_STATE_LABEL,
     RESOLUTION_LABEL,
@@ -32,6 +35,7 @@ const STATUS_TONE: Partial<Record<SzStatusCode, { fg: string; bg: string }>> = {
     PendingRegistration: colors.status.onact,
     Registered: colors.status.review,
     OnRevision: colors.status.onact,
+    OnAddresseeDecision: colors.status.review,
     OnExecution: colors.status.consol,
     Executed: colors.status.active,
     Rejected: colors.status.arch,
@@ -88,18 +92,23 @@ export function SzCardPage() {
 
     const [form, setForm] = useState<SzSaveRequest>({
         title: "", kindId: 0, body: "", correspondentUnitId: null, rubricIds: [],
+        addresseeUserId: null, approverUserIds: [], approvalIsParallel: false,
     });
 
     const {user} = useAuth();
     const [route, setRoute] = useState<RouteInstance | null>(null);
     const [users, setUsers] = useState<Record<number, string>>({});
+    const [userList, setUserList] = useState<{ id: number; fullName: string }[]>([]);
     const [comment, setComment] = useState("");
     const [withdrawReason, setWithdrawReason] = useState("");
     const [withdrawOpen, setWithdrawOpen] = useState(false);
 
     useEffect(() => {
         userService.getAll()
-            .then((list) => setUsers(Object.fromEntries(list.map((u) => [u.id, u.fullName]))))
+            .then((list) => {
+                setUsers(Object.fromEntries(list.map((u) => [u.id, u.fullName])));
+                setUserList(list.map((u) => ({id: u.id, fullName: u.fullName})));
+            })
             .catch(() => {});
     }, []);
 
@@ -119,6 +128,9 @@ export function SzCardPage() {
             title: d.title, kindId: d.kindId, body: d.body,
             correspondentUnitId: d.correspondentUnitId, isPaperCarrier: d.isPaperCarrier,
             rubricIds: d.rubricIds,
+            addresseeUserId: d.addresseeUserId,
+            approverUserIds: d.approvers.map((a) => a.userId),
+            approvalIsParallel: d.approvalIsParallel,
             hrKindId: d.hrKindId, employeeName: d.employeeName,
             employeeUnitId: d.employeeUnitId, transferUnitId: d.transferUnitId,
             hasBudget: d.hasBudget, amount: d.amount, travelExpenses: d.travelExpenses,
@@ -160,7 +172,7 @@ export function SzCardPage() {
 
     const save = async () => {
         if (!form.title.trim() || !form.kindId) {
-            setError("Заполните заголовок и вид записки");
+            setError("Заполните тему и вид записки");
             return;
         }
         setSaving(true);
@@ -420,7 +432,7 @@ export function SzCardPage() {
 
             <div className="mt-5 rounded-[12px] border border-[#e5e9f0] bg-white p-5">
                 <div className="grid grid-cols-2 gap-4">
-                    <Field label="Заголовок">
+                    <Field label="Тема">
                         <input className={inputClass} value={form.title} disabled={!editable}
                                onChange={(e) => set("title", e.target.value)}/>
                     </Field>
@@ -428,6 +440,13 @@ export function SzCardPage() {
                         <select className={inputClass} value={form.kindId} disabled={!editable}
                                 onChange={(e) => set("kindId", Number(e.target.value))}>
                             {kinds.map((k) => <option key={k.id} value={k.id}>{k.titleRu}</option>)}
+                        </select>
+                    </Field>
+                    <Field label="Кому">
+                        <select className={inputClass} value={form.addresseeUserId ?? ""} disabled={!editable}
+                                onChange={(e) => set("addresseeUserId", e.target.value ? Number(e.target.value) : null)}>
+                            <option value="">Не выбрано</option>
+                            {userList.map((u) => <option key={u.id} value={u.id}>{u.fullName}</option>)}
                         </select>
                     </Field>
                     <Field label="Адресат — структурное подразделение">
@@ -542,7 +561,31 @@ export function SzCardPage() {
                         })}
                     </div>
                 </div>
+
+                <SzApproversField
+                    value={form.approverUserIds ?? []}
+                    onChange={(ids) => set("approverUserIds", ids)}
+                    users={userList}
+                    parallel={form.approvalIsParallel ?? false}
+                    onParallelChange={(p) => set("approvalIsParallel", p)}
+                    editable={editable}
+                />
+
+                <AttachmentsPanel
+                    documentId={sz?.documentId ?? null}
+                    editable={editable}
+                    hint="необязательно"
+                />
             </div>
+
+            {sz && (
+                <SzAddresseeDecisionPanel
+                    sz={sz}
+                    currentUserId={user?.id}
+                    users={userList}
+                    onDecided={applyDetails}
+                />
+            )}
 
             {sz && (
                 <div className="mt-4 rounded-[12px] border border-[#e5e9f0] bg-white p-5">

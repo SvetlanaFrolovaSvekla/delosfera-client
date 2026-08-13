@@ -97,6 +97,19 @@ export function SzPrintPage() {
                     <div className="mt-2 whitespace-pre-wrap text-[12.5px] leading-[1.55]">{form.body}</div>
                 )}
 
+                {form.addresseeDecision && (
+                    <div className="mt-6">
+                        <div className="text-[11px] font-bold uppercase tracking-[.05em] text-[#55617a]">
+                            Решение адресата
+                        </div>
+                        <div className="mt-1 whitespace-pre-wrap text-[12.5px]">{form.addresseeDecision}</div>
+                        <div className="mt-1 text-[11px] text-[#55617a]">
+                            {form.addresseeName ?? "—"}
+                            {form.addresseeDecisionAt && `, ${formatDate(form.addresseeDecisionAt)}`}
+                        </div>
+                    </div>
+                )}
+
                 {form.executionResolution && (
                     <div className="mt-6">
                         <div className="text-[11px] font-bold uppercase tracking-[.05em] text-[#55617a]">Резолюция</div>

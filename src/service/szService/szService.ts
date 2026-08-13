@@ -1,8 +1,19 @@
 import {apiClient} from "@/service/apiClient.ts";
+import type {SzAssignmentDraft} from "@/service/szService/szExecutionService.ts";
 
 export type SzStatusCode =
     | "Draft" | "PendingRegistration" | "Registered" | "OnRevision"
+    | "OnAddresseeDecision"
     | "OnExecution" | "Executed" | "Rejected" | "Withdrawn" | "Archived";
+
+/** Согласующий в карточке записки. */
+export interface SzApprover {
+    userId: number;
+    fullName: string;
+    position: string | null;
+    /** Порядок прохождения при последовательном согласовании. */
+    order: number;
+}
 
 export type SzFormKey = "Other" | "Hr" | "Procurement" | "Training";
 
@@ -47,6 +58,18 @@ export interface SzDetails extends SzListItem {
     authorUnitId: number | null;
     authorUnit: string | null;
     correspondentUnitId: number | null;
+
+    /** «Кому» — пользователь, который выносит решение по записке. */
+    addresseeUserId: number | null;
+    addresseeUser: string | null;
+
+    approvers: SzApprover[];
+    approvalIsParallel: boolean;
+
+    /** Решение адресата. Заполняет только он сам. */
+    addresseeDecision: string | null;
+    addresseeDecisionAt: string | null;
+
     signerUserId: number | null;
     signerUser: string | null;
     registeredByUserId: number | null;
@@ -90,6 +113,9 @@ export interface SzSaveRequest {
     kindId: number;
     body?: string | null;
     correspondentUnitId?: number | null;
+    addresseeUserId?: number | null;
+    approverUserIds?: number[];
+    approvalIsParallel?: boolean;
     signerUserId?: number | null;
     isPaperCarrier?: boolean | null;
     rubricIds?: number[];
@@ -216,11 +242,27 @@ export const szService = {
     },
 };
 
+export const szApprovalService = {
+    /** Состав и порядок согласующих — меняется до отправки записки. */
+    setApprovers: (id: number, userIds: number[], parallel: boolean) =>
+        apiClient.put<SzDetails>(`/api/sz/${id}/approvers`, {userIds, parallel}).then((r) => r.data),
+
+    /**
+     * Решение адресата по существу вопроса. Тем же действием выдаются поручения:
+     * решение и есть резолюция, по которой работа расходится исполнителям.
+     */
+    decide: (id: number, decision: string, assignments: SzAssignmentDraft[] = []) =>
+        apiClient
+            .post<SzDetails>(`/api/sz/${id}/addressee-decision`, {decision, assignments})
+            .then((r) => r.data),
+};
+
 export const SZ_STATUS_LABEL: Record<SzStatusCode, string> = {
     Draft: "Черновик",
     PendingRegistration: "В ожидании регистрации",
     Registered: "Зарегистрирована",
     OnRevision: "На доработке",
+    OnAddresseeDecision: "На решении адресата",
     OnExecution: "На исполнении",
     Executed: "Исполнена",
     Rejected: "Забракована",

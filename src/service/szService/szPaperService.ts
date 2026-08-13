@@ -67,6 +67,11 @@ export interface SzPrintForm {
     approvals: SzPrintApproval[];
     executionResolution: string | null;
     assignments: SzPrintAssignment[];
+
+    /** Решение адресата по существу вопроса — печатается, если вынесено. */
+    addresseeName: string | null;
+    addresseeDecision: string | null;
+    addresseeDecisionAt: string | null;
 }
 
 export const PRINT_RESOLUTION_LABEL: Record<string, string> = {

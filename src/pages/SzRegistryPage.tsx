@@ -35,6 +35,7 @@ const STATUS_TONE: Partial<Record<SzStatusCode, { fg: string; bg: string }>> = {
     PendingRegistration: colors.status.onact,
     Registered: colors.status.review,
     OnRevision: colors.status.onact,
+    OnAddresseeDecision: colors.status.review,
     OnExecution: colors.status.consol,
     Executed: colors.status.active,
     Rejected: colors.status.arch,
@@ -209,7 +210,7 @@ export function SzRegistryPage() {
                         <thead>
                         <tr className="bg-[#fafbfd] text-[11px] font-bold uppercase tracking-[.04em] text-[#a3adbd]">
                             <th className="px-4 py-2.5 text-left w-[140px]">Записка</th>
-                            <th className="px-4 py-2.5 text-left">Заголовок</th>
+                            <th className="px-4 py-2.5 text-left">Тема</th>
                             <th className="px-4 py-2.5 text-left w-[190px]">У кого</th>
                             <th className="px-4 py-2.5 text-left w-[170px]">Место хранения</th>
                             <th className="px-4 py-2.5 text-left w-[160px]">Вернуть до</th>
@@ -310,7 +311,7 @@ export function SzRegistryPage() {
                     <thead>
                     <tr className="bg-[#fafbfd] text-[11px] font-bold uppercase tracking-[.04em] text-[#a3adbd]">
                         <th className="px-4 py-2.5 text-left w-[140px]">Номер</th>
-                        <th className="px-4 py-2.5 text-left">Заголовок</th>
+                        <th className="px-4 py-2.5 text-left">Тема</th>
                         <th className="px-4 py-2.5 text-left w-[130px]">Вид</th>
                         <th className="px-4 py-2.5 text-left w-[170px]">Автор</th>
                         <th className="px-4 py-2.5 text-left w-[150px]">Срок исполнения</th>

@@ -3,7 +3,7 @@ import type {LoginResponse} from "@/service/authService/authServiceType.ts";
 import {getLanguage} from "@/utils/getLanguage.ts";
 import {getAccessToken, setAccessToken} from "@/service/tokenStore.ts";
 
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL ?? "http://localhost:5293";
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL ?? "";
 
 // withCredentials: браузер отправляет httpOnly refresh-cookie на /auth/*.
 export const apiClient = axios.create({

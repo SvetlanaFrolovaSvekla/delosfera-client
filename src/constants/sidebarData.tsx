@@ -72,6 +72,8 @@ export const navGroups: NavGroup[] = [
             { id: "adm-users", icon: "user", labelKey: "sidebar.items.admUsers", path: "/users" },
             { id: "adm-roles", icon: "shield", labelKey: "sidebar.items.admRoles", path: "/roles", permission: PermissionCode.ManageRoles },
             { id: "refs", icon: "refs", labelKey: "sidebar.items.refs", path: "/refs" },
+            // Настройки интеграций: адрес каталога, учётная запись, расписание синхронизации
+            { id: "system-settings", icon: "future", labelKey: "Системные настройки", path: "/system/settings", permission: PermissionCode.ManageSystemSettings },
             // База знаний (KB-01..03) ещё не реализована: пункт вёл на несуществующий
             // маршрут и ронял пользователя на пустой экран. Вернём вместе с разделом.
         ],

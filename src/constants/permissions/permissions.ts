@@ -101,4 +101,6 @@ export const PermissionCode = {
 
     /* Член Кредитного комитета — полная повестка заседаний КИТ */
     MemberOfCreditCommittee: 34,
+    /** Системные настройки: интеграции, расписание синхронизации */
+    ManageSystemSettings: 35,
 } as const;

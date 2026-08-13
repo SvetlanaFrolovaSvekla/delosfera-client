@@ -34,18 +34,6 @@ export const navGroups: NavGroup[] = [
         ],
     },
     {
-        titleKey: "sidebar.groups.admin",
-        items: [
-/*
-            { id: "adm-users", icon: "user", labelKey: "sidebar.items.admUsers", path: "/users" },
-*/
-            { id: "adm-roles", icon: "shield", labelKey: "sidebar.items.admRoles", path: "/roles", permission: PermissionCode.ManageRoles },
-        /*    { id: "adm-log", icon: "clock", labelKey: "sidebar.items.admLog" },
-            { id: "adm-auth", icon: "lock", labelKey: "sidebar.items.admAuth" },*/
-            { id: "refs", icon: "refs", labelKey: "sidebar.items.refs", path: "/refs" },
-        ],
-    },
-    {
         titleKey: "Задачи",
         items: [
             // Согласования по всем контурам в одном месте, включая задачи по замещению
@@ -82,6 +70,8 @@ export const navGroups: NavGroup[] = [
         titleKey: "Система",
         items: [
             { id: "adm-users", icon: "user", labelKey: "sidebar.items.admUsers", path: "/users" },
+            { id: "adm-roles", icon: "shield", labelKey: "sidebar.items.admRoles", path: "/roles", permission: PermissionCode.ManageRoles },
+            { id: "refs", icon: "refs", labelKey: "sidebar.items.refs", path: "/refs" },
             // База знаний (KB-01..03) ещё не реализована: пункт вёл на несуществующий
             // маршрут и ронял пользователя на пустой экран. Вернём вместе с разделом.
         ],

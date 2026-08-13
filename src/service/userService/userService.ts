@@ -51,6 +51,14 @@ function buildQuery(params?: GetUsersParams): string {
 }
 
 export const userService = {
+    /** Одна учётная запись — для карточки пользователя. */
+    async getById(id: number): Promise<UserResponse> {
+        const response = await fetch(`${API_BASE}/users/${id}`, {
+            headers: buildHeaders(),
+        });
+        return handleResponse<UserResponse>(response);
+    },
+
     async getAll(params?: GetUsersParams): Promise<UserResponse[]> {
         const response = await fetch(`${API_BASE}/users?${buildQuery(params)}`, {
             headers: buildHeaders(),

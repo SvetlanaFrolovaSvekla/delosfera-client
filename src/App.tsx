@@ -56,6 +56,7 @@ const TaskInboxPage = lazy(() => import("@/pages/TasksPages/TaskInboxPage.tsx").
 
 // Поиск по документам: реквизиты и текстовые поля карточек (GEN-02/04)
 const BaseKnowPage = lazy(() => import("@/pages/BaseKnowPages/BaseKnowPage.tsx").then(m => ({default: m.BaseKnowPage})));
+const UserCardPage = lazy(() => import("@/pages/UsersPages/UserCardPage.tsx").then(m => ({default: m.UserCardPage})));
 const SystemSettingsPage = lazy(() => import("@/pages/SystemSettingsPage.tsx").then(m => ({default: m.SystemSettingsPage})));
 const SearchPage = lazy(() => import("@/pages/SearchPage/SearchPage.tsx").then(m => ({default: m.SearchPage})));
 
@@ -136,6 +137,8 @@ function App() {
                                 <Route path="/sz/:id" element={<SzCardPage/>}/>
 
                                 <Route path="/users" element={<UsersPage/>}/>
+                                <Route path="/users/new" element={<UserCardPage/>}/>
+                                <Route path="/users/:id" element={<UserCardPage/>}/>
 
                                 <Route element={<RequirePermission code={PermissionCode.ManageRoles}/>}>
                                     <Route path="/roles" element={<RolesPermissionPage/>}/>
@@ -153,6 +156,28 @@ function App() {
                                 <Route path="/refs/coordination-users" element={<CoordinationApproversPage/>}/>
                             </Route>
                         </Route>
+
+                        {/* Адрес, которого нет, раньше давал пустой экран — по нему было не
+                            понять, сломалась система или раздел просто не открывается. */}
+                        <Route
+                            path="*"
+                            element={
+                                <div style={{padding: 24}}>
+                                    <div style={{fontSize: 19, fontWeight: 700, color: "#0f1b2d"}}>
+                                        Страница не найдена
+                                    </div>
+                                    <div style={{marginTop: 6, fontSize: 13, color: "#8b97ab"}}>
+                                        Раздел не существует или ещё не открыт для вашей роли.
+                                    </div>
+                                    <a href="/" style={{
+                                        display: "inline-block", marginTop: 14, fontSize: 12.5,
+                                        fontWeight: 600, color: "#2f68f5",
+                                    }}>
+                                        На рабочий стол
+                                    </a>
+                                </div>
+                            }
+                        />
                     </Routes>
                 </Suspense>
                 <ToastContainer/>

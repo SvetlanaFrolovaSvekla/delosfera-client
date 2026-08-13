@@ -1,6 +1,6 @@
 // Хук с состоянием и логикой multi-select дерева
 // Для рубрикатора, select с иерархией и множественным выбором
-import {useState} from "react";
+import {useCallback, useMemo, useState} from "react";
 import {
     buildNodeIndex,
     buildTree,
@@ -37,27 +37,30 @@ export function useTreeMultiSelect<T extends BaseTreeOption>({
         }
     }
 
-    const tree = buildTree(options);
-    const nodeByKey = buildNodeIndex(tree);
-    const visibleTree = query.trim() ? filterTree(tree, query.trim()) : tree;
-    const allKeys = getAllKeysInTree(tree);
+    const tree = useMemo(() => buildTree(options), [options]);
+    const nodeByKey = useMemo(() => buildNodeIndex(tree), [tree]);
+    const visibleTree = useMemo(
+        () => (query.trim() ? filterTree(tree, query.trim()) : tree),
+        [tree, query]
+    );
+    const allKeys = useMemo(() => getAllKeysInTree(tree), [tree]);
 
     const allSelected = allKeys.length > 0 && draft.length === allKeys.length;
     const noneSelected = draft.length === 0;
 
-    const selectAll = () => setDraft(allKeys);
-    const deselectAll = () => setDraft([]);
+    const selectAll = useCallback(() => setDraft(allKeys), [allKeys]);
+    const deselectAll = useCallback(() => setDraft([]), []);
 
-    const toggleCollapse = (key: string) =>
+    const toggleCollapse = useCallback((key: string) =>
         setCollapsed((prev) => {
             const next = new Set(prev);
             if (next.has(key)) next.delete(key);
             else next.add(key);
             return next;
-        });
+        }), []);
 
     // Переключение узла + каскад на детей; после этого пересчитываем родителей
-    const toggle = (node: TreeNodeOf<T>) => {
+    const toggle = useCallback((node: TreeNodeOf<T>) => {
         setDraft((prev) => {
             const isSelected = prev.includes(node.key);
             const descendantKeys = getAllDescendantKeys(node);
@@ -87,14 +90,14 @@ export function useTreeMultiSelect<T extends BaseTreeOption>({
 
             return next;
         });
-    };
+    }, [nodeByKey]);
 
-    const isPartiallySelected = (node: TreeNodeOf<T>): boolean => {
+    const isPartiallySelected = useCallback((node: TreeNodeOf<T>): boolean => {
         if (node.children.length === 0) return false;
         const descendantKeys = getAllDescendantKeys(node);
         const selectedCount = descendantKeys.filter((k) => draft.includes(k)).length;
         return selectedCount > 0 && selectedCount < descendantKeys.length && !draft.includes(node.key);
-    };
+    }, [draft]);
 
     return {
         draft,

@@ -54,8 +54,7 @@ export const EMPTY_ADVANCED_DRAFT: AdvancedDraft = {
 
 interface UseVndAdvancedFiltersDraftParams {
     onCloseAdv: () => void;
-    /* Актуальные применённые значения (из пропов страницы) — используются только
-       как начальное значение черновика при первом монтировании компонента */
+    /* Актуальные применённые значения (из пропов страницы) */
     appliedValues: AdvancedDraft;
     /* Применить черновик - вызывает соответствующие onXChange из пропов */
     onApply: (draft: AdvancedDraft) => void;
@@ -66,9 +65,20 @@ export function useVndAdvancedFiltersDraft({
                                                appliedValues,
                                                onApply,
                                            }: UseVndAdvancedFiltersDraftParams) {
-    // Черновик инициализируется применёнными значениями один раз и дальше живёт
-    // независимо — сворачивание/разворачивание панели его не трогает
     const [draft, setDraft] = useState<AdvancedDraft>(appliedValues);
+
+    // Ресинхронизация черновика, если применённые значения поменялись извне
+    // (сброс фильтров кнопкой вне панели, переход по рубрике из рубрикатора и т.п.).
+    // Сравниваем по содержимому, а не по ссылке — иначе будет срабатывать на каждый рендер.
+    // Пока пользователь просто печатает в черновике, appliedValues не меняются
+    // (onApply вызывается только при "Найти"/"Сбросить"), так что ввод не затирается.
+    const appliedSnapshot = JSON.stringify(appliedValues);
+    const [prevAppliedSnapshot, setPrevAppliedSnapshot] = useState(appliedSnapshot);
+
+    if (appliedSnapshot !== prevAppliedSnapshot) {
+        setPrevAppliedSnapshot(appliedSnapshot);
+        setDraft(appliedValues);
+    }
 
     const updateDraft = <K extends keyof AdvancedDraft>(key: K, value: AdvancedDraft[K]) =>
         setDraft((prev) => ({...prev, [key]: value}));

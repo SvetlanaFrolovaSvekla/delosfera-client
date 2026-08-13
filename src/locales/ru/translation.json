@@ -17,6 +17,10 @@
     "saving": "Сохранение…"
   },
   "sidebar": {
+    "badgeTooltips": {
+      "planning": "Просроченных и критических ВНД: {{count}}",
+      "tasks": "Задач требует внимания: {{count}}"
+    },
     "appName": "Делосфера",
     "appSub": "СЭД",
     "collapse": "Свернуть меню",
@@ -74,7 +78,20 @@
     "myProfile": "Мой профиль"
   },
   "home": {
-    "createDoc": "Создать документ",
+    "recentActivity": {
+      "title": "Последняя активность",
+      "loading": "Загрузка активности…",
+      "empty": "Пока нет событий"
+    },
+    "kpi": {
+      "myResponsibleActualizations": "На актуализации под моей ответственностью",
+      "myTimeoutApprovalsThisMonth": "Просроченные мной согласования в этом месяце",
+      "myVndAwaitingApproval": "Мои ВНД, ожидающие согласования",
+      "pendingMyApproval": "ВНД, которые мне необходимо согласовать"
+    },
+    "planActualizationTitle": "План актуализации ВНД",
+    "seeActualization": "Смотреть план",
+    "createDocument": "Создать документ",
     "myTasks": "Мои задачи",
     "allTasks": "Все задачи",
     "planTitle": "План актуализации ВНД",
@@ -85,12 +102,6 @@
       "over30": "> 30 дней",
       "under30": "< 30 дней",
       "late": "просрочено"
-    },
-    "kpi": {
-      "finalControl": "На финальном контроле",
-      "overduePlan": "Просроченные позиции плана",
-      "actualization30": "Актуализации < 30 дней",
-      "tidInProgress": "ТИД в работе"
     }
   },
   "notifications": {
@@ -259,6 +270,12 @@
     "fieldParent": "Родительская рубрика",
     "deleteConfirmTitle": "Удалить рубрику?"
   },
+  "rubricTreeModal": {
+    "helpTooltip": "Выберите одну или несколько рубрик, чтобы отфильтровать реестр",
+    "goToRubric": "Перейти к реестру с фильтром по этой рубрике",
+    "selectedCount": "Выбрано:",
+    "apply": "Перейти"
+  },
   "keywordPage": {
     "title": "Ключевые слова",
     "searchPlaceholder": "Поиск по ключевым словам…",
@@ -310,5 +327,13 @@
     "errorDomain": "Служба каталогов не подтвердила доменные логин и пароль",
     "footerVersion": "Делосфера СЭД · v8.2",
     "support": "Поддержка"
+  },
+  "tasks": {
+    "myTasks": {
+      "title": "Мои задачи",
+      "allTasks": "Все задачи",
+      "loading": "Загрузка задач…",
+      "empty": "Нет активных задач"
+    }
   }
 }

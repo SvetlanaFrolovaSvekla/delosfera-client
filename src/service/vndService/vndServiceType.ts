@@ -273,3 +273,10 @@ export interface EditLastRevisionDirectlyRequest {
     docEn?: File;
     description?: string;
 }
+
+export interface VndQuickSearchResult {
+    id: number;
+    code: string;
+    name: string;
+    status: VndStatusKey;
+}

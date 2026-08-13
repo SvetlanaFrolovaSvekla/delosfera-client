@@ -3,7 +3,7 @@ import {Link} from "react-router-dom";
 import type {VndTaskResponse} from "@/service/tasksVndService/tasksServiceTypes.ts";
 import {COORDINATION_STAGE_META, TASK_SCOPE_META} from "@/constants/vndStatus.ts";
 import {getActionTitle, getDeadlineTone, getMetaText} from "@/utils/tasksUtils.ts";
-import {Icon} from "@/components/icons/Icon";
+import {Icon} from "@/components/icons/Icon.tsx";
 
 
 interface VndTaskCardProps {

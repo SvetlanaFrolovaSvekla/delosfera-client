@@ -1,7 +1,7 @@
 import { Loader } from "@/components/componentsGeneral/Loader.tsx";
 import { EmptyState } from "@/components/componentsGeneral/EmptyState.tsx";
 import type {VndTaskResponse} from "@/service/tasksVndService/tasksServiceTypes.ts";
-import {VndTaskCard} from "@/pages/TasksPages/VndTaskCard.tsx";
+import {VndTaskCard} from "@/components/componentsTasks/VndTaskCard.tsx";
 
 interface VndTaskListProps {
     tasks: VndTaskResponse[];

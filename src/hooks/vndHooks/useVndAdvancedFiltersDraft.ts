@@ -53,7 +53,6 @@ export const EMPTY_ADVANCED_DRAFT: AdvancedDraft = {
 };
 
 interface UseVndAdvancedFiltersDraftParams {
-    advOpen: boolean;
     onCloseAdv: () => void;
     /* Актуальные применённые значения (из пропов страницы) */
     appliedValues: AdvancedDraft;
@@ -62,20 +61,23 @@ interface UseVndAdvancedFiltersDraftParams {
 }
 
 export function useVndAdvancedFiltersDraft({
-                                               advOpen,
                                                onCloseAdv,
                                                appliedValues,
                                                onApply,
                                            }: UseVndAdvancedFiltersDraftParams) {
     const [draft, setDraft] = useState<AdvancedDraft>(appliedValues);
 
-    // Синхронизация черновика с применёнными фильтрами в момент открытия панели
-    const [prevAdvOpen, setPrevAdvOpen] = useState(advOpen);
-    if (advOpen !== prevAdvOpen) {
-        setPrevAdvOpen(advOpen);
-        if (advOpen) {
-            setDraft(appliedValues);
-        }
+    // Ресинхронизация черновика, если применённые значения поменялись извне
+    // (сброс фильтров кнопкой вне панели, переход по рубрике из рубрикатора и т.п.).
+    // Сравниваем по содержимому, а не по ссылке — иначе будет срабатывать на каждый рендер.
+    // Пока пользователь просто печатает в черновике, appliedValues не меняются
+    // (onApply вызывается только при "Найти"/"Сбросить"), так что ввод не затирается.
+    const appliedSnapshot = JSON.stringify(appliedValues);
+    const [prevAppliedSnapshot, setPrevAppliedSnapshot] = useState(appliedSnapshot);
+
+    if (appliedSnapshot !== prevAppliedSnapshot) {
+        setPrevAppliedSnapshot(appliedSnapshot);
+        setDraft(appliedValues);
     }
 
     const updateDraft = <K extends keyof AdvancedDraft>(key: K, value: AdvancedDraft[K]) =>
@@ -92,6 +94,7 @@ export function useVndAdvancedFiltersDraft({
 
     const handleResetDraft = () => {
         setDraft(EMPTY_ADVANCED_DRAFT);
+        onApply(EMPTY_ADVANCED_DRAFT);
     };
 
     return {draft, updateDraft, handleApply, handleCollapse, handleResetDraft};

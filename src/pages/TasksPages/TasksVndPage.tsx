@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useVndTasks } from "@/hooks/tasksVndHooks/useVndTasks.ts";
 import { useVndTaskCounts } from "@/hooks/tasksVndHooks/useVndTaskCounts.ts";
 import { Tabs } from "@/components/componentsGeneral/Tabs.tsx";
-import { VndTaskList } from "@/pages/TasksPages/VndTaskList.tsx";
+import { VndTaskList } from "@/components/componentsTasks/VndTaskList.tsx";
 import {emptyTextByScope, type TasksScope} from "@/constants/tasksConst.ts";
 import {PageHeader} from "@/components/componentsGeneral/PageHeader.tsx";
 

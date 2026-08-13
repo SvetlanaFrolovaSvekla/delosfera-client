@@ -1,7 +1,8 @@
 // Всплывающая подсказка
-import {useState, type ReactNode} from "react";
+import {type ReactNode, useEffect, useLayoutEffect, useRef, useState} from "react";
+import {createPortal} from "react-dom";
 
-type Side = "top" | "bottom" | "left" | "right";
+export type Side = "top" | "bottom" | "left" | "right";
 
 interface TooltipProps {
     content: string;
@@ -12,13 +13,10 @@ interface TooltipProps {
     className?: string;
 }
 
-const sideClasses: Record<Side, string> = {
-    top: "bottom-full left-1/2 -translate-x-1/2 mb-2 origin-bottom",
-    bottom: "top-full left-1/2 -translate-x-1/2 mt-2 origin-top",
-    left: "right-full top-1/2 -translate-y-1/2 mr-2 origin-right",
-    right: "left-full top-1/2 -translate-y-1/2 ml-2 origin-left",
-};
+const GAP = 8; // расстояние от триггера до тултипа (включая стрелку)
 
+// Позиция самой стрелки внутри тултипа (тултип центрируется по триггеру,
+// поэтому стрелка всегда по центру своей стороны)
 const arrowClasses: Record<Side, string> = {
     top: "top-full left-1/2 -translate-x-1/2 border-t-[#0f1b2d] border-x-transparent border-b-transparent",
     bottom: "bottom-full left-1/2 -translate-x-1/2 border-b-[#0f1b2d] border-x-transparent border-t-transparent",
@@ -29,22 +27,70 @@ const arrowClasses: Record<Side, string> = {
 export function Tooltip({content, children, side = "bottom", delay = 300, disabled = false, className = ""}: TooltipProps) {
     const [visible, setVisible] = useState(false);
     const [mounted, setMounted] = useState(false);
-    const [timer, setTimer] = useState<ReturnType<typeof setTimeout> | null>(null);
+    const [coords, setCoords] = useState<{top: number; left: number} | null>(null);
+    const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+    const triggerRef = useRef<HTMLDivElement>(null);
 
     const clearPendingTimer = () => {
-        if (timer) {
-            clearTimeout(timer);
-            setTimer(null);
+        if (timerRef.current) {
+            clearTimeout(timerRef.current);
+            timerRef.current = null;
         }
     };
 
+    const computePosition = () => {
+        const trigger = triggerRef.current;
+        if (!trigger) return;
+        const rect = trigger.getBoundingClientRect();
+
+        let top = 0;
+        let left = 0;
+
+        switch (side) {
+            case "top":
+                top = rect.top - GAP;
+                left = rect.left + rect.width / 2;
+                break;
+            case "bottom":
+                top = rect.bottom + GAP;
+                left = rect.left + rect.width / 2;
+                break;
+            case "left":
+                top = rect.top + rect.height / 2;
+                left = rect.left - GAP;
+                break;
+            case "right":
+                top = rect.top + rect.height / 2;
+                left = rect.right + GAP;
+                break;
+        }
+
+        setCoords({top, left});
+    };
+
+    useLayoutEffect(() => {
+        if (mounted) computePosition();
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [mounted, side]);
+
+    useEffect(() => {
+        if (!mounted) return;
+        const handle = () => computePosition();
+        window.addEventListener("scroll", handle, true);
+        window.addEventListener("resize", handle);
+        return () => {
+            window.removeEventListener("scroll", handle, true);
+            window.removeEventListener("resize", handle);
+        };
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [mounted]);
+
     const handleEnter = () => {
         if (disabled) return;
-        const id = setTimeout(() => {
+        timerRef.current = setTimeout(() => {
             setMounted(true);
             requestAnimationFrame(() => setVisible(true));
         }, delay);
-        setTimer(id);
     };
 
     const handleLeave = () => {
@@ -59,25 +105,39 @@ export function Tooltip({content, children, side = "bottom", delay = 300, disabl
         handleLeave();
     };
 
+    const translate =
+        side === "top" ? "translate(-50%, -100%)" :
+            side === "bottom" ? "translate(-50%, 0)" :
+                side === "left" ? "translate(-100%, -50%)" :
+                    "translate(0, -50%)";
+
     return (
         <div
+            ref={triggerRef}
             className={`relative inline-flex ${className}`}
             onMouseEnter={handleEnter}
             onMouseLeave={handleLeave}
             onClick={handleClick}
         >
             {children}
-            {mounted && !disabled && (
-                <div
-                    role="tooltip"
-                    className={`pointer-events-none absolute z-50 whitespace-nowrap rounded-[7px] bg-[#0f1b2d] px-2.5 py-1.5 text-[11.5px] font-medium text-white shadow-[0_8px_20px_-6px_rgba(15,27,45,.35)] transition-all duration-150 ease-out ${
-                        sideClasses[side]
-                    } ${visible ? "opacity-100 scale-100" : "opacity-0 scale-95"}`}
-                >
-                    {content}
-                    <span className={`absolute h-0 w-0 border-[5px] ${arrowClasses[side]}`}/>
-                </div>
-            )}
+            {mounted && !disabled && coords &&
+                createPortal(
+                    <div
+                        role="tooltip"
+                        className={`pointer-events-none fixed z-[9999] whitespace-nowrap rounded-[7px] bg-[#0f1b2d] px-2.5 py-1.5 text-[11.5px] font-medium text-white shadow-[0_8px_20px_-6px_rgba(15,27,45,.35)] transition-all duration-150 ease-out ${
+                            visible ? "opacity-100 scale-100" : "opacity-0 scale-95"
+                        }`}
+                        style={{
+                            top: coords.top,
+                            left: coords.left,
+                            transform: translate,
+                        }}
+                    >
+                        {content}
+                        <span className={`absolute h-0 w-0 border-[5px] ${arrowClasses[side]}`}/>
+                    </div>,
+                    document.body
+                )}
         </div>
     );
 }

@@ -12,13 +12,18 @@ export function formatDateTime(iso: string): string {
     });
 }
 
-// Формат минут/часов для отображения дедлайнов нормативов
-export function formatMinutesAsHm(totalMinutes: number): string {
-    const h = Math.floor(totalMinutes / 60);
-    const m = totalMinutes % 60;
-    if (h === 0) return `${m} мин.`;
-    if (m === 0) return `${h} ч.`;
-    return `${h} ч. ${m} мин.`;
+export function timeAgo(iso: string): string {
+    const diffMs = Date.now() - new Date(iso).getTime();
+    const min = Math.floor(diffMs / 60000);
+
+    if (min < 1) return "только что";
+    if (min < 60) return `${min} мин назад`;
+
+    const hrs = Math.floor(min / 60);
+    if (hrs < 24) return `${hrs} ч назад`;
+
+    const days = Math.floor(hrs / 24);
+    return `${days} дн назад`;
 }
 
 // Форматирование времени для уведомлений

@@ -55,6 +55,7 @@ const ProcurementProtocolPage = lazy(() => import("@/pages/ProcurementPages/Proc
 const TaskInboxPage = lazy(() => import("@/pages/TasksPages/TaskInboxPage.tsx").then(m => ({default: m.TaskInboxPage})));
 
 // Поиск по документам: реквизиты и текстовые поля карточек (GEN-02/04)
+const BaseKnowPage = lazy(() => import("@/pages/BaseKnowPages/BaseKnowPage.tsx").then(m => ({default: m.BaseKnowPage})));
 const SearchPage = lazy(() => import("@/pages/SearchPage/SearchPage.tsx").then(m => ({default: m.SearchPage})));
 
 // Заседания Правления, КПА и комитетов: журнал и карточка с повесткой
@@ -122,6 +123,7 @@ function App() {
                                 <Route path="/prc/:id" element={<ProcurementCardPage/>}/>
                                 <Route path="/prc/:id/protocol" element={<ProcurementProtocolPage/>}/>
 
+                                <Route path="/base-know" element={<BaseKnowPage/>}/>
                                 <Route path="/search" element={<SearchPage/>}/>
 
                                 <Route path="/meetings" element={<MeetingRegistryPage/>}/>

@@ -3,10 +3,12 @@ import {useAuth} from "@/context/AuthContext.ts";
 import {useTranslation} from "react-i18next";
 import {Link, useLocation, useNavigate} from "react-router-dom";
 import {useDictionaries} from "@/context/DictionariesContext.tsx";
+import {useVndActualizationSummary} from "@/hooks/vndHooks/useVndActualizationSummary.tsx";
+import {useVndTaskCounts} from "@/hooks/tasksVndHooks/useVndTaskCounts.ts";
 import {navGroups} from "@/constants/sidebarData.tsx";
 import {CountBadge} from "@/components/componentsSidebar/CountBadge.tsx";
 import {Icon} from "@/components/icons/Icon";
-import {RubricTreeModal} from "@/components/componentsGeneral/selects/MultiSelects/RubricTreeModal.tsx";
+import {RubricTreeModal} from "@/components/componentsGeneral/rubricator/RubricTreeModal.tsx";
 import {ChevronRight} from "lucide-react";
 
 const MODAL_ITEM_IDS = ["vnd-rubric"];
@@ -22,6 +24,24 @@ export function Sidebar() {
 
     const {rubricOptions} = useDictionaries();
 
+    // Планирование актуализации: Просрочено + Критический срок
+    const {summary: actualizationSummary} = useVndActualizationSummary();
+    const planningBadge = (actualizationSummary?.critical ?? 0) + (actualizationSummary?.overdue ?? 0);
+
+    // Мои задачи: Согласование (ждущие меня) + Актуализация + Консолидация
+    const {counts: taskCounts} = useVndTaskCounts();
+    const tasksBadge = taskCounts.coordination + taskCounts.actualization + taskCounts.consolidation;
+
+    const dynamicBadges: Record<string, number> = {
+        pln: planningBadge,
+        tasks: tasksBadge,
+    };
+
+    const dynamicBadgeTooltips: Record<string, string> = {
+        pln: t("sidebar.badgeTooltips.planning", {count: planningBadge}),
+        tasks: t("sidebar.badgeTooltips.tasks", {count: tasksBadge}),
+    };
+
     const goToVndWithRubrics = (keys: string[]) => {
         if (keys.length === 0) return;
         const params = new URLSearchParams({rubrics: keys.join(",")});
@@ -29,13 +49,17 @@ export function Sidebar() {
         setRubricModalOpen(false);
     };
 
-    // Группы с уже отфильтрованными по правам пунктами
     const visibleGroups = navGroups
         .map((grp) => ({
             ...grp,
-            items: grp.items.filter((it) => it.permission === undefined || hasPermission(it.permission)),
+            items: grp.items
+                .filter((it) => it.permission === undefined || hasPermission(it.permission))
+                .map((it) => ({
+                    ...it,
+                    badge: dynamicBadges[it.id] ?? it.badge,
+                })),
         }))
-        .filter((grp) => grp.items.length > 0); // прячем группу целиком, если в ней не осталось пунктов
+        .filter((grp) => grp.items.length > 0);
 
     return (
         <aside
@@ -89,7 +113,9 @@ export function Sidebar() {
                                     )}
                                     <span className="relative flex-none">
                                         <Icon name={it.icon} width={19} height={19}/>
-                                        {collapsed && !!it.badge && <CountBadge count={it.badge} dot/>}
+                                        {collapsed && !!it.badge && (
+                                            <CountBadge count={it.badge} tooltip={dynamicBadgeTooltips[it.id]} tooltipSide="right"/>
+                                        )}
                                     </span>
                                     {!collapsed && (
                                         <>
@@ -98,10 +124,12 @@ export function Sidebar() {
                                                 {label}
                                             </span>
                                             {isModalItem ? (
-                                                <ChevronRight className="w-[16px] h-[16px] flex-none text-[#a3adbd] mt-0.5"
-                                                              strokeWidth={2}/>
+                                                <ChevronRight
+                                                    className="w-[16px] h-[16px] flex-none text-[#a3adbd] mt-0.5"
+                                                    strokeWidth={2}/>
                                             ) : (
-                                                !!it.badge && <CountBadge count={it.badge}/>
+                                                !!it.badge &&
+                                                <CountBadge count={it.badge} tooltip={dynamicBadgeTooltips[it.id]}/>
                                             )}
                                         </>
                                     )}
@@ -121,7 +149,6 @@ export function Sidebar() {
                                     <Link
                                         key={it.id}
                                         to={it.path}
-                                        title={label}
                                         className={sharedClassName}
                                         style={sharedStyle}
                                     >
@@ -133,7 +160,6 @@ export function Sidebar() {
                             return (
                                 <button
                                     key={it.id}
-                                    title={label}
                                     className={sharedClassName}
                                     style={sharedStyle}
                                     onClick={() => {

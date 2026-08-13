@@ -30,7 +30,9 @@ export const navGroups: NavGroup[] = [
             // Годовой план актуализации: светофор сроков, импорт из Excel, отчёт (PLN-01..07)
             { id: "pln-plan", icon: "pln", labelKey: "План актуализации", path: "/actualization/plan", permission: PermissionCode.ViewVndActualizationPage },
             { id: "tasks", icon: "tasks", labelKey: "sidebar.items.tasks", badge: 4, path: "/tasks" },
-            { id: "rpt", icon: "rpt", labelKey: "sidebar.items.rpt", path: "/reportvnd" },
+            // Аналитика закрыта правом: без него страница отдаёт одни отказы и выглядит
+            // пустой — пользователь не понимает, сломалось или не положено.
+            { id: "rpt", icon: "rpt", labelKey: "sidebar.items.rpt", path: "/reportvnd", permission: PermissionCode.ViewFullStatistics },
         ],
     },
     {

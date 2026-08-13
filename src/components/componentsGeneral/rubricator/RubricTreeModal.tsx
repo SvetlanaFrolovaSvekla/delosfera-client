@@ -6,6 +6,7 @@ import {useModalShake} from "@/hooks//useModalShake.ts";
 import type {BaseTreeOption, TreeNodeOf} from "@/utils/treeSelectUtils.ts";
 import {HighlightText} from "@/utils/HighlightText.tsx";
 import {SearchBar} from "@/components/componentsGeneral/SearchBar.tsx";
+import {HelpTooltip} from "@/components/componentsGeneral/knowledgeBaseComponents/HelpTooltip.tsx";
 import {Check, ChevronRight, Minus, X, ArrowUpRight} from "lucide-react";
 
 export type RubricTreeOption = BaseTreeOption;
@@ -24,8 +25,6 @@ interface RubricTreeModalProps {
     // Переход к реестру с фильтром по конкретной рубрике
     onGoToRubric?: (key: string) => void;
 }
-
-const GREEN = "#1c9c5c";
 
 export function RubricTreeModal({
                                     open,
@@ -93,21 +92,23 @@ export function RubricTreeModal({
                             className="w-5 h-5 rounded-md grid place-items-center border-[1.5px]"
                             style={
                                 on
-                                    ? {borderColor: GREEN, background: GREEN}
+                                    ? {borderColor: "#1c9c5c", background: "#1c9c5c"}
                                     : partial
-                                        ? {borderColor: GREEN, background: "white"}
+                                        ? {borderColor: "#1c9c5c", background: "white"}
                                         : {borderColor: "#cbd3df", background: "white"}
                             }
                         >
                             {on && <Check className="w-[13px] h-[13px] text-white" strokeWidth={3}/>}
-                            {!on && partial && <Minus className="w-[13px] h-[13px]" style={{color: GREEN}} strokeWidth={3}/>}
+                            {!on && partial &&
+                                <Minus className="w-[13px] h-[13px]" style={{color: "#1c9c5c"}} strokeWidth={3}/>}
                         </span>
                     </button>
 
                     <button
                         type="button"
                         onClick={(e) => handleGoToRubric(e, node.key)}
-                        title="Перейти к реестру с фильтром по этой рубрике"
+                        // title="Перейти к реестру с фильтром по этой рубрике"
+                        title={t("rubricTreeModal.goToRubric")}
                         className="flex-1 flex items-center gap-1.5 text-left cursor-pointer min-w-0"
                     >
                         <span className="text-[13.5px] text-[#26324a] group-hover:underline truncate">
@@ -115,7 +116,7 @@ export function RubricTreeModal({
                         </span>
                         <ArrowUpRight
                             className="w-[13px] h-[13px] flex-none opacity-0 group-hover:opacity-100 transition-opacity"
-                            style={{color: GREEN}}
+                            style={{color: "#1c9c5c"}}
                             strokeWidth={2}
                         />
                     </button>
@@ -140,7 +141,13 @@ export function RubricTreeModal({
                 onClick={(e) => e.stopPropagation()}
                 className="w-full max-w-[440px] h-[600px] max-h-[85vh] bg-white rounded-2xl shadow-[0_24px_60px_-20px_rgba(15,27,45,.5)] overflow-hidden flex flex-col"
             >
-                <div className="relative flex items-center justify-center px-5 py-4 border-b border-[#eef2f7] flex-none">
+                <div
+                    className="relative flex items-center justify-center px-5 py-4 border-b border-[#eef2f7] flex-none">
+                    <div className="absolute left-4 top-1/2 -translate-y-1/2">
+                        {/* content="Выберите одну или несколько рубрик, чтобы отфильтровать реестр" */}
+                        <HelpTooltip content={t("rubricTreeModal.helpTooltip")}/>
+                    </div>
+
                     <h3 className="m-0 text-[15px] font-semibold text-[#1c2740] text-center">{title}</h3>
                     <button
                         onClick={onClose}
@@ -165,7 +172,7 @@ export function RubricTreeModal({
                         onClick={selectAll}
                         disabled={allSelected}
                         className="text-[11px] font-semibold cursor-pointer"
-                        style={{color: allSelected ? "#c3ccd8" : GREEN}}
+                        style={{color: allSelected ? "#c3ccd8" : "#1c9c5c"}}
                     >
                         {t("general.selectAll")}
                     </button>
@@ -174,7 +181,7 @@ export function RubricTreeModal({
                         onClick={deselectAll}
                         disabled={noneSelected}
                         className="text-[11px] font-semibold cursor-pointer"
-                        style={{color: noneSelected ? "#c3ccd8" : GREEN}}
+                        style={{color: noneSelected ? "#c3ccd8" : "#1c9c5c"}}
                     >
                         {t("general.deselectAll")}
                     </button>
@@ -189,10 +196,12 @@ export function RubricTreeModal({
                     {visibleTree.map((node) => renderNode(node, 0))}
                 </div>
 
-                <div className="flex items-center justify-between gap-2.5 px-5 py-4 border-t border-[#eef2f7] flex-none">
-                    <span className="text-[12px] text-[#8b97ab]">
-                        Выбрано:{" "}
-                        <b className="text-[#3a4560] font-mono">{draft.length}</b>
+                <div
+                    className="flex items-center justify-between gap-2.5 px-5 py-4 border-t border-[#eef2f7] flex-none">
+                   <span className="text-[12px] text-[#8b97ab]">
+                        {/* Выбрано:{" "} */}
+                       {t("rubricTreeModal.selectedCount")}{" "}
+                       <b className="text-[#3a4560] font-mono">{draft.length}</b>
                     </span>
                     <div className="flex items-center gap-2.5">
                         <button
@@ -204,9 +213,10 @@ export function RubricTreeModal({
                         <button
                             onClick={handleApply}
                             className="h-9 px-5 rounded-[9px] border-none text-white font-semibold text-[12.5px] cursor-pointer hover:brightness-[1.06]"
-                            style={{background: GREEN}}
+                            style={{background: "#1c9c5c"}}
                         >
-                            Перейти
+                            {/* Перейти */}
+                            {t("rubricTreeModal.apply")}
                         </button>
                     </div>
                 </div>

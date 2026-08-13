@@ -98,7 +98,10 @@ export const TaskInboxPage = () => {
                                 {task.documentTitle}
                             </span>
                             <span style={{display: "block", marginTop: 2, fontSize: 11.5, color: "#8b97ab"}}>
-                                {task.regNumber ?? "без номера"} · {task.taskType} · этап {task.stepOrder}
+                                {task.regNumber ?? "без номера"} · {task.taskType}
+                                {/* Этап есть только у задач маршрута: решение адресата и
+                                    поручение приходят вне согласования. */}
+                                {task.stepOrder !== null && ` · этап ${task.stepOrder}`}
                                 {task.onBehalfOf && ` · по замещению за ${task.onBehalfOf}`}
                             </span>
                         </span>

@@ -63,11 +63,15 @@ export function useUsersList() {
         return users.filter((u) => sourceFilters.includes(u.source));
     }, [users, sourceFilters]);
 
+    // Учётная запись работает, только если она и не заблокирована администратором,
+    // и активна сама по себе. Отключённые в службе каталогов приходят неактивными,
+    // и раньше они попадали в «Активные» — после первой же синхронизации домена
+    // счётчик показывал бы работающими сотни уволенных.
     const counts = useMemo(
         () => ({
             all: users.length,
-            active: users.filter((u) => !u.isBlocked).length,
-            blocked: users.filter((u) => u.isBlocked).length,
+            active: users.filter((u) => !u.isBlocked && u.isActive).length,
+            blocked: users.filter((u) => u.isBlocked || !u.isActive).length,
         }),
         [users]
     );

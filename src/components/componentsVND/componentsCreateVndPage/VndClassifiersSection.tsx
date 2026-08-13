@@ -1,5 +1,7 @@
+// Секция классификаторов на странице при разработке нового ВНД
 import {MultiSelectField} from "@/components/componentsGeneral/selects/MultiSelects/MultiSelectField.tsx";
 import {SingleSelectListField} from "@/components/componentsGeneral/selects/SingleSelects/SingleSelectListField.tsx";
+import {useTranslation} from "react-i18next";
 
 interface DictOption {
     key: string;
@@ -31,48 +33,59 @@ export function VndClassifiersSection({
                                           secrecyOptions, secrecyLevelId, onSecrecyLevelIdChange,
                                           userGroupIds, onUserGroupIdsChange, userGroupOptions,
                                       }: VndClassifiersSectionProps) {
+    const {t} = useTranslation();
+
     return (
         <div className="border border-[#eef2f7] rounded-xl p-3.5 mt-5">
             <div className="text-[11px] font-bold tracking-[.04em] uppercase text-[#a3adbd] mb-2.5">
-                Классификаторы
+                {/* Классификаторы */}
+                {t("createVnd.classifiers.title")}
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 [&>*]:min-w-0">
                 <MultiSelectField
-                    label="Ключевые слова"
-                    modalTitle="Ключевые слова"
+                    // "Ключевые слова"
+                    label={t("createVnd.classifiers.keywords")}
+                    modalTitle={t("createVnd.classifiers.keywords")}
                     options={keywordOptions}
                     selectedKeys={keywordIds}
                     onChange={onKeywordIdsChange}
-                    searchPlaceholder="Поиск ключевых слов…"
+                    // "Поиск ключевых слов…"
+                    searchPlaceholder={t("createVnd.classifiers.keywordsSearchPlaceholder")}
                     hierarchical
                     boldLabel={false}
                 />
                 <MultiSelectField
-                    label="Рубрикатор"
-                    modalTitle="Рубрикатор"
+                    // "Рубрикатор"
+                    label={t("createVnd.classifiers.rubric")}
+                    modalTitle={t("createVnd.classifiers.rubric")}
                     options={rubricOptions}
                     selectedKeys={rubricIds}
                     onChange={onRubricIdsChange}
-                    searchPlaceholder="Поиск рубрики…"
+                    // "Поиск рубрики…"
+                    searchPlaceholder={t("createVnd.classifiers.rubricSearchPlaceholder")}
                     hierarchical
                     boldLabel={false}
                 />
                 <SingleSelectListField
-                    label="Уровень секретности"
-                    modalTitle="Уровень секретности"
+                    // "Уровень секретности"
+                    label={t("createVnd.classifiers.secrecyLevel")}
+                    modalTitle={t("createVnd.classifiers.secrecyLevel")}
                     options={secrecyOptions}
                     selectedKey={secrecyLevelId || null}
                     onChange={(key) => onSecrecyLevelIdChange(key ?? "")}
-                    searchPlaceholder="Поиск уровня…"
+                    // "Поиск уровня…"
+                    searchPlaceholder={t("createVnd.classifiers.secrecyLevelSearchPlaceholder")}
                     boldLabel={false}
                 />
                 <MultiSelectField
-                    label="Группы доступа"
-                    modalTitle="Группы доступа"
+                    // "Группы доступа"
+                    label={t("createVnd.classifiers.userGroups")}
+                    modalTitle={t("createVnd.classifiers.userGroups")}
                     options={userGroupOptions}
                     selectedKeys={userGroupIds}
                     onChange={onUserGroupIdsChange}
-                    searchPlaceholder="Поиск группы…"
+                    // "Поиск группы…"
+                    searchPlaceholder={t("createVnd.classifiers.userGroupsSearchPlaceholder")}
                     boldLabel={false}
                 />
             </div>

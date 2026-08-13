@@ -155,6 +155,47 @@
       "withoutChanges": "Без изменений"
     }
   },
+  "createVnd": {
+    "titlesSection": {
+      "title": "Заголовки",
+      "titleRu": "Заголовок (рус)",
+      "titleKy": "Заголовок (кырг)",
+      "titleEn": "Заголовок (англ)"
+    },
+    "classifiers": {
+      "title": "Классификаторы",
+      "keywords": "Ключевые слова",
+      "keywordsSearchPlaceholder": "Поиск ключевых слов…",
+      "rubric": "Рубрикатор",
+      "rubricSearchPlaceholder": "Поиск рубрики…",
+      "secrecyLevel": "Уровень секретности",
+      "secrecyLevelSearchPlaceholder": "Поиск уровня…",
+      "userGroups": "Группы доступа",
+      "userGroupsSearchPlaceholder": "Поиск группы…"
+    },
+    "loadingDictionaries": "Загрузка справочников…",
+    "loadError": {
+      "title": "Не удалось загрузить данные!"
+    },
+    "backToBase": "База ВНД",
+    "title": "Разработка нового ВНД",
+    "subtitle": "Заполните карточку — код присваивается автоматически, редакция добавляется позже",
+    "cardTitle": "Карточка ВНД",
+    "fields": {
+      "docType": "Вид документа",
+      "docTypeSearchPlaceholder": "Поиск вида документа…",
+      "docTypePlaceholder": "Вид ВНД",
+      "approvalBody": "Орган утверждения",
+      "approvalBodySearchPlaceholder": "Поиск органа утверждения…",
+      "developer": "Разработчик (СП)",
+      "developerHead": "Начальник СП: {{name}}",
+      "responsibleExecutors": "Ответственные исполнители",
+      "executorSearchPlaceholder": "Поиск СП…",
+      "executorHeads": "Начальники: {{names}}"
+    },
+    "submitting": "Создание…",
+    "submit": "Создать черновик-карточку"
+  },
   "dictionaries": {
     "maxDepthTag": "макс. глубина",
     "maxDepthReason": "Нельзя выбрать — превышена максимальная глубина вложенности ({{max}} уровней)",
@@ -338,6 +379,51 @@
       "allTasks": "Все задачи",
       "loading": "Загрузка задач…",
       "empty": "Нет активных задач"
+    }
+  },
+  "successModal": {
+    "title": "Черновик-карточка была успешно создана!",
+    "codeLabel": "ВНД-{{code}}",
+    "redirecting": "Переход к карточке ВНД…"
+  },
+  "codeCard": {
+    "label": "Код документа",
+    "example": "Пример: 10101",
+    "hint": "Код документа присваивается системой после сохранения",
+    "note": "После утверждения временный идентификатор трансформируется в постоянный номер документа."
+  },
+  "actualizationCard": {
+    "label": "Срок актуализации",
+    "description": "До какого числа нужно актуализировать ВНД. Выберите готовую периодичность (считается от даты создания) — или задайте дату вручную, тогда периодичность посчитается сама.",
+    "periodicity": "Периодичность",
+    "modes": {
+      "halfYear": "Раз в полгода",
+      "year": "Раз в год",
+      "twoYears": "Раз в два года",
+      "threeYears": "Раз в три года",
+      "date": "Ввод даты"
+    },
+    "periodDescription": {
+      "specifyDate": "укажите дату",
+      "mustBeFuture": "дата должна быть в будущем",
+      "daysShort": "{{count}} дн.",
+      "monthsApprox": "≈ {{count}} мес."
+    }
+  },
+  "vndRequisites": {
+    "actualizationModes": {
+      "Quarterly": "Квартал (3 мес.)",
+      "HalfYear": "Полгода (6 мес.)",
+      "Annual": "Год (12 мес.)",
+      "Biennial": "2 года (24 мес.)",
+      "Triennial": "3 года (36 мес.)",
+      "Custom": "Указать дату вручную"
+    },
+    "toast": {
+      "savedTitle": "Реквизиты обновлены",
+      "savedDescription": "Изменения по документу «{{code}}» сохранены",
+      "saveErrorTitle": "Ошибка сохранения",
+      "saveErrorDefault": "Не удалось сохранить реквизиты"
     }
   }
 }

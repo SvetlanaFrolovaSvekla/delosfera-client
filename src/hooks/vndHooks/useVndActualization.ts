@@ -1,8 +1,7 @@
-// src/hooks/vndHooks/useVndActualization.ts
 import {useMemo, useState} from "react";
 import {formatDDMMYYYY, formatISO, parseDDMMYYYY} from "@/utils/dateUtils.ts";
 import {
-    ACTUALIZATION_MODE_OPTIONS,
+    getActualizationModeOptions,
     addMonths,
     type ActualizationMode,
     describeManualPeriod,
@@ -36,10 +35,14 @@ export function useVndActualization() {
             ? manualDueDate
             : formatDDMMYYYY(addMonths(today, PERIOD_MONTHS[actualizationMode]));
 
+    // Пересчитывается при каждом рендере, чтобы label совпадал с текущим языком —
+    // раньше ACTUALIZATION_MODE_OPTIONS была статичной константой, теперь это функция
+    const actualizationModeOptions = getActualizationModeOptions();
+
     const periodicityLabel =
         actualizationMode === "date"
             ? describeManualPeriod(manualDueDateISO, todayISO)
-            : ACTUALIZATION_MODE_OPTIONS.find((o) => o.key === actualizationMode)?.label.toLowerCase() ?? "";
+            : actualizationModeOptions.find((o) => o.key === actualizationMode)?.label.toLowerCase() ?? "";
 
     const isDateModeValid = actualizationMode !== "date" || manualDueDateISO !== "";
 

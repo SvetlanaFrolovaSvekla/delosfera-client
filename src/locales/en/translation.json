@@ -155,6 +155,47 @@
       "withoutChanges": "Unchanged"
     }
   },
+  "createVnd": {
+    "titlesSection": {
+      "title": "Titles",
+      "titleRu": "Title (RU)",
+      "titleKy": "Title (KY)",
+      "titleEn": "Title (EN)"
+    },
+    "classifiers": {
+      "title": "Classifiers",
+      "keywords": "Keywords",
+      "keywordsSearchPlaceholder": "Search keywords…",
+      "rubric": "Rubric",
+      "rubricSearchPlaceholder": "Search rubric…",
+      "secrecyLevel": "Security level",
+      "secrecyLevelSearchPlaceholder": "Search level…",
+      "userGroups": "Access groups",
+      "userGroupsSearchPlaceholder": "Search group…"
+    },
+    "loadingDictionaries": "Loading reference data…",
+    "loadError": {
+      "title": "Failed to load data!"
+    },
+    "backToBase": "VND Registry",
+    "title": "New VND Development",
+    "subtitle": "Fill in the card — the code is assigned automatically, the edition is added later",
+    "cardTitle": "VND Card",
+    "fields": {
+      "docType": "Document type",
+      "docTypeSearchPlaceholder": "Search document type…",
+      "docTypePlaceholder": "VND type",
+      "approvalBody": "Approval body",
+      "approvalBodySearchPlaceholder": "Search approval body…",
+      "developer": "Developer (unit)",
+      "developerHead": "Unit head: {{name}}",
+      "responsibleExecutors": "Responsible executors",
+      "executorSearchPlaceholder": "Search unit…",
+      "executorHeads": "Heads: {{names}}"
+    },
+    "submitting": "Creating…",
+    "submit": "Create draft card"
+  },
   "dictionaries": {
     "maxDepthTag": "max. depth",
     "maxDepthReason": "Cannot select — maximum nesting depth exceeded ({{max}} levels)",
@@ -338,6 +379,51 @@
       "allTasks": "All tasks",
       "loading": "Loading tasks…",
       "empty": "No active tasks"
+    }
+  },
+  "successModal": {
+    "title": "The draft card was created successfully!",
+    "codeLabel": "VND-{{code}}",
+    "redirecting": "Redirecting to the VND card…"
+  },
+  "codeCard": {
+    "label": "Document code",
+    "example": "Example: 10101",
+    "hint": "The document code is assigned by the system after saving",
+    "note": "Once approved, the temporary identifier is converted into a permanent document number."
+  },
+  "actualizationCard": {
+    "label": "Actualization due date",
+    "description": "The date by which the VND needs to be actualized. Pick a preset periodicity (calculated from the creation date) — or set the date manually and the periodicity will be calculated automatically.",
+    "periodicity": "Periodicity",
+    "modes": {
+      "halfYear": "Every 6 months",
+      "year": "Yearly",
+      "twoYears": "Every 2 years",
+      "threeYears": "Every 3 years",
+      "date": "Custom date"
+    },
+    "periodDescription": {
+      "specifyDate": "specify a date",
+      "mustBeFuture": "the date must be in the future",
+      "daysShort": "{{count}} days",
+      "monthsApprox": "≈ {{count}} mo."
+    }
+  },
+  "vndRequisites": {
+    "actualizationModes": {
+      "Quarterly": "Quarter (3 mo.)",
+      "HalfYear": "Half-year (6 mo.)",
+      "Annual": "Year (12 mo.)",
+      "Biennial": "2 years (24 mo.)",
+      "Triennial": "3 years (36 mo.)",
+      "Custom": "Set date manually"
+    },
+    "toast": {
+      "savedTitle": "Requisites updated",
+      "savedDescription": "Changes to document «{{code}}» have been saved",
+      "saveErrorTitle": "Save error",
+      "saveErrorDefault": "Failed to save requisites"
     }
   }
 }

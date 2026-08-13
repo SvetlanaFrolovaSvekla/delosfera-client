@@ -155,6 +155,47 @@
       "withoutChanges": "Өзгөртүүсүз"
     }
   },
+  "createVnd": {
+    "titlesSection": {
+      "title": "Аталыштар",
+      "titleRu": "Аталышы (орус)",
+      "titleKy": "Аталышы (кырг)",
+      "titleEn": "Аталышы (англ)"
+    },
+    "classifiers": {
+      "title": "Классификаторлор",
+      "keywords": "Ачкыч сөздөр",
+      "keywordsSearchPlaceholder": "Ачкыч сөздөрдү издөө…",
+      "rubric": "Рубрикатор",
+      "rubricSearchPlaceholder": "Рубриканы издөө…",
+      "secrecyLevel": "Купуялык деңгээли",
+      "secrecyLevelSearchPlaceholder": "Деңгээлди издөө…",
+      "userGroups": "Мүмкүнчүлүк топтору",
+      "userGroupsSearchPlaceholder": "Топту издөө…"
+    },
+    "loadingDictionaries": "Маалымдамалар жүктөлүүдө…",
+    "loadError": {
+      "title": "Маалыматтарды жүктөө мүмкүн болбоду!"
+    },
+    "backToBase": "ИНД базасы",
+    "title": "Жаңы ИНД иштеп чыгуу",
+    "subtitle": "Карточканы толтуруңуз — код автоматтык түрдө берилет, редакция кийинчерээк кошулат",
+    "cardTitle": "ИНД карточкасы",
+    "fields": {
+      "docType": "Документтин түрү",
+      "docTypeSearchPlaceholder": "Документ түрүн издөө…",
+      "docTypePlaceholder": "ИНД түрү",
+      "approvalBody": "Бекитүүчү орган",
+      "approvalBodySearchPlaceholder": "Бекитүүчү органды издөө…",
+      "developer": "Иштеп чыгуучу (СБ)",
+      "developerHead": "СБ башчысы: {{name}}",
+      "responsibleExecutors": "Жооптуу аткаруучулар",
+      "executorSearchPlaceholder": "СБ издөө…",
+      "executorHeads": "Башчылар: {{names}}"
+    },
+    "submitting": "Түзүлүүдө…",
+    "submit": "Долбоор-карточка түзүү"
+  },
   "dictionaries": {
     "maxDepthTag": "макс. тереңдик",
     "maxDepthReason": "Тандоого болбойт — уюлдардын максималдуу тереңдиги ашып кетти ({{max}} деңгээл)",
@@ -338,6 +379,51 @@
       "allTasks": "Бардык тапшырмалар",
       "loading": "Тапшырмалар жүктөлүүдө…",
       "empty": "Активдүү тапшырмалар жок"
+    }
+  },
+  "successModal": {
+    "title": "Долбоор-карточка ийгиликтүү түзүлдү!",
+    "codeLabel": "ИНД-{{code}}",
+    "redirecting": "ИНД карточкасына өтүлүүдө…"
+  },
+  "codeCard": {
+    "label": "Документ коду",
+    "example": "Мисалы: 10101",
+    "hint": "Документ коду сакталгандан кийин система тарабынан ыйгарылат",
+    "note": "Бекитилгенден кийин убактылуу идентификатор туруктуу документ номерине айланат."
+  },
+  "actualizationCard": {
+    "label": "Актуалдаштыруу мөөнөтү",
+    "description": "ИНД качан актуалдаштырылышы керек экени. Даяр мезгилдүүлүктү тандаңыз (түзүлгөн күндөн эсептелет) — же датаны кол менен коюңуз, ошондо мезгилдүүлүк өзү эсептелет.",
+    "periodicity": "Мезгилдүүлүк",
+    "modes": {
+      "halfYear": "Жарым жылда бир жолу",
+      "year": "Жылына бир жолу",
+      "twoYears": "Эки жылда бир жолу",
+      "threeYears": "Үч жылда бир жолу",
+      "date": "Дата киргизүү"
+    },
+    "periodDescription": {
+      "specifyDate": "датаны көрсөтүңүз",
+      "mustBeFuture": "дата келечекте болушу керек",
+      "daysShort": "{{count}} күн",
+      "monthsApprox": "≈ {{count}} ай"
+    }
+  },
+  "vndRequisites": {
+    "actualizationModes": {
+      "Quarterly": "Чейрек (3 ай)",
+      "HalfYear": "Жарым жыл (6 ай)",
+      "Annual": "Жыл (12 ай)",
+      "Biennial": "2 жыл (24 ай)",
+      "Triennial": "3 жыл (36 ай)",
+      "Custom": "Датаны кол менен көрсөтүү"
+    },
+    "toast": {
+      "savedTitle": "Реквизиттер жаңыртылды",
+      "savedDescription": "«{{code}}» документи боюнча өзгөртүүлөр сакталды",
+      "saveErrorTitle": "Сактоо катасы",
+      "saveErrorDefault": "Реквизиттерди сактоо мүмкүн болбоду"
     }
   }
 }

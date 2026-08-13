@@ -1,3 +1,6 @@
+// Секция заголовков на странице при разработке нового ВНД
+import {useTranslation} from "react-i18next";
+
 interface VndTitlesSectionProps {
     titleRu: string;
     onTitleRuChange: (v: string) => void;
@@ -15,15 +18,19 @@ export function VndTitlesSection({
                                      titleKy, onTitleKyChange,
                                      titleEn, onTitleEnChange,
                                  }: VndTitlesSectionProps) {
+    const {t} = useTranslation();
+
     return (
         <div className="border border-[#eef2f7] rounded-xl p-3.5 mb-4">
             <div className="text-[11px] font-bold tracking-[.04em] uppercase text-[#a3adbd] mb-2.5">
-                Заголовки
+                {/* Заголовки */}
+                {t("createVnd.titlesSection.title")}
             </div>
             <div className="flex flex-col gap-3">
                 <div>
                     <label className="block text-[12px] font-semibold text-[#3a4560] mb-1.5">
-                        Заголовок (рус) <span className="text-[#c0392b]">*</span>
+                        {/* Заголовок (рус) */}
+                        {t("createVnd.titlesSection.titleRu")} <span className="text-[#c0392b]">*</span>
                     </label>
                     <input
                         value={titleRu}
@@ -34,7 +41,8 @@ export function VndTitlesSection({
                 </div>
                 <div>
                     <label className="block text-[12px] font-medium text-[#3a4560] mb-1.5">
-                        Заголовок (кырг)
+                        {/* Заголовок (кырг) */}
+                        {t("createVnd.titlesSection.titleKy")}
                     </label>
                     <input
                         value={titleKy}
@@ -45,7 +53,8 @@ export function VndTitlesSection({
                 </div>
                 <div>
                     <label className="block text-[12px] font-semibold text-[#3a4560] mb-1.5">
-                        Заголовок (англ)
+                        {/* Заголовок (англ) */}
+                        {t("createVnd.titlesSection.titleEn")}
                     </label>
                     <input
                         value={titleEn}

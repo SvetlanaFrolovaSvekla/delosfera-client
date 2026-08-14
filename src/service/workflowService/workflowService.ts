@@ -17,6 +17,27 @@ export interface Resolution {
     type: ResolutionType;
     comment: string | null;
     remarks: Remark[];
+
+    /** Подпись под резолюцией — реквизиты для штампа. */
+    signature: SignatureStamp | null;
+}
+
+/**
+ * Штамп подписи. Реквизиты приходят с сервера такими, какими были в момент
+ * подписания: должность подписанта может смениться, штамп меняться не должен.
+ */
+export interface SignatureStamp {
+    id: number;
+    levelTitle: string;
+    fullName: string | null;
+    position: string | null;
+    at: string;
+
+    /** Начало отпечатка подписанного — для сверки. */
+    fingerprint: string | null;
+
+    revoked: boolean;
+    revokedReason: string | null;
 }
 
 export interface RouteParticipant {

@@ -32,6 +32,16 @@ export interface SzPrintField {
     value: string;
 }
 
+export interface SzPrintSignature {
+    levelTitle: string;
+    fullName: string | null;
+    position: string | null;
+    at: string;
+    fingerprint: string | null;
+    revoked: boolean;
+    revokedReason: string | null;
+}
+
 export interface SzPrintApproval {
     stepOrder: number;
     userName: string | null;
@@ -41,6 +51,9 @@ export interface SzPrintApproval {
     resolution: string | null;
     comment: string | null;
     resolvedAt: string | null;
+
+    /** Штамп подписи под визой; пусто — визы нет. */
+    signature: SzPrintSignature | null;
 }
 
 export interface SzPrintAssignment {

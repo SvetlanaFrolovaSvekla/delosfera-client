@@ -20,6 +20,7 @@ import {
     type ResolutionType,
     type RouteInstance,
 } from "@/service/workflowService/workflowService.ts";
+import {SignatureStampView} from "@/components/signing/SignatureStampView.tsx";
 import {
     SZ_STATUS_LABEL,
     szService,
@@ -653,6 +654,9 @@ export function SzCardPage() {
                                                 </span>
                                                 {p.resolution?.comment && (
                                                     <div className="text-[12.5px] text-[#8b97ab]">{p.resolution.comment}</div>
+                                                )}
+                                                {p.resolution?.signature && (
+                                                    <SignatureStampView signature={p.resolution.signature}/>
                                                 )}
                                             </div>
                                             <span className="text-[12px] font-semibold whitespace-nowrap"

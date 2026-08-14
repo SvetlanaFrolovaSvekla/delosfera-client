@@ -5,6 +5,7 @@ import {
     szPaperService,
     type SzPrintForm,
 } from "@/service/szService/szPaperService.ts";
+import {formatDateTime} from "@/utils/dateUtils.ts";
 
 function formatDate(iso: string | null): string {
     if (!iso) return "";
@@ -163,8 +164,27 @@ export function SzPrintPage() {
                                         : ""}
                                     {a.comment && <div className="text-[#55617a]">{a.comment}</div>}
                                 </td>
-                                {/* Виза не поставлена — оставляем строку под подпись от руки. */}
-                                <td className="py-2">{a.resolvedAt ? formatDate(a.resolvedAt) : "____________"}</td>
+                                <td className="py-2">
+                                    {a.signature ? (
+                                        <div className="leading-[1.45]">
+                                            <div className="font-semibold">{a.signature.levelTitle}</div>
+                                            {a.signature.fullName && <div>{a.signature.fullName}</div>}
+                                            {a.signature.position && <div>{a.signature.position}</div>}
+                                            <div>{formatDateTime(a.signature.at)}</div>
+                                            {a.signature.fingerprint && (
+                                                <div>отпечаток {a.signature.fingerprint}</div>
+                                            )}
+                                            {a.signature.revoked && (
+                                                <div>подпись аннулирована: {a.signature.revokedReason}</div>
+                                            )}
+                                        </div>
+                                    ) : a.resolvedAt ? (
+                                        formatDate(a.resolvedAt)
+                                    ) : (
+                                        /* Визы нет — оставляем линейку под подпись от руки. */
+                                        "____________"
+                                    )}
+                                </td>
                             </tr>
                         ))}
                         </tbody>

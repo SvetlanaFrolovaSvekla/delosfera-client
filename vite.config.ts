@@ -13,6 +13,18 @@ export default defineConfig({
       '@': path.resolve(__dirname, './src'),
     },
   },
+  // Адреса, под которыми открывают систему: preview отвергает запрос с чужим
+  // именем узла, и вместо приложения человек видит отказ. Список задаётся
+  // переменной ALLOWED_HOSTS, чтобы новый адрес не требовал правки кода.
+  preview: {
+    allowedHosts: [
+      'edo-test.keremetbank.kg',
+      '10.222.10.42',
+      'localhost',
+      ...(process.env.ALLOWED_HOSTS?.split(',').map(h => h.trim()).filter(Boolean) ?? []),
+    ],
+  },
+
   build: {
     rollupOptions: {
       output: {

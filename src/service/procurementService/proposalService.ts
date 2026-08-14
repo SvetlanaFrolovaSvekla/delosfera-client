@@ -25,6 +25,19 @@ export interface Proposal {
     supplierBlacklisted: boolean;
     supplierAffiliated: boolean;
     supplierReliable: boolean | null;
+
+    /** Ссылка на облако банка с приложениями к предложению. */
+    externalLink: string | null;
+
+    /** Файлы предложения из вложений карточки закупки. */
+    files: ProposalFile[];
+}
+
+export interface ProposalFile {
+    id: number;
+    attachmentId: number;
+    fileName: string;
+    size: number;
 }
 
 export interface ProposalComparison {
@@ -69,6 +82,16 @@ export const proposalService = {
     async verdict(proposalId: number, meetsRequirements: boolean, rejectionReason?: string): Promise<ProposalComparison> {
         const {data} = await apiClient.post<ProposalComparison>(
             `${BASE}/proposals/${proposalId}/verdict`, {meetsRequirements, rejectionReason});
+        return data;
+    },
+
+    /** Файлы предложения и ссылка на облако: полный список заменяет прежний. */
+    async setSources(
+        proposalId: number,
+        body: {attachmentIds: number[]; externalLink?: string | null},
+    ): Promise<ProposalComparison> {
+        const {data} = await apiClient.put<ProposalComparison>(
+            `${BASE}/proposals/${proposalId}/sources`, body);
         return data;
     },
 

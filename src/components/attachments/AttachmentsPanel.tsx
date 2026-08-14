@@ -34,6 +34,7 @@ export function AttachmentsPanel({
     documentId, editable, title = "Вложения", hint, pending, onPendingChange,
 }: Props) {
     const deferred = !documentId && !!onPendingChange;
+    const canAttach = !!documentId || deferred;
     const [items, setItems] = useState<Attachment[]>([]);
     const [busy, setBusy] = useState(false);
     const [dragOver, setDragOver] = useState(false);
@@ -131,6 +132,18 @@ export function AttachmentsPanel({
                 <div
                     ref={zone}
                     tabIndex={0}
+                    role={canAttach ? "button" : undefined}
+                    // Клик по всей рамке, а не только по слову «обзор»: рамка занимает
+                    // почти шестьсот пикселей и выглядит кнопкой, поэтому жмут именно
+                    // по ней — и раньше ничего не происходило.
+                    onClick={() => { if (canAttach && !busy) fileInput.current?.click(); }}
+                    onKeyDown={(e) => {
+                        if (!canAttach || busy) return;
+                        if (e.key === "Enter" || e.key === " ") {
+                            e.preventDefault();
+                            fileInput.current?.click();
+                        }
+                    }}
                     onDragOver={(e) => { e.preventDefault(); setDragOver(true); }}
                     onDragLeave={() => setDragOver(false)}
                     onDrop={(e) => {
@@ -139,21 +152,15 @@ export function AttachmentsPanel({
                         void upload(Array.from(e.dataTransfer.files));
                     }}
                     className={`rounded-[9px] border border-dashed px-4 py-5 text-center text-[13px] outline-none transition-colors ${
+                        canAttach && !busy ? "cursor-pointer" : ""} ${
                         dragOver
                             ? "border-[#2f68f5] bg-[#f2f6ff] text-[#2f68f5]"
-                            : "border-[#d6dded] bg-[#fafbfd] text-[#8b97ab] focus:border-[#2f68f5]"}`}
+                            : "border-[#d6dded] bg-[#fafbfd] text-[#8b97ab] hover:border-[#b9c8e8] focus:border-[#2f68f5]"}`}
                 >
-                    {documentId || deferred ? (
+                    {canAttach ? (
                         <>
                             Перетащите файлы, вставьте снимки экрана или{" "}
-                            <button
-                                type="button"
-                                onClick={() => fileInput.current?.click()}
-                                disabled={busy}
-                                className="border-none bg-transparent p-0 text-[13px] font-semibold text-[#2f68f5] underline cursor-pointer disabled:opacity-50"
-                            >
-                                обзор
-                            </button>
+                            <span className="font-semibold text-[#2f68f5] underline">обзор</span>
                         </>
                     ) : (
                         "Сохраните черновик, чтобы приложить файлы"
@@ -166,6 +173,9 @@ export function AttachmentsPanel({
                         type="file"
                         multiple
                         hidden
+                        // Поле лежит внутри рамки, и его собственный клик всплыл бы
+                        // обратно в обработчик рамки — диалог открывался бы дважды.
+                        onClick={(e) => e.stopPropagation()}
                         onChange={(e) => {
                             void upload(Array.from(e.target.files ?? []));
                             e.target.value = "";

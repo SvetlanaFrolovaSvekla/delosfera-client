@@ -3,8 +3,15 @@ import {apiClient} from "@/service/apiClient.ts";
 /** Стадия конкурса (PRC-13..16). Сервер сериализует перечисления строками. */
 export type TenderStatus = "Draft" | "Published" | "Opened" | "Decided" | "Failed" | "Cancelled";
 
-/** Роль в комиссии по закупке. */
-export type CommissionRole = "Chairman" | "Member" | "Secretary";
+/** Роль в комиссии по закупке. Голосуют председатель и члены; секретарь и эксперт — нет. */
+export type CommissionRole = "Chairman" | "Member" | "Secretary" | "Expert";
+
+export const COMMISSION_ROLE_LABEL: Record<CommissionRole, string> = {
+    Chairman: "Председатель",
+    Member: "Член комиссии",
+    Secretary: "Секретарь",
+    Expert: "Эксперт без права голоса",
+};
 
 export interface CommissionMember {
     id: number;
@@ -16,6 +23,15 @@ export interface CommissionMember {
     isAccountant: boolean;
     attendedOpening: boolean;
     dissentingOpinion: string | null;
+
+    /** Учитывается ли в кворуме и решении. */
+    isVoting: boolean;
+
+    /** Заключение эксперта по предмету закупки. */
+    conclusion: string | null;
+    conclusionAttachmentId: number | null;
+    conclusionFileName: string | null;
+    conclusionAt: string | null;
 }
 
 export interface TenderBid {
@@ -110,6 +126,12 @@ export const tenderService = {
     async setAttendance(memberId: number, attended: boolean, dissentingOpinion?: string): Promise<Tender> {
         const {data} = await apiClient.post<Tender>(
             `${BASE}/commission/${memberId}/attendance`, {attended, dissentingOpinion});
+        return data;
+    },
+
+    /** Заключение эксперта: текст, файл из вложений закупки или и то, и другое. */
+    async setConclusion(memberId: number, body: {conclusion?: string | null; attachmentId?: number | null}) {
+        const {data} = await apiClient.post<Tender>(`${BASE}/commission/${memberId}/conclusion`, body);
         return data;
     },
 

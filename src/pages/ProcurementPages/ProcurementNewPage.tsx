@@ -14,6 +14,7 @@ import {organizationUnitService} from "@/service/dictionariesService/organizatio
 import {AttachmentsPanel} from "@/components/attachments/AttachmentsPanel.tsx";
 import {attachmentService} from "@/service/documentService/attachmentService.ts";
 import type {OrganizationUnitResponse} from "@/service/dictionariesService/organizationUnitService/organizationUnitServiceType.ts";
+import {formatDate} from "@/utils/dateUtils.ts";
 
 /**
  * Мастер новой заявки на закупку (экран v8 isPrcNew), три шага:
@@ -56,6 +57,17 @@ export const ProcurementNewPage = () => {
     });
 
     const patch = (p: Partial<ProcurementCreateRequest>) => setForm(prev => ({...prev, ...p}));
+
+    // Окно объявления задаётся целиком: одна дата без второй не определяет ни день
+    // публикации, ни день окончания приёма предложений.
+    const announcementProblem = (() => {
+        const from = form.announcementFrom;
+        const to = form.announcementTo;
+        if (!from && !to) return null;
+        if (!from || !to) return "Укажите обе даты — «с» и «по»";
+        if (to < from) return "Дата окончания раньше даты начала";
+        return null;
+    })();
 
     useEffect(() => {
         organizationUnitService.getAll().then(setUnits).catch(() => undefined);
@@ -126,7 +138,7 @@ export const ProcurementNewPage = () => {
 
     const canNext =
         (step === 0 && form.subject.trim().length > 0 && form.amount > 0) ||
-        (step === 1) ||
+        (step === 1 && !announcementProblem) ||
         step === 2;
 
     return (
@@ -284,6 +296,32 @@ export const ProcurementNewPage = () => {
                                     Закупка вне бюджета и без позиции Плана пойдёт по ветке внеплановой закупки (PRC-03)
                                 </div>
                             )}
+
+                            <label style={{...fieldLabel, marginTop: 14}}>Сроки объявления закупки</label>
+                            <div style={{display: "flex", gap: 10, alignItems: "center"}}>
+                                <input
+                                    type="date"
+                                    value={form.announcementFrom ?? ""}
+                                    onChange={e => patch({announcementFrom: e.target.value || null})}
+                                    style={{...input, flex: 1}}
+                                />
+                                <span style={{fontSize: 12.5, color: "#8b97ab"}}>по</span>
+                                <input
+                                    type="date"
+                                    value={form.announcementTo ?? ""}
+                                    min={form.announcementFrom ?? undefined}
+                                    onChange={e => patch({announcementTo: e.target.value || null})}
+                                    style={{...input, flex: 1}}
+                                />
+                            </div>
+                            <div style={{marginTop: 5, fontSize: 11.5, color: "#8b97ab"}}>
+                                Объявление публикуется на сайте Банка и tenders.kg, конкурсный период — не менее 5 рабочих дней
+                            </div>
+                            {announcementProblem && (
+                                <div style={{marginTop: 6, fontSize: 11.5, color: "#c0392b"}}>
+                                    {announcementProblem}
+                                </div>
+                            )}
                         </>
                     )}
 
@@ -379,6 +417,12 @@ export const ProcurementNewPage = () => {
                         value={units.find(u => u.id === form.initiatorUnitId)?.titleRu ?? "—"}
                     />
                     <Row label="ТЗ приложено" value={form.hasSpecification ? "да" : "нет"}/>
+                    <Row
+                        label="Объявление"
+                        value={form.announcementFrom && form.announcementTo
+                            ? `${formatDate(form.announcementFrom)} — ${formatDate(form.announcementTo)}`
+                            : "—"}
+                    />
                     <Row label="Способ" value={resolved?.methodShortTitle ?? "—"}/>
                     <Row label="Утверждает" value={resolved?.approvalAuthorityTitle ?? "—"}/>
                 </aside>

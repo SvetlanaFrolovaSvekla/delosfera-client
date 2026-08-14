@@ -5,6 +5,7 @@ import {
     type Proposal,
     type ProposalComparison,
 } from "@/service/procurementService/proposalService.ts";
+import {attachmentService, formatFileSize, type Attachment} from "@/service/documentService/attachmentService.ts";
 
 /**
  * Коммерческие предложения и сравнительная таблица (PRC-09/11/12) на карточке закупки.
@@ -14,6 +15,10 @@ import {
 
 interface Props {
     requestId: number;
+
+    /** Документ закупки: из его вложений выбираются файлы предложения. */
+    documentId?: number;
+
     /** Способ закупки требует минимум предложений — показываем прогресс сбора. */
     onChanged?: () => void;
 }
@@ -22,11 +27,16 @@ function money(value: number): string {
     return `${value.toLocaleString("ru-RU")} сом`;
 }
 
-export const ProposalsPanel = ({requestId, onChanged}: Props) => {
+export const ProposalsPanel = ({requestId, documentId, onChanged}: Props) => {
     const [data, setData] = useState<ProposalComparison | null>(null);
     const [error, setError] = useState<string | null>(null);
     const [adding, setAdding] = useState(false);
     const [busy, setBusy] = useState(false);
+
+    /** Предложение, у которого сейчас правят файлы и ссылку. */
+    const [sourcesFor, setSourcesFor] = useState<number | null>(null);
+    const [sourcesDraft, setSourcesDraft] = useState<{ids: number[]; link: string}>({ids: [], link: ""});
+    const [attachments, setAttachments] = useState<Attachment[]>([]);
 
     const [form, setForm] = useState({
         supplierTitle: "",
@@ -49,6 +59,29 @@ export const ProposalsPanel = ({requestId, onChanged}: Props) => {
     useEffect(() => {
         void load();
     }, [load]);
+
+    /**
+     * Файлы предложения берутся из вложений закупки: поставщик присылает пачку
+     * документов, они ложатся в карточку, а здесь отмечается, что относится к КП.
+     */
+    const openSources = (proposal: Proposal) => {
+        setSourcesDraft({
+            ids: proposal.files.map(f => f.attachmentId),
+            link: proposal.externalLink ?? "",
+        });
+        setSourcesFor(proposal.id);
+
+        if (documentId) {
+            attachmentService.list(documentId).then(setAttachments).catch(() => setAttachments([]));
+        }
+    };
+
+    const toggleFile = (attachmentId: number) => setSourcesDraft(prev => ({
+        ...prev,
+        ids: prev.ids.includes(attachmentId)
+            ? prev.ids.filter(id => id !== attachmentId)
+            : [...prev.ids, attachmentId],
+    }));
 
     const run = async (action: () => Promise<ProposalComparison>) => {
         try {
@@ -174,6 +207,64 @@ export const ProposalsPanel = ({requestId, onChanged}: Props) => {
                 </div>
             )}
 
+            {sourcesFor !== null && (
+                <div style={{
+                    marginTop: 12, padding: 12, borderRadius: 10,
+                    border: "1px solid #cbddff", background: "#f5f8ff",
+                }}>
+                    <div style={{fontSize: 12.5, fontWeight: 600, color: "#0f1b2d"}}>
+                        Файлы предложения и ссылка
+                    </div>
+
+                    <div style={{marginTop: 8, display: "flex", flexDirection: "column", gap: 5}}>
+                        {attachments.length === 0 && (
+                            <div style={{fontSize: 11.5, color: "#8b97ab"}}>
+                                Приложите файлы к карточке закупки — здесь они появятся списком
+                            </div>
+                        )}
+                        {attachments.map(a => (
+                            <label key={a.id} style={{display: "flex", alignItems: "center", gap: 7, fontSize: 12.5, color: "#26324a"}}>
+                                <input
+                                    type="checkbox"
+                                    checked={sourcesDraft.ids.includes(a.id)}
+                                    onChange={() => toggleFile(a.id)}
+                                    style={{accentColor: "#2f68f5"}}
+                                />
+                                {a.fileName}
+                                <span style={{color: "#a6b0c2", fontSize: 11}}>{formatFileSize(a.size)}</span>
+                            </label>
+                        ))}
+                    </div>
+
+                    <input
+                        value={sourcesDraft.link}
+                        onChange={e => setSourcesDraft({...sourcesDraft, link: e.target.value})}
+                        placeholder="https://nextcloud.keremetbank.kg/s/…"
+                        style={{...input, width: "100%", marginTop: 10}}
+                    />
+
+                    <div style={{display: "flex", gap: 8, marginTop: 10, alignItems: "center"}}>
+                        <button
+                            onClick={() => run(async () => {
+                                const updated = await proposalService.setSources(sourcesFor, {
+                                    attachmentIds: sourcesDraft.ids,
+                                    externalLink: sourcesDraft.link.trim() || null,
+                                });
+                                setSourcesFor(null);
+                                return updated;
+                            })}
+                            disabled={busy}
+                            style={secondaryButton}
+                        >
+                            Сохранить
+                        </button>
+                        <button onClick={() => setSourcesFor(null)} disabled={busy} style={linkButton}>
+                            отмена
+                        </button>
+                    </div>
+                </div>
+            )}
+
             <div style={{marginTop: 14, overflowX: "auto"}}>
                 <table style={{width: "100%", borderCollapse: "collapse", fontSize: 12.5}}>
                     <thead>
@@ -182,6 +273,7 @@ export const ProposalsPanel = ({requestId, onChanged}: Props) => {
                             <th style={{...th, textAlign: "right"}}>Цена</th>
                             <th style={{...th, textAlign: "right"}}>Отклонение</th>
                             <th style={th}>Срок / гарантия</th>
+                            <th style={th}>Файлы и ссылка</th>
                             <th style={th}>Техтребования</th>
                             <th style={th}>Решение</th>
                         </tr>
@@ -219,6 +311,42 @@ export const ProposalsPanel = ({requestId, onChanged}: Props) => {
                                         {p.deliveryDays ? `${p.deliveryDays} дн.` : "—"}
                                         {p.warrantyMonths ? ` · гарантия ${p.warrantyMonths} мес.` : ""}
                                         {p.paymentTerms && <div style={{fontSize: 11, color: "#8b97ab"}}>{p.paymentTerms}</div>}
+                                    </td>
+                                    <td style={td}>
+                                        {p.files.length > 0 && (
+                                            <div style={{display: "flex", flexDirection: "column", gap: 2}}>
+                                                {p.files.map(f => (
+                                                    <button
+                                                        key={f.id}
+                                                        onClick={() => void attachmentService.download({
+                                                            id: f.attachmentId, fileName: f.fileName,
+                                                        } as Attachment)}
+                                                        style={fileButton}
+                                                        title={formatFileSize(f.size)}
+                                                    >
+                                                        {f.fileName}
+                                                    </button>
+                                                ))}
+                                            </div>
+                                        )}
+                                        {p.externalLink && (
+                                            <a
+                                                href={p.externalLink}
+                                                target="_blank"
+                                                rel="noreferrer"
+                                                style={{fontSize: 11.5, color: "#2f68f5"}}
+                                            >
+                                                облако банка
+                                            </a>
+                                        )}
+                                        {p.files.length === 0 && !p.externalLink && (
+                                            <span style={{color: "#a6b0c2"}}>—</span>
+                                        )}
+                                        <div>
+                                            <button onClick={() => openSources(p)} disabled={busy} style={linkButton}>
+                                                приложить
+                                            </button>
+                                        </div>
                                     </td>
                                     <td style={td}>
                                         {p.meetsRequirements === true && <span style={{color: "#1f8a4c", fontWeight: 600}}>соответствует</span>}
@@ -329,6 +457,21 @@ const iconButton: React.CSSProperties = {
     width: 30, height: 30, display: "grid", placeItems: "center",
     border: "1px solid #e5e9f0", borderRadius: 8, background: "#fff",
     color: "#55617a", cursor: "pointer",
+};
+
+const linkButton: React.CSSProperties = {
+    border: "none", background: "transparent", padding: 0,
+    fontSize: 11.5, color: "#2f68f5", cursor: "pointer",
+};
+
+const fileButton: React.CSSProperties = {
+    ...linkButton,
+    textAlign: "left",
+    textDecoration: "underline",
+    maxWidth: 190,
+    overflow: "hidden",
+    textOverflow: "ellipsis",
+    whiteSpace: "nowrap",
 };
 
 const th: React.CSSProperties = {padding: "9px 12px", fontWeight: 600, whiteSpace: "nowrap"};

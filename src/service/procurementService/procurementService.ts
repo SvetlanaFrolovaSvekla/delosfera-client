@@ -86,6 +86,10 @@ export interface ProcurementCard {
     planItem: string | null;
     hasSpecification: boolean;
 
+    /** Желаемое окно объявления закупки, заданное инициатором. */
+    announcementFrom: string | null;
+    announcementTo: string | null;
+
     initiatorName: string | null;
     initiatorUnit: string | null;
     curatorName: string | null;
@@ -136,6 +140,11 @@ export interface ProcurementCreateRequest {
     hasBudget: boolean;
     planItem?: string;
     hasSpecification: boolean;
+
+    /** Желаемое окно объявления закупки: обе даты или ни одной. */
+    announcementFrom?: string | null;
+    announcementTo?: string | null;
+
     initiatorUnitId?: number;
     curatorUserId?: number;
     preferredMethod?: string;

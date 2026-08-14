@@ -13,6 +13,7 @@ import {TenderPanel} from "@/components/procurement/TenderPanel.tsx";
 import {ContractPanel} from "@/components/procurement/ContractPanel.tsx";
 import {GuaranteeClaimPanel} from "@/components/procurement/GuaranteeClaimPanel.tsx";
 import {AttachmentsPanel} from "@/components/attachments/AttachmentsPanel.tsx";
+import {formatDate} from "@/utils/dateUtils.ts";
 
 /**
  * Карточка закупки (экран v8 isPrcCard): параметры заявки, решение Матрицы полномочий
@@ -147,6 +148,12 @@ export const ProcurementCardPage = () => {
                     <Row label="Бюджет" value={card.hasBudget ? "предусмотрено" : "вне бюджета"}/>
                     <Row label="Позиция Плана закупок" value={card.planItem ?? "—"}/>
                     <Row label="ТЗ (спецификация)" value={card.hasSpecification ? "приложено" : "не приложено"}/>
+                    <Row
+                        label="Сроки объявления"
+                        value={card.announcementFrom && card.announcementTo
+                            ? `с ${formatDate(card.announcementFrom)} по ${formatDate(card.announcementTo)}`
+                            : "не заданы"}
+                    />
                     <Row label="Инициатор" value={card.initiatorName ?? "—"}/>
                     <Row label="Инициирующее СП" value={card.initiatorUnit ?? "—"}/>
                     <Row label="Куратор" value={card.curatorName ?? "—"}/>
@@ -216,12 +223,12 @@ export const ProcurementCardPage = () => {
 
             {/* Сбор предложений идёт после согласования заявки, но черновик тоже показываем —
                 Сектор закупок нередко собирает КП параллельно с визированием. */}
-            <ProposalsPanel requestId={card.id} onChanged={load}/>
+            <ProposalsPanel requestId={card.id} documentId={card.documentId} onChanged={load}/>
 
             {/* Конкурс показывается только для конкурсных способов: у простой закупки
                 отбор идёт по коммерческим предложениям выше. */}
             {card.methodShortTitle.startsWith("Конкурс") && (
-                <TenderPanel requestId={card.id} onChanged={load}/>
+                <TenderPanel requestId={card.id} documentId={card.documentId} onChanged={load}/>
             )}
 
             <ContractPanel requestId={card.id} onChanged={load}/>

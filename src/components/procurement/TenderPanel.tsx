@@ -1,6 +1,7 @@
 import {useCallback, useEffect, useState} from "react";
 import {Trophy} from "lucide-react";
-import {tenderService, type Tender} from "@/service/procurementService/tenderService.ts";
+import {tenderService, type CommissionRole, type Tender} from "@/service/procurementService/tenderService.ts";
+import {attachmentService, type Attachment} from "@/service/documentService/attachmentService.ts";
 import {userService} from "@/service/userService/userService.ts";
 import {publicationService, type PublicationPackage} from "@/service/procurementService/guaranteeService.ts";
 
@@ -14,6 +15,10 @@ import {publicationService, type PublicationPackage} from "@/service/procurement
 
 interface Props {
     requestId: number;
+
+    /** Документ закупки — из его вложений эксперт выбирает файл заключения. */
+    documentId?: number;
+
     onChanged?: () => void;
 }
 
@@ -26,7 +31,7 @@ function money(value: number): string {
     return `${value.toLocaleString("ru-RU")} сом`;
 }
 
-export const TenderPanel = ({requestId, onChanged}: Props) => {
+export const TenderPanel = ({requestId, documentId, onChanged}: Props) => {
     const [tender, setTender] = useState<Tender | null>(null);
     const [users, setUsers] = useState<UserOption[]>([]);
     const [busy, setBusy] = useState(false);
@@ -38,6 +43,11 @@ export const TenderPanel = ({requestId, onChanged}: Props) => {
     const [bidForm, setBidForm] = useState({title: "", inn: "", price: 0, submittedOn: ""});
     /** Пакет публикации (INT-05): текст объявления собирается из карточки конкурса. */
     const [publication, setPublication] = useState<PublicationPackage | null>(null);
+
+    /** Эксперт, чьё заключение сейчас редактируется, и его черновик. */
+    const [conclusionFor, setConclusionFor] = useState<number | null>(null);
+    const [conclusionDraft, setConclusionDraft] = useState({text: "", attachmentId: 0});
+    const [attachments, setAttachments] = useState<Attachment[]>([]);
 
     const load = useCallback(async () => {
         try {
@@ -55,6 +65,24 @@ export const TenderPanel = ({requestId, onChanged}: Props) => {
             .then(list => setUsers(list.map(u => ({id: u.id, fullName: u.fullName}))))
             .catch(() => undefined);
     }, [load]);
+
+    /**
+     * Заключение эксперта редактируется по месту: подставляем то, что уже сохранено,
+     * и список вложений закупки — файл заключения берётся оттуда, а не загружается
+     * отдельно, иначе он выпал бы из общего хранилища и подписей карточки.
+     */
+    const openConclusion = (memberId: number) => {
+        const member = tender?.commission.find(m => m.id === memberId);
+        setConclusionDraft({
+            text: member?.conclusion ?? "",
+            attachmentId: member?.conclusionAttachmentId ?? 0,
+        });
+        setConclusionFor(memberId);
+
+        if (documentId) {
+            attachmentService.list(documentId).then(setAttachments).catch(() => setAttachments([]));
+        }
+    };
 
     const run = async (action: () => Promise<Tender>) => {
         try {
@@ -92,7 +120,7 @@ export const TenderPanel = ({requestId, onChanged}: Props) => {
         );
     }
 
-    const votingCount = tender.commission.filter(m => m.role !== "Secretary").length;
+    const votingCount = tender.commission.filter(m => m.isVoting).length;
 
     return (
         <section style={card}>
@@ -137,9 +165,12 @@ export const TenderPanel = ({requestId, onChanged}: Props) => {
                             <b>{m.userName}</b> · {m.roleTitle}
                             {m.isBoardMember && " · ЧП"}
                             {m.isAccountant && " · УБУиО"}
+                            {m.conclusionFileName && (
+                                <span style={{color: "#8b97ab"}}> · {m.conclusionFileName}</span>
+                            )}
                         </span>
 
-                        {tender.status === "Opened" && m.role !== "Secretary" && (
+                        {tender.status === "Opened" && m.isVoting && (
                             <label style={{display: "flex", alignItems: "center", gap: 5, color: "#55617a"}}>
                                 <input
                                     type="checkbox"
@@ -151,6 +182,12 @@ export const TenderPanel = ({requestId, onChanged}: Props) => {
                             </label>
                         )}
 
+                        {m.role === "Expert" && (
+                            <button onClick={() => openConclusion(m.id)} disabled={busy} style={linkButton}>
+                                {m.conclusion || m.conclusionFileName ? "заключение" : "дать заключение"}
+                            </button>
+                        )}
+
                         {tender.status === "Draft" && (
                             <button onClick={() => run(() => tenderService.removeMember(m.id))} disabled={busy} style={linkButton}>
                                 исключить
@@ -159,6 +196,56 @@ export const TenderPanel = ({requestId, onChanged}: Props) => {
                     </div>
                 ))}
             </div>
+
+            {conclusionFor !== null && (
+                <div style={{
+                    marginTop: 10, padding: 12, borderRadius: 10,
+                    border: "1px solid #cbddff", background: "#f5f8ff",
+                }}>
+                    <div style={{fontSize: 12.5, fontWeight: 600, color: "#0f1b2d"}}>
+                        Заключение эксперта
+                    </div>
+                    <textarea
+                        value={conclusionDraft.text}
+                        onChange={e => setConclusionDraft({...conclusionDraft, text: e.target.value})}
+                        rows={3}
+                        placeholder="Вывод по предмету закупки: соответствие требованиям, замечания, рекомендация"
+                        style={{...input, width: "100%", height: "auto", padding: "8px 10px", resize: "vertical", marginTop: 6}}
+                    />
+                    <div style={{display: "flex", gap: 8, marginTop: 8, flexWrap: "wrap", alignItems: "center"}}>
+                        <select
+                            value={conclusionDraft.attachmentId}
+                            onChange={e => setConclusionDraft({...conclusionDraft, attachmentId: Number(e.target.value)})}
+                            style={{...input, width: 300}}
+                        >
+                            <option value={0}>— файл заключения не выбран —</option>
+                            {attachments.map(a => <option key={a.id} value={a.id}>{a.fileName}</option>)}
+                        </select>
+                        <button
+                            onClick={() => run(async () => {
+                                const updated = await tenderService.setConclusion(conclusionFor, {
+                                    conclusion: conclusionDraft.text.trim() || null,
+                                    attachmentId: conclusionDraft.attachmentId || null,
+                                });
+                                setConclusionFor(null);
+                                return updated;
+                            })}
+                            disabled={busy}
+                            style={secondaryButton}
+                        >
+                            Сохранить заключение
+                        </button>
+                        <button onClick={() => setConclusionFor(null)} disabled={busy} style={linkButton}>
+                            отмена
+                        </button>
+                    </div>
+                    {attachments.length === 0 && (
+                        <div style={{marginTop: 6, fontSize: 11.5, color: "#8b97ab"}}>
+                            Файл сначала прикладывается к карточке закупки — здесь он появится в списке
+                        </div>
+                    )}
+                </div>
+            )}
 
             {tender.status === "Draft" && (
                 <div style={{display: "flex", gap: 8, marginTop: 10, flexWrap: "wrap", alignItems: "center"}}>
@@ -178,6 +265,7 @@ export const TenderPanel = ({requestId, onChanged}: Props) => {
                         <option value="Member">Член комиссии</option>
                         <option value="Chairman">Председатель</option>
                         <option value="Secretary">Секретарь</option>
+                        <option value="Expert">Эксперт без права голоса</option>
                     </select>
                     <label style={checkLabel}>
                         <input type="checkbox" checked={memberForm.board}
@@ -192,7 +280,7 @@ export const TenderPanel = ({requestId, onChanged}: Props) => {
                     <button
                         onClick={() => run(() => tenderService.addMember(tender.id, {
                             userId: memberForm.userId,
-                            role: memberForm.role as "Member" | "Chairman" | "Secretary",
+                            role: memberForm.role as CommissionRole,
                             isBoardMember: memberForm.board,
                             isAccountant: memberForm.accountant,
                         }))}

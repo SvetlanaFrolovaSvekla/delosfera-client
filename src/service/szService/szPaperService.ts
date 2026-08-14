@@ -52,6 +52,9 @@ export interface SzPrintApproval {
     comment: string | null;
     resolvedAt: string | null;
 
+    /** Вид этапа: Approval или Signing. */
+    stepKind: string | null;
+
     /** Штамп подписи под визой; пусто — визы нет. */
     signature: SzPrintSignature | null;
 }

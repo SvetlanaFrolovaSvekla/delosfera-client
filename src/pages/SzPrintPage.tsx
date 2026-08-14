@@ -152,7 +152,12 @@ export function SzPrintPage() {
                             </tr>
                         ) : form.approvals.map((a, i) => (
                             <tr key={i} className="border-b border-[#e5e9f0] align-top">
-                                <td className="py-2">{a.stepOrder}</td>
+                                <td className="py-2">
+                                    {a.stepOrder}
+                                    {a.stepKind === "Signing" && (
+                                        <div className="text-[9px] text-[#55617a]">подпись</div>
+                                    )}
+                                </td>
                                 <td className="py-2">
                                     {a.position ?? "—"}
                                     {a.unit && <div className="text-[#55617a]">{a.unit}</div>}

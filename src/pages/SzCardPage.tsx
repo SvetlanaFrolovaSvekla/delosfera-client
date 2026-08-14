@@ -202,6 +202,18 @@ export function SzCardPage() {
         return null;
     }, [route, user]);
 
+    /**
+     * Этап подписания отличается от согласования по существу: подписант ставит
+     * подпись под текстом, с которым согласующие уже согласились, и «замечаний»
+     * у него быть не может — либо подписывает, либо возвращает на доработку.
+     */
+    const myStepKind = useMemo(() => {
+        if (!route || !myParticipant) return null;
+        return route.steps.find((s) => s.participants.some((p) => p.id === myParticipant.id))?.kind ?? null;
+    }, [route, myParticipant]);
+
+    const isSigningStep = myStepKind === "Signing";
+
     /** Открытые замечания — их устраняет инициатор, после чего маршрут идёт с того же этапа. */
     const openRemarks = useMemo(() => {
         if (!route) return [];
@@ -642,6 +654,7 @@ export function SzCardPage() {
                             <div key={step.id} className="rounded-[10px] border border-[#eef2f7] px-4 py-3">
                                 <div className="text-[11.5px] font-semibold uppercase tracking-[.04em] text-[#a3adbd]">
                                     Этап {step.order}
+                                    {step.kind === "Signing" && " · подписание"}
                                     {step.isFinalMethodology && " · финальный контроль"}
                                 </div>
                                 <div className="mt-2 flex flex-col gap-1.5">
@@ -677,26 +690,32 @@ export function SzCardPage() {
                     {/* Резолюция доступна только тому, чья задача сейчас активна. */}
                     {myParticipant && (
                         <div className="mt-4 rounded-[10px] border border-[#cbddff] bg-[#f5f8ff] p-4">
-                            <div className="text-[13px] font-semibold text-[#0f1b2d]">Ваше решение по записке</div>
+                            <div className="text-[13px] font-semibold text-[#0f1b2d]">
+                                {isSigningStep ? "Подписание записки" : "Ваше решение по записке"}
+                            </div>
                             <textarea
                                 value={comment}
                                 onChange={(e) => setComment(e.target.value)}
                                 rows={3}
-                                placeholder="Комментарий (обязателен для замечаний и отклонения)"
+                                placeholder={isSigningStep
+                                    ? "Комментарий (обязателен при возврате на доработку)"
+                                    : "Комментарий (обязателен для замечаний и отклонения)"}
                                 className="mt-2 w-full px-3 py-2.5 rounded-[9px] border border-[#e5e9f0] bg-white text-[13px] outline-none resize-y focus:border-[#2f68f5]"
                             />
                             <div className="mt-2.5 flex flex-wrap gap-2">
                                 <button onClick={() => resolve("Approved")} disabled={saving}
                                         className="h-9 px-4 rounded-[9px] border-none bg-[#1c7a4d] text-white font-semibold text-[12.5px] cursor-pointer hover:brightness-[1.06] disabled:opacity-50">
-                                    Согласовать
+                                    {isSigningStep ? "Подписать" : "Согласовать"}
                                 </button>
-                                <button onClick={() => resolve("ApprovedWithRemarks")} disabled={saving}
-                                        className="h-9 px-4 rounded-[9px] border border-[#f0dcae] bg-white text-[#b3730a] font-semibold text-[12.5px] cursor-pointer hover:bg-[#fdf3e0] disabled:opacity-50">
-                                    С замечаниями
-                                </button>
+                                {!isSigningStep && (
+                                    <button onClick={() => resolve("ApprovedWithRemarks")} disabled={saving}
+                                            className="h-9 px-4 rounded-[9px] border border-[#f0dcae] bg-white text-[#b3730a] font-semibold text-[12.5px] cursor-pointer hover:bg-[#fdf3e0] disabled:opacity-50">
+                                        С замечаниями
+                                    </button>
+                                )}
                                 <button onClick={() => resolve("Rejected")} disabled={saving}
                                         className="h-9 px-4 rounded-[9px] border border-[#f1c9c2] bg-white text-[#c0392b] font-semibold text-[12.5px] cursor-pointer hover:bg-[#fbeae7] disabled:opacity-50">
-                                    Отклонить
+                                    {isSigningStep ? "Вернуть на доработку" : "Отклонить"}
                                 </button>
                             </div>
                         </div>

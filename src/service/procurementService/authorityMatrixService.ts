@@ -48,6 +48,9 @@ export interface MatrixResolveResult {
 
     facts: MatrixFact[];
     notes: MatrixNote[];
+
+    /** Положение о закупках в базе ВНД — для ссылок из подсказок экрана. */
+    regulationDocumentId: number | null;
     ruleId: number | null;
 }
 

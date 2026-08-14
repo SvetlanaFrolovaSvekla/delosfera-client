@@ -1,5 +1,5 @@
 import {useCallback, useEffect, useState} from "react";
-import {useNavigate} from "react-router-dom";
+import {Link, useNavigate} from "react-router-dom";
 import {
     procurementService,
     SUBJECT_KIND_LABEL,
@@ -295,6 +295,17 @@ export const ProcurementNewPage = () => {
                             {!form.hasBudget && !form.planItem?.trim() && (
                                 <div style={{marginTop: 6, fontSize: 11.5, color: "#c77700"}}>
                                     Закупка вне бюджета и без позиции Плана пойдёт по ветке внеплановой закупки (PRC-03)
+                                    {resolved?.regulationDocumentId && (
+                                        <>
+                                            {" — "}
+                                            <Link
+                                                to={`/base-vnd/${resolved.regulationDocumentId}`}
+                                                style={{color: "#2f68f5", textDecoration: "underline"}}
+                                            >
+                                                раздел 7 Положения — планирование закупок и бюджет
+                                            </Link>
+                                        </>
+                                    )}
                                 </div>
                             )}
 

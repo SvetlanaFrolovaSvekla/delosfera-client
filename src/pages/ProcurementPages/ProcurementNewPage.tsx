@@ -15,6 +15,7 @@ import {AttachmentsPanel} from "@/components/attachments/AttachmentsPanel.tsx";
 import {attachmentService} from "@/service/documentService/attachmentService.ts";
 import type {OrganizationUnitResponse} from "@/service/dictionariesService/organizationUnitService/organizationUnitServiceType.ts";
 import {formatDate} from "@/utils/dateUtils.ts";
+import {MatrixNotesList} from "@/components/procurement/MatrixNotesList.tsx";
 
 /**
  * Мастер новой заявки на закупку (экран v8 isPrcNew), три шага:
@@ -361,9 +362,10 @@ export const ProcurementNewPage = () => {
                                     )}
 
                                     {resolved.notes.length > 0 && (
-                                        <ul style={{margin: "14px 0 0", paddingLeft: 18, fontSize: 12.5, color: "#55617a", lineHeight: 1.7}}>
-                                            {resolved.notes.map(n => <li key={n}>{n}</li>)}
-                                        </ul>
+                                        <MatrixNotesList
+                                            notes={resolved.notes}
+                                            className="mt-3.5 pl-[18px] text-[12.5px] leading-[1.7] text-[#55617a]"
+                                        />
                                     )}
                                 </>
                             ) : (

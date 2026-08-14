@@ -1,6 +1,7 @@
 import {useCallback, useEffect, useMemo, useState} from "react";
 import {colors} from "@/design/tokens";
 import {
+import {MatrixNotesList} from "@/components/procurement/MatrixNotesList.tsx";
     authorityMatrixService,
     type ApprovalAuthority,
     type MatrixResolveResult,
@@ -256,9 +257,10 @@ export const AuthorityMatrixPage = () => {
                             </div>
 
                             {result.notes.length > 0 && (
-                                <ul style={{margin: "14px 0 0", paddingLeft: 18, fontSize: 12.5, color: "#55617a", lineHeight: 1.7}}>
-                                    {result.notes.map(n => <li key={n}>{n}</li>)}
-                                </ul>
+                                <MatrixNotesList
+                                    notes={result.notes}
+                                    className="mt-3.5 pl-[18px] text-[12.5px] leading-[1.7] text-[#55617a]"
+                                />
                             )}
                         </>
                     )}

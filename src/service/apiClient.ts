@@ -24,8 +24,10 @@ let refreshPromise: Promise<LoginResponse> | null = null;
 
 async function doRefresh(): Promise<LoginResponse> {
     // Refresh-токен не передаётся из JS — он уходит автоматически в httpOnly-cookie.
+    // Префикс api уже внутри API_BASE_URL — второй раз его добавлять нельзя,
+    // иначе запрос уходит на /api/api/auth/refresh и сессия не восстанавливается.
     const response = await axios.post<LoginResponse>(
-        `${API_BASE_URL}/api/auth/refresh`, null, {withCredentials: true});
+        `${API_BASE_URL}/auth/refresh`, null, {withCredentials: true});
     setAccessToken(response.data.token);
     return response.data;
 }

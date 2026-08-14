@@ -14,6 +14,16 @@ export interface MatrixFact {
 }
 
 /** Результат подбора по Матрице полномочий (PRC-04). */
+/**
+ * Примечание к решению матрицы. Правило опирается на пункт Положения о закупках,
+ * поэтому рядом с текстом идёт номер пункта и ссылка на сам документ.
+ */
+export interface MatrixNote {
+    text: string;
+    clause: string | null;
+    documentId: number | null;
+}
+
 export interface MatrixResolveResult {
     methodCode: string;
     methodTitle: string;
@@ -37,7 +47,7 @@ export interface MatrixResolveResult {
     requiresPublication: boolean;
 
     facts: MatrixFact[];
-    notes: string[];
+    notes: MatrixNote[];
     ruleId: number | null;
 }
 

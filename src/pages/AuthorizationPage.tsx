@@ -15,7 +15,9 @@ export function AuthorizationPage() {
     const {login, loginDomain, user, loading} = useAuth();
     const navigate = useNavigate();
 
-    const [tab, setTab] = useState<Tab>("password");
+    // Доменная учётная запись — основной способ входа: пароль СЭД остаётся у
+    // администраторов и у тех, кого нет в каталоге.
+    const [tab, setTab] = useState<Tab>("domain");
     const [email, setEmail] = useState(() => localStorage.getItem(REMEMBER_KEY) ?? "");
     const [password, setPassword] = useState("");
     const [pwdVisible, setPwdVisible] = useState(false);
@@ -96,20 +98,20 @@ export function AuthorizationPage() {
                         <button
                             type="button"
                             role="tab"
-                            aria-selected={tab === "password"}
-                            onClick={() => switchTab("password")}
-                            className={tabClass(tab === "password")}
-                        >
-                            {t("auth.tabPassword")}
-                        </button>
-                        <button
-                            type="button"
-                            role="tab"
                             aria-selected={tab === "domain"}
                             onClick={() => switchTab("domain")}
                             className={tabClass(tab === "domain")}
                         >
                             {t("auth.tabDomain")}
+                        </button>
+                        <button
+                            type="button"
+                            role="tab"
+                            aria-selected={tab === "password"}
+                            onClick={() => switchTab("password")}
+                            className={tabClass(tab === "password")}
+                        >
+                            {t("auth.tabPassword")}
                         </button>
                     </div>
 

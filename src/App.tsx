@@ -11,6 +11,7 @@ import {Loader} from "@/components/componentsGeneral/Loader.tsx";
 
 import {Sidebar} from "@/components/componentsSidebar/Sidebar.tsx";
 import {Header} from "@/components/componentsHeader/Header.tsx";
+import {RegulationConsentGate} from "@/components/signing/RegulationConsentGate.tsx";
 
 // Страницы грузятся лениво — каждая попадает в отдельный чанк, а не в один общий бандл.
 // Named-экспорты оборачиваем в { default } для React.lazy.
@@ -68,6 +69,8 @@ const ProcurementPlanPage = lazy(() => import("@/pages/ProcurementPages/Procurem
 
 const MainLayout = () => (
     <DictionariesProvider>
+        {/* Согласие с регламентом ПЭП спрашивается один раз, до первого подписания. */}
+        <RegulationConsentGate/>
         <div className="flex h-screen overflow-hidden">
             <Sidebar/>
             <main className="flex-1 flex flex-col min-w-0 overflow-hidden bg-[#edecf5]">

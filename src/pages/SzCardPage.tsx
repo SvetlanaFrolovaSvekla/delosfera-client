@@ -238,8 +238,12 @@ export function SzCardPage() {
             setComment("");
             setNotice(`Решение принято: ${RESOLUTION_LABEL[type].toLowerCase()}`);
             await reload();
-        } catch {
-            setError("Не удалось отправить решение");
+        } catch (e) {
+            // Сервер отказывает по существу — не принят регламент подписи, решение
+            // выносит другой человек, изменился документ. Общее «не удалось»
+            // спрятало бы причину, и человек не понял бы, что делать.
+            const message = (e as { response?: { data?: { message?: string } } }).response?.data?.message;
+            setError(message ?? "Не удалось отправить решение");
         } finally {
             setSaving(false);
         }

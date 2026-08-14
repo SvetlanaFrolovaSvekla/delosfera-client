@@ -93,7 +93,7 @@ export function SzCardPage() {
 
     const [form, setForm] = useState<SzSaveRequest>({
         title: "", kindId: 0, body: "", correspondentUnitId: null, rubricIds: [],
-        addresseeUserId: null, approverUserIds: [], approvalIsParallel: false,
+        addresseeUserId: null, signerUserId: null, approverUserIds: [], approvalIsParallel: false,
     });
 
     const {user} = useAuth();
@@ -130,6 +130,7 @@ export function SzCardPage() {
             correspondentUnitId: d.correspondentUnitId, isPaperCarrier: d.isPaperCarrier,
             rubricIds: d.rubricIds,
             addresseeUserId: d.addresseeUserId,
+            signerUserId: d.signerUserId,
             approverUserIds: d.approvers.map((a) => a.userId),
             approvalIsParallel: d.approvalIsParallel,
             hrKindId: d.hrKindId, employeeName: d.employeeName,
@@ -583,6 +584,24 @@ export function SzCardPage() {
                     onParallelChange={(p) => set("approvalIsParallel", p)}
                     editable={editable}
                 />
+
+                {/*
+                  Подписант замыкает маршрут: он ставит подпись после того, как
+                  согласующие высказались по существу. Поле необязательное — записка
+                  может идти и без отдельного подписания.
+                */}
+                <div className="mt-4">
+                    <Field label="Подписант">
+                        <select className={inputClass} value={form.signerUserId ?? ""} disabled={!editable}
+                                onChange={(e) => set("signerUserId", e.target.value ? Number(e.target.value) : null)}>
+                            <option value="">Без подписания</option>
+                            {userList.map((u) => <option key={u.id} value={u.id}>{u.fullName}</option>)}
+                        </select>
+                    </Field>
+                    <div className="mt-1 text-[11.5px] text-[#8b97ab]">
+                        Подписывает записку последним, после согласования
+                    </div>
+                </div>
 
                 <AttachmentsPanel
                     documentId={sz?.documentId ?? null}

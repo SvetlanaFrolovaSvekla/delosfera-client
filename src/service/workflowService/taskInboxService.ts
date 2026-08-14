@@ -43,7 +43,7 @@ export interface TaskInbox {
 
 export const taskInboxService = {
     async get(documentType?: string): Promise<TaskInbox> {
-        const {data} = await apiClient.get<TaskInbox>("/api/workflow/inbox", {
+        const {data} = await apiClient.get<TaskInbox>("/workflow/inbox", {
             params: documentType ? {documentType} : undefined,
         });
         return data;

@@ -149,7 +149,7 @@ export interface Paged<T> {
     pageSize: number;
 }
 
-const BASE = "/api/procurement";
+const BASE = "/procurement";
 
 export const procurementService = {
     async search(request: ProcurementSearchRequest): Promise<Paged<ProcurementListItem>> {

@@ -126,7 +126,7 @@ export const statusOptions: {value: ExecutionStatus; title: string}[] = [
     {value: "Excluded", title: "Исключено/снято из повестки дня заседания"},
 ];
 
-const BASE = "/api/meetings";
+const BASE = "/meetings";
 
 export const meetingsService = {
     async list(params: {

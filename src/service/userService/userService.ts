@@ -10,7 +10,7 @@ import type {
 import {getLanguage} from "@/utils/getLanguage.ts";
 import {getAccessToken} from "@/service/tokenStore.ts";
 
-const API_BASE = import.meta.env.VITE_API_BASE_URL ?? "";
+const API_BASE = `${import.meta.env.VITE_API_BASE_URL ?? ""}/api`;
 
 function buildHeaders(withJson = false): HeadersInit {
     const headers: Record<string, string> = {

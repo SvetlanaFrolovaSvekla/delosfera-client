@@ -3,7 +3,9 @@ import type {LoginResponse} from "@/service/authService/authServiceType.ts";
 import {getLanguage} from "@/utils/getLanguage.ts";
 import {getAccessToken, setAccessToken} from "@/service/tokenStore.ts";
 
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL ?? "";
+// Пусто — тот же адрес, по которому открыт клиент; префикс /api разбирает
+// reverse-proxy и передаёт запрос приложению как есть.
+const API_BASE_URL = `${import.meta.env.VITE_API_BASE_URL ?? ""}/api`;
 
 // withCredentials: браузер отправляет httpOnly refresh-cookie на /auth/*.
 export const apiClient = axios.create({
@@ -23,7 +25,7 @@ let refreshPromise: Promise<LoginResponse> | null = null;
 async function doRefresh(): Promise<LoginResponse> {
     // Refresh-токен не передаётся из JS — он уходит автоматически в httpOnly-cookie.
     const response = await axios.post<LoginResponse>(
-        `${API_BASE_URL}/auth/refresh`, null, {withCredentials: true});
+        `${API_BASE_URL}/api/auth/refresh`, null, {withCredentials: true});
     setAccessToken(response.data.token);
     return response.data;
 }

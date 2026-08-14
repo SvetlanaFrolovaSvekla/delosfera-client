@@ -81,7 +81,7 @@ export interface ProtocolUpdateRequest {
     selectionBasis?: string;
 }
 
-const BASE = "/api/procurement";
+const BASE = "/procurement";
 
 export const protocolService = {
     /** null — протокол ещё не сформирован (сервер отвечает 204). */

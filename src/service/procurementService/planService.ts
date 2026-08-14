@@ -37,7 +37,7 @@ export interface Plan {
     unplannedAmount: number;
 }
 
-const BASE = "/api/procurement/plans";
+const BASE = "/procurement/plans";
 
 export const planService = {
     async years(): Promise<number[]> {

@@ -23,7 +23,7 @@ interface Supplier {
     blacklistExpired: boolean;
 }
 
-const BASE = "/api/procurement/suppliers";
+const BASE = "/procurement/suppliers";
 
 export const SupplierRegistryPage = () => {
     const [items, setItems] = useState<Supplier[]>([]);

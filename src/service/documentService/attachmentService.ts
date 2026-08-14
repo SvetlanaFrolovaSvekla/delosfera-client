@@ -17,13 +17,13 @@ export interface Attachment {
 
 export const attachmentService = {
     list: (documentId: number) =>
-        apiClient.get<Attachment[]>(`/api/documents/${documentId}/attachments`).then((r) => r.data),
+        apiClient.get<Attachment[]>(`/documents/${documentId}/attachments`).then((r) => r.data),
 
     upload: (documentId: number, file: File, isPrimary = false) => {
         const body = new FormData();
         body.append("file", file);
         return apiClient
-            .post<Attachment>(`/api/documents/${documentId}/attachments`, body, {
+            .post<Attachment>(`/documents/${documentId}/attachments`, body, {
                 params: {isPrimary},
             })
             .then((r) => r.data);
@@ -33,20 +33,19 @@ export const attachmentService = {
         const body = new FormData();
         body.append("file", file);
         return apiClient
-            .put<Attachment>(`/api/documents/attachments/${attachmentId}`, body)
+            .put<Attachment>(`/documents/attachments/${attachmentId}`, body)
             .then((r) => r.data);
     },
 
     remove: (attachmentId: number) =>
-        apiClient.delete(`/api/documents/attachments/${attachmentId}`).then(() => undefined),
+        apiClient.delete(`/documents/attachments/${attachmentId}`).then(() => undefined),
 
     /**
      * Ссылка на скачивание. Токен уходит заголовком, поэтому файл забираем запросом,
      * а не переходом по адресу: иначе сервер ответит 401.
      */
     download: async (attachment: Attachment) => {
-        const response = await apiClient.get(
-            `/api/documents/attachments/${attachment.id}/download`,
+        const response = await apiClient.get(`/documents/attachments/${attachment.id}/download`,
             {responseType: "blob"});
 
         const url = URL.createObjectURL(response.data as Blob);

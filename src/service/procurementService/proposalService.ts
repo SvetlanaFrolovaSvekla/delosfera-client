@@ -53,7 +53,7 @@ export interface ProposalCreateRequest {
     receivedOn?: string;
 }
 
-const BASE = "/api/procurement";
+const BASE = "/procurement";
 
 export const proposalService = {
     async comparison(requestId: number): Promise<ProposalComparison> {

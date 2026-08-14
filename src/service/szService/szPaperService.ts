@@ -82,7 +82,7 @@ export const PRINT_RESOLUTION_LABEL: Record<string, string> = {
     AutoAccept: "Автоакцепт",
 };
 
-const BASE = "/api/sz";
+const BASE = "/sz";
 
 export const szPaperService = {
     async original(szId: number): Promise<SzOriginal> {

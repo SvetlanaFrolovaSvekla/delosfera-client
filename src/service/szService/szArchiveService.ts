@@ -44,7 +44,7 @@ export interface NomenclatureCase {
     isActive: boolean;
 }
 
-const BASE = "/api/sz";
+const BASE = "/sz";
 
 export const szArchiveService = {
     async get(szId: number): Promise<SzArchive> {
@@ -73,12 +73,12 @@ export const szArchiveService = {
     },
 
     async cases(): Promise<NomenclatureCase[]> {
-        const {data} = await apiClient.get<NomenclatureCase[]>("/api/dictionaries/nomenclature-case");
+        const {data} = await apiClient.get<NomenclatureCase[]>("/dictionaries/nomenclature-case");
         return data;
     },
 
     async storageTerms(): Promise<StorageTerm[]> {
-        const {data} = await apiClient.get<StorageTerm[]>("/api/dictionaries/storage-term");
+        const {data} = await apiClient.get<StorageTerm[]>("/dictionaries/storage-term");
         return data;
     },
 };

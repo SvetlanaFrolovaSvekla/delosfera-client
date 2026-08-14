@@ -56,7 +56,7 @@ export const scopeOptions: {value: SearchScope; title: string}[] = [
     {value: "Meeting", title: "Заседания"},
 ];
 
-const BASE = "/api/search";
+const BASE = "/search";
 
 export const searchService = {
     async search(request: SearchRequest): Promise<SearchResult> {

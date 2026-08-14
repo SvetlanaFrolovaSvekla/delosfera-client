@@ -77,7 +77,7 @@ export interface PublicationPackage {
     blockers: string[];
 }
 
-const BASE = "/api/procurement";
+const BASE = "/procurement";
 
 export const guaranteeService = {
     async list(params: {tenderId?: number; contractId?: number; activeOnly?: boolean}): Promise<Guarantee[]> {

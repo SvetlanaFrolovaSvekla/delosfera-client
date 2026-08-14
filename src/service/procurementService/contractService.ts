@@ -59,7 +59,7 @@ export interface Contract {
     blockers: string[];
 }
 
-const BASE = "/api/procurement";
+const BASE = "/procurement";
 
 export const contractService = {
     async list(requestId?: number): Promise<Contract[]> {

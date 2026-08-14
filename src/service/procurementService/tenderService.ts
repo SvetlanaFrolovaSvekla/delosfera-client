@@ -73,7 +73,7 @@ export interface Tender {
     blockers: string[];
 }
 
-const BASE = "/api/procurement";
+const BASE = "/procurement";
 
 export const tenderService = {
     /** null — конкурс по заявке не объявлялся (сервер отвечает 204). */

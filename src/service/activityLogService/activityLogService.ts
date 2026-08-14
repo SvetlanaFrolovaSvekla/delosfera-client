@@ -9,7 +9,7 @@ export const activityLogService = {
      * брал токен из хранилища браузера, где его нет — токен живёт в памяти вкладки.
      */
     async getRecent(limit = 8, module?: string): Promise<ActivityLogEntryResponse[]> {
-        const {data} = await apiClient.get<ActivityLogEntryResponse[]>("/api/activity-log/recent", {
+        const {data} = await apiClient.get<ActivityLogEntryResponse[]>("/activity-log/recent", {
             params: module ? {limit, module} : {limit},
         });
         return data;

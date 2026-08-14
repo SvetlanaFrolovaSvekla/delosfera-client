@@ -72,7 +72,7 @@ export interface MatrixResolveRequest {
     preferredMethod?: string;
 }
 
-const BASE = "/api/procurement";
+const BASE = "/procurement";
 
 export const authorityMatrixService = {
     async table(): Promise<MatrixTable> {

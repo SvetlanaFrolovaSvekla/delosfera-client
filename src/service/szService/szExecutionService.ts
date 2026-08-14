@@ -36,7 +36,7 @@ export interface SzAssignmentDraft {
     dueDate?: string | null;
 }
 
-const BASE = "/api/sz";
+const BASE = "/sz";
 
 export const szExecutionService = {
     /** Очередь «Мои поручения». */

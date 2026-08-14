@@ -54,24 +54,24 @@ export interface SubstitutionCreateRequest {
 
 export const dashboardService = {
     async summary(): Promise<DashboardSummary> {
-        const {data} = await apiClient.get<DashboardSummary>("/api/dashboard/summary");
+        const {data} = await apiClient.get<DashboardSummary>("/dashboard/summary");
         return data;
     },
 };
 
 export const substitutionService = {
     async list(mine = false): Promise<Substitution[]> {
-        const {data} = await apiClient.get<Substitution[]>("/api/substitutions", {params: {mine}});
+        const {data} = await apiClient.get<Substitution[]>("/substitutions", {params: {mine}});
         return data;
     },
 
     async create(request: SubstitutionCreateRequest): Promise<Substitution> {
-        const {data} = await apiClient.post<Substitution>("/api/substitutions", request);
+        const {data} = await apiClient.post<Substitution>("/substitutions", request);
         return data;
     },
 
     async cancel(id: number): Promise<Substitution> {
-        const {data} = await apiClient.post<Substitution>(`/api/substitutions/${id}/cancel`, {});
+        const {data} = await apiClient.post<Substitution>(`/substitutions/${id}/cancel`, {});
         return data;
     },
 };

@@ -85,7 +85,7 @@ export interface ActualizationSettings {
     monthlyDigestEnabled: boolean;
 }
 
-const BASE = "/api/actualization/plan";
+const BASE = "/actualization/plan";
 
 export const actualizationPlanService = {
     async years(): Promise<number[]> {

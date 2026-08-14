@@ -25,7 +25,7 @@ export interface SzProcurement {
     blockers: string[];
 }
 
-const BASE = "/api/sz";
+const BASE = "/sz";
 
 export const szProcurementService = {
     async get(szId: number): Promise<SzProcurement> {

@@ -170,7 +170,7 @@ export interface SzHistoryEntry {
     payload: string | null;
 }
 
-const BASE = "/api/sz";
+const BASE = "/sz";
 
 export const szService = {
     async search(request: SzSearchRequest): Promise<SzPage> {
@@ -245,7 +245,7 @@ export const szService = {
 export const szApprovalService = {
     /** Состав и порядок согласующих — меняется до отправки записки. */
     setApprovers: (id: number, userIds: number[], parallel: boolean) =>
-        apiClient.put<SzDetails>(`/api/sz/${id}/approvers`, {userIds, parallel}).then((r) => r.data),
+        apiClient.put<SzDetails>(`/sz/${id}/approvers`, {userIds, parallel}).then((r) => r.data),
 
     /**
      * Решение адресата по существу вопроса. Тем же действием выдаются поручения:
@@ -253,7 +253,7 @@ export const szApprovalService = {
      */
     decide: (id: number, decision: string, assignments: SzAssignmentDraft[] = []) =>
         apiClient
-            .post<SzDetails>(`/api/sz/${id}/addressee-decision`, {decision, assignments})
+            .post<SzDetails>(`/sz/${id}/addressee-decision`, {decision, assignments})
             .then((r) => r.data),
 };
 

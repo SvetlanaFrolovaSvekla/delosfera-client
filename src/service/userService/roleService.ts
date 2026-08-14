@@ -2,7 +2,7 @@ import type {RoleResponse} from "./userServiceType.ts";
 import {getLanguage} from "@/utils/getLanguage.ts";
 import {getAccessToken} from "@/service/tokenStore.ts";
 
-const API_BASE = import.meta.env.VITE_API_BASE_URL ?? "";
+const API_BASE = `${import.meta.env.VITE_API_BASE_URL ?? ""}/api`;
 
 function buildHeaders(): HeadersInit {
     const headers: Record<string, string> = {"X-Language": getLanguage()};

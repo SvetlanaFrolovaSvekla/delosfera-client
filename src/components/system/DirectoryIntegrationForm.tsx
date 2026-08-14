@@ -62,6 +62,8 @@ export function DirectoryIntegrationForm({onStateChange}: Props) {
             loginAttribute: data.loginAttribute,
             emailAttribute: data.emailAttribute,
             fullNameAttribute: data.fullNameAttribute,
+            positionAttribute: data.positionAttribute,
+            orgUnitAttribute: data.orgUnitAttribute,
             syncIntervalMinutes: data.syncIntervalMinutes,
             defaultRoleId: data.defaultRoleId,
         });
@@ -222,6 +224,16 @@ export function DirectoryIntegrationForm({onStateChange}: Props) {
                         <Field label="Атрибут ФИО">
                             <input className={inputClass} value={form.fullNameAttribute ?? ""}
                                    onChange={(e) => set("fullNameAttribute", e.target.value)}/>
+                        </Field>
+                        <Field label="Атрибут должности">
+                            <input className={inputClass} value={form.positionAttribute ?? ""}
+                                   onChange={(e) => set("positionAttribute", e.target.value)}
+                                   placeholder="title"/>
+                        </Field>
+                        <Field label="Атрибут подразделения">
+                            <input className={inputClass} value={form.orgUnitAttribute ?? ""}
+                                   onChange={(e) => set("orgUnitAttribute", e.target.value)}
+                                   placeholder="department"/>
                         </Field>
                     </div>
                 </details>

@@ -17,6 +17,10 @@ export interface DirectorySettings {
     loginAttribute: string;
     emailAttribute: string;
     fullNameAttribute: string;
+
+    /** Должность и подразделение: в Active Directory это title и department. */
+    positionAttribute: string;
+    orgUnitAttribute: string;
     syncIntervalMinutes: number;
     defaultRoleId: number | null;
 
@@ -41,6 +45,8 @@ export interface DirectorySettingsRequest {
     loginAttribute?: string | null;
     emailAttribute?: string | null;
     fullNameAttribute?: string | null;
+    positionAttribute?: string | null;
+    orgUnitAttribute?: string | null;
     syncIntervalMinutes: number;
     defaultRoleId?: number | null;
 }

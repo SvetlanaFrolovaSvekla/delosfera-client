@@ -1,7 +1,7 @@
 import {useCallback, useEffect, useMemo, useState} from "react";
 import {colors} from "@/design/tokens";
-import {
 import {MatrixNotesList} from "@/components/procurement/MatrixNotesList.tsx";
+import {
     authorityMatrixService,
     type ApprovalAuthority,
     type MatrixResolveResult,

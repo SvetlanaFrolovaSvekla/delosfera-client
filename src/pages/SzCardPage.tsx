@@ -274,6 +274,7 @@ export function SzCardPage() {
         try {
             const updated = await szService.withdraw(sz.id, withdrawReason.trim());
             applyDetails(updated);
+            await reload();
             setWithdrawOpen(false);
             setWithdrawReason("");
             setNotice("Записка отозвана и возвращена в черновик");
@@ -298,7 +299,12 @@ export function SzCardPage() {
             const updated = action === "submit"
                 ? await szService.submit(sz.id)
                 : await szService.register(sz.id);
+
+            // Ответ описывает записку, но маршрут создаётся тем же действием, и
+            // ссылка на него может ещё не попасть в ответ. Перечитываем карточку,
+            // иначе лист согласования появится только после перезагрузки страницы.
             applyDetails(updated);
+            await reload();
             setNotice(action === "submit"
                 ? "Записка отправлена на регистрацию"
                 : `Зарегистрирована: ${updated.regNumber} · срок исполнения ${formatDate(updated.dueDate)}`);

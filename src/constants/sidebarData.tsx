@@ -47,6 +47,7 @@ export const navGroups: NavGroup[] = [
         items: [
             // Реестр служебных записок: карточка, согласование, исполнение, архив, закупка
             { id: "sz", icon: "sz", labelKey: "sidebar.items.sz", path: "/sz" },
+            { id: "sz-analytics", icon: "rpt", labelKey: "Аналитика СЗ", path: "/sz-analytics" },
         ],
     },
     {
@@ -73,6 +74,8 @@ export const navGroups: NavGroup[] = [
         items: [
             { id: "adm-users", icon: "user", labelKey: "sidebar.items.admUsers", path: "/users" },
             { id: "adm-roles", icon: "shield", labelKey: "sidebar.items.admRoles", path: "/roles", permission: PermissionCode.ManageRoles },
+            { id: "adm-sub", icon: "user", labelKey: "Замещения", path: "/substitutions", permission: PermissionCode.ManageUsers },
+            { id: "adm-log", icon: "clock", labelKey: "Журнал действий", path: "/audit-log", permission: PermissionCode.ManageUsers },
             { id: "refs", icon: "refs", labelKey: "sidebar.items.refs", path: "/refs" },
             // Настройки интеграций: адрес каталога, учётная запись, расписание синхронизации
             { id: "system-settings", icon: "future", labelKey: "Системные настройки", path: "/system/settings", permission: PermissionCode.ManageSystemSettings },

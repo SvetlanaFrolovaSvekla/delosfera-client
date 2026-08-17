@@ -30,6 +30,31 @@ interface Props {
  * ошибки, счёта, переписки. Через диалог выбора файла его сначала пришлось бы
  * сохранить на диск, поэтому вставка из буфера здесь не украшение, а основной путь.
  */
+/**
+ * Что принимает хранилище: те же форматы и тот же предел, что проверяет сервер.
+ * Держать список в двух местах приходится ради ранней проверки; расхождение
+ * безопасно — окончательное слово всё равно за сервером.
+ */
+const ALLOWED_EXTENSIONS = [".doc", ".docx", ".pdf", ".xls", ".xlsx", ".ppt", ".pptx", ".png", ".jpg", ".jpeg"];
+const MAX_FILE_SIZE = 50 * 1024 * 1024;
+
+function extensionOf(name: string): string {
+    const i = name.lastIndexOf(".");
+    return i < 0 ? "" : name.slice(i).toLowerCase();
+}
+
+function allowedFile(file: File): boolean {
+    return ALLOWED_EXTENSIONS.includes(extensionOf(file.name)) && file.size <= MAX_FILE_SIZE;
+}
+
+function fileProblem(file: File): string {
+    const ext = extensionOf(file.name);
+    if (!ALLOWED_EXTENSIONS.includes(ext))
+        return `«${file.name}»: формат ${ext || "без расширения"} не принимается. `
+            + "Подойдут PDF, Word, Excel, PowerPoint, PNG, JPG";
+    return `«${file.name}»: файл больше 50 МБ`;
+}
+
 export function AttachmentsPanel({
     documentId, editable, title = "Вложения", hint, pending, onPendingChange,
 }: Props) {
@@ -51,6 +76,19 @@ export function AttachmentsPanel({
 
     const upload = useCallback(async (files: File[]) => {
         if (!files.length) return;
+
+        // Формат и размер проверяем сразу при выборе. Сервер проверит их ещё раз —
+        // расширение подделывается, — но человек должен узнать о неподходящем файле
+        // здесь, а не после сохранения карточки, когда сообщение уже не связать с
+        // выбором.
+        const негодные = files.filter((f) => !allowedFile(f));
+        if (негодные.length > 0) {
+            setError(fileProblem(негодные[0]));
+            files = files.filter((f) => allowedFile(f));
+            if (files.length === 0) return;
+        } else {
+            setError(null);
+        }
 
         if (!documentId) {
             // Карточки ещё нет — файлы ждут её создания в состоянии формы.
@@ -173,6 +211,7 @@ export function AttachmentsPanel({
                         type="file"
                         multiple
                         hidden
+                        accept={ALLOWED_EXTENSIONS.join(",")}
                         // Поле лежит внутри рамки, и его собственный клик всплыл бы
                         // обратно в обработчик рамки — диалог открывался бы дважды.
                         onClick={(e) => e.stopPropagation()}

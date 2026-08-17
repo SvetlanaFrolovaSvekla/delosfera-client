@@ -1,5 +1,7 @@
 import {useState} from "react";
 import {DirectoryIntegrationForm} from "@/components/system/DirectoryIntegrationForm.tsx";
+import {ProcurementParametersForm} from "@/components/system/ProcurementParametersForm.tsx";
+import {SignatureLevelForm} from "@/components/system/SignatureLevelForm.tsx";
 
 type IntegrationState = { enabled: boolean; hasError: boolean } | null;
 
@@ -28,6 +30,20 @@ const INTEGRATIONS: Integration[] = [
         title: "Служба каталогов",
         subtitle: "LDAP · пользователи домена",
         render: (report) => <DirectoryIntegrationForm onStateChange={report}/>,
+    },
+    {
+        // Не интеграция, но живёт по тем же правилам: значения, которые задаёт
+        // администратор и от которых зависит поведение контура.
+        id: "procurement",
+        title: "Параметры закупок",
+        subtitle: "Пороги Положения и Матрицы полномочий",
+        render: () => <ProcurementParametersForm/>,
+    },
+    {
+        id: "signature",
+        title: "Электронная подпись",
+        subtitle: "Чем закрываются этапы согласования",
+        render: () => <SignatureLevelForm/>,
     },
     {
         id: "mail",

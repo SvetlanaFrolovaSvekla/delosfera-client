@@ -118,6 +118,7 @@ export const navGroups: NavGroup[] = [
     {
         titleKey: "sidebar.groups.system",
         items: [
+            { id: "signing-workplace", icon: "check", labelKey: "Рабочее место подписи", path: "/signing-workplace" },
             { id: "mobile", icon: "mobile", labelKey: "sidebar.items.mobile" },
             { id: "refs", icon: "refs", labelKey: "sidebar.items.refs" },
             { id: "kb", icon: "kb", labelKey: "sidebar.items.kb" },

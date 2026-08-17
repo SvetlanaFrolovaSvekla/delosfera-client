@@ -21,6 +21,7 @@ import {
     type RouteInstance,
 } from "@/service/workflowService/workflowService.ts";
 import {SignatureStampView} from "@/components/signing/SignatureStampView.tsx";
+import {QualifiedSignDialog} from "@/components/signing/QualifiedSignDialog.tsx";
 import {
     SZ_STATUS_LABEL,
     szService,
@@ -90,6 +91,9 @@ export function SzCardPage() {
     const [saving, setSaving] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const [notice, setNotice] = useState<string | null>(null);
+
+    /** Открыто окно подписания: этап требует квалифицированной подписи. */
+    const [подписываем, setПодписываем] = useState(false);
 
     const [form, setForm] = useState<SzSaveRequest>({
         title: "", kindId: 0, body: "", correspondentUnitId: null, rubricIds: [],
@@ -215,6 +219,20 @@ export function SzCardPage() {
 
     const isSigningStep = myStepKind === "Signing";
 
+    /**
+     * Этап может требовать квалифицированной подписи. Тогда решение не отправляется
+     * сразу: сначала подписант ставит подпись криптопровайдером, и только потом её
+     * идентификатор уходит вместе с решением. Иначе сервер отказал бы — и правильно
+     * сделал бы, но человек не понял бы, чего от него хотят.
+     */
+    const requiredLevel = useMemo(() => {
+        if (!route || !myParticipant) return null;
+        return route.steps.find((s) => s.participants.some((p) => p.id === myParticipant.id))
+            ?.requiredSignatureLevel ?? null;
+    }, [route, myParticipant]);
+
+    const needsQualified = requiredLevel === "Qualified";
+
     /** Открытые замечания — их устраняет инициатор, после чего маршрут идёт с того же этапа. */
     const openRemarks = useMemo(() => {
         if (!route) return [];
@@ -224,17 +242,25 @@ export function SzCardPage() {
                 .map((r) => ({...r, userId: p.userId})));
     }, [route]);
 
-    const resolve = async (type: ResolutionType) => {
+    const resolve = async (type: ResolutionType, signatureId?: number) => {
         if (!myParticipant) return;
         if ((type === "ApprovedWithRemarks" || type === "Rejected") && !comment.trim()) {
             setError("Для замечаний и отклонения нужен комментарий");
             return;
         }
+
+        // Отклонение и возврат на доработку ничего не удостоверяют — под ними подпись
+        // не нужна, и требовать её значило бы мешать остановить процесс.
+        if (needsQualified && type === "Approved" && signatureId === undefined) {
+            setПодписываем(true);
+            return;
+        }
+
         setSaving(true);
         setError(null);
         setNotice(null);
         try {
-            await workflowService.resolve(myParticipant.id, type, comment.trim() || undefined);
+            await workflowService.resolve(myParticipant.id, type, comment.trim() || undefined, signatureId);
             setComment("");
             setNotice(`Решение принято: ${RESOLUTION_LABEL[type].toLowerCase()}`);
             await reload();
@@ -722,6 +748,15 @@ export function SzCardPage() {
                             <div className="text-[13px] font-semibold text-[#0f1b2d]">
                                 {isSigningStep ? "Подписание записки" : "Ваше решение по записке"}
                             </div>
+
+                            {needsQualified && (
+                                <div className="mt-2 rounded-[9px] border border-[#cbddff] bg-white px-3 py-2.5 text-[12.5px] leading-[1.6] text-[#55617a]">
+                                    Этап закрывается <b>квалифицированной подписью</b>. По кнопке
+                                    «{isSigningStep ? "Подписать" : "Согласовать"}» откроется рабочее
+                                    место: подпись ставит криптопровайдер на вашем компьютере, ключ
+                                    на сервер не передаётся.
+                                </div>
+                            )}
                             <textarea
                                 value={comment}
                                 onChange={(e) => setComment(e.target.value)}
@@ -748,6 +783,19 @@ export function SzCardPage() {
                                 </button>
                             </div>
                         </div>
+                    )}
+
+                    {подписываем && sz && (
+                        <QualifiedSignDialog
+                            documentId={sz.documentId}
+                            onClose={() => setПодписываем(false)}
+                            onSigned={async (signature) => {
+                                setПодписываем(false);
+                                // Подпись поставлена — теперь ею закрывается этап. Разрыв
+                                // между этими действиями оставил бы подпись без резолюции.
+                                await resolve("Approved", signature.id);
+                            }}
+                        />
                     )}
 
                     {/* Замечания устраняет инициатор — после подтверждения маршрут идёт с того же этапа. */}

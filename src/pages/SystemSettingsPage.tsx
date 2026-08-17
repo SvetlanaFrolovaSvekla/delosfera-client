@@ -2,6 +2,7 @@ import {useState} from "react";
 import {DirectoryIntegrationForm} from "@/components/system/DirectoryIntegrationForm.tsx";
 import {ProcurementParametersForm} from "@/components/system/ProcurementParametersForm.tsx";
 import {SignatureLevelForm} from "@/components/system/SignatureLevelForm.tsx";
+import {CertificateAuthoritiesForm} from "@/components/system/CertificateAuthoritiesForm.tsx";
 
 type IntegrationState = { enabled: boolean; hasError: boolean } | null;
 
@@ -44,6 +45,12 @@ const INTEGRATIONS: Integration[] = [
         title: "Электронная подпись",
         subtitle: "Чем закрываются этапы согласования",
         render: () => <SignatureLevelForm/>,
+    },
+    {
+        id: "authorities",
+        title: "Удостоверяющие центры",
+        subtitle: "Кому банк доверяет выпуск сертификатов",
+        render: () => <CertificateAuthoritiesForm/>,
     },
     {
         id: "mail",

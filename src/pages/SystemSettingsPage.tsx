@@ -3,6 +3,7 @@ import {DirectoryIntegrationForm} from "@/components/system/DirectoryIntegration
 import {ProcurementParametersForm} from "@/components/system/ProcurementParametersForm.tsx";
 import {SignatureLevelForm} from "@/components/system/SignatureLevelForm.tsx";
 import {CertificateAuthoritiesForm} from "@/components/system/CertificateAuthoritiesForm.tsx";
+import {SigningSettingsForm} from "@/components/system/SigningSettingsForm.tsx";
 
 type IntegrationState = { enabled: boolean; hasError: boolean } | null;
 
@@ -51,6 +52,12 @@ const INTEGRATIONS: Integration[] = [
         title: "Удостоверяющие центры",
         subtitle: "Кому банк доверяет выпуск сертификатов",
         render: () => <CertificateAuthoritiesForm/>,
+    },
+    {
+        id: "timestamp",
+        title: "Метка времени и отзыв",
+        subtitle: "Служба меток RFC 3161 · списки отзыва",
+        render: () => <SigningSettingsForm/>,
     },
     {
         id: "mail",

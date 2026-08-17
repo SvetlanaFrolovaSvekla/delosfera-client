@@ -27,6 +27,36 @@ export interface SignatureInfo {
 
     /** Цепочка не проверялась — доверенные центры не заведены. */
     trustNotChecked: boolean;
+
+    /** Отзыв сертификата проверен по списку удостоверяющего центра. */
+    revocationChecked: boolean;
+
+    /** Почему отзыв не проверен. */
+    revocationNote: string | null;
+
+    /** Время, удостоверённое службой меток. Пусто — метки нет. */
+    timestampedAt: string | null;
+
+    timestampAuthority: string | null;
+
+    /** Почему метки нет. */
+    timestampNote: string | null;
+}
+
+export interface SigningSettings {
+    timestampEnabled: boolean;
+    timestampAuthorityUrl: string | null;
+    timestampRequired: boolean;
+    timestampTimeoutSeconds: number;
+
+    revocationCheckEnabled: boolean;
+    revocationStrict: boolean;
+    revocationRecheckHours: number;
+
+    updatedAt: string | null;
+
+    /** Сколько подписей уже стоит без метки: включение не действует задним числом. */
+    signaturesWithoutTimestamp: number;
 }
 
 export interface SignChallenge {
@@ -128,5 +158,21 @@ export const qualifiedSigningService = {
 
     async enableAuthority(id: number): Promise<void> {
         await apiClient.post(`/signing/authorities/${id}/enable`, null);
+    },
+
+    async settings(): Promise<SigningSettings> {
+        const {data} = await apiClient.get<SigningSettings>("/signing/settings");
+        return data;
+    },
+
+    async saveSettings(settings: Omit<SigningSettings, "updatedAt" | "signaturesWithoutTimestamp">): Promise<void> {
+        await apiClient.put("/signing/settings", settings);
+    },
+
+    /** Проверить связь со службой меток, ничего не подписывая. */
+    async testTimestamp(): Promise<{at: string; authority: string | null}> {
+        const {data} = await apiClient.post<{at: string; authority: string | null}>(
+            "/signing/settings/timestamp/test", null);
+        return data;
     },
 };

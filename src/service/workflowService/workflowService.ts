@@ -38,6 +38,21 @@ export interface SignatureStamp {
 
     revoked: boolean;
     revokedReason: string | null;
+
+    /**
+     * Время, удостоверённое службой меток. Отличается от at тем, что его назвал не
+     * наш сервер: именно оно доказывает, что подпись поставлена, пока сертификат
+     * действовал. Пусто — метки нет.
+     */
+    timestampedAt: string | null;
+
+    timestampAuthority: string | null;
+
+    /** Каким удостоверяющим центром подтверждён сертификат подписанта. */
+    trustAuthority: string | null;
+
+    /** Что в подписи осталось непроверенным: цепочка, отзыв, метка. */
+    caveats: string[];
 }
 
 export interface RouteParticipant {

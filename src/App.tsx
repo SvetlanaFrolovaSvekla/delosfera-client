@@ -66,6 +66,7 @@ const MeetingRegistryPage = lazy(() => import("@/pages/MeetingsPages/MeetingRegi
 const MeetingCardPage = lazy(() => import("@/pages/MeetingsPages/MeetingCardPage.tsx").then(m => ({default: m.MeetingCardPage})));
 const AuditLogPage = lazy(() => import("@/pages/AuditLogPage.tsx").then(m => ({default: m.AuditLogPage})));
 const SigningWorkplacePage = lazy(() => import("@/pages/SigningWorkplacePage.tsx").then(m => ({default: m.SigningWorkplacePage})));
+const AcknowledgementPage = lazy(() => import("@/pages/AcknowledgementPage.tsx").then(m => ({default: m.AcknowledgementPage})));
 const SzStatisticsPage = lazy(() => import("@/pages/SzStatisticsPage.tsx").then(m => ({default: m.SzStatisticsPage})));
 const SubstitutionsPage = lazy(() => import("@/pages/UsersPages/SubstitutionsPage.tsx").then(m => ({default: m.SubstitutionsPage})));
 const SupplierRegistryPage = lazy(() => import("@/pages/ProcurementPages/SupplierRegistryPage.tsx").then(m => ({default: m.SupplierRegistryPage})));
@@ -150,6 +151,7 @@ function App() {
                                 <Route path="/substitutions" element={<SubstitutionsPage/>}/>
                                 <Route path="/audit-log" element={<AuditLogPage/>}/>
                                 <Route path="/signing-workplace" element={<SigningWorkplacePage/>}/>
+                                <Route path="/hr-ack" element={<AcknowledgementPage/>}/>
 
                                 <Route element={<RequirePermission code={PermissionCode.ManageRoles}/>}>
                                     <Route path="/roles" element={<RolesPermissionPage/>}/>

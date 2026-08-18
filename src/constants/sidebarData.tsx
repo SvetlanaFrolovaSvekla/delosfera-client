@@ -70,8 +70,18 @@ export const navGroups: NavGroup[] = [
         ],
     },
     {
+        titleKey: "Кадровый документооборот",
+        items: [
+            // Ознакомление с приказами и документами: роспись сотрудника простой
+            // электронной подписью (Б-19)
+            { id: "hr-ack", icon: "check", labelKey: "Ознакомление", path: "/hr-ack" },
+        ],
+    },
+    {
         titleKey: "Система",
         items: [
+            // Проверка готовности подписывать квалифицированной подписью (Б-17)
+            { id: "signing-workplace", icon: "check", labelKey: "Рабочее место подписи", path: "/signing-workplace" },
             { id: "adm-users", icon: "user", labelKey: "sidebar.items.admUsers", path: "/users" },
             { id: "adm-roles", icon: "shield", labelKey: "sidebar.items.admRoles", path: "/roles", permission: PermissionCode.ManageRoles },
             { id: "adm-sub", icon: "user", labelKey: "Замещения", path: "/substitutions", permission: PermissionCode.ManageUsers },
@@ -118,7 +128,6 @@ export const navGroups: NavGroup[] = [
     {
         titleKey: "sidebar.groups.system",
         items: [
-            { id: "signing-workplace", icon: "check", labelKey: "Рабочее место подписи", path: "/signing-workplace" },
             { id: "mobile", icon: "mobile", labelKey: "sidebar.items.mobile" },
             { id: "refs", icon: "refs", labelKey: "sidebar.items.refs" },
             { id: "kb", icon: "kb", labelKey: "sidebar.items.kb" },

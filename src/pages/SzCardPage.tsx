@@ -10,6 +10,7 @@ import {SzOriginalPanel} from "@/components/sz/SzOriginalPanel.tsx";
 import {SzArchivePanel} from "@/components/sz/SzArchivePanel.tsx";
 import {SzProcurementPanel} from "@/components/sz/SzProcurementPanel.tsx";
 import {SzApproversField} from "@/components/sz/SzApproversField.tsx";
+import {SzHrForm} from "@/components/sz/SzHrForm.tsx";
 import {SzAddresseeDecisionPanel} from "@/components/sz/SzAddresseeDecisionPanel.tsx";
 import {AttachmentsPanel} from "@/components/attachments/AttachmentsPanel.tsx";
 import {
@@ -23,6 +24,8 @@ import {
 import {SignatureStampView} from "@/components/signing/SignatureStampView.tsx";
 import {QualifiedSignDialog} from "@/components/signing/QualifiedSignDialog.tsx";
 import {
+    hrForms as szHrForms,
+    type HrFormSchema,
     SZ_STATUS_LABEL,
     szService,
     type SzDetails,
@@ -86,6 +89,12 @@ export function SzCardPage() {
 
     const [kinds, setKinds] = useState<SzKind[]>([]);
     const [hrKinds, setHrKinds] = useState<SzHrKind[]>([]);
+
+    /** Схема полей по видам кадровых записок — приходит с сервера один раз. */
+    const [hrForms, setHrForms] = useState<Record<string, HrFormSchema>>({});
+
+    /** Общие значения полей вида: те, что не заполняются по каждому сотруднику. */
+    const [hrValues, setHrValues] = useState<Record<string, unknown>>({});
     const [sz, setSz] = useState<SzDetails | null>(null);
     const [loading, setLoading] = useState(!isNew);
     const [saving, setSaving] = useState(false);
@@ -112,12 +121,17 @@ export function SzCardPage() {
         userService.getAll()
             .then((list) => {
                 setUsers(Object.fromEntries(list.map((u) => [u.id, u.fullName])));
-                setUserList(list.map((u) => ({id: u.id, fullName: u.fullName})));
+                setUserList(list.map((u) => ({
+                    id: u.id, fullName: u.fullName,
+                    position: u.position ?? null, orgUnit: u.orgUnit ?? null,
+                })));
             })
             .catch(() => {});
     }, []);
 
     useEffect(() => {
+        void szHrForms().then(setHrForms).catch(() => undefined);
+
         Promise.all([szService.kinds(), szService.hrKinds()])
             .then(([k, hr]) => {
                 setKinds(k);
@@ -140,6 +154,7 @@ export function SzCardPage() {
             hrKindId: d.hrKindId, employeeName: d.employeeName,
             employeeUnitId: d.employeeUnitId, transferUnitId: d.transferUnitId,
             hasBudget: d.hasBudget, amount: d.amount, travelExpenses: d.travelExpenses,
+            employees: d.employees ?? [],
         });
 
         // Маршрут нужен и после завершения: карточка показывает, кто и как решил.
@@ -525,7 +540,7 @@ export function SzCardPage() {
                 </div>
 
                 {formKey === "Hr" && (
-                    <div className="mt-4 grid grid-cols-2 gap-4">
+                    <div className="mt-4">
                         <Field label="Вид кадровой записки">
                             <select className={inputClass} value={form.hrKindId ?? ""} disabled={!editable}
                                     onChange={(e) => set("hrKindId", e.target.value ? Number(e.target.value) : null)}>
@@ -533,24 +548,19 @@ export function SzCardPage() {
                                 {hrKinds.map((k) => <option key={k.id} value={k.id}>{k.titleRu}</option>)}
                             </select>
                         </Field>
-                        <Field label="ФИО сотрудника">
-                            <input className={inputClass} value={form.employeeName ?? ""} disabled={!editable}
-                                   onChange={(e) => set("employeeName", e.target.value)}/>
-                        </Field>
-                        <Field label="Филиал / СП сотрудника">
-                            <select className={inputClass} value={form.employeeUnitId ?? ""} disabled={!editable}
-                                    onChange={(e) => set("employeeUnitId", e.target.value ? Number(e.target.value) : null)}>
-                                <option value="">Не выбрано</option>
-                                {ORG_UNITS.map((u) => <option key={u.id} value={u.id}>{u.name}</option>)}
-                            </select>
-                        </Field>
-                        <Field label="Филиал / СП перевода">
-                            <select className={inputClass} value={form.transferUnitId ?? ""} disabled={!editable}
-                                    onChange={(e) => set("transferUnitId", e.target.value ? Number(e.target.value) : null)}>
-                                <option value="">Не выбрано</option>
-                                {ORG_UNITS.map((u) => <option key={u.id} value={u.id}>{u.name}</option>)}
-                            </select>
-                        </Field>
+
+                        {/* Поля зависят от вида: у командировки свои, у изменения оклада свои.
+                            Схему отдаёт сервер, здесь её только рисуют. */}
+                        <SzHrForm
+                            schema={hrForms[hrKinds.find((k) => k.id === form.hrKindId)?.titleRu ?? ""] ?? null}
+                            employees={form.employees ?? []}
+                            onEmployeesChange={(list) => set("employees", list)}
+                            values={hrValues}
+                            onValuesChange={setHrValues}
+                            users={userList}
+                            orgUnits={ORG_UNITS.map((u) => ({id: Number(u.id), name: u.name}))}
+                            editable={editable}
+                        />
                     </div>
                 )}
 

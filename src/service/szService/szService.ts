@@ -88,6 +88,9 @@ export interface SzDetails extends SzListItem {
     amount: number | null;
     travelExpenses: boolean | null;
 
+    /** Сотрудники, которых касается кадровая записка. */
+    employees: SzEmployee[];
+
     extraFields: Record<string, unknown> | null;
     currentRouteInstanceId: number | null;
     /** Обоснование последнего отзыва — участники должны видеть, почему процесс прерван. */
@@ -128,6 +131,7 @@ export interface SzSaveRequest {
     hasBudget?: boolean | null;
     amount?: number | null;
     travelExpenses?: boolean | null;
+    employees?: SzEmployee[];
 
     extraFields?: Record<string, unknown> | null;
 }
@@ -269,3 +273,51 @@ export const SZ_STATUS_LABEL: Record<SzStatusCode, string> = {
     Withdrawn: "Отозвана",
     Archived: "В архиве",
 };
+
+
+/**
+ * Сотрудник в кадровой записке. userId пуст у кандидата: в записке о приёме
+ * человека в системе ещё нет, а записка уже нужна.
+ */
+export interface SzEmployee {
+    id?: number;
+    userId?: number | null;
+    fullName: string;
+    orgUnitId?: number | null;
+    orgUnit?: string | null;
+    position?: string | null;
+
+    /** Значения полей, своих для этого человека: оклад, даты. */
+    values?: Record<string, unknown>;
+}
+
+export type HrFieldType =
+    "text" | "number" | "money" | "date" | "checkbox" | "select" | "orgUnit";
+
+export interface HrFieldSchema {
+    code: string;
+    label: string;
+    type: HrFieldType;
+    required: boolean;
+
+    /** Поле заполняется по каждому сотруднику: оклад свой у каждого, город — общий. */
+    perEmployee: boolean;
+
+    options?: string[] | null;
+    hint?: string | null;
+}
+
+export interface HrFormSchema {
+    allowMultipleEmployees: boolean;
+
+    /** Сотрудника нет в системе — записка о приёме: ФИО вводится строкой. */
+    employeeMayBeExternal: boolean;
+
+    fields: HrFieldSchema[];
+}
+
+/** Схема полей по видам кадровых записок — ключ совпадает с названием вида. */
+export async function hrForms(): Promise<Record<string, HrFormSchema>> {
+    const {data} = await apiClient.get<Record<string, HrFormSchema>>("/sz/hr-forms");
+    return data;
+}

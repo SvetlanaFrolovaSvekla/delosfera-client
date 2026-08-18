@@ -11,6 +11,7 @@ import {SzArchivePanel} from "@/components/sz/SzArchivePanel.tsx";
 import {SzProcurementPanel} from "@/components/sz/SzProcurementPanel.tsx";
 import {SzApproversField} from "@/components/sz/SzApproversField.tsx";
 import {SzHrForm} from "@/components/sz/SzHrForm.tsx";
+import {RichTextEditor} from "@/components/editor/RichTextEditor.tsx";
 import {SzAddresseeDecisionPanel} from "@/components/sz/SzAddresseeDecisionPanel.tsx";
 import {AttachmentsPanel} from "@/components/attachments/AttachmentsPanel.tsx";
 import {
@@ -530,12 +531,11 @@ export function SzCardPage() {
                 </div>
 
                 <div className="mt-4">
-                    <span className={labelClass}>Текст записки</span>
-                    <textarea
-                        value={form.body ?? ""} disabled={!editable}
-                        onChange={(e) => set("body", e.target.value)}
-                        rows={7}
-                        className="w-full px-3 py-2.5 rounded-[9px] border border-[#e5e9f0] bg-white text-[13px] leading-[1.6] outline-none resize-y focus:border-[#2f68f5]"
+                    <RichTextEditor
+                        label="Текст записки"
+                        value={form.body ?? ""}
+                        disabled={!editable}
+                        onChange={(html) => set("body", html)}
                     />
                 </div>
 

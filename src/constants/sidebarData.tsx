@@ -80,6 +80,8 @@ export const navGroups: NavGroup[] = [
     {
         titleKey: "Система",
         items: [
+            // Инструкции по работе с системой: статьи со ссылками прямо на экраны (KB-01..03)
+            { id: "help", icon: "kb", labelKey: "Как работать в системе", path: "/help" },
             // Проверка готовности подписывать квалифицированной подписью (Б-17)
             { id: "signing-workplace", icon: "check", labelKey: "Рабочее место подписи", path: "/signing-workplace" },
             { id: "adm-users", icon: "user", labelKey: "sidebar.items.admUsers", path: "/users" },

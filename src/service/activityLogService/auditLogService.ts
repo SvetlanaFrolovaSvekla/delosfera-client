@@ -33,7 +33,9 @@ export interface AuditFilter {
     pageSize?: number;
 }
 
-const BASE = "/activity-log";
+// Журнал аудита переехал на /api/audit: на /api/activity-log теперь лента
+// событий рабочего стола — это разные вещи, и делить один адрес им незачем.
+const BASE = "/audit";
 
 export const auditLogService = {
     async search(filter: AuditFilter): Promise<AuditPage> {

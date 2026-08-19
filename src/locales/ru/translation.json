@@ -194,7 +194,47 @@
     "deleteFailedToastTitle": "Не удалось удалить",
     "consolidatedToastTitle": "ВНД консолидирован",
     "consolidatedToastDescription": "Документ теперь в статусе «Действующий»",
-    "consolidateError": "Не удалось консолидировать документ"
+    "consolidateError": "Не удалось консолидировать документ",
+    "editionsTab": {
+      "loadingRedactions": "Загрузка редакций…",
+      "loadErrorTitle": "Не удалось загрузить редакции",
+      "retry": "Повторить",
+      "emptyTitle": "Редакции документа отсутствуют",
+      "emptyDescription": "Загрузите первую редакцию, чтобы документ начал действовать",
+      "uploadFirstAction": "Загрузить первую редакцию",
+      "downloadError": "Не удалось скачать файл",
+      "redactionBecameCurrentTitle": "ВНД теперь действует!",
+      "redactionBecameCurrentDescription": "Редакция {{code}} стала действующей!",
+      "redactionAddedToDraftTitle": "Редакция добавлена в черновик!",
+      "redactionAddedToDraftDescription": "Чтобы {{vndCode}} начал действовать, пожалуйста, отправьте редакцию {{redactionCode}} на согласование.",
+      "redactionUpdatedTitle": "Редакция обновлена",
+      "redactionUpdatedDescription": "Изменения в редакции {{code}} сохранены."
+    },
+    "redactionsSidebar": {
+      "title": "Редакции документа",
+      "newRedactionButton": "Новая редакция",
+      "uploadBlockedHint": "Р{{number}} ещё не завершена — сначала отправьте и дождитесь решения.",
+      "downloadButton": "Скачать редакцию",
+      "contentsButton": "Содержание редакции",
+      "compareButton": "Сравнение редакций",
+      "editButton": "Редактировать",
+      "tidButton": "ТИД"
+    },
+    "languageTabsPanel": {
+      "title": "Язык документа",
+      "unavailableHint": "Текст на этом языке ещё не загружен"
+    },
+    "redactionTextView": {
+      "noTextInLanguage": "Текст на этом языке отсутствует"
+    }
+  },
+  "docxEditor": {
+    "loadingDocument": "Загрузка документа…",
+    "loadError": "Не удалось загрузить документ",
+    "contextMenu": {
+      "copy": "Копировать",
+      "searchInGoogle": "Найти «{{query}}» в Google"
+    }
   },
   "createVnd": {
     "titlesSection": {

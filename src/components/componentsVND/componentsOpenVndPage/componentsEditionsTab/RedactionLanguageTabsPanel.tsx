@@ -1,17 +1,10 @@
 // Панель переключения языка содержимого редакции (RU/KG/EN)
+import {Fragment} from "react";
+import {useTranslation} from "react-i18next";
 import type {VndRedactionResponse} from "@/service/vndService/vndServiceType.ts";
-
-export type RedactionLanguage = "ru" | "kg" | "en";
-
-const LANGUAGE_TABS: {
-    code: RedactionLanguage;
-    label: string;
-    fileKey: "docFileRuId" | "docFileKgId" | "docFileEnId";
-}[] = [
-    {code: "ru", label: "Русский", fileKey: "docFileRuId"},
-    {code: "kg", label: "Кыргызча", fileKey: "docFileKgId"},
-    {code: "en", label: "English", fileKey: "docFileEnId"},
-];
+import {LANGUAGE_TABS, type RedactionLanguage} from "@/utils/redactionLanguagePanelUtils.ts";
+import {Tooltip} from "@/components/componentsGeneral/Tooltip";
+import {Check, Lock} from "lucide-react";
 
 interface RedactionLanguageTabsPanelProps {
     selected: VndRedactionResponse;
@@ -24,45 +17,67 @@ export function RedactionLanguageTabsPanel({
                                                activeLanguage,
                                                onChange,
                                            }: RedactionLanguageTabsPanelProps) {
+    const {t} = useTranslation();
+
     return (
         <div className="rounded-[14px] border border-[#e9edf3] bg-white p-[14px]">
             <div className="px-1 pb-[10px] pt-[2px] text-[11px] font-bold uppercase tracking-[0.04em] text-[#a3adbd]">
-                Язык документа
+                {/* Язык документа */}
+                {t("openVndPage.languageTabsPanel.title")}
             </div>
 
-            <div className="flex flex-col gap-1 rounded-[10px] bg-[#f4f6fa] p-1">
-                {LANGUAGE_TABS.map((tab) => {
+            <div className="flex flex-col rounded-[9px] bg-[#f2f5f9] p-[3px]">
+                {LANGUAGE_TABS.map((tab, index) => {
                     const available = selected[tab.fileKey] !== null;
-                    const active = activeLanguage === tab.code;
-                    return (
+                    const active = available && activeLanguage === tab.code;
+                    const prevActive = index > 0 && available && LANGUAGE_TABS[index - 1].code === activeLanguage;
+                    const showDivider = index > 0 && !active && !prevActive;
+
+                    const button = (
                         <button
-                            key={tab.code}
                             onClick={() => available && onChange(tab.code)}
                             disabled={!available}
-                            className={`h-9 w-full rounded-[8px] text-[12.5px] font-semibold transition-colors ${
+                            className="flex h-8 w-full items-center justify-between rounded-[6px] px-2.5 text-[12.5px] font-semibold transition-colors"
+                            style={
                                 !available
-                                    ? "cursor-not-allowed text-[#c3ccd8]"
+                                    ? {color: "#c3ccd8", cursor: "not-allowed"}
                                     : active
-                                        ? "cursor-pointer bg-white text-[#1c2740] shadow-[0_1px_3px_rgba(16,24,40,0.08)]"
-                                        : "cursor-pointer text-[#8b97ab] hover:text-[#3a4560]"
-                            }`}
+                                        ? {
+                                            background: "#fff",
+                                            color: "var(--app-accent, #4e57d6)",
+                                            boxShadow: "0 1px 2px rgba(15,27,45,.08)",
+                                            cursor: "pointer",
+                                        }
+                                        : {color: "#5d616c", cursor: "pointer"}
+                            }
                         >
-                            {tab.label}
+                            <span>{tab.label}</span>
+                            {!available ? (
+                                <Lock size={12} strokeWidth={2} className="flex-none opacity-70"/>
+                            ) : active ? (
+                                <Check size={14} strokeWidth={2.5} className="flex-none"/>
+                            ) : null}
                         </button>
+                    );
+
+                    return (
+                        <Fragment key={tab.code}>
+                            {showDivider && (
+                                <div className="h-px shrink-0 bg-gradient-to-r from-transparent via-[#dde2ea] to-transparent"/>
+                            )}
+                            <div className="grid py-[2.5px]">
+                                {available ? (
+                                    button
+                                ) : (
+                                    <Tooltip content={t("openVndPage.languageTabsPanel.unavailableHint")} side="right">
+                                        {button}
+                                    </Tooltip>
+                                )}
+                            </div>
+                        </Fragment>
                     );
                 })}
             </div>
         </div>
     );
-}
-
-/** Языки, для которых у редакции реально есть файл текста */
-export function getAvailableLanguages(redaction: VndRedactionResponse): RedactionLanguage[] {
-    return LANGUAGE_TABS.filter((t) => redaction[t.fileKey] !== null).map((t) => t.code);
-}
-
-/** ID файла редакции на конкретном языке (или null, если текста на этом языке нет) */
-export function getRedactionFileId(redaction: VndRedactionResponse, lang: RedactionLanguage): number | null {
-    const tab = LANGUAGE_TABS.find((t) => t.code === lang);
-    return tab ? (redaction[tab.fileKey] as number | null) : null;
 }

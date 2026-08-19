@@ -194,7 +194,47 @@
     "deleteFailedToastTitle": "Failed to delete",
     "consolidatedToastTitle": "VND consolidated",
     "consolidatedToastDescription": "The document is now in «Active» status",
-    "consolidateError": "Failed to consolidate document"
+    "consolidateError": "Failed to consolidate document",
+    "editionsTab": {
+      "loadingRedactions": "Loading revisions…",
+      "loadErrorTitle": "Failed to load revisions",
+      "retry": "Retry",
+      "emptyTitle": "No revisions yet",
+      "emptyDescription": "Upload the first revision to make the document active",
+      "uploadFirstAction": "Upload first revision",
+      "downloadError": "Failed to download file",
+      "redactionBecameCurrentTitle": "Document is now active!",
+      "redactionBecameCurrentDescription": "Revision {{code}} is now current!",
+      "redactionAddedToDraftTitle": "Revision added as draft!",
+      "redactionAddedToDraftDescription": "For {{vndCode}} to become active, please submit revision {{redactionCode}} for approval.",
+      "redactionUpdatedTitle": "Revision updated",
+      "redactionUpdatedDescription": "Changes to revision {{code}} have been saved."
+    },
+    "redactionsSidebar": {
+      "title": "Document revisions",
+      "newRedactionButton": "New revision",
+      "uploadBlockedHint": "R{{number}} is not finished yet — submit it first and wait for a decision.",
+      "downloadButton": "Download revision",
+      "contentsButton": "Revision contents",
+      "compareButton": "Compare revisions",
+      "editButton": "Edit",
+      "tidButton": "TID"
+    },
+    "languageTabsPanel": {
+      "title": "Document language",
+      "unavailableHint": "Text in this language hasn't been uploaded yet"
+    },
+    "redactionTextView": {
+      "noTextInLanguage": "Text in this language is not available"
+    }
+  },
+  "docxEditor": {
+    "loadingDocument": "Loading document…",
+    "loadError": "Failed to load document",
+    "contextMenu": {
+      "copy": "Copy",
+      "searchInGoogle": "Search for \"{{query}}\" on Google"
+    }
   },
   "createVnd": {
     "titlesSection": {

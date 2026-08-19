@@ -1,4 +1,6 @@
 // Компонент Loader загрузки (кольцо)
+import {useTranslation} from "react-i18next";
+
 interface LoaderProps {
     label?: string;
     size?: "sm" | "md" | "lg";
@@ -11,7 +13,12 @@ const SIZE_MAP = {
     lg: "w-14 h-14 border-4",
 } as const;
 
-export function Loader({label = "Загрузка…", size = "md", fullHeight = true}: LoaderProps) {
+export function Loader({label, size = "md", fullHeight = true}: LoaderProps) {
+    const {t} = useTranslation();
+    // Если label не передан явно - берём общий перевод "Загрузка…";
+    // передав label="" можно осознанно скрыть подпись
+    const resolvedLabel = label ?? t("general.loading");
+
     return (
         <div
             className={`flex flex-col items-center justify-center gap-3 ${
@@ -23,8 +30,8 @@ export function Loader({label = "Загрузка…", size = "md", fullHeight =
                     className={`${SIZE_MAP[size]} rounded-full border-[#ececfc] border-t-[#4e57d6] animate-spin`}
                 />
             </div>
-            {label && (
-                <span className="text-[13px] text-[#8b97ab]">{label}</span>
+            {resolvedLabel && (
+                <span className="text-[13px] text-[#8b97ab]">{resolvedLabel}</span>
             )}
         </div>
     );

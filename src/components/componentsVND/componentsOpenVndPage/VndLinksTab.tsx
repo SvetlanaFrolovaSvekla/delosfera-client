@@ -42,7 +42,7 @@ export function VndLinksTab({vndId}: VndLinksTabProps) {
     };
 
     return (
-        <div className="bg-white border border-[#e9edf3] rounded-2xl overflow-hidden">
+        <div className="mx-4 sm:mx-6 bg-white border border-[#e9edf3] rounded-2xl overflow-hidden">
             <div className="px-5 pt-4 pb-3 border-b border-[#eef2f7] flex items-center gap-3">
                 <Link2 size={18} strokeWidth={1.8} className="text-[#4e57d6]"/>
                 <h2 className="m-0 text-sm font-semibold flex-1">Связанные документы</h2>

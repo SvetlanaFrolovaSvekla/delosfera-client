@@ -9,26 +9,34 @@ function authHeaders(): HeadersInit {
 }
 
 /**
- * Скачивает файл с бэка через fetch (с Bearer-токеном) и триггерит сохранение в браузере.
- * Обычный <a href> тут не работает, т.к. эндпоинт защищён [Authorize] и не получает заголовок.
+ * Скачивает файл с бэка через авторизованный fetch и отдаёт Blob + оригинальное имя,
+ * ничего не сохраняя на диск. Используется для встраивания файла в UI (например, в DocxEditor).
  */
-export async function downloadFile(fileId: number, fallbackName = "файл"): Promise<void> {
+export async function fetchFileBlob(fileId: number, fallbackName = "файл"): Promise<{ blob: Blob; fileName: string }> {
     const response = await fetch(`${API_BASE}/files/${fileId}`, {
         headers: authHeaders(),
     });
 
     if (!response.ok) {
-        throw new Error(`Не удалось скачать файл: ${response.status}`);
+        throw new Error(`Не удалось загрузить файл: ${response.status}`);
     }
 
-    // Пытаемся достать оригинальное имя файла из Content-Disposition
     const disposition = response.headers.get("Content-Disposition");
     const match = disposition?.match(/filename\*?=(?:UTF-8'')?"?([^";]+)"?/i);
     const fileName = match ? decodeURIComponent(match[1]) : fallbackName;
 
     const blob = await response.blob();
-    const url = URL.createObjectURL(blob);
+    return {blob, fileName};
+}
 
+/**
+ * Скачивает файл с бэка через fetch (с Bearer-токеном) и триггерит сохранение в браузере.
+ * Обычный <a href> тут не работает, т.к. эндпоинт защищён [Authorize] и не получает заголовок.
+ */
+export async function downloadFile(fileId: number, fallbackName = "файл"): Promise<void> {
+    const {blob, fileName} = await fetchFileBlob(fileId, fallbackName);
+
+    const url = URL.createObjectURL(blob);
     const link = document.createElement("a");
     link.href = url;
     link.download = fileName;

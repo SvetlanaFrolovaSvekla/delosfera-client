@@ -7,7 +7,7 @@ export type LastActualizationStatus = "no_changes" | "with_changes";
 // Режимы просмотра реестра ВНД:: все, действующие, архивированные, черновики
 export type VndScope = "all" | "active" | "arch" | "draft";
 // Режимы открытого ВНД:
-export const VND_TAB_IDS = ["passport", "editions", "links", "history", "approval", "actual"] as const;
+export const VND_TAB_IDS = ["editions", "passport", "links", "history", "approval", "actual"] as const;
 export type VndTabId = (typeof VND_TAB_IDS)[number];
 
 interface VndTabMeta {
@@ -16,8 +16,8 @@ interface VndTabMeta {
 }
 
 const BASE_LABELS: Record<VndTabId, string> = {
-    passport: "Реквизиты",
     editions: "Редакции",
+    passport: "Реквизиты",
     links: "Связи",
     history: "История",
     approval: "Ход согласования",

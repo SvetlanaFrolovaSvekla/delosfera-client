@@ -65,6 +65,8 @@
     }
   },
   "header": {
+    "searching": "Поиск…",
+    "noResultsFor": "Ничего не найдено по «{{query}}»",
     "profileTooltip": "Перейти в мой профиль",
     "langRu": "Русский",
     "langKy": "Кыргызча",
@@ -75,7 +77,9 @@
     "notif": "Уведомления",
     "readAll": "Прочитать все",
     "switchRole": "Просмотр от роли",
-    "myProfile": "Мой профиль"
+    "myProfile": "Мой профиль",
+    "myRoles": "Мои роли:",
+    "logout": "Выход"
   },
   "home": {
     "recentActivity": {
@@ -92,6 +96,13 @@
     "planActualizationTitle": "План актуализации ВНД",
     "seeActualization": "Смотреть план",
     "createDocument": "Создать документ",
+    "loadingPage": "Загрузка главной страницы…",
+    "greeting": {
+      "morning": "Доброе утро",
+      "day": "Добрый день",
+      "evening": "Добрый вечер",
+      "night": "Доброй ночи"
+    },
     "myTasks": "Мои задачи",
     "allTasks": "Все задачи",
     "planTitle": "План актуализации ВНД",
@@ -107,7 +118,8 @@
   "notifications": {
     "n1": "Документ №СЗ-1245 согласован Э. Сыдыковым",
     "n2": "ТИД-88 возвращён на доработку",
-    "n3": "Новая заявка на закупку требует вашей визы"
+    "n3": "Новая заявка на закупку требует вашей визы",
+    "title": "Уведомлений нет!"
   },
   "notificationsTime": {
     "n1": "5 мин назад",
@@ -119,13 +131,111 @@
     "initiator": "Инициатор",
     "clerk": "Канцелярия"
   },
+  "auth": {
+    "brandName": "Делосфера",
+    "brandSub": "СЭД БАНКА",
+    "heroTitle": "Электронный документооборот банка",
+    "heroSubtitle": "Согласование, подписание и хранение внутренних нормативных документов — от инициации до архива, в едином маршруте.",
+    "title": "Вход в систему",
+    "subtitle": "Выберите способ авторизации",
+    "tabPassword": "Логин и пароль",
+    "tabDomain": "Доменный вход",
+    "loginLabel": "Логин",
+    "loginPlaceholder": "ivanov.ii@bank.kg",
+    "passwordLabel": "Пароль",
+    "showPassword": "Показать пароль",
+    "hidePassword": "Скрыть пароль",
+    "remember": "Запомнить меня",
+    "forgotPassword": "Забыли пароль?",
+    "signIn": "Войти",
+    "signingIn": "Вход…",
+    "errorCredentials": "Неверный логин или пароль",
+    "domainHint": "Введите доменные логин и пароль — те же, что и для входа в рабочую станцию. Пароль проверяет служба каталогов банка, система его не хранит.",
+    "domainSignIn": "Войти через домен",
+    "domainChecking": "Проверяем в службе каталогов…",
+    "errorDomain": "Служба каталогов не подтвердила доменные логин и пароль",
+    "footerVersion": "Делосфера СЭД · v8.2",
+    "support": "Поддержка"
+  },
   "vnd": {
+    "shortLabel": "ВНД",
     "status": "Статус",
     "emptyState": {
       "title": "ВНД не найдены!",
       "description": "По заданным параметрам поиска ничего не найдено. Попробуйте изменить запрос или сбросить фильтры.",
       "resetFilters": "Сбросить фильтры"
+    },
+    "actualizationBuckets": {
+      "normal": "В норме",
+      "approaching": "Приближается срок",
+      "critical": "Критичный срок",
+      "overdue": "Просрочено"
+    },
+    "daysUnit": "дн",
+    "dueInDays": "через {{count}} дн",
+    "overdueByDays": "−{{count}} дн",
+    "createdDateHint": "дата создания",
+    "documentsUnit": "докум.",
+    "lastActualizationStatus": {
+      "withChanges": "С изменениями",
+      "withoutChanges": "Без изменений"
     }
+  },
+  "openVndPage": {
+    "loadError": "Не удалось загрузить документ: {{error}}",
+    "dictionariesErrorTitle": "Не удалось загрузить данные!",
+    "createdAtLabel": "Дата создания: {{date}}",
+    "deleteDraftButton": "Удалить черновик",
+    "deleteConfirmTitle": "Удалить черновик?",
+    "deleteConfirmMessage": "Удалить черновик ВНД «{{name}}»? Действие необратимо.",
+    "deleteError": "Не удалось удалить документ",
+    "deletedToastTitle": "ВНД удалён",
+    "deletedToastDescription": "«{{name}}» удалён",
+    "deleteFailedToastTitle": "Не удалось удалить",
+    "consolidatedToastTitle": "ВНД консолидирован",
+    "consolidatedToastDescription": "Документ теперь в статусе «Действующий»",
+    "consolidateError": "Не удалось консолидировать документ"
+  },
+  "createVnd": {
+    "titlesSection": {
+      "title": "Заголовки",
+      "titleRu": "Заголовок (рус)",
+      "titleKy": "Заголовок (кырг)",
+      "titleEn": "Заголовок (англ)"
+    },
+    "classifiers": {
+      "title": "Классификаторы",
+      "keywords": "Ключевые слова",
+      "keywordsSearchPlaceholder": "Поиск ключевых слов…",
+      "rubric": "Рубрикатор",
+      "rubricSearchPlaceholder": "Поиск рубрики…",
+      "secrecyLevel": "Уровень секретности",
+      "secrecyLevelSearchPlaceholder": "Поиск уровня…",
+      "userGroups": "Группы доступа",
+      "userGroupsSearchPlaceholder": "Поиск группы…"
+    },
+    "loadingDictionaries": "Загрузка справочников…",
+    "loadError": {
+      "title": "Не удалось загрузить данные!"
+    },
+    "backToBase": "База ВНД",
+    "title": "Разработка нового ВНД",
+    "subtitle": "Заполните карточку — код присваивается автоматически, редакция добавляется позже",
+    "cardTitle": "Карточка ВНД",
+    "fields": {
+      "docType": "Вид документа",
+      "docTypeSearchPlaceholder": "Поиск вида документа…",
+      "docTypePlaceholder": "Вид ВНД",
+      "approvalBody": "Орган утверждения",
+      "approvalBodySearchPlaceholder": "Поиск органа утверждения…",
+      "developer": "Разработчик (СП)",
+      "developerHead": "Начальник СП: {{name}}",
+      "responsibleExecutors": "Ответственные исполнители",
+      "executorSearchPlaceholder": "Поиск СП…",
+      "executorHeads": "Начальники: {{names}}"
+    },
+    "submitting": "Создание…",
+    "submit": "Создать черновик-карточку"
   },
   "dictionaries": {
     "maxDepthTag": "макс. глубина",
@@ -271,7 +381,7 @@
     "deleteConfirmTitle": "Удалить рубрику?"
   },
   "rubricTreeModal": {
-    "helpTooltip": "Выберите одну или несколько рубрик, чтобы отфильтровать реестр",
+    "helpTooltip": "Выберите одну или несколько рубрик, чтобы отфильтровать реестр ВНД",
     "goToRubric": "Перейти к реестру с фильтром по этой рубрике",
     "selectedCount": "Выбрано:",
     "apply": "Перейти"
@@ -334,6 +444,51 @@
       "allTasks": "Все задачи",
       "loading": "Загрузка задач…",
       "empty": "Нет активных задач"
+    }
+  },
+  "successModal": {
+    "title": "Черновик-карточка была успешно создана!",
+    "codeLabel": "ВНД-{{code}}",
+    "redirecting": "Переход к карточке ВНД…"
+  },
+  "codeCard": {
+    "label": "Код документа",
+    "example": "Пример: 10101",
+    "hint": "Код документа присваивается системой после сохранения",
+    "note": "После утверждения временный идентификатор трансформируется в постоянный номер документа."
+  },
+  "actualizationCard": {
+    "label": "Срок актуализации",
+    "description": "До какого числа нужно актуализировать ВНД. Выберите готовую периодичность (считается от даты создания) — или задайте дату вручную, тогда периодичность посчитается сама.",
+    "periodicity": "Периодичность",
+    "modes": {
+      "halfYear": "Раз в полгода",
+      "year": "Раз в год",
+      "twoYears": "Раз в два года",
+      "threeYears": "Раз в три года",
+      "date": "Ввод даты"
+    },
+    "periodDescription": {
+      "specifyDate": "укажите дату",
+      "mustBeFuture": "дата должна быть в будущем",
+      "daysShort": "{{count}} дн.",
+      "monthsApprox": "≈ {{count}} мес."
+    }
+  },
+  "vndRequisites": {
+    "actualizationModes": {
+      "Quarterly": "Квартал (3 мес.)",
+      "HalfYear": "Полгода (6 мес.)",
+      "Annual": "Год (12 мес.)",
+      "Biennial": "2 года (24 мес.)",
+      "Triennial": "3 года (36 мес.)",
+      "Custom": "Указать дату вручную"
+    },
+    "toast": {
+      "savedTitle": "Реквизиты обновлены",
+      "savedDescription": "Изменения по документу «{{code}}» сохранены",
+      "saveErrorTitle": "Ошибка сохранения",
+      "saveErrorDefault": "Не удалось сохранить реквизиты"
     }
   }
 }

@@ -2,12 +2,16 @@
 import type {LucideIcon} from "lucide-react";
 import {AlertTriangle, SearchX} from "lucide-react";
 
+type EmptyStateActionVariant = "default" | "primary";
+
 interface EmptyStateProps {
     variant?: "empty" | "error";
     icon?: LucideIcon;
     title: string;
     description?: string;
     actionLabel?: string;
+    actionIcon?: LucideIcon;
+    actionVariant?: EmptyStateActionVariant;
     onAction?: () => void;
 }
 
@@ -28,12 +32,21 @@ const VARIANT_STYLES = {
     },
 } as const;
 
+const ACTION_BUTTON_STYLES: Record<EmptyStateActionVariant, string> = {
+    default:
+        "border border-[#e5e9f0] bg-white text-[#3a4560] hover:bg-[#f6f8fb]",
+    primary:
+        "border-none bg-[#4e57d6] text-white hover:brightness-[1.06] shadow-[0_6px_16px_-6px_#4e57d6]",
+};
+
 export function EmptyState({
                                variant = "empty",
                                icon,
                                title,
                                description,
                                actionLabel,
+                               actionIcon: ActionIcon,
+                               actionVariant = "default",
                                onAction,
                            }: EmptyStateProps) {
     const styles = VARIANT_STYLES[variant];
@@ -55,8 +68,9 @@ export function EmptyState({
             {actionLabel && onAction && (
                 <button
                     onClick={onAction}
-                    className="h-9 px-4 rounded-[9px] border border-[#e5e9f0] bg-white text-[#3a4560] font-semibold text-[12.5px] cursor-pointer hover:bg-[#f6f8fb]"
+                    className={`inline-flex items-center gap-2 h-9 px-4 rounded-[9px] font-semibold text-[12.5px] cursor-pointer ${ACTION_BUTTON_STYLES[actionVariant]}`}
                 >
+                    {ActionIcon && <ActionIcon className="w-4 h-4" strokeWidth={2}/>}
                     {actionLabel}
                 </button>
             )}

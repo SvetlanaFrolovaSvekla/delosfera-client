@@ -13,6 +13,18 @@ import type {
 } from "@/service/dictionariesService/coordinationDefaultApproverService/coordinationDefaultApproverServiceType.ts";
 import {useAuth} from "@/context/AuthContext.ts";
 
+// crypto.randomUUID() доступен только в secure context (https или localhost).
+// На http-проде (edo-test.keremetbank.kg) его нет — используем фолбэк.
+function generateUUID(): string {
+    if (typeof crypto !== "undefined" && crypto.randomUUID) {
+        return crypto.randomUUID();
+    }
+    return "xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx".replace(/[xy]/g, (c) => {
+        const r = (Math.random() * 16) | 0;
+        const v = c === "x" ? r : (r & 0x3) | 0x8;
+        return v.toString(16);
+    });
+}
 
 export interface StageDraft {
     localId: string;
@@ -33,7 +45,7 @@ const KIND_STRING_TO_ENUM: Record<CoordinationStageKind, ApprovalStageKind> = {
 // Создание фиксированных этапов
 function createInitialStages(): StageDraft[] {
     return FIXED_KIND_ORDER.map((kind) => ({
-        localId: crypto.randomUUID(),
+        localId: generateUUID(),
         kind,
         orgUnitId: FIXED_STAGE_ORG_UNITS[kind],
         approverUserId: null,
@@ -96,7 +108,7 @@ export function useStageDrafts() {
             return [
                 ...prev,
                 {
-                    localId: crypto.randomUUID(),
+                    localId: generateUUID(),
                     kind: ApprovalStageKind.Custom,
                     approverUserId: null,
                     approverName: null,

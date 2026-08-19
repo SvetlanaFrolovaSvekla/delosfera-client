@@ -73,7 +73,7 @@ export function VndActualizationTab({vnd, onVndChanged, onGoToEditions}: VndActu
 
     if (vnd.status === "onact") {
         return (
-            <div className="py-4">
+            <div className="px-4 sm:px-6 py-4">
                 <div className="overflow-hidden rounded-[14px] border border-[#e9edf3] bg-white">
                     <div className="flex items-center gap-2.5 border-b border-[#eef2f7] px-5 py-[13px]">
                         <span className="grid h-8 w-8 flex-none place-items-center rounded-[9px] bg-[#eef0f3] text-[#5b6472]">
@@ -105,7 +105,7 @@ export function VndActualizationTab({vnd, onVndChanged, onGoToEditions}: VndActu
 
     if (vnd.status === "consol") {
         return (
-            <div className="py-4">
+            <div className="px-4 sm:px-6 py-4">
                 <div className="rounded-[14px] border border-[#e9edf3] bg-white px-5 py-6 text-center text-[13px] text-[#8b97ab]">
                     Редакция согласована и ждёт консолидации — используйте кнопку «Консолидировать
                     согласованную версию» в шапке документа.
@@ -116,7 +116,7 @@ export function VndActualizationTab({vnd, onVndChanged, onGoToEditions}: VndActu
 
     if (vnd.status !== "active") {
         return (
-            <div className="py-4">
+            <div className="px-4 sm:px-6 py-4">
                 <div className="rounded-[14px] border border-[#e9edf3] bg-white px-5 py-6 text-center text-[13px] text-[#8b97ab]">
                     Актуализация доступна только для действующего документа.
                 </div>
@@ -133,7 +133,7 @@ export function VndActualizationTab({vnd, onVndChanged, onGoToEditions}: VndActu
     }
 
     return (
-        <div className="py-4">
+        <div className="px-4 sm:px-6 py-4">
             <div className="mb-5 overflow-hidden rounded-[14px] border border-[#e9edf3] bg-white">
                 <div className="flex items-center gap-2.5 border-b border-[#eef2f7] px-5 py-[13px]">
                     <span className="grid h-8 w-8 flex-none place-items-center rounded-[9px] bg-[#ececfc] text-[#4e57d6]">

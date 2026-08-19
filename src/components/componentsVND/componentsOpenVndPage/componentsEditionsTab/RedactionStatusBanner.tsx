@@ -1,6 +1,6 @@
 // Компонента с header панели для скачивания ВНД
-import {Loader2} from "lucide-react";
 import type {RedactionDisplayStatus} from "@/utils/redactionStatus.ts";
+import {Loader2} from "lucide-react";
 
 interface BannerConfig {
     border: string;

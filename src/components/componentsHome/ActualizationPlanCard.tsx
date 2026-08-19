@@ -2,7 +2,7 @@
 import {useNavigate} from "react-router-dom";
 import {useTranslation} from "react-i18next";
 import type {VndActualizationSummaryResponse} from "@/service/vndService/vndServiceType.ts";
-import {ACTUALIZATION_BUCKET_META, ACTUALIZATION_BUCKET_ORDER} from "@/constants/actualizationBucket.ts";
+import {ACTUALIZATION_BUCKET_ORDER, useActualizationBucketMeta} from "@/hooks/actualizationHooks/useActualizationBucketMeta.ts";
 
 interface ActualizationPlanCardProps {
     summary: VndActualizationSummaryResponse | null | undefined;
@@ -12,6 +12,7 @@ interface ActualizationPlanCardProps {
 export function ActualizationPlanCard({summary, isLoading}: ActualizationPlanCardProps) {
     const {t} = useTranslation();
     const navigate = useNavigate();
+    const bucketMetaMap = useActualizationBucketMeta();
 
     return (
         <div className="overflow-hidden rounded-[14px] border border-[#e9edf3] bg-white">
@@ -30,7 +31,7 @@ export function ActualizationPlanCard({summary, isLoading}: ActualizationPlanCar
             </div>
             <div className="grid grid-cols-2 gap-[9px] p-8">
                 {ACTUALIZATION_BUCKET_ORDER.map((key) => {
-                    const meta = ACTUALIZATION_BUCKET_META[key];
+                    const meta = bucketMetaMap[key];
                     const BucketIcon = meta.icon;
                     const count = summary ? summary[key] : null;
 

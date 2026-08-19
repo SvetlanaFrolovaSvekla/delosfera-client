@@ -4,6 +4,7 @@ import {useTranslation} from "react-i18next";
 import {useNavigate} from "react-router-dom";
 import {User, LogOut, ChevronRight} from "lucide-react";
 import {useAuth} from "@/context/AuthContext.ts";
+import {transliterate} from "@/utils/transliterate.ts";
 
 function getInitials(fullName: string): string {
     return fullName
@@ -16,7 +17,7 @@ function getInitials(fullName: string): string {
 }
 
 export function ProfileMenu() {
-    const {t} = useTranslation();
+    const {t, i18n} = useTranslation();
     const {user, logout} = useAuth();
     const navigate = useNavigate();
 
@@ -36,8 +37,13 @@ export function ProfileMenu() {
 
     if (!user) return null;
 
-    const abbr = getInitials(user.fullName);
-    const roleLabel = user.position?.name ?? user.roles[0]?.name ?? "";
+    // ФИО, должность и роли — оргданные банка, не словарные термины,
+    // поэтому на английской локали транслитерируем, а не переводим
+    const isLatin = i18n.language === "en";
+    const displayName = isLatin ? transliterate(user.fullName) : user.fullName;
+    const roleLabelRaw = user.position?.name ?? user.roles[0]?.name ?? "";
+    const roleLabel = isLatin ? transliterate(roleLabelRaw) : roleLabelRaw;
+    const abbr = getInitials(displayName);
 
     const handleLogout = async () => {
         setOpen(false);
@@ -56,7 +62,7 @@ export function ProfileMenu() {
                     {abbr}
                 </span>
                 <span className="text-left leading-[1.25]">
-                    <span className="block text-[14.5px] font-semibold text-[#0f1b2d]">{user.fullName}</span>
+                    <span className="block text-[14.5px] font-semibold text-[#0f1b2d]">{displayName}</span>
                     <span className="block text-[11.5px] text-[#8b97ab]">{roleLabel}</span>
                 </span>
             </button>
@@ -70,7 +76,7 @@ export function ProfileMenu() {
                         </span>
                         <div className="min-w-0">
                             <div className="text-[14px] font-semibold text-[#0f1b2d] truncate">
-                                {user.fullName}
+                                {displayName}
                             </div>
                             <div className="text-[11.5px] text-[#8b97ab] truncate">
                                 {user.email}
@@ -84,14 +90,14 @@ export function ProfileMenu() {
                             <span
                                 className="px-2 py-1 text-[11px] font-semibold"
                             >
-                                    Мои роли:
+                                    {t("header.myRoles")}
                                 </span>
                             {user.roles.map((role) => (
                                 <span
                                     key={role.id}
                                     className="px-2 py-1 rounded-[7px] bg-[#f2f5f9] text-[11px] font-semibold text-[#55617a]"
                                 >
-                                    {role.name}
+                                    {isLatin ? transliterate(role.name) : role.name}
                                 </span>
                             ))}
                         </div>
@@ -110,7 +116,7 @@ export function ProfileMenu() {
                                 <User className="w-4 h-4" strokeWidth={1.9} />
                             </span>
                             <span className="flex-1 font-semibold text-[13px] text-[#0f1b2d]">
-                                {t("header.myProfile", "Мой профиль")}
+                                {t("header.myProfile")}
                             </span>
                             <ChevronRight className="w-4 h-4 text-[#c3ccd8]" strokeWidth={2} />
                         </button>
@@ -124,7 +130,7 @@ export function ProfileMenu() {
                                 <LogOut className="w-4 h-4" strokeWidth={1.9} />
                             </span>
                             <span className="flex-1 font-semibold text-[13px] text-[#e5484d]">
-                                {t("header.logout", "Выход")}
+                                {t("header.logout")}
                             </span>
                         </button>
                     </div>

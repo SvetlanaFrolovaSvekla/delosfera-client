@@ -85,7 +85,7 @@ export function VndPassportTab({
 
     return (
         <>
-            <div className="flex items-center justify-between gap-2 mb-[15px]">
+            <div className="px-4 sm:px-6 flex items-center justify-between gap-2 mb-[15px]">
                 <p className="m-0 text-[#8b97ab] text-[13px]">
                     Реквизиты документа
                 </p>

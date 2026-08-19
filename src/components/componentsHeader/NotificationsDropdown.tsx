@@ -116,7 +116,7 @@ export function NotificationsDropdown() {
                         {loading ? (
                             <Loader label="Загрузка уведомлений…" />
                         ) : items.length === 0 ? (
-                            <EmptyState variant="empty" title="Уведомлений нет!"/>
+                            <EmptyState variant="empty" title={t("notifications.emptyState.title")}/>
                         ) : (
                             items.map((n) => (
                                 <div

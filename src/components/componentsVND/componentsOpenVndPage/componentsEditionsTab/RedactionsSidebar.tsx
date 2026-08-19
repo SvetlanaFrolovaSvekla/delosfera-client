@@ -1,9 +1,10 @@
 // Панель с перечнем редакций документа
 import {Fragment} from "react";
-import {Calendar, Columns2, Download, ListTree, Loader2, Paperclip, Pencil, Plus, Table2} from "lucide-react";
+import {useTranslation} from "react-i18next";
 import type {VndRedactionResponse} from "@/service/vndService/vndServiceType.ts";
 import {formatDate} from "@/utils/dateUtils.ts";
 import {getRedactionDisplayStatus, REDACTION_STATUS_META} from "@/utils/redactionStatus.ts";
+import {Calendar, Columns2, Download, ListTree, Loader2, Paperclip, Pencil, Plus, Table2} from "lucide-react";
 
 interface RedactionsSidebarProps {
     redactions: VndRedactionResponse[];
@@ -26,8 +27,7 @@ interface RedactionsSidebarProps {
 }
 
 const VISIBLE_REDACTIONS_COUNT = 4;
-// Примерная высота одного пункта списка (используется, чтобы после 4 редакций появлялся скролл)
-const REDACTION_ITEM_HEIGHT_PX = 76;
+const REDACTION_ITEM_HEIGHT_PX = 56;
 
 export function RedactionsSidebar({
                                       redactions,
@@ -48,6 +48,7 @@ export function RedactionsSidebar({
                                       downloadDisabled,
                                       downloading,
                                   }: RedactionsSidebarProps) {
+    const {t} = useTranslation();
     const isScrollable = redactions.length > VISIBLE_REDACTIONS_COUNT;
     const lastRedactionId = redactions[0]?.id;
     const firstRedactionId = redactions[redactions.length - 1]?.id;
@@ -55,7 +56,8 @@ export function RedactionsSidebar({
     return (
         <div className="rounded-[14px] border border-[#e9edf3] bg-white p-[14px]">
             <div className="px-1 pb-[10px] pt-[2px] text-[11px] font-bold uppercase tracking-[0.04em] text-[#a3adbd]">
-                Редакции документа
+                {/* Редакции документа */}
+                {t("openVndPage.redactionsSidebar.title")}
             </div>
 
             <div
@@ -88,11 +90,13 @@ export function RedactionsSidebar({
                     className="cursor-pointer flex h-[38px] w-full items-center justify-center gap-2 rounded-[10px] bg-[#4e57d6] text-[12.5px] font-semibold text-white hover:bg-[#3f47bd] disabled:cursor-not-allowed disabled:bg-[#c7cbe6]"
                 >
                     <Plus size={16} strokeWidth={2}/>
-                    Новая редакция
+                    {/* Новая редакция */}
+                    {t("openVndPage.redactionsSidebar.newRedactionButton")}
                 </button>
                 {uploadBlocked && (
                     <p className="px-1 text-[11px] leading-[1.4] text-[#9a6408]">
-                        Р{lastByNumber?.number} ещё не завершена — сначала отправьте и дождитесь решения.
+                        {/* Р{lastByNumber?.number} ещё не завершена - сначала отправьте и дождитесь решения. */}
+                        {t("openVndPage.redactionsSidebar.uploadBlockedHint", {number: lastByNumber?.number})}
                     </p>
                 )}
             </div>
@@ -107,7 +111,8 @@ export function RedactionsSidebar({
                 ) : (
                     <Download size={16} strokeWidth={1.8}/>
                 )}
-                Скачать редакцию
+                {/* Скачать редакцию */}
+                {t("openVndPage.redactionsSidebar.downloadButton")}
             </button>
 
             <button
@@ -119,7 +124,8 @@ export function RedactionsSidebar({
                 }`}
             >
                 <ListTree size={16} strokeWidth={1.8}/>
-                Содержание редакции
+                {/* Содержание редакции */}
+                {t("openVndPage.redactionsSidebar.contentsButton")}
             </button>
 
             <button
@@ -131,7 +137,8 @@ export function RedactionsSidebar({
                 }`}
             >
                 <Columns2 size={16} strokeWidth={1.8}/>
-                Сравнение редакций
+                {/* Сравнение редакций */}
+                {t("openVndPage.redactionsSidebar.compareButton")}
             </button>
         </div>
     );
@@ -156,6 +163,7 @@ function RedactionListItem({
     onOpenAttachments: () => void;
     onOpenTid: () => void;
 }) {
+    const {t} = useTranslation();
     const status = getRedactionDisplayStatus(redaction);
     const meta = REDACTION_STATUS_META[status];
     const hasAttachments = redaction.attachmentFileIds.length > 0;
@@ -237,7 +245,8 @@ function RedactionListItem({
                             className="cursor-pointer inline-flex h-7 flex-none items-center justify-center gap-[5px] rounded-[7px] border border-[#e5e9f0] bg-white px-[10px] text-[11px] font-semibold text-[#3a4560] hover:bg-[#f6f8fb]"
                         >
                             <Pencil size={12} strokeWidth={2} className="flex-none"/>
-                            Редактировать
+                            {/* Редактировать */}
+                            {t("openVndPage.redactionsSidebar.editButton")}
                         </button>
                     )}
 
@@ -251,7 +260,8 @@ function RedactionListItem({
                             className="cursor-pointer inline-flex h-7 flex-none items-center justify-center gap-[5px] rounded-[7px] border border-[#e5e9f0] bg-white px-[10px] text-[11px] font-semibold text-[#3a4560] hover:bg-[#f6f8fb] disabled:cursor-not-allowed disabled:opacity-50"
                         >
                             <Table2 size={12} strokeWidth={2} className="flex-none"/>
-                            ТИД
+                            {/* ТИД */}
+                            {t("openVndPage.redactionsSidebar.tidButton")}
                         </button>
                     )}
                 </div>

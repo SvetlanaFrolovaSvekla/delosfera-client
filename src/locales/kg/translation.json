@@ -194,7 +194,43 @@
     "deleteFailedToastTitle": "Өчүрүү мүмкүн болгон жок",
     "consolidatedToastTitle": "ИНД консолидацияланды",
     "consolidatedToastDescription": "Документ азыр «Аракеттеги» статусунда",
-    "consolidateError": "Документти консолидациялоо мүмкүн болгон жок"
+    "consolidateError": "Документти консолидациялоо мүмкүн болгон жок",
+    "editionsTab": {
+      "loadingRedactions": "Редакциялар жүктөлүүдө…",
+      "loadErrorTitle": "Редакцияларды жүктөө мүмкүн болгон жок",
+      "retry": "Кайталоо",
+      "emptyTitle": "Документтин редакциялары жок",
+      "emptyDescription": "Документ күчүнө кириши үчүн биринчи редакцияны жүктөңүз",
+      "uploadFirstAction": "Биринчи редакцияны жүктөө",
+      "downloadError": "Файлды жүктөп алуу мүмкүн болгон жок",
+      "redactionBecameCurrentTitle": "ВНД эми күчүндө!",
+      "redactionBecameCurrentDescription": "{{code}} редакциясы күчүнө кирди!",
+      "redactionAddedToDraftTitle": "Редакция долбоорго кошулду!",
+      "redactionAddedToDraftDescription": "{{vndCode}} күчүнө кириши үчүн, сураныч, {{redactionCode}} редакциясын макулдашууга жөнөтүңүз.",
+      "redactionUpdatedTitle": "Редакция жаңыртылды",
+      "redactionUpdatedDescription": "{{code}} редакциясындагы өзгөртүүлөр сакталды."
+    },
+    "redactionsSidebar": {
+      "title": "Документтин редакциялары",
+      "newRedactionButton": "Жаңы редакция",
+      "uploadBlockedHint": "Р{{number}} али аяктаган жок — адегенде жөнөтүп, чечимди күтүңүз.",
+      "downloadButton": "Редакцияны жүктөп алуу",
+      "contentsButton": "Редакциянын мазмуну",
+      "compareButton": "Редакцияларды салыштыруу",
+      "editButton": "Түзөтүү",
+      "tidButton": "ТИД"
+    },
+    "languageTabsPanel": {
+      "title": "Документтин тили",
+      "unavailableHint": "Бул тилдеги текст азырынча жүктөлгөн эмес"
+    },
+    "redactionTextView": {
+      "noTextInLanguage": "Бул тилде текст жок"
+    }
+  },
+  "docxEditor": {
+    "loadingDocument": "Документ жүктөлүүдө…",
+    "loadError": "Документти жүктөө мүмкүн болгон жок"
   },
   "createVnd": {
     "titlesSection": {

@@ -1,6 +1,7 @@
 // Таб "Редакции" открытой страницы ВНД
 import {useEffect, useState} from "react";
 import {useAuth} from "@/context/AuthContext.ts";
+import {useTranslation} from "react-i18next";
 import type {VndRedactionResponse, VndResponse} from "@/service/vndService/vndServiceType.ts";
 import {toast} from "@/service/toastService.ts";
 
@@ -12,19 +13,22 @@ import {useAvailableHeight} from "@/hooks/vndHooks/useAvailableHeight.ts";
 import {downloadWithToast} from "@/utils/downloadFile.ts";
 import {getRedactionDisplayStatus} from "@/utils/redactionStatus.ts";
 import {buildRedactionFileName} from "@/utils/fileNaming.ts";
+import {
+    getAvailableLanguages,
+    getRedactionFileId,
+    type RedactionLanguage
+} from "@/utils/redactionLanguagePanelUtils.ts";
 
 import {PermissionCode} from "@/constants/permissions/permissions.ts";
 
 import {
-VndUploadRedactionModal
+    VndUploadRedactionModal
 } from "@/components/componentsVND/componentsOpenVndPage/componentsEditionsTab/VndUploadRedactionModal.tsx";
 import {
     RedactionsSidebar
 } from "@/components/componentsVND/componentsOpenVndPage/componentsEditionsTab/RedactionsSidebar.tsx";
 import {
-    RedactionLanguageTabsPanel,
-    getAvailableLanguages,
-    type RedactionLanguage, getRedactionFileId,
+    RedactionLanguageTabsPanel
 } from "@/components/componentsVND/componentsOpenVndPage/componentsEditionsTab/RedactionLanguageTabsPanel.tsx";
 import {
     RedactionStatusBanner
@@ -55,12 +59,14 @@ import {EmptyState} from "@/components/componentsGeneral/EmptyState.tsx";
 import {Loader} from "@/components/componentsGeneral/Loader";
 import {Upload} from "lucide-react";
 
+
 interface VndEditionsTabProps {
     vnd: VndResponse;
     onVndChanged?: () => void;
 }
 
 export function VndEditionsTab({vnd, onVndChanged}: VndEditionsTabProps) {
+    const {t} = useTranslation();
     const {data: redactions, loading, error, refetch} = useVndRedactions(vnd.id);
     const [uploadOpen, setUploadOpen] = useState(false);
     const [compareMode, setCompareMode] = useState(false);
@@ -96,7 +102,7 @@ export function VndEditionsTab({vnd, onVndChanged}: VndEditionsTabProps) {
     }, [selected?.id]);
 
     const handleDownload = (fileId: number, name: string) =>
-        download.run(fileId, () => downloadWithToast(fileId, name), "Не удалось скачать файл");
+        download.run(fileId, () => downloadWithToast(fileId, name), t("openVndPage.editionsTab.downloadError"));
 
     const selectedFileId = selected ? getRedactionFileId(selected, activeLanguage) : null;
     const handleDownloadSelected = () => {
@@ -110,11 +116,17 @@ export function VndEditionsTab({vnd, onVndChanged}: VndEditionsTabProps) {
         onVndChanged?.();
 
         if (redaction.isCurrent) {
-            toast.success("ВНД теперь действует!", `Редакция ${redaction.code} стала действующей!`);
+            toast.success(
+                t("openVndPage.editionsTab.redactionBecameCurrentTitle"),
+                t("openVndPage.editionsTab.redactionBecameCurrentDescription", {code: redaction.code})
+            );
         } else {
             toast.info(
-                "Редакция добавлена в черновик!",
-                `Чтобы ${vnd.code} начал действовать, пожалуйста, отправьте редакцию ${redaction.code} на согласование.`
+                t("openVndPage.editionsTab.redactionAddedToDraftTitle"),
+                t("openVndPage.editionsTab.redactionAddedToDraftDescription", {
+                    vndCode: vnd.code,
+                    redactionCode: redaction.code
+                })
             );
         }
     };
@@ -125,16 +137,16 @@ export function VndEditionsTab({vnd, onVndChanged}: VndEditionsTabProps) {
     };
 
     if (loading) {
-        return <Loader label="Загрузка редакций…" fullHeight={false}/>;
+        return <Loader label={t("openVndPage.editionsTab.loadingRedactions")} fullHeight={false}/>
     }
 
     if (error) {
         return (
             <EmptyState
                 variant="error"
-                title="Не удалось загрузить редакции"
+                title={t("openVndPage.editionsTab.loadErrorTitle")}
                 description={error}
-                actionLabel="Повторить"
+                actionLabel={t("openVndPage.editionsTab.retry")}
                 onAction={refetch}
             />
         );
@@ -146,9 +158,9 @@ export function VndEditionsTab({vnd, onVndChanged}: VndEditionsTabProps) {
             <div className="mx-auto mt-30 max-w-[420px]">
                 <EmptyState
                     icon={Upload}
-                    title="Редакции документа отсутствуют"
-                    description="Загрузите первую редакцию, чтобы документ начал действовать"
-                    actionLabel="Загрузить первую редакцию"
+                    title={t("openVndPage.editionsTab.emptyTitle")}
+                    description={t("openVndPage.editionsTab.emptyDescription")}
+                    actionLabel={t("openVndPage.editionsTab.uploadFirstAction")}
                     actionIcon={Upload}
                     actionVariant="primary"
                     onAction={() => setUploadOpen(true)}
@@ -303,7 +315,10 @@ export function VndEditionsTab({vnd, onVndChanged}: VndEditionsTabProps) {
                         setEditOpen(false);
                         refetch();
                         onVndChanged?.();
-                        toast.success("Редакция обновлена", `Изменения в редакции ${selected.code} сохранены.`);
+                        toast.success(
+                            t("openVndPage.editionsTab.redactionUpdatedTitle"),
+                            t("openVndPage.editionsTab.redactionUpdatedDescription", {code: selected.code})
+                        );
                     }}
                 />
             )}

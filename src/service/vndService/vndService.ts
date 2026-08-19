@@ -9,12 +9,12 @@ import type {
     VndSearchRequest
 } from "./vndServiceType.ts";
 
-// TODO: передавать заголовок Authorization при интеграции с общим клиентом.
+import {getAccessToken} from "@/service/tokenStore.ts";
 
-const API_BASE = import.meta.env.VITE_API_BASE_URL ?? "http://localhost:5293";
+const API_BASE = `${import.meta.env.VITE_API_BASE_URL ?? ""}/api`;
 
 function authHeaders(): HeadersInit {
-    const token = localStorage.getItem("accessToken");
+    const token = getAccessToken();
     return token ? {Authorization: `Bearer ${token}`} : {};
 }
 
@@ -125,6 +125,18 @@ export const vndService = {
             body: JSON.stringify({targetVndId}),
         });
         return handleResponse<VndLinksResponse>(response);
+    },
+
+    /** Удалить ВНД (только черновик; проверка прав и статуса — на бэке) */
+    async remove(id: number): Promise<void> {
+        const response = await fetch(`${API_BASE}/vnd/${id}`, {
+            method: "DELETE",
+            headers: authHeaders(),
+        });
+        if (!response.ok) {
+            const errorBody = await response.json().catch(() => null);
+            throw new Error(errorBody?.message ?? `Ошибка запроса: ${response.status}`);
+        }
     },
 
     /** Удалить связь ВНД (можно с любой из сторон связи) */

@@ -10,6 +10,7 @@ interface SearchBarProps {
     className?: string;
     maxWidth?: string; // ограничить рост, если понадобится в другом месте
     variant?: "gray" | "white"; // фон поля, серый по умолчанию
+    onSubmit?: (value: string) => void; // Enter в поле: там, где строка ведёт к выдаче
 }
 
 export function SearchBar({
@@ -19,6 +20,7 @@ export function SearchBar({
                               className = "",
                               maxWidth,
                               variant = "gray",
+                              onSubmit,
                           }: SearchBarProps) {
     const {t} = useTranslation();
 
@@ -37,6 +39,9 @@ export function SearchBar({
                 placeholder={placeholder ?? t("general.search")}
                 value={value}
                 onChange={(e) => onChange?.(e.target.value)}
+                onKeyDown={(e) => {
+                    if (e.key === "Enter" && value?.trim()) onSubmit?.(value.trim());
+                }}
                 className={`h-[38px] w-full rounded-[10px] border border-[#e5e9f0] pl-[38px] pr-9 text-[13px] outline-none focus:border-[var(--app-accent,_#4e57d6)] focus:bg-white focus:ring-[3px] focus:ring-[var(--app-soft,_#ececfc)] ${
                     variant === "white" ? "bg-white" : "bg-[#f6f8fb]"
                 }`}

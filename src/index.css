@@ -19,6 +19,18 @@ a:hover { color: #1b4fd0; }
 ::-webkit-scrollbar-thumb { background: #d3dbe6; border-radius: 8px; border: 2px solid transparent; background-clip: padding-box; }
 ::-webkit-scrollbar-thumb:hover { background: #b9c4d3; background-clip: padding-box; }
 
+/* Анимации страницы авторизации (левая hero-панель) */
+@keyframes authFloat { 0%,100% { transform: translate(0,0) rotate(var(--rot,0deg)); } 50% { transform: translate(6px,-16px) rotate(calc(var(--rot,0deg) + 5deg)); } }
+@keyframes authDash { to { stroke-dashoffset: -200; } }
+@keyframes authGlow { 0%,100% { opacity:.5; transform:scale(1); } 50% { opacity:1; transform:scale(1.12); } }
+@keyframes authTravel { 0% { offset-distance: 0%; opacity:0; } 8% { opacity:1; } 92% { opacity:1; } 100% { offset-distance: 100%; opacity:0; } }
+@keyframes authStampPop { 0%,70% { transform: scale(0) rotate(-18deg); opacity:0; } 82% { transform: scale(1.25) rotate(-18deg); opacity:1; } 90%,100% { transform: scale(1) rotate(-18deg); opacity:1; } }
+
+/* Пользователь просил уменьшить анимацию — гасим декоративное движение */
+@media (prefers-reduced-motion: reduce) {
+    [data-auth-decor] * { animation: none !important; }
+}
+
 @keyframes dsSpin { to { transform: rotate(360deg); } }
 @keyframes dsIn { from { opacity: 0; transform: translateY(7px); } to { opacity: 1; transform: none; } }
 @keyframes dsPop { from { opacity: 0; transform: translateY(6px) scale(.98); } to { opacity: 1; transform: none; } }

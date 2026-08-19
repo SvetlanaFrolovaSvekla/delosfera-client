@@ -10,7 +10,7 @@ import {getFirstLastName} from "@/utils/userNaming.ts";
 import {transliterate} from "@/utils/transliterate.ts";
 import {HOME_TASKS_LIMIT} from "@/constants/validation/HomeTasksLimit.ts";
 import {Loader} from "@/components/componentsGeneral/Loader.tsx";
-import {CreateDocumentModal} from "@/components/CreateDocumentModal.tsx";
+import {CreateDocumentModal} from "@/components/componentsModal/CreateDocumentModal.tsx";
 import {HomePageHeader} from "@/components/componentsHome/HomePageHeader.tsx";
 import {HomeKpiGrid} from "@/components/componentsHome/HomeKpiGrid.tsx";
 import {MyTasksCard} from "@/components/componentsHome/MyTasksCard.tsx";

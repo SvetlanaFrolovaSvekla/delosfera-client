@@ -1,10 +1,32 @@
 import {toast} from "@/service/toastService.ts";
+import {getAccessToken} from "@/service/tokenStore.ts";
 
-const API_BASE = import.meta.env.VITE_API_BASE_URL ?? "http://localhost:5293";
+const API_BASE = `${import.meta.env.VITE_API_BASE_URL ?? ""}/api`;
 
 function authHeaders(): HeadersInit {
-    const token = localStorage.getItem("accessToken");
+    const token = getAccessToken();
     return token ? { Authorization: `Bearer ${token}` } : {};
+}
+
+/**
+ * Скачивает файл с бэка через авторизованный fetch и отдаёт Blob + оригинальное имя,
+ * ничего не сохраняя на диск. Используется для встраивания файла в UI (например, в DocxEditor).
+ */
+export async function fetchFileBlob(fileId: number, fallbackName = "файл"): Promise<{ blob: Blob; fileName: string }> {
+    const response = await fetch(`${API_BASE}/files/${fileId}`, {
+        headers: authHeaders(),
+    });
+
+    if (!response.ok) {
+        throw new Error(`Не удалось загрузить файл: ${response.status}`);
+    }
+
+    const disposition = response.headers.get("Content-Disposition");
+    const match = disposition?.match(/filename\*?=(?:UTF-8'')?"?([^";]+)"?/i);
+    const fileName = match ? decodeURIComponent(match[1]) : fallbackName;
+
+    const blob = await response.blob();
+    return {blob, fileName};
 }
 
 /**
@@ -12,22 +34,9 @@ function authHeaders(): HeadersInit {
  * Обычный <a href> тут не работает, т.к. эндпоинт защищён [Authorize] и не получает заголовок.
  */
 export async function downloadFile(fileId: number, fallbackName = "файл"): Promise<void> {
-    const response = await fetch(`${API_BASE}/files/${fileId}`, {
-        headers: authHeaders(),
-    });
+    const {blob, fileName} = await fetchFileBlob(fileId, fallbackName);
 
-    if (!response.ok) {
-        throw new Error(`Не удалось скачать файл: ${response.status}`);
-    }
-
-    // Пытаемся достать оригинальное имя файла из Content-Disposition
-    const disposition = response.headers.get("Content-Disposition");
-    const match = disposition?.match(/filename\*?=(?:UTF-8'')?"?([^";]+)"?/i);
-    const fileName = match ? decodeURIComponent(match[1]) : fallbackName;
-
-    const blob = await response.blob();
     const url = URL.createObjectURL(blob);
-
     const link = document.createElement("a");
     link.href = url;
     link.download = fileName;

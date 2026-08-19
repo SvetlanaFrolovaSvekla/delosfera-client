@@ -9,7 +9,6 @@ import {navGroups} from "@/constants/sidebarData.tsx";
 import {CountBadge} from "@/components/componentsSidebar/CountBadge.tsx";
 import {Icon} from "@/components/icons/Icon";
 import {RubricTreeModal} from "@/components/componentsGeneral/rubricator/RubricTreeModal.tsx";
-import {Tooltip} from "../componentsGeneral/Tooltip";
 import {ChevronRight} from "lucide-react";
 
 const MODAL_ITEM_IDS = ["vnd-rubric"];
@@ -113,16 +112,9 @@ export function Sidebar() {
                                         />
                                     )}
                                     <span className="relative flex-none">
-                                        <Tooltip content={label} side="right" disabled={!collapsed}>
-                                            <Icon name={it.icon} width={19} height={19}/>
-                                        </Tooltip>
+                                        <Icon name={it.icon} width={19} height={19}/>
                                         {collapsed && !!it.badge && (
-                                            <CountBadge
-                                                count={it.badge}
-                                                tooltip={dynamicBadgeTooltips[it.id]}
-                                                tooltipSide="right"
-                                                className="absolute left-1/2 -translate-x-1/2 -bottom-2"
-                                            />
+                                            <CountBadge count={it.badge} tooltip={dynamicBadgeTooltips[it.id]} tooltipSide="right"/>
                                         )}
                                     </span>
                                     {!collapsed && (

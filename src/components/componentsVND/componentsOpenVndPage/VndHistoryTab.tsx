@@ -145,7 +145,7 @@ const mockVersions: VndVersion[] = [
 
 export function VndHistoryTab() {
     return (
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-[18px] items-start">
+        <div className="px-4 sm:px-6 grid grid-cols-1 lg:grid-cols-2 gap-[18px] items-start">
             {/* Левая колонка */}
             <div className="flex flex-col gap-[18px]">
                 {/* Журнал аудита */}

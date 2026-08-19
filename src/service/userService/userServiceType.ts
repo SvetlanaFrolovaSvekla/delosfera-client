@@ -95,3 +95,19 @@ export interface GetUsersParams {
     source?: UserSource;
     isBlocked?: boolean;
 }
+// Лента активности пользователя (GET /users/{id}/activity)
+export interface UserActivityItem {
+    type: "vnd_created" | "approval_decided" | "approval_initiated";
+    vndId?: number | null;
+    vndCode?: string | null;
+    vndTitle?: string | null;
+    timestamp: string;
+    description: string;
+}
+
+export interface UserActivityResponse {
+    vndCreatedCount: number;
+    approvalsDecidedCount: number;
+    approvalsInitiatedCount: number;
+    recent: UserActivityItem[];
+}

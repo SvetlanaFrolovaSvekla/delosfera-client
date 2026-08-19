@@ -1,4 +1,5 @@
 import {useEffect, useRef, useState} from "react";
+import {useNavigate} from "react-router-dom";
 import {useVndQuickSearch} from "@/hooks/vndHooks/useVndQuickSearch.ts";
 import {useTranslation} from "react-i18next";
 
@@ -10,6 +11,7 @@ import {HeaderSearchResults} from "@/components/componentsHeader/HeaderSearchRes
 
 export function Header() {
     const {t} = useTranslation();
+    const navigate = useNavigate();
     const [search, setSearch] = useState("");
     const [isOpen, setIsOpen] = useState(false);
     const containerRef = useRef<HTMLDivElement>(null);
@@ -42,6 +44,16 @@ export function Header() {
                     onChange={(v) => {
                         setSearch(v);
                         setIsOpen(v.trim().length >= 2);
+                    }}
+                    // Подсказки показывают только ВНД; Enter уводит на страницу поиска,
+                    // где ищется по всем контурам. Без него найти записку или закупку
+                    // из шапки было бы нельзя.
+                    onSubmit={(value) => {
+                        const query = value.trim();
+                        if (!query) return;
+
+                        setIsOpen(false);
+                        navigate(`/search?q=${encodeURIComponent(query)}`);
                     }}
                 />
                 {isOpen && search.trim().length >= 2 && (

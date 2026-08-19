@@ -27,30 +27,61 @@ export const navGroups: NavGroup[] = [
             },
             { id: "vnd", icon: "vnd", labelKey: "sidebar.items.vnd", path: "/base-vnd" },
             { id: "pln", icon: "pln", labelKey: "sidebar.items.pln", badge: 3, path: "/actualization", permission: PermissionCode.ViewVndActualizationPage },
+            // Годовой план актуализации: светофор сроков, импорт из Excel, отчёт (PLN-01..07)
+            { id: "pln-plan", icon: "pln", labelKey: "План актуализации", path: "/actualization/plan", permission: PermissionCode.ViewVndActualizationPage },
             { id: "tasks", icon: "tasks", labelKey: "sidebar.items.tasks", badge: 4, path: "/tasks" },
-            { id: "rpt", icon: "rpt", labelKey: "sidebar.items.rpt", path: "/reportvnd" },
+            // Аналитика закрыта правом: без него страница отдаёт одни отказы и выглядит
+            // пустой — пользователь не понимает, сломалось или не положено.
+            { id: "rpt", icon: "rpt", labelKey: "sidebar.items.rpt", path: "/reportvnd", permission: PermissionCode.ViewFullStatistics },
         ],
     },
     {
-        titleKey: "sidebar.groups.admin",
+        titleKey: "Задачи",
         items: [
-/*
-            { id: "adm-users", icon: "user", labelKey: "sidebar.items.admUsers", path: "/users" },
-*/
-            { id: "adm-roles", icon: "shield", labelKey: "sidebar.items.admRoles", path: "/roles", permission: PermissionCode.ManageRoles },
-        /*    { id: "adm-log", icon: "clock", labelKey: "sidebar.items.admLog" },
-            { id: "adm-auth", icon: "lock", labelKey: "sidebar.items.admAuth" },*/
-            { id: "refs", icon: "refs", labelKey: "sidebar.items.refs", path: "/refs" },
+            // Согласования по всем контурам в одном месте, включая задачи по замещению
+            { id: "inbox", icon: "check", labelKey: "Мои задачи (все контуры)", path: "/inbox" },
+        ],
+    },
+    {
+        titleKey: "sidebar.groups.sz",
+        items: [
+            // Реестр служебных записок: карточка, согласование, исполнение, архив, закупка
+            { id: "sz", icon: "sz", labelKey: "sidebar.items.sz", path: "/sz" },
+        ],
+    },
+    {
+        titleKey: "Заседания",
+        items: [
+            // Журнал заседаний Правления, КПА и комитетов: повестка, протоколы, исполнение решений
+            { id: "meetings", icon: "committee", labelKey: "Решения комитетов", path: "/meetings", permission: PermissionCode.ViewMeetings },
+        ],
+    },
+    {
+        titleKey: "sidebar.groups.purchases",
+        items: [
+            { id: "prc", icon: "prc", labelKey: "sidebar.items.prc", path: "/prc" },
+            // Годовой План закупок с отчётом об исполнении (PRC-22)
+            { id: "prc-plan", icon: "pln", labelKey: "План закупок", path: "/prc/plan" },
+            // Матрица определяет способ закупки, состав согласования и орган утверждения
+            { id: "matrix", icon: "matrix", labelKey: "sidebar.items.matrix", path: "/prc/matrix" },
+            // Благонадёжность и чёрный список недобросовестных (PRC-07/17)
+            { id: "prc-suppliers", icon: "flag", labelKey: "Поставщики и чёрный список", path: "/prc/suppliers" },
         ],
     },
     {
         titleKey: "Система",
         items: [
             { id: "adm-users", icon: "user", labelKey: "sidebar.items.admUsers", path: "/users" },
-            { id: "kb", icon: "kb", labelKey: "База знаний", path: "/base-know\n" },
+            { id: "adm-roles", icon: "shield", labelKey: "sidebar.items.admRoles", path: "/roles", permission: PermissionCode.ManageRoles },
+            { id: "refs", icon: "refs", labelKey: "sidebar.items.refs", path: "/refs" },
+            // Настройки интеграций: адрес каталога, учётная запись, расписание синхронизации
+            { id: "system-settings", icon: "future", labelKey: "Системные настройки", path: "/system/settings", permission: PermissionCode.ManageSystemSettings },
+            // База знаний (KB-01..03) ещё не реализована: пункт вёл на несуществующий
+            // маршрут и ронял пользователя на пустой экран. Вернём вместе с разделом.
         ],
     }
 ];
+
    /* {
         titleKey: "sidebar.groups.sz",
         items: [
@@ -59,6 +90,7 @@ export const navGroups: NavGroup[] = [
             { id: "notifs", icon: "bell", labelKey: "sidebar.items.notifs", badge: 4 },
         ],
     },
+    {
     {
         titleKey: "sidebar.groups.purchases",
         items: [

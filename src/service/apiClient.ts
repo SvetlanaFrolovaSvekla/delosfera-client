@@ -1,18 +1,20 @@
 import axios, {type InternalAxiosRequestConfig} from "axios";
 import type {LoginResponse} from "@/service/authService/authServiceType.ts";
+import {getLanguage} from "@/utils/getLanguage.ts";
+import {getAccessToken, setAccessToken} from "@/service/tokenStore.ts";
 
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL ?? "http://localhost:5293";
+// Пусто — тот же адрес, по которому открыт клиент; префикс /api разбирает
+// reverse-proxy и передаёт запрос приложению как есть.
+const API_BASE_URL = `${import.meta.env.VITE_API_BASE_URL ?? ""}/api`;
 
+// withCredentials: браузер отправляет httpOnly refresh-cookie на /auth/*.
 export const apiClient = axios.create({
     baseURL: API_BASE_URL,
+    withCredentials: true,
 });
 
-function getLanguage(): string {
-    return localStorage.getItem("lang") ?? "ru";
-}
-
 apiClient.interceptors.request.use((config: InternalAxiosRequestConfig) => {
-    const token = localStorage.getItem("accessToken");
+    const token = getAccessToken();
     if (token) config.headers.Authorization = `Bearer ${token}`;
     config.headers["X-Language"] = getLanguage();
     return config;
@@ -21,19 +23,18 @@ apiClient.interceptors.request.use((config: InternalAxiosRequestConfig) => {
 let refreshPromise: Promise<LoginResponse> | null = null;
 
 async function doRefresh(): Promise<LoginResponse> {
-    const refreshToken = localStorage.getItem("refreshToken");
-    if (!refreshToken) throw new Error("No refresh token");
-
-    const response = await axios.post<LoginResponse>(`${API_BASE_URL}/auth/refresh`, {refreshToken});
-    localStorage.setItem("accessToken", response.data.token);
-    localStorage.setItem("refreshToken", response.data.refreshToken);
-    localStorage.setItem("user", JSON.stringify(response.data.user));
+    // Refresh-токен не передаётся из JS — он уходит автоматически в httpOnly-cookie.
+    // Префикс api уже внутри API_BASE_URL — второй раз его добавлять нельзя,
+    // иначе запрос уходит на /api/api/auth/refresh и сессия не восстанавливается.
+    const response = await axios.post<LoginResponse>(
+        `${API_BASE_URL}/auth/refresh`, null, {withCredentials: true});
+    setAccessToken(response.data.token);
     return response.data;
 }
+
 /**
- * Единая точка обновления сессии. Лок через navigator.locks гарантирует,
- * что даже несколько ОТКРЫТЫХ ВКЛАДОК одного сайта не смогут одновременно
- * вызвать /auth/refresh — выполнение сериализуется на уровне браузера.
+ * Единая точка обновления сессии. Лок через navigator.locks сериализует /auth/refresh
+ * между несколькими вкладками одного сайта.
  */
 export async function refreshSession(): Promise<LoginResponse> {
     if (refreshPromise) return refreshPromise; // защита внутри текущей вкладки
@@ -45,11 +46,7 @@ export async function refreshSession(): Promise<LoginResponse> {
     }
 
     refreshPromise = navigator.locks
-        .request("delosfera-refresh-token", async () => {
-            // Пока ждали лок, другая вкладка могла уже обновить токен —
-            // перечитываем localStorage перед реальным запросом
-            return doRefresh();
-        })
+        .request("delosfera-refresh-token", async () => doRefresh())
         .finally(() => {
             refreshPromise = null;
         });
@@ -61,12 +58,16 @@ apiClient.interceptors.response.use(
     (response) => response,
     async (error) => {
         const originalRequest = error.config;
-        const isRefreshCall = originalRequest?.url?.includes("/auth/refresh");
+        const requestUrl = originalRequest?.url ?? "";
+        const isRefreshCall = requestUrl.includes("/auth/refresh");
+        // 401 от самих эндпоинтов входа (/auth/login, /auth/login-domain) означает неверные
+        // учётные данные, а не протухший access-токен. Не пытаемся обновлять сессию —
+        // иначе форма получит ошибку refresh ("Refresh-токен отсутствует") вместо ошибки входа.
+        const isLoginCall = requestUrl.includes("/auth/login");
 
-        if (error.response?.status !== 401 || originalRequest._retry || isRefreshCall) {
+        if (error.response?.status !== 401 || originalRequest._retry || isRefreshCall || isLoginCall) {
             if (error.response?.status === 401 && isRefreshCall) {
-                localStorage.removeItem("accessToken");
-                localStorage.removeItem("refreshToken");
+                setAccessToken(null);
                 window.dispatchEvent(new Event("auth-change"));
             }
             return Promise.reject(error);
@@ -79,8 +80,7 @@ apiClient.interceptors.response.use(
             originalRequest.headers.Authorization = `Bearer ${token}`;
             return apiClient(originalRequest);
         } catch (refreshError) {
-            localStorage.removeItem("accessToken");
-            localStorage.removeItem("refreshToken");
+            setAccessToken(null);
             window.dispatchEvent(new Event("auth-change"));
             return Promise.reject(refreshError);
         }

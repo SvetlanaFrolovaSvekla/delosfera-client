@@ -2,20 +2,17 @@ import {useState} from "react";
 import {vndService} from "@/service/vndService/vndService.ts";
 import type {UpdateVndRequisitesRequest, VndResponse} from "@/service/vndService/vndServiceType.ts";
 import {toast} from "@/service/toastService.ts";
-import i18n from "@/i18n";
 
 export type ActualizationModeKey = "Quarterly" | "HalfYear" | "Annual" | "Biennial" | "Triennial" | "Custom";
 
-export function getRequisitesActualizationModeOptions(): { key: ActualizationModeKey; label: string }[] {
-    return [
-        {key: "Quarterly", label: i18n.t("vndRequisites.actualizationModes.Quarterly")},
-        {key: "HalfYear", label: i18n.t("vndRequisites.actualizationModes.HalfYear")},
-        {key: "Annual", label: i18n.t("vndRequisites.actualizationModes.Annual")},
-        {key: "Biennial", label: i18n.t("vndRequisites.actualizationModes.Biennial")},
-        {key: "Triennial", label: i18n.t("vndRequisites.actualizationModes.Triennial")},
-        {key: "Custom", label: i18n.t("vndRequisites.actualizationModes.Custom")},
-    ];
-}
+export const ACTUALIZATION_MODE_OPTIONS: { key: ActualizationModeKey; label: string }[] = [
+    {key: "Quarterly", label: "Квартал (3 мес.)"},
+    {key: "HalfYear", label: "Полгода (6 мес.)"},
+    {key: "Annual", label: "Год (12 мес.)"},
+    {key: "Biennial", label: "2 года (24 мес.)"},
+    {key: "Triennial", label: "3 года (36 мес.)"},
+    {key: "Custom", label: "Указать дату вручную"},
+];
 
 const MONTHS_BY_MODE: Record<Exclude<ActualizationModeKey, "Custom">, number> = {
     Quarterly: 3,
@@ -194,17 +191,11 @@ export function useVndRequisitesForm(vnd: VndResponse, onSaved?: (updated: VndRe
             const updated = await vndService.updateRequisites(vnd.id, toRequest(draft));
             onSaved?.(updated);
             setIsEditing(false);
-            // toast.success("Реквизиты обновлены", `Изменения по документу «${updated.code}» сохранены`);
-            toast.success(
-                i18n.t("vndRequisites.toast.savedTitle"),
-                i18n.t("vndRequisites.toast.savedDescription", {code: updated.code})
-            );
+            toast.success("Реквизиты обновлены", `Изменения по документу «${updated.code}» сохранены`);
         } catch (e) {
-            // const message = e instanceof Error ? e.message : "Не удалось сохранить реквизиты";
-            const message = e instanceof Error ? e.message : i18n.t("vndRequisites.toast.saveErrorDefault");
+            const message = e instanceof Error ? e.message : "Не удалось сохранить реквизиты";
             setError(message);
-            // toast.error("Ошибка сохранения", message);
-            toast.error(i18n.t("vndRequisites.toast.saveErrorTitle"), message);
+            toast.error("Ошибка сохранения", message);
         } finally {
             setSaving(false);
         }

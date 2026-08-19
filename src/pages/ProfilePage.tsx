@@ -1,7 +1,9 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Check, KeyRound, User as UserIcon } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
 import { Tabs } from "@/components/componentsGeneral/Tabs";
+import { userService } from "@/service/userService/userService.ts";
+import type { UserActivityResponse } from "@/service/userService/userServiceType.ts";
 
 // TODO: фото цвет, приоритет ролей цвет, главная панель с историей действий, начальник СП, куратор СП;
 
@@ -26,6 +28,20 @@ function formatDateTime(value: string | null | undefined) {
 export function ProfilePage() {
     const { user } = useAuth();
     const [activeTab, setActiveTab] = useState<string>(ALL_TAB);
+    const [activity, setActivity] = useState<UserActivityResponse | null>(null);
+    const [activityLoading, setActivityLoading] = useState(true);
+
+    useEffect(() => {
+        if (!user) return;
+        let cancelled = false;
+        setActivityLoading(true);
+        userService
+            .getActivity(user.id)
+            .then((data) => { if (!cancelled) setActivity(data); })
+            .catch(() => { if (!cancelled) setActivity(null); })
+            .finally(() => { if (!cancelled) setActivityLoading(false); });
+        return () => { cancelled = true; };
+    }, [user]);
 
     // все права по всем ролям пользователя, без дублей (по code)
     const allPermissions = useMemo(() => {
@@ -124,10 +140,31 @@ export function ProfilePage() {
                         <h2 className="m-0 text-[15px] font-bold">История действий</h2>
                     </div>
                     <div className="px-[22px] pb-[18px] pt-[2px]">
-                        {/* TODO: подключить, когда появится эндпоинт GET /users/{id}/activity */}
-                        <div className="py-7 text-center text-[#a3adbd] text-[13px]">
-                            Журнал действий пока недоступен
-                        </div>
+                        {activityLoading ? (
+                            <div className="py-7 text-center text-[#a3adbd] text-[13px]">Загрузка…</div>
+                        ) : !activity || activity.recent.length === 0 ? (
+                            <div className="py-7 text-center text-[#a3adbd] text-[13px]">Действий пока нет</div>
+                        ) : (
+                            <ul className="flex flex-col divide-y divide-[#f1f4f8]">
+                                {activity.recent.map((item, idx) => (
+                                    <li key={idx} className="flex items-start gap-3 py-[11px]">
+                                        <span className="mt-[3px] h-2 w-2 shrink-0 rounded-full bg-[#7c86ff]" />
+                                        <div className="min-w-0">
+                                            <div className="text-[13px] text-[#1c2740]">
+                                                {item.description}
+                                                {item.vndCode && (
+                                                    <span className="text-[#6b7688]"> · {item.vndCode}</span>
+                                                )}
+                                            </div>
+                                            {item.vndTitle && (
+                                                <div className="truncate text-[12px] text-[#8b97ab]">{item.vndTitle}</div>
+                                            )}
+                                            <div className="text-[11px] text-[#a3adbd]">{formatDateTime(item.timestamp)}</div>
+                                        </div>
+                                    </li>
+                                ))}
+                            </ul>
+                        )}
                     </div>
                 </div>
 

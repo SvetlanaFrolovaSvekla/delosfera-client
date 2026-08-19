@@ -131,6 +131,32 @@
     "initiator": "Initiator",
     "clerk": "Registry Office"
   },
+  "auth": {
+    "brandName": "Delosfera",
+    "brandSub": "BANK EDMS",
+    "heroTitle": "Electronic document management for the bank",
+    "heroSubtitle": "Approval, signing, and storage of internal regulatory documents — from initiation to archive, in a single workflow.",
+    "title": "Sign In",
+    "subtitle": "Choose a sign-in method",
+    "tabPassword": "Login and password",
+    "tabDomain": "Domain sign-in",
+    "loginLabel": "Login",
+    "loginPlaceholder": "ivanov.ii@bank.kg",
+    "passwordLabel": "Password",
+    "showPassword": "Show password",
+    "hidePassword": "Hide password",
+    "remember": "Remember me",
+    "forgotPassword": "Forgot your password?",
+    "signIn": "Sign in",
+    "signingIn": "Signing in…",
+    "errorCredentials": "Invalid login or password",
+    "domainHint": "Enter the domain login and password — the same ones you use to sign in to your workstation. The password is verified by the bank's directory service; the system does not store it.",
+    "domainSignIn": "Sign in via domain",
+    "domainChecking": "Checking with the directory service…",
+    "errorDomain": "The directory service could not confirm the domain login and password",
+    "footerVersion": "Delosfera EDMS · v8.2",
+    "support": "Support"
+  },
   "vnd": {
     "shortLabel": "VND",
     "status": "Status",
@@ -154,6 +180,21 @@
       "withChanges": "Changed",
       "withoutChanges": "Unchanged"
     }
+  },
+  "openVndPage": {
+    "loadError": "Failed to load document: {{error}}",
+    "dictionariesErrorTitle": "Failed to load data!",
+    "createdAtLabel": "Created: {{date}}",
+    "deleteDraftButton": "Delete draft",
+    "deleteConfirmTitle": "Delete draft?",
+    "deleteConfirmMessage": "Delete VND draft «{{name}}»? This action cannot be undone.",
+    "deleteError": "Failed to delete document",
+    "deletedToastTitle": "VND deleted",
+    "deletedToastDescription": "«{{name}}» has been deleted",
+    "deleteFailedToastTitle": "Failed to delete",
+    "consolidatedToastTitle": "VND consolidated",
+    "consolidatedToastDescription": "The document is now in «Active» status",
+    "consolidateError": "Failed to consolidate document"
   },
   "createVnd": {
     "titlesSection": {

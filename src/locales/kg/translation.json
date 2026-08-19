@@ -131,6 +131,32 @@
     "initiator": "Демилгечи",
     "clerk": "Канцелярия"
   },
+  "auth": {
+    "brandName": "Делосфера",
+    "brandSub": "БАНКТЫН ЭДБ",
+    "heroTitle": "Банктын электрондук документ жүгүртүүсү",
+    "heroSubtitle": "Ички ченемдик документтерди макулдашуу, кол коюу жана сактоо — демилгеден архивге чейин, бирдиктүү маршрутта.",
+    "title": "Тутумга кирүү",
+    "subtitle": "Авторизация ыкмасын тандаңыз",
+    "tabPassword": "Логин жана сырсөз",
+    "tabDomain": "Домендик кирүү",
+    "loginLabel": "Логин",
+    "loginPlaceholder": "ivanov.ii@bank.kg",
+    "passwordLabel": "Сырсөз",
+    "showPassword": "Сырсөздү көрсөтүү",
+    "hidePassword": "Сырсөздү жашыруу",
+    "remember": "Мени эстеп кал",
+    "forgotPassword": "Сырсөздү унутуп калдыңызбы?",
+    "signIn": "Кирүү",
+    "signingIn": "Кирүүдө…",
+    "errorCredentials": "Логин же сырсөз туура эмес",
+    "domainHint": "Иш станциясына кирүү үчүн колдонулган домендик логин менен сырсөздү киргизиңиз. Сырсөздү банктын каталог кызматы текшерет, тутум аны сактабайт.",
+    "domainSignIn": "Домен аркылуу кирүү",
+    "domainChecking": "Каталог кызматында текшерилүүдө…",
+    "errorDomain": "Каталог кызматы домендик логин менен сырсөздү ырастаган жок",
+    "footerVersion": "Делосфера ЭДБ · v8.2",
+    "support": "Колдоо"
+  },
   "vnd": {
     "shortLabel": "ИНД",
     "status": "Статус",
@@ -154,6 +180,21 @@
       "withChanges": "Өзгөртүүлөр менен",
       "withoutChanges": "Өзгөртүүсүз"
     }
+  },
+  "openVndPage": {
+    "loadError": "Документти жүктөп алуу мүмкүн болгон жок: {{error}}",
+    "dictionariesErrorTitle": "Маалыматтарды жүктөп алуу мүмкүн болгон жок!",
+    "createdAtLabel": "Түзүлгөн күнү: {{date}}",
+    "deleteDraftButton": "Долбоорду өчүрүү",
+    "deleteConfirmTitle": "Долбоорду өчүрөсүзбү?",
+    "deleteConfirmMessage": "«{{name}}» ИНДнин долбоорун өчүрөсүзбү? Бул аракетти артка кайтаруу мүмкүн эмес.",
+    "deleteError": "Документти өчүрүү мүмкүн болгон жок",
+    "deletedToastTitle": "ИНД өчүрүлдү",
+    "deletedToastDescription": "«{{name}}» өчүрүлдү",
+    "deleteFailedToastTitle": "Өчүрүү мүмкүн болгон жок",
+    "consolidatedToastTitle": "ИНД консолидацияланды",
+    "consolidatedToastDescription": "Документ азыр «Аракеттеги» статусунда",
+    "consolidateError": "Документти консолидациялоо мүмкүн болгон жок"
   },
   "createVnd": {
     "titlesSection": {

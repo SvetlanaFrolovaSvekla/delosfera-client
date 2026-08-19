@@ -1,6 +1,4 @@
-// Модальное окно успеха при разработке нового ВНД (создание черновика ВНД)
 import {useEffect, useState} from "react";
-import {useTranslation} from "react-i18next";
 import {Check} from "lucide-react";
 
 interface VndCreateSuccessModalProps {
@@ -15,10 +13,9 @@ export function VndCreateSuccessModal({
                                           open,
                                           code,
                                           title,
-                                          durationMs = 2200, // 2.2 секунды
+                                          durationMs = 2200,
                                           onDone,
                                       }: VndCreateSuccessModalProps) {
-    const {t} = useTranslation();
     const [progress, setProgress] = useState(0);
 
     useEffect(() => {
@@ -56,14 +53,10 @@ export function VndCreateSuccessModal({
                 </div>
 
                 <h3 className="text-center text-[16px] font-bold text-[#1c2740] mb-1">
-                    {/* Черновик-карточка была успешно создана! */}
-                    {t("createVnd.successModal.title")}
+                    Черновик-карточка была успешно создана!
                 </h3>
                 <p className="text-center text-[13px] text-[#8b97ab] mb-1">
-                    <span className="font-semibold text-[#3a4560]">
-                        {/* ВНД-{code} */}
-                        {t("createVnd.successModal.codeLabel", {code})}
-                    </span>
+                    <span className="font-semibold text-[#3a4560]">ВНД-{code}</span>
                 </p>
                 <p className="text-center text-[12.5px] text-[#a3adbd] mb-5 line-clamp-2">
                     {title}
@@ -76,8 +69,7 @@ export function VndCreateSuccessModal({
                     />
                 </div>
                 <p className="text-center text-[11px] text-[#a3adbd] mt-2">
-                    {/* Переход к карточке ВНД… */}
-                    {t("createVnd.successModal.redirecting")}
+                    Переход к карточке ВНД…
                 </p>
             </div>
         </div>

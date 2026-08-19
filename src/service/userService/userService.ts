@@ -3,19 +3,14 @@ import type {
     CreateUserRequest,
     GetUsersParams,
     UpdateUserRequest,
+    UserActivityResponse,
     UserResponse,
 } from "./userServiceType.ts";
 
-const API_BASE = import.meta.env.VITE_API_BASE_URL ?? "http://localhost:5293";
-// TODO: Подставить реальную логику получения текущего языка (i18n) + токены
+import {getLanguage} from "@/utils/getLanguage.ts";
+import {getAccessToken} from "@/service/tokenStore.ts";
 
-function getLanguage(): string {
-    return localStorage.getItem("lang") ?? "ru";
-}
-
-function getAuthToken(): string | null {
-    return localStorage.getItem("accessToken");
-}
+const API_BASE = `${import.meta.env.VITE_API_BASE_URL ?? ""}/api`;
 
 function buildHeaders(withJson = false): HeadersInit {
     const headers: Record<string, string> = {
@@ -24,7 +19,7 @@ function buildHeaders(withJson = false): HeadersInit {
 
     if (withJson) headers["Content-Type"] = "application/json";
 
-    const token = getAuthToken();
+    const token = getAccessToken();
     if (token) headers["Authorization"] = `Bearer ${token}`;
 
     return headers;
@@ -56,6 +51,14 @@ function buildQuery(params?: GetUsersParams): string {
 }
 
 export const userService = {
+    /** Одна учётная запись — для карточки пользователя. */
+    async getById(id: number): Promise<UserResponse> {
+        const response = await fetch(`${API_BASE}/users/${id}`, {
+            headers: buildHeaders(),
+        });
+        return handleResponse<UserResponse>(response);
+    },
+
     async getAll(params?: GetUsersParams): Promise<UserResponse[]> {
         const response = await fetch(`${API_BASE}/users?${buildQuery(params)}`, {
             headers: buildHeaders(),
@@ -68,6 +71,13 @@ export const userService = {
             headers: buildHeaders(),
         });
         return handleResponse<UserResponse>(response);
+    },
+
+    async getActivity(id: number): Promise<UserActivityResponse> {
+        const response = await fetch(`${API_BASE}/users/${id}/activity`, {
+            headers: buildHeaders(),
+        });
+        return handleResponse<UserActivityResponse>(response);
     },
 
     async create(request: CreateUserRequest): Promise<UserResponse> {

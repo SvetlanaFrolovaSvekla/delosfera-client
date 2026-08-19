@@ -74,6 +74,11 @@ export const vndAnalyticsService = {
         return res.data;
     },
 
+    /** Скачивает книгу Excel с разрезами аналитики (RPT-03) */
+    async downloadExportXlsx(period?: AnalyticsPeriodRequest): Promise<void> {
+        await download(`${BASE}/export/xlsx`, "Аналитика ВНД.xlsx", period);
+    },
+
     /** Скачивает сводный CSV-отчёт и триггерит сохранение файла в браузере */
     async downloadExportCsv(): Promise<void> {
         const res = await axiosInstance.get(`${BASE}/export`, {responseType: "blob"});
@@ -91,3 +96,24 @@ export const vndAnalyticsService = {
         URL.revokeObjectURL(url);
     },
 };
+
+/**
+ * Скачивание файла: имя берём из заголовка ответа, иначе подставляем своё —
+ * сервер знает про период выгрузки больше, чем страница.
+ */
+async function download(url: string, fallbackName: string, params?: unknown): Promise<void> {
+    const res = await axiosInstance.get(url, {responseType: "blob", params});
+
+    const disposition = res.headers["content-disposition"] as string | undefined;
+    const match = disposition?.match(/filename\*?=(?:UTF-8'')?"?([^";]+)"?/i);
+    const fileName = match ? decodeURIComponent(match[1]) : fallbackName;
+
+    const objectUrl = URL.createObjectURL(res.data as Blob);
+    const link = document.createElement("a");
+    link.href = objectUrl;
+    link.download = fileName;
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    URL.revokeObjectURL(objectUrl);
+}

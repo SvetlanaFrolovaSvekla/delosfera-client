@@ -1,35 +1,59 @@
 // Таб "Редакции" открытой страницы ВНД
-import {useState} from "react";
+import {useEffect, useState} from "react";
+import {useAuth} from "@/context/AuthContext.ts";
 import type {VndRedactionResponse, VndResponse} from "@/service/vndService/vndServiceType.ts";
 import {toast} from "@/service/toastService.ts";
+
 import {useVndRedactions} from "@/hooks/vndHooks/useVndRedactions.ts";
 import {useRedactionSelection} from "@/hooks/vndHooks/useRedactionSelection.ts";
 import {useAsyncAction} from "@/hooks/useAsyncAction.ts";
+import {useAvailableHeight} from "@/hooks/vndHooks/useAvailableHeight.ts";
+
 import {downloadWithToast} from "@/utils/downloadFile.ts";
-import {VndUploadRedactionModal} from "@/components/componentsVND/componentsOpenVndPage/componentsEditionsTab/VndUploadRedactionModal.tsx";
-import {getRedactionDisplayStatus, REDACTION_STATUS_META} from "@/utils/redactionStatus.ts";
-import {formatDate} from "@/utils/dateUtils.ts";
-import {EmptyState} from "@/components/componentsGeneral/EmptyState.tsx";
-import {Loader} from "@/components/componentsGeneral/Loader";
+import {getRedactionDisplayStatus} from "@/utils/redactionStatus.ts";
+import {buildRedactionFileName} from "@/utils/fileNaming.ts";
+
+import {PermissionCode} from "@/constants/permissions/permissions.ts";
+
+import {
+VndUploadRedactionModal
+} from "@/components/componentsVND/componentsOpenVndPage/componentsEditionsTab/VndUploadRedactionModal.tsx";
 import {
     RedactionsSidebar
 } from "@/components/componentsVND/componentsOpenVndPage/componentsEditionsTab/RedactionsSidebar.tsx";
 import {
+    RedactionLanguageTabsPanel,
+    getAvailableLanguages,
+    type RedactionLanguage, getRedactionFileId,
+} from "@/components/componentsVND/componentsOpenVndPage/componentsEditionsTab/RedactionLanguageTabsPanel.tsx";
+import {
     RedactionStatusBanner
 } from "@/components/componentsVND/componentsOpenVndPage/componentsEditionsTab/RedactionStatusBanner.tsx";
 import {
-    RedactionDocumentsPanel
-} from "@/components/componentsVND/componentsOpenVndPage/componentsEditionsTab/RedactionDocumentsPanel.tsx";
+    RedactionTextView
+} from "@/components/componentsVND/componentsOpenVndPage/componentsEditionsTab/RedactionTextView.tsx";
+import {
+    RedactionAttachmentsModal
+} from "@/components/componentsVND/componentsOpenVndPage/componentsEditionsTab/RedactionAttachmentsModal.tsx";
+import {
+    RedactionTidModal
+} from "@/components/componentsVND/componentsOpenVndPage/componentsEditionsTab/RedactionTidModal.tsx";
 import {
     RedactionCompareView
 } from "@/components/componentsVND/componentsOpenVndPage/componentsEditionsTab/RedactionCompareView.tsx";
-import {VndStartApprovalModal} from "@/components/componentsCoordination/CoordinationRouteConstructor/functionalComponents/VndStartApprovalModal.tsx";
-
-import {useAuth} from "@/context/AuthContext.ts";
-import {PermissionCode} from "@/constants/permissions/permissions.ts";
+import {
+    VndStartApprovalModal
+} from "@/components/componentsCoordination/CoordinationRouteConstructor/functionalComponents/VndStartApprovalModal.tsx";
 import {
     VndEditLastRevisionModal
 } from "@/components/componentsVND/componentsOpenVndPage/componentsEditionsTab/VndEditLastRevisionModal.tsx";
+import {
+    RedactionContentsPanel
+} from "@/components/componentsVND/componentsOpenVndPage/componentsEditionsTab/RedactionContentsPanel.tsx";
+
+import {EmptyState} from "@/components/componentsGeneral/EmptyState.tsx";
+import {Loader} from "@/components/componentsGeneral/Loader";
+import {Upload} from "lucide-react";
 
 interface VndEditionsTabProps {
     vnd: VndResponse;
@@ -41,9 +65,12 @@ export function VndEditionsTab({vnd, onVndChanged}: VndEditionsTabProps) {
     const [uploadOpen, setUploadOpen] = useState(false);
     const [compareMode, setCompareMode] = useState(false);
     const [selectedId, setSelectedId] = useState<number | undefined>(undefined);
+    const [contentsOpen, setContentsOpen] = useState(false);
 
     const {sortedDesc, lastByNumber, current, selected, compareTarget, uploadBlocked} =
         useRedactionSelection(redactions, selectedId);
+
+    const {ref: containerRef, height: availableHeight} = useAvailableHeight();
 
     const download = useAsyncAction<number>();
     const submit = useAsyncAction<number>();
@@ -52,10 +79,30 @@ export function VndEditionsTab({vnd, onVndChanged}: VndEditionsTabProps) {
 
     const {hasPermission} = useAuth();
     const [editOpen, setEditOpen] = useState(false);
-    const isTrueLast = sortedDesc[0]?.id === selected?.id;
+
+    const [activeLanguage, setActiveLanguage] = useState<RedactionLanguage>("ru");
+
+    const [attachmentsRedaction, setAttachmentsRedaction] = useState<VndRedactionResponse | null>(null);
+    const [tidRedaction, setTidRedaction] = useState<VndRedactionResponse | null>(null);
+
+    useEffect(() => {
+        if (!selected) return;
+        const available = getAvailableLanguages(selected);
+        if (!available.includes(activeLanguage)) {
+            // eslint-disable-next-line react-hooks/set-state-in-effect
+            setActiveLanguage(available[0] ?? "ru");
+        }
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [selected?.id]);
 
     const handleDownload = (fileId: number, name: string) =>
         download.run(fileId, () => downloadWithToast(fileId, name), "Не удалось скачать файл");
+
+    const selectedFileId = selected ? getRedactionFileId(selected, activeLanguage) : null;
+    const handleDownloadSelected = () => {
+        if (!selected || selectedFileId === null) return;
+        void handleDownload(selectedFileId, buildRedactionFileName(selected.code, vnd.name, activeLanguage));
+    };
 
     const handleRedactionUploaded = (redaction: VndRedactionResponse) => {
         setUploadOpen(false);
@@ -70,6 +117,11 @@ export function VndEditionsTab({vnd, onVndChanged}: VndEditionsTabProps) {
                 `Чтобы ${vnd.code} начал действовать, пожалуйста, отправьте редакцию ${redaction.code} на согласование.`
             );
         }
+    };
+
+    const handleEditRedaction = (redactionId: number) => {
+        setSelectedId(redactionId);
+        setEditOpen(true);
     };
 
     if (loading) {
@@ -88,17 +140,19 @@ export function VndEditionsTab({vnd, onVndChanged}: VndEditionsTabProps) {
         );
     }
 
+    /* Если нет редакций */
     if (!selected) {
         return (
-            <div
-                className="flex flex-col items-center gap-3 rounded-2xl border border-[#e9edf3] bg-white p-8 text-sm text-[#8b97ab]">
-                <p>Редакции документа отсутствуют.</p>
-                <button
-                    onClick={() => setUploadOpen(true)}
-                    className="inline-flex items-center gap-2 h-10 px-[15px] rounded-[10px] border-none bg-[#4e57d6] text-white font-semibold text-[13px] cursor-pointer hover:brightness-[1.06] shadow-[0_6px_16px_-6px_#4e57d6]"
-                >
-                    Загрузить первую редакцию
-                </button>
+            <div className="mx-auto mt-30 max-w-[420px]">
+                <EmptyState
+                    icon={Upload}
+                    title="Редакции документа отсутствуют"
+                    description="Загрузите первую редакцию, чтобы документ начал действовать"
+                    actionLabel="Загрузить первую редакцию"
+                    actionIcon={Upload}
+                    actionVariant="primary"
+                    onAction={() => setUploadOpen(true)}
+                />
                 {uploadOpen && (
                     <VndUploadRedactionModal
                         vndId={vnd.id}
@@ -112,43 +166,56 @@ export function VndEditionsTab({vnd, onVndChanged}: VndEditionsTabProps) {
     }
 
     const selectedStatus = getRedactionDisplayStatus(selected);
-    const selectedMeta = REDACTION_STATUS_META[selectedStatus];
 
     return (
-        <div className="grid grid-cols-[300px_1fr] gap-[18px] items-start">
-            <RedactionsSidebar
-                redactions={sortedDesc}
-                selectedId={selected.id}
-                onSelect={setSelectedId}
-                uploadBlocked={uploadBlocked}
-                lastByNumber={lastByNumber}
-                onUpload={() => setUploadOpen(true)}
-                compareMode={compareMode}
-                onToggleCompare={() => setCompareMode((v) => !v)}
-            />
+        <div
+            ref={containerRef}
+            style={{height: availableHeight}}
+            className={`px-2 grid items-start gap-[15px] overflow-hidden ${
+                contentsOpen ? "grid-cols-[260px_1fr_260px]" : "grid-cols-[260px_1fr]"
+            }`}
+        >
 
-            <div className="overflow-hidden rounded-[14px] border border-[#e9edf3] bg-white">
-                <div className="flex flex-wrap items-center gap-3 border-b border-[#eef2f7] px-5 py-[13px]">
-                    <div className="text-[13.5px] font-semibold text-[#1c2740]">{selected.code}</div>
-                    <span className="text-[12px] text-[#8b97ab]">{formatDate(selected.createdAt)}</span>
-                    <span
-                        className="rounded-full px-[9px] py-[3px] text-[11px] font-semibold"
-                        style={{color: selectedMeta.color, background: selectedMeta.bg}}
-                    >
-                        {selectedMeta.label}
-                    </span>
-                    <div className="flex-1"/>
+            {/* Левая панель */}
+            <div
+                style={{height: availableHeight}}
+                className="flex min-h-0 flex-col gap-[10px]"
+            >
 
-                    {hasPermission(PermissionCode.EditLastRevisionDirectly) && isTrueLast && (
-                        <button
-                            onClick={() => setEditOpen(true)}
-                            className="cursor-pointer inline-flex items-center gap-1.5 h-8 px-3 rounded-[8px] border border-[#e5e9f0] text-[12.5px] font-semibold text-[#3a4560] hover:bg-[#f6f8fb]"
-                        >
-                            Редактировать
-                        </button>
-                    )}
-                </div>
+                {/* Редакции документа */}
+                <RedactionsSidebar
+                    redactions={sortedDesc}
+                    selectedId={selected.id}
+                    onSelect={setSelectedId}
+                    uploadBlocked={uploadBlocked}
+                    lastByNumber={lastByNumber}
+                    onUpload={() => setUploadOpen(true)}
+                    compareMode={compareMode}
+                    onToggleCompare={() => setCompareMode((v) => !v)}
+                    contentsOpen={contentsOpen}
+                    onToggleContents={() => setContentsOpen((v) => !v)}
+                    canEditLastRevision={hasPermission(PermissionCode.EditLastRevisionDirectly)}
+                    onEditRedaction={handleEditRedaction}
+                    onOpenAttachments={setAttachmentsRedaction}
+                    onOpenTid={setTidRedaction}
+                    onDownloadSelected={handleDownloadSelected}
+                    downloadDisabled={selectedFileId === null}
+                    downloading={download.activeId === selectedFileId}
+                />
+                {/* Языки редакции */}
+                <RedactionLanguageTabsPanel
+                    selected={selected}
+                    activeLanguage={activeLanguage}
+                    onChange={setActiveLanguage}
+                />
+            </div>
 
+            {/* Центральная панель */}
+            {/* Закреплённый статус-баннер сверху + прокручиваемое содержимое ниже */}
+            <div
+                style={{height: availableHeight}}
+                className="flex min-h-0 max-h-[750px] flex-col overflow-hidden rounded-[14px] border border-[#e9edf3] bg-white"
+            >
                 <RedactionStatusBanner
                     status={selectedStatus}
                     currentNumber={current?.number}
@@ -156,43 +223,54 @@ export function VndEditionsTab({vnd, onVndChanged}: VndEditionsTabProps) {
                     onSubmit={() => setApprovalModalOpen(true)}
                 />
 
-                {submit.error && (
-                    <div className="border-b border-[#f2c2c2] bg-[#fdf1f1] px-5 py-[10px] text-[12px] text-[#c0392b]">
-                        {submit.error}
-                    </div>
-                )}
+                <div className="min-h-0 flex-1 overflow-y-auto">
 
-                {selected.description && (
-                    <div
-                        className="border-b border-[#eef2f7] bg-[#fbfcfe] px-5 py-3 text-[13px] leading-[1.6] text-[#3c424a]">
-                        <span className="font-semibold">Описание редакции:</span> {selected.description}
-                    </div>
-                )}
+                    {submit.error && (
+                        <div
+                            className="border-b border-[#f2c2c2] bg-[#fdf1f1] px-5 py-[10px] text-[12px] text-[#c0392b]">
+                            {submit.error}
+                        </div>
+                    )}
 
-                {download.error && (
-                    <div className="border-b border-[#f2c2c2] bg-[#fdf1f1] px-5 py-[10px] text-[12px] text-[#c0392b]">
-                        {download.error}
-                    </div>
-                )}
+                    {download.error && (
+                        <div
+                            className="border-b border-[#f2c2c2] bg-[#fdf1f1] px-5 py-[10px] text-[12px] text-[#c0392b]">
+                            {download.error}
+                        </div>
+                    )}
 
-                {!compareMode ? (
-                    <RedactionDocumentsPanel
-                        vnd={vnd}
-                        selected={selected}
-                        downloadingId={download.activeId}
-                        onDownload={handleDownload}
-                    />
-                ) : (
-                    <RedactionCompareView
-                        vnd={vnd}
-                        selected={selected}
-                        compareTarget={compareTarget}
-                        downloadingId={download.activeId}
-                        onDownload={handleDownload}
-                    />
-                )}
+                    {/* compareMode - режим сравнения редакций */}
+                    {!compareMode ? (
+                        <RedactionTextView
+                            vnd={vnd}
+                            selected={selected}
+                            activeLanguage={activeLanguage}
+                            downloadingId={download.activeId}
+                            onDownload={handleDownload}
+                        />
+                    ) : (
+                        <RedactionCompareView
+                            vnd={vnd}
+                            selected={selected}
+                            compareTarget={compareTarget}
+                            downloadingId={download.activeId}
+                            onDownload={handleDownload}
+                        />
+                    )}
+                </div>
             </div>
 
+            {/* Правая панель - содержание */}
+            {contentsOpen && selected && (
+                <div style={{height: availableHeight}} className="min-h-0">
+                    <RedactionContentsPanel
+                        redactionCode={selected.code}
+                        onClose={() => setContentsOpen(false)}
+                    />
+                </div>
+            )}
+
+            {/* --- Другие модальные окна --- */}
             {/* Загрузка новой редакции */}
             {uploadOpen && (
                 <VndUploadRedactionModal
@@ -215,6 +293,7 @@ export function VndEditionsTab({vnd, onVndChanged}: VndEditionsTabProps) {
                 />
             )}
 
+            {/* Редактирование редакции */}
             {editOpen && selected && (
                 <VndEditLastRevisionModal
                     vndId={vnd.id}
@@ -226,6 +305,26 @@ export function VndEditionsTab({vnd, onVndChanged}: VndEditionsTabProps) {
                         onVndChanged?.();
                         toast.success("Редакция обновлена", `Изменения в редакции ${selected.code} сохранены.`);
                     }}
+                />
+            )}
+
+            {/* Вложения редакции */}
+            {attachmentsRedaction && (
+                <RedactionAttachmentsModal
+                    redaction={attachmentsRedaction}
+                    downloadingId={download.activeId}
+                    onDownload={handleDownload}
+                    onClose={() => setAttachmentsRedaction(null)}
+                />
+            )}
+
+            {/* Просмотр ТИД редакции */}
+            {tidRedaction && (
+                <RedactionTidModal
+                    redaction={tidRedaction}
+                    downloadingId={download.activeId}
+                    onDownload={handleDownload}
+                    onClose={() => setTidRedaction(null)}
                 />
             )}
         </div>

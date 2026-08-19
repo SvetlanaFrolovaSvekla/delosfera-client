@@ -131,6 +131,32 @@
     "initiator": "Инициатор",
     "clerk": "Канцелярия"
   },
+  "auth": {
+    "brandName": "Делосфера",
+    "brandSub": "СЭД БАНКА",
+    "heroTitle": "Электронный документооборот банка",
+    "heroSubtitle": "Согласование, подписание и хранение внутренних нормативных документов — от инициации до архива, в едином маршруте.",
+    "title": "Вход в систему",
+    "subtitle": "Выберите способ авторизации",
+    "tabPassword": "Логин и пароль",
+    "tabDomain": "Доменный вход",
+    "loginLabel": "Логин",
+    "loginPlaceholder": "ivanov.ii@bank.kg",
+    "passwordLabel": "Пароль",
+    "showPassword": "Показать пароль",
+    "hidePassword": "Скрыть пароль",
+    "remember": "Запомнить меня",
+    "forgotPassword": "Забыли пароль?",
+    "signIn": "Войти",
+    "signingIn": "Вход…",
+    "errorCredentials": "Неверный логин или пароль",
+    "domainHint": "Введите доменные логин и пароль — те же, что и для входа в рабочую станцию. Пароль проверяет служба каталогов банка, система его не хранит.",
+    "domainSignIn": "Войти через домен",
+    "domainChecking": "Проверяем в службе каталогов…",
+    "errorDomain": "Служба каталогов не подтвердила доменные логин и пароль",
+    "footerVersion": "Делосфера СЭД · v8.2",
+    "support": "Поддержка"
+  },
   "vnd": {
     "shortLabel": "ВНД",
     "status": "Статус",
@@ -154,6 +180,21 @@
       "withChanges": "С изменениями",
       "withoutChanges": "Без изменений"
     }
+  },
+  "openVndPage": {
+    "loadError": "Не удалось загрузить документ: {{error}}",
+    "dictionariesErrorTitle": "Не удалось загрузить данные!",
+    "createdAtLabel": "Дата создания: {{date}}",
+    "deleteDraftButton": "Удалить черновик",
+    "deleteConfirmTitle": "Удалить черновик?",
+    "deleteConfirmMessage": "Удалить черновик ВНД «{{name}}»? Действие необратимо.",
+    "deleteError": "Не удалось удалить документ",
+    "deletedToastTitle": "ВНД удалён",
+    "deletedToastDescription": "«{{name}}» удалён",
+    "deleteFailedToastTitle": "Не удалось удалить",
+    "consolidatedToastTitle": "ВНД консолидирован",
+    "consolidatedToastDescription": "Документ теперь в статусе «Действующий»",
+    "consolidateError": "Не удалось консолидировать документ"
   },
   "createVnd": {
     "titlesSection": {
@@ -213,7 +254,6 @@
     "addChildAction": "Добавить дочерний элемент",
     "editAction": "Изменить",
     "deleteAction": "Удалить",
-
     "fieldTitleRu": "Название (рус.)",
     "fieldTitleEn": "Название (англ.)",
     "fieldTitleKg": "Название (кырг.)",
@@ -223,7 +263,6 @@
     "saveError": "Не удалось сохранить. Попробуйте ещё раз.",
     "deleteError": "Не удалось удалить. Возможно, элемент используется в других данных.",
     "deleteConfirmMessage": "Вы уверены, что хотите удалить «{{name}}»? Это действие нельзя отменить.",
-
     "sectionSubtitleGeneral": "Справочники Общее",
     "sectionSubtitleVnd": "Справочники ВНД"
   },
@@ -342,7 +381,7 @@
     "deleteConfirmTitle": "Удалить рубрику?"
   },
   "rubricTreeModal": {
-    "helpTooltip": "Выберите одну или несколько рубрик, чтобы отфильтровать реестр",
+    "helpTooltip": "Выберите одну или несколько рубрик, чтобы отфильтровать реестр ВНД",
     "goToRubric": "Перейти к реестру с фильтром по этой рубрике",
     "selectedCount": "Выбрано:",
     "apply": "Перейти"

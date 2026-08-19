@@ -7,6 +7,8 @@ interface AuthContextType {
     permissionCodes: Set<number>;
     hasPermission: (code: number) => boolean;
     login: (email: string, password: string) => Promise<void>;
+    /** Вход по доменной (LDAP) учётной записи рабочей станции */
+    loginDomain: (login: string, password: string) => Promise<void>;
     logout: () => Promise<void>;
     refetch: () => Promise<void>;
 }
@@ -17,6 +19,7 @@ export const AuthContext = createContext<AuthContextType>({
     permissionCodes: new Set(),
     hasPermission: () => false,
     login: async () => {},
+    loginDomain: async () => {},
     logout: async () => {},
     refetch: async () => {},
 });

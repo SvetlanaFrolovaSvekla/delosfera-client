@@ -1,20 +1,28 @@
 import {apiClient, refreshSession} from "@/service/apiClient.ts";
 import type {LoginRequest, LoginResponse} from "@/service/authService/authServiceType.ts";
+import {setAccessToken} from "@/service/tokenStore.ts";
 
 class AuthService {
     async login(request: LoginRequest): Promise<LoginResponse> {
         const response = await apiClient.post<LoginResponse>("/auth/login", request);
-        const {token, refreshToken, user} = response.data;
-        localStorage.setItem("accessToken", token);
-        localStorage.setItem("refreshToken", refreshToken);
-        localStorage.setItem("user", JSON.stringify(user));
+        // Access-токен — только в память; refresh пришёл в httpOnly-cookie.
+        setAccessToken(response.data.token);
         return response.data;
     }
 
     /**
-     * Обновляет пару токенов через ту же защищённую от гонки логику,
-     * что использует apiClient (navigator.locks). Возвращает новый accessToken —
-     * его ждёт axiosInstance, чтобы повторить упавший с 401 запрос.
+     * Вход по доменной учётной записи (INT-01): пароль проверяет служба каталогов,
+     * привязываясь к ней от имени самого сотрудника. Система пароль не хранит.
+     */
+    async loginDomain(login: string, password: string): Promise<LoginResponse> {
+        const response = await apiClient.post<LoginResponse>("/auth/login-domain", {login, password});
+        setAccessToken(response.data.token);
+        return response.data;
+    }
+
+    /**
+     * Обновляет сессию по httpOnly refresh-cookie (через защищённую от гонки логику
+     * apiClient с navigator.locks). Возвращает новый access-токен.
      */
     async refresh(): Promise<string> {
         const response = await refreshSession();
@@ -22,14 +30,9 @@ class AuthService {
     }
 
     async logout(): Promise<void> {
-        const refreshToken = localStorage.getItem("refreshToken");
-        localStorage.removeItem("accessToken");
-        localStorage.removeItem("refreshToken");
-        localStorage.removeItem("user");
-
-        if (refreshToken) {
-            await apiClient.post("/auth/logout", {refreshToken}).catch(() => {});
-        }
+        // Сервер отзовёт refresh по cookie и очистит её; локально сбрасываем access-токен.
+        setAccessToken(null);
+        await apiClient.post("/auth/logout").catch(() => {});
     }
 }
 

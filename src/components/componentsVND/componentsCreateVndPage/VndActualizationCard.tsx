@@ -1,6 +1,4 @@
-// Блок с проставлением срока актуализации при разработке ВНД
-import {useTranslation} from "react-i18next";
-import {getActualizationModeOptions, type ActualizationMode} from "@/utils/vndActualizationUtils.ts";
+import {ACTUALIZATION_MODE_OPTIONS, type ActualizationMode} from "@/utils/vndActualizationUtils.ts";
 import {DatePickerInput} from "@/components/componentsGeneral/datePickers/DatePickerInput.tsx";
 
 interface VndActualizationCardProps {
@@ -18,25 +16,18 @@ export function VndActualizationCard({
                                          onManualDueDateChange,
                                          periodicityLabel,
                                      }: VndActualizationCardProps) {
-    const {t} = useTranslation();
-
-    // Вызывается на каждом рендере — label пересчитывается при смене языка
-    const actualizationModeOptions = getActualizationModeOptions();
-
     return (
         <div className="bg-white border border-[#e9edf3] rounded-2xl p-5 flex-1 flex flex-col">
             <div className="text-[11px] font-bold uppercase tracking-[.04em] text-[#a3adbd]">
-                {/* Срок актуализации */}
-                {t("actualizationCard.label")}
+                Срок актуализации
             </div>
             <p className="mt-2 mb-3 text-[11.5px] text-[#8b97ab] leading-[1.5]">
-                {/* До какого числа нужно актуализировать ВНД. Выберите готовую периодичность (считается от даты
-                создания) — или задайте дату вручную, тогда периодичность посчитается сама. */}
-                {t("actualizationCard.description")}
+                До какого числа нужно актуализировать ВНД. Выберите готовую периодичность (считается от даты
+                создания) — или задайте дату вручную, тогда периодичность посчитается сама.
             </p>
 
             <div className="flex flex-col gap-1 mb-3">
-                {actualizationModeOptions.map((opt) => {
+                {ACTUALIZATION_MODE_OPTIONS.map((opt) => {
                     const isActive = actualizationMode === opt.key;
                     return (
                         <button
@@ -69,13 +60,11 @@ export function VndActualizationCard({
                 onChange={onManualDueDateChange}
                 disabled={actualizationMode !== "date"}
                 modal
-                // "Срок актуализации"
-                modalTitle={t("actualizationCard.label")}
+                modalTitle="Срок актуализации"
             />
 
             <div className="mt-3 pt-3 border-t border-[#eef2f7] text-[12px] text-[#55617a] leading-[1.55]">
-                {/* Периодичность: <b>{periodicityLabel}</b> */}
-                {t("actualizationCard.periodicity")}: <b className="text-[#1c2740]">{periodicityLabel}</b>
+                Периодичность: <b className="text-[#1c2740]">{periodicityLabel}</b>
             </div>
         </div>
     );

@@ -26,10 +26,15 @@ import {
     type ResolutionChoice,
 } from "./componentsCoordinationTab/VndApproverResolutionPanel.tsx";
 import {VndRevisionNeededPanel} from "./componentsCoordinationTab/VndRevisionNeededPanel.tsx";
+import {toast} from "@/service/toastService.ts";
 
 interface VndCoordinationTabProps {
     vnd: VndResponse;
+    onVndChanged?: () => void;
 }
+
+// Статусы, из которых инициатор ещё может отозвать согласование
+const CANCELLABLE_STATUSES = ["primary", "repeated", "final_hold", "revision_needed"];
 
 
 const DECISION_MAP: Record<ResolutionChoice, ApprovalDecisionType> = {
@@ -38,66 +43,11 @@ const DECISION_MAP: Record<ResolutionChoice, ApprovalDecisionType> = {
     reject: ApprovalDecisionType.Reject,
 };
 
-// Дебажный вывод process в консоль с подписями по-русски, чтобы удобно было смотреть в devtools
-function logProcessDebug(process: ApprovalProcessResponse) {
-    console.groupCollapsed(`[VndCoordinationTab] Согласование по ВНД: process.id=${process.id}, статус=${process.status}`);
 
-    console.log("Статус:", process.status);
-    console.log("Норматив первичного согласования (ч):", process.primaryDeadlineMinutes);
-    console.log("Норматив повторного согласования (ч):", process.repeatDeadlineMinutes);
-    console.log("Норматив финальной выдержки (ч):", process.finalHoldDeadlineMinutes);
-    console.log("Первичное согласование начато:", process.primaryStartedAt);
-    console.log("Дедлайн первичного согласования:", process.primaryDeadlineAt);
-    console.log("Повторное согласование начато:", process.repeatStartedAt ?? "—");
-    console.log("Дедлайн повторного согласования:", process.repeatDeadlineAt ?? "—");
-    console.log("Комментарий инициатора при повторной отправке:", process.repeatInitiatorComment ?? "—");
-    console.log("Финальная выдержка начата:", process.finalHoldStartedAt ?? "—");
-    console.log("Дедлайн финальной выдержки:", process.finalHoldDeadlineAt ?? "—");
-    console.log("Завершено:", process.completedAt ?? "—");
-    console.log("Создано:", process.createdAt);
-    console.log("Обновлено:", process.updatedAt);
-
-    if (process.disagreementMatrixRows.length > 0) {
-        console.group("Матрица разногласий:");
-        process.disagreementMatrixRows.forEach((row) => {
-            console.log(`Строка id=${row.id}`, {
-                "Редакция разработчика": row.developerPosition,
-                "Редакция и комментарий оппонента": row.opponentPosition,
-                "Обоснование": row.developerJustification ?? "—",
-            });
-        });
-        console.groupEnd();
-    }
-
-    console.group("Этапы согласования:");
-    if (process.stages.length === 0) {
-        console.log("Этапов нет");
-    }
-    process.stages.forEach((stage) => {
-        console.log(`Этап #${stage.order} (id: ${stage.id})`, {
-            "Тип": stage.kind,
-            "Подразделение": `${stage.orgUnitName} (id: ${stage.orgUnitId})`,
-            "Согласующий": `${stage.approverName} (id: ${stage.approverUserId})`,
-            "Первичное решение": stage.primaryDecision,
-            "Комментарий (первично)": stage.primaryComment ?? "—",
-            "Дата решения (первично)": stage.primaryDecidedAt ?? "—",
-            "Участвует в повторном": stage.participatesInRepeat ? "да" : "нет",
-            "Повторное решение": stage.repeatDecision ?? "—",
-            "Комментарий (повторно)": stage.repeatComment ?? "—",
-            "Дата решения (повторно)": stage.repeatDecidedAt ?? "—",
-            "Решение (финальная выдержка)": stage.finalHoldDecision ?? "—",
-            "Комментарий (финальная выдержка)": stage.finalHoldComment ?? "—",
-            "Дата решения (финальная выдержка)": stage.finalHoldDecidedAt ?? "—",
-        });
-    });
-    console.groupEnd();
-
-    console.groupEnd();
-}
-
-export function VndCoordinationTab({vnd}: VndCoordinationTabProps) {
+export function VndCoordinationTab({vnd, onVndChanged}: VndCoordinationTabProps) {
     const {user} = useAuth();
     const currentUserId = user?.id;
+    const [cancelling, setCancelling] = useState(false);
 
     const [process, setProcess] = useState<ApprovalProcessResponse | null>(null);
     const [loading, setLoading] = useState(true);
@@ -139,13 +89,6 @@ export function VndCoordinationTab({vnd}: VndCoordinationTabProps) {
             cancelled = true;
         };
     }, [vnd.id]);
-
-    // Логируем process в консоль каждый раз, когда он обновляется
-    useEffect(() => {
-        if (process) {
-            logProcessDebug(process);
-        }
-    }, [process]);
 
     // Редакции ВНД грузим, чтобы достать ту, что связана с process.redactionId
     const {data: redactions, loading: redactionsLoading, error: redactionsError} = useVndRedactions(vnd.id);
@@ -214,6 +157,21 @@ export function VndCoordinationTab({vnd}: VndCoordinationTabProps) {
             setDecisionError(err instanceof Error ? err.message : "Не удалось отправить резолюцию");
         } finally {
             setSubmitting(false);
+        }
+    };
+
+    const handleCancel = async () => {
+        if (!window.confirm(
+            "Отозвать согласование? Редакция и документ вернутся в черновик, задача у согласующих будет снята.")) return;
+        setCancelling(true);
+        try {
+            await coordinationService.cancel(vnd.id);
+            toast.success("Согласование отозвано", "Документ возвращён в черновик");
+            onVndChanged?.();
+        } catch (err) {
+            toast.error("Не удалось отозвать", err instanceof Error ? err.message : undefined);
+        } finally {
+            setCancelling(false);
         }
     };
 
@@ -339,6 +297,21 @@ export function VndCoordinationTab({vnd}: VndCoordinationTabProps) {
                     requiresTid={!!redaction && redaction.number > 1}
                     onChanged={loadProcess}
                 />
+            )}
+
+            {isInitiator && CANCELLABLE_STATUSES.includes(process.status) && (
+                <div className="mt-6 flex items-center justify-between gap-3 rounded-[12px] border border-[#f0dede] bg-[#fdf6f5] px-4 py-3">
+                    <span className="text-[12.5px] text-[#8b6a68]">
+                        Можно отозвать согласование — документ вернётся в черновик для правок.
+                    </span>
+                    <button
+                        onClick={handleCancel}
+                        disabled={cancelling}
+                        className="shrink-0 rounded-[9px] border border-[#e0b4ae] bg-white px-[14px] py-[8px] text-[12.5px] font-semibold text-[#c0392b] cursor-pointer hover:bg-[#fbecea] disabled:opacity-60"
+                    >
+                        {cancelling ? "Отзываю…" : "Отозвать согласование"}
+                    </button>
+                </div>
             )}
         </div>
     );

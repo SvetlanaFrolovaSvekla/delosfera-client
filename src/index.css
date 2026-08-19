@@ -19,6 +19,18 @@ a:hover { color: #1b4fd0; }
 ::-webkit-scrollbar-thumb { background: #d3dbe6; border-radius: 8px; border: 2px solid transparent; background-clip: padding-box; }
 ::-webkit-scrollbar-thumb:hover { background: #b9c4d3; background-clip: padding-box; }
 
+/* DocxEditor: режим просмотра ВНД - скрыть мигающую каретку */
+.docx-viewer-readonly .ProseMirror {
+    caret-color: transparent !important;
+}
+.docx-viewer-readonly .ProseMirror:focus {
+    outline: none !important;
+}
+
+.docx-viewer-readonly .presentation-editor-pages {
+    overflow-x: hidden !important;
+}
+
 /* Анимации страницы авторизации (левая hero-панель) */
 @keyframes authFloat { 0%,100% { transform: translate(0,0) rotate(var(--rot,0deg)); } 50% { transform: translate(6px,-16px) rotate(calc(var(--rot,0deg) + 5deg)); } }
 @keyframes authDash { to { stroke-dashoffset: -200; } }

@@ -230,7 +230,11 @@
   },
   "docxEditor": {
     "loadingDocument": "Документ жүктөлүүдө…",
-    "loadError": "Документти жүктөө мүмкүн болгон жок"
+    "loadError": "Документти жүктөө мүмкүн болгон жок",
+    "contextMenu": {
+      "copy": "Көчүрүү",
+      "searchInGoogle": "Google'дон «{{query}}» издөө"
+    }
   },
   "createVnd": {
     "titlesSection": {

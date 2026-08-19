@@ -230,7 +230,11 @@
   },
   "docxEditor": {
     "loadingDocument": "Loading document…",
-    "loadError": "Failed to load document"
+    "loadError": "Failed to load document",
+    "contextMenu": {
+      "copy": "Copy",
+      "searchInGoogle": "Search for \"{{query}}\" on Google"
+    }
   },
   "createVnd": {
     "titlesSection": {

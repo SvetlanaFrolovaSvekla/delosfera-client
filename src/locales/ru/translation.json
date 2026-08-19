@@ -230,7 +230,11 @@
   },
   "docxEditor": {
     "loadingDocument": "Загрузка документа…",
-    "loadError": "Не удалось загрузить документ"
+    "loadError": "Не удалось загрузить документ",
+    "contextMenu": {
+      "copy": "Копировать",
+      "searchInGoogle": "Найти «{{query}}» в Google"
+    }
   },
   "createVnd": {
     "titlesSection": {

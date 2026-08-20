@@ -19,18 +19,71 @@ a:hover { color: #1b4fd0; }
 ::-webkit-scrollbar-thumb { background: #d3dbe6; border-radius: 8px; border: 2px solid transparent; background-clip: padding-box; }
 ::-webkit-scrollbar-thumb:hover { background: #b9c4d3; background-clip: padding-box; }
 
-/* DocxEditor: режим просмотра ВНД - скрыть мигающую каретку */
-.docx-viewer-readonly .ProseMirror {
-    caret-color: transparent !important;
-}
-.docx-viewer-readonly .ProseMirror:focus {
-    outline: none !important;
+.docx-preview-content table {
+    border-collapse: collapse;
+    width: 100%;
+    margin: 12px 0;
 }
 
-.docx-viewer-readonly .presentation-editor-pages {
-    overflow-x: hidden !important;
+.docx-preview-content table td,
+.docx-preview-content table th {
+    border: 1px solid #d5dbe3;
+    padding: 6px 10px;
+    vertical-align: top;
 }
 
+.docx-preview-content table th {
+    background-color: #f5f7fa;
+    font-weight: 600;
+}
+
+.docx-preview-content img {
+    max-width: 100%;
+    height: auto;
+}
+
+
+.docx-preview-wrapper .docx-wrapper {
+    background: transparent !important;
+    padding: 0 !important;
+}
+
+.docx-preview-wrapper section.docx {
+    background: transparent !important;
+    box-shadow: none !important;
+    margin: 0 !important;
+    padding: 0 !important;
+}
+
+.docx-preview-wrapper .docx-wrapper > .docx {
+    border: none !important;
+}
+.docx-preview-content [class*="_tssoderzhanie"] {
+    background-color: transparent !important;
+}
+
+.docx-preview-content [class*="wordsection"] {
+    background-color: transparent !important;
+}
+
+.docx-preview-content [class*="tssoderzhanie3"] {
+    padding: 0 !important;
+    line-height: 0 !important;
+}
+
+.docx-preview-content {
+    padding: 36px !important;
+}
+
+.docx-preview-content p {
+    min-height: 0 !important;
+}
+
+.docx-preview-content [class*="tssoderzhanie"] + p:empty {
+    min-height: 0 !important;
+    line-height: 0 !important;
+    margin: 0 !important;
+}
 /* Анимации страницы авторизации (левая hero-панель) */
 @keyframes authFloat { 0%,100% { transform: translate(0,0) rotate(var(--rot,0deg)); } 50% { transform: translate(6px,-16px) rotate(calc(var(--rot,0deg) + 5deg)); } }
 @keyframes authDash { to { stroke-dashoffset: -200; } }

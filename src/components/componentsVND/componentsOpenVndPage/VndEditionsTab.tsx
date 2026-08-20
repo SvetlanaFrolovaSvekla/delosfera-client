@@ -1,4 +1,5 @@
 // Таб "Редакции" открытой страницы ВНД
+import {useRef} from "react";
 import {useEffect, useState} from "react";
 import {useAuth} from "@/context/AuthContext.ts";
 import {useTranslation} from "react-i18next";
@@ -34,7 +35,7 @@ import {
     RedactionStatusBanner
 } from "@/components/componentsVND/componentsOpenVndPage/componentsEditionsTab/RedactionStatusBanner.tsx";
 import {
-    RedactionTextView
+    RedactionTextView, type RedactionTextViewHandle
 } from "@/components/componentsVND/componentsOpenVndPage/componentsEditionsTab/RedactionTextView.tsx";
 import {
     RedactionAttachmentsModal
@@ -58,6 +59,7 @@ import {
 import {EmptyState} from "@/components/componentsGeneral/EmptyState.tsx";
 import {Loader} from "@/components/componentsGeneral/Loader";
 import {Upload} from "lucide-react";
+import {SearchBar} from "@/components/componentsGeneral/SearchBar.tsx";
 
 
 interface VndEditionsTabProps {
@@ -72,6 +74,9 @@ export function VndEditionsTab({vnd, onVndChanged}: VndEditionsTabProps) {
     const [compareMode, setCompareMode] = useState(false);
     const [selectedId, setSelectedId] = useState<number | undefined>(undefined);
     const [contentsOpen, setContentsOpen] = useState(false);
+
+    const [searchQuery, setSearchQuery] = useState("");
+    const textViewRef = useRef<RedactionTextViewHandle>(null);
 
     const {sortedDesc, lastByNumber, current, selected, compareTarget, uploadBlocked} =
         useRedactionSelection(redactions, selectedId);
@@ -99,6 +104,11 @@ export function VndEditionsTab({vnd, onVndChanged}: VndEditionsTabProps) {
             setActiveLanguage(available[0] ?? "ru");
         }
         // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [selected?.id]);
+
+    useEffect(() => {
+        // eslint-disable-next-line react-hooks/set-state-in-effect
+        setSearchQuery("");
     }, [selected?.id]);
 
     const handleDownload = (fileId: number, name: string) =>
@@ -194,6 +204,14 @@ export function VndEditionsTab({vnd, onVndChanged}: VndEditionsTabProps) {
                 className="flex min-h-0 flex-col gap-[10px]"
             >
 
+                <SearchBar
+                    variant="white"
+                    placeholder="Поиск по тексту редакции…"
+                    value={searchQuery}
+                    onChange={setSearchQuery}
+                    onSubmit={() => textViewRef.current?.goNext()}
+                />
+
                 {/* Редакции документа */}
                 <RedactionsSidebar
                     redactions={sortedDesc}
@@ -235,30 +253,29 @@ export function VndEditionsTab({vnd, onVndChanged}: VndEditionsTabProps) {
                     onSubmit={() => setApprovalModalOpen(true)}
                 />
 
-                <div className="min-h-0 flex-1 overflow-y-auto">
-
+                <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
                     {submit.error && (
-                        <div
-                            className="border-b border-[#f2c2c2] bg-[#fdf1f1] px-5 py-[10px] text-[12px] text-[#c0392b]">
+                        <div className="border-b border-[#f2c2c2] bg-[#fdf1f1] px-5 py-[10px] text-[12px] text-[#c0392b]">
                             {submit.error}
                         </div>
                     )}
 
                     {download.error && (
-                        <div
-                            className="border-b border-[#f2c2c2] bg-[#fdf1f1] px-5 py-[10px] text-[12px] text-[#c0392b]">
+                        <div className="border-b border-[#f2c2c2] bg-[#fdf1f1] px-5 py-[10px] text-[12px] text-[#c0392b]">
                             {download.error}
                         </div>
                     )}
 
-                    {/* compareMode - режим сравнения редакций */}
                     {!compareMode ? (
                         <RedactionTextView
+                            ref={textViewRef}
                             vnd={vnd}
                             selected={selected}
                             activeLanguage={activeLanguage}
                             downloadingId={download.activeId}
                             onDownload={handleDownload}
+                            searchQuery={searchQuery}
+                            onClearSearch={() => setSearchQuery("")}
                         />
                     ) : (
                         <RedactionCompareView

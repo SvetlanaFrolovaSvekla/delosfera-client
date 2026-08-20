@@ -1,8 +1,7 @@
 import {useCallback, useEffect, useMemo, useState} from "react";
 import {colors} from "@/design/tokens";
 import {useAuth} from "@/context/AuthContext.ts";
-import {userService} from "@/service/userService/userService.ts";
-import type {UserResponse} from "@/service/userService/userServiceType.ts";
+import {userService, type UserLookupItem} from "@/service/userService/userService.ts";
 import type {SzDetails} from "@/service/szService/szService.ts";
 import {
     ASSIGNMENT_STATE_LABEL,
@@ -34,7 +33,7 @@ export function SzExecutionPanel({sz, onChanged}: Props) {
     const {user} = useAuth();
 
     const [assignments, setAssignments] = useState<SzAssignment[]>([]);
-    const [users, setUsers] = useState<UserResponse[]>([]);
+    const [users, setUsers] = useState<UserLookupItem[]>([]);
     const [error, setError] = useState<string | null>(null);
     const [busy, setBusy] = useState(false);
 
@@ -61,7 +60,7 @@ export function SzExecutionPanel({sz, onChanged}: Props) {
     useEffect(() => { void load(); }, [load]);
 
     useEffect(() => {
-        userService.getAll().then(setUsers).catch(() => setUsers([]));
+        userService.lookup().then(setUsers).catch(() => setUsers([]));
     }, []);
 
     const isAuthor = !!user && sz.authorId === user.id;

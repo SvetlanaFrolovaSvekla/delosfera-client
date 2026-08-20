@@ -1,3 +1,4 @@
+import type {UserLookupItem} from "@/service/userService/userService.ts";
 import {useState} from "react";
 import {
     agendaService,
@@ -8,7 +9,6 @@ import {
     type MeetingFileKind,
 } from "@/service/meetingsService/meetingsService.ts";
 import {formatDate} from "@/service/meetingsService/formatMeetingDate.ts";
-import type {UserResponse} from "@/service/userService/userServiceType.ts";
 
 /**
  * Вопрос повестки дня: тема, протокол, решение, приглашённые и поручения.
@@ -22,7 +22,7 @@ import type {UserResponse} from "@/service/userService/userServiceType.ts";
 
 interface Props {
     item: AgendaItem;
-    users: UserResponse[];
+    users: UserLookupItem[];
     canEdit: boolean;
     canReport: boolean;
     onChanged: () => void | Promise<void>;
@@ -351,7 +351,7 @@ const Field = ({label, value}: {label: string; value: string | null}) => (
 
 const UserSelect = ({label, users, value, onChange}: {
     label: string;
-    users: UserResponse[];
+    users: UserLookupItem[];
     value: string;
     onChange: (v: string) => void;
 }) => (

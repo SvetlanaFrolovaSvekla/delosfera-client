@@ -119,7 +119,7 @@ export function SzCardPage() {
     const [withdrawOpen, setWithdrawOpen] = useState(false);
 
     useEffect(() => {
-        userService.getAll()
+        userService.lookup()
             .then((list) => {
                 setUsers(Object.fromEntries(list.map((u) => [u.id, u.fullName])));
                 setUserList(list.map((u) => ({

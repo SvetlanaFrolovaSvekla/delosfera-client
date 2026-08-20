@@ -53,7 +53,7 @@ export function SubstitutionsPage() {
 
     useEffect(() => {
         void загрузить();
-        userService.getAll()
+        userService.lookup()
             .then((list) => setЛюди(list.map((u) => ({id: u.id, fullName: u.fullName}))))
             .catch(() => undefined);
     }, [загрузить]);

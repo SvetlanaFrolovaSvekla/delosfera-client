@@ -60,7 +60,7 @@ export function AuditLogPage() {
 
     useEffect(() => {
         auditLogService.dictionaries().then(setПеречни).catch(() => undefined);
-        userService.getAll()
+        userService.lookup()
             .then((l) => setЛюди(l.map((u) => ({id: u.id, fullName: u.fullName}))))
             .catch(() => undefined);
     }, []);

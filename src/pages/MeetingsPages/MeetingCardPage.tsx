@@ -7,8 +7,7 @@ import {
     type MeetingNotifyResult,
 } from "@/service/meetingsService/meetingsService.ts";
 import {formatDate, formatTime} from "@/service/meetingsService/formatMeetingDate.ts";
-import {userService} from "@/service/userService/userService.ts";
-import type {UserResponse} from "@/service/userService/userServiceType.ts";
+import {userService, type UserLookupItem} from "@/service/userService/userService.ts";
 import {AgendaItemCard} from "@/components/meetings/AgendaItemCard.tsx";
 
 /**
@@ -23,7 +22,7 @@ export const MeetingCardPage = () => {
     const meetingId = Number(id);
 
     const [meeting, setMeeting] = useState<Meeting | null>(null);
-    const [users, setUsers] = useState<UserResponse[]>([]);
+    const [users, setUsers] = useState<UserLookupItem[]>([]);
     const [busy, setBusy] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const [notified, setNotified] = useState<MeetingNotifyResult | null>(null);
@@ -40,7 +39,7 @@ export const MeetingCardPage = () => {
 
     useEffect(() => {
         void load();
-        userService.getAll().then(setUsers).catch(() => undefined);
+        userService.lookup().then(setUsers).catch(() => undefined);
     }, [load]);
 
     const run = async (action: () => Promise<unknown>) => {

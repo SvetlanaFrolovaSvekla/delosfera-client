@@ -1,3 +1,4 @@
+/*
 import React, {useEffect, useRef, useState, useCallback} from 'react';
 import {useTranslation} from "react-i18next";
 import {SuperDoc} from '@harbour-enterprises/superdoc';
@@ -237,7 +238,7 @@ export function DocxEditor({fileId, fallbackName = "document.docx", onReady, edi
                             className="flex w-full items-center gap-2 px-3 py-1.5 text-left text-[13px] text-[#0f1b2d] hover:bg-[#f4f6fb]"
                         >
                             <Search size={14} className="text-[#4e57d6]"/>
-                            {/* Найти «текст» в Google */}
+                            {/!* Найти «текст» в Google *!/}
                             {t("docxEditor.contextMenu.searchInGoogle", {query: truncatedQuery})}
                         </button>
                     )}
@@ -245,4 +246,4 @@ export function DocxEditor({fileId, fallbackName = "document.docx", onReady, edi
             )}
         </div>
     );
-}
+}*/

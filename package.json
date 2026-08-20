@@ -10,7 +10,6 @@
     "preview": "vite preview"
   },
   "dependencies": {
-    "@harbour-enterprises/superdoc": "^1.46.1",
     "@tailwindcss/vite": "^4.3.3",
     "axios": "^1.18.1",
     "clsx": "^2.1.1",

@@ -137,8 +137,7 @@ export function OpenVndPage() {
     }
 
     if (error) {
-        {/* Не удалось загрузить документ: {error} */
-        }
+        {/* Не удалось загрузить документ: {error} */}
         return (
             <div
                 className="my-4 mx-auto max-w-[1000px] rounded-md border border-[#f2c2c2] bg-[#fdf1f1] px-4 py-3 text-[13px] text-[#c0392b]">
@@ -161,7 +160,7 @@ export function OpenVndPage() {
 
     const meta = STATUS_META[vnd.status];
     const tabs = getVndTabs(vnd.status);
-    // Если сменился статус и текущий выбранный таб для него больше не доступен — откатываемся на «Реквизиты»
+    // Если сменился статус и текущий выбранный таб для него больше не доступен - откатываемся на «Реквизиты»
     const activeTab = tabs.some((t) => t.id === tab) ? tab : "passport";
 
     return (

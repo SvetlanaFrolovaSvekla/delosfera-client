@@ -7,6 +7,7 @@ import {
     ClipboardList,
     FileText,
     Folder,
+    Gauge,
     Landmark, type LucideIcon,
     Scale,
     ShieldCheck,
@@ -125,6 +126,16 @@ export const getRefSections = (t: TFunction): RefSection[] => [
                 subtitle: t("refSections.vnd.coordinationUsers.subtitle"),
                 icon: FileText,
                 path: "/refs/coordination-users",
+            },
+            {
+                key: "actualization-thresholds",
+                code: "06",
+                // Пороги индикации сроков актуализации
+                title: t("refSections.vnd.actualizationThresholds.title"),
+                // Через сколько дней срок актуализации становится "приближается" и "критично"
+                subtitle: t("refSections.vnd.actualizationThresholds.subtitle"),
+                icon: Gauge,
+                path: "/refs/actualization-thresholds",
             },
         ],
     },

@@ -349,6 +349,10 @@
       "coordinationUsers": {
         "title": "Mandatory Approval Process Participants",
         "subtitle": "Defining mandatory participants for the approval of each VND"
+      },
+      "actualizationThresholds": {
+        "title": "Actualization Deadline Indicator Thresholds",
+        "subtitle": "How many days before the deadline the status becomes \"approaching\" and \"critical\""
       }
     },
     "procurement": {
@@ -453,6 +457,19 @@
     "fieldApprover": "Approver",
     "orgUnitHint": "Unit: {{orgUnitName}}",
     "noApprover": "— Not assigned —"
+  },
+  "actualizationBucketSettingsPage": {
+    "title": "Actualization Deadline Indicator Thresholds",
+    "subtitle": "Define when a VND actualization deadline becomes \"approaching\" and \"critical\" — on the VND registry and in the planning dashboard. \"Overdue\" is not configurable: it is always a deadline that has already passed.",
+    "normalValue": "More than {{days}} days",
+    "overdueValue": "Deadline already passed",
+    "overdueHint": "\"Overdue\" is not governed by thresholds — the status is set automatically once the actualization deadline passes.",
+    "errorInvalid": "Enter a whole number",
+    "errorRange": "Enter a number from 0 to {{max}}",
+    "errorMustExceedCritical": "Must be greater than the \"Critical\" threshold",
+    "saveError": "Failed to save the thresholds. Please try again.",
+    "saved": "Saved",
+    "retry": "Retry"
   },
   "tasks": {
     "myTasks": {

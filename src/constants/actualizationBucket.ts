@@ -13,9 +13,6 @@ export const ACTUALIZATION_BUCKET_META: Record<ActualizationBucketKey, {
     overdue: {label: "Просрочено", color: "#c0392b", bg: "#fdecea", icon: AlertOctagon},
 };
 
-export const ACTUALIZATION_BUCKET_ORDER: ActualizationBucketKey[] = [
-    "normal", "approaching", "critical", "overdue",
-];
 
 /*
 На беке:

@@ -29,6 +29,7 @@ const UserGroupPage = lazy(() => import("@/pages/DictionariesPages/UserGroupPage
 const RubricPage = lazy(() => import("@/pages/DictionariesPages/RubricPage.tsx").then(m => ({default: m.RubricPage})));
 const KeywordPage = lazy(() => import("@/pages/DictionariesPages/KeywordPage.tsx").then(m => ({default: m.KeywordPage})));
 const CoordinationApproversPage = lazy(() => import("@/pages/DictionariesPages/CoordinationApproversPage.tsx").then(m => ({default: m.CoordinationApproversPage})));
+const ActualizationBucketSettingsPage = lazy(() => import("@/pages/DictionariesPages/ActualizationBucketSettingsPage.tsx").then(m => ({default: m.ActualizationBucketSettingsPage})));
 const RolesPermissionPage = lazy(() => import("@/pages/RolesPermissionPage.tsx").then(m => ({default: m.RolesPermissionPage})));
 const BaseVndPage = lazy(() => import("@/pages/VndPages/BaseVndPage.tsx").then(m => ({default: m.BaseVndPage})));
 const CreateVndPage = lazy(() => import("@/pages/VndPages/CreateVndPage.tsx").then(m => ({default: m.CreateVndPage})));
@@ -190,6 +191,7 @@ function App() {
                                 <Route path="/refs/user-group" element={<UserGroupPage/>}/>
                                 <Route path="/refs/rubric" element={<RubricPage/>}/>
                                 <Route path="/refs/coordination-users" element={<CoordinationApproversPage/>}/>
+                                <Route path="/refs/actualization-thresholds" element={<ActualizationBucketSettingsPage/>}/>
                             </Route>
                         </Route>
 

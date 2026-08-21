@@ -44,7 +44,29 @@ export function SzPrintPage() {
                 @media print {
                     .sz-print-hide { display: none !important; }
                     .sz-print-sheet { box-shadow: none !important; margin: 0 !important; width: auto !important; }
+
+                    /* Таблицу расчёта нельзя рвать между листами по строке:
+                       продолжение без шапки читателю ни о чём не говорит. */
+                    .sz-print-body tr, .sz-print-body blockquote { break-inside: avoid; }
                 }
+
+                /* Текст записки набирают в редакторе — на бумаге он должен
+                   выглядеть так же, как на экране. */
+                .sz-print-body p { margin: 0 0 5px; }
+                .sz-print-body h1 { font-size: 15px; font-weight: 700; margin: 8px 0 5px; }
+                .sz-print-body h2 { font-size: 13.5px; font-weight: 700; margin: 8px 0 4px; }
+                .sz-print-body h3 { font-size: 12.5px; font-weight: 700; margin: 7px 0 4px; }
+                .sz-print-body ul, .sz-print-body ol { margin: 0 0 5px; padding-left: 20px; }
+                .sz-print-body blockquote {
+                    margin: 5px 0; padding-left: 9px; border-left: 2px solid #999;
+                }
+                .sz-print-body table {
+                    border-collapse: collapse; width: 100%; margin: 6px 0; table-layout: fixed;
+                }
+                .sz-print-body th, .sz-print-body td {
+                    border: 1px solid #000; padding: 3px 5px; vertical-align: top;
+                }
+                .sz-print-body th { font-weight: 600; text-align: left; }
             `}</style>
 
             <div className="sz-print-hide mx-auto mb-4 flex max-w-[210mm] items-center justify-between px-4">
@@ -95,7 +117,14 @@ export function SzPrintPage() {
 
                 <div className="mt-6 text-[13px] font-semibold">{form.title}</div>
                 {form.body && (
-                    <div className="mt-2 whitespace-pre-wrap text-[12.5px] leading-[1.55]">{form.body}</div>
+                    /* Разметку выводим как разметку: в тексте бывают таблицы расчётов
+                       и выделенные условия, и на бумаге они должны остаться собой.
+                       Сервер чистит её по белому списку при сохранении — здесь она
+                       уже безопасна. */
+                    <div
+                        className="sz-print-body mt-2 text-[12.5px] leading-[1.55]"
+                        dangerouslySetInnerHTML={{__html: form.body}}
+                    />
                 )}
 
                 {form.addresseeDecision && (

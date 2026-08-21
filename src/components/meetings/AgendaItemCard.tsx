@@ -1,3 +1,4 @@
+import type {UserLookupItem} from "@/service/userService/userService.ts";
 import {useState} from "react";
 import {
     agendaService,
@@ -8,7 +9,6 @@ import {
     type MeetingFileKind,
 } from "@/service/meetingsService/meetingsService.ts";
 import {formatDate} from "@/service/meetingsService/formatMeetingDate.ts";
-import type {UserResponse} from "@/service/userService/userServiceType.ts";
 
 /**
  * Вопрос повестки дня: тема, протокол, решение, приглашённые и поручения.
@@ -22,7 +22,7 @@ import type {UserResponse} from "@/service/userService/userServiceType.ts";
 
 interface Props {
     item: AgendaItem;
-    users: UserResponse[];
+    users: UserLookupItem[];
     canEdit: boolean;
     canReport: boolean;
     onChanged: () => void | Promise<void>;
@@ -34,7 +34,7 @@ export const AgendaItemCard = ({item, users, canEdit, canReport, onChanged}: Pro
     const [open, setOpen] = useState(true);
 
     const [guestId, setGuestId] = useState("");
-    const [assignee, setAssignee] = useState({userId: "", dueDate: ""});
+    const [assignee, setAssignee] = useState({userId: "", text: "", dueDate: ""});
     const [edit, setEdit] = useState({
         protocolNumber: item.protocolNumber ?? "",
         decision: item.decision ?? "",
@@ -195,6 +195,11 @@ export const AgendaItemCard = ({item, users, canEdit, canReport, onChanged}: Pro
                                     {a.orgUnitTitle && (
                                         <span style={{fontSize: 11.5, color: "#8b97ab"}}>{a.orgUnitTitle}</span>
                                     )}
+                                    {a.text && (
+                                        <span style={{fontSize: 12.5, color: "#26324a", flexBasis: "100%"}}>
+                                            {a.text}
+                                        </span>
+                                    )}
                                     <span style={{
                                         fontSize: 12, fontWeight: 600,
                                         color: a.isOverdue ? "#c0392b" : "#55617a",
@@ -252,6 +257,13 @@ export const AgendaItemCard = ({item, users, canEdit, canReport, onChanged}: Pro
                                     <option value="">— ответственный —</option>
                                     {users.map(u => <option key={u.id} value={u.id}>{u.fullName}</option>)}
                                 </select>
+                                <input
+                                    value={assignee.text}
+                                    onChange={e => setAssignee({...assignee, text: e.target.value})}
+                                    placeholder="Что поручено"
+                                    style={{...input, flex: 1, minWidth: 220}}
+                                    title="Пусто — поручение по решению целиком"
+                                />
                                 <input type="date" value={assignee.dueDate}
                                        onChange={e => setAssignee({...assignee, dueDate: e.target.value})}
                                        style={{...input, width: 165}} title="Срок исполнения"/>
@@ -259,9 +271,10 @@ export const AgendaItemCard = ({item, users, canEdit, canReport, onChanged}: Pro
                                     onClick={() => run(async () => {
                                         await agendaService.addAssignment(item.id, {
                                             userId: Number(assignee.userId),
+                                            text: assignee.text.trim() || undefined,
                                             dueDate: assignee.dueDate || undefined,
                                         });
-                                        setAssignee({userId: "", dueDate: ""});
+                                        setAssignee({userId: "", text: "", dueDate: ""});
                                     })}
                                     disabled={busy || !assignee.userId} style={smallButton}>
                                     Назначить
@@ -338,7 +351,7 @@ const Field = ({label, value}: {label: string; value: string | null}) => (
 
 const UserSelect = ({label, users, value, onChange}: {
     label: string;
-    users: UserResponse[];
+    users: UserLookupItem[];
     value: string;
     onChange: (v: string) => void;
 }) => (

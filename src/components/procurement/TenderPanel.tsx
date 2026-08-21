@@ -61,7 +61,7 @@ export const TenderPanel = ({requestId, documentId, onChanged}: Props) => {
 
     useEffect(() => {
         void load();
-        userService.getAll()
+        userService.lookup()
             .then(list => setUsers(list.map(u => ({id: u.id, fullName: u.fullName}))))
             .catch(() => undefined);
     }, [load]);

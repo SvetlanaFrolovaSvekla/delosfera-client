@@ -25,6 +25,10 @@ export interface AgendaAssignment {
     userName: string;
     orgUnitId: number | null;
     orgUnitTitle: string | null;
+
+    /** Что поручено; пусто — поручение по решению целиком. */
+    text: string | null;
+
     dueDate: string | null;
     status: ExecutionStatus;
     statusTitle: string;
@@ -208,7 +212,10 @@ export const agendaService = {
         return data;
     },
 
-    async addAssignment(itemId: number, body: {userId: number; orgUnitId?: number; dueDate?: string}): Promise<AgendaItem> {
+    async addAssignment(
+        itemId: number,
+        body: {userId: number; orgUnitId?: number; text?: string; dueDate?: string},
+    ): Promise<AgendaItem> {
         const {data} = await apiClient.post<AgendaItem>(`${BASE}/items/${itemId}/assignments`, body);
         return data;
     },

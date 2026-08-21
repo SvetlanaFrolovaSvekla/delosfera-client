@@ -12,6 +12,7 @@ import {HOME_TASKS_LIMIT} from "@/constants/validation/HomeTasksLimit.ts";
 import {Loader} from "@/components/componentsGeneral/Loader.tsx";
 import {CreateDocumentModal} from "@/components/componentsModal/CreateDocumentModal.tsx";
 import {HomePageHeader} from "@/components/componentsHome/HomePageHeader.tsx";
+import {HomeContoursCard} from "@/components/componentsHome/HomeContoursCard.tsx";
 import {HomeKpiGrid} from "@/components/componentsHome/HomeKpiGrid.tsx";
 import {MyTasksCard} from "@/components/componentsHome/MyTasksCard.tsx";
 import {ActualizationPlanCard} from "@/components/componentsHome/ActualizationPlanCard.tsx";
@@ -76,6 +77,7 @@ export function HomePage() {
 
             {/* Сетка с карточками с информацией об активности деятельности */}
             <HomeKpiGrid summary={homeSummary}/>
+            <HomeContoursCard/>
 
             <div className="grid grid-cols-1 xl:grid-cols-[1.65fr_1fr] gap-[18px]">
                 {/* Виджет последних задач */}

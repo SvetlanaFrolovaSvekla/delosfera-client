@@ -12,6 +12,8 @@ import {Loader} from "@/components/componentsGeneral/Loader.tsx";
 import {Sidebar} from "@/components/componentsSidebar/Sidebar.tsx";
 import {Header} from "@/components/componentsHeader/Header.tsx";
 import {RegulationConsentGate} from "@/components/signing/RegulationConsentGate.tsx";
+import {FeedbackButton} from "@/components/feedback/FeedbackButton.tsx";
+import {useUsageTracking} from "@/hooks/useUsageTracking.ts";
 
 // Страницы грузятся лениво — каждая попадает в отдельный чанк, а не в один общий бандл.
 // Named-экспорты оборачиваем в { default } для React.lazy.
@@ -64,24 +66,41 @@ const SearchPage = lazy(() => import("@/pages/SearchPage/SearchPage.tsx").then(m
 // Заседания Правления, КПА и комитетов: журнал и карточка с повесткой
 const MeetingRegistryPage = lazy(() => import("@/pages/MeetingsPages/MeetingRegistryPage.tsx").then(m => ({default: m.MeetingRegistryPage})));
 const MeetingCardPage = lazy(() => import("@/pages/MeetingsPages/MeetingCardPage.tsx").then(m => ({default: m.MeetingCardPage})));
+const AuditLogPage = lazy(() => import("@/pages/AuditLogPage.tsx").then(m => ({default: m.AuditLogPage})));
+const SigningWorkplacePage = lazy(() => import("@/pages/SigningWorkplacePage.tsx").then(m => ({default: m.SigningWorkplacePage})));
+const AcknowledgementPage = lazy(() => import("@/pages/AcknowledgementPage.tsx").then(m => ({default: m.AcknowledgementPage})));
+const HelpPage = lazy(() => import("@/pages/HelpPage.tsx").then(m => ({default: m.HelpPage})));
+const FeedbackInboxPage = lazy(() => import("@/pages/FeedbackInboxPage.tsx").then(m => ({default: m.FeedbackInboxPage})));
+const UsageAnalyticsPage = lazy(() => import("@/pages/UsageAnalyticsPage.tsx").then(m => ({default: m.UsageAnalyticsPage})));
+const SzStatisticsPage = lazy(() => import("@/pages/SzStatisticsPage.tsx").then(m => ({default: m.SzStatisticsPage})));
+const SubstitutionsPage = lazy(() => import("@/pages/UsersPages/SubstitutionsPage.tsx").then(m => ({default: m.SubstitutionsPage})));
 const SupplierRegistryPage = lazy(() => import("@/pages/ProcurementPages/SupplierRegistryPage.tsx").then(m => ({default: m.SupplierRegistryPage})));
 const ProcurementPlanPage = lazy(() => import("@/pages/ProcurementPages/ProcurementPlanPage.tsx").then(m => ({default: m.ProcurementPlanPage})));
 
-const MainLayout = () => (
-    <DictionariesProvider>
-        {/* Согласие с регламентом ПЭП спрашивается один раз, до первого подписания. */}
-        <RegulationConsentGate/>
-        <div className="flex h-screen overflow-hidden">
-            <Sidebar/>
-            <main className="flex-1 flex flex-col min-w-0 overflow-hidden bg-[#edecf5]">
-                <Header/>
-                <div className="flex-1 overflow-y-auto overflow-x-hidden">
-                    <Outlet/> {/* Место для вложенных маршрутов */}
-                </div>
-            </main>
-        </div>
-    </DictionariesProvider>
-);
+const MainLayout = () => {
+    // Учёт посещаемости включаем здесь, а не в App: сюда попадают только
+    // авторизованные экраны, и страница входа в статистику не просачивается.
+    useUsageTracking(true);
+
+    return (
+        <DictionariesProvider>
+            {/* Согласие с регламентом ПЭП спрашивается один раз, до первого подписания. */}
+            <RegulationConsentGate/>
+            <div className="flex h-screen overflow-hidden">
+                <Sidebar/>
+                <main className="flex-1 flex flex-col min-w-0 overflow-hidden bg-[#edecf5]">
+                    <Header/>
+                    <div className="flex-1 overflow-y-auto overflow-x-hidden">
+                        <Outlet/> {/* Место для вложенных маршрутов */}
+                    </div>
+                </main>
+            </div>
+            {/* Кнопка «Сообщить» — на каждом экране, а не в отдельном разделе:
+                замечание случается посреди работы, и искать его некуда некогда. */}
+            <FeedbackButton/>
+        </DictionariesProvider>
+    );
+};
 
 function App() {
     return (
@@ -138,10 +157,24 @@ function App() {
                                 <Route path="/sz" element={<SzRegistryPage/>}/>
                                 <Route path="/sz/new" element={<SzCardPage/>}/>
                                 <Route path="/sz/:id" element={<SzCardPage/>}/>
+                                <Route path="/sz-analytics" element={<SzStatisticsPage/>}/>
 
                                 <Route path="/users" element={<UsersPage/>}/>
                                 <Route path="/users/new" element={<UserCardPage/>}/>
                                 <Route path="/users/:id" element={<UserCardPage/>}/>
+                                <Route path="/substitutions" element={<SubstitutionsPage/>}/>
+                                <Route path="/audit-log" element={<AuditLogPage/>}/>
+                                <Route path="/signing-workplace" element={<SigningWorkplacePage/>}/>
+                                <Route path="/hr-ack" element={<AcknowledgementPage/>}/>
+                                <Route path="/help" element={<HelpPage/>}/>
+
+                                {/* Обкатка подразделениями: разбор пожеланий и учёт посещаемости */}
+                                <Route element={<RequirePermission code={PermissionCode.ManageSystemSettings}/>}>
+                                    <Route path="/feedback" element={<FeedbackInboxPage/>}/>
+                                </Route>
+                                <Route element={<RequirePermission code={PermissionCode.ViewFullStatistics}/>}>
+                                    <Route path="/usage" element={<UsageAnalyticsPage/>}/>
+                                </Route>
 
                                 <Route element={<RequirePermission code={PermissionCode.ManageRoles}/>}>
                                     <Route path="/roles" element={<RolesPermissionPage/>}/>

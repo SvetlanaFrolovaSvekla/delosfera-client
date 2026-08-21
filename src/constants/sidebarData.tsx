@@ -47,6 +47,7 @@ export const navGroups: NavGroup[] = [
         items: [
             // Реестр служебных записок: карточка, согласование, исполнение, архив, закупка
             { id: "sz", icon: "sz", labelKey: "sidebar.items.sz", path: "/sz" },
+            { id: "sz-analytics", icon: "rpt", labelKey: "Аналитика СЗ", path: "/sz-analytics" },
         ],
     },
     {
@@ -69,10 +70,27 @@ export const navGroups: NavGroup[] = [
         ],
     },
     {
+        titleKey: "Кадровый документооборот",
+        items: [
+            // Ознакомление с приказами и документами: роспись сотрудника простой
+            // электронной подписью (Б-19)
+            { id: "hr-ack", icon: "check", labelKey: "Ознакомление", path: "/hr-ack" },
+        ],
+    },
+    {
         titleKey: "Система",
         items: [
+            // Инструкции по работе с системой: статьи со ссылками прямо на экраны (KB-01..03)
+            { id: "help", icon: "kb", labelKey: "Как работать в системе", path: "/help" },
+            // Проверка готовности подписывать квалифицированной подписью (Б-17)
+            { id: "signing-workplace", icon: "check", labelKey: "Рабочее место подписи", path: "/signing-workplace" },
             { id: "adm-users", icon: "user", labelKey: "sidebar.items.admUsers", path: "/users" },
             { id: "adm-roles", icon: "shield", labelKey: "sidebar.items.admRoles", path: "/roles", permission: PermissionCode.ManageRoles },
+            { id: "adm-sub", icon: "user", labelKey: "Замещения", path: "/substitutions", permission: PermissionCode.ManageUsers },
+            { id: "adm-log", icon: "clock", labelKey: "Журнал действий", path: "/audit-log", permission: PermissionCode.ManageUsers },
+            // Обкатка подразделениями: что пишут с экранов и кто вообще заходит
+            { id: "feedback", icon: "bell", labelKey: "Пожелания и замечания", path: "/feedback", permission: PermissionCode.ManageSystemSettings },
+            { id: "usage", icon: "rpt", labelKey: "Посещаемость", path: "/usage", permission: PermissionCode.ViewFullStatistics },
             { id: "refs", icon: "refs", labelKey: "sidebar.items.refs", path: "/refs" },
             // Настройки интеграций: адрес каталога, учётная запись, расписание синхронизации
             { id: "system-settings", icon: "future", labelKey: "Системные настройки", path: "/system/settings", permission: PermissionCode.ManageSystemSettings },

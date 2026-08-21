@@ -1,7 +1,6 @@
 import {useCallback, useEffect, useState} from "react";
 import {colors} from "@/design/tokens";
-import {userService} from "@/service/userService/userService.ts";
-import type {UserResponse} from "@/service/userService/userServiceType.ts";
+import {userService, type UserLookupItem} from "@/service/userService/userService.ts";
 import {szPaperService, type SzOriginal} from "@/service/szService/szPaperService.ts";
 
 const inputClass =
@@ -25,7 +24,7 @@ interface Props {
  */
 export function SzOriginalPanel({szId, isPaperCarrier}: Props) {
     const [original, setOriginal] = useState<SzOriginal | null>(null);
-    const [users, setUsers] = useState<UserResponse[]>([]);
+    const [users, setUsers] = useState<UserLookupItem[]>([]);
     const [error, setError] = useState<string | null>(null);
     const [busy, setBusy] = useState(false);
 
@@ -47,7 +46,7 @@ export function SzOriginalPanel({szId, isPaperCarrier}: Props) {
     }, [isPaperCarrier, load]);
 
     useEffect(() => {
-        userService.getAll().then(setUsers).catch(() => setUsers([]));
+        userService.lookup().then(setUsers).catch(() => setUsers([]));
     }, []);
 
     // Электронная записка бумажного оригинала не имеет — панель не нужна.

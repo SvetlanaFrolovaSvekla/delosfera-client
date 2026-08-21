@@ -1,3 +1,4 @@
+import {apiClient} from "@/service/apiClient.ts";
 import type {
     BlockUserRequest,
     CreateUserRequest,
@@ -50,6 +51,15 @@ function buildQuery(params?: GetUsersParams): string {
     return query.toString();
 }
 
+
+/** Сотрудник в списке выбора: только то, чем его опознают. */
+export interface UserLookupItem {
+    id: number;
+    fullName: string;
+    position: string | null;
+    orgUnit: string | null;
+}
+
 export const userService = {
     /** Одна учётная запись — для карточки пользователя. */
     async getById(id: number): Promise<UserResponse> {
@@ -57,6 +67,18 @@ export const userService = {
             headers: buildHeaders(),
         });
         return handleResponse<UserResponse>(response);
+    },
+
+    /**
+     * Краткий список для выбора человека — согласующим, исполнителем, подписантом.
+     *
+     * Полный список отдаёт роли, даты блокировки и вложенные объекты: на пятистах
+     * сотрудниках это полмегабайта на каждое открытие карточки. Здесь четыре поля,
+     * и заблокированные не приходят — назначать им задачу бессмысленно.
+     */
+    async lookup(): Promise<UserLookupItem[]> {
+        const {data} = await apiClient.get<UserLookupItem[]>("/users/lookup");
+        return data;
     },
 
     async getAll(params?: GetUsersParams): Promise<UserResponse[]> {

@@ -38,6 +38,21 @@ export interface SignatureStamp {
 
     revoked: boolean;
     revokedReason: string | null;
+
+    /**
+     * Время, удостоверённое службой меток. Отличается от at тем, что его назвал не
+     * наш сервер: именно оно доказывает, что подпись поставлена, пока сертификат
+     * действовал. Пусто — метки нет.
+     */
+    timestampedAt: string | null;
+
+    timestampAuthority: string | null;
+
+    /** Каким удостоверяющим центром подтверждён сертификат подписанта. */
+    trustAuthority: string | null;
+
+    /** Что в подписи осталось непроверенным: цепочка, отзыв, метка. */
+    caveats: string[];
 }
 
 export interface RouteParticipant {
@@ -56,6 +71,14 @@ export interface RouteStep {
     mode: string;
     kind: string;
     isFinalMethodology: boolean;
+
+    /**
+     * Чем закрывается этап. Пусто — подписи не требуется; «Simple» ставится самим
+     * нажатием кнопки; «Qualified» требует криптопровайдера на рабочем месте, и
+     * тогда решению предшествует подписание.
+     */
+    requiredSignatureLevel: "Simple" | "Qualified" | null;
+
     participants: RouteParticipant[];
 }
 
@@ -100,8 +123,15 @@ export const workflowService = {
     },
 
     /** Резолюция участника: согласовано / с замечаниями / отклонить / вето. */
-    async resolve(participantId: number, type: ResolutionType, comment?: string): Promise<void> {
-        await apiClient.post(`${BASE}/participants/${participantId}/resolve`, {type, comment});
+    /**
+     * signatureId прикладывается, когда этап закрывается квалифицированной подписью:
+     * её ставят до решения, отдельным действием с криптопровайдером. Для простой
+     * подписи он не нужен — её создаёт сам сервер в момент решения.
+     */
+    async resolve(
+        participantId: number, type: ResolutionType, comment?: string, signatureId?: number,
+    ): Promise<void> {
+        await apiClient.post(`${BASE}/participants/${participantId}/resolve`, {type, comment, signatureId});
     },
 
     /** Инициатор подтверждает, что замечание устранено — маршрут продолжится с того же этапа. */

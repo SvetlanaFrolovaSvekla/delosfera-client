@@ -100,7 +100,7 @@ interface ProcessStatusMeta {
 export const PROCESS_STATUS_META: Record<ApprovalProcessStatus, ProcessStatusMeta> = {
     primary: {
         label: "Первичное согласование",
-        badgeClass: "bg-[#f1f2f6] text-[#3a4560]",
+        badgeClass: "bg-[#e9f0ff] text-[#2f68f5]",
     },
     revision_needed: {
         label: "На доработке",
@@ -108,7 +108,7 @@ export const PROCESS_STATUS_META: Record<ApprovalProcessStatus, ProcessStatusMet
     },
     repeated: {
         label: "Согласование после внесённых изменений",
-        badgeClass: "bg-[#f1f2f6] text-[#3a4560]",
+        badgeClass: "bg-[#e9f0ff] text-[#2f68f5]",
     },
     final_hold: {
         label: "Финальная выдержка",

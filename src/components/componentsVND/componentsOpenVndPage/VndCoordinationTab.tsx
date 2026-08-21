@@ -178,7 +178,7 @@ export function VndCoordinationTab({vnd, onVndChanged}: VndCoordinationTabProps)
     // --- Вид для согласующего ---
     if (isApprover) {
         return (
-            <div className="py-4">
+            <div className="py-4 px-4 sm:px-6">
                 <VndApprovalSummary process={process}/>
 
                 {redactionsError && (

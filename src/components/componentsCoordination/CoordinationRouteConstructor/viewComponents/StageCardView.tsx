@@ -8,6 +8,16 @@ import {
 } from "@/constants/coordinationParams.ts";
 import {formatDateTime} from "@/utils/dateUtils.ts";
 
+function getInitials(fullName: string): string {
+    return fullName
+        .split(" ")
+        .filter(Boolean)
+        .map((part) => part[0])
+        .join("")
+        .toUpperCase()
+        .slice(0, 2);
+}
+
 interface StageCardViewProps {
     stage: ApprovalStageResponse;
     cardRef: (el: HTMLDivElement | null) => void;
@@ -48,18 +58,22 @@ export function StageCardView({stage, cardRef, isCurrentUserStage}: StageCardVie
     const borderClass = isPendingForCurrentUser
         ? "border-[#e3b23c]"
         : isCustom
-            ? "border-[#e5e9f0]"
+            ? "border-slate-200"
             : "border-[#34a853]";
 
     return (
         <div
             ref={cardRef}
-            className={`relative flex w-[210px] flex-none flex-col gap-3 rounded-[14px] border-2 bg-white px-4 py-6 shadow-[0_1px_3px_rgba(20,25,45,0.05)] ${borderClass} ${
+            className={`relative flex w-[220px] flex-none flex-col gap-3 rounded-2xl border-2 bg-white p-4 shadow-[0_3px_12px_-6px_rgba(15,27,45,0.14)] ${borderClass} ${
                 isPendingForCurrentUser ? "bg-[#fffdf7]" : ""
             }`}
         >
             <div className="flex items-center gap-2">
-                <div className="flex h-8 w-8 flex-none items-center justify-center rounded-[9px] bg-[#f0f1fb] text-[#4e57d6]">
+                <div
+                    className={`flex h-8 w-8 flex-none items-center justify-center rounded-[9px] ${
+                        isCustom ? "bg-[#f0f1fb] text-[#4e57d6]" : "bg-[#efeafe] text-[#7a5ce0]"
+                    }`}
+                >
                     <Icon size={16}/>
                 </div>
                 <span className="text-[12.5px] font-semibold leading-tight text-[#26324a]">
@@ -67,8 +81,13 @@ export function StageCardView({stage, cardRef, isCurrentUserStage}: StageCardVie
                 </span>
             </div>
 
-            <div className="text-[12px] text-[#26324a] truncate">
-                {stage.approverName}
+            <div className="flex h-[36px] w-full items-center gap-2 rounded-[9px] border border-[#e5e9f0] bg-[#fbfcfe] px-2 text-[12px]">
+                <span className="flex min-w-0 items-center gap-1.5">
+                    <span className="flex h-6 w-6 flex-none items-center justify-center rounded-md bg-[#ececfc] text-[9px] font-bold text-[#4e57d6]">
+                        {getInitials(stage.approverName)}
+                    </span>
+                    <span className="truncate text-[#26324a]">{stage.approverName}</span>
+                </span>
             </div>
 
             <span className={`inline-flex w-fit items-center rounded-full px-[9px] py-0.5 text-[11px] font-semibold ${badgeClass}`}>

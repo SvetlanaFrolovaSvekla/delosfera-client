@@ -116,6 +116,8 @@ export interface ApprovalProcessResponse {
     redactionId: number;
     initiatorUserId: number;
     initiatorName: string;
+    /** Должность инициатора согласования */
+    initiatorPosition?: string;
     status: ApprovalProcessStatus;
     primaryDeadlineMinutes: number;
     repeatDeadlineMinutes: number;

@@ -14,7 +14,6 @@ import {Header} from "@/components/componentsHeader/Header.tsx";
 import {RegulationConsentGate} from "@/components/signing/RegulationConsentGate.tsx";
 import {FeedbackButton} from "@/components/feedback/FeedbackButton.tsx";
 import {useUsageTracking} from "@/hooks/useUsageTracking.ts";
-import TestPage from "@/pages/TestPage.tsx";
 
 // Страницы грузятся лениво — каждая попадает в отдельный чанк, а не в один общий бандл.
 // Named-экспорты оборачиваем в { default } для React.lazy.
@@ -120,9 +119,6 @@ function App() {
 
                             <Route element={<MainLayout/>}>
                                 <Route path="/" element={<HomePage/>}/>
-
-                                <Route path="/test" element={<TestPage/>}/>
-
 
                                 <Route path="/profile" element={<ProfilePage/>}/>
 

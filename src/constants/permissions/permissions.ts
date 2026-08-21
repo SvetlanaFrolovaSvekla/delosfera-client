@@ -103,4 +103,9 @@ export const PermissionCode = {
     MemberOfCreditCommittee: 34,
     /** Системные настройки: интеграции, расписание синхронизации */
     ManageSystemSettings: 35,
+
+    /** Просмотр реестра ВНД в расширенном режиме: колонки и фильтры
+     * "Статус последней редакции" и "Актуализация" */
+    ViewVndRegistryExtended: 36,
+
 } as const;

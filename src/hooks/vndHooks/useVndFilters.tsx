@@ -3,9 +3,27 @@ import type {VndSearchRequest} from "@/service/vndService/vndServiceType.ts";
 import type {VndScope, VndStatusKey} from "@/constants/vndTabs.ts";
 import {type DateFilterValue, EMPTY_DATE_FILTER} from "@/components/componentsGeneral/datePickers/DateFilterGroup.tsx";
 import {toDateRangeFilter} from "@/utils/dateUtils.ts";
+import {ALL_LINKED_TO_ME_RELATION_KEYS, type LinkedToMeRelationKey} from "@/constants/linkedToMeRelations.ts";
 
-export function useVndFilters(scope: VndScope, draftOwnerScope?: "mine" | "others") {
+// canCreateVnd — право создавать ВНД (CreateVndWithApproval / CreateVndWithoutApproval):
+// определяет, входят ли черновики в состав таба "Все" по умолчанию (без ручного фильтра
+// по статусу, доступного только при праве ViewVndRegistryExtended).
+export function useVndFilters(scope: VndScope, draftOwnerScope?: "mine" | "others", canCreateVnd: boolean = false) {
     const [linkedToMeOnly, setLinkedToMeOnly] = useState(false);
+    // По умолчанию выбраны все виды связи — чекбокс без открытия выпадающего списка
+    // ведёт себя как раньше (любая связь с пользователем)
+    const [linkedToMeRelations, setLinkedToMeRelations] =
+        useState<LinkedToMeRelationKey[]>(ALL_LINKED_TO_ME_RELATION_KEYS);
+
+    const toggleLinkedToMeRelation = (key: string) =>
+        setLinkedToMeRelations((prev) =>
+            prev.includes(key as LinkedToMeRelationKey)
+                ? prev.filter((k) => k !== key)
+                : [...prev, key as LinkedToMeRelationKey]
+        );
+    const selectAllLinkedToMeRelations = () => setLinkedToMeRelations(ALL_LINKED_TO_ME_RELATION_KEYS);
+    const deselectAllLinkedToMeRelations = () => setLinkedToMeRelations([]);
+
     const [docTypeFilters, setDocTypeFilters] = useState<string[]>([]);
     const [developerFilters, setDeveloperFilters] = useState<string[]>([]);
     const [search, setSearch] = useState("");
@@ -40,11 +58,15 @@ export function useVndFilters(scope: VndScope, draftOwnerScope?: "mine" | "other
 
     const searchRequest: VndSearchRequest = useMemo(() => {
         const statuses: VndStatusKey[] =
-            scope === "active" ? ["active"] :
+            // "Действующие" — все ВНД с хотя бы одной актуальной редакцией: сама актуальная,
+            // а также те, что сейчас на актуализации/согласовании/консолидации
+            scope === "active" ? ["active", "onact", "review", "consol"] :
                 scope === "arch" ? ["arch"] :
                     scope === "draft" ? ["draft"] :
                         statusFilters.length > 0 ? (statusFilters as VndStatusKey[]) :
-                            ["active", "onact", "review", "consol"];
+                            canCreateVnd
+                                ? ["active", "onact", "review", "consol", "arch", "draft"]
+                                : ["active", "onact", "review", "consol", "arch"];
 
         return {
             code: advSearchCode || undefined,
@@ -71,6 +93,7 @@ export function useVndFilters(scope: VndScope, draftOwnerScope?: "mine" | "other
             lastActualizationDate: toDateRangeFilter(lastActualizationDateFilter),
             archivedDate: toDateRangeFilter(archivedDateFilter),
             linkedToMeOnly: linkedToMeOnly || undefined,
+            linkedToMeRelations: linkedToMeOnly ? linkedToMeRelations : undefined,
             draftOwnerScope: scope === "draft" ? draftOwnerScope : undefined,
         };
     }, [
@@ -81,11 +104,12 @@ export function useVndFilters(scope: VndScope, draftOwnerScope?: "mine" | "other
         requisitesChangedDateFilter, revisionChangedDateFilter,
         cancelDateFilter, cancelCodeFilter,
         dueActualizationDateFilter, lastActualizationDateFilter, archivedDateFilter,
-        linkedToMeOnly, draftOwnerScope,
+        linkedToMeOnly, linkedToMeRelations, draftOwnerScope, canCreateVnd,
     ]);
 
     const resetFilters = () => {
         setLinkedToMeOnly(false);
+        setLinkedToMeRelations(ALL_LINKED_TO_ME_RELATION_KEYS);
         setSearch("");
         setStatusFilters([]);
         setRubricFilters([]);
@@ -114,6 +138,8 @@ export function useVndFilters(scope: VndScope, draftOwnerScope?: "mine" | "other
 
     return {
         linkedToMeOnly, setLinkedToMeOnly,
+        linkedToMeRelations, toggleLinkedToMeRelation,
+        selectAllLinkedToMeRelations, deselectAllLinkedToMeRelations,
         docTypeFilters, setDocTypeFilters,
         developerFilters, setDeveloperFilters,
         search, setSearch,

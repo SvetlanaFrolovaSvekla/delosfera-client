@@ -3,10 +3,12 @@ import {Link} from "react-router-dom";
 import {useActualizationBucketMeta} from "@/hooks/actualizationHooks/useActualizationBucketMeta.ts";
 import {HighlightText} from "@/utils/HighlightText.tsx";
 import type {VndResponse} from "@/service/vndService/vndServiceType.ts";
-import {STATUS_META} from "@/constants/vndStatus.ts";
+import {getSimplifiedVndStatus, SIMPLE_STATUS_META, STATUS_META} from "@/constants/vndStatus.ts";
+import {LINKED_TO_ME_RELATION_META, type LinkedToMeRelationKey} from "@/constants/linkedToMeRelations.ts";
 import type {ColDef} from "@/constants/columnsFilters/vndColumns.ts";
 import {EmptyState} from "@/components/componentsGeneral/EmptyState.tsx";
 import {Clock} from "lucide-react";
+import {Tooltip} from "@/components/componentsGeneral/Tooltip.tsx";
 
 interface VndTableProps {
     columns: ColDef[];
@@ -20,6 +22,9 @@ interface VndTableProps {
     onResetFilters: () => void;
     rubricNames: (ids: number[]) => string;
     searchQuery: string;
+    /** Право ViewVndRegistryExtended — без него значок статуса упрощается до
+     * действующий/архивированный/черновик, без деталей о стадии жизненного цикла */
+    canViewExtended: boolean;
 }
 
 export function VndTable({
@@ -33,7 +38,8 @@ export function VndTable({
                              userGroupNames,
                              onResetFilters,
                              rubricNames,
-                             searchQuery
+                             searchQuery,
+                             canViewExtended
                          }: VndTableProps) {
     const {t} = useTranslation();
     const bucketMetaMap = useActualizationBucketMeta();
@@ -58,7 +64,7 @@ export function VndTable({
         <div className="bg-white border border-[#e9edf3] rounded-2xl overflow-x-auto">
             <div className="w-full">
                 <div
-                    className="grid gap-3 px-5 py-3 border-b border-[#eef2f7] bg-[#fafbfd] text-[11px] font-bold tracking-[.04em] uppercase text-[#a3adbd]"
+                    className="grid gap-3 px-5 py-3 border-b border-[#f0f0f0] bg-[#fafbfd] text-[11px] font-bold tracking-[.04em] uppercase text-[#a3adbd]"
                     style={{gridTemplateColumns: gridTemplate}}
                 >
                     {columns.map((c) => (
@@ -69,7 +75,10 @@ export function VndTable({
                 </div>
 
                 {rows.map((r) => {
-                    const meta = STATUS_META[r.status];
+                    // Без права ViewVndRegistryExtended значок первой колонки показывает только
+                    // упрощённый статус ВНД (действующий/архивированный/черновик), без деталей
+                    // о стадии жизненного цикла (на актуализации/согласовании/консолидации)
+                    const meta = canViewExtended ? STATUS_META[r.status] : SIMPLE_STATUS_META[getSimplifiedVndStatus(r.status)];
                     const StatusIcon = meta.icon;
                     const days = daysUntil(r.dueActualizationDate);
                     const bucketMeta = r.actualizationBucket ? bucketMetaMap[r.actualizationBucket] : null;
@@ -113,9 +122,12 @@ export function VndTable({
                                     case "name":
                                         return (
                                             <div key={c.key} className="min-w-0">
-                                              <span className="block text-[13.5px] font-medium text-[#1c2740] whitespace-normal break-words line-clamp-5 group-hover:underline decoration-1 underline-offset-1">
-                                                  <HighlightText text={r.name} query={searchQuery} />
-                                              </span>
+                                                <Tooltip content={r.name} side="top" className="w-full">
+                                                    <span
+                                                        className="text-[13.5px] font-medium text-[#1c2740] whitespace-normal break-words line-clamp-[7] group-hover:underline decoration-1 underline-offset-1">
+                                                        <HighlightText text={r.name} query={searchQuery}/>
+                                                    </span>
+                                                </Tooltip>
                                             </div>
                                         );
                                     case "type":
@@ -207,7 +219,7 @@ export function VndTable({
                                         );
                                     case "status":
                                         return (
-                                            <div key={c.key} className="min-w-0">
+                                            <div key={c.key} className="min-w-0 flex justify-center">
                                                 <span
                                                     className="inline-flex items-center text-[11px] font-semibold py-0.5 px-[9px] rounded-full whitespace-nowrap"
                                                     style={{color: meta.color, background: meta.bg}}
@@ -216,6 +228,36 @@ export function VndTable({
                                                 </span>
                                             </div>
                                         );
+                                    case "linkedToMe": {
+                                        const relations = (r.linkedToMeRelations ?? []) as LinkedToMeRelationKey[];
+                                        const sorted = [...relations].sort(
+                                            (a, b) => (LINKED_TO_ME_RELATION_META[a]?.order ?? 0) - (LINKED_TO_ME_RELATION_META[b]?.order ?? 0)
+                                        );
+                                        return (
+                                            <div key={c.key} className="min-w-0">
+                                                {sorted.length === 0 ? (
+                                                    <span className="text-[12px] text-[#a3adbd]">—</span>
+                                                ) : (
+                                                    <span className="block text-[12px] whitespace-normal break-words line-clamp-5">
+                                                        {sorted.map((key, i) => {
+                                                            const relMeta = LINKED_TO_ME_RELATION_META[key];
+                                                            if (!relMeta) return null;
+                                                            return (
+                                                                <span key={key}>
+                                                                    <span style={{color: relMeta.color}} className="font-semibold">
+                                                                        {relMeta.label}
+                                                                    </span>
+                                                                    {i < sorted.length - 1 && (
+                                                                        <span className="text-[#a3adbd]">{"; "}</span>
+                                                                    )}
+                                                                </span>
+                                                            );
+                                                        })}
+                                                    </span>
+                                                )}
+                                            </div>
+                                        );
+                                    }
                                     case "archivedDate":
                                         return (
                                             <div key={c.key} className="min-w-0">

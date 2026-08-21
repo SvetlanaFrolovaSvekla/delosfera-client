@@ -30,7 +30,8 @@ export type ColKey =
     | "keywords"
     | "secrecyLevel"
     | "userGroups"
-    | "actualizationBucket"; // статус срока актуализации (normal/approaching/critical/overdue) - для страницы планирования актуализации
+    | "actualizationBucket" // статус срока актуализации (normal/approaching/critical/overdue) - для страницы планирования актуализации
+    | "linkedToMe"; // виды связи текущего пользователя с документом - только при включённом чекбоксе "Только связанные со мной"
 
 export interface ColDef {
     key: ColKey;
@@ -41,6 +42,7 @@ export interface ColDef {
 
 // --- Дополнительные колонки, общие для обоих scope
 const EXTRA_COLUMNS: ColDef[] = [
+    {key: "linkedToMe", label: "Связь со мной", width: "220px"},
     {key: "responsibleExecutors", label: "Ответственные исполнители", width: "220px"},
     {key: "adoptionDate", label: "Дата принятия", width: "140px"},
     {key: "adoptionCode", label: "№ принятия", width: "140px"},
@@ -64,8 +66,8 @@ export const ACTIVE_COLUMNS: ColDef[] = [
     {key: "type", label: "Вид", width: "160px"},
     {key: "developer", label: "Разработчик", width: "200px"},
     {key: "organ", label: "Орган утв.", width: "180px"},
-    {key: "act", label: "Актуализация", width: "156px"},
-    {key: "status", label: "Статус", width: "134px"},
+    {key: "act", label: "Актуализация", width: "116px"},
+    {key: "status", label: "Статус посл. редакции", width: "180px"},
     {key: "cancelDate", label: "Дата отмены", width: "140px"},
     {key: "cancelCode", label: "№ отмены", width: "140px"},
     {key: "archivedDate", label: "Дата архивации", width: "140px"}, // переключаемая на "Все"/"Действующие"
@@ -84,7 +86,7 @@ export const ARCHIVE_COLUMNS: ColDef[] = [
     {key: "cancelCode", label: "№ отмены", width: "140px", fixed: true},
     {key: "archivedDate", label: "Дата архивации", width: "140px", fixed: true}, // спец. обязательна на "Архивированные"
     {key: "daysInArchive", label: "В архиве", width: "110px", fixed: true}, // спец.
-    {key: "status", label: "Статус", width: "134px"},
+    {key: "status", label: "Статус последней редакции", width: "134px"},
     ...EXTRA_COLUMNS,
 ];
 
@@ -99,20 +101,42 @@ const HIDDEN_ON_ARCH: ColKey[] = [
     "cancelInfo",
 ];
 
-// Возвращает итоговый список возможных колонок для таблицы в зависимости от Tab
-export function getColumnsForScope(scope: VndScope): ColDef[] {
+// Колонки, доступные только при праве ViewVndRegistryExtended ("Просмотр реестра ВНД
+// в расширенном режиме: статус последней редакции, актуализация")
+const EXTENDED_PERMISSION_COLUMNS: ColKey[] = ["status", "act"];
+
+// Колонки, доступные только при включённом чекбоксе "Только связанные со мной"
+const LINKED_TO_ME_ONLY_COLUMNS: ColKey[] = ["linkedToMe"];
+
+// Возвращает итоговый список возможных колонок для таблицы в зависимости от Tab.
+// canViewExtended — есть ли у пользователя право ViewVndRegistryExtended; по умолчанию
+// true, чтобы места без явной проверки прав (если такие остались) не теряли колонки молча.
+// linkedToMeOnly — включён ли чекбокс "Только связанные со мной" (колонка "Связь со мной"
+// имеет смысл только тогда, когда он включён — иначе связей просто нет).
+export function getColumnsForScope(
+    scope: VndScope, canViewExtended: boolean = true, linkedToMeOnly: boolean = false
+): ColDef[] {
     const base = scope === "arch" ? ARCHIVE_COLUMNS : ACTIVE_COLUMNS;
 
+    let cols = base;
     if (scope === "active") {
-        return base.filter((c) => !HIDDEN_ON_ACTIVE.includes(c.key));
+        cols = cols.filter((c) => !HIDDEN_ON_ACTIVE.includes(c.key));
     }
     if (scope === "arch") {
-        return base.filter((c) => !HIDDEN_ON_ARCH.includes(c.key));
+        cols = cols.filter((c) => !HIDDEN_ON_ARCH.includes(c.key));
     }
-    return base;
+    if (!canViewExtended) {
+        cols = cols.filter((c) => !EXTENDED_PERMISSION_COLUMNS.includes(c.key));
+    }
+    if (!linkedToMeOnly) {
+        cols = cols.filter((c) => !LINKED_TO_ME_ONLY_COLUMNS.includes(c.key));
+    }
+    return cols;
 }
 
 // Возвращает список колонок, которые пользователь может скрывать/отображать через выпадающий список
-export function getToggleableColumns(scope: VndScope): ColDef[] {
-    return getColumnsForScope(scope).filter((c) => !c.fixed);
+export function getToggleableColumns(
+    scope: VndScope, canViewExtended: boolean = true, linkedToMeOnly: boolean = false
+): ColDef[] {
+    return getColumnsForScope(scope, canViewExtended, linkedToMeOnly).filter((c) => !c.fixed);
 }

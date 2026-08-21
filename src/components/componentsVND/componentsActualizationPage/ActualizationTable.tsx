@@ -6,7 +6,7 @@ import type {VndResponse} from "@/service/vndService/vndServiceType.ts";
 import type {ColDef} from "@/constants/columnsFilters/vndColumns.ts";
 import {STATUS_META} from "@/constants/vndStatus.ts";
 import {EmptyState} from "@/components/componentsGeneral/EmptyState.tsx";
-
+import {Tooltip} from "@/components/componentsGeneral/Tooltip.tsx";
 
 interface ActualizationTableProps {
     columns: ColDef[];
@@ -74,7 +74,7 @@ export function ActualizationTable({
                                     e.preventDefault();
                                 }
                             }}
-                            className="group no-underline w-full grid gap-3 items-start px-5 py-3.5 border-b border-[#f3f6f9] bg-transparent text-left cursor-pointer hover:bg-[#f8fafc] select-text"
+                            className="group no-underline w-full grid gap-3 items-start px-5 py-3.5 border-b border-[#f0f0f0] bg-transparent text-left cursor-pointer hover:bg-[#f8fafc] select-text"
                             style={{gridTemplateColumns: gridTemplate}}
                         >
                             {columns.map((c) => {
@@ -111,9 +111,11 @@ export function ActualizationTable({
                                     case "name":
                                         return (
                                             <div key={c.key} className="min-w-0">
-                                                <span className="block text-[13.5px] font-medium text-[#1c2740] whitespace-normal break-words line-clamp-5 group-hover:underline decoration-1 underline-offset-1">
-                                                    {r.name}
-                                                </span>
+                                                <Tooltip content={r.name} side="top" className="w-full">
+                                                    <span className="text-[13.5px] font-medium text-[#1c2740] whitespace-normal break-words line-clamp-[7] group-hover:underline decoration-1 underline-offset-1">
+                                                        {r.name}
+                                                    </span>
+                                                </Tooltip>
                                             </div>
                                         );
                                     case "type":

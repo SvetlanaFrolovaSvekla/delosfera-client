@@ -1,3 +1,4 @@
+// Страница "Планирование актуализации"
 import {useMemo, useState} from "react";
 
 import type {VndSearchRequest} from "@/service/vndService/vndServiceType.ts";

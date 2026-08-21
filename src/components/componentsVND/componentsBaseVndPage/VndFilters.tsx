@@ -9,15 +9,28 @@ import {MultiSelectField} from "@/components/componentsGeneral/selects/MultiSele
 import {DateFilterGroup, type DateFilterValue} from "@/components/componentsGeneral/datePickers/DateFilterGroup.tsx";
 import {SearchBar} from "@/components/componentsGeneral/SearchBar.tsx";
 import {MultiSelectDropdown} from "@/components/componentsGeneral/selects/MultiSelects/MultiSelectDropdown.tsx";
-import {AlertTriangle, ChevronDown, ChevronUp, Filter, SlidersHorizontal} from "lucide-react";
+import {AlertTriangle, Check, ChevronDown, ChevronUp, Filter, SlidersHorizontal} from "lucide-react";
 import {useInitiatorOptions} from "@/hooks/useInitiatorOptions.ts";
+import {LinkedToMeRelationDropdown} from "@/components/componentsVND/componentsBaseVndPage/LinkedToMeRelationDropdown.tsx";
+import {LINKED_TO_ME_RELATION_OPTIONS} from "@/constants/linkedToMeRelations.ts";
 
 interface VndFiltersProps {
     scope: VndScope;
     isArchScope: boolean;
 
+    /** Право ViewVndRegistryExtended: колонки/фильтры "Статус последней редакции" и "Актуализация" */
+    canViewExtended: boolean;
+
+    /** Согласование/создание/актуализация/консолидация — виден ли чекбокс "Только связанные со мной" */
+    canFilterLinkedToMe: boolean;
+
     linkedToMeOnly: boolean;
     onLinkedToMeOnlyChange: (v: boolean) => void;
+
+    linkedToMeRelations: string[];
+    onToggleLinkedToMeRelation: (key: string) => void;
+    onSelectAllLinkedToMeRelations: () => void;
+    onDeselectAllLinkedToMeRelations: () => void;
 
     search: string;
     onSearchChange: (v: string) => void;
@@ -111,7 +124,11 @@ interface VndFiltersProps {
 
 export function VndFilters(props: VndFiltersProps) {
     const {
-        scope, isArchScope, linkedToMeOnly, onLinkedToMeOnlyChange, search, onSearchChange,
+        scope, isArchScope, canViewExtended, canFilterLinkedToMe,
+        linkedToMeOnly, onLinkedToMeOnlyChange,
+        linkedToMeRelations, onToggleLinkedToMeRelation,
+        onSelectAllLinkedToMeRelations, onDeselectAllLinkedToMeRelations,
+        search, onSearchChange,
         statusOptions, statusFilters, onToggleStatus, onSelectAllStatuses, onDeselectAllStatuses,
         advOpen, onToggleAdv, onCloseAdv,
         rubricFilters, onRubricFiltersChange,
@@ -255,11 +272,11 @@ export function VndFilters(props: VndFiltersProps) {
                     )}
                 </button>
 
-                {scope === "all" && (
+                {scope === "all" && canViewExtended && (
                     <div className="relative">
                         <MultiSelectDropdown
-                            triggerLabel="Статус"
-                            label="Статус документа"
+                            triggerLabel="Статус последней редакции"
+                            label="Статус последней редакции"
                             options={statusOptions}
                             selectedKeys={statusFilters}
                             onToggle={onToggleStatus}
@@ -287,28 +304,47 @@ export function VndFilters(props: VndFiltersProps) {
                     searchPlaceholder="Поиск колонки…"
                 />
 
-                {scope !== "draft" && (
-                    <label className="inline-flex items-center gap-2 h-9 px-3 rounded-[9px] border border-[#e5e9f0] bg-white text-[#3a4560] font-semibold text-[12.5px] cursor-pointer hover:bg-[#f6f8fb] select-none">
-                        <input
-                            type="checkbox"
-                            checked={linkedToMeOnly}
-                            onChange={(e) => onLinkedToMeOnlyChange(e.target.checked)}
-                            className="h-4 w-4 accent-[#4e57d6]"
-                        />
-                        Только связанные со мной
-                    </label>
+                {scope !== "draft" && canFilterLinkedToMe && (
+                    <>
+                        <button
+                            type="button"
+                            onClick={() => onLinkedToMeOnlyChange(!linkedToMeOnly)}
+                            className="inline-flex items-center gap-2 h-9 px-3 rounded-[9px] border border-[#e5e9f0] bg-white text-[#3a4560] font-semibold text-[12.5px] cursor-pointer hover:bg-[#f6f8fb] select-none"
+                        >
+                            <span
+                                className="w-5 h-5 flex-none rounded-md grid place-items-center border-[1.5px]"
+                                style={{
+                                    borderColor: linkedToMeOnly ? "#4e57d6" : "#cbd3df",
+                                    background: linkedToMeOnly ? "#4e57d6" : "white",
+                                }}
+                            >
+                                <Check
+                                    className="w-[13px] h-[13px] text-white"
+                                    strokeWidth={3}
+                                    style={{opacity: linkedToMeOnly ? 1 : 0}}
+                                />
+                            </span>
+                            Только связанные со мной
+                        </button>
+
+                        {linkedToMeOnly && (
+                            <div className="relative">
+                                <LinkedToMeRelationDropdown
+                                    triggerLabel="Тип связи"
+                                    selectedKeys={linkedToMeRelations}
+                                    onToggle={onToggleLinkedToMeRelation}
+                                    onSelectAll={onSelectAllLinkedToMeRelations}
+                                    onDeselectAll={onDeselectAllLinkedToMeRelations}
+                                />
+                                {linkedToMeRelations.length < LINKED_TO_ME_RELATION_OPTIONS.length && (
+                                    <span className="absolute -top-1 -right-1 w-2.5 h-2.5 rounded-full bg-[#3fb36c] ring-2 ring-white pointer-events-none" />
+                                )}
+                            </div>
+                        )}
+                    </>
                 )}
 
                 <div className="flex-1"/>
-
-                {hasActiveFilters && (
-                    <button
-                        onClick={onResetFilters}
-                        className="inline-flex items-center h-9 px-3 rounded-[9px] border border-[#e5e9f0] bg-white text-[#55617a] font-semibold text-[12.5px] cursor-pointer hover:bg-[#f6f8fb]"
-                    >
-                        Сбросить фильтры
-                    </button>
-                )}
 
                 <div className="text-[12.5px] text-[#8b97ab]">
                     {hasActiveFilters ? (
@@ -324,6 +360,15 @@ export function VndFilters(props: VndFiltersProps) {
                         </>
                     )}
                 </div>
+
+                {hasActiveFilters && (
+                    <button
+                        onClick={onResetFilters}
+                        className="inline-flex items-center h-9 px-3 rounded-[9px] border border-[#e5e9f0] bg-white text-[#55617a] font-semibold text-[12.5px] cursor-pointer hover:bg-[#f6f8fb]"
+                    >
+                        Сбросить фильтры
+                    </button>
+                )}
             </div>
 
             <div
@@ -470,28 +515,30 @@ export function VndFilters(props: VndFiltersProps) {
                                         />
                                     </div>
 
-                                    <div className="border border-[#eef2f7] rounded-xl p-3.5 min-w-0">
-                                        <div
-                                            className="text-[11px] font-bold tracking-[.04em] uppercase text-[#a3adbd] mb-2.5">
-                                            Актуализация
+                                    {canViewExtended && (
+                                        <div className="border border-[#eef2f7] rounded-xl p-3.5 min-w-0">
+                                            <div
+                                                className="text-[11px] font-bold tracking-[.04em] uppercase text-[#a3adbd] mb-2.5">
+                                                Актуализация
+                                            </div>
+                                            <DateFilterGroup
+                                                rows={[
+                                                    {
+                                                        key: "dueActualization",
+                                                        label: "Срок актуализации",
+                                                        value: draft.dueActualizationDateFilter,
+                                                        onChange: (v) => updateDraft("dueActualizationDateFilter", v),
+                                                    },
+                                                    {
+                                                        key: "lastActualization",
+                                                        label: "Дата посл. актуализации",
+                                                        value: draft.lastActualizationDateFilter,
+                                                        onChange: (v) => updateDraft("lastActualizationDateFilter", v),
+                                                    },
+                                                ]}
+                                            />
                                         </div>
-                                        <DateFilterGroup
-                                            rows={[
-                                                {
-                                                    key: "dueActualization",
-                                                    label: "Срок актуализации",
-                                                    value: draft.dueActualizationDateFilter,
-                                                    onChange: (v) => updateDraft("dueActualizationDateFilter", v),
-                                                },
-                                                {
-                                                    key: "lastActualization",
-                                                    label: "Дата посл. актуализации",
-                                                    value: draft.lastActualizationDateFilter,
-                                                    onChange: (v) => updateDraft("lastActualizationDateFilter", v),
-                                                },
-                                            ]}
-                                        />
-                                    </div>
+                                    )}
                                 </div>
 
                                 {scope !== "active" && (

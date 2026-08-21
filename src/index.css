@@ -1,6 +1,8 @@
 @import "./assets/fonts.css";
 @import "tailwindcss";
 
+/*#f0f0f0 - цвет бордера табличек*/
+
 :root {
     --app-accent: #4e57d6;
     --app-soft: #ececfc;

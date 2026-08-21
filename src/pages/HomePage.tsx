@@ -34,20 +34,36 @@ export function HomePage() {
         return isLatin ? transliterate(position) : position;
     }, [user?.position?.name, isLatin]);
 
-    // Реальные задачи по всем скоупам (как на странице "Мои задачи"), объединённые в одну сводку
+    // Реальные задачи по всем скоупам (как на странице "Мои задачи"), объединённые в одну сводку.
+    // "coordination" уже включает финальную выдержку (см. TasksService.GetCoordinationTasksAsync) —
+    // отдельного скоупа для неё больше нет. Раньше здесь не хватало myVndApproval (свои ВНД
+    // на согласовании) — добавлен.
     const coordination = useVndTasks("coordination");
+    const myVndApproval = useVndTasks("myVndApproval");
     const actualization = useVndTasks("actualization");
     const consolidation = useVndTasks("consolidation");
     const {summary: actualizationSummary, isLoading: actualizationLoading} = useActualizationSummary();
     const {summary: homeSummary} = useVndHomeSummary();
 
-    const homeTasks = useMemo(
-        () => [...coordination.tasks, ...actualization.tasks, ...consolidation.tasks].slice(0, HOME_TASKS_LIMIT),
-        [coordination.tasks, actualization.tasks, consolidation.tasks]
-    );
+    // "Последние задачи" = отсортированные по дате появления (createdAt), самые новые сверху —
+    // раньше список просто склеивался по скоупам и обрезался по лимиту, из-за чего порядок
+    // не отражал реальную свежесть задач.
+    const homeTasks = useMemo(() => {
+        const allTasks = [
+            ...coordination.tasks,
+            ...myVndApproval.tasks,
+            ...actualization.tasks,
+            ...consolidation.tasks,
+        ];
+        return [...allTasks]
+            .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
+            .slice(0, HOME_TASKS_LIMIT);
+    }, [coordination.tasks, myVndApproval.tasks, actualization.tasks, consolidation.tasks]);
 
-    const tasksTotalCount = coordination.tasks.length + actualization.tasks.length + consolidation.tasks.length;
-    const tasksLoading = coordination.isLoading || actualization.isLoading || consolidation.isLoading;
+    const tasksTotalCount = coordination.tasks.length + myVndApproval.tasks.length
+        + actualization.tasks.length + consolidation.tasks.length;
+    const tasksLoading = coordination.isLoading || myVndApproval.isLoading
+        || actualization.isLoading || consolidation.isLoading;
 
     // Текущая дата - локализуется под текущий язык
     const formattedDate = useFormattedDate();

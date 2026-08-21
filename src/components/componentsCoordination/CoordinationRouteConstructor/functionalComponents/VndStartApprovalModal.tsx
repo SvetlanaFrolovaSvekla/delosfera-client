@@ -9,7 +9,7 @@ import {
     StageCard
 } from "@/components/componentsCoordination/CoordinationRouteConstructor/functionalComponents/StageCard.tsx";
 import {VndSelectApproverModal} from "./VndSelectApproverModal.tsx";
-import {ArrowDown, Clock, Loader2, Route, Lock, Plus, X} from "lucide-react";
+import {ArrowDown, Clock, Loader2, Route, Lock, Plus, X, BadgeCheck} from "lucide-react";
 import {
     NormBlock
 } from "@/components/componentsCoordination/CoordinationRouteConstructor/functionalComponents/NormBlock.tsx";
@@ -37,12 +37,17 @@ const ROUTE_HINTS: RouteHint[] = [
     },
     {
         icon: Lock,
-        iconColor: "#4b831d",
+        iconColor: "#1d8374",
         text: "Фиолетовым выделены фиксированные СП, которые обязательно должны принять участие в согласовании — их нельзя открепить, можно только изменить установленного согласующего по умолчанию.",
     },
     {
         icon: Clock,
         iconColor: "#b3730a",
+        text: "Максимальное значение для норматива каждого из этапов - 90 дней!",
+    },
+    {
+        icon: BadgeCheck,
+        iconColor: "#4b831d",
         text: "Если согласующий не примет решение за отведённый норматив срока, этап считается автоматически согласованным.",
     },
 ];

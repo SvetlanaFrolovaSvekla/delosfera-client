@@ -1,6 +1,7 @@
 // Блок с нормативными значениями для согласования в модалке конструктора маршрутов
 import React from "react";
 import {HelpTooltip} from "@/components/componentsGeneral/knowledgeBaseComponents/HelpTooltip.tsx";
+import {MAX_DEADLINE_HOURS, MAX_DEADLINE_MINUTES} from "@/constants/coordinationParams.ts";
 
 interface NormBlockProps {
     label: string;
@@ -16,13 +17,19 @@ export function NormBlock({label, value, onChange, blockRef, helpText}: NormBloc
     const hours = Math.floor(totalMinutes / 60);
     const minutes = totalMinutes % 60;
 
+    // Верхняя граница - MAX_DEADLINE_MINUTES (90 дней), см. constants/coordinationParams.ts.
+    // Без неё в поле можно вписать любое число (28238492843 часа и т.п.), которое потом
+    // не проходит на бэкенде и там же ломает расчёт дедлайна при переполнении DateTime.
+    const clampTotal = (totalValue: number) => Math.min(Math.max(0, totalValue), MAX_DEADLINE_MINUTES);
+
     const handleHoursChange = (raw: string) => {
         if (raw === "") {
             onChange(minutes > 0 ? minutes : "");
             return;
         }
-        const newHours = Math.max(0, Math.floor(Number(raw)));
-        const next = newHours * 60 + minutes;
+        const parsed = Math.floor(Number(raw));
+        const newHours = Number.isFinite(parsed) ? Math.min(Math.max(0, parsed), MAX_DEADLINE_HOURS) : 0;
+        const next = clampTotal(newHours * 60 + minutes);
         onChange(next > 0 ? next : "");
     };
 
@@ -33,8 +40,10 @@ export function NormBlock({label, value, onChange, blockRef, helpText}: NormBloc
         }
         // Специально не ограничиваем сверху 59 - если ввели 90, normalize произойдёт
         // сам собой на следующем рендере (hours/minutes пересчитаются из totalMinutes).
-        const newMinutes = Math.max(0, Math.floor(Number(raw)));
-        const next = hours * 60 + newMinutes;
+        // Но общий итог всё равно ограничен MAX_DEADLINE_MINUTES.
+        const parsed = Math.floor(Number(raw));
+        const newMinutes = Number.isFinite(parsed) ? Math.max(0, parsed) : 0;
+        const next = clampTotal(hours * 60 + newMinutes);
         onChange(next > 0 ? next : "");
     };
 
@@ -58,6 +67,7 @@ export function NormBlock({label, value, onChange, blockRef, helpText}: NormBloc
                 <input
                     type="number"
                     min={0}
+                    max={MAX_DEADLINE_HOURS}
                     value={hours || ""}
                     onChange={(e) => handleHoursChange(e.target.value)}
                     placeholder="0"
@@ -67,6 +77,7 @@ export function NormBlock({label, value, onChange, blockRef, helpText}: NormBloc
                 <input
                     type="number"
                     min={0}
+                    max={MAX_DEADLINE_MINUTES}
                     value={minutes || ""}
                     onChange={(e) => handleMinutesChange(e.target.value)}
                     placeholder="0"

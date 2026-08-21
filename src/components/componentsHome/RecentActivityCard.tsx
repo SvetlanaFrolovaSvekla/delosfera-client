@@ -20,7 +20,7 @@ interface RecentActivityCardProps {
     module?: string;
 }
 
-export function RecentActivityCard({limit = 8, module}: RecentActivityCardProps) {
+export function RecentActivityCard({limit = 15, module}: RecentActivityCardProps) {
     const {t} = useTranslation();
     const {items, isLoading, error} = useRecentActivity(limit, module);
     const navigate = useNavigate();

@@ -1,7 +1,7 @@
 import type {MouseEvent} from "react";
 import {Link} from "react-router-dom";
 import type {VndTaskResponse} from "@/service/tasksVndService/tasksServiceTypes.ts";
-import {COORDINATION_STAGE_META, STATUS_META, TASK_SCOPE_META} from "@/constants/vndStatus.ts";
+import {COORDINATION_STAGE_META, TASK_SCOPE_META} from "@/constants/vndStatus.ts";
 import {getActionTitle, getDeadlineTone, getMetaText} from "@/utils/tasksUtils.ts";
 import {Icon} from "@/components/icons/Icon.tsx";
 
@@ -32,8 +32,6 @@ export function VndTaskCard({task}: VndTaskCardProps) {
     const stageMeta = task.stagePhase
         ? COORDINATION_STAGE_META[task.stagePhase as keyof typeof COORDINATION_STAGE_META]
         : null;
-
-    const vndStatusMeta = task.vndStatus ? STATUS_META[task.vndStatus] : null;
 
     const hasStagePhase = task.scope === "coordination" || task.scope === "myVndApproval";
     const due = hasStagePhase
@@ -78,15 +76,6 @@ export function VndTaskCard({task}: VndTaskCardProps) {
                             style={{background: stageMeta.bg, color: stageMeta.color}}
                         >
                             {stageMeta.label}
-                        </span>
-                    )}
-                    {/* Статус самого ВНД (действующий/черновик/на согласовании и т.д.) */}
-                    {vndStatusMeta && (
-                        <span
-                            className="rounded-full px-[9px] py-[2px] text-[11px] font-semibold"
-                            style={{background: vndStatusMeta.bg, color: vndStatusMeta.color}}
-                        >
-                            {vndStatusMeta.label}
                         </span>
                     )}
                 </span>

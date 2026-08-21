@@ -11,9 +11,14 @@ interface MyTasksCardProps {
     isLoading: boolean;
 }
 
+const VISIBLE_TASKS_LIMIT = 15;
+
 export function MyTasksCard({tasks, totalCount, isLoading}: MyTasksCardProps) {
     const {t} = useTranslation();
     const navigate = useNavigate();
+
+    const visibleTasks = tasks.slice(0, VISIBLE_TASKS_LIMIT);
+    const hasMoreTasks = tasks.length > VISIBLE_TASKS_LIMIT;
 
     return (
         <div className="overflow-hidden rounded-[14px] border border-[#e9edf3] bg-white">
@@ -46,9 +51,22 @@ export function MyTasksCard({tasks, totalCount, isLoading}: MyTasksCardProps) {
                         {t("tasks.myTasks.empty")}
                     </div>
                 ) : (
-                    tasks.map((task) => (
-                        <VndTaskCard key={task.vndId} task={task}/>
-                    ))
+                    <>
+                        {visibleTasks.map((task) => (
+                            <VndTaskCard key={task.vndId} task={task}/>
+                        ))}
+                        {hasMoreTasks && (
+                            <div className="border-t border-[#eef2f7] px-[18px] py-3 text-center">
+                                <button
+                                    className="cursor-pointer text-[12.5px] font-semibold text-[var(--app-accent,_#2f68f5)] hover:underline"
+                                    onClick={() => navigate("/tasks")}
+                                >
+                                    {/* Смотреть больше задач */}
+                                    {t("tasks.myTasks.showMore")}
+                                </button>
+                            </div>
+                        )}
+                    </>
                 )}
             </div>
         </div>

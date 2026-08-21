@@ -72,6 +72,14 @@ export interface SzDetails extends SzListItem {
 
     signerUserId: number | null;
     signerUser: string | null;
+
+    /** Отметка «вынести на коллегиальный орган»: заявка секретарю, а не распоряжение. */
+    submitToBody: string | null;
+    submitToBodyQuestion: string | null;
+    submitToBodyRequestedAt: string | null;
+
+    /** Записка уже включена в повестку — менять отметку поздно. */
+    inAgenda: boolean;
     registeredByUserId: number | null;
     rubricIds: number[];
     rubrics: string[];

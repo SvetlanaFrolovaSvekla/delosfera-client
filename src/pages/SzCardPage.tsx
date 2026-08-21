@@ -4,12 +4,14 @@ import {ArrowLeft} from "lucide-react";
 import {colors} from "@/design/tokens";
 import {useDictionaries} from "@/context/DictionariesContext.tsx";
 import {useAuth} from "@/context/AuthContext.ts";
-import {userService} from "@/service/userService/userService.ts";
+import {userService, type UserLookupItem} from "@/service/userService/userService.ts";
 import {SzExecutionPanel} from "@/components/sz/SzExecutionPanel.tsx";
 import {SzOriginalPanel} from "@/components/sz/SzOriginalPanel.tsx";
 import {SzArchivePanel} from "@/components/sz/SzArchivePanel.tsx";
 import {SzProcurementPanel} from "@/components/sz/SzProcurementPanel.tsx";
 import {SzApproversField} from "@/components/sz/SzApproversField.tsx";
+import {SzSubmitToBodyPanel} from "@/components/sz/SzSubmitToBodyPanel.tsx";
+import {SearchSelect} from "@/components/componentsGeneral/selects/SearchSelect.tsx";
 import {SzHrForm} from "@/components/sz/SzHrForm.tsx";
 import {RichTextEditor} from "@/components/editor/RichTextEditor.tsx";
 import {SzAddresseeDecisionPanel} from "@/components/sz/SzAddresseeDecisionPanel.tsx";
@@ -59,10 +61,20 @@ const inputClass =
     "w-full h-10 px-3 rounded-[9px] border border-[#e5e9f0] bg-white text-[13px] outline-none focus:border-[#2f68f5]";
 const labelClass = "block text-[11.5px] text-[#8b97ab] mb-[5px]";
 
-function Field({label, children}: { label: string; children: React.ReactNode }) {
+/**
+ * Подпись поля. Обязательные помечены красной звёздочкой — до отправки, а не
+ * сообщением об ошибке после: человек должен видеть, что заполнять, пока
+ * заполняет, а не когда уже нажал «Отправить».
+ */
+function Field({label, children, required}: {
+    label: string; children: React.ReactNode; required?: boolean;
+}) {
     return (
         <label className="block">
-            <span className={labelClass}>{label}</span>
+            <span className={labelClass}>
+                {label}
+                {required && <span className="ml-0.5 text-[#c0392b]" title="Обязательное поле">*</span>}
+            </span>
             {children}
         </label>
     );
@@ -113,7 +125,9 @@ export function SzCardPage() {
     const {user} = useAuth();
     const [route, setRoute] = useState<RouteInstance | null>(null);
     const [users, setUsers] = useState<Record<number, string>>({});
-    const [userList, setUserList] = useState<{ id: number; fullName: string }[]>([]);
+    // Тип берём у сервиса целиком: должность и подразделение нужны, чтобы
+    // различать однофамильцев в полях с поиском.
+    const [userList, setUserList] = useState<UserLookupItem[]>([]);
     const [comment, setComment] = useState("");
     const [withdrawReason, setWithdrawReason] = useState("");
     const [withdrawOpen, setWithdrawOpen] = useState(false);
@@ -498,29 +512,57 @@ export function SzCardPage() {
 
             <div className="mt-5 rounded-[12px] border border-[#e5e9f0] bg-white p-5">
                 <div className="grid grid-cols-2 gap-4">
-                    <Field label="Тема">
+                    <Field label="Тема" required>
                         <input className={inputClass} value={form.title} disabled={!editable}
                                onChange={(e) => set("title", e.target.value)}/>
                     </Field>
-                    <Field label="Вид записки">
-                        <select className={inputClass} value={form.kindId} disabled={!editable}
-                                onChange={(e) => set("kindId", Number(e.target.value))}>
-                            {kinds.map((k) => <option key={k.id} value={k.id}>{k.titleRu}</option>)}
-                        </select>
+                    <Field label="Вид записки" required>
+                        <SearchSelect
+                            options={kinds.map((k) => ({value: k.id, label: k.titleRu}))}
+                            value={form.kindId}
+                            onChange={(v) => set("kindId", Number(v))}
+                            disabled={!editable}
+                            allowEmpty={false}
+                        />
                     </Field>
-                    <Field label="Кому">
-                        <select className={inputClass} value={form.addresseeUserId ?? ""} disabled={!editable}
-                                onChange={(e) => set("addresseeUserId", e.target.value ? Number(e.target.value) : null)}>
-                            <option value="">Не выбрано</option>
-                            {userList.map((u) => <option key={u.id} value={u.id}>{u.fullName}</option>)}
-                        </select>
+
+                    {/* Вид кадровой записки стоит сразу под видом: он его уточняет,
+                        и разносить их по разным концам формы значит заставлять
+                        возвращаться наверх после выбора. */}
+                    {formKey === "Hr" && (
+                        <Field label="Вид кадровой записки" required>
+                            <SearchSelect
+                                options={hrKinds.map((k) => ({value: k.id, label: k.titleRu}))}
+                                value={form.hrKindId ?? null}
+                                onChange={(v) => set("hrKindId", v === null ? null : Number(v))}
+                                disabled={!editable}
+                                placeholder="Выберите вид"
+                            />
+                        </Field>
+                    )}
+                    {/* Адресат: человек или подразделение — при отправке нужен
+                        хотя бы один, поэтому звёздочка стоит у обоих. */}
+                    <Field label="Кому" required={!form.correspondentUnitId}>
+                        <SearchSelect
+                            options={userList.map((u) => ({
+                                value: u.id,
+                                label: u.fullName,
+                                hint: [u.position, u.orgUnit].filter(Boolean).join(", ") || null,
+                            }))}
+                            value={form.addresseeUserId ?? null}
+                            onChange={(v) => set("addresseeUserId", v === null ? null : Number(v))}
+                            disabled={!editable}
+                            placeholder="Найдите по фамилии"
+                        />
                     </Field>
-                    <Field label="Адресат — структурное подразделение">
-                        <select className={inputClass} value={form.correspondentUnitId ?? ""} disabled={!editable}
-                                onChange={(e) => set("correspondentUnitId", e.target.value ? Number(e.target.value) : null)}>
-                            <option value="">Не выбрано</option>
-                            {ORG_UNITS.map((u) => <option key={u.id} value={u.id}>{u.name}</option>)}
-                        </select>
+                    <Field label="Адресат — структурное подразделение" required={!form.addresseeUserId}>
+                        <SearchSelect
+                            options={ORG_UNITS.map((u) => ({value: Number(u.id), label: u.name}))}
+                            value={form.correspondentUnitId ?? null}
+                            onChange={(v) => set("correspondentUnitId", v === null ? null : Number(v))}
+                            disabled={!editable}
+                            placeholder="Найдите по названию"
+                        />
                     </Field>
                     <label className="flex items-end gap-2 pb-2.5 text-[13px] text-[#55617a]">
                         <input type="checkbox" checked={form.isPaperCarrier ?? kind?.isPaperByDefault ?? false}
@@ -541,14 +583,6 @@ export function SzCardPage() {
 
                 {formKey === "Hr" && (
                     <div className="mt-4">
-                        <Field label="Вид кадровой записки">
-                            <select className={inputClass} value={form.hrKindId ?? ""} disabled={!editable}
-                                    onChange={(e) => set("hrKindId", e.target.value ? Number(e.target.value) : null)}>
-                                <option value="">Не выбрано</option>
-                                {hrKinds.map((k) => <option key={k.id} value={k.id}>{k.titleRu}</option>)}
-                            </select>
-                        </Field>
-
                         {/* Поля зависят от вида: у командировки свои, у изменения оклада свои.
                             Схему отдаёт сервер, здесь её только рисуют. */}
                         <SzHrForm
@@ -585,11 +619,13 @@ export function SzCardPage() {
                                    onChange={(e) => set("employeeName", e.target.value)}/>
                         </Field>
                         <Field label="Филиал / СП сотрудника">
-                            <select className={inputClass} value={form.employeeUnitId ?? ""} disabled={!editable}
-                                    onChange={(e) => set("employeeUnitId", e.target.value ? Number(e.target.value) : null)}>
-                                <option value="">Не выбрано</option>
-                                {ORG_UNITS.map((u) => <option key={u.id} value={u.id}>{u.name}</option>)}
-                            </select>
+                            <SearchSelect
+                                options={ORG_UNITS.map((u) => ({value: Number(u.id), label: u.name}))}
+                                value={form.employeeUnitId ?? null}
+                                onChange={(v) => set("employeeUnitId", v === null ? null : Number(v))}
+                                disabled={!editable}
+                                placeholder="Найдите по названию"
+                            />
                         </Field>
                         <label className="flex items-end gap-2 pb-2.5 text-[13px] text-[#55617a]">
                             <input type="checkbox" checked={form.travelExpenses ?? false} disabled={!editable}
@@ -638,11 +674,18 @@ export function SzCardPage() {
                 */}
                 <div className="mt-4">
                     <Field label="Подписант">
-                        <select className={inputClass} value={form.signerUserId ?? ""} disabled={!editable}
-                                onChange={(e) => set("signerUserId", e.target.value ? Number(e.target.value) : null)}>
-                            <option value="">Без подписания</option>
-                            {userList.map((u) => <option key={u.id} value={u.id}>{u.fullName}</option>)}
-                        </select>
+                        <SearchSelect
+                            options={userList.map((u) => ({
+                                value: u.id,
+                                label: u.fullName,
+                                hint: [u.position, u.orgUnit].filter(Boolean).join(", ") || null,
+                            }))}
+                            value={form.signerUserId ?? null}
+                            onChange={(v) => set("signerUserId", v === null ? null : Number(v))}
+                            disabled={!editable}
+                            emptyLabel="Без подписания"
+                            placeholder="Без подписания"
+                        />
                     </Field>
                     <div className="mt-1 text-[11.5px] text-[#8b97ab]">
                         Подписывает записку последним, после согласования
@@ -685,6 +728,19 @@ export function SzCardPage() {
                         }/>
                     </div>
                 </div>
+            )}
+
+            {/* Вынесение на коллегиальный орган: заявка секретарю, а не распоряжение.
+                У черновика отметки нет — в очередь попадают зарегистрированные записки. */}
+            {sz && sz.statusCode !== "Draft" && (
+                <SzSubmitToBodyPanel
+                    szId={sz.id}
+                    body={sz.submitToBody}
+                    question={sz.submitToBodyQuestion}
+                    inAgenda={sz.inAgenda}
+                    canEdit={isAuthor || (!!user && sz.addresseeUserId === user.id)}
+                    onChanged={reload}
+                />
             )}
 
             {/* Исполнение начинается после согласования — панель ведёт поручения и сроки. */}

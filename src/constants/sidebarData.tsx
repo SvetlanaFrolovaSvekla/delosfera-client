@@ -55,6 +55,10 @@ export const navGroups: NavGroup[] = [
         items: [
             // Журнал заседаний Правления, КПА и комитетов: повестка, протоколы, исполнение решений
             { id: "meetings", icon: "committee", labelKey: "Решения комитетов", path: "/meetings", permission: PermissionCode.ViewMeetings },
+            // Очередь записок с отметкой «вынести на орган» — отбирает секретарь
+            { id: "meet-candidates", icon: "check", labelKey: "Вопросы на рассмотрение", path: "/meetings/candidates", permission: PermissionCode.ViewMeetings },
+            // Периодичность, которой мыслит регулятор: «не реже раза в месяц»
+            { id: "obligations", icon: "clock", labelKey: "Регулярные обязательства", path: "/obligations" },
         ],
     },
     {
@@ -70,15 +74,26 @@ export const navGroups: NavGroup[] = [
         ],
     },
     {
+        titleKey: "Канцелярия",
+        items: [
+            // Книга регистрации: входящие, исходящие, запросы НБКР, обращения клиентов
+            { id: "correspondence", icon: "sz", labelKey: "Корреспонденция", path: "/correspondence", permission: PermissionCode.ViewCorrespondence },
+            // «Вправе ли этот человек подписать вот это сегодня»
+            { id: "poa", icon: "shield", labelKey: "Доверенности", path: "/poa", permission: PermissionCode.ViewPowersOfAttorney },
+        ],
+    },
+    {
         titleKey: "Кадровый документооборот",
         items: [
             // Ознакомление с приказами и документами: роспись сотрудника простой
             // электронной подписью (Б-19)
+            // Книга приказов по личному составу — нумерация своя, «12-лс»
+            { id: "hr-orders", icon: "hr", labelKey: "Приказы по личному составу", path: "/hr/orders", permission: PermissionCode.ViewHrOrders },
             { id: "hr-ack", icon: "check", labelKey: "Ознакомление", path: "/hr-ack" },
         ],
     },
     {
-        titleKey: "Система",
+        titleKey: "Управление",
         items: [
             // Инструкции по работе с системой: статьи со ссылками прямо на экраны (KB-01..03)
             { id: "help", icon: "kb", labelKey: "Как работать в системе", path: "/help" },
@@ -88,6 +103,9 @@ export const navGroups: NavGroup[] = [
             { id: "adm-roles", icon: "shield", labelKey: "sidebar.items.admRoles", path: "/roles", permission: PermissionCode.ManageRoles },
             { id: "adm-sub", icon: "user", labelKey: "Замещения", path: "/substitutions", permission: PermissionCode.ManageUsers },
             { id: "adm-log", icon: "clock", labelKey: "Журнал действий", path: "/audit-log", permission: PermissionCode.ManageUsers },
+            // Обкатка подразделениями: что пишут с экранов и кто вообще заходит
+            { id: "feedback", icon: "bell", labelKey: "Пожелания и замечания", path: "/feedback", permission: PermissionCode.ManageSystemSettings },
+            { id: "usage", icon: "rpt", labelKey: "Посещаемость", path: "/usage", permission: PermissionCode.ViewFullStatistics },
             { id: "refs", icon: "refs", labelKey: "sidebar.items.refs", path: "/refs" },
             // Настройки интеграций: адрес каталога, учётная запись, расписание синхронизации
             { id: "system-settings", icon: "future", labelKey: "Системные настройки", path: "/system/settings", permission: PermissionCode.ManageSystemSettings },

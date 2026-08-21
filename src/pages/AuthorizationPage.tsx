@@ -4,6 +4,7 @@ import {Navigate, useNavigate} from "react-router-dom";
 import {useTranslation} from "react-i18next";
 import {useAuth} from "@/context/AuthContext.ts";
 import {AuthHero} from "@/components/componentsAuth/AuthHero.tsx";
+import {DemoAccountsPanel} from "@/components/componentsAuth/DemoAccountsPanel.tsx";
 import {Loader} from "@/components/componentsGeneral/Loader.tsx";
 
 const REMEMBER_KEY = "delosfera.rememberedLogin";
@@ -31,6 +32,18 @@ export function AuthorizationPage() {
     // Смена вкладки сбрасывает ошибку предыдущего способа входа
     const switchTab = (next: Tab) => {
         setTab(next);
+        setError(null);
+    };
+
+    /**
+     * Подставляет учётную запись обкатки. Переключает на вкладку пароля: тестовые
+     * учётки локальные, в домене их нет, и попытка войти доменным способом
+     * закончилась бы непонятной ошибкой.
+     */
+    const pickDemoAccount = (demoEmail: string, demoPassword: string) => {
+        setTab("password");
+        setEmail(demoEmail);
+        setPassword(demoPassword);
         setError(null);
     };
 
@@ -227,6 +240,10 @@ export function AuthorizationPage() {
                             </button>
                         </form>
                     )}
+
+                    {/* Блок появляется только на стенде обкатки: список учётных записей
+                        приходит с сервера и на рабочем контуре пуст. */}
+                    <DemoAccountsPanel onPick={pickDemoAccount}/>
 
                     {tab === "domain" && (
                         <div className="flex flex-col gap-4">

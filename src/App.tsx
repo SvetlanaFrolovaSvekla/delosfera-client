@@ -12,6 +12,8 @@ import {Loader} from "@/components/componentsGeneral/Loader.tsx";
 import {Sidebar} from "@/components/componentsSidebar/Sidebar.tsx";
 import {Header} from "@/components/componentsHeader/Header.tsx";
 import {RegulationConsentGate} from "@/components/signing/RegulationConsentGate.tsx";
+import {FeedbackButton} from "@/components/feedback/FeedbackButton.tsx";
+import {useUsageTracking} from "@/hooks/useUsageTracking.ts";
 
 // Страницы грузятся лениво — каждая попадает в отдельный чанк, а не в один общий бандл.
 // Named-экспорты оборачиваем в { default } для React.lazy.
@@ -68,26 +70,42 @@ const AuditLogPage = lazy(() => import("@/pages/AuditLogPage.tsx").then(m => ({d
 const SigningWorkplacePage = lazy(() => import("@/pages/SigningWorkplacePage.tsx").then(m => ({default: m.SigningWorkplacePage})));
 const AcknowledgementPage = lazy(() => import("@/pages/AcknowledgementPage.tsx").then(m => ({default: m.AcknowledgementPage})));
 const HelpPage = lazy(() => import("@/pages/HelpPage.tsx").then(m => ({default: m.HelpPage})));
+const FeedbackInboxPage = lazy(() => import("@/pages/FeedbackInboxPage.tsx").then(m => ({default: m.FeedbackInboxPage})));
+const UsageAnalyticsPage = lazy(() => import("@/pages/UsageAnalyticsPage.tsx").then(m => ({default: m.UsageAnalyticsPage})));
+const PoaRegistryPage = lazy(() => import("@/pages/PoaRegistryPage.tsx").then(m => ({default: m.PoaRegistryPage})));
+const CorrespondencePage = lazy(() => import("@/pages/CorrespondencePage.tsx").then(m => ({default: m.CorrespondencePage})));
+const ObligationsPage = lazy(() => import("@/pages/ObligationsPage.tsx").then(m => ({default: m.ObligationsPage})));
+const AgendaCandidatesPage = lazy(() => import("@/pages/MeetingsPages/AgendaCandidatesPage.tsx").then(m => ({default: m.AgendaCandidatesPage})));
+const HrOrdersPage = lazy(() => import("@/pages/HrOrdersPage.tsx").then(m => ({default: m.HrOrdersPage})));
 const SzStatisticsPage = lazy(() => import("@/pages/SzStatisticsPage.tsx").then(m => ({default: m.SzStatisticsPage})));
 const SubstitutionsPage = lazy(() => import("@/pages/UsersPages/SubstitutionsPage.tsx").then(m => ({default: m.SubstitutionsPage})));
 const SupplierRegistryPage = lazy(() => import("@/pages/ProcurementPages/SupplierRegistryPage.tsx").then(m => ({default: m.SupplierRegistryPage})));
 const ProcurementPlanPage = lazy(() => import("@/pages/ProcurementPages/ProcurementPlanPage.tsx").then(m => ({default: m.ProcurementPlanPage})));
 
-const MainLayout = () => (
-    <DictionariesProvider>
-        {/* Согласие с регламентом ПЭП спрашивается один раз, до первого подписания. */}
-        <RegulationConsentGate/>
-        <div className="flex h-screen overflow-hidden">
-            <Sidebar/>
-            <main className="flex-1 flex flex-col min-w-0 overflow-hidden bg-[#edecf5]">
-                <Header/>
-                <div className="flex-1 overflow-y-auto overflow-x-hidden">
-                    <Outlet/> {/* Место для вложенных маршрутов */}
-                </div>
-            </main>
-        </div>
-    </DictionariesProvider>
-);
+const MainLayout = () => {
+    // Учёт посещаемости включаем здесь, а не в App: сюда попадают только
+    // авторизованные экраны, и страница входа в статистику не просачивается.
+    useUsageTracking(true);
+
+    return (
+        <DictionariesProvider>
+            {/* Согласие с регламентом ПЭП спрашивается один раз, до первого подписания. */}
+            <RegulationConsentGate/>
+            <div className="flex h-screen overflow-hidden">
+                <Sidebar/>
+                <main className="flex-1 flex flex-col min-w-0 overflow-hidden bg-[#edecf5]">
+                    <Header/>
+                    <div className="flex-1 overflow-y-auto overflow-x-hidden">
+                        <Outlet/> {/* Место для вложенных маршрутов */}
+                    </div>
+                </main>
+            </div>
+            {/* Кнопка «Сообщить» — на каждом экране, а не в отдельном разделе:
+                замечание случается посреди работы, и искать его некуда некогда. */}
+            <FeedbackButton/>
+        </DictionariesProvider>
+    );
+};
 
 function App() {
     return (
@@ -154,6 +172,31 @@ function App() {
                                 <Route path="/signing-workplace" element={<SigningWorkplacePage/>}/>
                                 <Route path="/hr-ack" element={<AcknowledgementPage/>}/>
                                 <Route path="/help" element={<HelpPage/>}/>
+
+                                {/* Обкатка подразделениями: разбор пожеланий и учёт посещаемости */}
+                                <Route element={<RequirePermission code={PermissionCode.ManageSystemSettings}/>}>
+                                    <Route path="/feedback" element={<FeedbackInboxPage/>}/>
+                                </Route>
+                                <Route element={<RequirePermission code={PermissionCode.ViewFullStatistics}/>}>
+                                    <Route path="/usage" element={<UsageAnalyticsPage/>}/>
+                                </Route>
+
+                                {/* Доверенности и книга регистрации корреспонденции */}
+                                <Route element={<RequirePermission code={PermissionCode.ViewPowersOfAttorney}/>}>
+                                    <Route path="/poa" element={<PoaRegistryPage/>}/>
+                                </Route>
+                                <Route element={<RequirePermission code={PermissionCode.ViewCorrespondence}/>}>
+                                    <Route path="/correspondence" element={<CorrespondencePage/>}/>
+                                </Route>
+
+                                {/* Периодичность заседаний и отчётов; отбор вопросов секретарём */}
+                                <Route path="/obligations" element={<ObligationsPage/>}/>
+                                <Route element={<RequirePermission code={PermissionCode.ViewHrOrders}/>}>
+                                    <Route path="/hr/orders" element={<HrOrdersPage/>}/>
+                                </Route>
+                                <Route element={<RequirePermission code={PermissionCode.ViewMeetings}/>}>
+                                    <Route path="/meetings/candidates" element={<AgendaCandidatesPage/>}/>
+                                </Route>
 
                                 <Route element={<RequirePermission code={PermissionCode.ManageRoles}/>}>
                                     <Route path="/roles" element={<RolesPermissionPage/>}/>

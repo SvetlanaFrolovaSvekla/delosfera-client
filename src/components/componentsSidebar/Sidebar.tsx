@@ -9,16 +9,33 @@ import {navGroups} from "@/constants/sidebarData.tsx";
 import {CountBadge} from "@/components/componentsSidebar/CountBadge.tsx";
 import {Icon} from "@/components/icons/Icon";
 import {RubricTreeModal} from "@/components/componentsGeneral/rubricator/RubricTreeModal.tsx";
-import {ChevronRight} from "lucide-react";
+import {ChevronRight, PanelLeftClose, PanelLeftOpen} from "lucide-react";
 
 const MODAL_ITEM_IDS = ["vnd-rubric"];
+
+/**
+ * Состояние панели переживает перезагрузку: тот, кто её спрятал ради места на
+ * экране, не хочет прятать её заново после каждого входа.
+ */
+const COLLAPSED_KEY = "delosfera.sidebar.collapsed";
+const HIDDEN_KEY = "delosfera.sidebar.hidden";
+
+function readFlag(key: string): boolean {
+    return localStorage.getItem(key) === "1";
+}
+
+function writeFlag(key: string, value: boolean): void {
+    if (value) localStorage.setItem(key, "1");
+    else localStorage.removeItem(key);
+}
 
 export function Sidebar() {
     const {t} = useTranslation();
     const {pathname} = useLocation();
     const navigate = useNavigate();
     const {hasPermission} = useAuth();
-    const [collapsed, setCollapsed] = useState(false);
+    const [collapsed, setCollapsed] = useState(() => readFlag(COLLAPSED_KEY));
+    const [hidden, setHidden] = useState(() => readFlag(HIDDEN_KEY));
     const [rubricModalOpen, setRubricModalOpen] = useState(false);
     const [rubricSelection, setRubricSelection] = useState<string[]>([]);
 
@@ -42,6 +59,18 @@ export function Sidebar() {
         tasks: t("sidebar.badgeTooltips.tasks", {count: tasksBadge}),
     };
 
+    const toggleCollapsed = () => {
+        setCollapsed((c) => {
+            writeFlag(COLLAPSED_KEY, !c);
+            return !c;
+        });
+    };
+
+    const setHiddenPersisted = (value: boolean) => {
+        writeFlag(HIDDEN_KEY, value);
+        setHidden(value);
+    };
+
     const goToVndWithRubrics = (keys: string[]) => {
         if (keys.length === 0) return;
         const params = new URLSearchParams({rubrics: keys.join(",")});
@@ -60,6 +89,25 @@ export function Sidebar() {
                 })),
         }))
         .filter((grp) => grp.items.length > 0);
+
+    // Панель спрятана целиком — на её месте остаётся только стрелка возврата.
+    // Кнопка держится у края экрана, а не в шапке: там её ищут глазами по тому
+    // же месту, где панель и была.
+    if (hidden) {
+        return (
+            <button
+                type="button"
+                onClick={() => setHiddenPersisted(false)}
+                title="Показать меню"
+                aria-label="Показать меню"
+                className="fixed left-0 top-[70px] z-30 grid h-9 w-7 place-items-center
+                           rounded-r-[9px] border border-l-0 border-[#e5e9f0] bg-white
+                           text-[#8b97ab] shadow-sm transition hover:text-[#2f68f5]"
+            >
+                <PanelLeftOpen size={17}/>
+            </button>
+        );
+    }
 
     return (
         <aside
@@ -176,10 +224,11 @@ export function Sidebar() {
                 ))}
             </nav>
 
-            {/* Свернуть меню */}
-            <div className="flex-none border-t border-[#eef2f7] p-2.5">
+            {/* Свернуть до значков или спрятать целиком */}
+            <div className={`flex flex-none items-center gap-1 border-t border-[#eef2f7] p-2.5
+                             ${collapsed ? "flex-col" : ""}`}>
                 <button
-                    onClick={() => setCollapsed((c) => !c)}
+                    onClick={toggleCollapsed}
                     className={`cursor-pointer flex w-full items-center overflow-hidden whitespace-nowrap rounded-[9px] text-[13px] text-[#55617a] hover:bg-[#f2f5f9] ${
                         collapsed ? "justify-center gap-0 px-0 py-[10px]" : "gap-[11px] px-[11px] py-[9px]"
                     }`}
@@ -192,6 +241,16 @@ export function Sidebar() {
                         style={{transform: collapsed ? "rotate(0deg)" : "rotate(180deg)"}}
                     />
                     {!collapsed && <span>{t("sidebar.collapse")}</span>}
+                </button>
+
+                <button
+                    onClick={() => setHiddenPersisted(true)}
+                    title="Скрыть меню"
+                    aria-label="Скрыть меню"
+                    className="flex-none cursor-pointer rounded-[9px] p-[9px] text-[#8b97ab]
+                               transition hover:bg-[#f2f5f9] hover:text-[#2f68f5]"
+                >
+                    <PanelLeftClose size={18}/>
                 </button>
             </div>
 

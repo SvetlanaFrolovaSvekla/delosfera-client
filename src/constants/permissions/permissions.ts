@@ -103,4 +103,25 @@ export const PermissionCode = {
     MemberOfCreditCommittee: 34,
     /** Системные настройки: интеграции, расписание синхронизации */
     ManageSystemSettings: 35,
+
+    /** Просмотр реестра доверенностей — «вправе ли он это подписать» */
+    ViewPowersOfAttorney: 36,
+
+    /** Ведение доверенностей: выдача, отзыв, передоверие */
+    ManagePowersOfAttorney: 37,
+
+    /** Просмотр книги регистрации корреспонденции */
+    ViewCorrespondence: 38,
+
+    /** Регистрация писем и ведение справочника корреспондентов */
+    RegisterCorrespondence: 39,
+
+    /** Запросы по счетам клиентов — банковская тайна, узкий круг */
+    ViewBankSecrecyInquiries: 40,
+
+    /** Просмотр книги приказов по личному составу */
+    ViewHrOrders: 41,
+
+    /** Издание кадровых приказов */
+    ManageHrOrders: 42,
 } as const;

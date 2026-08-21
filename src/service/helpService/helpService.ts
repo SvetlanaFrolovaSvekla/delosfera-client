@@ -32,7 +32,18 @@ export type HelpBlock =
     | {kind: "steps"; items: string[]}
     | {kind: "note"; tone?: "info" | "warning"; text: string}
     | {kind: "link"; label: string; path: string}
-    | {kind: "vnd"; label: string; documentId: number};
+    | {kind: "vnd"; label: string; documentId: number}
+    | {
+          kind: "image";
+          fileId: number;
+          caption?: string;
+          /**
+           * Выноски: номер и точка на снимке в процентах от его размера.
+           * Проценты, а не пиксели, — снимок показывается в разной ширине,
+           * и метка в пикселях уехала бы с нужной кнопки.
+           */
+          markers?: {x: number; y: number; text?: string}[];
+      };
 
 export interface HelpArticleBrief {
     id: number;
@@ -101,6 +112,29 @@ export const helpService = {
 
     async update(id: number, input: HelpArticleInput): Promise<void> {
         await apiClient.put(`${BASE}/${id}`, input);
+    },
+
+    /** Загрузить снимок экрана. Возвращает идентификатор файла для блока. */
+    async uploadImage(file: File): Promise<{fileId: number; fileName: string; size: number}> {
+        const form = new FormData();
+        form.append("file", file);
+        const {data} = await apiClient.post<{fileId: number; fileName: string; size: number}>(
+            `${BASE}/images`, form);
+        return data;
+    },
+
+    /**
+     * Забирает снимок и отдаёт локальную ссылку на него.
+     *
+     * Не адресом в src: токен живёт в памяти вкладки, а тег img запрос заголовком
+     * не снабдит — картинка вернулась бы отказом. Поэтому качаем сами и отдаём
+     * ссылку на полученные данные; освобождать её должен тот, кто получил.
+     */
+    async fetchImage(fileId: number): Promise<string> {
+        const {data} = await apiClient.get<Blob>(`${BASE}/images/${fileId}`, {
+            responseType: "blob",
+        });
+        return URL.createObjectURL(data);
     },
 
     async remove(id: number): Promise<void> {

@@ -1,5 +1,6 @@
 // Блок с нормативными значениями для согласования в модалке конструктора маршрутов
 import React from "react";
+import {HelpTooltip} from "@/components/componentsGeneral/knowledgeBaseComponents/HelpTooltip.tsx";
 
 interface NormBlockProps {
     label: string;
@@ -7,9 +8,10 @@ interface NormBlockProps {
     value: number | "";
     onChange: (value: number | "") => void;
     blockRef?: React.Ref<HTMLDivElement>;
+    helpText?: string;
 }
 
-export function NormBlock({label, value, onChange, blockRef}: NormBlockProps) {
+export function NormBlock({label, value, onChange, blockRef, helpText}: NormBlockProps) {
     const totalMinutes = value === "" ? 0 : value;
     const hours = Math.floor(totalMinutes / 60);
     const minutes = totalMinutes % 60;
@@ -39,9 +41,19 @@ export function NormBlock({label, value, onChange, blockRef}: NormBlockProps) {
     return (
         <div
             ref={blockRef}
-            className="flex w-[280px] flex-none items-center justify-between gap-3 rounded-[12px] border border-[#e5e9f0] bg-[#f9fafc] px-4 py-3"
+            className="relative flex w-[280px] flex-none items-center justify-between gap-3 rounded-2xl border border-slate-200 bg-white p-4 shadow-[0_3px_12px_-6px_rgba(15,27,45,0.14)]"
         >
-            <span className="text-[12px] font-medium leading-tight text-[#6b7488]">{label}</span>
+            {helpText && (
+                <div className="absolute -right-2 -top-2">
+                    <HelpTooltip
+                        content={helpText}
+                        side="top"
+                        className="h-6 w-6 bg-white shadow-sm border border-[#e5e9f0]"
+                    />
+                </div>
+            )}
+
+            <span className="text-[12px] font-medium leading-tight text-[#26324a]">{label}</span>
             <div className="flex flex-none items-center gap-1">
                 <input
                     type="number"

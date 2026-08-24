@@ -10,6 +10,7 @@ import {useVndRedactions} from "@/hooks/vndHooks/useVndRedactions.ts";
 import {useRedactionSelection} from "@/hooks/vndHooks/useRedactionSelection.ts";
 import {useAsyncAction} from "@/hooks/useAsyncAction.ts";
 import {useAvailableHeight} from "@/hooks/vndHooks/useAvailableHeight.ts";
+import {useVndActualizationFlow} from "@/hooks/vndHooks/useVndActualizationFlow.ts";
 
 import {downloadWithToast} from "@/utils/downloadFile.ts";
 import {getRedactionDisplayStatus} from "@/utils/redactionStatus.ts";
@@ -26,8 +27,17 @@ import {
     VndUploadRedactionModal
 } from "@/components/componentsVND/componentsOpenVndPage/componentsEditionsTab/VndUploadRedactionModal.tsx";
 import {
-    RedactionsSidebar
+    RedactionsSidebar, type RedactionsPrimaryActionVariant
 } from "@/components/componentsVND/componentsOpenVndPage/componentsEditionsTab/RedactionsSidebar.tsx";
+import {
+    StartActualizationModal
+} from "@/components/componentsVND/componentsOpenVndPage/componentsActualizationTab/StartActualizationModal.tsx";
+import {
+    RequestActualizationAccessModal
+} from "@/components/componentsVND/componentsOpenVndPage/componentsActualizationTab/RequestActualizationAccessModal.tsx";
+import {
+    PerformActualizationModal
+} from "@/components/componentsVND/componentsOpenVndPage/componentsActualizationTab/PerformActualizationModal.tsx";
 import {
     RedactionLanguageTabsPanel
 } from "@/components/componentsVND/componentsOpenVndPage/componentsEditionsTab/RedactionLanguageTabsPanel.tsx";
@@ -88,8 +98,21 @@ export function VndEditionsTab({vnd, onVndChanged}: VndEditionsTabProps) {
 
     const [approvalModalOpen, setApprovalModalOpen] = useState(false);
 
-    const {hasPermission} = useAuth();
+    const {hasPermission, user} = useAuth();
     const [editOpen, setEditOpen] = useState(false);
+
+    const {
+        canDirectly, canByRequest,
+        myAccessState, needsPerform, needsConfirmStartAfterRequest,
+        startOpen: actualizeStartOpen, setStartOpen: setActualizeStartOpen,
+        requestOpen: actualizeRequestOpen, setRequestOpen: setActualizeRequestOpen,
+        performOpen: actualizePerformOpen, setPerformOpen: setActualizePerformOpen, performMode: actualizePerformMode,
+        submitting: actualizeSubmitting, error: actualizeError, setError: setActualizeError,
+        handleStart: handleActualizeStart, handleRequestAccess: handleActualizeRequestAccess,
+        handlePerformConfirm: handleActualizePerformConfirm,
+        canWithoutApproval, canWithApproval,
+        canRequestWithoutApproval, canRequestWithApproval,
+    } = useVndActualizationFlow(vnd, () => onVndChanged?.());
 
     const [activeLanguage, setActiveLanguage] = useState<RedactionLanguage>("ru");
 
@@ -187,7 +210,86 @@ export function VndEditionsTab({vnd, onVndChanged}: VndEditionsTabProps) {
         );
     }
 
-    const selectedStatus = getRedactionDisplayStatus(selected);
+    const selectedStatus = getRedactionDisplayStatus(selected, vnd.status, lastByNumber?.id === selected.id);
+
+    // --- Главная кнопка сайдбара редакций: что она делает, зависит от того, есть ли у ВНД уже
+    // действующая редакция, и, если да, от текущего статуса цикла актуализации.
+    const hasCurrentRedaction = !!current;
+    const uploadMode: "default" | "actualization" = vnd.status === "onact" ? "actualization" : "default";
+
+    let primaryVariant: RedactionsPrimaryActionVariant;
+    let primaryDisabled: boolean;
+    let primaryHint: string | undefined;
+    let primaryAction: () => void;
+
+    if (!hasCurrentRedaction) {
+        // Нет предыдущих актуальных редакций - добавление новой редакции напрямую, без актуализации
+        primaryVariant = "new";
+        primaryDisabled = uploadBlocked;
+        primaryHint = uploadBlocked
+            ? t("openVndPage.redactionsSidebar.uploadBlockedHint", {number: lastByNumber?.number})
+            : undefined;
+        primaryAction = () => setUploadOpen(true);
+    } else if (vnd.status === "onact") {
+        if (vnd.actualizationPerformed) {
+            // Цикл актуализации уже идёт, шаг "Выполнить актуализацию" пройден - загружаем
+            // актуализированную версию
+            primaryVariant = "uploadActualized";
+            primaryDisabled = uploadBlocked;
+            primaryHint = uploadBlocked
+                ? t("openVndPage.redactionsSidebar.uploadBlockedHint", {number: lastByNumber?.number})
+                : undefined;
+            primaryAction = () => setUploadOpen(true);
+        } else if (needsPerform) {
+            // Шаг "Выполнить актуализацию" ещё не пройден, но я могу его выполнить (ответственный
+            // или главный редактор) — загрузка новой редакции заблокирована на бэке (см.
+            // VndDocument.ActualizationPerformed). Кнопка сама открывает PerformActualizationModal
+            // прямо здесь, без перехода на вкладку «Актуализация».
+            primaryVariant = "performActualization";
+            primaryDisabled = false;
+            primaryHint = undefined;
+            primaryAction = () => setActualizePerformOpen(true);
+        } else {
+            // Шаг ещё не пройден, но выполнить его должен кто-то другой (не я)
+            primaryVariant = "performActualization";
+            primaryDisabled = true;
+            primaryHint = t("openVndPage.redactionsSidebar.waitingPerformHint");
+            primaryAction = () => {};
+        }
+    } else if (vnd.status === "active") {
+        if (myAccessState.kind === "pending") {
+            primaryVariant = "actualize";
+            primaryDisabled = true;
+            primaryHint = t("openVndPage.redactionsSidebar.pendingRequestHint");
+            primaryAction = () => {};
+        } else if (needsConfirmStartAfterRequest) {
+            // Заявка одобрена - остаётся выполнить актуализацию (совмещает старт цикла и сам
+            // шаг для этого пути), тоже прямо здесь, без перехода на вкладку «Актуализация».
+            primaryVariant = "performActualization";
+            primaryDisabled = false;
+            primaryHint = undefined;
+            primaryAction = () => setActualizePerformOpen(true);
+        } else if (!canDirectly && !canByRequest) {
+            primaryVariant = "actualize";
+            primaryDisabled = true;
+            primaryHint = t("openVndPage.redactionsSidebar.noPermissionHint");
+            primaryAction = () => {};
+        } else {
+            primaryVariant = "actualize";
+            primaryDisabled = false;
+            primaryHint = undefined;
+            primaryAction = () => {
+                if (canDirectly) setActualizeStartOpen(true);
+                else setActualizeRequestOpen(true);
+            };
+        }
+    } else {
+        // Согласование/консолидация/архив/черновик - актуализацию сейчас не начать
+        primaryVariant = "actualize";
+        primaryDisabled = true;
+        primaryHint = undefined;
+        primaryAction = () => {};
+    }
 
     return (
         <div
@@ -216,10 +318,12 @@ export function VndEditionsTab({vnd, onVndChanged}: VndEditionsTabProps) {
                 <RedactionsSidebar
                     redactions={sortedDesc}
                     selectedId={selected.id}
+                    vndStatus={vnd.status}
                     onSelect={setSelectedId}
-                    uploadBlocked={uploadBlocked}
-                    lastByNumber={lastByNumber}
-                    onUpload={() => setUploadOpen(true)}
+                    primaryActionVariant={primaryVariant}
+                    primaryActionDisabled={primaryDisabled}
+                    primaryActionHint={primaryHint}
+                    onPrimaryAction={primaryAction}
                     compareMode={compareMode}
                     onToggleCompare={() => setCompareMode((v) => !v)}
                     contentsOpen={contentsOpen}
@@ -300,13 +404,64 @@ export function VndEditionsTab({vnd, onVndChanged}: VndEditionsTabProps) {
             )}
 
             {/* --- Другие модальные окна --- */}
-            {/* Загрузка новой редакции */}
+            {/* Загрузка новой редакции (или актуализированной версии - см. uploadMode) */}
             {uploadOpen && (
                 <VndUploadRedactionModal
                     vndId={vnd.id}
                     requiresTid={vnd.redactionIds.length > 0}
+                    mode={uploadMode}
+                    lockedRequiresApproval={vnd.actualizationRequiresApproval}
                     onClose={() => setUploadOpen(false)}
                     onUploaded={handleRedactionUploaded}
+                />
+            )}
+
+            {/* Начать актуализацию (для прав ActualizeAnyVnd...) */}
+            {actualizeStartOpen && user && (
+                <StartActualizationModal
+                    canWithoutApproval={canWithoutApproval}
+                    canWithApproval={canWithApproval}
+                    submitting={actualizeSubmitting}
+                    error={actualizeError}
+                    currentUserId={user.id}
+                    onClose={() => {
+                        if (actualizeSubmitting) return;
+                        setActualizeStartOpen(false);
+                        setActualizeError(null);
+                    }}
+                    onConfirm={handleActualizeStart}
+                />
+            )}
+
+            {/* Запросить доступ к актуализации (для прав ActualizeVnd...ByRequest) */}
+            {actualizeRequestOpen && (
+                <RequestActualizationAccessModal
+                    canWithoutApproval={canRequestWithoutApproval}
+                    canWithApproval={canRequestWithApproval}
+                    submitting={actualizeSubmitting}
+                    error={actualizeError}
+                    onClose={() => {
+                        if (actualizeSubmitting) return;
+                        setActualizeRequestOpen(false);
+                        setActualizeError(null);
+                    }}
+                    onConfirm={handleActualizeRequestAccess}
+                />
+            )}
+
+            {/* Выполнить актуализацию (прямо во вкладке «Редакции», без перехода на «Актуализация») */}
+            {actualizePerformOpen && (needsPerform || needsConfirmStartAfterRequest) && (
+                <PerformActualizationModal
+                    mode={actualizePerformMode}
+                    decidedShiftNextPeriod={myAccessState.kind === "approved" ? myAccessState.shiftNextPeriod : undefined}
+                    submitting={actualizeSubmitting}
+                    error={actualizeError}
+                    onClose={() => {
+                        if (actualizeSubmitting) return;
+                        setActualizePerformOpen(false);
+                        setActualizeError(null);
+                    }}
+                    onConfirm={handleActualizePerformConfirm}
                 />
             )}
 

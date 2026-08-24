@@ -3,6 +3,8 @@ import {useEffect, useState} from "react";
 import {ChevronDown, ChevronUp, Inbox, Loader2} from "lucide-react";
 import {actualizationService} from "@/service/actualizationService/actualizationService.ts";
 import type {VndActualizationRequestResponse} from "@/service/actualizationService/actualizationServiceTypes.ts";
+import {ApproveActualizationRequestModal} from
+    "@/components/componentsVND/componentsOpenVndPage/componentsActualizationTab/ApproveActualizationRequestModal.tsx";
 import {toast} from "@/service/toastService.ts";
 import {formatDate} from "@/utils/dateUtils.ts";
 
@@ -12,6 +14,8 @@ export function ActualizationRequestsPanel() {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
     const [decidingId, setDecidingId] = useState<number | null>(null);
+    const [approveTarget, setApproveTarget] = useState<VndActualizationRequestResponse | null>(null);
+    const [approveError, setApproveError] = useState<string | null>(null);
 
     const load = () => {
         setLoading(true);
@@ -27,11 +31,26 @@ export function ActualizationRequestsPanel() {
         load();
     }, []);
 
-    const handleDecide = async (requestId: number, approve: boolean) => {
+    const handleApprove = async (requestId: number, shiftNextPeriod: boolean) => {
+        setDecidingId(requestId);
+        setApproveError(null);
+        try {
+            await actualizationService.decideRequest(requestId, {approve: true, shiftNextPeriod});
+            toast.success("Заявка одобрена");
+            setApproveTarget(null);
+            setRequests((prev) => prev.filter((r) => r.id !== requestId));
+        } catch (err) {
+            setApproveError(err instanceof Error ? err.message : "Не удалось одобрить заявку");
+        } finally {
+            setDecidingId(null);
+        }
+    };
+
+    const handleReject = async (requestId: number) => {
         setDecidingId(requestId);
         try {
-            await actualizationService.decideRequest(requestId, {approve});
-            toast.success(approve ? "Заявка одобрена" : "Заявка отклонена");
+            await actualizationService.decideRequest(requestId, {approve: false});
+            toast.success("Заявка отклонена");
             setRequests((prev) => prev.filter((r) => r.id !== requestId));
         } catch (err) {
             toast.error(
@@ -100,7 +119,7 @@ export function ActualizationRequestsPanel() {
                                     <button
                                         type="button"
                                         disabled={decidingId === r.id}
-                                        onClick={() => handleDecide(r.id, true)}
+                                        onClick={() => { setApproveError(null); setApproveTarget(r); }}
                                         className="cursor-pointer h-8 rounded-[8px] bg-[#1c7a4d] px-3 text-[12px] font-semibold text-white hover:brightness-[1.06] disabled:opacity-50"
                                     >
                                         Одобрить
@@ -108,7 +127,7 @@ export function ActualizationRequestsPanel() {
                                     <button
                                         type="button"
                                         disabled={decidingId === r.id}
-                                        onClick={() => handleDecide(r.id, false)}
+                                        onClick={() => handleReject(r.id)}
                                         className="cursor-pointer h-8 rounded-[8px] border border-[#e5e9f0] bg-white px-3 text-[12px] font-semibold text-[#c0392b] hover:bg-[#fdf1f1] disabled:opacity-50"
                                     >
                                         Отклонить
@@ -118,6 +137,17 @@ export function ActualizationRequestsPanel() {
                         ))}
                     </div>
                 </div>
+            )}
+
+            {approveTarget && (
+                <ApproveActualizationRequestModal
+                    requestedByName={approveTarget.requestedByName}
+                    requestedShiftNextPeriod={approveTarget.shiftNextPeriod}
+                    submitting={decidingId === approveTarget.id}
+                    error={approveError}
+                    onClose={() => { if (decidingId) return; setApproveTarget(null); setApproveError(null); }}
+                    onConfirm={(shiftNextPeriod) => handleApprove(approveTarget.id, shiftNextPeriod)}
+                />
             )}
         </div>
     );

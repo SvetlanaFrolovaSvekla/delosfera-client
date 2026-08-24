@@ -161,6 +161,16 @@ export interface VndResponse {
     actualizationResponsibleUserId: number | null;
     actualizationResponsibleUserName: string | null;
 
+    /** Требуется ли согласование в ТЕКУЩЕМ цикле актуализации — заполнено, только пока
+     * документ в OnActualization/Review/Consolidation в рамках этого цикла. */
+    actualizationRequiresApproval: boolean;
+    /** Заявлено ли, что текущий цикл актуализации пройдёт без изменений документа. */
+    actualizationPlannedNoChanges: boolean;
+    /** Пройден ли шаг "Выполнить актуализацию" в текущем открытом цикле — пока false, загрузка
+     * новой редакции заблокирована, и должна показываться кнопка "Выполнить актуализацию" вместо
+     * загрузки/согласования. */
+    actualizationPerformed: boolean;
+
     // --- Даты
     adoptionDate: string | null; // "YYYY-MM-DD"
     adoptionCode: string | null;
@@ -251,8 +261,12 @@ export interface VndActualizationRecordResponse {
 
     requiresApproval: boolean;
     shiftNextPeriod: boolean;
+    plannedNoChanges: boolean;
 
     startedAt: string; // ISO datetime
+    /** null, пока шаг "Выполнить актуализацию" ещё не пройден — до этого момента
+     * shiftNextPeriod/plannedNoChanges выше ещё не окончательные */
+    performedAt: string | null;
     /** null, пока документ не дошёл (в рамках этого цикла) до статуса "Консолидация" */
     consolidationStartedAt: string | null;
     /** null, пока цикл ещё не завершён (см. isCompleted) */

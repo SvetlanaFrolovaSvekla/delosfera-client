@@ -10,7 +10,7 @@ interface RequestActualizationAccessModalProps {
     submitting: boolean;
     error: string | null;
     onClose: () => void;
-    onConfirm: (data: {requiresApproval: boolean}) => void;
+    onConfirm: (data: {requiresApproval: boolean; shiftNextPeriod: boolean}) => void;
 }
 
 export function RequestActualizationAccessModal({
@@ -22,6 +22,7 @@ export function RequestActualizationAccessModal({
                                                       onConfirm,
                                                   }: RequestActualizationAccessModalProps) {
     const [requiresApproval, setRequiresApproval] = useState<boolean>(!canWithoutApproval);
+    const [shiftNextPeriod, setShiftNextPeriod] = useState(true);
     const canChoose = canWithoutApproval && canWithApproval;
 
     return createPortal(
@@ -64,6 +65,20 @@ export function RequestActualizationAccessModal({
                     </div>
                 )}
 
+                <label className="mt-3 flex cursor-pointer items-center gap-[10px] rounded-[10px] border border-[#e5e9f0] px-3 py-[10px] text-[13px] text-[#3a4560] hover:bg-[#f6f8fb]">
+                    <input
+                        type="checkbox"
+                        checked={shiftNextPeriod}
+                        onChange={(e) => setShiftNextPeriod(e.target.checked)}
+                        className="h-4 w-4 accent-[#4e57d6]"
+                    />
+                    Сдвинуть срок следующей актуализации после публикации новой редакции
+                </label>
+                <p className="mt-1 px-1 text-[11px] leading-[1.5] text-[#8b97ab]">
+                    Это ваше пожелание — главный редактор увидит его при рассмотрении заявки и
+                    сможет изменить.
+                </p>
+
                 {error && (
                     <div className="mt-4 rounded-[10px] border border-[#f2c2c2] bg-[#fdf1f1] px-3 py-[10px] text-[12.5px] text-[#c0392b]">
                         {error}
@@ -79,7 +94,7 @@ export function RequestActualizationAccessModal({
                         Отмена
                     </button>
                     <button
-                        onClick={() => onConfirm({requiresApproval})}
+                        onClick={() => onConfirm({requiresApproval, shiftNextPeriod})}
                         disabled={submitting}
                         className="cursor-pointer inline-flex h-[38px] items-center gap-2 rounded-[10px] bg-[#4e57d6] px-4 text-[13px] font-semibold text-white hover:bg-[#3f47bd] disabled:cursor-not-allowed disabled:opacity-50"
                     >

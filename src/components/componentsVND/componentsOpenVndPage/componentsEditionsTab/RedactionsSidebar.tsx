@@ -4,15 +4,42 @@ import {useTranslation} from "react-i18next";
 import type {VndRedactionResponse} from "@/service/vndService/vndServiceType.ts";
 import {formatDate} from "@/utils/dateUtils.ts";
 import {getRedactionDisplayStatus, REDACTION_STATUS_META} from "@/utils/redactionStatus.ts";
-import {Calendar, Columns2, Download, ListTree, Loader2, Paperclip, Pencil, Plus, Table2} from "lucide-react";
+import {
+    Calendar,
+    Columns2,
+    Download,
+    ListTree,
+    Loader2,
+    Paperclip,
+    Pencil,
+    Plus,
+    RefreshCw,
+    Table2,
+    Upload
+} from "lucide-react";
+import type {VndStatusKey} from "@/constants/vndTabs.ts";
+
+/** Какое действие выполняет главная кнопка сайдбара:
+ * - "new" — добавить редакцию напрямую (у ВНД ещё нет действующей редакции)
+ * - "actualize" — начать актуализацию (открывает StartActualizationModal/RequestActualizationAccessModal)
+ * - "performActualization" — выполнить актуализацию (открывает PerformActualizationModal прямо
+ *   здесь, во вкладке «Редакции» — без перехода на вкладку «Актуализация»): либо цикл уже начат
+ *   напрямую и шаг ещё не пройден (needsPerform), либо есть одобренная заявка и цикл нужно
+ *   стартовать (needsConfirmStartAfterRequest)
+ * - "uploadActualized" — загрузить актуализированную версию (цикл начат И шаг "Выполнить
+ *   актуализацию" уже пройден) */
+export type RedactionsPrimaryActionVariant = "new" | "actualize" | "performActualization" | "uploadActualized";
 
 interface RedactionsSidebarProps {
     redactions: VndRedactionResponse[];
+    vndStatus: VndStatusKey;
     selectedId: number | undefined;
     onSelect: (id: number) => void;
-    uploadBlocked: boolean;
-    lastByNumber: VndRedactionResponse | undefined;
-    onUpload: () => void;
+    primaryActionVariant: RedactionsPrimaryActionVariant;
+    primaryActionDisabled: boolean;
+    /** Текст подсказки под кнопкой (почему заблокирована/что происходит) — необязателен */
+    primaryActionHint?: string;
+    onPrimaryAction: () => void;
     compareMode: boolean;
     onToggleCompare: () => void;
     contentsOpen: boolean;
@@ -29,13 +56,25 @@ interface RedactionsSidebarProps {
 const VISIBLE_REDACTIONS_COUNT = 4;
 const REDACTION_ITEM_HEIGHT_PX = 56;
 
+const PRIMARY_ACTION_META: Record<
+    RedactionsPrimaryActionVariant,
+    { icon: typeof Plus; labelKey: string }
+> = {
+    new: {icon: Plus, labelKey: "openVndPage.redactionsSidebar.newRedactionButton"},
+    actualize: {icon: RefreshCw, labelKey: "openVndPage.redactionsSidebar.actualRedactionButton"},
+    performActualization: {icon: RefreshCw, labelKey: "openVndPage.redactionsSidebar.performActualizationButton"},
+    uploadActualized: {icon: Upload, labelKey: "openVndPage.redactionsSidebar.uploadActualizedButton"},
+};
+
 export function RedactionsSidebar({
                                       redactions,
+                                      vndStatus,
                                       selectedId,
                                       onSelect,
-                                      uploadBlocked,
-                                      lastByNumber,
-                                      onUpload,
+                                      primaryActionVariant,
+                                      primaryActionDisabled,
+                                      primaryActionHint,
+                                      onPrimaryAction,
                                       compareMode,
                                       onToggleCompare,
                                       contentsOpen,
@@ -52,6 +91,8 @@ export function RedactionsSidebar({
     const isScrollable = redactions.length > VISIBLE_REDACTIONS_COUNT;
     const lastRedactionId = redactions[0]?.id;
     const firstRedactionId = redactions[redactions.length - 1]?.id;
+    const primaryMeta = PRIMARY_ACTION_META[primaryActionVariant];
+    const PrimaryIcon = primaryMeta.icon;
 
     return (
         <div className="rounded-[14px] border border-[#e9edf3] bg-white p-[14px]">
@@ -68,9 +109,11 @@ export function RedactionsSidebar({
                     <Fragment key={e.id}>
                         <RedactionListItem
                             redaction={e}
+                            vndStatus={vndStatus}
+                            isLatest={e.id === lastRedactionId}
                             active={e.id === selectedId}
                             onClick={() => onSelect(e.id)}
-                            showEditButton={canEditLastRevision && e.id === lastRedactionId}
+                            showEditButton={canEditLastRevision && e.id === lastRedactionId && e.approvalStatus !== "Pending"}
                             showTidButton={e.id !== firstRedactionId}
                             onEdit={() => onEditRedaction(e.id)}
                             onOpenAttachments={() => onOpenAttachments(e)}
@@ -85,18 +128,16 @@ export function RedactionsSidebar({
 
             <div className="mt-[11px] flex flex-col gap-1">
                 <button
-                    onClick={onUpload}
-                    disabled={uploadBlocked}
+                    onClick={onPrimaryAction}
+                    disabled={primaryActionDisabled}
                     className="cursor-pointer flex h-[38px] w-full items-center justify-center gap-2 rounded-[10px] bg-[#4e57d6] text-[12.5px] font-semibold text-white hover:bg-[#3f47bd] disabled:cursor-not-allowed disabled:bg-[#c7cbe6]"
                 >
-                    <Plus size={16} strokeWidth={2}/>
-                    {/* Новая редакция */}
-                    {t("openVndPage.redactionsSidebar.newRedactionButton")}
+                    <PrimaryIcon size={16} strokeWidth={2}/>
+                    {t(primaryMeta.labelKey)}
                 </button>
-                {uploadBlocked && (
+                {primaryActionHint && (
                     <p className="px-1 text-[11px] leading-[1.4] text-[#9a6408]">
-                        {/* Р{lastByNumber?.number} ещё не завершена - сначала отправьте и дождитесь решения. */}
-                        {t("openVndPage.redactionsSidebar.uploadBlockedHint", {number: lastByNumber?.number})}
+                        {primaryActionHint}
                     </p>
                 )}
             </div>
@@ -146,6 +187,8 @@ export function RedactionsSidebar({
 
 function RedactionListItem({
                                redaction,
+                               vndStatus,
+                               isLatest,
                                active,
                                onClick,
                                showEditButton,
@@ -156,6 +199,8 @@ function RedactionListItem({
                            }: {
     redaction: VndRedactionResponse;
     active: boolean;
+    vndStatus: VndStatusKey;
+    isLatest: boolean;
     onClick: () => void;
     showEditButton: boolean;
     showTidButton: boolean;
@@ -164,7 +209,7 @@ function RedactionListItem({
     onOpenTid: () => void;
 }) {
     const {t} = useTranslation();
-    const status = getRedactionDisplayStatus(redaction);
+    const status = getRedactionDisplayStatus(redaction, vndStatus, isLatest);
     const meta = REDACTION_STATUS_META[status];
     const hasAttachments = redaction.attachmentFileIds.length > 0;
     const hasTid = redaction.tidFileId !== null;

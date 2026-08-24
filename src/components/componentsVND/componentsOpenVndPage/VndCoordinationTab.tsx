@@ -27,6 +27,10 @@ import {
 } from "./componentsCoordinationTab/VndApproverResolutionPanel.tsx";
 import {VndRevisionNeededPanel} from "./componentsCoordinationTab/VndRevisionNeededPanel.tsx";
 import {toast} from "@/service/toastService.ts";
+import {PermissionCode} from "@/constants/permissions/permissions.ts";
+import {
+    VndStartApprovalModal
+} from "@/components/componentsCoordination/CoordinationRouteConstructor/functionalComponents/VndStartApprovalModal.tsx";
 
 interface VndCoordinationTabProps {
     vnd: VndResponse;
@@ -45,9 +49,18 @@ const DECISION_MAP: Record<ResolutionChoice, ApprovalDecisionType> = {
 
 
 export function VndCoordinationTab({vnd, onVndChanged}: VndCoordinationTabProps) {
-    const {user} = useAuth();
+    const {user, hasPermission} = useAuth();
     const currentUserId = user?.id;
     const [cancelling, setCancelling] = useState(false);
+    const [startApprovalOpen, setStartApprovalOpen] = useState(false);
+
+    // Зеркалит бэковый IsChiefEditor() (VndApprovalService/VndService) — главному редактору
+    // разрешено отзывать согласование даже когда он не инициатор (см. VndApprovalService.CancelAsync).
+    const isChiefEditor =
+        hasPermission(PermissionCode.CreateVndWithApproval) ||
+        hasPermission(PermissionCode.CreateVndWithoutApproval) ||
+        hasPermission(PermissionCode.ActualizeAnyVndWithApproval) ||
+        hasPermission(PermissionCode.ActualizeAnyVndWithoutApproval);
 
     const [process, setProcess] = useState<ApprovalProcessResponse | null>(null);
     const [loading, setLoading] = useState(true);
@@ -112,7 +125,46 @@ export function VndCoordinationTab({vnd, onVndChanged}: VndCoordinationTabProps)
     }
 
     if (!process) {
-        return <div className="py-6 text-[13px] text-[#8b97ab]">Согласование ещё не запущено</div>;
+        // Особый случай: заявлена "актуализация без изменений" с согласованием — новая редакция
+        // не загружалась, но согласование всё равно нужно запустить (над существующей действующей
+        // редакцией, см. послабление в VndApprovalService.StartAsync). Обычный триггер запуска
+        // согласования (RedactionStatusBanner на вкладке «Редакции») здесь не появится — там нет
+        // черновика, который можно было бы отправить, — поэтому даём отдельную кнопку прямо тут.
+        const canStartNoChangesReview =
+            vnd.status === "onact" && vnd.actualizationRequiresApproval && vnd.actualizationPlannedNoChanges &&
+            (isChiefEditor || vnd.actualizationResponsibleUserId === currentUserId);
+
+        return (
+            <div className="py-6">
+                <div className="text-[13px] text-[#8b97ab]">Согласование ещё не запущено</div>
+                {canStartNoChangesReview && (
+                    <div className="mt-4 flex flex-col items-start gap-2">
+                        <p className="text-[12.5px] leading-[1.6] text-[#55617a]">
+                            Заявлена актуализация без изменений — можно отправить существующую
+                            действующую редакцию на согласование как есть, без загрузки нового файла.
+                        </p>
+                        <button
+                            type="button"
+                            onClick={() => setStartApprovalOpen(true)}
+                            className="cursor-pointer inline-flex h-9 items-center gap-2 rounded-[9px] bg-[#4e57d6] px-3.5 text-[12.5px] font-semibold text-white hover:bg-[#3f47bd]"
+                        >
+                            Начать согласование (без изменений)
+                        </button>
+                    </div>
+                )}
+
+                {startApprovalOpen && (
+                    <VndStartApprovalModal
+                        vndId={vnd.id}
+                        onClose={() => setStartApprovalOpen(false)}
+                        onStarted={() => {
+                            setStartApprovalOpen(false);
+                            onVndChanged?.();
+                        }}
+                    />
+                )}
+            </div>
+        );
     }
 
     const redaction = redactions?.find((r) => r.id === process.redactionId);
@@ -179,6 +231,13 @@ export function VndCoordinationTab({vnd, onVndChanged}: VndCoordinationTabProps)
     if (isApprover) {
         return (
             <div className="py-4 px-4 sm:px-6">
+                {vnd.actualizationPlannedNoChanges && (
+                    <div className="mb-3 rounded-[10px] border border-[#f0dcae] bg-[#fdf6e8] px-4 py-[10px] text-[12.5px] text-[#7a5006]">
+                        Заявлена актуализация без изменений — на согласовании существующая действующая
+                        редакция как есть, без нового файла.
+                    </div>
+                )}
+
                 <VndApprovalSummary process={process}/>
 
                 {redactionsError && (
@@ -246,6 +305,13 @@ export function VndCoordinationTab({vnd, onVndChanged}: VndCoordinationTabProps)
     // --- Вид для инициатора ---
     return (
         <div className="py-4">
+            {vnd.actualizationPlannedNoChanges && (
+                <div className="mb-3 rounded-[10px] border border-[#f0dcae] bg-[#fdf6e8] px-4 py-[10px] text-[12.5px] text-[#7a5006]">
+                    Заявлена актуализация без изменений — на согласовании существующая действующая
+                    редакция как есть, без нового файла.
+                </div>
+            )}
+
             <VndApprovalSummary process={process}/>
 
             {redactionsError && (
@@ -299,7 +365,7 @@ export function VndCoordinationTab({vnd, onVndChanged}: VndCoordinationTabProps)
                 />
             )}
 
-            {isInitiator && CANCELLABLE_STATUSES.includes(process.status) && (
+            {(isInitiator || isChiefEditor) && CANCELLABLE_STATUSES.includes(process.status) && (
                 <div className="mt-6 flex items-center justify-between gap-3 rounded-[12px] border border-[#f0dede] bg-[#fdf6f5] px-4 py-3">
                     <span className="text-[12.5px] text-[#8b6a68]">
                         Можно отозвать согласование — документ вернётся в черновик для правок.

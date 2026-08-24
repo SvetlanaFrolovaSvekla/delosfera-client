@@ -37,10 +37,15 @@ const EDITIONS_LABEL_BY_STATUS: Partial<Record<VndStatusKey, string>> = {
 // актуализировать и связывать пока нечего: первый цикл начнётся только
 // после появления редакции.
 //
-// С реальным значением VndStatusKey для статуса «На согласовании».
+// onact/consol ОБЯЗАТЕЛЬНО должны включать "approval" — иначе кнопка «Перейти к
+// согласованию» на вкладке «Актуализация» (сценарий «без изменений») ведёт в никуда:
+// пользователь физически не может открыть вкладку согласования, пока документ на
+// актуализации/консолидации (баг: кнопка "не работает").
 const TABS_BY_STATUS: Partial<Record<VndStatusKey, VndTabId[]>> = {
     draft: ["passport", "editions"],
     review: ["passport", "editions", "approval", "links"],
+    onact: ["passport", "editions", "approval", "links", "history", "actual"],
+    consol: ["passport", "editions", "approval", "links", "history", "actual"],
 };
 
 export function getVndTabs(status: VndStatusKey): VndTabMeta[] {

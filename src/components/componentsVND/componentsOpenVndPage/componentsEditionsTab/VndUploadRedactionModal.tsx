@@ -14,6 +14,14 @@ interface VndUploadRedactionModalProps {
      * хотя бы одна предыдущая редакция, то есть документ актуализируется, а не создаётся впервые.
      * Родитель вычисляет это по vnd.redactionIds.length > 0. */
     requiresTid: boolean;
+    /** "actualization" — модалка открыта из цикла актуализации (ВНД в статусе "На актуализации"):
+     * меняется заголовок, а решение "требуется ли согласование" больше не выбирается здесь -
+     * оно уже зафиксировано при старте цикла (см. lockedRequiresApproval). */
+    mode?: "default" | "actualization";
+    /** Только для mode="actualization": vnd.actualizationRequiresApproval — решение "с
+     * согласованием / без", зафиксированное при старте текущего цикла актуализации. Чекбокс
+     * "Требуется согласование" в этом режиме скрыт, значение берётся отсюда. */
+    lockedRequiresApproval?: boolean;
     onClose: () => void;
     onUploaded: (redaction: VndRedactionResponse) => void;
 }
@@ -77,10 +85,16 @@ function formatBytes(bytes: number): string {
 
 const MAX_FILE_SIZE = 50 * 1024 * 1024; // 50 МБ
 
-export function VndUploadRedactionModal({vndId, requiresTid, onClose, onUploaded}: VndUploadRedactionModalProps) {
+export function VndUploadRedactionModal({
+                                             vndId, requiresTid, mode = "default", lockedRequiresApproval,
+                                             onClose, onUploaded,
+                                         }: VndUploadRedactionModalProps) {
     const {user, hasPermission} = useAuth();
-    // Право обойтись без согласования
-    const canSkipApproval = hasPermission(PermissionCode.CreateVndWithoutApproval);
+    const isActualization = mode === "actualization";
+    // Право обойтись без согласования — не имеет значения в mode="actualization", там решение
+    // уже зафиксировано при старте цикла (lockedRequiresApproval), см. AddRedactionAsync на бэке,
+    // которая тоже игнорирует request.RequiresApproval в рамках открытого цикла актуализации.
+    const canSkipApproval = !isActualization && hasPermission(PermissionCode.CreateVndWithoutApproval);
 
     // Роли пользователя, которые конкретно дают это право - чтобы показать в подсказке
     const grantingRoleNames = useMemo(() => {
@@ -97,6 +111,9 @@ export function VndUploadRedactionModal({vndId, requiresTid, onClose, onUploaded
     const [attachments, setAttachments] = useState<File[]>([]);
     const [description, setDescription] = useState("");
     const [requiresApproval, setRequiresApproval] = useState(!canSkipApproval);
+    // В режиме актуализации решение уже зафиксировано на старте цикла - используем его напрямую,
+    // а не локальное состояние чекбокса (которого в этом режиме нет).
+    const effectiveRequiresApproval = isActualization ? !!lockedRequiresApproval : requiresApproval;
     const [submitting, setSubmitting] = useState(false);
     const [error, setError] = useState<string | null>(null);
 
@@ -136,8 +153,13 @@ export function VndUploadRedactionModal({vndId, requiresTid, onClose, onUploaded
                 docEn,
                 tid,
                 description: description.trim() || undefined,
-                // Если права нет - всегда true, независимо от локального состояния чекбокса
-                requiresApproval: canSkipApproval ? requiresApproval : true,
+                // В режиме актуализации - решение, зафиксированное на старте цикла. Иначе, если
+                // права на согласование без него нет - всегда true, независимо от чекбокса.
+                // (Бэк всё равно перепроверяет и переопределяет это сам для открытого цикла
+                // актуализации — см. VndService.AddRedactionAsync — это лишь для UX.)
+                requiresApproval: isActualization
+                    ? effectiveRequiresApproval
+                    : (canSkipApproval ? requiresApproval : true),
                 attachments,
             });
             onUploaded(result);
@@ -152,7 +174,11 @@ export function VndUploadRedactionModal({vndId, requiresTid, onClose, onUploaded
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 p-4">
             <div className="max-h-[90vh] w-full max-w-[520px] overflow-y-auto rounded-[16px] bg-white p-6 shadow-xl">
                 <div className="mb-5 flex items-center justify-between">
-                    <h2 className="text-[16px] font-bold text-[#1c2740]">Загрузка новой редакции</h2>
+                    <h2 className="text-[16px] font-bold text-[#1c2740]">
+                        {mode === "actualization"
+                            ? "Актуализация ВНД — загрузка новой редакции"
+                            : "Загрузка новой редакции"}
+                    </h2>
                     <button onClick={onClose} className="cursor-pointer text-[#8b97ab] hover:text-[#3a4560]">
                         <X size={20}/>
                     </button>
@@ -238,6 +264,16 @@ export function VndUploadRedactionModal({vndId, requiresTid, onClose, onUploaded
                             className="w-full resize-none rounded-[10px] border border-[#e5e9f0] bg-[#f9fafc] p-3 text-[13px] text-[#26324a] outline-none focus:border-[#4e57d6] focus:bg-white"
                         />
                     </div>
+
+                    {/* В режиме актуализации решение "с согласованием / без" уже зафиксировано при
+                        старте цикла - показываем как информацию, менять здесь нельзя */}
+                    {isActualization && (
+                        <div className="rounded-[10px] border border-[#e5e9f0] bg-[#f9fafc] px-3 py-[10px] text-[12.5px] text-[#55617a]">
+                            Согласование: <span className="font-semibold text-[#26324a]">
+                                {effectiveRequiresApproval ? "требуется" : "не требуется"}
+                            </span> — определено при старте актуализации
+                        </div>
+                    )}
 
                     {/* Чекбокс показываем только тем, у кого есть права на публикацию редакции без согласования */}
                     {canSkipApproval && (

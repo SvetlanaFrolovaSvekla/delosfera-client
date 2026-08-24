@@ -42,6 +42,11 @@ export interface VndTaskResponse {
     initiatorComment?: string | null;
 
     dueActualizationDate: string | null;
+    /// Заявлено ли для текущего цикла актуализации "без изменений"
+    actualizationPlannedNoChanges: boolean;
+    /// Пройден ли шаг "Выполнить актуализацию" (только для actualization/consolidation) — пока
+    /// false, карточка actualization должна вести на экран "Выполнить актуализацию"
+    actualizationPerformed: boolean;
 
     createdAt: string;
 }

@@ -1,9 +1,12 @@
 // Модалка «Начать актуализацию» — для пользователей с правом брать любую ВНД
 // в актуализацию напрямую (ActualizeAnyVndWithApproval / ActualizeAnyVndWithoutApproval).
-import {useState} from "react";
+import {useMemo, useState} from "react";
 import {createPortal} from "react-dom";
 import {Loader2, RefreshCw, X} from "lucide-react";
 import {useInitiatorOptions} from "@/hooks/useInitiatorOptions.ts";
+import {Clue} from "@/components/componentsGeneral/knowledgeBaseComponents/Clue.tsx";
+import {useAuth} from "@/context/AuthContext.ts";
+import {PermissionCode} from "@/constants/permissions/permissions.ts";
 
 interface StartActualizationModalProps {
     canWithoutApproval: boolean;
@@ -12,9 +15,11 @@ interface StartActualizationModalProps {
     error: string | null;
     currentUserId: number;
     onClose: () => void;
+    // Шаг А — только переводит документ в "На актуализации" и фиксирует ответственного/порядок.
+    // Сдвиг срока и "актуализация без изменений" решаются отдельно, позже, шагом
+    // "Выполнить актуализацию" (см. PerformActualizationModal) — это осознанно не запрашивается здесь.
     onConfirm: (data: {
         requiresApproval: boolean;
-        shiftNextPeriod: boolean;
         responsibleUserId: number;
     }) => void;
 }
@@ -22,12 +27,22 @@ interface StartActualizationModalProps {
 export function StartActualizationModal({
                                             canWithoutApproval, canWithApproval, submitting, error, currentUserId, onClose, onConfirm,
                                         }: StartActualizationModalProps) {
-    const [requiresApproval, setRequiresApproval] = useState<boolean>(!canWithoutApproval);
-    const [shiftNextPeriod, setShiftNextPeriod] = useState(true);
+    const [requiresApproval, setRequiresApproval] = useState<boolean>(canWithoutApproval);
     const [responsibleUserId, setResponsibleUserId] = useState<number>(currentUserId);
 
     const {options: userOptions, loading: usersLoading} = useInitiatorOptions();
     const canChoose = canWithoutApproval && canWithApproval;
+
+    const {user} = useAuth();
+
+    // Роли пользователя, которые дают право актуализировать без согласования — для подсказки.
+    // Актуально только когда доступен выбор порядка (canChoose), иначе показывать нечего.
+    const grantingRoleNames = useMemo(() => {
+        if (!canChoose || !user) return [];
+        return user.roles
+            .filter((role) => role.permissionCodes.includes(PermissionCode.ActualizeAnyVndWithoutApproval))
+            .map((role) => role.name);
+    }, [canChoose, user]);
 
     return createPortal(
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 p-4">
@@ -45,8 +60,14 @@ export function StartActualizationModal({
                     </button>
                 </div>
 
+                <p className="rounded-[10px] border border-[#e5e9f0] bg-[#f6f8fb] px-3 py-[10px] text-[12px] leading-[1.5] text-[#8b97ab]">
+                    На данном этапе Вы берете ВНД в актуализацию.
+                    Дополнительные параметры актуализации Вы сможете настроить позже — сразу после старта.
+                    Все пользователи, помимо редакторов ВНД, будут видеть последнюю редакцию, как актуальную.
+                </p>
+
                 {/* --- Ответственный за актуализацию --- */}
-                <div className="mb-4">
+                <div className="mb-4 mt-2">
                     <div className="mb-2 text-[12.5px] font-semibold text-[#26324a]">
                         Ответственный за актуализацию
                     </div>
@@ -73,15 +94,29 @@ export function StartActualizationModal({
                             <RadioRow label="Без согласования" checked={!requiresApproval}
                                       onSelect={() => setRequiresApproval(false)}/>
                         </div>
+
+                        {grantingRoleNames.length > 0 && (
+                            <div className="mt-2">
+                                <Clue>
+                                    <span className="flex flex-wrap items-center gap-x-1.5 gap-y-1.5">
+                                        <span>
+                                            Вы можете начать актуализацию без согласования — это право Вам дают
+                                            {grantingRoleNames.length === 1 ? " роль:" : " роли:"}
+                                        </span>
+                                        {grantingRoleNames.map((name) => (
+                                            <span
+                                                key={name}
+                                                className="inline-flex items-center px-[9px] py-[3px] rounded-full bg-[#ececfc] text-[11.5px] font-semibold text-[#4e57d6] whitespace-nowrap"
+                                            >
+                                                {name}
+                                            </span>
+                                        ))}
+                                    </span>
+                                </Clue>
+                            </div>
+                        )}
                     </div>
                 )}
-
-                <label className="flex cursor-pointer items-center gap-[10px] rounded-[10px] border border-[#e5e9f0] px-3 py-[10px] text-[13px] text-[#3a4560] hover:bg-[#f6f8fb]">
-                    <input type="checkbox" checked={shiftNextPeriod}
-                           onChange={(e) => setShiftNextPeriod(e.target.checked)}
-                           className="h-4 w-4 accent-[#4e57d6]"/>
-                    Сдвинуть срок следующей актуализации после публикации
-                </label>
 
                 {error && (
                     <div className="mt-4 rounded-[10px] border border-[#f2c2c2] bg-[#fdf1f1] px-3 py-[10px] text-[12.5px] text-[#c0392b]">
@@ -95,7 +130,7 @@ export function StartActualizationModal({
                         Отмена
                     </button>
                     <button
-                        onClick={() => onConfirm({requiresApproval, shiftNextPeriod, responsibleUserId})}
+                        onClick={() => onConfirm({requiresApproval, responsibleUserId})}
                         disabled={submitting}
                         className="cursor-pointer inline-flex h-[38px] items-center gap-2 rounded-[10px] bg-[#4e57d6] px-4 text-[13px] font-semibold text-white hover:bg-[#3f47bd] disabled:cursor-not-allowed disabled:opacity-50"
                     >

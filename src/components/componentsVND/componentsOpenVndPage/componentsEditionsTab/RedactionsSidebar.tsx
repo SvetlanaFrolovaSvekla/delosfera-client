@@ -6,6 +6,7 @@ import {formatDate} from "@/utils/dateUtils.ts";
 import {getRedactionDisplayStatus, REDACTION_STATUS_META} from "@/utils/redactionStatus.ts";
 import {
     Calendar,
+    CheckCircle2,
     Columns2,
     Download,
     ListTree,
@@ -14,6 +15,7 @@ import {
     Pencil,
     Plus,
     RefreshCw,
+    Send,
     Table2,
     Upload
 } from "lucide-react";
@@ -26,9 +28,19 @@ import type {VndStatusKey} from "@/constants/vndTabs.ts";
  *   здесь, во вкладке «Редакции» — без перехода на вкладку «Актуализация»): либо цикл уже начат
  *   напрямую и шаг ещё не пройден (needsPerform), либо есть одобренная заявка и цикл нужно
  *   стартовать (needsConfirmStartAfterRequest)
- * - "uploadActualized" — загрузить актуализированную версию (цикл начат И шаг "Выполнить
- *   актуализацию" уже пройден) */
-export type RedactionsPrimaryActionVariant = "new" | "actualize" | "performActualization" | "uploadActualized";
+ * - "uploadActualized" — загрузить актуализированную версию (цикл начат, шаг "Выполнить
+ *   актуализацию" пройден, и заявлено, что будут изменения — нужна новая редакция)
+ * - "startApprovalNoChanges" — заявлено "без изменений" + цикл требует согласования: новая
+ *   редакция не нужна, действующая редакция отправляется на согласование как есть
+ * - "confirmNoChanges" — заявлено "без изменений" + согласование не требуется: подтвердить
+ *   отсутствие изменений напрямую, документ сразу уходит в консолидацию */
+export type RedactionsPrimaryActionVariant =
+    | "new"
+    | "actualize"
+    | "performActualization"
+    | "uploadActualized"
+    | "startApprovalNoChanges"
+    | "confirmNoChanges";
 
 interface RedactionsSidebarProps {
     redactions: VndRedactionResponse[];
@@ -64,6 +76,8 @@ const PRIMARY_ACTION_META: Record<
     actualize: {icon: RefreshCw, labelKey: "openVndPage.redactionsSidebar.actualRedactionButton"},
     performActualization: {icon: RefreshCw, labelKey: "openVndPage.redactionsSidebar.performActualizationButton"},
     uploadActualized: {icon: Upload, labelKey: "openVndPage.redactionsSidebar.uploadActualizedButton"},
+    startApprovalNoChanges: {icon: Send, labelKey: "openVndPage.redactionsSidebar.startApprovalButton"},
+    confirmNoChanges: {icon: CheckCircle2, labelKey: "openVndPage.redactionsSidebar.confirmNoChangesButton"},
 };
 
 export function RedactionsSidebar({

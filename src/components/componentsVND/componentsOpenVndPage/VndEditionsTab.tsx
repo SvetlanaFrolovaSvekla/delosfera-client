@@ -11,6 +11,7 @@ import {useRedactionSelection} from "@/hooks/vndHooks/useRedactionSelection.ts";
 import {useAsyncAction} from "@/hooks/useAsyncAction.ts";
 import {useAvailableHeight} from "@/hooks/vndHooks/useAvailableHeight.ts";
 import {useVndActualizationFlow} from "@/hooks/vndHooks/useVndActualizationFlow.ts";
+import {actualizationService} from "@/service/actualizationService/actualizationService.ts";
 
 import {downloadWithToast} from "@/utils/downloadFile.ts";
 import {getRedactionDisplayStatus} from "@/utils/redactionStatus.ts";
@@ -113,6 +114,24 @@ export function VndEditionsTab({vnd, onVndChanged}: VndEditionsTabProps) {
         canWithoutApproval, canWithApproval,
         canRequestWithoutApproval, canRequestWithApproval,
     } = useVndActualizationFlow(vnd, () => onVndChanged?.());
+
+    // "Без изменений" без согласования — подтвердить прямо здесь (кнопка сайдбара
+    // "confirmNoChanges"), без захода на вкладку «Актуализация» (см. handleConfirmNoChanges
+    // в VndActualizationTab.tsx — та же логика, продублирована здесь по той же причине, по
+    // которой сюда переехал шаг "Выполнить актуализацию").
+    const [confirmingNoChanges, setConfirmingNoChanges] = useState(false);
+    const handleConfirmNoChanges = async () => {
+        setConfirmingNoChanges(true);
+        try {
+            await actualizationService.confirmNoChanges(vnd.id);
+            toast.success("Отсутствие изменений подтверждено", "Документ переведён в консолидацию");
+            onVndChanged?.();
+        } catch (err) {
+            toast.error("Не удалось подтвердить", err instanceof Error ? err.message : undefined);
+        } finally {
+            setConfirmingNoChanges(false);
+        }
+    };
 
     const [activeLanguage, setActiveLanguage] = useState<RedactionLanguage>("ru");
 
@@ -232,14 +251,36 @@ export function VndEditionsTab({vnd, onVndChanged}: VndEditionsTabProps) {
         primaryAction = () => setUploadOpen(true);
     } else if (vnd.status === "onact") {
         if (vnd.actualizationPerformed) {
-            // Цикл актуализации уже идёт, шаг "Выполнить актуализацию" пройден - загружаем
-            // актуализированную версию
-            primaryVariant = "uploadActualized";
-            primaryDisabled = uploadBlocked;
-            primaryHint = uploadBlocked
-                ? t("openVndPage.redactionsSidebar.uploadBlockedHint", {number: lastByNumber?.number})
-                : undefined;
-            primaryAction = () => setUploadOpen(true);
+            if (vnd.actualizationPlannedNoChanges) {
+                // Заявлено "без изменений" на шаге "Выполнить актуализацию" - новая редакция не
+                // нужна. Дальше два пути в зависимости от того, требует ли цикл согласования:
+                if (vnd.actualizationRequiresApproval) {
+                    // Отправляем действующую редакцию на согласование как есть (открывает тот
+                    // же VndStartApprovalModal, что и обычная отправка черновика на
+                    // согласование - бэк сам разрешает это для actualizationPlannedNoChanges,
+                    // см. VndApprovalService.StartAsync/isNoChangesReviewRound)
+                    primaryVariant = "startApprovalNoChanges";
+                    primaryDisabled = false;
+                    primaryHint = t("openVndPage.redactionsSidebar.noChangesApprovalHint");
+                    primaryAction = () => setApprovalModalOpen(true);
+                } else {
+                    // Согласование не требуется - подтверждаем отсутствие изменений напрямую,
+                    // документ сразу уходит в консолидацию
+                    primaryVariant = "confirmNoChanges";
+                    primaryDisabled = confirmingNoChanges;
+                    primaryHint = t("openVndPage.redactionsSidebar.noChangesConfirmHint");
+                    primaryAction = () => void handleConfirmNoChanges();
+                }
+            } else {
+                // Цикл актуализации уже идёт, шаг "Выполнить актуализацию" пройден, заявлены
+                // изменения - загружаем актуализированную версию
+                primaryVariant = "uploadActualized";
+                primaryDisabled = uploadBlocked;
+                primaryHint = uploadBlocked
+                    ? t("openVndPage.redactionsSidebar.uploadBlockedHint", {number: lastByNumber?.number})
+                    : undefined;
+                primaryAction = () => setUploadOpen(true);
+            }
         } else if (needsPerform) {
             // Шаг "Выполнить актуализацию" ещё не пройден, но я могу его выполнить (ответственный
             // или главный редактор) — загрузка новой редакции заблокирована на бэке (см.

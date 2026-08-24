@@ -1,4 +1,5 @@
 import {useEffect, useState} from "react";
+import axios from "axios";
 import {coordinationService} from "@/service/coordinationService/coordinationService.ts";
 import {
     ApprovalDecisionType,
@@ -69,13 +70,23 @@ export function VndCoordinationTab({vnd, onVndChanged}: VndCoordinationTabProps)
     const [decisionError, setDecisionError] = useState<string | null>(null);
     const [submitting, setSubmitting] = useState(false);
 
+    // 404 от GET .../approval означает "для последней редакции согласование ещё не запускалось" —
+    // это ожидаемое, а не ошибочное состояние (черновик ещё не отправлен, или заявлена
+    // актуализация без изменений и запуск согласования только предстоит). Раньше это тоже
+    // считалось ошибкой загрузки, и вкладка вместо кнопки "Начать согласование (без изменений)"
+    // всегда показывала EmptyState с сырым текстом ошибки бэка.
+    const isNotStartedYet = (err: unknown) => axios.isAxiosError(err) && err.response?.status === 404;
+
     const loadProcess = async () => {
         try {
             const data = await coordinationService.getByVndId(vnd.id);
             setProcess(data);
+            setError(null);
         } catch (err) {
             setProcess(null);
-            setError(err instanceof Error ? err.message : "Не удалось загрузить согласование");
+            setError(isNotStartedYet(err)
+                ? null
+                : err instanceof Error ? err.message : "Не удалось загрузить согласование");
         }
     };
 
@@ -91,7 +102,9 @@ export function VndCoordinationTab({vnd, onVndChanged}: VndCoordinationTabProps)
             } catch (err) {
                 if (!cancelled) {
                     setProcess(null);
-                    setError(err instanceof Error ? err.message : "Не удалось загрузить согласование");
+                    setError(isNotStartedYet(err)
+                        ? null
+                        : err instanceof Error ? err.message : "Не удалось загрузить согласование");
                 }
             } finally {
                 if (!cancelled) setLoading(false);

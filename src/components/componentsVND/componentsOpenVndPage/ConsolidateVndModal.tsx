@@ -1,13 +1,21 @@
 // Модалка «Консолидировать согласованную версию» — завершающий шаг после согласования.
 // Реальная публикация (когда именно можно публиковать редакцию) в жизни определяется
 // руководством после дополнительных процессов — здесь просто фиксируется решение.
-import {useState} from "react";
+//
+// "С изменениями" / "без изменений" здесь больше не спрашивается вручную: не-первая редакция
+// в статусе "Консолидация" может появиться только через цикл актуализации (см.
+// VndService.AddRedactionAsync — добавить редакцию действующему ВНД можно только в рамках
+// актуализации), а цикл уже зафиксировал это на шаге "Выполнить актуализацию"
+// (VndDocument.ActualizationPlannedNoChanges) — здесь только отображается итог.
 import {createPortal} from "react-dom";
 import {Layers, Loader2, X} from "lucide-react";
 
 interface ConsolidateVndModalProps {
     /** Первая редакция нового ВНД — тогда вопрос об изменениях не нужен, просто консолидация */
     isFirstRedaction: boolean;
+    /** Заявлено ли для этого цикла актуализации "без изменений" (шаг "Выполнить актуализацию") —
+     * определяет hadChanges автоматически. Не используется при isFirstRedaction. */
+    plannedNoChanges: boolean;
     submitting: boolean;
     error: string | null;
     onClose: () => void;
@@ -16,17 +24,16 @@ interface ConsolidateVndModalProps {
 
 export function ConsolidateVndModal({
                                          isFirstRedaction,
+                                         plannedNoChanges,
                                          submitting,
                                          error,
                                          onClose,
                                          onConfirm,
                                      }: ConsolidateVndModalProps) {
-    const [hadChanges, setHadChanges] = useState<boolean | null>(isFirstRedaction ? true : null);
-
-    const canConfirm = hadChanges !== null && !submitting;
+    const hadChanges = isFirstRedaction ? true : !plannedNoChanges;
 
     const handleConfirm = () => {
-        if (hadChanges === null) return;
+        if (submitting) return;
         onConfirm(hadChanges);
     };
 
@@ -56,25 +63,14 @@ export function ConsolidateVndModal({
                         Это первая редакция документа. После консолидации ВНД приобретёт статус «Действующий».
                     </p>
                 ) : (
-                    <div>
-                        <p className="mb-3 text-[13px] leading-[1.6] text-[#55617a]">
-                            Отметьте, прошла ли актуализация с изменениями. После консолидации ВНД приобретёт
-                            статус «Действующий».
-                        </p>
-
-                        <div className="flex flex-col gap-2">
-                            <RadioRow
-                                label="Актуализация прошла с изменениями"
-                                checked={hadChanges === true}
-                                onSelect={() => setHadChanges(true)}
-                            />
-                            <RadioRow
-                                label="Актуализация прошла без изменений"
-                                checked={hadChanges === false}
-                                onSelect={() => setHadChanges(false)}
-                            />
-                        </div>
-                    </div>
+                    <p className="text-[13px] leading-[1.6] text-[#55617a]">
+                        Актуализация прошла{" "}
+                        <span className="font-semibold text-[#2a2352]">
+                            {hadChanges ? "с изменениями документа" : "без изменений документа"}
+                        </span>
+                        {" "}— определено автоматически по шагу «Выполнить актуализацию». После консолидации
+                        ВНД приобретёт статус «Действующий».
+                    </p>
                 )}
 
                 {error && (
@@ -93,7 +89,7 @@ export function ConsolidateVndModal({
                     </button>
                     <button
                         onClick={handleConfirm}
-                        disabled={!canConfirm}
+                        disabled={submitting}
                         className="cursor-pointer inline-flex h-[38px] items-center gap-2 rounded-[10px] bg-[#7a5ce0] px-4 text-[13px] font-semibold text-white hover:brightness-[1.06] disabled:cursor-not-allowed disabled:opacity-50"
                     >
                         {submitting && <Loader2 size={14} className="animate-spin"/>}
@@ -103,28 +99,5 @@ export function ConsolidateVndModal({
             </div>
         </div>,
         document.body
-    );
-}
-
-function RadioRow({label, checked, onSelect}: {label: string; checked: boolean; onSelect: () => void}) {
-    return (
-        <button
-            type="button"
-            onClick={onSelect}
-            className={`flex cursor-pointer items-center gap-[10px] rounded-[10px] border px-3 py-[10px] text-left text-[13px] transition-colors ${
-                checked
-                    ? "border-[#7a5ce0] bg-[#f4f0ff] text-[#2a2352]"
-                    : "border-[#e5e9f0] text-[#3a4560] hover:bg-[#f6f8fb]"
-            }`}
-        >
-            <span
-                className={`grid h-[16px] w-[16px] flex-none place-items-center rounded-full border-2 ${
-                    checked ? "border-[#7a5ce0]" : "border-[#c7cedb]"
-                }`}
-            >
-                {checked && <span className="h-[8px] w-[8px] rounded-full bg-[#7a5ce0]"/>}
-            </span>
-            {label}
-        </button>
     );
 }

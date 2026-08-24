@@ -278,6 +278,7 @@ export function OpenVndPage() {
             {consolidateOpen && (
                 <ConsolidateVndModal
                     isFirstRedaction={isFirstRedaction}
+                    plannedNoChanges={vnd.actualizationPlannedNoChanges}
                     submitting={consolidating}
                     error={consolidateError}
                     onClose={() => {

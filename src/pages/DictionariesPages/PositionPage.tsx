@@ -14,7 +14,7 @@ export function PositionPage() {
             canManage={hasPermission(PermissionCode.ManageGeneralDictionaries)}
             pageKey="positionPage"
             icon={Briefcase}
-            backTo="/refs"
+            backTo="/management/refs"
             backLabelKey="dictionaries.navigateGeneral"
         />
     );

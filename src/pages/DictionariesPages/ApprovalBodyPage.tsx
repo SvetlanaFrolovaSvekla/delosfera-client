@@ -14,7 +14,7 @@ export function ApprovalBodyPage() {
             canManage={hasPermission(PermissionCode.ManageGeneralDictionaries)}
             pageKey="approvalBodyPage"
             icon={Landmark}
-            backTo="/refs"
+            backTo="/management/refs"
             backLabelKey="dictionaries.navigateGeneral"
         />
     );

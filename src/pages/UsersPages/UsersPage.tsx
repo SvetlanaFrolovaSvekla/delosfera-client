@@ -124,7 +124,7 @@ export function UsersPage() {
         <div
             className="w-full max-w-[1700px] mx-auto px-4 sm:px-6 lg:px-8 xl:px-10 pt-5 sm:pt-[26px] pb-10 sm:pb-[60px]">
 
-            <UsersPageHeader onCreateClick={() => navigate("/users/new")}/>
+            <UsersPageHeader onCreateClick={() => navigate("/management/users/new")}/>
 
             <Tabs<UserStatusScope> tabs={scopeTabs} value={statusScope} onChange={setStatusScope}/>
 

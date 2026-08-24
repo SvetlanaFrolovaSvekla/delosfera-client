@@ -28,7 +28,7 @@ export function UserGroupPage() {
     return (
         <div className="w-full max-w-[1700px] mx-auto px-4 sm:px-6 lg:px-8 xl:px-10 pt-5 sm:pt-[26px] pb-10 sm:pb-[60px]">
             <button
-                onClick={() => navigate("/refs")}
+                onClick={() => navigate("/management/refs")}
                 className="inline-flex items-center gap-[7px] border-none bg-transparent text-[#8b97ab] text-[13px] font-medium cursor-pointer p-0 mb-1 hover:text-[#4e57d6]"
             >
                 <ArrowLeft className="w-4 h-4" strokeWidth={2}/>

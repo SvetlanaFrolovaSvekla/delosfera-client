@@ -14,7 +14,7 @@ export function SecurityLevelPage() {
             canManage={hasPermission(PermissionCode.ManageVndDictionaries)}
             pageKey="securityLevelPage"
             icon={ShieldCheck}
-            backTo="/refs"
+            backTo="/management/refs"
             backLabelKey="dictionaries.navigateGeneral"
         />
     );

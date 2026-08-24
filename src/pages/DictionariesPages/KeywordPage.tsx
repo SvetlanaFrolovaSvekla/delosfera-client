@@ -14,7 +14,7 @@ export function KeywordPage() {
             canManage={hasPermission(PermissionCode.ManageVndDictionaries)}
             pageKey="keywordPage"
             icon={Tag}
-            backTo="/refs"
+            backTo="/management/refs"
             backLabelKey="dictionaries.navigateGeneral"
         />
     );

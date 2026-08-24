@@ -76,6 +76,8 @@ const PoaRegistryPage = lazy(() => import("@/pages/PoaRegistryPage.tsx").then(m 
 const CorrespondencePage = lazy(() => import("@/pages/CorrespondencePage.tsx").then(m => ({default: m.CorrespondencePage})));
 const ObligationsPage = lazy(() => import("@/pages/ObligationsPage.tsx").then(m => ({default: m.ObligationsPage})));
 const AgendaCandidatesPage = lazy(() => import("@/pages/MeetingsPages/AgendaCandidatesPage.tsx").then(m => ({default: m.AgendaCandidatesPage})));
+const ManagementPage = lazy(() => import("@/pages/ManagementPage.tsx").then(m => ({default: m.ManagementPage})));
+const SettingsChangesPage = lazy(() => import("@/pages/SettingsChangesPage.tsx").then(m => ({default: m.SettingsChangesPage})));
 const HrOrdersPage = lazy(() => import("@/pages/HrOrdersPage.tsx").then(m => ({default: m.HrOrdersPage})));
 const SzStatisticsPage = lazy(() => import("@/pages/SzStatisticsPage.tsx").then(m => ({default: m.SzStatisticsPage})));
 const SubstitutionsPage = lazy(() => import("@/pages/UsersPages/SubstitutionsPage.tsx").then(m => ({default: m.SubstitutionsPage})));
@@ -153,7 +155,6 @@ function App() {
                                 <Route path="/prc/:id/protocol" element={<ProcurementProtocolPage/>}/>
 
                                 <Route path="/base-know" element={<BaseKnowPage/>}/>
-                                <Route path="/system/settings" element={<SystemSettingsPage/>}/>
                                 <Route path="/search" element={<SearchPage/>}/>
 
                                 <Route path="/meetings" element={<MeetingRegistryPage/>}/>
@@ -164,23 +165,50 @@ function App() {
                                 <Route path="/sz/:id" element={<SzCardPage/>}/>
                                 <Route path="/sz-analytics" element={<SzStatisticsPage/>}/>
 
-                                <Route path="/users" element={<UsersPage/>}/>
-                                <Route path="/users/new" element={<UserCardPage/>}/>
-                                <Route path="/users/:id" element={<UserCardPage/>}/>
-                                <Route path="/substitutions" element={<SubstitutionsPage/>}/>
-                                <Route path="/audit-log" element={<AuditLogPage/>}/>
                                 <Route path="/signing-workplace" element={<SigningWorkplacePage/>}/>
                                 <Route path="/hr-ack" element={<AcknowledgementPage/>}/>
                                 <Route path="/help" element={<HelpPage/>}/>
 
-                                {/* Обкатка подразделениями: разбор пожеланий и учёт посещаемости */}
-                                <Route element={<RequirePermission code={PermissionCode.ManageSystemSettings}/>}>
-                                    <Route path="/feedback" element={<FeedbackInboxPage/>}/>
-                                </Route>
-                                <Route element={<RequirePermission code={PermissionCode.ViewFullStatistics}/>}>
-                                    <Route path="/usage" element={<UsageAnalyticsPage/>}/>
+                                {/* Управление: настройки, справочники, доступы, наблюдение.
+                                    Собрано в один раздел с подменю — пунктов настройки
+                                    полтора десятка, и в общем меню они вытесняли бы работу. */}
+                                <Route path="/management" element={<ManagementPage/>}>
+                                    <Route path="users" element={<UsersPage/>}/>
+                                    <Route path="users/new" element={<UserCardPage/>}/>
+                                    <Route path="users/:id" element={<UserCardPage/>}/>
+
+                                    <Route path="refs" element={<DictionariesPages/>}/>
+                                    <Route path="refs/approval-body" element={<ApprovalBodyPage/>}/>
+                                    <Route path="refs/organization-unit" element={<OrganizationUnitPage/>}/>
+                                    <Route path="refs/position" element={<PositionPage/>}/>
+                                    <Route path="refs/keyword" element={<KeywordPage/>}/>
+                                    <Route path="refs/type-vnd" element={<TypeVndPage/>}/>
+                                    <Route path="refs/security-level" element={<SecurityLevelPage/>}/>
+                                    <Route path="refs/user-group" element={<UserGroupPage/>}/>
+                                    <Route path="refs/rubric" element={<RubricPage/>}/>
+                                    <Route path="refs/coordination-users" element={<CoordinationApproversPage/>}/>
+
+
+                                    <Route element={<RequirePermission code={PermissionCode.ManageRoles}/>}>
+                                        <Route path="roles" element={<RolesPermissionPage/>}/>
+                                    </Route>
+                                    <Route element={<RequirePermission code={PermissionCode.ManageUsers}/>}>
+                                        <Route path="substitutions" element={<SubstitutionsPage/>}/>
+                                        <Route path="audit" element={<AuditLogPage/>}/>
+                                    </Route>
+                                    <Route element={<RequirePermission code={PermissionCode.ViewFullStatistics}/>}>
+                                        <Route path="usage" element={<UsageAnalyticsPage/>}/>
+                                    </Route>
+                                    <Route element={<RequirePermission code={PermissionCode.ManageSystemSettings}/>}>
+                                        <Route path="feedback" element={<FeedbackInboxPage/>}/>
+                                        <Route path="changes" element={<SettingsChangesPage/>}/>
+                                        <Route path="integrations" element={<SystemSettingsPage/>}/>
+                                        <Route path="signing" element={<SystemSettingsPage/>}/>
+                                        <Route path="help" element={<HelpPage/>}/>
+                                    </Route>
                                 </Route>
 
+                                {/* Обкатка подразделениями: разбор пожеланий и учёт посещаемости */}
                                 {/* Доверенности и книга регистрации корреспонденции */}
                                 <Route element={<RequirePermission code={PermissionCode.ViewPowersOfAttorney}/>}>
                                     <Route path="/poa" element={<PoaRegistryPage/>}/>
@@ -198,20 +226,6 @@ function App() {
                                     <Route path="/meetings/candidates" element={<AgendaCandidatesPage/>}/>
                                 </Route>
 
-                                <Route element={<RequirePermission code={PermissionCode.ManageRoles}/>}>
-                                    <Route path="/roles" element={<RolesPermissionPage/>}/>
-                                </Route>
-
-                                <Route path="/refs" element={<DictionariesPages/>}/>
-                                <Route path="/refs/approval-body" element={<ApprovalBodyPage/>}/>
-                                <Route path="/refs/organization-unit" element={<OrganizationUnitPage/>}/>
-                                <Route path="/refs/position" element={<PositionPage/>}/>
-                                <Route path="/refs/keyword" element={<KeywordPage/>}/>
-                                <Route path="/refs/type-vnd" element={<TypeVndPage/>}/>
-                                <Route path="/refs/security-level" element={<SecurityLevelPage/>}/>
-                                <Route path="/refs/user-group" element={<UserGroupPage/>}/>
-                                <Route path="/refs/rubric" element={<RubricPage/>}/>
-                                <Route path="/refs/coordination-users" element={<CoordinationApproversPage/>}/>
                             </Route>
                         </Route>
 

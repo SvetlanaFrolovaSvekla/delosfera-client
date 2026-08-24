@@ -41,7 +41,7 @@ export const getRefSections = (t: TFunction): RefSection[] => [
                 title: t("refSections.general.approvalBody.title"),
                 subtitle: t("refSections.general.approvalBody.subtitle"),
                 icon: Landmark,
-                path: "/refs/approval-body",
+                path: "/management/refs/approval-body",
             },
             {
                 key: "organization-unit",
@@ -49,7 +49,7 @@ export const getRefSections = (t: TFunction): RefSection[] => [
                 title: t("refSections.general.organizationUnit.title"),
                 subtitle: t("refSections.general.organizationUnit.subtitle"),
                 icon: Building2,
-                path: "/refs/organization-unit",
+                path: "/management/refs/organization-unit",
             },
             {
                 key: "position",
@@ -57,7 +57,7 @@ export const getRefSections = (t: TFunction): RefSection[] => [
                 title: t("refSections.general.position.title"),
                 subtitle: t("refSections.general.position.subtitle"),
                 icon: Briefcase,
-                path: "/refs/position",
+                path: "/management/refs/position",
             },
             {
                 key: "keyword",
@@ -67,7 +67,7 @@ export const getRefSections = (t: TFunction): RefSection[] => [
                 // Теги для тематического поиска и классификации документов
                 subtitle: t("refSections.general.keyword.subtitle"),
                 icon: Tag,
-                path: "/refs/keyword",
+                path: "/management/refs/keyword",
             },
         ],
     },
@@ -84,7 +84,7 @@ export const getRefSections = (t: TFunction): RefSection[] => [
                 // Регламент, Порядок, Положение и другие типы документов
                 subtitle: t("refSections.vnd.typeVnd.subtitle"),
                 icon: FileText,
-                path: "/refs/type-vnd",
+                path: "/management/refs/type-vnd",
             },
             {
                 key: "security-level",
@@ -94,7 +94,7 @@ export const getRefSections = (t: TFunction): RefSection[] => [
                 // Открытый доступ, конфиденциально, секретно
                 subtitle: t("refSections.vnd.securityLevel.subtitle"),
                 icon: ShieldCheck,
-                path: "/refs/security-level",
+                path: "/management/refs/security-level",
             },
             {
                 key: "user-group",
@@ -104,7 +104,7 @@ export const getRefSections = (t: TFunction): RefSection[] => [
                 // Группы доступа для просмотра и согласования документов
                 subtitle: t("refSections.vnd.userGroup.subtitle"),
                 icon: Users,
-                path: "/refs/user-group",
+                path: "/management/refs/user-group",
             },
             {
                 key: "rubric",
@@ -114,7 +114,7 @@ export const getRefSections = (t: TFunction): RefSection[] => [
                 // Тематическая классификация документов по направлениям
                 subtitle: t("refSections.vnd.rubric.subtitle"),
                 icon: Folder,
-                path: "/refs/rubric",
+                path: "/management/refs/rubric",
             },
             {
                 key: "coordination-users",
@@ -124,7 +124,7 @@ export const getRefSections = (t: TFunction): RefSection[] => [
                 // Определение обязательных участников согласования каждого ВНД
                 subtitle: t("refSections.vnd.coordinationUsers.subtitle"),
                 icon: FileText,
-                path: "/refs/coordination-users",
+                path: "/management/refs/coordination-users",
             },
         ],
     },
@@ -142,7 +142,7 @@ export const getRefSections = (t: TFunction): RefSection[] => [
                 // Поставщики и подрядчики, с которыми запрещено сотрудничество
                 subtitle: t("refSections.procurement.counterpartyBlacklist.subtitle"),
                 icon: Ban,
-                path: "/refs/counterparty-blacklist",
+                path: "/management/refs/counterparty-blacklist",
             },
             {
                 key: "procurement-threshold",
@@ -152,7 +152,7 @@ export const getRefSections = (t: TFunction): RefSection[] => [
                 // Суммовые пороги, определяющие процедуру и уровень согласования
                 subtitle: t("refSections.procurement.procurementThreshold.subtitle"),
                 icon: Scale,
-                path: "/refs/procurement-threshold",
+                path: "/management/refs/procurement-threshold",
             },
         ],
     },
@@ -170,7 +170,7 @@ export const getRefSections = (t: TFunction): RefSection[] => [
                 // Тематические категории служебных записок
                 subtitle: t("refSections.memos.memoCategory.subtitle"),
                 icon: ClipboardList,
-                path: "/refs/memo-category",
+                path: "/management/refs/memo-category",
             },
         ],
     },

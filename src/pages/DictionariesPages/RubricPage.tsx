@@ -14,7 +14,7 @@ export function RubricPage() {
             canManage={hasPermission(PermissionCode.ManageVndDictionaries)}
             pageKey="rubricPage"
             icon={Folder}
-            backTo="/refs"
+            backTo="/management/refs"
             backLabelKey="dictionaries.navigateGeneral"
         />
     );

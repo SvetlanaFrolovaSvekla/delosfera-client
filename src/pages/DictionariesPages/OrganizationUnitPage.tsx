@@ -14,7 +14,7 @@ export function OrganizationUnitPage() {
             canManage={hasPermission(PermissionCode.ManageGeneralDictionaries)}
             pageKey="organizationUnitPage"
             icon={Building2}
-            backTo="/refs"
+            backTo="/management/refs"
             backLabelKey="dictionaries.navigateGeneral"
         />
     );

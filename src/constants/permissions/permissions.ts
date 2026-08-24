@@ -104,24 +104,28 @@ export const PermissionCode = {
     /** Системные настройки: интеграции, расписание синхронизации */
     ManageSystemSettings: 35,
 
-    /** Просмотр реестра доверенностей — «вправе ли он это подписать» */
-    ViewPowersOfAttorney: 36,
+    /** Просмотр реестра ВНД в расширенном режиме: колонки и фильтры
+     * "Статус последней редакции" и "Актуализация" */
+    ViewVndRegistryExtended: 36,
+
+/** Просмотр реестра доверенностей — «вправе ли он это подписать» */
+    ViewPowersOfAttorney: 37,
 
     /** Ведение доверенностей: выдача, отзыв, передоверие */
-    ManagePowersOfAttorney: 37,
+    ManagePowersOfAttorney: 38,
 
     /** Просмотр книги регистрации корреспонденции */
-    ViewCorrespondence: 38,
+    ViewCorrespondence: 39,
 
     /** Регистрация писем и ведение справочника корреспондентов */
-    RegisterCorrespondence: 39,
+    RegisterCorrespondence: 40,
 
     /** Запросы по счетам клиентов — банковская тайна, узкий круг */
-    ViewBankSecrecyInquiries: 40,
+    ViewBankSecrecyInquiries: 41,
 
     /** Просмотр книги приказов по личному составу */
-    ViewHrOrders: 41,
+    ViewHrOrders: 42,
 
     /** Издание кадровых приказов */
-    ManageHrOrders: 42,
+    ManageHrOrders: 43,
 } as const;

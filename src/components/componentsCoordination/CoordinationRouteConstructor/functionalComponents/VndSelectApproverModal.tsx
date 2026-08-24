@@ -24,13 +24,15 @@ interface OrgUnitOption {
     parentId: number | null;
 }
 
-interface RawUserResponse {
+// Отдаётся GET /api/users/approvers - уже отфильтрован по праву ActAsApprover,
+// активности и отсутствию блокировки (см. UserController.Approvers на бэкенде).
+interface RawApproverResponse {
     id: number;
     fullName: string;
     email: string;
-    isActive: boolean;
-    position?: { name: string } | null;
-    orgUnit?: { id: number; name: string } | null;
+    orgUnitId: number | null;
+    orgUnitName: string | null;
+    positionName: string | null;
 }
 
 interface RawOrgUnitResponse {
@@ -40,15 +42,18 @@ interface RawOrgUnitResponse {
 }
 
 async function fetchAllUsers(): Promise<ApproverOption[]> {
-    const {data} = await axiosInstance.get<RawUserResponse[]>("/users");
+    // Важно: не /users (все пользователи), а /users/approvers - иначе в списке согласующих
+    // окажется вообще каждый сотрудник, включая тех, у кого нет права ActAsApprover.
+    const {data} = await axiosInstance.get<RawApproverResponse[]>("/users/approvers");
     return data.map((u) => ({
         id: u.id,
         fullName: u.fullName,
         email: u.email,
-        orgUnitId: u.orgUnit?.id ?? null,
-        orgUnitName: u.orgUnit?.name ?? null,
-        positionName: u.position?.name ?? null,
-        isActive: u.isActive,
+        orgUnitId: u.orgUnitId,
+        orgUnitName: u.orgUnitName,
+        positionName: u.positionName,
+        // Эндпоинт уже отдаёт только активных пользователей.
+        isActive: true,
     }));
 }
 

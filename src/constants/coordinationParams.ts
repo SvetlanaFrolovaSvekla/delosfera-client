@@ -7,6 +7,13 @@ import {BookOpen, type LucideIcon, Scale, ShieldAlert, ShieldCheck, User} from "
 // Максимальное число согласующих
 export const MAX_STAGES = 10;
 
+// Верхняя граница норматива срока согласования (в минутах) — 90 дней.
+// Ограничивает поля "ч." / "м." в NormBlock и должна совпадать с MaxDeadlineMinutes
+// на бэкенде (VndApprovalService.StartAsync), где является финальной защитой:
+// без неё слишком большое значение минут ломает расчёт дедлайна (DateTime overflow).
+export const MAX_DEADLINE_MINUTES = 90 * 24 * 60;
+export const MAX_DEADLINE_HOURS = Math.floor(MAX_DEADLINE_MINUTES / 60);
+
 // TODO: сделать настройку в приложении для администратора/главного редактора, чтоб был выбор фиксированных согласующих
 export const FIXED_STAGE_ORG_UNITS: Partial<Record<ApprovalStageKind, number>> = {
     [ApprovalStageKind.Legal]: 34,
@@ -93,7 +100,7 @@ interface ProcessStatusMeta {
 export const PROCESS_STATUS_META: Record<ApprovalProcessStatus, ProcessStatusMeta> = {
     primary: {
         label: "Первичное согласование",
-        badgeClass: "bg-[#f1f2f6] text-[#3a4560]",
+        badgeClass: "bg-[#e9f0ff] text-[#2f68f5]",
     },
     revision_needed: {
         label: "На доработке",
@@ -101,7 +108,7 @@ export const PROCESS_STATUS_META: Record<ApprovalProcessStatus, ProcessStatusMet
     },
     repeated: {
         label: "Согласование после внесённых изменений",
-        badgeClass: "bg-[#f1f2f6] text-[#3a4560]",
+        badgeClass: "bg-[#e9f0ff] text-[#2f68f5]",
     },
     final_hold: {
         label: "Финальная выдержка",

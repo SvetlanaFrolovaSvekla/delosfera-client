@@ -76,6 +76,7 @@ const PoaRegistryPage = lazy(() => import("@/pages/PoaRegistryPage.tsx").then(m 
 const CorrespondencePage = lazy(() => import("@/pages/CorrespondencePage.tsx").then(m => ({default: m.CorrespondencePage})));
 const ObligationsPage = lazy(() => import("@/pages/ObligationsPage.tsx").then(m => ({default: m.ObligationsPage})));
 const AgendaCandidatesPage = lazy(() => import("@/pages/MeetingsPages/AgendaCandidatesPage.tsx").then(m => ({default: m.AgendaCandidatesPage})));
+const ActualizationBucketSettingsPage = lazy(() => import("@/pages/DictionariesPages/ActualizationBucketSettingsPage.tsx").then(m => ({default: m.ActualizationBucketSettingsPage})));
 const ManagementPage = lazy(() => import("@/pages/ManagementPage.tsx").then(m => ({default: m.ManagementPage})));
 const SettingsChangesPage = lazy(() => import("@/pages/SettingsChangesPage.tsx").then(m => ({default: m.SettingsChangesPage})));
 const HrOrdersPage = lazy(() => import("@/pages/HrOrdersPage.tsx").then(m => ({default: m.HrOrdersPage})));
@@ -187,6 +188,7 @@ function App() {
                                     <Route path="refs/user-group" element={<UserGroupPage/>}/>
                                     <Route path="refs/rubric" element={<RubricPage/>}/>
                                     <Route path="refs/coordination-users" element={<CoordinationApproversPage/>}/>
+                                    <Route path="refs/actualization-thresholds" element={<ActualizationBucketSettingsPage/>}/>
 
 
                                     <Route element={<RequirePermission code={PermissionCode.ManageRoles}/>}>

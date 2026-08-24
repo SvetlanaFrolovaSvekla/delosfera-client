@@ -1,5 +1,6 @@
 import {getDeadlineUrgency, getRemainingLabel} from "@/utils/dateUtils.ts";
 import {DEADLINE_URGENCY_META} from "@/constants/vndStatus.ts";
+import {STAGE_KIND_RESPONSE_TO_REQUEST, STAGE_LABELS} from "@/constants/coordinationParams.ts";
 import type {VndTaskResponse} from "@/service/tasksVndService/tasksServiceTypes.ts";
 
 export function getDeadlineTone(deadlineAt: string | null, totalHours: number | null): { label: string; color: string } {
@@ -11,9 +12,17 @@ export function getDeadlineTone(deadlineAt: string | null, totalHours: number | 
     return { label, color: DEADLINE_URGENCY_META[urgency].color };
 }
 
-export function getActionTitle(task: VndTaskResponse): string {
-    const vndTitle = `«${task.vndTitle}»`;
+// Лейбл этапа согласования ("Юридическое управление" и т.п.) по строковому
+// kind, который отдаёт бэкенд (VndTaskResponse.stageKind)
+export function getStageKindLabel(stageKind: VndTaskResponse["stageKind"]): string | null {
+    if (!stageKind) return null;
+    const requestKind = STAGE_KIND_RESPONSE_TO_REQUEST[stageKind];
+    return requestKind ? STAGE_LABELS[requestKind] : null;
+}
 
+// Название/суть задачи — само название ВНД показывается на карточке отдельной строкой
+// (см. VndTaskCard), поэтому здесь оно больше не дублируется.
+export function getActionTitle(task: VndTaskResponse): string {
     // Для myVndApproval и (если пришёл) consolidation бэкенд уже отдаёт готовый
     // человекочитаемый статус — используем его вместо старой производной формулировки.
     if (task.statusLabel) {
@@ -23,21 +32,21 @@ export function getActionTitle(task: VndTaskResponse): string {
     if (task.scope === "coordination") {
         switch (task.stagePhase) {
             case "primary":
-                return `Провести первичное согласование редакции ВНД ${vndTitle}`;
+                return "Провести первичное согласование редакции";
             case "repeat":
-                return `Провести согласование после внесённых инициатором изменений по вашим правкам ВНД ${vndTitle}`;
+                return "Провести согласование после внесённых инициатором изменений по вашим правкам";
             case "final":
-                return `Проверить финальную версию редакции ВНД ${vndTitle}`;
+                return "Ознакомиться с редакцией на финальной выдержке";
             default:
-                return `Согласовать редакцию ВНД ${vndTitle}`;
+                return "Согласовать редакцию";
         }
     }
 
     if (task.scope === "actualization") {
-        return `Актуализировать ВНД ${vndTitle}`;
+        return "Актуализировать ВНД";
     }
 
-    return `Провести консолидацию ВНД ${vndTitle}`;
+    return "Провести консолидацию ВНД";
 }
 
 export function getMetaText(task: VndTaskResponse): string {
@@ -45,6 +54,8 @@ export function getMetaText(task: VndTaskResponse): string {
         const parts: string[] = [];
 
         if (task.redactionCode) parts.push(`Редакция ${task.redactionCode}`);
+        const stageLabel = getStageKindLabel(task.stageKind);
+        if (stageLabel) parts.push(stageLabel);
         if (task.initiatorName) parts.push(`Инициатор: ${task.initiatorName}`);
         if (task.deadlineMinutes) parts.push(`Норматив: ${task.deadlineMinutes} ч`);
 

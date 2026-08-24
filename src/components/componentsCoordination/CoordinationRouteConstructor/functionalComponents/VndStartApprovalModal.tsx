@@ -5,21 +5,52 @@ import {
     type ApprovalProcessResponse,
 } from "@/service/coordinationService/coordinationServiceTypes.ts";
 import {MAX_STAGES, STAGE_LABELS} from "@/constants/coordinationParams.ts";
-import {StageCard} from "@/components/componentsCoordination/CoordinationRouteConstructor/functionalComponents/StageCard.tsx";
+import {
+    StageCard
+} from "@/components/componentsCoordination/CoordinationRouteConstructor/functionalComponents/StageCard.tsx";
 import {VndSelectApproverModal} from "./VndSelectApproverModal.tsx";
-import {ArrowDown, Loader2, Plus, X} from "lucide-react";
-import {NormBlock} from "@/components/componentsCoordination/CoordinationRouteConstructor/functionalComponents/NormBlock.tsx";
+import {ArrowDown, Clock, Loader2, Route, Lock, Plus, X, BadgeCheck} from "lucide-react";
+import {
+    NormBlock
+} from "@/components/componentsCoordination/CoordinationRouteConstructor/functionalComponents/NormBlock.tsx";
+import {
+    RouteHintsPanel, type RouteHint
+} from "@/components/componentsCoordination/CoordinationRouteConstructor/functionalComponents/RouteHintsPanel.tsx";
 import {useStageDrafts} from "@/hooks/coordinationHooks/useStageDrafts.ts";
 import {useApprovalNorms} from "@/hooks/coordinationHooks/useApprovalNorms.ts";
 import {useStartApproval} from "@/hooks/coordinationHooks/useStartApproval.ts";
 import {useStageRouting} from "@/hooks/coordinationHooks/useStageRouting.ts";
-import {Clue} from "@/components/componentsGeneral/knowledgeBaseComponents/Clue.tsx";
+import {HelpTooltip} from "@/components/componentsGeneral/knowledgeBaseComponents/HelpTooltip.tsx";
+import {Tooltip} from "@/components/componentsGeneral/Tooltip.tsx";
 
 interface VndStartApprovalModalProps {
     vndId: number;
     onClose: () => void;
     onStarted: (process: ApprovalProcessResponse) => void;
 }
+
+const ROUTE_HINTS: RouteHint[] = [
+    {
+        icon: Route,
+        iconColor: "#7a5ce0",
+        text: "Пожалуйста, настройте маршрут: добавьте согласующих и задайте нормативы сроков согласования на каждом этапе!",
+    },
+    {
+        icon: Lock,
+        iconColor: "#1d8374",
+        text: "Фиолетовым выделены фиксированные СП, которые обязательно должны принять участие в согласовании — их нельзя открепить, можно только изменить установленного согласующего по умолчанию.",
+    },
+    {
+        icon: Clock,
+        iconColor: "#b3730a",
+        text: "Максимальное значение для норматива каждого из этапов — 90 дней!",
+    },
+    {
+        icon: BadgeCheck,
+        iconColor: "#4b831d",
+        text: "Если согласующий не примет решение за отведённый норматив срока — этап считается автоматически согласованным.",
+    },
+];
 
 export function VndStartApprovalModal({vndId, onClose, onStarted}: VndStartApprovalModalProps) {
     const {
@@ -57,6 +88,17 @@ export function VndStartApprovalModal({vndId, onClose, onStarted}: VndStartAppro
     const {funnelWrapperRef, targetRef, cardsScrollRef, paths, recomputePaths, registerStageRef} =
         useStageRouting(stages); // Для рисовки линий от этапов к блокам нормативов
 
+    const submitButton = (
+        <button
+            onClick={handleSubmit}
+            disabled={!canSubmit}
+            className="cursor-pointer flex h-[40px] items-center gap-2 rounded-[10px] bg-[#4e57d6] px-5 text-[13px] font-semibold text-white hover:bg-[#3f47bd] disabled:cursor-not-allowed disabled:opacity-50"
+        >
+            {submitting && <Loader2 size={15} className="animate-spin"/>}
+            Запустить согласование
+        </button>
+    );
+
     return createPortal(
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 p-4">
             <div
@@ -66,7 +108,7 @@ export function VndStartApprovalModal({vndId, onClose, onStarted}: VndStartAppro
                     <div>
                         <h2 className="text-[17px] font-bold text-[#1c2740]">Запуск согласования</h2>
                         <p className="mt-[2px] text-[12.5px] text-[#8b97ab]">
-                            Настройте маршрут и нормативы сроков для этой редакции
+                            Настройте маршрут для процесса согласования этой редакции ВНД
                         </p>
                     </div>
                     <button onClick={onClose} className="cursor-pointer text-[#8b97ab] hover:text-[#3a4560]">
@@ -74,23 +116,31 @@ export function VndStartApprovalModal({vndId, onClose, onStarted}: VndStartAppro
                     </button>
                 </div>
 
-                {/* Header */}
-                <div className="px-4 py-4 flex flex-none items-center justify-between border-b border-[#eef0f5]">
-                    <Clue>
-                        Добавьте согласующих на каждом этапе и задайте нормативы сроков! Зеленым выделены фиксированные этапы, которые нельзя открепить.
-                    </Clue>
-                </div>
+
 
                 {/* Контент */}
                 <div className="flex-1 overflow-y-auto px-12 py-4">
                     <div className="mb-4 flex items-center justify-between">
                         <h3 className="text-[13.5px] font-bold text-[#1c2740]">Конструктор маршрута</h3>
-                        <span className="text-[11.5px] text-[#8b97ab]">
-                            {stages.length} из {MAX_STAGES} этапов
+                        <span className="flex items-center gap-0.5 text-[11.5px] text-[#8b97ab]">
+                            Добавлено {stages.length} из {MAX_STAGES} согласующих максимум
+                            <HelpTooltip
+                                content="Максимальное количество согласующих ограничено, чтобы процесс не растягивался на слишком долгий срок (фиксированные СП также учитываются)."
+                                side="bottom"
+                                className="h-5 w-5"
+                            />
                         </span>
                     </div>
 
-                    <div ref={funnelWrapperRef} className="relative">
+                    {/* Подсказки по работе с конструктором */}
+                    <div className="flex-none border-b border-[#eef0f5] pb-4">
+                        <RouteHintsPanel items={ROUTE_HINTS}/>
+                    </div>
+
+                    <div
+                        ref={funnelWrapperRef}
+                        className="relative rounded-[16px] border border-[#e5e9f0] bg-[#fbfcfe] bg-[radial-gradient(#e4e9f1_1px,transparent_1px)] bg-[length:18px_18px] p-6"
+                    >
                         {/* Ряд карточек этапов - всегда в одну строку (скролл по горизонтали при 5+ этапах) */}
                         <div ref={cardsScrollRef} onScroll={recomputePaths} className="py-5 flex gap-6 overflow-x-auto">
                             {stages.map((stage) => (
@@ -111,7 +161,7 @@ export function VndStartApprovalModal({vndId, onClose, onStarted}: VndStartAppro
                                 <button
                                     type="button"
                                     onClick={addCustomStage}
-                                    className="flex h-[110px] w-[210px] flex-none cursor-pointer flex-col items-center justify-center gap-2 rounded-[14px] border border-dashed border-[#d5dae3] bg-[#fbfcfe] text-[#8b97ab] transition-colors hover:border-[#4e57d6]/50 hover:bg-[#f6f8fb]"
+                                    className="flex h-[110px] w-[210px] flex-none cursor-pointer flex-col items-center justify-center gap-2 rounded-[14px] border border-dashed border-[#d5dae3] bg-white text-[#8b97ab] transition-colors hover:border-[#4e57d6]/50 hover:bg-[#f6f8fb]"
                                 >
                                     <Plus size={18}/>
                                     <span className="text-[12px] font-medium">Добавить этап</span>
@@ -133,15 +183,22 @@ export function VndStartApprovalModal({vndId, onClose, onStarted}: VndStartAppro
                                 value={primaryMinutes}
                                 onChange={setPrimaryMinutes}
                                 blockRef={targetRef}
+                                helpText="Время, за которое каждый согласующий должен принять решение на этом этапе. Участвуют все согласующие, добавленные в маршрут."
                             />
                             <ArrowDown size={16} className="flex-none text-[#c3c9d4]"/>
                             <NormBlock
                                 label="Согласование после внесённых изменений"
                                 value={repeatMinutes}
                                 onChange={setRepeatMinutes}
+                                helpText="Время, за которое согласующий должен проверить исправленную версию после того, как оставил замечания на предыдущем этапе. Участвуют только те согласующие, которые оставляли замечания."
                             />
                             <ArrowDown size={16} className="flex-none text-[#c3c9d4]"/>
-                            <NormBlock label="Финальная выдержка" value={finalHoldMinutes} onChange={setFinalHoldMinutes}/>
+                            <NormBlock
+                                label="Финальная выдержка"
+                                value={finalHoldMinutes}
+                                onChange={setFinalHoldMinutes}
+                                helpText="Время, за которое согласующие могут ознакомиться с финальной версией редакции. Этап необязательный — отсутствие реакции не считается просрочкой. Если за это время не поступит новых замечаний, редакция автоматически становится действующей. Если замечания появятся, после их исправления, согласование вернётся на этап «Согласование после внесённых изменений»."
+                            />
                         </div>
                     </div>
 
@@ -162,14 +219,16 @@ export function VndStartApprovalModal({vndId, onClose, onStarted}: VndStartAppro
                     >
                         Отмена
                     </button>
-                    <button
-                        onClick={handleSubmit}
-                        disabled={!canSubmit}
-                        className="cursor-pointer flex h-[40px] items-center gap-2 rounded-[10px] bg-[#4e57d6] px-5 text-[13px] font-semibold text-white hover:bg-[#3f47bd] disabled:cursor-not-allowed disabled:opacity-50"
-                    >
-                        {submitting && <Loader2 size={15} className="animate-spin"/>}
-                        Запустить согласование
-                    </button>
+                    {canSubmit ? (
+                        submitButton
+                    ) : (
+                        <Tooltip
+                            content="Чтобы запустить согласование, пожалуйста, заполните всех согласующих и укажите нормативы сроков по всем этапам!"
+                            side="top"
+                        >
+                            <span className="inline-block">{submitButton}</span>
+                        </Tooltip>
+                    )}
                 </div>
             </div>
 

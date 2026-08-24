@@ -12,16 +12,38 @@ import {
 } from "lucide-react";
 import type {ComponentType} from "react";
 
+// Статус последней редакции (детальный, требует право ViewVndRegistryExtended):
+// консолидация / актуальная / на актуализации / на согласовании / черновик / в архиве
 export const STATUS_META: Record<
     VndStatusKey,
     { label: string; color: string; bg: string; icon: typeof Check }
 > = {
-    active: {label: "Действующий", color: "#1c7a4d", bg: "#e2f4ea", icon: Check},
+    active: {label: "Актуальная", color: "#1c7a4d", bg: "#e2f4ea", icon: Check},
     onact: {label: "На актуализации", color: "#b3730a", bg: "#fbeecf", icon: Clock},
     review: {label: "На согласовании", color: "#2f68f5", bg: "#e9f0ff", icon: Clock},
     consol: {label: "Консолидация", color: "#7a5ce0", bg: "#efeafe", icon: Layers},
     arch: {label: "В архиве", color: "#c0392b", bg: "#fdecea", icon: Archive},
     draft: {label: "Черновик", color: "#5b6472", bg: "#eef0f3", icon: FileEdit}
+};
+
+// Упрощённый статус ВНД (для значка первой колонки у пользователей без права
+// ViewVndRegistryExtended): действующие/архивированные/черновики — без деталей о том,
+// на каком этапе жизненного цикла находится действующий документ.
+export type SimpleVndStatusKey = "active" | "arch" | "draft";
+
+export function getSimplifiedVndStatus(status: VndStatusKey): SimpleVndStatusKey {
+    if (status === "arch") return "arch";
+    if (status === "draft") return "draft";
+    return "active"; // active/onact/review/consol — все действующие
+}
+
+export const SIMPLE_STATUS_META: Record<
+    SimpleVndStatusKey,
+    { label: string; color: string; bg: string; icon: typeof Check }
+> = {
+    active: {label: "Действующий", color: STATUS_META.active.color, bg: STATUS_META.active.bg, icon: Check},
+    arch: {label: STATUS_META.arch.label, color: STATUS_META.arch.color, bg: STATUS_META.arch.bg, icon: Archive},
+    draft: {label: STATUS_META.draft.label, color: STATUS_META.draft.color, bg: STATUS_META.draft.bg, icon: FileEdit},
 };
 
 export const SCOPE_COUNT_LABELS: Record<VndScope, { total: string; found: string }> = {
@@ -73,10 +95,11 @@ export const COORDINATION_STAGE_META: Record<"primary" | "repeat" | "final", Tas
     },
 };
 
-// Цвета разделов задач - те же, что и статусы ВНД (review/onact/consol)
+// Цвета разделов задач - совпадают с названиями вложенных вкладок на странице "Мои задачи"
+// (см. TasksVndPage), чтобы бейдж на карточке однозначно указывал, в какой раздел вести.
 export const TASK_SCOPE_META: Record<"coordination" | "actualization" | "consolidation" | "myVndApproval", TaskStatusMeta> = {
     coordination: {
-        label: "На согласовании",
+        label: "Ждущие моего согласования",
         color: "#2f68f5",
         bg: "#e9f0ff",
         icon: Clock,

@@ -30,3 +30,6 @@ dist-ssr
 
 # oh-my-claudecode session state (не коммитить)
 .omc/
+src.before-restore-180329/
+*.before-restore-*/
+*.before-tiptap

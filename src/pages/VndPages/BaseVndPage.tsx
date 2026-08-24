@@ -35,6 +35,23 @@ export function BaseVndPage() {
     const navigate = useNavigate();
     const {hasPermission} = useAuth();
     const canViewOtherUsersDrafts = hasPermission(PermissionCode.ViewOtherUsersDrafts);
+    // Право создавать ВНД — от него зависит видимость вкладки "Черновики" и состав таба "Все"
+    const canCreateVnd =
+        hasPermission(PermissionCode.CreateVndWithApproval) ||
+        hasPermission(PermissionCode.CreateVndWithoutApproval);
+    // Право "Просмотр реестра ВНД в расширенном режиме" — колонки/фильтры
+    // "Статус последней редакции" и "Актуализация"
+    const canViewVndRegistryExtended = hasPermission(PermissionCode.ViewVndRegistryExtended);
+    // Чекбокс "Только связанные со мной" — только для "редакторов ВНД": тех, кто может
+    // согласовывать, создавать или актуализировать/консолидировать документы
+    const canFilterLinkedToMe =
+        hasPermission(PermissionCode.ActAsApprover) ||
+        hasPermission(PermissionCode.CreateVndWithApproval) ||
+        hasPermission(PermissionCode.CreateVndWithoutApproval) ||
+        hasPermission(PermissionCode.ActualizeAnyVndWithApproval) ||
+        hasPermission(PermissionCode.ActualizeAnyVndWithoutApproval) ||
+        hasPermission(PermissionCode.ActualizeVndWithApprovalByRequest) ||
+        hasPermission(PermissionCode.ActualizeVndWithoutApprovalByRequest);
 
     const [scope, setScope] = useState<VndScope>("all");
     const [draftOwnerScope, setDraftOwnerScope] = useState<DraftOwnerScope>("allDraft");
@@ -42,15 +59,16 @@ export function BaseVndPage() {
 
     const filters = useVndFilters(
         scope,
-        scope === "draft" && draftOwnerScope !== "allDraft" ? draftOwnerScope : undefined
+        scope === "draft" && draftOwnerScope !== "allDraft" ? draftOwnerScope : undefined,
+        canCreateVnd
     );
 
     useRubricsFromUrl(filters.setRubricFilters, setAdvOpen);
 
     const {visibleCols, toggleColumn, selectAllColumns, deselectAllColumns, columns, gridTemplate, toggleableColumns} =
-        useVndColumnVisibility(scope);
+        useVndColumnVisibility(scope, canViewVndRegistryExtended, filters.linkedToMeOnly);
 
-    const counts = useVndScopeCounts();
+    const counts = useVndScopeCounts(canCreateVnd);
     const {filteredRows, loading, error} = useVndFilteredRows(filters.searchRequest, filters.search);
 
     const dictionaries = useDictionaries();
@@ -62,11 +80,15 @@ export function BaseVndPage() {
     const selectAllStatuses = () => filters.setStatusFilters(ALL_STATUS_OPTIONS.map((o) => o.key));
     const deselectAllStatuses = () => filters.setStatusFilters([]);
 
+    // Вкладка "Черновики" видна только при праве создавать ВНД — и идёт сразу за
+    // "Архивированными", в общей группе табов (не отделяется вправо)
     const scopeTabs = [
         {id: "all" as VndScope, label: "Все", n: counts.all},
         {id: "active" as VndScope, label: "Действующие", n: counts.active},
         {id: "arch" as VndScope, label: "Архивированные", n: counts.arch},
-        {id: "draft" as VndScope, label: "Черновики", n: counts.draft, alignRight: true, icon: <FileEdit size={14}/>},
+        ...(canCreateVnd
+            ? [{id: "draft" as VndScope, label: "Черновики", n: counts.draft, icon: <FileEdit size={14}/>}]
+            : []),
     ];
 
     return (
@@ -101,14 +123,20 @@ export function BaseVndPage() {
             )}
 
             <VndFilters
+                canViewExtended={canViewVndRegistryExtended}
                 organFilters={filters.organFilters}
                 onOrganFiltersChange={filters.setOrganFilters}
                 docTypeFilters={filters.docTypeFilters}
                 onDocTypeFiltersChange={filters.setDocTypeFilters}
                 scope={scope}
                 isArchScope={isArchScope}
+                canFilterLinkedToMe={canFilterLinkedToMe}
                 linkedToMeOnly={filters.linkedToMeOnly}
                 onLinkedToMeOnlyChange={filters.setLinkedToMeOnly}
+                linkedToMeRelations={filters.linkedToMeRelations}
+                onToggleLinkedToMeRelation={filters.toggleLinkedToMeRelation}
+                onSelectAllLinkedToMeRelations={filters.selectAllLinkedToMeRelations}
+                onDeselectAllLinkedToMeRelations={filters.deselectAllLinkedToMeRelations}
                 search={filters.search}
                 onSearchChange={filters.setSearch}
                 statusOptions={ALL_STATUS_OPTIONS}
@@ -193,6 +221,7 @@ export function BaseVndPage() {
             ) : (
                 <VndTable
                     searchQuery={filters.search}
+                    canViewExtended={canViewVndRegistryExtended}
                     columns={columns}
                     rows={filteredRows}
                     gridTemplate={gridTemplate}

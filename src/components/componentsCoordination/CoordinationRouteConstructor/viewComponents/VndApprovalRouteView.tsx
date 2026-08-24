@@ -86,78 +86,77 @@ export function VndApprovalRouteView({process, highlightStageId}: VndApprovalRou
         useApprovalRouteLines(stagesWithLocalId);
 
     return (
-        <div className="flex justify-center">
-            <div className="w-full rounded-[18px] border-2 border-dashed border-[#d5dae3] px-2 py-4">
-                <div ref={funnelWrapperRef} className="relative flex flex-col items-center">
-                    <div
-                        ref={cardsScrollRef}
-                        onScroll={recomputePaths}
-                        className="flex justify-center gap-6 overflow-x-auto w-full"
-                    >
-                        {stagesWithLocalId.map((stage) => (
-                            <StageCardView
-                                key={stage.localId}
-                                stage={stage}
-                                cardRef={registerStageRef(stage.localId)}
-                                isCurrentUserStage={stage.id === highlightStageId}
-                            />
-                        ))}
-                    </div>
+        <div
+            ref={funnelWrapperRef}
+            className="relative rounded-[16px] border border-[#e5e9f0] bg-[#fbfcfe] bg-[radial-gradient(#e4e9f1_1px,transparent_1px)] bg-[length:18px_18px] p-6"
+        >
+            <div
+                ref={cardsScrollRef}
+                onScroll={recomputePaths}
+                className="flex justify-center gap-6 overflow-x-auto"
+            >
+                {stagesWithLocalId.map((stage) => (
+                    <StageCardView
+                        key={stage.localId}
+                        stage={stage}
+                        cardRef={registerStageRef(stage.localId)}
+                        isCurrentUserStage={stage.id === highlightStageId}
+                    />
+                ))}
+            </div>
 
-                    <svg className="pointer-events-none absolute inset-0 h-full w-full overflow-visible">
-                        {paths.map((d, i) => (
-                            <path key={i} d={d} stroke="#d5dae3" strokeWidth={1.5} fill="none"/>
-                        ))}
-                    </svg>
+            <svg className="pointer-events-none absolute inset-0 h-full w-full overflow-visible">
+                {paths.map((d, i) => (
+                    <path key={i} d={d} stroke="#d5dae3" strokeWidth={1.5} fill="none"/>
+                ))}
+            </svg>
 
-                    <div className="mx-auto mt-10 flex w-[280px] flex-col items-center gap-4">
-                        <div className="relative w-full">
-                            <NormBlockView
-                                label="Первичное согласование"
-                                value={process.primaryDeadlineMinutes}
-                                phaseStatus={primaryPhaseStatus}
-                                blockRef={targetRef}
-                            />
-                            {primaryPhaseStatus === "current" && (
-                                <CurrentPhaseHint
-                                    startedAt={process.primaryStartedAt}
-                                    deadlineAt={process.primaryDeadlineAt}
-                                />
-                            )}
-                        </div>
+            <div className="mx-auto mt-10 flex w-[280px] flex-col items-center gap-4">
+                <div className="relative w-full">
+                    <NormBlockView
+                        label="Первичное согласование"
+                        value={process.primaryDeadlineMinutes}
+                        phaseStatus={primaryPhaseStatus}
+                        blockRef={targetRef}
+                    />
+                    {primaryPhaseStatus === "current" && (
+                        <CurrentPhaseHint
+                            startedAt={process.primaryStartedAt}
+                            deadlineAt={process.primaryDeadlineAt}
+                        />
+                    )}
+                </div>
 
-                        <ArrowDown size={16} className="flex-none text-[#c3c9d4]"/>
+                <ArrowDown size={16} className="flex-none text-[#c3c9d4]"/>
 
-                        <div className="relative w-full">
-                            <NormBlockView
-                                label="Согласование после внесённых изменений"
-                                value={process.repeatDeadlineMinutes}
-                                phaseStatus={repeatPhaseStatus}
-                            />
-                            {repeatPhaseStatus === "current" && (
-                                <CurrentPhaseHint
-                                    startedAt={process.repeatStartedAt}
-                                    deadlineAt={process.repeatDeadlineAt}
-                                />
-                            )}
-                        </div>
+                <div className="relative w-full">
+                    <NormBlockView
+                        label="Согласование после внесённых изменений"
+                        value={process.repeatDeadlineMinutes}
+                        phaseStatus={repeatPhaseStatus}
+                    />
+                    {repeatPhaseStatus === "current" && (
+                        <CurrentPhaseHint
+                            startedAt={process.repeatStartedAt}
+                            deadlineAt={process.repeatDeadlineAt}
+                        />
+                    )}
+                </div>
 
-                        <ArrowDown size={16} className="flex-none text-[#c3c9d4]"/>
+                <ArrowDown size={16} className="flex-none text-[#c3c9d4]"/>
 
-                        <div className="relative w-full">
-                            <NormBlockView
-                                label="Финальная выдержка"
-                                value={process.finalHoldDeadlineMinutes}
-                                phaseStatus={finalHoldPhaseStatus}
-                            />
-                            {finalHoldPhaseStatus === "current" && (
-                                <CurrentPhaseHint
-                                    startedAt={process.finalHoldStartedAt}
-                                    deadlineAt={process.finalHoldDeadlineAt}
-                                />
-                            )}
-                        </div>
-                    </div>
+                <div className="relative w-full">
+                    <NormBlockView
+                        label="Финальная выдержка"
+                        value={process.finalHoldDeadlineMinutes}
+                        phaseStatus={finalHoldPhaseStatus}
+                    />
+                    {finalHoldPhaseStatus === "current" && (
+                        <CurrentPhaseHint
+                            startedAt={process.finalHoldStartedAt}
+                            deadlineAt={process.finalHoldDeadlineAt}
+                        />
+                    )}
                 </div>
             </div>
         </div>

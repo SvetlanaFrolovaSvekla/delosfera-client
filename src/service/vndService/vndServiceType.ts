@@ -91,6 +91,11 @@ export interface VndSearchRequest {
      * ответственный за актуализацию/консолидацию */
     linkedToMeOnly?: boolean;
 
+    /** Какие именно виды связи учитывать при linkedToMeOnly (LinkedToMeRelationKey[]).
+     * Пусто/не задано при linkedToMeOnly=true — не совпадёт ни с чем (фронт всегда
+     * передаёт явный список, по умолчанию — все виды связи). */
+    linkedToMeRelations?: string[];
+
     /** Для вкладки "Черновики": "mine" — только свои, "others" — черновики других
      * пользователей (требует право ViewOtherUsersDrafts) */
     draftOwnerScope?: "mine" | "others";
@@ -183,6 +188,10 @@ export interface VndResponse {
 
     createdAt: string; // ISO datetime
     updatedAt: string;
+
+    /** Виды связи текущего пользователя с этим документом (LinkedToMeRelationKey[]) —
+     * заполнено только когда поиск шёл с linkedToMeOnly=true, иначе пустой массив */
+    linkedToMeRelations: string[];
 }
 
 // --- Редакции
@@ -244,6 +253,8 @@ export interface VndActualizationRecordResponse {
     shiftNextPeriod: boolean;
 
     startedAt: string; // ISO datetime
+    /** null, пока документ не дошёл (в рамках этого цикла) до статуса "Консолидация" */
+    consolidationStartedAt: string | null;
     /** null, пока цикл ещё не завершён (см. isCompleted) */
     publishedAt: string | null;
     hadChanges: boolean | null;

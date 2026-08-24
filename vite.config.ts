@@ -1,4 +1,4 @@
-import { defineConfig } from 'vite'
+/*import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 import tailwindcss from '@tailwindcss/vite'
 import path from 'path'
@@ -41,4 +41,27 @@ export default defineConfig({
       },
     },
   },
+})*/
+
+import { defineConfig } from 'vite'
+import react from '@vitejs/plugin-react'
+import tailwindcss from '@tailwindcss/vite'
+import path from 'path'
+
+const apiPrefixes = ['/api','/auth','/users','/vnd','/files','/tasks','/notifications','/analytics','/dictionaries','/roles','/health']
+const proxy = Object.fromEntries(
+    apiPrefixes.map(p => [p, {
+        target: 'http://localhost:5293',
+        changeOrigin: true,
+        bypass: (req: {method?: string; headers: Record<string, string | string[] | undefined>}) => {
+            const accept = String(req.headers.accept ?? '')
+            if ((req.method === 'GET' || req.method === 'HEAD') && accept.includes('text/html')) return '/index.html'
+        },
+    }])
+)
+
+export default defineConfig({
+    plugins: [react(), tailwindcss()],
+    resolve: { alias: { '@': path.resolve(__dirname, './src') } },
+    server: { port: 5174, strictPort: true, host: 'localhost', proxy },
 })

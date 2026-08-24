@@ -6,6 +6,8 @@ export interface PermissionResponse {
     description: string;
 }
 
+
+// 1 - Администратор, 2 - Рядовой пользователь, 3 - Редактор ВНД, 4 - Главный редактор ВНД
 export interface RoleResponse {
     id: number;
     name: string;

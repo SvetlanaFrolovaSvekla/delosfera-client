@@ -124,7 +124,7 @@ export function Tooltip({content, children, side = "bottom", delay = 300, disabl
                 createPortal(
                     <div
                         role="tooltip"
-                        className={`pointer-events-none fixed z-[9999] whitespace-nowrap rounded-[7px] bg-[#0f1b2d] px-2.5 py-1.5 text-[11.5px] font-medium text-white shadow-[0_8px_20px_-6px_rgba(15,27,45,.35)] transition-all duration-150 ease-out ${
+                        className={`pointer-events-none fixed z-[9999] max-w-[420px] whitespace-normal break-words rounded-[7px] bg-[#0f1b2d] px-2.5 py-1.5 text-[11.5px] font-medium text-white shadow-[0_8px_20px_-6px_rgba(15,27,45,.35)] transition-all duration-150 ease-out ${
                             visible ? "opacity-100 scale-100" : "opacity-0 scale-95"
                         }`}
                         style={{

@@ -121,11 +121,41 @@ export const QualifiedSignDialog = ({documentId, attachmentId, onSigned, onClose
         onSigned(результат);
     };
 
+    /**
+     * Копирует данные для подписи в буфер обмена.
+     *
+     * Через navigator.clipboard — там, где он есть. Браузер отдаёт его только
+     * на защищённых страницах, а стенд открывается по http: там обращение
+     * упало бы, и кнопка перестала бы работать молча, посреди подписания.
+     *
+     * Запасной путь — выделить и скопировать старым способом. Он работает
+     * везде, потому и остаётся про запас.
+     */
     const скопироватьХеш = async () => {
         if (!вызов) return;
-        await navigator.clipboard.writeText(вызов.dataToSign);
-        setСкопировано(true);
-        setTimeout(() => setСкопировано(false), 2000);
+
+        try {
+            if (navigator.clipboard?.writeText) {
+                await navigator.clipboard.writeText(вызов.dataToSign);
+            } else {
+                const поле = document.createElement("textarea");
+                поле.value = вызов.dataToSign;
+                поле.setAttribute("readonly", "");
+                поле.style.position = "fixed";
+                поле.style.opacity = "0";
+                document.body.appendChild(поле);
+                поле.select();
+                document.execCommand("copy");
+                document.body.removeChild(поле);
+            }
+
+            setСкопировано(true);
+            setTimeout(() => setСкопировано(false), 2000);
+        } catch {
+            // Скопировать не вышло — не беда: строка видна на экране и её
+            // можно выделить руками. Прерывать подписание из-за этого нельзя.
+            setСкопировано(false);
+        }
     };
 
     const поле = "w-full rounded-[9px] border border-[#e5e9f0] bg-white px-3 py-2 text-[12px] font-mono outline-none focus:border-[#2f68f5]";

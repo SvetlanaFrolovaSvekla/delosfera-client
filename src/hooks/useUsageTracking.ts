@@ -20,17 +20,33 @@ const FLUSH_INTERVAL_MS = 30_000;
 /** Сколько переходов копим, прежде чем отправить не дожидаясь срока. Столько же берёт сервер за раз. */
 const MAX_BUFFER = 50;
 
-/** Метка вкладки: живёт до её закрытия, ни с чем не связана — только чтобы отличать сеансы. */
+/**
+ * Метка вкладки: живёт до её закрытия, ни с чем не связана — только чтобы
+ * отличать сеансы.
+ *
+ * Не берём `crypto.randomUUID`: браузер отдаёт его лишь на защищённых страницах,
+ * а стенд открывается по http. Там функции просто нет, вызов падал ещё до
+ * отправки — и учёт молчал целиком, не оставляя даже ошибки в сети. На localhost
+ * при этом всё работало: он считается защищённым и по http.
+ *
+ * Метка ничего не защищает и ни с чем не связана, поэтому случайности обычного
+ * генератора здесь достаточно.
+ */
 function sessionKey(): string {
     const KEY = "delosfera-usage-session";
-    let value = sessionStorage.getItem(KEY);
 
-    if (!value) {
-        value = crypto.randomUUID();
-        sessionStorage.setItem(KEY, value);
+    try {
+        const сохранённая = sessionStorage.getItem(KEY);
+        if (сохранённая) return сохранённая;
+
+        const метка = `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 10)}`;
+        sessionStorage.setItem(KEY, метка);
+        return метка;
+    } catch {
+        // Хранилище вкладки может быть недоступно — закрытый режим, запрет
+        // в настройках. Учёт не должен падать из-за этого: отдаём разовую метку.
+        return `bez-hranilishcha-${Math.random().toString(36).slice(2, 10)}`;
     }
-
-    return value;
 }
 
 export function useUsageTracking(enabled: boolean) {

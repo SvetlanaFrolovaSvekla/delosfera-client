@@ -88,13 +88,41 @@ export function OrgStructureIntegrationForm({onStateChange}: Props) {
         }
     };
 
+    /**
+     * Запускает проход и следит за историей, пока он не закончится.
+     *
+     * Сервер возвращает управление сразу — обход портала идёт минуты. Раньше
+     * кнопка ждала ответа, прокси обрывал запрос, и администратор видел ошибку
+     * там, где на деле всё шло своим ходом.
+     */
     const syncNow = async () => {
         setSyncing(true);
         setError(null);
+
         try {
-            const run = await orgStructureService.syncNow();
-            setRuns([run, ...runs]);
-            onStateChange?.(settings.enabled, run.outcome === "Failed");
+            await orgStructureService.syncNow();
+
+            // Ждём появления новой записи и её завершения. Ограничиваем время:
+            // если проход застрянет, кнопка не должна крутиться вечно.
+            const было = runs[0]?.id;
+            const край = Date.now() + 10 * 60 * 1000;
+
+            while (Date.now() < край) {
+                await new Promise((r) => setTimeout(r, 3000));
+
+                const свежие = await orgStructureService.runs(20).catch(() => null);
+                if (!свежие) continue;
+
+                setRuns(свежие);
+
+                const текущий = свежие[0];
+                if (текущий && текущий.id !== было && текущий.finishedAt) {
+                    onStateChange?.(settings.enabled, текущий.outcome === "Failed");
+                    return;
+                }
+            }
+
+            setError("Проход идёт дольше обычного. Загляните в историю позже.");
         } catch (e: unknown) {
             const response = e as {response?: {data?: {message?: string}}};
             setError(response.response?.data?.message ?? "Синхронизация не запустилась");

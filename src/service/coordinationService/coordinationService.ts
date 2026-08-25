@@ -28,15 +28,30 @@ class CoordinationService {
         return data;
     }
 
-    /** Решение согласующего по своему этапу */
+    /** Решение согласующего по своему этапу. Можно приложить файлы к резолюции —
+     * они хранятся, пока идёт согласование, и удаляются, как только редакция
+     * становится согласованной (текст комментария остаётся). */
     async decide(
         vndId: number,
         stageId: number,
         request: ApprovalDecisionRequest,
     ): Promise<ApprovalProcessResponse> {
+        const formData = new FormData();
+        formData.append("Decision", request.decision);
+        if (request.comment) formData.append("Comment", request.comment);
+        for (const file of request.files ?? []) {
+            formData.append("Files", file);
+        }
+
+        // Content-Type НЕ задаём вручную: axios/браузер сам подставит
+        // "multipart/form-data; boundary=...". Если прописать заголовок явно без
+        // boundary (как было раньше), браузер не переопределяет наш заголовок —
+        // и сервер получает тело без границы между частями, из-за чего вложения
+        // либо не долетают вовсе, либо долетает только часть (нестабильно от
+        // раза к разу). Именно это ломало повторное/первое прикрепление файла.
         const { data } = await axiosInstance.post<ApprovalProcessResponse>(
             `${this.basePath(vndId)}/stages/${stageId}/decision`,
-            request,
+            formData,
         );
         return data;
     }
@@ -57,10 +72,10 @@ class CoordinationService {
         if (request.comment) formData.append("Comment", request.comment);
         formData.append("AgreesWithAllRemarks", String(request.agreesWithAllRemarks));
 
+        // См. комментарий в decide() выше — Content-Type не задаём вручную.
         const { data } = await axiosInstance.post<ApprovalProcessResponse>(
             `${this.basePath(vndId)}/resubmit`,
             formData,
-            { headers: { "Content-Type": "multipart/form-data" } },
         );
         return data;
     }

@@ -76,9 +76,13 @@ import {SearchBar} from "@/components/componentsGeneral/SearchBar.tsx";
 interface VndEditionsTabProps {
     vnd: VndResponse;
     onVndChanged?: () => void;
+    /** Переключить страницу ВНД на таб «Ход согласования» — вызывается сразу после
+     * успешного запуска согласования, чтобы пользователь увидел маршрут, а не
+     * остался на «Редакциях», где дальше делать нечего. */
+    onGoToApproval?: () => void;
 }
 
-export function VndEditionsTab({vnd, onVndChanged}: VndEditionsTabProps) {
+export function VndEditionsTab({vnd, onVndChanged, onGoToApproval}: VndEditionsTabProps) {
     const {t} = useTranslation();
     const {data: redactions, loading, error, refetch} = useVndRedactions(vnd.id);
     const [uploadOpen, setUploadOpen] = useState(false);
@@ -520,6 +524,7 @@ export function VndEditionsTab({vnd, onVndChanged}: VndEditionsTabProps) {
                     onStarted={() => {
                         setApprovalModalOpen(false);
                         onVndChanged?.();
+                        onGoToApproval?.();
                     }}
                 />
             )}

@@ -185,7 +185,7 @@
   "openVndPage": {
     "loadError": "Не удалось загрузить документ: {{error}}",
     "dictionariesErrorTitle": "Не удалось загрузить данные!",
-    "createdAtLabel": "Дата создания: {{date}}",
+    "createdAtLabel": "Дата создания ВНД: {{date}}",
     "deleteDraftButton": "Удалить черновик",
     "deleteConfirmTitle": "Удалить черновик?",
     "deleteConfirmMessage": "Удалить черновик ВНД «{{name}}»? Действие необратимо.",

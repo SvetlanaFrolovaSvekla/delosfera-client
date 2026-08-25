@@ -76,7 +76,7 @@ export const STAGE_DECISION_META: Record<ApprovalStageDecisionResponse, Decision
         badgeClass: "bg-[#e8f6ec] text-[#1e8e3e]",
     },
     approved_with_comment: {
-        label: "С замечаниями",
+        label: "Согласовано с замечаниями",
         borderClass: "border-[#e0a13e]",
         badgeClass: "bg-[#fdf3e3] text-[#b3791b]",
     },

@@ -30,9 +30,6 @@ export function RedactionSummaryCard({
                         {formatDate(redaction.createdAt)}
                     </div>
                 </div>
-                <span className="flex-none rounded-full bg-[#ececfc] px-[11px] py-[3px] text-[11px] font-semibold text-[#4e57d6]">
-                    На согласовании
-                </span>
             </div>
 
             {redaction.description && (

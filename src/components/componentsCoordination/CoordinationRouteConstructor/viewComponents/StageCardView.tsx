@@ -1,6 +1,7 @@
 // Read-only карточка этапа уже построенного маршрута согласования
 import {useLayoutEffect, useRef, useState} from "react";
 import {Link} from "react-router-dom";
+import {Paperclip} from "lucide-react";
 import {useAuth} from "@/context/AuthContext.ts";
 import type {ApprovalStageResponse} from "@/service/coordinationService/coordinationServiceTypes.ts";
 import {
@@ -11,6 +12,40 @@ import {
 } from "@/constants/coordinationParams.ts";
 import {formatDateTime} from "@/utils/dateUtils.ts";
 import {Tooltip} from "@/components/componentsGeneral/Tooltip.tsx";
+import {downloadWithToast} from "@/utils/downloadFile.ts";
+
+// Строка одного вложения резолюции — со своим тултипом на полное имя файла,
+// если оно обрезано по ширине. Вынесено отдельным компонентом, т.к. каждая строка
+// отслеживает обрезку независимо (свой ref/своё состояние).
+function AttachmentRow({fileId, fileName}: {fileId: number; fileName: string}) {
+    const textRef = useRef<HTMLSpanElement>(null);
+    const [isTruncated, setIsTruncated] = useState(false);
+
+    useLayoutEffect(() => {
+        const el = textRef.current;
+        if (!el) return;
+
+        const checkTruncation = () => setIsTruncated(el.scrollWidth > el.clientWidth);
+        checkTruncation();
+
+        const observer = new ResizeObserver(checkTruncation);
+        observer.observe(el);
+        return () => observer.disconnect();
+    }, [fileName]);
+
+    return (
+        <Tooltip content={fileName} disabled={!isTruncated} side="top" className="w-full">
+            <button
+                type="button"
+                onClick={() => void downloadWithToast(fileId, fileName)}
+                className="cursor-pointer flex w-full items-center gap-1.5 rounded-[7px] border border-[#e5e9f0] bg-[#fbfcfe] px-2 py-1 text-left text-[11px] text-[#4e57d6] hover:border-[#4e57d6]/40 hover:bg-white"
+            >
+                <Paperclip size={11} className="flex-none"/>
+                <span ref={textRef} className="truncate">{fileName}</span>
+            </button>
+        </Tooltip>
+    );
+}
 
 function getInitials(fullName: string): string {
     return fullName
@@ -69,6 +104,13 @@ export function StageCardView({stage, cardRef, isCurrentUserStage}: StageCardVie
         : stage.repeatDecision
             ? stage.repeatDecidedAt
             : stage.primaryDecidedAt;
+    // Вложения к той же фазе, что и показанный комментарий. Пропадают, как только редакция
+    // становится согласованной (текст резолюции при этом остаётся).
+    const attachments = stage.finalHoldDecision
+        ? stage.finalHoldAttachments
+        : stage.repeatDecision
+            ? stage.repeatAttachments
+            : stage.primaryAttachments;
 
     // Пока решение не принято, а это этап текущего пользователя — показываем отдельный жёлтый статус
     const isPendingForCurrentUser = isCurrentUserStage && decision === "pending";
@@ -140,6 +182,14 @@ export function StageCardView({stage, cardRef, isCurrentUserStage}: StageCardVie
             {comment && (
                 <div className="text-[11.5px] leading-snug text-[#6b7488]">
                     {comment}
+                </div>
+            )}
+
+            {attachments.length > 0 && (
+                <div className="flex flex-col gap-1">
+                    {attachments.map((a) => (
+                        <AttachmentRow key={a.id} fileId={a.fileId} fileName={a.fileName}/>
+                    ))}
                 </div>
             )}
         </div>

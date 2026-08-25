@@ -108,4 +108,7 @@ export const PermissionCode = {
      * "Статус последней редакции" и "Актуализация" */
     ViewVndRegistryExtended: 36,
 
+    /** Отозвать согласование любой ВНД, не будучи инициатором (главный редактор) */
+    CancelAnyVndApproval: 37,
+
 } as const;

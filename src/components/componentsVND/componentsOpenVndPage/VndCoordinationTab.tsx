@@ -35,7 +35,7 @@ import {
     RedactionSummaryCard
 } from "@/components/componentsCoordination/CoordinationRouteConstructor/viewComponents/RedactionSummaryCard.tsx";
 import {ConfirmActionModal} from "@/components/componentsGeneral/modal/ConfirmActionModal.tsx";
-import {AlertTriangle} from "lucide-react";
+import {AlertTriangle, CheckCircle2, Clock3} from "lucide-react";
 ///
 
 interface VndCoordinationTabProps {
@@ -59,14 +59,19 @@ export function VndCoordinationTab({vnd, onVndChanged}: VndCoordinationTabProps)
     const [cancelModalOpen, setCancelModalOpen] = useState(false);
     const [startApprovalOpen, setStartApprovalOpen] = useState(false);
 
-    // Зеркалит бэковый IsChiefEditor() (VndApprovalService/VndService) - главному редактору
-    // разрешено отзывать согласование даже когда он не инициатор
-    // TODO: Сейчас отозвать согласование может кто угодно! Почему-то.
+    // Зеркалит бэковый IsChiefEditor() (VndApprovalService/VndService) - широкий набор прав на
+    // создание/актуализацию ВНД без запроса права. Используется там, где так же широко ведёт
+    // себя бэк (например, кто может стартовать проверку "актуализация без изменений").
     const isChiefEditor =
         hasPermission(PermissionCode.CreateVndWithApproval) ||
         hasPermission(PermissionCode.CreateVndWithoutApproval) ||
         hasPermission(PermissionCode.ActualizeAnyVndWithApproval) ||
         hasPermission(PermissionCode.ActualizeAnyVndWithoutApproval);
+
+    // Отдельное узкое право именно на отзыв ЧУЖОГО согласования (роль главного редактора).
+    // isChiefEditor тут не годится: правами создания/актуализации ВНД на практике обладает
+    // почти любой автор ВНД, из-за чего раньше отозвать согласование мог кто угодно.
+    const canCancelAnyApproval = hasPermission(PermissionCode.CancelAnyVndApproval);
 
     const [process, setProcess] = useState<ApprovalProcessResponse | null>(null);
     const [loading, setLoading] = useState(true);
@@ -181,6 +186,7 @@ export function VndCoordinationTab({vnd, onVndChanged}: VndCoordinationTabProps)
     const isRepeatedPhase = process.status === "repeated";
     const isFinalHoldPhase = process.status === "final_hold";
     const isRevisionNeeded = process.status === "revision_needed";
+    const isApproved = process.status === "approved";
 
     // На финальной выдержке решение может принять ЛЮБОЙ согласующий маршрута (participatesInRepeat
     // здесь не фильтрует — бэк на этом этапе открывает FinalHoldDecision всем этапам сразу)
@@ -203,7 +209,7 @@ export function VndCoordinationTab({vnd, onVndChanged}: VndCoordinationTabProps)
             (isRepeatedPhase && (myStage.repeatDecision === null || myStage.repeatDecision === "pending")) ||
             (isFinalHoldPhase && (myStage.finalHoldDecision === null || myStage.finalHoldDecision === "pending")));
 
-    const handleResolutionSubmit = async (choice: ResolutionChoice, comment: string) => {
+    const handleResolutionSubmit = async (choice: ResolutionChoice, comment: string, files: File[]) => {
         if (!myStage) return;
         setSubmitting(true);
         setDecisionError(null);
@@ -211,6 +217,7 @@ export function VndCoordinationTab({vnd, onVndChanged}: VndCoordinationTabProps)
             await coordinationService.decide(vnd.id, myStage.id, {
                 decision: DECISION_MAP[choice],
                 comment: comment || undefined,
+                files: files.length > 0 ? files : undefined,
             });
             await loadProcess();
         } catch (err) {
@@ -309,6 +316,45 @@ export function VndCoordinationTab({vnd, onVndChanged}: VndCoordinationTabProps)
             {/* Информационный блок */}
             <VndApprovalSummary process={process}/>
 
+            {/* Редакция согласована всеми без единого замечания — согласование как таковое
+                завершено, дело за консолидацией. Показываем явно, иначе непонятно, почему
+                страница "просто висит" без дальнейших действий согласующего. */}
+            {isApproved && (
+                <div className="mb-4 flex items-start gap-3 rounded-[12px] border border-[#bfe3cc] bg-[#eef9f2] px-4 py-3.5">
+                    <CheckCircle2 size={18} className="mt-[1px] flex-none text-[#1f7a4c]"/>
+                    <div>
+                        <div className="text-[13px] font-semibold text-[#1c5e37]">
+                            Редакция согласована
+                        </div>
+                        <div className="mt-0.5 text-[12.5px] leading-[1.5] text-[#2f6b47]">
+                            Все согласующие приняли решение без замечаний. Осталось дождаться
+                            консолидации редакции — её выполняет инициатор согласования или главный
+                            редактор.
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* Кто-то из согласующих оставил замечания, все уже высказались — мяч на стороне
+                инициатора. Без этого блока согласующие видят как бы "зависший" этап и не
+                понимают, что делать дальше. Инициатору вместо баннера показывается панель
+                VndRevisionNeededPanel ниже — с самими действиями. */}
+            {isRevisionNeeded && !isInitiator && (
+                <div className="mb-4 flex items-start gap-3 rounded-[12px] border border-[#f0dcae] bg-[#fdf6e8] px-4 py-3.5">
+                    <Clock3 size={18} className="mt-[1px] flex-none text-[#9a6408]"/>
+                    <div>
+                        <div className="text-[13px] font-semibold text-[#7a5006]">
+                            Инициатор согласования работает над замечаниями
+                        </div>
+                        <div className="mt-0.5 text-[12.5px] leading-[1.5] text-[#8a6a1f]">
+                            Все согласующие уже приняли решение на этом этапе. Документ вернётся к
+                            вам на повторное согласование, как только инициатор внесёт правки по
+                            замечаниям или заполнит матрицу разногласий.
+                        </div>
+                    </div>
+                </div>
+            )}
+
             {redactionsError && (
                 <div>
                     <EmptyState
@@ -344,7 +390,7 @@ export function VndCoordinationTab({vnd, onVndChanged}: VndCoordinationTabProps)
                 />
             )}
 
-            {(isInitiator || isChiefEditor) && CANCELLABLE_STATUSES.includes(process.status) && (
+            {(isInitiator || canCancelAnyApproval) && CANCELLABLE_STATUSES.includes(process.status) && (
                 <div className="mt-8 rounded-[14px] border border-[#f0dede] overflow-hidden">
                     <div className="bg-[#fdf6f5] px-4 py-2.5 border-b border-[#f0dede]">
             <span className="text-[11px] font-bold uppercase tracking-wide text-[#c0392b]">

@@ -1,5 +1,5 @@
 // Таб "Редакции" открытой страницы ВНД
-import {useRef} from "react";
+import {useMemo, useRef} from "react";
 import {useEffect, useState} from "react";
 import {useAuth} from "@/context/AuthContext.ts";
 import {useTranslation} from "react-i18next";
@@ -71,7 +71,8 @@ import {
 
 import {EmptyState} from "@/components/componentsGeneral/EmptyState.tsx";
 import {Loader} from "@/components/componentsGeneral/Loader";
-import {Upload, ShieldCheck} from "lucide-react";
+import {Clue} from "@/components/componentsGeneral/knowledgeBaseComponents/Clue.tsx";
+import {Upload} from "lucide-react";
 import {SearchBar} from "@/components/componentsGeneral/SearchBar.tsx";
 import {ConfirmActionModal} from "@/components/componentsGeneral/modal/ConfirmActionModal.tsx";
 import {vndService} from "@/service/vndService/vndService.ts";
@@ -85,6 +86,13 @@ interface VndEditionsTabProps {
      * остался на «Редакциях», где дальше делать нечего. */
     onGoToApproval?: () => void;
 }
+
+const PUBLISH_WITHOUT_APPROVAL_PERMISSIONS: number[] = [
+    PermissionCode.CreateVndWithApproval,
+    PermissionCode.CreateVndWithoutApproval,
+    PermissionCode.ActualizeAnyVndWithApproval,
+    PermissionCode.ActualizeAnyVndWithoutApproval,
+];
 
 export function VndEditionsTab({vnd, onVndChanged, onGoToApproval}: VndEditionsTabProps) {
     const {t} = useTranslation();
@@ -129,6 +137,17 @@ export function VndEditionsTab({vnd, onVndChanged, onGoToApproval}: VndEditionsT
     const [publishingWithoutApproval, setPublishingWithoutApproval] = useState(false);
     const [publishWithoutApprovalError, setPublishWithoutApprovalError] = useState<string | null>(null);
 
+    const publishWithoutApprovalRoleNames = useMemo(() => {
+        if (!isChiefEditor || !user) return [];
+        return user.roles
+            .filter((role) =>
+                role.permissionCodes.some((code) =>
+                    PUBLISH_WITHOUT_APPROVAL_PERMISSIONS.includes(code)
+                )
+            )
+            .map((role) => role.name);
+    }, [isChiefEditor, user]);
+
     // Процесс согласования - нужен только чтобы решить, кому показать кнопку "Перейти к
     // согласованию" в статус-баннере редакции ("pending"): участвующему согласующему,
     // инициатору согласования и инициатору самой ВНД. Грузим один раз при открытии вкладки -
@@ -137,9 +156,15 @@ export function VndEditionsTab({vnd, onVndChanged, onGoToApproval}: VndEditionsT
     useEffect(() => {
         let cancelled = false;
         coordinationService.getByVndId(vnd.id)
-            .then((data) => { if (!cancelled) setApprovalProcess(data); })
-            .catch(() => { if (!cancelled) setApprovalProcess(null); });
-        return () => { cancelled = true; };
+            .then((data) => {
+                if (!cancelled) setApprovalProcess(data);
+            })
+            .catch(() => {
+                if (!cancelled) setApprovalProcess(null);
+            });
+        return () => {
+            cancelled = true;
+        };
     }, [vnd.id]);
 
     const {
@@ -368,14 +393,16 @@ export function VndEditionsTab({vnd, onVndChanged, onGoToApproval}: VndEditionsT
             primaryVariant = "performActualization";
             primaryDisabled = true;
             primaryHint = t("openVndPage.redactionsSidebar.waitingPerformHint");
-            primaryAction = () => {};
+            primaryAction = () => {
+            };
         }
     } else if (vnd.status === "active") {
         if (myAccessState.kind === "pending") {
             primaryVariant = "actualize";
             primaryDisabled = true;
             primaryHint = t("openVndPage.redactionsSidebar.pendingRequestHint");
-            primaryAction = () => {};
+            primaryAction = () => {
+            };
         } else if (needsConfirmStartAfterRequest) {
             // Заявка одобрена - остаётся выполнить актуализацию (совмещает старт цикла и сам
             // шаг для этого пути), тоже прямо здесь, без перехода на вкладку «Актуализация».
@@ -387,7 +414,8 @@ export function VndEditionsTab({vnd, onVndChanged, onGoToApproval}: VndEditionsT
             primaryVariant = "actualize";
             primaryDisabled = true;
             primaryHint = t("openVndPage.redactionsSidebar.noPermissionHint");
-            primaryAction = () => {};
+            primaryAction = () => {
+            };
         } else {
             primaryVariant = "actualize";
             primaryDisabled = false;
@@ -402,7 +430,8 @@ export function VndEditionsTab({vnd, onVndChanged, onGoToApproval}: VndEditionsT
         primaryVariant = "actualize";
         primaryDisabled = true;
         primaryHint = undefined;
-        primaryAction = () => {};
+        primaryAction = () => {
+        };
     }
 
     return (
@@ -479,13 +508,15 @@ export function VndEditionsTab({vnd, onVndChanged, onGoToApproval}: VndEditionsT
 
                 <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
                     {submit.error && (
-                        <div className="border-b border-[#f2c2c2] bg-[#fdf1f1] px-5 py-[10px] text-[12px] text-[#c0392b]">
+                        <div
+                            className="border-b border-[#f2c2c2] bg-[#fdf1f1] px-5 py-[10px] text-[12px] text-[#c0392b]">
                             {submit.error}
                         </div>
                     )}
 
                     {download.error && (
-                        <div className="border-b border-[#f2c2c2] bg-[#fdf1f1] px-5 py-[10px] text-[12px] text-[#c0392b]">
+                        <div
+                            className="border-b border-[#f2c2c2] bg-[#fdf1f1] px-5 py-[10px] text-[12px] text-[#c0392b]">
                             {download.error}
                         </div>
                     )}
@@ -613,9 +644,27 @@ export function VndEditionsTab({vnd, onVndChanged, onGoToApproval}: VndEditionsT
                 loadingLabel="Применяю…"
                 loading={publishingWithoutApproval}
                 error={publishWithoutApprovalError}
-                variant="danger"
-                icon={ShieldCheck}
-            />
+                variant="primary"
+            >
+                {publishWithoutApprovalRoleNames.length > 0 && (
+                    <Clue>
+                        <span className="flex flex-wrap items-center gap-x-1.5 gap-y-1.5">
+                            <span>
+                                Это право Вам дают
+                                {publishWithoutApprovalRoleNames.length === 1 ? " роль:" : " роли:"}
+                            </span>
+                            {publishWithoutApprovalRoleNames.map((name) => (
+                                <span
+                                    key={name}
+                                    className="inline-flex items-center px-[9px] py-[3px] rounded-full bg-[#ececfc] text-[11.5px] font-semibold text-[#4e57d6] whitespace-nowrap"
+                                >
+                                    {name}
+                                </span>
+                            ))}
+                        </span>
+                    </Clue>
+                )}
+            </ConfirmActionModal>
 
             {/* Редактирование редакции */}
             {editOpen && selected && (

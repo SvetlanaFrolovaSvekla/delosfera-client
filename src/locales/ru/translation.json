@@ -218,7 +218,7 @@
       "newRedactionButton": "Новая редакция",
       "actualRedactionButton": "Взять в актуализацию",
       "performActualizationButton": "Выполнить актуализацию",
-      "uploadActualizedButton": "Загрузить актуализированную версию",
+      "uploadActualizedButton": "Загрузить новую версию",
       "startApprovalButton": "Отправить на согласование",
       "confirmNoChangesButton": "Подтвердить отсутствие изменений",
       "uploadBlockedHint": "Р{{number}} ещё не завершена — сначала отправьте и дождитесь решения.",

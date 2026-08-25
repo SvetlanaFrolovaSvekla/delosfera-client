@@ -34,8 +34,11 @@ import {EmptyState} from "@/components/componentsGeneral/EmptyState.tsx";
 import {
     RedactionSummaryCard
 } from "@/components/componentsCoordination/CoordinationRouteConstructor/viewComponents/RedactionSummaryCard.tsx";
+import {
+    RedactionCompareModal
+} from "@/components/componentsCoordination/CoordinationRouteConstructor/viewComponents/RedactionCompareModal.tsx";
 import {ConfirmActionModal} from "@/components/componentsGeneral/modal/ConfirmActionModal.tsx";
-import {AlertTriangle, CheckCircle2, Clock3, FileCheck2, XCircle} from "lucide-react";
+import {AlertTriangle, CheckCircle2, Clock3, Columns2, FileCheck2, XCircle} from "lucide-react";
 ///
 
 interface VndCoordinationTabProps {
@@ -59,6 +62,7 @@ export function VndCoordinationTab({vnd, onVndChanged}: VndCoordinationTabProps)
     const [cancelling, setCancelling] = useState(false);
     const [cancelModalOpen, setCancelModalOpen] = useState(false);
     const [startApprovalOpen, setStartApprovalOpen] = useState(false);
+    const [compareModalOpen, setCompareModalOpen] = useState(false);
 
     // Зеркалит бэковый IsChiefEditor() (VndApprovalService/VndService) - широкий набор прав на
     // создание/актуализацию ВНД без запроса права. Используется там, где так же широко ведёт
@@ -183,6 +187,14 @@ export function VndCoordinationTab({vnd, onVndChanged}: VndCoordinationTabProps)
 
     const redaction = redactions?.find((r) => r.id === process.redactionId);
 
+    // Если у редакции, вынесенной на согласование, номер 1 — это первая редакция ВНД,
+    // предыдущей ещё не существует. Иначе ВНД актуализируется, и есть предыдущая
+    // (действовавшая до старта этой актуализации) редакция — её тоже показываем рядом.
+    const isFirstRedaction = redaction?.number === 1;
+    const previousRedaction = redaction
+        ? redactions?.find((r) => r.number === redaction.number - 1)
+        : undefined;
+
     const isPrimaryPhase = process.status === "primary";
     const isRepeatedPhase = process.status === "repeated";
     const isFinalHoldPhase = process.status === "final_hold";
@@ -297,14 +309,41 @@ export function VndCoordinationTab({vnd, onVndChanged}: VndCoordinationTabProps)
                     </div>
                 )}
 
-                <div className="mb-2 text-[13.5px] font-bold text-[#1c2740]">Данная редакция:</div>
+                <div className="mb-2 flex items-center justify-between gap-3">
+                    <div className="text-[13.5px] font-bold text-[#1c2740]">
+                        {isFirstRedaction
+                            ? "Данная редакция (первая для этого ВНД):"
+                            : "Новая редакция и предыдущая для этого ВНД:"}
+                    </div>
+                    {!isFirstRedaction && redaction && previousRedaction && (
+                        <button
+                            type="button"
+                            onClick={() => setCompareModalOpen(true)}
+                            className="cursor-pointer flex h-[35px] shrink-0 items-center justify-center gap-2 rounded-[10px] bg-[#4e57d6] px-4 text-[12.5px] font-semibold text-white hover:bg-[#3f47bd] disabled:cursor-not-allowed disabled:bg-[#c7cbe6]"
+                        >
+                            <Columns2 size={15} strokeWidth={2}/>
+                            Просмотр и сравнение редакций
+                        </button>
+                    )}
+                </div>
                 {redaction && (
                     <RedactionSummaryCard
                         vnd={vnd}
                         redaction={redaction}
+                        previousRedaction={!isFirstRedaction ? previousRedaction : undefined}
                         downloadingId={download.activeId}
                         downloadError={download.error}
                         onDownload={handleDownload}
+                    />
+                )}
+                {compareModalOpen && redaction && previousRedaction && (
+                    <RedactionCompareModal
+                        vnd={vnd}
+                        redaction={redaction}
+                        previousRedaction={previousRedaction}
+                        downloadingId={download.activeId}
+                        onDownload={handleDownload}
+                        onClose={() => setCompareModalOpen(false)}
                     />
                 )}
 
@@ -377,14 +416,41 @@ export function VndCoordinationTab({vnd, onVndChanged}: VndCoordinationTabProps)
             )}
 
             {/* Блок ознакомления с редакцией ("Данная редакция:") */}
-            <div className="mb-2 text-[13.5px] font-bold text-[#1c2740]">Данная редакция:</div>
+            <div className="mb-4 flex items-center justify-between gap-3">
+                <div className="text-[13.5px] font-bold text-[#1c2740]">
+                    {isFirstRedaction
+                        ? "Данная редакция (первая для этого ВНД):"
+                        : "Новая редакция и предыдущая для этого ВНД:"}
+                </div>
+                {!isFirstRedaction && redaction && previousRedaction && (
+                    <button
+                        type="button"
+                        onClick={() => setCompareModalOpen(true)}
+                        className="cursor-pointer flex h-[35px] shrink-0 items-center justify-center gap-2 rounded-[10px] bg-[#4e57d6] px-4 text-[12.5px] font-semibold text-white hover:bg-[#3f47bd] disabled:cursor-not-allowed disabled:bg-[#c7cbe6]"
+                    >
+                        <Columns2 size={15} strokeWidth={2}/>
+                        Просмотр и сравнение редакций
+                    </button>
+                )}
+            </div>
             {redaction && (
                 <RedactionSummaryCard
                     vnd={vnd}
                     redaction={redaction}
+                    previousRedaction={!isFirstRedaction ? previousRedaction : undefined}
                     downloadingId={download.activeId}
                     downloadError={download.error}
                     onDownload={handleDownload}
+                />
+            )}
+            {compareModalOpen && redaction && previousRedaction && (
+                <RedactionCompareModal
+                    vnd={vnd}
+                    redaction={redaction}
+                    previousRedaction={previousRedaction}
+                    downloadingId={download.activeId}
+                    onDownload={handleDownload}
+                    onClose={() => setCompareModalOpen(false)}
                 />
             )}
 

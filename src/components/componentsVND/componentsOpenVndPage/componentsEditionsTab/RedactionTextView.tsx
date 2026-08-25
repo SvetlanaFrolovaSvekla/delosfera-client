@@ -20,6 +20,10 @@ interface RedactionTextViewProps {
 export interface RedactionTextViewHandle {
     goNext: () => void;
     goPrev: () => void;
+    /** DOM-узел, в который отрендерен docx (для внешней подсветки, напр. сравнения редакций) */
+    getContainer: () => HTMLDivElement | null;
+    /** true, когда документ отрендерен, без ошибки и текст на выбранном языке существует */
+    isReady: () => boolean;
 }
 
 const FILE_KEY_BY_LANG: Record<RedactionLanguage, "docFileRuId" | "docFileKgId" | "docFileEnId"> = {
@@ -42,7 +46,12 @@ export const RedactionTextView = forwardRef<RedactionTextViewHandle, RedactionTe
             `${fileId}-${activeLanguage}`, // сброс подсветки при смене редакции/языка
         );
 
-        useImperativeHandle(ref, () => ({goNext, goPrev}), [goNext, goPrev]);
+        useImperativeHandle(ref, () => ({
+            goNext,
+            goPrev,
+            getContainer: () => containerRef.current,
+            isReady: () => !loading && error === null && fileId !== null,
+        }), [goNext, goPrev, containerRef, loading, error, fileId]);
 
         if (fileId === null) {
             return (

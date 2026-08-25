@@ -1,7 +1,8 @@
-import {useState} from "react";
+import {useState, useEffect} from "react";
 import {useAuth} from "@/context/AuthContext.ts";
 import {useTranslation} from "react-i18next";
 import {Link, useLocation, useNavigate} from "react-router-dom";
+import {notificationsService} from "@/service/notificationsService/notificationsService.ts";
 import {useDictionaries} from "@/context/DictionariesContext.tsx";
 import {useVndActualizationSummary} from "@/hooks/vndHooks/useVndActualizationSummary.tsx";
 import {useVndTaskCounts} from "@/hooks/tasksVndHooks/useVndTaskCounts.ts";
@@ -31,15 +32,27 @@ export function Sidebar() {
     // Мои задачи: Согласование (ждущие меня) + Актуализация + Консолидация
     const {counts: taskCounts} = useVndTaskCounts();
     const tasksBadge = taskCounts.coordination + taskCounts.actualization + taskCounts.consolidation;
+    const [unreadCount, setUnreadCount] = useState(0);
+
+    useEffect(() => {
+        notificationsService
+            .getCounts()
+            .then((c) => setUnreadCount(c.totalUnread))
+            .catch(() => {
+                // счётчик не критичен — просто не показываем бейдж
+            });
+    }, []);
 
     const dynamicBadges: Record<string, number> = {
         pln: planningBadge,
         tasks: tasksBadge,
+        notif: unreadCount,
     };
 
     const dynamicBadgeTooltips: Record<string, string> = {
         pln: t("sidebar.badgeTooltips.planning", {count: planningBadge}),
         tasks: t("sidebar.badgeTooltips.tasks", {count: tasksBadge}),
+        notif: t("sidebar.badgeTooltips.notif", {count: unreadCount}),
     };
 
     const goToVndWithRubrics = (keys: string[]) => {

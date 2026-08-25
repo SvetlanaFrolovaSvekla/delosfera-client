@@ -84,6 +84,10 @@ export function VndApprovalRouteView({process, highlightStageId, frameless}: Vnd
     const repeatPhaseStatus = useMemo(() => getRepeatPhaseStatus(process), [process]);
     const finalHoldPhaseStatus = useMemo(() => getFinalHoldPhaseStatus(process), [process]);
 
+    // Процесс завершён без результата (отклонён/отозван) - этапы, на которых решение так и не
+    // было принято, больше не "В ожидании": ждать уже нечего, весь процесс прекращён.
+    const isProcessEnded = process.status === "rejected" || process.status === "cancelled";
+
     const {funnelWrapperRef, targetRef, cardsScrollRef, paths, recomputePaths, registerStageRef} =
         useApprovalRouteLines(stagesWithLocalId);
 
@@ -107,6 +111,7 @@ export function VndApprovalRouteView({process, highlightStageId, frameless}: Vnd
                         stage={stage}
                         cardRef={registerStageRef(stage.localId)}
                         isCurrentUserStage={stage.id === highlightStageId}
+                        isProcessEnded={isProcessEnded}
                     />
                 ))}
             </div>

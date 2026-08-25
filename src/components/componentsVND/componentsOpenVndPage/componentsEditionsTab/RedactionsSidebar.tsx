@@ -46,6 +46,9 @@ interface RedactionsSidebarProps {
     redactions: VndRedactionResponse[];
     vndStatus: VndStatusKey;
     selectedId: number | undefined;
+    /** id редакции, чей последний процесс согласования был отклонён - под ней покажем
+     * подсказку "отредактируйте, чтобы отправить вновь" (см. VndEditionsTab) */
+    rejectedRedactionId?: number;
     onSelect: (id: number) => void;
     primaryActionVariant: RedactionsPrimaryActionVariant;
     primaryActionDisabled: boolean;
@@ -80,6 +83,7 @@ export function RedactionsSidebar({
                                       redactions,
                                       vndStatus,
                                       selectedId,
+                                      rejectedRedactionId,
                                       onSelect,
                                       primaryActionVariant,
                                       primaryActionDisabled,
@@ -122,6 +126,7 @@ export function RedactionsSidebar({
                                 onClick={() => onSelect(e.id)}
                                 showEditButton={canEditLastRevision && e.id === lastRedactionId && e.approvalStatus !== "Pending"}
                                 showTidButton={e.id !== firstRedactionId}
+                                wasRejected={e.id === rejectedRedactionId}
                                 onEdit={() => onEditRedaction(e.id)}
                                 onOpenAttachments={() => onOpenAttachments(e)}
                                 onOpenTid={() => onOpenTid(e)}
@@ -199,6 +204,7 @@ function RedactionListItem({
                                onClick,
                                showEditButton,
                                showTidButton,
+                               wasRejected,
                                onEdit,
                                onOpenAttachments,
                                onOpenTid,
@@ -210,6 +216,8 @@ function RedactionListItem({
     onClick: () => void;
     showEditButton: boolean;
     showTidButton: boolean;
+    /** последний процесс согласования этой редакции был отклонён - показать подсказку */
+    wasRejected?: boolean;
     onEdit: () => void;
     onOpenAttachments: () => void;
     onOpenTid: () => void;
@@ -280,6 +288,12 @@ function RedactionListItem({
                     {redaction.description && (
                         <span className="mt-[5px] line-clamp-5 block text-[11.5px] leading-[1.5] text-[#55617a]">
                             {redaction.description}
+                        </span>
+                    )}
+
+                    {wasRejected && (
+                        <span className="mt-[5px] block text-[11px] leading-[1.4] text-[#c0392b]">
+                            Эта редакция была отклонена при согласовании. Отредактируйте её, чтобы отправить на согласование вновь.
                         </span>
                     )}
                 </span>

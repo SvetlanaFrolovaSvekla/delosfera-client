@@ -280,6 +280,13 @@ export function VndEditionsTab({vnd, onVndChanged, onGoToApproval}: VndEditionsT
     const isVndInitiator = vnd.createdByUserId !== null && vnd.createdByUserId === user?.id;
     const canGoToApprovalFromBanner = isApprovalParticipant || isApprovalInitiator || isVndInitiator;
 
+    // Редакция, по которой последний процесс согласования был отклонён - она вернулась в
+    // черновик (как и после отзыва), поэтому по одному только approvalStatus не отличить
+    // "никогда не отправлялась" от "отклонена, нужно доработать". Сверяемся с историей
+    // процесса согласования, чтобы показать в сайдбаре подсказку именно для этого случая.
+    const rejectedRedactionId =
+        approvalProcess?.status === "rejected" ? approvalProcess.redactionId : undefined;
+
     const handlePublishWithoutApproval = async () => {
         setPublishingWithoutApproval(true);
         setPublishWithoutApprovalError(null);
@@ -426,6 +433,7 @@ export function VndEditionsTab({vnd, onVndChanged, onGoToApproval}: VndEditionsT
                     redactions={sortedDesc}
                     selectedId={selected.id}
                     vndStatus={vnd.status}
+                    rejectedRedactionId={rejectedRedactionId}
                     onSelect={setSelectedId}
                     primaryActionVariant={primaryVariant}
                     primaryActionDisabled={primaryDisabled}

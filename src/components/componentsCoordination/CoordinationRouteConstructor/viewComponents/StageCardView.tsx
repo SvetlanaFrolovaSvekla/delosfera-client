@@ -62,9 +62,13 @@ interface StageCardViewProps {
     cardRef: (el: HTMLDivElement | null) => void;
     /** true, если это этап текущего залогиненного пользователя — подсвечивает карточку и статус */
     isCurrentUserStage?: boolean;
+    /** true, если весь процесс согласования уже завершён без результата (отклонён/отозван) —
+     * этапы, которые так и остались "pending", больше не значат "ждём решения", т.к. решения по
+     * ним уже не будет: сам процесс прекращён. */
+    isProcessEnded?: boolean;
 }
 
-export function StageCardView({stage, cardRef, isCurrentUserStage}: StageCardViewProps) {
+export function StageCardView({stage, cardRef, isCurrentUserStage, isProcessEnded}: StageCardViewProps) {
     const {user} = useAuth();
 
     const kind = STAGE_KIND_RESPONSE_TO_REQUEST[stage.kind];
@@ -113,13 +117,22 @@ export function StageCardView({stage, cardRef, isCurrentUserStage}: StageCardVie
             : stage.primaryAttachments;
 
     // Пока решение не принято, а это этап текущего пользователя — показываем отдельный жёлтый статус
-    const isPendingForCurrentUser = isCurrentUserStage && decision === "pending";
+    const isPendingForCurrentUser = isCurrentUserStage && decision === "pending" && !isProcessEnded;
     const isAutoTimeout = decision === "auto_approved_timeout";
+    // Решение так и не было принято, а весь процесс уже прекращён (отклонён/отозван на другом
+    // этапе) — этап не "в ожидании", он просто больше не актуален.
+    const isStalePending = decision === "pending" && isProcessEnded;
 
-    const badgeLabel = isPendingForCurrentUser ? "В рассмотрении (мой этап)" : decisionMeta.label;
+    const badgeLabel = isPendingForCurrentUser
+        ? "В рассмотрении (мой этап)"
+        : isStalePending
+            ? "Согласование прекращено"
+            : decisionMeta.label;
     const badgeClass = isPendingForCurrentUser
         ? "bg-[#fdf3dc] text-[#a97313]"
-        : decisionMeta.badgeClass;
+        : isStalePending
+            ? "bg-[#f1f2f5] text-[#7c8494]"
+            : decisionMeta.badgeClass;
 
     const containerClass = isPendingForCurrentUser
         ? "border border-[#e3b23c] bg-gradient-to-b from-[#fffdf7] to-white shadow-[0_2px_5px_-2px_rgba(179,115,10,0.28)]"

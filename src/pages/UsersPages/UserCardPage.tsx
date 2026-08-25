@@ -124,7 +124,7 @@ export function UserCardPage() {
                 roleIds: form.roleIds,
             });
 
-            navigate(`/users/${created.id}`, {replace: true});
+            navigate(`/management/users/${created.id}`, {replace: true});
             return;
         }
 

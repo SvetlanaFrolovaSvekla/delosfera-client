@@ -9,6 +9,7 @@ import {EmptyState} from "@/components/componentsGeneral/EmptyState.tsx";
 import {UsersPageHeader} from "@/components/componentsUsers/UsersPageHeader.tsx";
 import {UsersFilters} from "@/components/componentsUsers/UsersFilters.tsx";
 import {UsersTable} from "@/components/componentsUsers/UsersTable.tsx";
+import {OrgStructureTree} from "@/components/componentsUsers/OrgStructureTree.tsx";
 import {ConfirmActionModal} from "@/components/componentsGeneral/modal/ConfirmActionModal.tsx";
 import {toast} from "@/service/toastService.ts";
 
@@ -20,7 +21,10 @@ type PendingUserAction = {
     type: "block" | "unblock";
 };
 
+type View = "people" | "structure";
+
 export function UsersPage() {
+    const [view, setView] = useState<View>("people");
     const navigate = useNavigate();
     const {
         search, setSearch,
@@ -126,6 +130,24 @@ export function UsersPage() {
 
             <UsersPageHeader onCreateClick={() => navigate("/management/users/new")}/>
 
+            <div className="mb-4 flex gap-1 rounded-[10px] bg-[#eef2f7] p-1 w-fit">
+                {([["people", "Сотрудники"], ["structure", "Оргструктура"]] as const).map(([id, title]) => (
+                    <button
+                        key={id}
+                        type="button"
+                        onClick={() => setView(id)}
+                        className={`rounded-[8px] px-4 py-1.5 text-[13.5px] transition
+                                    ${view === id
+                                        ? "bg-white font-semibold text-[#101a2c] shadow-sm"
+                                        : "text-[#5b6b85] hover:text-[#101a2c]"}`}
+                    >
+                        {title}
+                    </button>
+                ))}
+            </div>
+
+            {view === "structure" ? <OrgStructureTree/> : <>
+
             <Tabs<UserStatusScope> tabs={scopeTabs} value={statusScope} onChange={setStatusScope}/>
 
             <UsersFilters
@@ -175,11 +197,13 @@ export function UsersPage() {
                     users={users}
                     columns={columns}
                     gridTemplate={gridTemplate}
-                    onEdit={(u) => navigate(`/users/${u.id}`)}
+                    onEdit={(u) => navigate(`/management/users/${u.id}`)}
                     onBlock={openBlockConfirm}
                     onUnblock={openUnblockConfirm}
                 />
             )}
+
+            </>}
 
             <ConfirmActionModal
                 open={pendingAction !== null}

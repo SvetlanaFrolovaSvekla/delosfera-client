@@ -279,6 +279,7 @@ function SyncHistory({runs}: {runs: OrgSyncRun[]}) {
                                         <Count label="пропущено" value={run.unitsSkipped} alert/>
                                         <Count label="сотрудников обновлено" value={run.employeesUpdated}/>
                                         <Count label="не нашлось в системе" value={run.employeesUnmatched} alert/>
+                                        <Count label="закрыт доступ (уволены)" value={run.employeesDeactivated} alert/>
                                     </div>
 
                                     {run.notes.length > 0 && (

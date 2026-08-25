@@ -113,9 +113,9 @@ function Node({node, depth, collapsed, toggle, forceOpen}: {
     const hasChildren = node.children.length > 0;
     const open = forceOpen || !collapsed.has(node.id);
 
-    // Управление или отдел — по тому, есть ли внутри другие подразделения.
-    // Вид из портала сюда не приходит, а разница видна именно по вложенности.
-    const Icon = hasChildren ? Building2 : Users2;
+    // Значок по виду из портала. Раньше вид угадывался по вложенности, и
+    // управление без отделов рисовалось отделом, а комитет с отделами — управлением.
+    const Icon = node.kind === "Отдел" ? Users2 : Building2;
 
     const inside = totalStaff(node);
 
@@ -153,6 +153,7 @@ function Node({node, depth, collapsed, toggle, forceOpen}: {
                         {node.title}
                     </span>
                     <span className="block truncate text-[11.5px] text-[#8593a8]">
+                        {node.kind && <>{node.kind} · </>}
                         {node.head
                             ? <>нач. {node.head}</>
                             : <span className="text-[#a8b3c4]">начальник не назначен</span>}

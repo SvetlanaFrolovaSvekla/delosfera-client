@@ -11,6 +11,8 @@ import {apiClient} from "@/service/apiClient.ts";
 export interface OrgTreeNode {
     id: number;
     title: string;
+    /** Коллегиальный орган, управление или отдел. Пусто — вид не указан. */
+    kind: string | null;
     parentId: number | null;
     /** Начальник подразделения. */
     head: string | null;

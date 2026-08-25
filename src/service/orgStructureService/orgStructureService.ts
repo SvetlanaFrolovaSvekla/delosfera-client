@@ -54,6 +54,8 @@ export interface OrgSyncRun {
     employeesMatched: number;
     employeesUnmatched: number;
     employeesUpdated: number;
+    /** Скольким закрыли доступ: в портале уволены. */
+    employeesDeactivated: number;
 
     error: string | null;
     notes: string[];

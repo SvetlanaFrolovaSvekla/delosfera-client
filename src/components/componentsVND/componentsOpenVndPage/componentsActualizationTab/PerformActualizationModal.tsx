@@ -11,7 +11,8 @@
 //   actualizationService.confirmStart.
 import {useState} from "react";
 import {createPortal} from "react-dom";
-import {Loader2, RefreshCw, X} from "lucide-react";
+import {Check, Loader2, RefreshCw, X} from "lucide-react";
+import {HelpTooltip} from "@/components/componentsGeneral/knowledgeBaseComponents/HelpTooltip.tsx";
 
 interface PerformActualizationModalProps {
     mode: "direct" | "afterRequest";
@@ -24,13 +25,13 @@ interface PerformActualizationModalProps {
 }
 
 export function PerformActualizationModal({
-                                                mode,
-                                                decidedShiftNextPeriod,
-                                                submitting,
-                                                error,
-                                                onClose,
-                                                onConfirm,
-                                            }: PerformActualizationModalProps) {
+                                              mode,
+                                              decidedShiftNextPeriod,
+                                              submitting,
+                                              error,
+                                              onClose,
+                                              onConfirm,
+                                          }: PerformActualizationModalProps) {
     const [shiftNextPeriod, setShiftNextPeriod] = useState(true);
     const [plannedNoChanges, setPlannedNoChanges] = useState(false);
 
@@ -39,9 +40,11 @@ export function PerformActualizationModal({
     return createPortal(
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 p-4">
             <div className="w-full max-w-[460px] rounded-[16px] bg-white p-6 shadow-xl">
+                {/* Шапка */}
                 <div className="mb-4 flex items-start justify-between gap-3">
                     <div className="flex items-center gap-3">
-                        <span className="grid h-10 w-10 flex-none place-items-center rounded-[11px] bg-[#ececfc] text-[#4e57d6]">
+                        <span
+                            className="grid h-10 w-10 flex-none place-items-center rounded-[11px] bg-[#ececfc] text-[#4e57d6]">
                             <RefreshCw size={19} strokeWidth={1.8}/>
                         </span>
                         <h2 className="text-[16px] font-bold text-[#1c2740]">Выполнить актуализацию</h2>
@@ -51,31 +54,72 @@ export function PerformActualizationModal({
                         <X size={20}/>
                     </button>
                 </div>
-
+                {/* Поле "Сдвинуть срок следующей актуализации после публикации новой редакции" */}
                 {mode === "afterRequest" ? (
-                    <div className="mb-4 rounded-[10px] border border-[#e5e9f0] bg-[#f6f8fb] px-3 py-[10px] text-[13px] text-[#3a4560]">
+                    <div
+                        className="mb-4 rounded-[10px] border border-[#e5e9f0] bg-[#f6f8fb] px-3 py-[10px] text-[13px] text-[#3a4560]">
                         Сдвиг срока следующей актуализации уже решён при одобрении заявки:{" "}
                         <span className="font-semibold">
                             {effectiveShift ? "срок будет сдвинут" : "срок сдвигаться не будет"}
                         </span>.
                     </div>
                 ) : (
-                    <label className="mb-2 flex cursor-pointer items-center gap-[10px] rounded-[10px] border border-[#e5e9f0] px-3 py-[10px] text-[13px] text-[#3a4560] hover:bg-[#f6f8fb]">
-                        <input type="checkbox" checked={shiftNextPeriod}
-                               onChange={(e) => setShiftNextPeriod(e.target.checked)}
-                               className="h-4 w-4 accent-[#4e57d6]"/>
-                        Сдвинуть срок следующей актуализации после публикации новой редакции
-                    </label>
+                    <div className="mb-2 flex items-center justify-between gap-2">
+                        <label className="flex cursor-pointer items-center gap-[10px] text-[13px] text-[#3a4560]">
+                            <span
+                                className="w-5 h-5 flex-none rounded-md grid place-items-center border-[1.5px]"
+                                style={{
+                                    borderColor: shiftNextPeriod ? "#4e57d6" : "#cbd3df",
+                                    background: shiftNextPeriod ? "#4e57d6" : "white",
+                                }}
+                            >
+                                <Check
+                                    className="w-[13px] h-[13px] text-white"
+                                    strokeWidth={3}
+                                    style={{opacity: shiftNextPeriod ? 1 : 0}}
+                                />
+                            </span>
+                            <input
+                                type="checkbox"
+                                checked={shiftNextPeriod}
+                                onChange={(e) => setShiftNextPeriod(e.target.checked)}
+                                className="hidden"
+                            />
+                            Сдвинуть срок следующей актуализации после публикации новой редакции
+                        </label>
+                        <HelpTooltip
+                            content="Если включено, срок следующей плановой актуализации будет отсчитан заново от даты публикации новой редакции."/>
+                    </div>
                 )}
-
-                <label className="mt-2 flex cursor-pointer items-center gap-[10px] rounded-[10px] border border-[#e5e9f0] px-3 py-[10px] text-[13px] text-[#3a4560] hover:bg-[#f6f8fb]">
-                    <input type="checkbox" checked={plannedNoChanges}
-                           onChange={(e) => setPlannedNoChanges(e.target.checked)}
-                           className="h-4 w-4 accent-[#4e57d6]"/>
-                    Актуализация без изменений
-                </label>
+                {/* Поле "Актуализация без изменений" */}
+                <div className="mt-4 flex items-center justify-between gap-2">
+                    <label className="flex cursor-pointer items-center gap-[10px] text-[13px] text-[#3a4560]">
+                        <span
+                            className="w-5 h-5 flex-none rounded-md grid place-items-center border-[1.5px]"
+                            style={{
+                                borderColor: plannedNoChanges ? "#4e57d6" : "#cbd3df",
+                                background: plannedNoChanges ? "#4e57d6" : "white",
+                            }}
+                        >
+                            <Check
+                                className="w-[13px] h-[13px] text-white"
+                                strokeWidth={3}
+                                style={{opacity: plannedNoChanges ? 1 : 0}}
+                            />
+                        </span>
+                        <input
+                            type="checkbox"
+                            checked={plannedNoChanges}
+                            onChange={(e) => setPlannedNoChanges(e.target.checked)}
+                            className="hidden"
+                        />
+                        Актуализация без изменений
+                    </label>
+                    <HelpTooltip
+                        content="Отметьте, если документ не требует изменений — новая редакция не понадобится, действующая редакция отправляется на согласование как есть."/>
+                </div>
                 {plannedNoChanges && (
-                    <p className="mt-1 px-1 text-[11.5px] leading-[1.5] text-[#8b97ab]">
+                    <p className="mt-4 px-1 text-[11.5px] leading-[1.5] text-[#8b97ab]">
                         Заявлено, что актуализация пройдёт без изменений документа — новая редакция
                         не потребуется. Отправьте существующую действующую редакцию на согласование
                         во вкладке «Согласование», как есть, без загрузки нового файла. Новая
@@ -84,12 +128,13 @@ export function PerformActualizationModal({
                 )}
 
                 {error && (
-                    <div className="mt-4 rounded-[10px] border border-[#f2c2c2] bg-[#fdf1f1] px-3 py-[10px] text-[12.5px] text-[#c0392b]">
+                    <div
+                        className="mt-4 rounded-[10px] border border-[#f2c2c2] bg-[#fdf1f1] px-3 py-[10px] text-[12.5px] text-[#c0392b]">
                         {error}
                     </div>
                 )}
 
-                <div className="mt-6 flex justify-end gap-2">
+                <div className="mt-4 flex justify-end gap-2">
                     <button onClick={onClose} disabled={submitting}
                             className="cursor-pointer h-[38px] rounded-[10px] border border-[#e5e9f0] px-4 text-[13px] font-semibold text-[#3a4560] hover:bg-[#f6f8fb] disabled:opacity-50">
                         Отмена

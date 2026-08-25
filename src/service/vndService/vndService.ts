@@ -96,6 +96,16 @@ export const vndService = {
         return handleResponse<VndRedactionResponse>(response);
     },
 
+    /** Только для главного редактора: сделать черновик редакции действующим напрямую,
+     * минуя согласование целиком. */
+    async publishRedactionWithoutApproval(vndId: number, redactionId: number): Promise<VndRedactionResponse> {
+        const response = await fetch(`${API_BASE}/vnd/${vndId}/redactions/${redactionId}/publish-without-approval`, {
+            method: "POST",
+            headers: authHeaders(),
+        });
+        return handleResponse<VndRedactionResponse>(response);
+    },
+
     /**
      * Обновить реквизиты ВНД (кнопка "Изменить реквизиты").
      * Даты "Изменение реквизитов" / "Изменение редакции" сюда не входят - они выставляются бэкендом автоматически.

@@ -9,8 +9,10 @@ import {getElapsedLabel} from "@/utils/dateUtils.ts";
 
 interface VndApprovalRouteViewProps {
     process: ApprovalProcessResponse;
-    /** id этапа текущего пользователя — если задан, карточка этого этапа подсвечивается как "В рассмотрении" */
     highlightStageId?: number;
+    /** true — не рисовать собственную внешнюю рамку/скругление/фон (используется, когда
+     * компонент вложен как тело под цветной шапкой-баннером, и рамку рисует родитель) */
+    frameless?: boolean;
 }
 
 // Статус фазы «Первичное согласование»
@@ -72,7 +74,7 @@ function CurrentPhaseHint({startedAt, deadlineAt}: CurrentPhaseHintProps) {
     );
 }
 
-export function VndApprovalRouteView({process, highlightStageId}: VndApprovalRouteViewProps) {
+export function VndApprovalRouteView({process, highlightStageId, frameless}: VndApprovalRouteViewProps) {
     const stagesWithLocalId = useMemo(
         () => process.stages.map((s) => ({...s, localId: String(s.id)})),
         [process.stages],
@@ -88,7 +90,11 @@ export function VndApprovalRouteView({process, highlightStageId}: VndApprovalRou
     return (
         <div
             ref={funnelWrapperRef}
-            className="relative rounded-[16px] border border-[#e5e9f0] bg-[#fbfcfe] bg-[radial-gradient(#e4e9f1_1px,transparent_1px)] bg-[length:18px_18px] p-6"
+            className={
+                frameless
+                    ? "relative bg-[#fbfcfe] bg-[radial-gradient(#e4e9f1_1px,transparent_1px)] bg-[length:18px_18px] p-6"
+                    : "relative rounded-[16px] border border-[#e5e9f0] bg-[#fbfcfe] bg-[radial-gradient(#e4e9f1_1px,transparent_1px)] bg-[length:18px_18px] p-6"
+            }
         >
             <div
                 ref={cardsScrollRef}

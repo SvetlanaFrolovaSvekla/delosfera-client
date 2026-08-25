@@ -35,13 +35,14 @@ import {
     RedactionSummaryCard
 } from "@/components/componentsCoordination/CoordinationRouteConstructor/viewComponents/RedactionSummaryCard.tsx";
 import {ConfirmActionModal} from "@/components/componentsGeneral/modal/ConfirmActionModal.tsx";
-import {AlertTriangle, CheckCircle2, Clock3} from "lucide-react";
+import {AlertTriangle, CheckCircle2, Clock3, FileCheck2, XCircle} from "lucide-react";
 ///
 
 interface VndCoordinationTabProps {
     vnd: VndResponse;
     onVndChanged?: () => void;
 }
+
 
 // Статусы, из которых инициатор ещё может отозвать согласование
 const CANCELLABLE_STATUSES = ["primary", "repeated", "final_hold", "revision_needed"];
@@ -187,6 +188,7 @@ export function VndCoordinationTab({vnd, onVndChanged}: VndCoordinationTabProps)
     const isFinalHoldPhase = process.status === "final_hold";
     const isRevisionNeeded = process.status === "revision_needed";
     const isApproved = process.status === "approved";
+    const isRejected = process.status === "rejected";
 
     // На финальной выдержке решение может принять ЛЮБОЙ согласующий маршрута (participatesInRepeat
     // здесь не фильтрует — бэк на этом этапе открывает FinalHoldDecision всем этапам сразу)
@@ -241,15 +243,45 @@ export function VndCoordinationTab({vnd, onVndChanged}: VndCoordinationTabProps)
         }
     };
 
+    // Конфиг шапки над установленным маршрутом
+    const routeHeaderConfig = isApproved
+        ? {
+            border: "border-[#bfe3cc]", bg: "bg-[#eef9f2]",
+            icon: CheckCircle2, iconColor: "text-[#1f7a4c]",
+            titleColor: "text-[#1c5e37]", textColor: "text-[#2f6b47]",
+            title: "Редакция согласована",
+            description: "Все согласующие приняли решение без замечаний. Осталось дождаться консолидации редакции — её выполняет инициатор согласования или главный редактор.",
+        }
+        : isRejected
+            ? {
+                border: "border-[#f2c2c2]", bg: "bg-[#fdf1f1]",
+                icon: XCircle, iconColor: "text-[#c0392b]",
+                titleColor: "text-[#8f2a1f]", textColor: "text-[#a63a2c]",
+                title: "Редакция отклонена",
+                description: "Один из согласующих отклонил редакцию — согласование прекращено. Редакция вернулась в черновик, изменения нужно внести заново и отправить на новое согласование.",
+            }
+            : (isRevisionNeeded && !isInitiator)
+                ? {
+                    border: "border-[#f0dcae]", bg: "bg-[#fdf6e8]",
+                    icon: Clock3, iconColor: "text-[#9a6408]",
+                    titleColor: "text-[#7a5006]", textColor: "text-[#8a6a1f]",
+                    title: "Инициатор согласования работает над замечаниями",
+                    description: "Все согласующие уже приняли решение на этом этапе. Документ вернётся к вам на повторное согласование, как только инициатор внесёт правки по замечаниям или заполнит матрицу разногласий.",
+                }
+                : null;
+
     // --- Вид для согласующего ---
     if (isApprover) {
         return (
             <div className="py-4 px-4 sm:px-6">
                 {vnd.actualizationPlannedNoChanges && (
-                    <div
-                        className="mb-3 rounded-[10px] border border-[#f0dcae] bg-[#fdf6e8] px-4 py-[10px] text-[12.5px] text-[#7a5006]">
-                        Заявлена актуализация без изменений — на согласовании существующая действующая
-                        редакция как есть, без нового файла.
+                    <div className="mb-3 inline-flex items-start gap-2.5 rounded-[12px] border border-[#dde0fa] bg-[#f4f5fd] px-3.5 py-3 max-w-full">
+                        <FileCheck2 size={16} strokeWidth={2} className="mt-[1px] flex-none text-[#4e57d6]"/>
+                        <p className="text-[12.5px] leading-[1.55] text-[#3a4560]">
+                            Обратите внимание: Инициатор текущего согласования считает, что актуализация данного ВНД
+                            должна пройти без изменений редакции. На согласовании находится
+                            существующая действующая редакция как есть, без нового файла.
+                        </p>
                     </div>
                 )}
 
@@ -277,7 +309,22 @@ export function VndCoordinationTab({vnd, onVndChanged}: VndCoordinationTabProps)
                 )}
 
                 <div className="mb-2 text-[13.5px] font-bold text-[#1c2740]">Установленный маршрут согласования:</div>
-                <VndApprovalRouteView process={process} highlightStageId={myStage?.id}/>
+                <div className={`rounded-[16px] border overflow-hidden ${routeHeaderConfig ? routeHeaderConfig.border : "border-[#e5e9f0]"}`}>
+                    {routeHeaderConfig && (
+                        <div className={`flex items-start gap-3 border-b px-5 py-3 ${routeHeaderConfig.border} ${routeHeaderConfig.bg}`}>
+                            <routeHeaderConfig.icon size={18} className={`mt-[1px] flex-none ${routeHeaderConfig.iconColor}`}/>
+                            <div>
+                                <div className={`text-[13px] font-semibold ${routeHeaderConfig.titleColor}`}>
+                                    {routeHeaderConfig.title}
+                                </div>
+                                <div className={`mt-0.5 text-[12.5px] leading-[1.5] ${routeHeaderConfig.textColor}`}>
+                                    {routeHeaderConfig.description}
+                                </div>
+                            </div>
+                        </div>
+                    )}
+                    <VndApprovalRouteView process={process} highlightStageId={myStage?.id} frameless={!!routeHeaderConfig}/>
+                </div>
 
                 {isPendingForMe && (
                     <div className="mt-6">
@@ -306,54 +353,18 @@ export function VndCoordinationTab({vnd, onVndChanged}: VndCoordinationTabProps)
     return (
         <div className="py-4 px-6">
             {vnd.actualizationPlannedNoChanges && (
-                <div
-                    className="mb-3 rounded-[10px] border border-[#f0dcae] bg-[#fdf6e8] px-4 py-[10px] text-[12.5px] text-[#7a5006]">
-                    Заявлена актуализация без изменений — на согласовании существующая действующая
-                    редакция как есть, без нового файла.
+                <div className="mb-3 inline-flex items-start gap-2.5 rounded-[12px] border border-[#dde0fa] bg-[#f4f5fd] px-3.5 py-3 max-w-full">
+                    <FileCheck2 size={16} strokeWidth={2} className="mt-[1px] flex-none text-[#4e57d6]"/>
+                    <p className="text-[12.5px] leading-[1.55] text-[#3a4560]">
+                        Обратите внимание: Вы заявили, что актуализация должна пройти без
+                        изменений. На согласовании действующая редакция как есть, без нового
+                        файла. Согласующие также увидят соответствующее сообщение.
+                    </p>
                 </div>
             )}
 
             {/* Информационный блок */}
             <VndApprovalSummary process={process}/>
-
-            {/* Редакция согласована всеми без единого замечания — согласование как таковое
-                завершено, дело за консолидацией. Показываем явно, иначе непонятно, почему
-                страница "просто висит" без дальнейших действий согласующего. */}
-            {isApproved && (
-                <div className="mb-4 flex items-start gap-3 rounded-[12px] border border-[#bfe3cc] bg-[#eef9f2] px-4 py-3.5">
-                    <CheckCircle2 size={18} className="mt-[1px] flex-none text-[#1f7a4c]"/>
-                    <div>
-                        <div className="text-[13px] font-semibold text-[#1c5e37]">
-                            Редакция согласована
-                        </div>
-                        <div className="mt-0.5 text-[12.5px] leading-[1.5] text-[#2f6b47]">
-                            Все согласующие приняли решение без замечаний. Осталось дождаться
-                            консолидации редакции — её выполняет инициатор согласования или главный
-                            редактор.
-                        </div>
-                    </div>
-                </div>
-            )}
-
-            {/* Кто-то из согласующих оставил замечания, все уже высказались — мяч на стороне
-                инициатора. Без этого блока согласующие видят как бы "зависший" этап и не
-                понимают, что делать дальше. Инициатору вместо баннера показывается панель
-                VndRevisionNeededPanel ниже — с самими действиями. */}
-            {isRevisionNeeded && !isInitiator && (
-                <div className="mb-4 flex items-start gap-3 rounded-[12px] border border-[#f0dcae] bg-[#fdf6e8] px-4 py-3.5">
-                    <Clock3 size={18} className="mt-[1px] flex-none text-[#9a6408]"/>
-                    <div>
-                        <div className="text-[13px] font-semibold text-[#7a5006]">
-                            Инициатор согласования работает над замечаниями
-                        </div>
-                        <div className="mt-0.5 text-[12.5px] leading-[1.5] text-[#8a6a1f]">
-                            Все согласующие уже приняли решение на этом этапе. Документ вернётся к
-                            вам на повторное согласование, как только инициатор внесёт правки по
-                            замечаниям или заполнит матрицу разногласий.
-                        </div>
-                    </div>
-                </div>
-            )}
 
             {redactionsError && (
                 <div>
@@ -376,9 +387,25 @@ export function VndCoordinationTab({vnd, onVndChanged}: VndCoordinationTabProps)
                     onDownload={handleDownload}
                 />
             )}
-            {/* Блок маршрута ("Установленный маршрут согласования:") */}
+
+            {/* Установленный маршрут согласования — с цветной шапкой-статусом, если применимо */}
             <div className="mb-2 text-[13.5px] font-bold text-[#1c2740]">Установленный маршрут согласования:</div>
-            <VndApprovalRouteView process={process}/>
+            <div className={`rounded-[16px] border overflow-hidden ${routeHeaderConfig ? routeHeaderConfig.border : "border-[#e5e9f0]"}`}>
+                {routeHeaderConfig && (
+                    <div className={`flex items-start gap-3 border-b px-5 py-3 ${routeHeaderConfig.border} ${routeHeaderConfig.bg}`}>
+                        <routeHeaderConfig.icon size={18} className={`mt-[1px] flex-none ${routeHeaderConfig.iconColor}`}/>
+                        <div>
+                            <div className={`text-[13px] font-semibold ${routeHeaderConfig.titleColor}`}>
+                                {routeHeaderConfig.title}
+                            </div>
+                            <div className={`mt-0.5 text-[12.5px] leading-[1.5] ${routeHeaderConfig.textColor}`}>
+                                {routeHeaderConfig.description}
+                            </div>
+                        </div>
+                    </div>
+                )}
+                <VndApprovalRouteView process={process} frameless={!!routeHeaderConfig}/>
+            </div>
 
 
             {isRevisionNeeded && isInitiator && (

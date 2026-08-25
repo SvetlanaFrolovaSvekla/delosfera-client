@@ -78,6 +78,18 @@ export function VndTaskCard({task}: VndTaskCardProps) {
                             {stageMeta.label}
                         </span>
                     )}
+                    {task.actualizationPlannedNoChanges && (
+                        <span className="rounded-full bg-[#fdf6e8] px-[9px] py-[2px] text-[11px] font-semibold text-[#9a6408]">
+                            Без изменений
+                        </span>
+                    )}
+                    {/* Пока шаг "Выполнить актуализацию" не пройден - ни "без изменений", ни сдвиг
+                        срока ещё не решены, карточка ведёт на этот шаг, а не на загрузку/согласование */}
+                    {task.scope === "actualization" && !task.actualizationPerformed && (
+                        <span className="rounded-full bg-[#ececfc] px-[9px] py-[2px] text-[11px] font-semibold text-[#4e57d6]">
+                            Требуется выполнить актуализацию
+                        </span>
+                    )}
                 </span>
 
                 {/* Название ВНД — отдельной строкой, чтобы быть видимым независимо от скоупа */}

@@ -6,6 +6,7 @@ import {userService} from "@/service/userService/userService.ts";
 import type {UserResponse} from "@/service/userService/userServiceType.ts";
 import {useVndDictionaries} from "@/hooks/vndHooks/useVndDictionaries.ts";
 import {useVndActualization} from "@/hooks/vndHooks/useVndActualization.ts";
+import {VND_TITLE_MAX_LENGTH, VND_TITLE_MIN_LENGTH} from "@/constants/validation/vndValidation.ts";
 
 export function useCreateVndForm() {
     const navigate = useNavigate();
@@ -16,9 +17,14 @@ export function useCreateVndForm() {
 
     const [typeId, setTypeId] = useState("");
     const [organId, setOrganId] = useState<string | null>(null);
-    const [titleRu, setTitleRu] = useState("");
-    const [titleKy, setTitleKy] = useState("");
-    const [titleEn, setTitleEn] = useState("");
+
+    const [titleRu, setTitleRuState] = useState("");
+    const [titleKy, setTitleKyState] = useState("");
+    const [titleEn, setTitleEnState] = useState("");
+
+    const setTitleRu = (value: string) => setTitleRuState(value.slice(0, VND_TITLE_MAX_LENGTH));
+    const setTitleKy = (value: string) => setTitleKyState(value.slice(0, VND_TITLE_MAX_LENGTH));
+    const setTitleEn = (value: string) => setTitleEnState(value.slice(0, VND_TITLE_MAX_LENGTH));
 
     const [keywordIds, setKeywordIds] = useState<string[]>([]);
     const [rubricIds, setRubricIds] = useState<string[]>([]);
@@ -75,7 +81,7 @@ export function useCreateVndForm() {
     const isValid =
         typeId !== "" &&
         organId !== null &&
-        titleRu.trim() !== "" &&
+        titleRu.trim().length >= VND_TITLE_MIN_LENGTH &&
         developerId !== "" &&
         responsibleExecutorIds.length > 0 &&
         actualization.isDateModeValid;

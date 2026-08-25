@@ -1,5 +1,5 @@
 // Открытый документ ВНД в любом статусе
-import {useLocation, useNavigate, useParams} from "react-router-dom";
+import {useLocation, useNavigate, useParams, useSearchParams} from "react-router-dom";
 import {useTranslation} from "react-i18next";
 import {useEffect, useState} from "react";
 
@@ -35,13 +35,18 @@ export function OpenVndPage() {
     const {t} = useTranslation();
     const {id} = useParams<{ id: string }>();
     const location = useLocation();
+    const [searchParams] = useSearchParams();
     const {data: vnd, loading, error, refetch} = useVndById(id ? Number(id) : undefined);
     const dictionaries = useVndDictionaries();
     const {data: redactions} = useVndRedactions(id ? Number(id) : undefined);
     const navigate = useNavigate();
     const {user, hasPermission} = useAuth();
 
-    const initialTab = (location.state as { tab?: VndTabId } | null)?.tab ?? "editions";
+    // Таб при открытии страницы: сначала react-router state (переход внутри приложения,
+    // например с карточки задачи), затем ?tab= в URL (переход из уведомления — там нет
+    // возможности передать state, только сам URL), иначе — «Редакции» по умолчанию.
+    const tabFromQuery = searchParams.get("tab") as VndTabId | null;
+    const initialTab = (location.state as { tab?: VndTabId } | null)?.tab ?? tabFromQuery ?? "editions";
     const [tab, setTab] = useState<VndTabId>(initialTab);
 
     const [consolidateOpen, setConsolidateOpen] = useState(false);
@@ -100,10 +105,14 @@ export function OpenVndPage() {
     const lastRedactionNumber = redactions.reduce((max, r) => Math.max(max, r.number), 0);
     const isFirstRedaction = lastRedactionNumber <= 1;
 
-    // Зеркалит право публикации из VndActualizationService.PublishAsync на бэке:
+    // Зеркалит право публикации из VndActualizationService.PublishAsync на бэке (после унификации
+    // с общим IsChiefEditor() — тем же, что используют VndService/VndApprovalService/
+    // VndCoordinationTab: CreateVnd... тоже считается главным редактором, не только Actualize...):
     // - если есть открытый цикл актуализации - только назначенный ответственный или главред;
     // - если цикла нет - только инициатор согласования или главред.
     const isChiefEditor =
+        hasPermission(PermissionCode.CreateVndWithApproval) ||
+        hasPermission(PermissionCode.CreateVndWithoutApproval) ||
         hasPermission(PermissionCode.ActualizeAnyVndWithApproval) ||
         hasPermission(PermissionCode.ActualizeAnyVndWithoutApproval);
 
@@ -258,12 +267,18 @@ export function OpenVndPage() {
             {activeTab === "history" && <VndHistoryTab/>}
             {/* Актуализация */}
             {activeTab === "actual" && (
-                <VndActualizationTab vnd={vnd} onVndChanged={refetch} onGoToEditions={() => setTab("editions")}/>)}
+                <VndActualizationTab
+                    vnd={vnd}
+                    onVndChanged={refetch}
+                    onGoToEditions={() => setTab("editions")}
+                    onGoToApproval={() => setTab("approval")}
+                />)}
 
             {/* Модальное окно консолидации */}
             {consolidateOpen && (
                 <ConsolidateVndModal
                     isFirstRedaction={isFirstRedaction}
+                    plannedNoChanges={vnd.actualizationPlannedNoChanges}
                     submitting={consolidating}
                     error={consolidateError}
                     onClose={() => {

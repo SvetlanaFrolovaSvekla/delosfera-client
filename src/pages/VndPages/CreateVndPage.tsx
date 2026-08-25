@@ -46,7 +46,7 @@ export function CreateVndPage() {
                 Разработка нового ВНД
             </h1>
             <p className="mt-0 mb-[13px] text-[#8b97ab] text-[13px]">
-                Заполните карточку — код присваивается автоматически, редакция добавляется позже
+                Пожалуйста, заполните карточку — код присваивается автоматически, редакция добавляется позже
             </p>
 
             <div className="grid grid-cols-1 lg:grid-cols-[1fr_290px] gap-5">
@@ -82,7 +82,7 @@ export function CreateVndPage() {
                         />
                     </div>
 
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4 items-start">
                         <div>
                             <ReadOnlyField label="Разработчик (СП)" value={form.developerName || "—"}/>
                             {form.developerHeadName && (

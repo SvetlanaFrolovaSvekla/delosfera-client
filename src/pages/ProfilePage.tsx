@@ -31,6 +31,13 @@ export function ProfilePage() {
     const [activity, setActivity] = useState<UserActivityResponse | null>(null);
     const [activityLoading, setActivityLoading] = useState(true);
 
+    // Сброс скролла при открытии профиля: страница открывается внутри общего
+    // скроллящегося контейнера (main > div.overflow-y-auto в App.tsx), а не окна
+    // браузера, поэтому без явного сброса остаётся там, где был скролл на предыдущей странице
+    useEffect(() => {
+        document.getElementById("main-scroll-container")?.scrollTo({ top: 0, left: 0 });
+    }, []);
+
     useEffect(() => {
         if (!user) return;
         let cancelled = false;

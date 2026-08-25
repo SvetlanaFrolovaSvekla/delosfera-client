@@ -1,12 +1,14 @@
 // Компонента загрузки новой редакции
 import {useMemo, useState} from "react";
 import {createPortal} from "react-dom";
-import {FileUp, Loader2, Paperclip, Trash2, X} from "lucide-react";
 import {vndService} from "@/service/vndService/vndService.ts";
 import type {VndRedactionResponse} from "@/service/vndService/vndServiceType.ts";
 import {useAuth} from "@/context/AuthContext.ts";
 import {PermissionCode} from "@/constants/permissions/permissions.ts";
 import {Clue} from "@/components/componentsGeneral/knowledgeBaseComponents/Clue.tsx";
+import {FileUp, Loader2, Paperclip, Trash2, X, Check} from "lucide-react";
+import {CharCounter} from "@/components/componentsGeneral/CharCounter.tsx";
+import {VND_REDACTION_DESCRIPTION_MAX_LENGTH} from "@/constants/validation/vndValidation.ts";
 
 interface VndUploadRedactionModalProps {
     vndId: number;
@@ -35,7 +37,14 @@ interface FileSlotProps {
     onChange: (file: File | null) => void;
 }
 
-function FileSlot({label, required, hint, accept = ".doc,.docx,.pdf,.xls,.xlsx,.ppt,.pptx", file, onChange}: FileSlotProps) {
+function FileSlot({
+                      label,
+                      required,
+                      hint,
+                      accept = ".doc,.docx,.pdf,.xls,.xlsx,.ppt,.pptx",
+                      file,
+                      onChange
+                  }: FileSlotProps) {
     const inputId = `redaction-file-${label}`;
 
     return (
@@ -86,9 +95,9 @@ function formatBytes(bytes: number): string {
 const MAX_FILE_SIZE = 50 * 1024 * 1024; // 50 МБ
 
 export function VndUploadRedactionModal({
-                                             vndId, requiresTid, mode = "default", lockedRequiresApproval,
-                                             onClose, onUploaded,
-                                         }: VndUploadRedactionModalProps) {
+                                            vndId, requiresTid, mode = "default", lockedRequiresApproval,
+                                            onClose, onUploaded,
+                                        }: VndUploadRedactionModalProps) {
     const {user, hasPermission} = useAuth();
     const isActualization = mode === "actualization";
     // Право обойтись без согласования — не имеет значения в mode="actualization", там решение
@@ -110,7 +119,7 @@ export function VndUploadRedactionModal({
     const [tid, setTid] = useState<File | null>(null);
     const [attachments, setAttachments] = useState<File[]>([]);
     const [description, setDescription] = useState("");
-    const [requiresApproval, setRequiresApproval] = useState(!canSkipApproval);
+    const [requiresApproval, setRequiresApproval] = useState(true);
     // В режиме актуализации решение уже зафиксировано на старте цикла - используем его напрямую,
     // а не локальное состояние чекбокса (которого в этом режиме нет).
     const effectiveRequiresApproval = isActualization ? !!lockedRequiresApproval : requiresApproval;
@@ -172,7 +181,7 @@ export function VndUploadRedactionModal({
 
     return createPortal(
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 p-4">
-            <div className="max-h-[90vh] w-full max-w-[520px] overflow-y-auto rounded-[16px] bg-white p-6 shadow-xl">
+            <div className="max-h-[110vh] w-full max-w-[520px] overflow-y-auto rounded-[16px] bg-white p-6 shadow-xl">
                 <div className="mb-5 flex items-center justify-between">
                     <h2 className="text-[16px] font-bold text-[#1c2740]">
                         {mode === "actualization"
@@ -253,14 +262,18 @@ export function VndUploadRedactionModal({
                     </div>
 
                     <div>
-                        <div className="mb-[6px] text-[12.5px] font-semibold text-[#26324a]">
-                            Описание редакции <span className="text-[#8b97ab] font-normal">(необязательно)</span>
+                        <div className="mb-[6px] flex items-center justify-between">
+                            <span className="text-[12.5px] font-semibold text-[#26324a]">
+                                Описание редакции <span className="text-[#8b97ab] font-normal">(необязательно)</span>
+                            </span>
+                            <CharCounter length={description.length} max={VND_REDACTION_DESCRIPTION_MAX_LENGTH}/>
                         </div>
                         <textarea
                             value={description}
                             onChange={(e) => setDescription(e.target.value)}
                             placeholder="Что изменилось в этой редакции…"
                             rows={3}
+                            maxLength={VND_REDACTION_DESCRIPTION_MAX_LENGTH}
                             className="w-full resize-none rounded-[10px] border border-[#e5e9f0] bg-[#f9fafc] p-3 text-[13px] text-[#26324a] outline-none focus:border-[#4e57d6] focus:bg-white"
                         />
                     </div>
@@ -268,7 +281,8 @@ export function VndUploadRedactionModal({
                     {/* В режиме актуализации решение "с согласованием / без" уже зафиксировано при
                         старте цикла - показываем как информацию, менять здесь нельзя */}
                     {isActualization && (
-                        <div className="rounded-[10px] border border-[#e5e9f0] bg-[#f9fafc] px-3 py-[10px] text-[12.5px] text-[#55617a]">
+                        <div
+                            className="rounded-[10px] border border-[#e5e9f0] bg-[#f9fafc] px-3 py-[10px] text-[12.5px] text-[#55617a]">
                             Согласование: <span className="font-semibold text-[#26324a]">
                                 {effectiveRequiresApproval ? "требуется" : "не требуется"}
                             </span> — определено при старте актуализации
@@ -277,16 +291,27 @@ export function VndUploadRedactionModal({
 
                     {/* Чекбокс показываем только тем, у кого есть права на публикацию редакции без согласования */}
                     {canSkipApproval && (
-                        <div className="flex flex-col gap-2">
-                            <label className="flex cursor-pointer items-center gap-2 text-[13px] text-[#26324a]">
-                                <input
-                                    type="checkbox"
-                                    checked={requiresApproval}
-                                    onChange={(e) => setRequiresApproval(e.target.checked)}
-                                    className="h-4 w-4 rounded border-[#d5dae3] accent-[#4e57d6]"
-                                />
+                        <>
+                            <button
+                                type="button"
+                                onClick={() => setRequiresApproval((v) => !v)}
+                                className="inline-flex items-center gap-2  rounded-[9px]  bg-white text-[#3a4560] font-semibold text-[12.5px] cursor-pointer select-none w-fit"
+                            >
+                                <span
+                                    className="w-5 h-5 flex-none rounded-md grid place-items-center border-[1.5px]"
+                                    style={{
+                                        borderColor: requiresApproval ? "#4e57d6" : "#cbd3df",
+                                        background: requiresApproval ? "#4e57d6" : "white",
+                                    }}
+                                >
+                                    <Check
+                                        className="w-[13px] h-[13px] text-white"
+                                        strokeWidth={3}
+                                        style={{opacity: requiresApproval ? 1 : 0}}
+                                    />
+                                </span>
                                 Требуется согласование
-                            </label>
+                            </button>
 
                             <Clue>
                                 <span className="flex flex-wrap items-center gap-x-1.5 gap-y-1.5">
@@ -304,7 +329,7 @@ export function VndUploadRedactionModal({
                                     ))}
                                 </span>
                             </Clue>
-                        </div>
+                        </>
                     )}
 
                     {error && (

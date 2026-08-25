@@ -3,7 +3,6 @@ import {useMemo} from "react";
 import {useNavigate} from "react-router-dom";
 import {useAuth} from "@/context/AuthContext.ts";
 import type {ApprovalProcessResponse} from "@/service/coordinationService/coordinationServiceTypes.ts";
-import {formatDate, getElapsedLabel} from "@/utils/dateUtils.ts";
 import {PHASE_LABELS, PROCESS_STATUS_META, type ApprovalPhase} from "@/constants/coordinationParams.ts";
 import {User, Calendar, CheckCircle2, Hourglass} from "lucide-react";
 
@@ -21,7 +20,6 @@ function getInitials(fullName: string): string {
         .slice(0, 2);
 }
 
-// Считаем, сколько согласующих уже поставили резолюцию на текущем круге
 function getResolvedCount(process: ApprovalProcessResponse): { resolved: number; total: number } {
     const isRepeatRound = process.status === "repeated";
 
@@ -35,13 +33,11 @@ function getResolvedCount(process: ApprovalProcessResponse): { resolved: number;
     return {resolved: resolved.length, total: process.stages.length};
 }
 
-// Определяем фазу, чьи даты нужно показать под сводкой, по статусу процесса
 function getRelevantPhase(process: ApprovalProcessResponse): ApprovalPhase {
     switch (process.status) {
         case "primary":
             return "primary";
         case "revision_needed":
-            // Повторный круг ещё не начат — показываем его как предстоящий (даты будут "—")
             return "repeat";
         case "repeated":
             return "repeat";
@@ -50,13 +46,36 @@ function getRelevantPhase(process: ApprovalProcessResponse): ApprovalPhase {
             return "finalHold";
         case "cancelled":
         case "rejected":
-            // Согласование прервано — показываем ту фазу, до которой реально дошли
             if (process.finalHoldStartedAt) return "finalHold";
             if (process.repeatStartedAt) return "repeat";
             return "primary";
         default:
             return "primary";
     }
+}
+
+// Дата + время в формате "25.08.2026" / "11:21"
+function formatDateParts(iso: string): { date: string; time: string } {
+    const d = new Date(iso);
+    return {
+        date: d.toLocaleDateString("ru-RU"),
+        time: d.toLocaleTimeString("ru-RU", {hour: "2-digit", minute: "2-digit"}),
+    };
+}
+
+// Точное "сколько прошло" с точностью до минуты: "2 д. 3 ч. 1 мин."
+function getPreciseElapsedLabel(iso: string): string {
+    const totalMinutes = Math.max(0, Math.floor((Date.now() - new Date(iso).getTime()) / 60000));
+    const days = Math.floor(totalMinutes / (60 * 24));
+    const hours = Math.floor((totalMinutes % (60 * 24)) / 60);
+    const minutes = totalMinutes % 60;
+
+    const parts: string[] = [];
+    if (days > 0) parts.push(`${days} д.`);
+    if (hours > 0) parts.push(`${hours} ч.`);
+    if (minutes > 0) parts.push(`${minutes} мин.`);
+
+    return parts.length > 0 ? parts.join(" ") : "меньше минуты";
 }
 
 export function VndApprovalSummary({process}: VndApprovalSummaryProps) {
@@ -76,7 +95,6 @@ export function VndApprovalSummary({process}: VndApprovalSummaryProps) {
     const {resolved, total} = useMemo(() => getResolvedCount(process), [process]);
     const pending = total - resolved;
     const relevantPhase = useMemo(() => getRelevantPhase(process), [process]);
-    const elapsedLabel = useMemo(() => getElapsedLabel(process.createdAt), [process.createdAt]);
     const initiatorInitials = useMemo(() => getInitials(process.initiatorName), [process.initiatorName]);
 
     const phaseLabels = PHASE_LABELS[relevantPhase];
@@ -94,11 +112,11 @@ export function VndApprovalSummary({process}: VndApprovalSummaryProps) {
                 : process.finalHoldDeadlineAt;
 
     return (
-        <div className="mb-5 rounded-[14px] border border-[#e5e9f0] bg-white px-5 py-4">
-            <div className="flex flex-wrap items-center gap-x-6 gap-y-3">
+        <div className="mx-auto mb-5 w-fit max-w-full rounded-[14px] border border-[#e5e9f0] bg-white px-5 py-4">
+            <div className="flex flex-wrap items-center justify-center gap-x-6 gap-y-3">
                 <div className="flex items-center gap-2.5">
                     <User size={15} className="flex-none text-[#8b97ab]"/>
-                    <span className="text-[12.5px] text-[#8b97ab]">Инициатор:</span>
+                    <span className="text-[12.5px] text-[#8b97ab]">Инициатор текущего согласования:</span>
                     <button
                         type="button"
                         onClick={handleInitiatorClick}
@@ -129,30 +147,60 @@ export function VndApprovalSummary({process}: VndApprovalSummaryProps) {
                     </button>
                 </div>
 
+                {/* Строка "Процесс согласования редакции запущен" */}
+                <div className="flex items-center gap-[7px] text-[12.5px] text-[#8b97ab]">
+                    <Calendar size={15} className="flex-none"/>
+                    <span>Процесс согласования редакции запущен:</span>
+                    <span>
+                        {formatDateParts(process.createdAt).date}
+                        {" "}({getPreciseElapsedLabel(process.createdAt)} назад)
+                        {" "}(в {formatDateParts(process.createdAt).time})
+                    </span>
+                </div>
+            </div>
+
+            {/* Текущий этап, когда начато, когда дедлайн */}
+            <div
+                className="mt-3 flex flex-wrap items-center justify-center gap-x-6 gap-y-2 border-t border-[#eef0f5] pt-3">
+
                 <div>
-                    <div className="flex items-center gap-[7px] text-[12.5px] text-[#3a4560]">
-                        <span className="text-[#8b97ab]"> Текущий статус согласования:</span>
+                    <div className="flex items-center gap-[7px] text-[12.5px] text-[#8b97ab]">
+                        <span> Текущий этап согласования:</span>
                         <span
                             className={`inline-flex items-center rounded-full px-[11px] py-1 text-[12px] font-semibold ${statusMeta.badgeClass}`}>
                             {statusMeta.label}
                         </span>
                     </div>
                 </div>
-
-                <div className="flex items-center gap-[7px] text-[12.5px] text-[#3a4560]">
-                    <Calendar size={15} className="flex-none text-[#8b97ab]"/>
-                    <span className="text-[#8b97ab]">Процесс согласования редакции запущен:</span>
-                    <span className="font-medium">{formatDate(process.createdAt)}</span>
-                    <span className="text-[#8b97ab]">({elapsedLabel} назад)</span>
+                {/* Блок "Текущий этап согласования" — started с точным "назад", deadline без него */}
+                <div className="flex items-center gap-[7px] text-[12.5px] text-[#8b97ab]">
+                    <span>{phaseLabels.started}:</span>
+                    <span>
+                        {phaseStartedAt
+                            ? <>
+                                {formatDateParts(phaseStartedAt).date}
+                                {" "}({getPreciseElapsedLabel(phaseStartedAt)} назад)
+                                {" "}(в {formatDateParts(phaseStartedAt).time})
+                            </>
+                            : "—"}
+                    </span>
+                </div>
+                <div className="flex items-center gap-[7px] text-[12.5px] text-[#8b97ab]">
+                    <span>{phaseLabels.deadline}:</span>
+                    <span>
+                        {phaseDeadlineAt
+                            ? <>{formatDateParts(phaseDeadlineAt).date} (в {formatDateParts(phaseDeadlineAt).time})</>
+                            : "—"}
+                    </span>
                 </div>
             </div>
 
             {/* Резолюции текущего этапа — сгруппированы в два мини-блока: поставленные и ожидающие */}
-            <div className="mt-3 border-t border-[#eef0f5] pt-3">
-                <div className="mb-2 text-[11.5px] font-medium text-[#8b97ab]">
+            <div className="mt-3 border-t border-[#eef0f5] pt-3 text-center">
+                <div className="mb-2 text-[11.5px] text-[#8b97ab]">
                     Резолюций на данном этапе выставлено:
                 </div>
-                <div className="flex flex-wrap items-center gap-2.5">
+                <div className="flex flex-wrap items-center justify-center gap-2.5">
                     <div className="flex items-center gap-2.5 rounded-[10px] bg-[#e2f4ea] px-3.5 py-2">
                         <CheckCircle2 size={16} className="flex-none text-[#1c7a4d]"/>
                         <span className="text-[14px] font-bold leading-none text-[#1c7a4d]">{resolved}</span>
@@ -164,17 +212,6 @@ export function VndApprovalSummary({process}: VndApprovalSummaryProps) {
                         <span className="text-[14px] font-bold leading-none text-[#b3730a]">{pending}</span>
                         <span className="text-[12px] font-medium text-[#b3730a]">ожидает решения</span>
                     </div>
-                </div>
-            </div>
-
-            <div className="mt-3 flex flex-wrap items-center gap-x-6 gap-y-2 border-t border-[#eef0f5] pt-3">
-                <div className="flex items-center gap-[7px] text-[12.5px] text-[#3a4560]">
-                    <span className="text-[#8b97ab]">{phaseLabels.started}:</span>
-                    <span className="font-medium">{phaseStartedAt ? formatDate(phaseStartedAt) : "—"}</span>
-                </div>
-                <div className="flex items-center gap-[7px] text-[12.5px] text-[#3a4560]">
-                    <span className="text-[#8b97ab]">{phaseLabels.deadline}:</span>
-                    <span className="font-medium">{phaseDeadlineAt ? formatDate(phaseDeadlineAt) : "—"}</span>
                 </div>
             </div>
         </div>

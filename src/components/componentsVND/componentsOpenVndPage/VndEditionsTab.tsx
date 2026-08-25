@@ -92,7 +92,13 @@ export function VndEditionsTab({vnd, onVndChanged}: VndEditionsTabProps) {
     const {sortedDesc, lastByNumber, current, selected, compareTarget, uploadBlocked} =
         useRedactionSelection(redactions, selectedId);
 
-    const {ref: containerRef, height: availableHeight} = useAvailableHeight();
+    const hasStatusBannerAbove = vnd.status === "draft" || vnd.status === "consol";
+
+    const {ref: containerRef, height: rawAvailableHeight} = useAvailableHeight();
+    const availableHeight =
+        rawAvailableHeight !== undefined && hasStatusBannerAbove
+            ? rawAvailableHeight - 30
+            : rawAvailableHeight;
 
     const download = useAsyncAction<number>();
     const submit = useAsyncAction<number>();
@@ -338,7 +344,7 @@ export function VndEditionsTab({vnd, onVndChanged}: VndEditionsTabProps) {
             style={{height: availableHeight}}
             className={`px-2 grid items-start gap-[15px] overflow-hidden ${
                 contentsOpen ? "grid-cols-[260px_1fr_260px]" : "grid-cols-[260px_1fr]"
-            }`}
+            } ${hasStatusBannerAbove ? "mb-[20px]" : ""}`}
         >
 
             {/* Левая панель */}

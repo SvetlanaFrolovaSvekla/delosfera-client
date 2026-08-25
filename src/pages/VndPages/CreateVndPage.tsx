@@ -1,16 +1,19 @@
 import {useCreateVndForm} from "@/hooks/vndHooks/useCreateVndForm.ts";
-import {SelectDropdown} from "@/components/componentsGeneral/selects/SingleSelects/SelectDropdown.tsx";
-import {SingleSelectListField} from "@/components/componentsGeneral/selects/SingleSelects/SingleSelectListField.tsx";
+
 import {VndTitlesSection} from "@/components/componentsVND/componentsCreateVndPage/VndTitlesSection.tsx";
 import {VndClassifiersSection} from "@/components/componentsVND/componentsCreateVndPage/VndClassifiersSection.tsx";
 import {VndCodeCard} from "@/components/componentsVND/componentsCreateVndPage/VndCodeCard.tsx";
 import {VndActualizationCard} from "@/components/componentsVND/componentsCreateVndPage/VndActualizationCard.tsx";
 import {VndCreateSuccessModal} from "@/components/componentsVND/componentsCreateVndPage/VndCreateSuccessModal.tsx";
+
 import {MultiSelectField} from "@/components/componentsGeneral/selects/MultiSelects/MultiSelectField.tsx";
 import {ReadOnlyField} from "@/components/componentsGeneral/readOnlySelects/ReadOnlyField.tsx";
-import {ArrowLeft, Check} from "lucide-react";
 import {Loader} from "@/components/componentsGeneral/Loader.tsx";
 import {EmptyState} from "@/components/componentsGeneral/EmptyState.tsx";
+import {SelectDropdown} from "@/components/componentsGeneral/selects/SingleSelects/SelectDropdown.tsx";
+import {SingleSelectListField} from "@/components/componentsGeneral/selects/SingleSelects/SingleSelectListField.tsx";
+
+import {ArrowLeft, Check} from "lucide-react";
 
 export function CreateVndPage() {
     const form = useCreateVndForm();
@@ -144,7 +147,7 @@ export function CreateVndPage() {
                     )}
                 </div>
 
-                {/* Правая колонка: код + доп. реквизиты */}
+                {/* Правая колонка: код + актуализация */}
                 <div className="flex flex-col gap-4 h-full">
                     <VndCodeCard/>
                     <VndActualizationCard

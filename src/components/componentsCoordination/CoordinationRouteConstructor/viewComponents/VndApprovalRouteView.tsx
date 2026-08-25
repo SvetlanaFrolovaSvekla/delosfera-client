@@ -33,7 +33,7 @@ function getFinalHoldPhaseStatus(process: ApprovalProcessResponse): NormPhaseSta
     return "upcoming";
 }
 
-// Сколько времени осталось до дедлайна фазы (или "просрочено" / "—")
+// Сколько времени осталось до дедлайна (дни, часы, минуты)
 function getRemainingLabel(deadlineAt: string | null | undefined): string {
     if (!deadlineAt) return "—";
 
@@ -48,7 +48,7 @@ function getRemainingLabel(deadlineAt: string | null | undefined): string {
     const parts: string[] = [];
     if (days > 0) parts.push(`${days} дн`);
     if (hours > 0) parts.push(`${hours} ч`);
-    if (days === 0 && minutes > 0) parts.push(`${minutes} мин`);
+    if (minutes > 0) parts.push(`${minutes} мин`);
 
     return parts.length > 0 ? parts.join(" ") : "меньше минуты";
 }
@@ -62,11 +62,11 @@ interface CurrentPhaseHintProps {
 function CurrentPhaseHint({startedAt, deadlineAt}: CurrentPhaseHintProps) {
     return (
         <div className="absolute left-full top-1/2 ml-3 flex -translate-y-1/2 items-center gap-2 whitespace-nowrap">
-            <ArrowLeft size={16} className="flex-none text-[#2f68f5]"/>
+            <ArrowLeft size={16} className="flex-none"/>
             <div className="flex flex-col text-[11.5px] leading-[1.5]">
-                <span className="font-semibold text-[#2f68f5]">Текущий этап</span>
-                <span className="text-[#8b97ab]">Прошло: {startedAt ? getElapsedLabel(startedAt) : "—"}</span>
-                <span className="text-[#8b97ab]">Осталось: {getRemainingLabel(deadlineAt)}</span>
+                <span className="font-semibold">Текущий этап</span>
+                <span className="text-[#8b97ab]">Прошло с начала этапа: {startedAt ? getElapsedLabel(startedAt) : "—"}</span>
+                <span className="text-[#8b97ab]">Осталось до дедлайна: {getRemainingLabel(deadlineAt)}</span>
             </div>
         </div>
     );

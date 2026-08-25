@@ -99,7 +99,7 @@ export function DatePickerInput({
     const selected = parseDDMMYYYY(value);
 
     return (
-        <div className="relative" ref={containerRef}>
+        <div className="relative w-full" ref={containerRef}>
             <div className="relative">
                 {modal ? (
                     // В режиме модалки поле выглядит как кнопка: клик открывает календарь,

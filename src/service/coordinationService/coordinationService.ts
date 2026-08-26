@@ -68,7 +68,15 @@ class CoordinationService {
         if (request.docRu) formData.append("DocRu", request.docRu);
         if (request.docKg) formData.append("DocKg", request.docKg);
         if (request.docEn) formData.append("DocEn", request.docEn);
+        if (request.removeDocKg) formData.append("RemoveDocKg", "true");
+        if (request.removeDocEn) formData.append("RemoveDocEn", "true");
         if (request.tid) formData.append("Tid", request.tid);
+        for (const file of request.newAttachments ?? []) {
+            formData.append("NewAttachments", file);
+        }
+        for (const fileId of request.removedAttachmentFileIds ?? []) {
+            formData.append("RemovedAttachmentFileIds", String(fileId));
+        }
         if (request.comment) formData.append("Comment", request.comment);
         formData.append("AgreesWithAllRemarks", String(request.agreesWithAllRemarks));
 

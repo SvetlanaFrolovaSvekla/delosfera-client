@@ -9,6 +9,7 @@ import {actualizationService} from "@/service/actualizationService/actualization
 import type {VndResponse} from "@/service/vndService/vndServiceType.ts";
 import type {VndActualizationRequestResponse} from "@/service/actualizationService/actualizationServiceTypes.ts";
 import {useVndActualizationRequests} from "@/hooks/vndHooks/useVndActualizationRequests.ts";
+import {toast} from "@/service/toastService.ts";
 
 export type VndMyActualizationAccessState =
     | { kind: "none" }
@@ -66,6 +67,7 @@ export function useVndActualizationFlow(vnd: VndResponse, onVndChanged: () => vo
     const [startOpen, setStartOpen] = useState(false);
     const [requestOpen, setRequestOpen] = useState(false);
     const [performOpen, setPerformOpen] = useState(false);
+    const [editSettingsOpen, setEditSettingsOpen] = useState(false);
     const [approveTarget, setApproveTarget] = useState<VndActualizationRequestResponse | null>(null);
     const [submitting, setSubmitting] = useState(false);
     const [error, setError] = useState<string | null>(null);
@@ -133,6 +135,29 @@ export function useVndActualizationFlow(vnd: VndResponse, onVndChanged: () => vo
         }
     };
 
+    // Уже выполненный шаг "Выполнить актуализацию" (ActualizationPerformed === true) можно
+    // отредактировать до отправки на согласование/публикации — ссылка "Изменить настройки
+    // актуализации" в сценарии startApprovalNoChanges. В отличие от handlePerformConfirm не трогает
+    // ActualizationPerformed и вызывает отдельный, безопасный на повтор эндпоинт.
+    const handleUpdatePerformedSettings = async (data: { shiftNextPeriod: boolean; plannedNoChanges: boolean }) => {
+        setSubmitting(true);
+        setError(null);
+        try {
+            await actualizationService.updatePerformedSettings(vnd.id, {
+                shiftNextPeriod: data.shiftNextPeriod,
+                plannedNoChanges: data.plannedNoChanges,
+            });
+            setEditSettingsOpen(false);
+            toast.success("Настройки актуализации изменены", "Новые значения сохранены!");
+            onVndChanged();
+            refetchRequests();
+        } catch (err) {
+            setError(err instanceof Error ? err.message : "Не удалось изменить настройки актуализации");
+        } finally {
+            setSubmitting(false);
+        }
+    };
+
     // Главный редактор одобряет заявку обычного редактора — с возможностью скорректировать
     // сдвиг срока (см. ApproveActualizationRequestModal). Сам старт цикла НЕ происходит здесь —
     // это отдельное действие заявителя (кнопка "Выполнить актуализацию" после одобрения).
@@ -179,9 +204,10 @@ export function useVndActualizationFlow(vnd: VndResponse, onVndChanged: () => vo
         canRequestWithApproval, canRequestWithoutApproval, canByRequest,
         startOpen, setStartOpen, requestOpen, setRequestOpen,
         performOpen, setPerformOpen, performMode,
+        editSettingsOpen, setEditSettingsOpen,
         approveTarget, setApproveTarget,
         submitting, error, setError,
-        handleStart, handleRequestAccess, handlePerformConfirm,
+        handleStart, handleRequestAccess, handlePerformConfirm, handleUpdatePerformedSettings,
         myAccessState, requests, refetchRequests,
         handleApproveRequest, handleRejectRequest, approvingRequestId,
         needsPerform, needsConfirmStartAfterRequest,

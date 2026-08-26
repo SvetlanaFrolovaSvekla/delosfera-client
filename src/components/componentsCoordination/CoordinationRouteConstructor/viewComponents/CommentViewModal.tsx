@@ -53,7 +53,7 @@ export function CommentViewModal({
 
     return createPortal(
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-3">
-            <div className="flex h-full max-h-[calc(100vh-24px)] w-[95vw] max-w-[760px] flex-col overflow-hidden rounded-[16px] bg-white shadow-xl">
+            <div className="flex min-h-[280px] max-h-[calc(100vh-24px)] w-[95vw] max-w-[760px] flex-col overflow-hidden rounded-[16px] bg-white shadow-xl">
                 <div className="flex flex-none flex-col gap-3 border-b border-[#eef2f7] px-6 py-4">
                     <div className="flex flex-wrap items-center justify-between gap-3">
                         <div className="flex min-w-0 items-center gap-3">

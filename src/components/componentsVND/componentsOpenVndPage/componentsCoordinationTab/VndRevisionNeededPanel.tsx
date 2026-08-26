@@ -4,12 +4,19 @@ import type {
     ApprovalProcessResponse,
     ApprovalStageAttachmentResponse,
 } from "@/service/coordinationService/coordinationServiceTypes.ts";
-import {STAGE_DECISION_META} from "@/constants/coordinationParams.ts";
+import {MAX_RESOLUTION_COMMENT_LENGTH, STAGE_DECISION_META} from "@/constants/coordinationParams.ts";
+import {VND_REDACTION_MAX_ATTACHMENTS} from "@/constants/validation/vndValidation.ts";
 import type {VndRedactionResponse, VndResponse} from "@/service/vndService/vndServiceType.ts";
 import {resolveVndDocTitle} from "@/utils/fileNaming.ts";
+import {formatFileSize} from "@/service/documentService/attachmentService.ts";
+import {downloadWithToast} from "@/utils/downloadFile.ts";
 import {Tooltip} from "@/components/componentsGeneral/Tooltip.tsx";
+import {HelpTooltip} from "@/components/componentsGeneral/knowledgeBaseComponents/HelpTooltip.tsx";
+import {ConfirmActionModal} from "@/components/componentsGeneral/modal/ConfirmActionModal.tsx";
+import {CharCounter} from "@/components/componentsGeneral/CharCounter.tsx";
 import {
     AlertCircle,
+    Check,
     CheckCircle2,
     FileCheck2,
     FileText,
@@ -32,14 +39,19 @@ interface VndRevisionNeededPanelProps {
     vnd: VndResponse;
     process: ApprovalProcessResponse;
     /** Редакция, вынесенная на согласование — берём отсюда текущие файлы документа
-     * (RU/KG/EN), чтобы дать возможность заменить только нужные языки. */
+     * (RU/KG/EN) и вложения, чтобы дать возможность заменить/удалить только нужное. */
     redaction: VndRedactionResponse | undefined;
     /** Требуется ли обязательно приложить ТИД вместе с исправленной редакцией — true, если
      * у ВНД уже была предыдущая редакция (см. VndRedactionResponse.number > 1 на родительской
      * странице). Для первой редакции нового ВНД ТИД не нужен. */
     requiresTid: boolean;
-    /** Вызывается после успешной отправки (resubmit) или изменения матрицы, чтобы перезагрузить процесс */
+    /** Вызывается после изменения матрицы разногласий (добавление/удаление строки),
+     * чтобы перезагрузить процесс. */
     onChanged: () => Promise<void>;
+    /** Вызывается после успешной отправки (resubmit). Родитель сам отвечает за перезагрузку
+     * процесса/редакций (метка "Обновлено, дата" берётся из персистентных полей редакции,
+     * которые придут со свежими данными) и всплывающее уведомление. */
+    onResubmitted: () => Promise<void>;
 }
 
 interface RemarkItem {
@@ -97,13 +109,27 @@ function collectRemarks(process: ApprovalProcessResponse): RemarkItem[] {
     });
 }
 
+/** Системные автосгенерированные тексты комментариев (см. AutoApproveInitiatorStages,
+ * ResetFinalHoldDecisions в VndApprovalService.cs на бэке) — это не пояснение от
+ * реального согласующего, а техническая пометка "решение проставлено автоматически".
+ * В блоке "пришедшие комментарии" такие записи только сбивают с толку, поэтому
+ * не показываем их там (сами решения/статусы этапов при этом никак не скрываются). */
+const AUTO_GENERATED_COMMENT_TEXTS = new Set([
+    "Согласовано автоматически — инициатор является согласующим на этом этапе",
+    "Согласовано автоматически — вы уже согласовали эту редакцию без замечаний ранее",
+]);
+
 /** Комментарии к простому согласованию ("approved") - не замечания, а просто
  * пояснения согласующего. Показываем отдельным блоком, и только если они есть. */
 function collectApprovalComments(process: ApprovalProcessResponse): RemarkItem[] {
     return process.stages.flatMap((stage) => {
         const comments: RemarkItem[] = [];
 
-        if (stage.primaryComment && stage.primaryDecision === "approved") {
+        if (
+            stage.primaryComment &&
+            stage.primaryDecision === "approved" &&
+            !AUTO_GENERATED_COMMENT_TEXTS.has(stage.primaryComment)
+        ) {
             comments.push({
                 stageId: stage.id,
                 approverName: stage.approverName,
@@ -114,7 +140,11 @@ function collectApprovalComments(process: ApprovalProcessResponse): RemarkItem[]
                 attachments: stage.primaryAttachments,
             });
         }
-        if (stage.repeatComment && stage.repeatDecision === "approved") {
+        if (
+            stage.repeatComment &&
+            stage.repeatDecision === "approved" &&
+            !AUTO_GENERATED_COMMENT_TEXTS.has(stage.repeatComment)
+        ) {
             comments.push({
                 stageId: stage.id,
                 approverName: stage.approverName,
@@ -125,7 +155,11 @@ function collectApprovalComments(process: ApprovalProcessResponse): RemarkItem[]
                 attachments: stage.repeatAttachments,
             });
         }
-        if (stage.finalHoldComment && stage.finalHoldDecision === "approved") {
+        if (
+            stage.finalHoldComment &&
+            stage.finalHoldDecision === "approved" &&
+            !AUTO_GENERATED_COMMENT_TEXTS.has(stage.finalHoldComment)
+        ) {
             comments.push({
                 stageId: stage.id,
                 approverName: stage.approverName,
@@ -207,58 +241,162 @@ function RemarkCard({
     );
 }
 
-type DocLang = "ru" | "kg" | "en";
-
-interface DocReplaceState {
-    requiresReplace: boolean;
-    file: File | null;
+/** Кнопка-чекбокс единого стиля с "Требуется согласование" (VndUploadRedactionModal) /
+ * "Только связанные со мной" (VndFilters) — квадрат со скруглением и галочкой вместо
+ * нативного input[type=checkbox]. */
+function CheckToggleButton({checked, onChange, label, disabled}: {
+    checked: boolean;
+    onChange: () => void;
+    label: string;
+    disabled?: boolean;
+}) {
+    return (
+        <button
+            type="button"
+            disabled={disabled}
+            onClick={onChange}
+            className="inline-flex flex-none items-center gap-2 rounded-[9px] bg-white text-[#3a4560] font-semibold text-[12.5px] cursor-pointer select-none disabled:cursor-not-allowed disabled:opacity-50"
+        >
+            <span
+                className="w-5 h-5 flex-none rounded-md grid place-items-center border-[1.5px]"
+                style={{
+                    borderColor: checked ? "#4e57d6" : "#cbd3df",
+                    background: checked ? "#4e57d6" : "white",
+                }}
+            >
+                <Check
+                    className="w-[13px] h-[13px] text-white"
+                    strokeWidth={3}
+                    style={{opacity: checked ? 1 : 0}}
+                />
+            </span>
+            {label}
+        </button>
+    );
 }
 
-const EMPTY_DOC_STATE: DocReplaceState = {requiresReplace: false, file: null};
+export type DocLang = "ru" | "kg" | "en";
+
+interface DocSlotState {
+    requiresReplace: boolean;
+    file: File | null;
+    remove: boolean;
+}
+
+const EMPTY_DOC_STATE: DocSlotState = {requiresReplace: false, file: null, remove: false};
 
 interface DocSlot {
     lang: DocLang;
     label: string;
-    fileId: number;
+    fileId: number | null;
+    exists: boolean;
+    /** RU обязателен - его нельзя удалить, только заменить */
+    deletable: boolean;
     title: string;
 }
 
-/** Строка одного документа редакции с возможностью пометить "требует замены" и
- * загрузить новый файл на его место (в духе строки из "Данная редакция…:", но вместо
- * "Просмотр"/"Скачивание" — чекбокс "требует замены" и кнопка "Заменить"). */
-function DocReplaceRow({slot, state, onToggle, onFileSelected, onClearFile}: {
+const DOC_ACCEPT = ".doc,.docx,.pdf,.xls,.xlsx,.ppt,.pptx";
+
+// Максимальный размер одного файла (документа редакции или вложения) — совпадает с
+// ограничением в VndUploadRedactionModal, см. formatFileSize для вывода в UI.
+const MAX_FILE_SIZE = 50 * 1024 * 1024; // 50 МБ
+
+/** Строка одного документа редакции: для существующего - "требует замены" (открывает
+ * "Заменить") либо удаление (для необязательных KG/EN); для отсутствующего языка -
+ * простая загрузка "Добавить документ". */
+function DocReplaceRow({slot, state, onToggleReplace, onToggleRemove, onFileSelected, onClearFile}: {
     slot: DocSlot;
-    state: DocReplaceState;
-    onToggle: () => void;
+    state: DocSlotState;
+    onToggleReplace: () => void;
+    onToggleRemove?: () => void;
     onFileSelected: (file: File) => void;
     onClearFile: () => void;
 }) {
     const inputRef = useRef<HTMLInputElement>(null);
     const isUpdated = state.file !== null;
+    const willBeRemoved = state.remove;
+
+    const handlePick = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (file) onFileSelected(file);
+        e.target.value = "";
+    };
+
+    if (!slot.exists) {
+        return (
+            <div className="flex flex-wrap items-center gap-2.5 rounded-[9px] border border-dashed border-[#d5dae3] bg-[#fbfcfe] px-3 py-[10px]">
+                <FileText size={16} className="flex-none text-[#c3c9d4]"/>
+                <span className="flex min-w-0 flex-1 flex-col">
+                    <span className="text-[9.5px] font-bold uppercase tracking-[0.04em] text-[#a3adbd]">
+                        {slot.label}
+                    </span>
+                    <span className="truncate text-[13px] text-[#8b97ab]">
+                        {isUpdated ? state.file!.name : "Документ не загружен"}
+                    </span>
+                </span>
+
+                {isUpdated && (
+                    <span className="flex-none inline-flex items-center gap-1 text-[11px] font-semibold text-[#1e8e3e]">
+                        <CheckCircle2 size={12} className="flex-none"/>
+                        Добавлено
+                    </span>
+                )}
+
+                {isUpdated && (
+                    <button
+                        type="button"
+                        onClick={onClearFile}
+                        className="cursor-pointer flex-none text-[#8b97ab] hover:text-[#c0392b]"
+                        title="Убрать выбранный файл"
+                    >
+                        <Trash2 size={14}/>
+                    </button>
+                )}
+
+                <button
+                    type="button"
+                    onClick={() => inputRef.current?.click()}
+                    className="flex-none cursor-pointer inline-flex items-center gap-1.5 rounded-[7px] border border-[#d7dee8] bg-white px-2.5 py-[6px] text-[11.5px] font-semibold text-[#4e57d6] hover:bg-[#ececfc]"
+                >
+                    <Paperclip size={13}/>
+                    {isUpdated ? "Заменить" : "Добавить документ"}
+                </button>
+                <input ref={inputRef} type="file" accept={DOC_ACCEPT} className="hidden" onChange={handlePick}/>
+            </div>
+        );
+    }
 
     return (
-        <div className="flex flex-wrap items-center gap-2.5 rounded-[9px] border border-[#e5e9f0] bg-white px-3 py-[10px]">
+        <div
+            className={`flex flex-wrap items-center gap-2.5 rounded-[9px] border px-3 py-[10px] ${
+                willBeRemoved ? "border-[#f0c4c4] bg-[#fdf5f5]" : "border-[#e5e9f0] bg-white"
+            }`}
+        >
             <FileText size={16} className="flex-none text-[#4e57d6]"/>
 
             <span className="flex min-w-0 flex-1 flex-col">
                 <span className="text-[9.5px] font-bold uppercase tracking-[0.04em] text-[#a3adbd]">
                     {slot.label}
                 </span>
-                <span className="truncate text-[13px] text-[#26324a]">
+                <span
+                    className={`truncate text-[13px] ${
+                        willBeRemoved ? "text-[#c0392b] line-through" : "text-[#26324a]"
+                    }`}
+                >
                     {isUpdated ? state.file!.name : slot.title}
                 </span>
             </span>
 
             <span
                 className={`flex-none inline-flex items-center gap-1 text-[11px] font-semibold ${
-                    isUpdated ? "text-[#1e8e3e]" : "text-[#8b97ab]"
+                    willBeRemoved ? "text-[#c0392b]" : isUpdated ? "text-[#1e8e3e]" : "text-[#8b97ab]"
                 }`}
             >
-                {isUpdated && <CheckCircle2 size={12} className="flex-none"/>}
-                {isUpdated ? "Обновлено" : "Не обновлено"}
+                {!willBeRemoved && isUpdated && <CheckCircle2 size={12} className="flex-none"/>}
+                {willBeRemoved ? "Будет удалено" : isUpdated ? "Обновлено" : "Не обновлено"}
             </span>
 
-            {isUpdated && (
+            {isUpdated && !willBeRemoved && (
                 <button
                     type="button"
                     onClick={onClearFile}
@@ -269,22 +407,19 @@ function DocReplaceRow({slot, state, onToggle, onFileSelected, onClearFile}: {
                 </button>
             )}
 
-            <label className="flex-none flex cursor-pointer items-center gap-1.5 text-[12px] font-medium text-[#3a4560] select-none">
-                <input
-                    type="checkbox"
-                    checked={state.requiresReplace}
-                    onChange={onToggle}
-                    className="h-[15px] w-[15px] cursor-pointer accent-[#4e57d6]"
-                />
-                требует замены
-            </label>
+            <CheckToggleButton
+                checked={state.requiresReplace}
+                onChange={onToggleReplace}
+                label="требует замены"
+                disabled={willBeRemoved}
+            />
 
             <button
                 type="button"
-                disabled={!state.requiresReplace}
+                disabled={!state.requiresReplace || willBeRemoved}
                 onClick={() => inputRef.current?.click()}
                 className={`flex-none inline-flex items-center gap-1.5 rounded-[7px] border px-2.5 py-[6px] text-[11.5px] font-semibold transition-colors ${
-                    state.requiresReplace
+                    state.requiresReplace && !willBeRemoved
                         ? "cursor-pointer border-[#d7dee8] bg-white text-[#4e57d6] hover:bg-[#ececfc]"
                         : "cursor-not-allowed border-[#e5e9f0] bg-[#f3f4f7] text-[#b7bdc9]"
                 }`}
@@ -292,23 +427,30 @@ function DocReplaceRow({slot, state, onToggle, onFileSelected, onClearFile}: {
                 <RefreshCcw size={13}/>
                 Заменить
             </button>
-            <input
-                ref={inputRef}
-                type="file"
-                accept=".doc,.docx,.pdf,.xls,.xlsx,.ppt,.pptx"
-                className="hidden"
-                onChange={(e) => {
-                    const file = e.target.files?.[0];
-                    if (file) onFileSelected(file);
-                    e.target.value = "";
-                }}
-            />
+            <input ref={inputRef} type="file" accept={DOC_ACCEPT} className="hidden" onChange={handlePick}/>
+
+            {slot.deletable && onToggleRemove && (
+                <button
+                    type="button"
+                    onClick={onToggleRemove}
+                    className={`flex-none cursor-pointer inline-flex items-center gap-1.5 rounded-[7px] border px-2.5 py-[6px] text-[11.5px] font-semibold transition-colors ${
+                        willBeRemoved
+                            ? "border-[#e0473e] bg-[#fdecec] text-[#c0392b]"
+                            : "border-[#e5e9f0] bg-white text-[#8b97ab] hover:border-[#e0473e]/50 hover:text-[#c0392b]"
+                    }`}
+                >
+                    <Trash2 size={13}/>
+                    {willBeRemoved ? "Отменить удаление" : "Удалить"}
+                </button>
+            )}
         </div>
     );
 }
 
-export function VndRevisionNeededPanel({vndId, vnd, process, redaction, requiresTid, onChanged}: VndRevisionNeededPanelProps) {
-    const [docState, setDocState] = useState<Record<DocLang, DocReplaceState>>({
+export function VndRevisionNeededPanel({
+                                            vndId, vnd, process, redaction, requiresTid, onChanged, onResubmitted,
+                                        }: VndRevisionNeededPanelProps) {
+    const [docState, setDocState] = useState<Record<DocLang, DocSlotState>>({
         ru: EMPTY_DOC_STATE,
         kg: EMPTY_DOC_STATE,
         en: EMPTY_DOC_STATE,
@@ -317,9 +459,28 @@ export function VndRevisionNeededPanel({vndId, vnd, process, redaction, requires
     const [comment, setComment] = useState("");
     const [agreesWithAllRemarks, setAgreesWithAllRemarks] = useState<boolean | null>(null);
 
+    const [newAttachments, setNewAttachments] = useState<File[]>([]);
+    const [attachmentCountLimitHit, setAttachmentCountLimitHit] = useState(false);
+    const [removedAttachmentIds, setRemovedAttachmentIds] = useState<Set<number>>(new Set());
+
     const [submitting, setSubmitting] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const [openRemark, setOpenRemark] = useState<{item: RemarkItem; isRemark: boolean} | null>(null);
+
+    // Подтверждение удаления существующего (уже сохранённого) документа/вложения редакции —
+    // только для случая "пометить на удаление", отмена пометки ("Отменить удаление") идёт
+    // без подтверждения, т.к. ничего не теряет. Само удаление физически произойдёт только
+    // при отправке (handleSubmit) - здесь лишь ставится флаг remove/removedAttachmentIds.
+    const [pendingRemoval, setPendingRemoval] = useState<
+        {kind: "doc"; lang: DocLang; label: string} | {kind: "attachment"; fileId: number; label: string} | null
+    >(null);
+
+    const confirmPendingRemoval = () => {
+        if (!pendingRemoval) return;
+        if (pendingRemoval.kind === "doc") toggleDocRemove(pendingRemoval.lang);
+        else toggleRemoveExistingAttachment(pendingRemoval.fileId);
+        setPendingRemoval(null);
+    };
 
     const remarks = collectRemarks(process);
     const approvalComments = collectApprovalComments(process);
@@ -327,17 +488,30 @@ export function VndRevisionNeededPanel({vndId, vnd, process, redaction, requires
 
     const docSlots: DocSlot[] = redaction
         ? [
-            {lang: "ru", label: "Русский", fileId: redaction.docFileRuId, title: resolveVndDocTitle(vnd, "ru")},
-            ...(redaction.docFileKgId !== null
-                ? [{lang: "kg" as const, label: "Кыргызча", fileId: redaction.docFileKgId, title: resolveVndDocTitle(vnd, "kg")}]
-                : []),
-            ...(redaction.docFileEnId !== null
-                ? [{lang: "en" as const, label: "English", fileId: redaction.docFileEnId, title: resolveVndDocTitle(vnd, "en")}]
-                : []),
+            {
+                lang: "ru", label: "Русский", fileId: redaction.docFileRuId, exists: true, deletable: false,
+                title: resolveVndDocTitle(vnd, "ru"),
+            },
+            {
+                lang: "kg", label: "Кыргызча", fileId: redaction.docFileKgId,
+                exists: redaction.docFileKgId !== null, deletable: true,
+                title: resolveVndDocTitle(vnd, "kg"),
+            },
+            {
+                lang: "en", label: "English", fileId: redaction.docFileEnId,
+                exists: redaction.docFileEnId !== null, deletable: true,
+                title: resolveVndDocTitle(vnd, "en"),
+            },
         ]
         : [];
 
-    const hasAnyUpdatedDoc = Object.values(docState).some((s) => s.file !== null);
+    const hasAnyDocChange = Object.values(docState).some((s) => s.file !== null || s.remove);
+
+    const existingAttachmentIds = (redaction?.attachmentFileIds ?? []).filter((id) => !removedAttachmentIds.has(id));
+    const totalAttachmentCount = existingAttachmentIds.length + newAttachments.length;
+    const attachmentSlotsLeft = VND_REDACTION_MAX_ATTACHMENTS - totalAttachmentCount;
+    const attachmentLimitReached = attachmentSlotsLeft <= 0;
+    const hasAnyAttachmentChange = newAttachments.length > 0 || removedAttachmentIds.size > 0;
 
     const tidMissing = requiresTid && !tid;
 
@@ -345,8 +519,8 @@ export function VndRevisionNeededPanel({vndId, vnd, process, redaction, requires
     let disabledReason: string | null = null;
     if (agreesWithAllRemarks === null) {
         disabledReason = "Сначала укажите, согласны ли вы со всеми замечаниями";
-    } else if (agreesWithAllRemarks === true && !hasAnyUpdatedDoc) {
-        disabledReason = "Отметьте хотя бы один документ как «требует замены» и загрузите обновлённый файл";
+    } else if (agreesWithAllRemarks === true && !hasAnyDocChange && !hasAnyAttachmentChange) {
+        disabledReason = "Отметьте хотя бы один документ как «требует замены» (или добавьте/удалите вложение) и загрузите обновлённый файл";
     } else if (agreesWithAllRemarks === false && rows.length === 0) {
         disabledReason = "Добавьте хотя бы одну строку в матрицу разногласий, чтобы отправить";
     } else if (tidMissing) {
@@ -380,16 +554,61 @@ export function VndRevisionNeededPanel({vndId, vnd, process, redaction, requires
             const cur = prev[lang];
             const nextRequires = !cur.requiresReplace;
             // Снимаем чекбокс - выбранный файл сбрасывается, к отправке вернётся старый файл
-            return {...prev, [lang]: {requiresReplace: nextRequires, file: nextRequires ? cur.file : null}};
+            return {...prev, [lang]: {requiresReplace: nextRequires, file: nextRequires ? cur.file : null, remove: false}};
+        });
+    };
+
+    const toggleDocRemove = (lang: DocLang) => {
+        setDocState((prev) => {
+            const cur = prev[lang];
+            const nextRemove = !cur.remove;
+            return {
+                ...prev,
+                [lang]: {requiresReplace: false, file: nextRemove ? null : cur.file, remove: nextRemove},
+            };
         });
     };
 
     const setDocFile = (lang: DocLang, file: File) => {
-        setDocState((prev) => ({...prev, [lang]: {...prev[lang], file}}));
+        if (file.size > MAX_FILE_SIZE) {
+            setError(`Файл «${file.name}» превышает допустимый размер (${formatFileSize(MAX_FILE_SIZE)})`);
+            return;
+        }
+        setError(null);
+        setDocState((prev) => ({...prev, [lang]: {...prev[lang], file, remove: false}}));
     };
 
     const clearDocFile = (lang: DocLang) => {
         setDocState((prev) => ({...prev, [lang]: {...prev[lang], file: null}}));
+    };
+
+    const handleAddNewAttachments = (files: FileList | null) => {
+        if (!files) return;
+        const incoming = Array.from(files);
+
+        const oversized = incoming.find((f) => f.size > MAX_FILE_SIZE);
+        if (oversized) {
+            setError(`Файл «${oversized.name}» превышает допустимый размер (${formatFileSize(MAX_FILE_SIZE)})`);
+            return;
+        }
+
+        setError(null);
+        const accepted = incoming.slice(0, Math.max(0, attachmentSlotsLeft));
+        setAttachmentCountLimitHit(accepted.length < incoming.length);
+        setNewAttachments((prev) => [...prev, ...accepted]);
+    };
+
+    const removeNewAttachment = (index: number) => {
+        setNewAttachments((prev) => prev.filter((_, i) => i !== index));
+        setAttachmentCountLimitHit(false);
+    };
+
+    const toggleRemoveExistingAttachment = (fileId: number) => {
+        setRemovedAttachmentIds((prev) => {
+            const next = new Set(prev);
+            if (next.has(fileId)) next.delete(fileId); else next.add(fileId);
+            return next;
+        });
     };
 
     const handleSubmit = async () => {
@@ -401,11 +620,15 @@ export function VndRevisionNeededPanel({vndId, vnd, process, redaction, requires
                 docRu: docState.ru.file ?? undefined,
                 docKg: docState.kg.file ?? undefined,
                 docEn: docState.en.file ?? undefined,
+                removeDocKg: docState.kg.remove,
+                removeDocEn: docState.en.remove,
                 tid: tid ?? undefined,
+                newAttachments: newAttachments.length > 0 ? newAttachments : undefined,
+                removedAttachmentFileIds: removedAttachmentIds.size > 0 ? Array.from(removedAttachmentIds) : undefined,
                 comment: comment.trim() || undefined,
                 agreesWithAllRemarks,
             });
-            await onChanged();
+            await onResubmitted();
         } catch (err) {
             setError(err instanceof Error ? err.message : "Не удалось отправить редакцию");
         } finally {
@@ -522,15 +745,22 @@ export function VndRevisionNeededPanel({vndId, vnd, process, redaction, requires
                         <DisagreementMatrixTable rows={rows} onAddRow={handleAddRow} onDeleteRow={handleDeleteRow}/>
                     </div>
                 )}
-            </div>
 
-            {agreesWithAllRemarks === true && (
-                <div className="overflow-hidden rounded-[14px] border border-[#e9edf3] bg-white">
-                    <div className="border-b border-[#eef2f7] px-5 py-[13px] text-[13.5px] font-bold text-[#1c2740]">
+                {/* Раньше это была отдельная карточка ниже - визуально "отваливалась" от блока
+                    с вопросом "Согласны ли вы...", тогда как матрица разногласий (ветка "Нет"
+                    выше) остаётся внутри той же карточки. Встраиваем сюда же для единообразия -
+                    один блок продолжается заголовком с border-t вместо новой карточки. */}
+                {agreesWithAllRemarks === true && (
+                    <>
+                    <div className="border-t border-[#eef2f7] px-5 py-[13px] text-[13.5px] font-bold text-[#1c2740]">
                         Загрузить редакцию с исправленными замечаниями:
                     </div>
 
                     <div className="flex flex-col gap-2 px-5 py-4">
+                        <div className="mb-1 rounded-[10px] border border-[#e5e9f0] bg-[#f9fafc] px-3 py-[10px] text-[11.5px] leading-[1.5] text-[#8b97ab]">
+                            Допустимые форматы: DOC, DOCX, PDF, XLS, XLSX, PPT, PPTX. Максимальный
+                            размер каждого файла — {formatFileSize(MAX_FILE_SIZE)}.
+                        </div>
                         {docSlots.length === 0 && (
                             <div className="text-[12.5px] text-[#8b97ab]">
                                 Не удалось загрузить документы текущей редакции — обновите страницу.
@@ -541,24 +771,166 @@ export function VndRevisionNeededPanel({vndId, vnd, process, redaction, requires
                                 key={slot.lang}
                                 slot={slot}
                                 state={docState[slot.lang]}
-                                onToggle={() => toggleDocReplace(slot.lang)}
+                                onToggleReplace={() => toggleDocReplace(slot.lang)}
+                                onToggleRemove={slot.deletable ? () => {
+                                    // Отмена уже выставленной пометки на удаление ничего не
+                                    // теряет - подтверждение нужно только на сам момент удаления.
+                                    if (docState[slot.lang].remove) toggleDocRemove(slot.lang);
+                                    else setPendingRemoval({kind: "doc", lang: slot.lang, label: slot.label});
+                                } : undefined}
                                 onFileSelected={(file) => setDocFile(slot.lang, file)}
                                 onClearFile={() => clearDocFile(slot.lang)}
                             />
                         ))}
 
-                        <label className="mt-2 block text-[12.5px] font-semibold text-[#26324a]">
-                            Комментарий о внесённых исправлениях
-                            <textarea
-                                value={comment}
-                                onChange={(e) => setComment(e.target.value)}
-                                rows={3}
-                                className="mt-[6px] w-full resize-none rounded-[10px] border border-[#e5e9f0] bg-[#f9fafc] p-3 text-[13px] font-normal text-[#26324a] outline-none focus:border-[#4e57d6] focus:bg-white"
-                            />
-                        </label>
+                        {/* Вложения редакции - существующие (с возможностью удалить) + новые */}
+                        <div className="mt-3">
+                            <div className="mb-[6px] flex items-center justify-between gap-2">
+                                <span className="text-[12.5px] font-semibold text-[#26324a]">
+                                    Вложения редакции <span className="text-[#8b97ab] font-normal">(необязательно)</span>
+                                </span>
+                                <span className="flex items-center gap-0.5 text-[11.5px] text-[#8b97ab]">
+                                    Добавлено {totalAttachmentCount} из {VND_REDACTION_MAX_ATTACHMENTS} файлов максимум
+                                    <HelpTooltip
+                                        content={`Количество вложений к редакции ограничено — не более ${VND_REDACTION_MAX_ATTACHMENTS}.`}
+                                        side="top"
+                                        className="h-5 w-5"
+                                    />
+                                </span>
+                            </div>
+
+                            {(redaction?.attachments.length ?? 0) > 0 && (
+                                <div className="flex flex-col gap-[6px]">
+                                    {(redaction?.attachments ?? []).map((attachment) => {
+                                        const willBeRemoved = removedAttachmentIds.has(attachment.fileId);
+                                        return (
+                                            <div
+                                                key={attachment.fileId}
+                                                className={`flex items-center gap-2 rounded-[9px] border px-3 py-[8px] ${
+                                                    willBeRemoved ? "border-[#f0c4c4] bg-[#fdf5f5]" : "border-[#e5e9f0] bg-white"
+                                                }`}
+                                            >
+                                                <Paperclip size={14} className="flex-none text-[#8b97ab]"/>
+                                                <button
+                                                    type="button"
+                                                    onClick={() => downloadWithToast(attachment.fileId, attachment.fileName)}
+                                                    className={`flex-1 truncate text-left text-[12.5px] cursor-pointer hover:underline ${
+                                                        willBeRemoved ? "text-[#c0392b] line-through" : "text-[#26324a]"
+                                                    }`}
+                                                >
+                                                    {attachment.fileName}
+                                                </button>
+                                                <button
+                                                    type="button"
+                                                    onClick={() => {
+                                                        if (willBeRemoved) toggleRemoveExistingAttachment(attachment.fileId);
+                                                        else setPendingRemoval({
+                                                            kind: "attachment",
+                                                            fileId: attachment.fileId,
+                                                            label: attachment.fileName,
+                                                        });
+                                                    }}
+                                                    className={`cursor-pointer flex-none rounded-[7px] border px-2.5 py-[5px] text-[11px] font-semibold transition-colors ${
+                                                        willBeRemoved
+                                                            ? "border-[#e0473e] bg-[#fdecec] text-[#c0392b]"
+                                                            : "border-[#e5e9f0] bg-white text-[#8b97ab] hover:border-[#e0473e]/50 hover:text-[#c0392b]"
+                                                    }`}
+                                                >
+                                                    {willBeRemoved ? "Отменить удаление" : "Удалить"}
+                                                </button>
+                                            </div>
+                                        );
+                                    })}
+                                </div>
+                            )}
+
+                            {newAttachments.length > 0 && (
+                                <div className="mt-[6px] flex flex-col gap-[6px]">
+                                    {newAttachments.map((file, index) => (
+                                        <div
+                                            key={`${file.name}-${index}`}
+                                            className="flex items-center gap-2 rounded-[9px] border border-[#e5e9f0] bg-[#fbfcfe] px-3 py-[8px]"
+                                        >
+                                            <Paperclip size={14} className="flex-none text-[#8b97ab]"/>
+                                            <span className="flex-1 truncate text-[12.5px] text-[#26324a]">{file.name}</span>
+                                            <span className="flex-none text-[11px] text-[#a3adbd]">
+                                                {formatFileSize(file.size)}
+                                            </span>
+                                            <span className="flex-none inline-flex items-center gap-1 text-[11px] font-semibold text-[#1e8e3e]">
+                                                <CheckCircle2 size={12} className="flex-none"/>
+                                                Добавлено
+                                            </span>
+                                            <button
+                                                type="button"
+                                                onClick={() => removeNewAttachment(index)}
+                                                className="cursor-pointer flex-none text-[#8b97ab] hover:text-[#c0392b]"
+                                            >
+                                                <Trash2 size={14}/>
+                                            </button>
+                                        </div>
+                                    ))}
+                                </div>
+                            )}
+
+                            {attachmentLimitReached ? (
+                                <Tooltip
+                                    content={`Достигнут максимум — ${VND_REDACTION_MAX_ATTACHMENTS} вложений на редакцию`}
+                                    side="top"
+                                    className="mt-[6px] w-full"
+                                >
+                                    <span
+                                        className="flex h-[42px] w-full cursor-not-allowed items-center justify-center gap-1.5 rounded-[9px] border border-dashed border-[#e5e9f0] bg-[#f6f8fb] text-[11.5px] text-[#b7bfcc]"
+                                    >
+                                        <Paperclip size={14}/>
+                                        Добавить файлы
+                                    </span>
+                                </Tooltip>
+                            ) : (
+                                <label
+                                    className="mt-[6px] flex h-[42px] w-full cursor-pointer items-center justify-center gap-1.5 rounded-[9px] border border-dashed border-[#d5dae3] bg-[#fbfcfe] text-[11.5px] text-[#8b97ab] transition-colors hover:border-[#4e57d6]/50 hover:bg-[#f6f8fb]"
+                                >
+                                    <Paperclip size={14}/>
+                                    Добавить файлы
+                                    <input
+                                        type="file"
+                                        multiple
+                                        accept={DOC_ACCEPT}
+                                        className="hidden"
+                                        onChange={(e) => {
+                                            handleAddNewAttachments(e.target.files);
+                                            e.target.value = "";
+                                        }}
+                                    />
+                                </label>
+                            )}
+
+                            {attachmentCountLimitHit && (
+                                <div className="mt-2 flex items-start gap-1.5 text-[11.5px] text-[#d62815]">
+                                    <AlertCircle className="mt-[1px] h-3.5 w-3.5 shrink-0"/>
+                                    <span>
+                                        Часть выбранных файлов не добавлена — максимум {VND_REDACTION_MAX_ATTACHMENTS} вложений на редакцию.
+                                    </span>
+                                </div>
+                            )}
+                        </div>
+
+                        <div className="mt-3 mb-[6px] flex items-center justify-between">
+                            <span className="text-[12.5px] font-semibold text-[#26324a]">
+                                Комментарий о внесённых исправлениях
+                            </span>
+                            <CharCounter length={comment.length} max={MAX_RESOLUTION_COMMENT_LENGTH}/>
+                        </div>
+                        <textarea
+                            value={comment}
+                            onChange={(e) => setComment(e.target.value.slice(0, MAX_RESOLUTION_COMMENT_LENGTH))}
+                            maxLength={MAX_RESOLUTION_COMMENT_LENGTH}
+                            rows={3}
+                            className="w-full resize-none rounded-[10px] border border-[#e5e9f0] bg-[#f9fafc] p-3 text-[13px] font-normal text-[#26324a] outline-none focus:border-[#4e57d6] focus:bg-white"
+                        />
                     </div>
-                </div>
-            )}
+                    </>
+                )}
+            </div>
 
             {requiresTid && (
                 <div className="overflow-hidden rounded-[14px] border border-[#e9edf3] bg-white">
@@ -647,6 +1019,23 @@ export function VndRevisionNeededPanel({vndId, vnd, process, redaction, requires
                     </div>
                 )}
             </div>
+
+            <ConfirmActionModal
+                open={pendingRemoval !== null}
+                onClose={() => setPendingRemoval(null)}
+                onConfirm={confirmPendingRemoval}
+                variant="danger"
+                icon={Trash2}
+                title="Удалить документ?"
+                message={
+                    pendingRemoval?.kind === "doc"
+                        ? `Документ «${pendingRemoval.label}» будет помечен на удаление — редакция останется без него. ` +
+                          "Само удаление произойдёт при отправке на согласование, до этого можно отменить."
+                        : `Вложение «${pendingRemoval?.label ?? ""}» будет помечено на удаление. ` +
+                          "Само удаление произойдёт при отправке на согласование, до этого можно отменить."
+                }
+                confirmLabel="Удалить"
+            />
         </div>
     );
 }

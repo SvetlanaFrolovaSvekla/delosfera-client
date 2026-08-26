@@ -8,7 +8,19 @@ interface UseDocxPreviewResult {
     error: string | null;
 }
 
-export function useDocxPreview(fileId: number | null): UseDocxPreviewResult {
+interface UseDocxPreviewOptions {
+    /** По умолчанию true - контент подстраивается под ширину контейнера (страница A4
+     * игнорируется). Передайте false, чтобы сохранить реальную ширину документа/таблиц
+     * (например, для широких таблиц ТИД, которые должны скроллиться по горизонтали, а не
+     * сжиматься). */
+    ignoreWidth?: boolean;
+}
+
+export function useDocxPreview(
+    fileId: number | null,
+    options: UseDocxPreviewOptions = {},
+): UseDocxPreviewResult {
+    const {ignoreWidth = true} = options;
     const containerRef = useRef<HTMLDivElement>(null);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
@@ -38,7 +50,7 @@ export function useDocxPreview(fileId: number | null): UseDocxPreviewResult {
                 await renderAsync(blob, containerRef.current, undefined, {
                     className: "docx-preview-content",
                     inWrapper: false,
-                    ignoreWidth: true,   // не навязываем ширину страницы A4 — подстраиваемся под контейнер
+                    ignoreWidth,   // true — не навязываем ширину страницы A4, подстраиваемся под контейнер
                     ignoreHeight: true,
                     breakPages: false,   // не рвём на "страницы" внутри веб-панели
                     ignoreLastRenderedPageBreak: true,
@@ -60,7 +72,7 @@ export function useDocxPreview(fileId: number | null): UseDocxPreviewResult {
         return () => {
             cancelled = true;
         };
-    }, [fileId]);
+    }, [fileId, ignoreWidth]);
 
     return {containerRef, loading, error};
 }

@@ -1,6 +1,6 @@
 // Панель с редакциями (панель ниже "Данная редакция:")
 import type {VndRedactionResponse, VndResponse} from "@/service/vndService/vndServiceType.ts";
-import type {RedactionLanguage} from "@/utils/redactionLanguagePanelUtils.ts";
+import type {RedactionViewTarget} from "@/utils/redactionLanguagePanelUtils.ts";
 import {formatDate} from "@/utils/dateUtils.ts";
 import {
     RedactionDocumentsPanel
@@ -15,8 +15,8 @@ interface RedactionSummaryCardProps {
     downloadingId: number | null;
     downloadError: string | null;
     onDownload: (fileId: number, name: string) => void;
-    /*Открыть просмотр конкретной редакции (новой или предыдущей) на выбранном языке*/
-    onView?: (redaction: VndRedactionResponse, language: RedactionLanguage) => void;
+    /*Открыть просмотр конкретной редакции (новой или предыдущей) на выбранном языке, либо ТИД*/
+    onView?: (redaction: VndRedactionResponse, target: RedactionViewTarget) => void;
 }
 
 export function RedactionSummaryCard({
@@ -81,7 +81,7 @@ function RedactionColumn({
     labelEmphasis?: string;
     downloadingId: number | null;
     onDownload: (fileId: number, name: string) => void;
-    onView?: (language: RedactionLanguage) => void;
+    onView?: (target: RedactionViewTarget) => void;
     className?: string;
 }) {
     return (

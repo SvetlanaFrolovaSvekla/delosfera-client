@@ -2,7 +2,8 @@
 import React from "react";
 import type {VndRedactionResponse, VndResponse} from "@/service/vndService/vndServiceType.ts";
 import {buildRedactionFileName, resolveVndDocTitle} from "@/utils/fileNaming.ts";
-import type {RedactionLanguage} from "@/utils/redactionLanguagePanelUtils.ts";
+import type {RedactionLanguage, RedactionViewTarget} from "@/utils/redactionLanguagePanelUtils.ts";
+import {formatDate} from "@/utils/dateUtils.ts";
 import {Download, FileText, Loader2} from "lucide-react";
 
 interface RedactionDocumentsPanelProps {
@@ -10,15 +11,20 @@ interface RedactionDocumentsPanelProps {
     selected: VndRedactionResponse;
     downloadingId: number | null;
     onDownload: (fileId: number, name: string) => void;
-    /* Открыть просмотр документа этой редакции на указанном языке (без сравнения). */
-    /* Кнопка "Просмотр" показывается только у языковых документов — не у ТИД и вложений. */
-    onView?: (language: RedactionLanguage) => void;
+    /* Открыть просмотр документа этой редакции на указанном языке, либо ТИД (без сравнения). */
+    /* Кнопка "Просмотр" показывается у языковых документов и у ТИД — не у вложений. */
+    onView?: (target: RedactionViewTarget) => void;
 }
 
-const DOC_LABELS: {label: string; lang: RedactionLanguage; fileKey: "docFileRuId" | "docFileKgId" | "docFileEnId"}[] = [
-    {label: "Русский", lang: "ru", fileKey: "docFileRuId"},
-    {label: "Кыргызча", lang: "kg", fileKey: "docFileKgId"},
-    {label: "English", lang: "en", fileKey: "docFileEnId"},
+const DOC_LABELS: {
+    label: string;
+    lang: RedactionLanguage;
+    fileKey: "docFileRuId" | "docFileKgId" | "docFileEnId";
+    updatedAtKey: "docRuUpdatedAt" | "docKgUpdatedAt" | "docEnUpdatedAt";
+}[] = [
+    {label: "Русский", lang: "ru", fileKey: "docFileRuId", updatedAtKey: "docRuUpdatedAt"},
+    {label: "Кыргызча", lang: "kg", fileKey: "docFileKgId", updatedAtKey: "docKgUpdatedAt"},
+    {label: "English", lang: "en", fileKey: "docFileEnId", updatedAtKey: "docEnUpdatedAt"},
 ];
 
 export function RedactionDocumentsPanel({
@@ -28,6 +34,14 @@ export function RedactionDocumentsPanel({
                                             onDownload,
                                             onView,
                                         }: RedactionDocumentsPanelProps) {
+    // Метка "Обновлено, дата" актуальна только пока редакция ещё в процессе согласования
+    // (т.е. пока не исключено, что мы смотрим именно на этап "Согласование после внесённых
+    // изменений") — как только процесс завершился (согласовано/отклонено) или редакция
+    // осталась черновиком нового цикла актуализации, метка больше не имеет смысла и должна
+    // исчезнуть из интерфейса. Сами DocXxUpdatedAt в БД при этом не сбрасываются - это лог
+    // для аудита, кто и когда обновлял файлы редакции.
+    const showUpdatedAtBadge = selected.approvalStatus === "Pending";
+
     const documents = DOC_LABELS
         .filter((d) => selected[d.fileKey] !== null)
         .map((d) => ({
@@ -37,6 +51,11 @@ export function RedactionDocumentsPanel({
             lang: d.lang,
             fileName: buildRedactionFileName(selected.code, vnd.name, d.lang),
             displayTitle: resolveVndDocTitle(vnd, d.lang),
+            // Заполняется только если документ на этом языке заменялся после создания
+            // редакции (см. ResubmitAfterRevisionAsync на бэке) — показываем как метку
+            // "Обновлено, дата" ниже, пока идёт согласование (см. showUpdatedAtBadge).
+            // Null для исходного, ни разу не заменённого файла.
+            updatedAt: showUpdatedAtBadge ? selected[d.updatedAtKey] : null,
         }));
 
     // ТИД не привязан к языку - один файл на редакцию. Имя файла собираем отдельно,
@@ -61,6 +80,11 @@ export function RedactionDocumentsPanel({
                             </span>
                             <span className="truncate text-[13px] text-[#26324a]">{doc.displayTitle}</span>
                         </span>
+                        {doc.updatedAt && (
+                            <span className="flex-none rounded-full bg-[#e7f6ec] px-2 py-[3px] text-[10.5px] font-semibold text-[#1f9254]">
+                                Обновлено, {formatDate(doc.updatedAt)}
+                            </span>
+                        )}
                     </DownloadRow>
                 ))}
             </div>
@@ -73,6 +97,7 @@ export function RedactionDocumentsPanel({
                             icon={<FileText size={16} className="flex-none text-[#4e57d6]"/>}
                             isDownloading={downloadingId === selected.tidFileId}
                             onClick={() => onDownload(selected.tidFileId as number, tidFileName)}
+                            onView={onView ? () => onView("tid") : undefined}
                         >
                             <span className="flex min-w-0 flex-1 flex-col">
                                 <span className="text-[9.5px] font-bold uppercase tracking-[0.04em] text-[#a3adbd]">
@@ -87,20 +112,20 @@ export function RedactionDocumentsPanel({
                 </>
             )}
 
-            {selected.attachmentFileIds.length > 0 && (
+            {selected.attachments.length > 0 && (
                 <>
                     <SectionLabel className="mt-5">
-                        Вложения ({selected.attachmentFileIds.length})
+                        Вложения ({selected.attachments.length})
                     </SectionLabel>
                     <div className="flex flex-col gap-2">
-                        {selected.attachmentFileIds.map((fid) => (
+                        {selected.attachments.map((attachment) => (
                             <DownloadRow
-                                key={fid}
+                                key={attachment.fileId}
                                 icon={<FileText size={16} className="text-[#8b97ab]"/>}
-                                isDownloading={downloadingId === fid}
-                                onClick={() => onDownload(fid, `Вложение_${fid}`)}
+                                isDownloading={downloadingId === attachment.fileId}
+                                onClick={() => onDownload(attachment.fileId, attachment.fileName)}
                             >
-                                <span className="flex-1">Вложение #{fid}</span>
+                                <span className="flex-1 truncate">{attachment.fileName}</span>
                             </DownloadRow>
                         ))}
                     </div>

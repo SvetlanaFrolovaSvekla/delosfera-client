@@ -2,6 +2,10 @@ import type {VndRedactionResponse} from "@/service/vndService/vndServiceType.ts"
 
 export type RedactionLanguage = "ru" | "kg" | "en";
 
+/** То же, что RedactionLanguage, плюс "tid" - для просмотра Таблицы изменений и дополнений
+ * (файл без привязки к языку) через те же компоненты просмотра/RedactionViewModal. */
+export type RedactionViewTarget = RedactionLanguage | "tid";
+
 export const LANGUAGE_TABS: {
     code: RedactionLanguage;
     label: string;

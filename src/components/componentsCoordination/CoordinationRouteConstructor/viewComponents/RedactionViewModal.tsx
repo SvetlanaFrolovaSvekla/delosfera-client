@@ -6,7 +6,7 @@ import {
     RedactionTextView, type RedactionTextViewHandle
 } from "@/components/componentsVND/componentsOpenVndPage/componentsEditionsTab/RedactionTextView.tsx";
 import {
-    getAvailableLanguages, type RedactionLanguage
+    getAvailableLanguages, type RedactionLanguage, type RedactionViewTarget
 } from "@/utils/redactionLanguagePanelUtils.ts";
 import {buildRedactionFileName} from "@/utils/fileNaming.ts";
 import {Tooltip} from "@/components/componentsGeneral/Tooltip.tsx";
@@ -15,15 +15,15 @@ import {Download, FileText, Loader2, X} from "lucide-react";
 interface RedactionViewModalProps {
     vnd: VndResponse;
     redaction: VndRedactionResponse;
-    /* Язык, с которого модалка откроется. Если не передан или недоступен у этой
-     редакции - используется первый доступный язык. */
-    initialLanguage?: RedactionLanguage;
+    /* Вкладка, с которой модалка откроется - язык или ТИД. Если не передана, недоступна у этой
+     редакции, или это "tid", а ТИД у редакции нет - используется первый доступный язык. */
+    initialLanguage?: RedactionViewTarget;
     downloadingId: number | null;
     onDownload: (fileId: number, name: string) => void;
     onClose: () => void;
 }
 
-const LANG_LABELS: Record<RedactionLanguage, string> = {ru: "RU", kg: "KG", en: "EN"};
+const LANG_LABELS: Record<RedactionViewTarget, string> = {ru: "RU", kg: "KG", en: "EN", tid: "ТИД"};
 
 const LANG_FILE_KEYS: Record<RedactionLanguage, "docFileRuId" | "docFileKgId" | "docFileEnId"> = {
     ru: "docFileRuId",
@@ -35,18 +35,28 @@ export function RedactionViewModal({
                                        vnd, redaction, initialLanguage, downloadingId, onDownload, onClose,
                                    }: RedactionViewModalProps) {
     const availableLanguages = getAvailableLanguages(redaction);
-    const [activeLanguage, setActiveLanguage] = useState<RedactionLanguage>(
-        initialLanguage && availableLanguages.includes(initialLanguage)
+    // ТИД доступен как отдельная "вкладка" просмотра наравне с языками, только если у редакции
+    // вообще есть файл ТИД.
+    const availableViews: RedactionViewTarget[] = redaction.tidFileId !== null
+        ? [...availableLanguages, "tid"]
+        : availableLanguages;
+    const [activeLanguage, setActiveLanguage] = useState<RedactionViewTarget>(
+        initialLanguage && availableViews.includes(initialLanguage)
             ? initialLanguage
             : availableLanguages[0] ?? "ru"
     );
     const textViewRef = useRef<RedactionTextViewHandle>(null);
 
-    const activeFileId = redaction[LANG_FILE_KEYS[activeLanguage]] as number | null;
+    const activeFileId = activeLanguage === "tid"
+        ? redaction.tidFileId
+        : redaction[LANG_FILE_KEYS[activeLanguage]] as number | null;
 
     const handleDownloadActive = () => {
         if (activeFileId === null) return;
-        onDownload(activeFileId, buildRedactionFileName(redaction.code, vnd.name, activeLanguage));
+        const name = activeLanguage === "tid"
+            ? `${redaction.code}_ТИД.docx`
+            : buildRedactionFileName(redaction.code, vnd.name, activeLanguage);
+        onDownload(activeFileId, name);
     };
 
     // @ts-ignore
@@ -69,9 +79,9 @@ export function RedactionViewModal({
                     </div>
 
                     <div className="flex items-center gap-4">
-                        {availableLanguages.length > 1 && (
+                        {availableViews.length > 1 && (
                             <div className="flex flex-none gap-1 rounded-[8px] bg-[#f2f5f9] p-[3px]">
-                                {availableLanguages.map((lang) => (
+                                {availableViews.map((lang) => (
                                     <button
                                         key={lang}
                                         type="button"

@@ -20,6 +20,7 @@ import {
     Upload
 } from "lucide-react";
 import type {VndStatusKey} from "@/constants/vndTabs.ts";
+import {HelpTooltip} from "@/components/componentsGeneral/knowledgeBaseComponents/HelpTooltip.tsx";
 
 /** Какое действие выполняет главная кнопка сайдбара:
  * - "new" — добавить редакцию напрямую (у ВНД ещё нет действующей редакции)
@@ -53,7 +54,14 @@ interface RedactionsSidebarProps {
     primaryActionVariant: RedactionsPrimaryActionVariant;
     primaryActionDisabled: boolean;
     primaryActionHint?: string;
+    /** Тултип-пояснение к primaryActionHint - показывается рядом с текстом подсказки, если задан. */
+    primaryActionHintTooltip?: string;
     onPrimaryAction: () => void;
+    /** Надпись-кнопка под подсказкой основного действия — например, "Изменить настройки
+     * актуализации" в сценарии startApprovalNoChanges. Показывается, только если задан label. */
+    secondaryActionLabel?: string;
+    onSecondaryAction?: () => void;
+    secondaryActionTooltip?: string;
     compareMode: boolean;
     onToggleCompare: () => void;
     contentsOpen: boolean;
@@ -88,7 +96,11 @@ export function RedactionsSidebar({
                                       primaryActionVariant,
                                       primaryActionDisabled,
                                       primaryActionHint,
+                                      primaryActionHintTooltip,
                                       onPrimaryAction,
+                                      secondaryActionLabel,
+                                      onSecondaryAction,
+                                      secondaryActionTooltip,
                                       compareMode,
                                       onToggleCompare,
                                       contentsOpen,
@@ -108,7 +120,7 @@ export function RedactionsSidebar({
     const PrimaryIcon = primaryMeta.icon;
 
     return (
-        <div className="flex max-h-[470px] flex-col rounded-[14px] border border-[#e9edf3] bg-white p-[14px]">
+        <div className="flex max-h-[500px] flex-col rounded-[14px] border border-[#e9edf3] bg-white p-[14px]">
             <div
                 className="flex-none px-1 pb-[10px] pt-[2px] text-[11px] font-bold uppercase tracking-[0.04em] text-[#a3adbd]">
                 {t("openVndPage.redactionsSidebar.title")}
@@ -150,9 +162,27 @@ export function RedactionsSidebar({
                     {t(primaryMeta.labelKey)}
                 </button>
                 {primaryActionHint && (
-                    <p className="px-1 text-[11px] leading-[1.4] text-[#9a6408]">
-                        {primaryActionHint}
-                    </p>
+                    <div className="flex items-start gap-0.5 px-1">
+                        <p className="text-[11px] leading-[1.4] text-[#9a6408]">
+                            {primaryActionHint}
+                        </p>
+                        {primaryActionHintTooltip && (
+                            <HelpTooltip content={primaryActionHintTooltip}/>
+                        )}
+                    </div>
+                )}
+                {secondaryActionLabel && onSecondaryAction && (
+                    <div className="flex items-center gap-0.5 px-1">
+                        <button
+                            onClick={onSecondaryAction}
+                            className="cursor-pointer text-left text-[11px] font-semibold leading-[1.4] text-[#4e57d6] hover:underline"
+                        >
+                            {secondaryActionLabel}
+                        </button>
+                        {secondaryActionTooltip && (
+                            <HelpTooltip content={secondaryActionTooltip}/>
+                        )}
+                    </div>
                 )}
             </div>
 

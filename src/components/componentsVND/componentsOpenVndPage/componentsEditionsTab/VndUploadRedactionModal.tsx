@@ -6,9 +6,14 @@ import type {VndRedactionResponse} from "@/service/vndService/vndServiceType.ts"
 import {useAuth} from "@/context/AuthContext.ts";
 import {PermissionCode} from "@/constants/permissions/permissions.ts";
 import {Clue} from "@/components/componentsGeneral/knowledgeBaseComponents/Clue.tsx";
+import {HelpTooltip} from "@/components/componentsGeneral/knowledgeBaseComponents/HelpTooltip.tsx";
+import {Tooltip} from "@/components/componentsGeneral/Tooltip.tsx";
 import {FileUp, Loader2, Paperclip, Trash2, X, Check} from "lucide-react";
 import {CharCounter} from "@/components/componentsGeneral/CharCounter.tsx";
-import {VND_REDACTION_DESCRIPTION_MAX_LENGTH} from "@/constants/validation/vndValidation.ts";
+import {
+    VND_REDACTION_DESCRIPTION_MAX_LENGTH,
+    VND_REDACTION_MAX_ATTACHMENTS,
+} from "@/constants/validation/vndValidation.ts";
 
 interface VndUploadRedactionModalProps {
     vndId: number;
@@ -35,6 +40,10 @@ interface FileSlotProps {
     accept?: string;
     file: File | null;
     onChange: (file: File | null) => void;
+    /** Вызывается с текстом ошибки, если выбранный файл превышает MAX_FILE_SIZE
+     * (в этом случае файл НЕ принимается — onChange не вызывается вовсе). Передать
+     * null явно на успешный выбор, чтобы сбросить возможную предыдущую ошибку. */
+    onError?: (message: string | null) => void;
 }
 
 function FileSlot({
@@ -43,9 +52,19 @@ function FileSlot({
                       hint,
                       accept = ".doc,.docx,.pdf,.xls,.xlsx,.ppt,.pptx",
                       file,
-                      onChange
+                      onChange,
+                      onError,
                   }: FileSlotProps) {
     const inputId = `redaction-file-${label}`;
+
+    const handlePick = (picked: File | null) => {
+        if (picked && picked.size > MAX_FILE_SIZE) {
+            onError?.(`Файл «${picked.name}» превышает допустимый размер (${formatBytes(MAX_FILE_SIZE)})`);
+            return;
+        }
+        onError?.(null);
+        onChange(picked);
+    };
 
     return (
         <div>
@@ -67,7 +86,10 @@ function FileSlot({
                         type="file"
                         accept={accept}
                         className="hidden"
-                        onChange={(e) => onChange(e.target.files?.[0] ?? null)}
+                        onChange={(e) => {
+                            handlePick(e.target.files?.[0] ?? null);
+                            e.target.value = ""; // чтобы можно было выбрать тот же файл повторно после ошибки
+                        }}
                     />
                 </label>
             ) : (
@@ -118,6 +140,7 @@ export function VndUploadRedactionModal({
     const [docEn, setDocEn] = useState<File | null>(null);
     const [tid, setTid] = useState<File | null>(null);
     const [attachments, setAttachments] = useState<File[]>([]);
+    const [attachmentCountLimitHit, setAttachmentCountLimitHit] = useState(false);
     const [description, setDescription] = useState("");
     const [requiresApproval, setRequiresApproval] = useState(true);
     // В режиме актуализации решение уже зафиксировано на старте цикла - используем его напрямую,
@@ -128,6 +151,9 @@ export function VndUploadRedactionModal({
 
     const tidMissing = requiresTid && !tid;
     const canSubmit = docRu !== null && !tidMissing && !submitting;
+
+    const attachmentSlotsLeft = VND_REDACTION_MAX_ATTACHMENTS - attachments.length;
+    const attachmentLimitReached = attachmentSlotsLeft <= 0;
 
     const handleAddAttachments = (files: FileList | null) => {
         if (!files) return;
@@ -140,11 +166,14 @@ export function VndUploadRedactionModal({
         }
 
         setError(null);
-        setAttachments((prev) => [...prev, ...incoming]);
+        const accepted = incoming.slice(0, Math.max(0, attachmentSlotsLeft));
+        setAttachmentCountLimitHit(accepted.length < incoming.length);
+        setAttachments((prev) => [...prev, ...accepted]);
     };
 
     const removeAttachment = (index: number) => {
         setAttachments((prev) => prev.filter((_, i) => i !== index));
+        setAttachmentCountLimitHit(false);
     };
 
     const handleSubmit = async () => {
@@ -181,8 +210,14 @@ export function VndUploadRedactionModal({
 
     return createPortal(
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 p-4">
-            <div className="max-h-[110vh] w-full max-w-[520px] overflow-y-auto rounded-[16px] bg-white p-6 shadow-xl">
-                <div className="mb-5 flex items-center justify-between">
+            {/* flex-col + max-h-[90vh] (строго меньше высоты экрана) с overflow-y-auto только
+                на среднем блоке (контент) — заголовок и кнопки снизу остаются на месте, даже
+                если вложений/полей много и контент не помещается. Раньше overflow-y-auto стоял
+                на всём модальном окне с max-h-[110vh] — бо́льше высоты экрана, из-за чего при
+                большом количестве вложений низ окна (в т.ч. кнопки "Отмена"/"Загрузить")
+                уходил за пределы видимой области и не был доступен для прокрутки. */}
+            <div className="flex max-h-[90vh] w-full max-w-[520px] flex-col overflow-hidden rounded-[16px] bg-white shadow-xl">
+                <div className="flex flex-none items-center justify-between px-6 pt-6 pb-5">
                     <h2 className="text-[16px] font-bold text-[#1c2740]">
                         {mode === "actualization"
                             ? "Актуализация ВНД — загрузка новой редакции"
@@ -193,10 +228,15 @@ export function VndUploadRedactionModal({
                     </button>
                 </div>
 
+                <div className="flex-1 overflow-y-auto px-6">
+                <div className="mb-2 rounded-[10px] border border-[#e5e9f0] bg-[#f9fafc] px-3 py-[10px] text-[11.5px] leading-[1.5] text-[#8b97ab]">
+                    Допустимые форматы: DOC, DOCX, PDF, XLS, XLSX, PPT, PPTX. Максимальный
+                    размер каждого файла — {formatBytes(MAX_FILE_SIZE)}.
+                </div>
                 <div className="flex flex-col gap-4">
-                    <FileSlot label="Русский" required file={docRu} onChange={setDocRu}/>
-                    <FileSlot label="Кыргызча" file={docKg} onChange={setDocKg}/>
-                    <FileSlot label="English" file={docEn} onChange={setDocEn}/>
+                    <FileSlot label="Русский" required file={docRu} onChange={setDocRu} onError={setError}/>
+                    <FileSlot label="Кыргызча" file={docKg} onChange={setDocKg} onError={setError}/>
+                    <FileSlot label="English" file={docEn} onChange={setDocEn} onError={setError}/>
 
                     {requiresTid && (
                         <FileSlot
@@ -206,35 +246,71 @@ export function VndUploadRedactionModal({
                             accept=".doc,.docx"
                             file={tid}
                             onChange={setTid}
+                            onError={setError}
                         />
                     )}
 
                     <div>
-                        <div className="mb-[6px] text-[12.5px] font-semibold text-[#26324a]">
-                            Вложения <span
-                            className="text-[#8b97ab] font-normal">(необязательно, можно несколько)</span>
+                        <div className="mb-[6px] flex flex-col gap-1">
+    <span className="text-[12.5px] font-semibold text-[#26324a]">
+        Вложения <span
+        className="text-[#8b97ab] font-normal">(необязательно, можно несколько)</span>
+    </span>
+                            <span className="flex items-center gap-0.5 text-[11.5px] text-[#8b97ab]">
+        Добавлено {attachments.length} из {VND_REDACTION_MAX_ATTACHMENTS} файлов максимум
+        <HelpTooltip
+            content={`Количество вложений к редакции ограничено — не более ${VND_REDACTION_MAX_ATTACHMENTS}, каждый файл не больше 50 МБ.`}
+            side="top"
+            className="h-5 w-5"
+        />
+    </span>
                         </div>
 
-                        <label
-                            htmlFor="redaction-attachments"
-                            className="flex h-[56px] cursor-pointer flex-col items-center justify-center gap-1 rounded-[10px] border border-dashed border-[#d5dae3] bg-[#fbfcfe] text-[#8b97ab] transition-colors hover:border-[#4e57d6]/50 hover:bg-[#f6f8fb]"
-                        >
-                            <span className="flex items-center gap-2 text-[11.5px]">
-                                <Paperclip size={15}/>
-                                Добавить файлы
-                            </span>
-                            <input
-                                id="redaction-attachments"
-                                type="file"
-                                multiple
-                                accept=".doc,.docx,.pdf,.xls,.xlsx,.ppt,.pptx"
-                                className="hidden"
-                                onChange={(e) => {
-                                    handleAddAttachments(e.target.files);
-                                    e.target.value = ""; // сброс, чтобы можно было выбрать тот же файл повторно
-                                }}
-                            />
-                        </label>
+                        {attachmentLimitReached ? (
+                            <Tooltip
+                                content={`Достигнут максимум — ${VND_REDACTION_MAX_ATTACHMENTS} вложений на редакцию`}
+                                side="top"
+                                className="w-full"
+                            >
+                                <span
+                                    className="flex h-[56px] w-full cursor-not-allowed flex-col items-center justify-center gap-1 rounded-[10px] border border-dashed border-[#e5e9f0] bg-[#f6f8fb] text-[#b7bfcc]"
+                                >
+                                    <span className="flex items-center gap-2 text-[11.5px]">
+                                        <Paperclip size={15}/>
+                                        Добавить файлы
+                                    </span>
+                                </span>
+                            </Tooltip>
+                        ) : (
+                            <label
+                                htmlFor="redaction-attachments"
+                                className="flex h-[56px] cursor-pointer flex-col items-center justify-center gap-1 rounded-[10px] border border-dashed border-[#d5dae3] bg-[#fbfcfe] text-[#8b97ab] transition-colors hover:border-[#4e57d6]/50 hover:bg-[#f6f8fb]"
+                            >
+                                <span className="flex items-center gap-2 text-[11.5px]">
+                                    <Paperclip size={15}/>
+                                    Добавить файлы
+                                </span>
+                                <input
+                                    id="redaction-attachments"
+                                    type="file"
+                                    multiple
+                                    accept=".doc,.docx,.pdf,.xls,.xlsx,.ppt,.pptx"
+                                    className="hidden"
+                                    onChange={(e) => {
+                                        handleAddAttachments(e.target.files);
+                                        e.target.value = ""; // сброс, чтобы можно было выбрать тот же файл повторно
+                                    }}
+                                />
+                            </label>
+                        )}
+
+                        {attachmentCountLimitHit && (
+                            <div className="mt-2 flex items-start gap-1.5 text-[11.5px] text-[#d62815]">
+                                <span>
+                                    Часть выбранных файлов не добавлена — максимум {VND_REDACTION_MAX_ATTACHMENTS} вложений на редакцию.
+                                </span>
+                            </div>
+                        )}
 
                         {attachments.length > 0 && (
                             <div className="mt-2 flex flex-col gap-[6px]">
@@ -339,8 +415,10 @@ export function VndUploadRedactionModal({
                         </div>
                     )}
                 </div>
+                <div className="pb-6"/>
+                </div>
 
-                <div className="mt-6 flex justify-end gap-2">
+                <div className="flex flex-none justify-end gap-2 border-t border-[#eef0f5] px-6 py-4">
                     <button
                         onClick={onClose}
                         disabled={submitting}

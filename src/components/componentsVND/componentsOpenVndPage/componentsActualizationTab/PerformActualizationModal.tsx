@@ -18,6 +18,15 @@ interface PerformActualizationModalProps {
     mode: "direct" | "afterRequest";
     /** Только для mode === "afterRequest" — уже решённое значение сдвига срока, для читаемого показа */
     decidedShiftNextPeriod?: boolean;
+    /** Заголовок окна — по умолчанию "Выполнить актуализацию"; переопределяется, когда окно
+     * открыто повторно для изменения уже зафиксированных настроек. */
+    title?: string;
+    /** Текст кнопки подтверждения — по умолчанию "Сохранить". */
+    confirmLabel?: string;
+    /** Начальные значения чекбоксов — используются, когда окно открывается повторно для
+     * изменения уже зафиксированных настроек (по умолчанию — true/false, как при первом заполнении). */
+    initialShiftNextPeriod?: boolean;
+    initialPlannedNoChanges?: boolean;
     submitting: boolean;
     error: string | null;
     onClose: () => void;
@@ -27,13 +36,17 @@ interface PerformActualizationModalProps {
 export function PerformActualizationModal({
                                               mode,
                                               decidedShiftNextPeriod,
+                                              title,
+                                              confirmLabel,
+                                              initialShiftNextPeriod,
+                                              initialPlannedNoChanges,
                                               submitting,
                                               error,
                                               onClose,
                                               onConfirm,
                                           }: PerformActualizationModalProps) {
-    const [shiftNextPeriod, setShiftNextPeriod] = useState(true);
-    const [plannedNoChanges, setPlannedNoChanges] = useState(false);
+    const [shiftNextPeriod, setShiftNextPeriod] = useState(initialShiftNextPeriod ?? true);
+    const [plannedNoChanges, setPlannedNoChanges] = useState(initialPlannedNoChanges ?? false);
 
     const effectiveShift = mode === "afterRequest" ? !!decidedShiftNextPeriod : shiftNextPeriod;
 
@@ -47,7 +60,7 @@ export function PerformActualizationModal({
                             className="grid h-10 w-10 flex-none place-items-center rounded-[11px] bg-[#ececfc] text-[#4e57d6]">
                             <RefreshCw size={19} strokeWidth={1.8}/>
                         </span>
-                        <h2 className="text-[16px] font-bold text-[#1c2740]">Выполнить актуализацию</h2>
+                        <h2 className="text-[16px] font-bold text-[#1c2740]">{title ?? "Выполнить актуализацию"}</h2>
                     </div>
                     <button onClick={onClose} disabled={submitting}
                             className="cursor-pointer flex-none text-[#8b97ab] hover:text-[#3a4560] disabled:opacity-50">
@@ -145,7 +158,7 @@ export function PerformActualizationModal({
                         className="cursor-pointer inline-flex h-[38px] items-center gap-2 rounded-[10px] bg-[#4e57d6] px-4 text-[13px] font-semibold text-white hover:bg-[#3f47bd] disabled:cursor-not-allowed disabled:opacity-50"
                     >
                         {submitting && <Loader2 size={14} className="animate-spin"/>}
-                        Сохранить
+                        {confirmLabel ?? "Сохранить"}
                     </button>
                 </div>
             </div>

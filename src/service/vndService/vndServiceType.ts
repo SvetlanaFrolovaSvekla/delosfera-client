@@ -166,6 +166,9 @@ export interface VndResponse {
     actualizationRequiresApproval: boolean;
     /** Заявлено ли, что текущий цикл актуализации пройдёт без изменений документа. */
     actualizationPlannedNoChanges: boolean;
+    /** Сдвигать ли DueActualizationDate после публикации текущего цикла — зафиксировано на шаге
+     * "Выполнить актуализацию". Пока этот шаг не пройден, значение ещё не окончательное. */
+    actualizationShiftNextPeriod: boolean;
     /** Пройден ли шаг "Выполнить актуализацию" в текущем открытом цикле — пока false, загрузка
      * новой редакции заблокирована, и должна показываться кнопка "Выполнить актуализацию" вместо
      * загрузки/согласования. */
@@ -216,6 +219,13 @@ export interface VndRedactionResponse {
     docFileKgId: number | null;
     docFileEnId: number | null;
 
+    /** Когда документ на соответствующем языке в последний раз заменялся файлом (напр. при
+     * повторной отправке после замечаний) — null, если это исходный файл редакции, ни разу
+     * не заменявшийся. Используется для метки "Обновлено, дата" (см. RedactionDocumentsPanel). */
+    docRuUpdatedAt: string | null;
+    docKgUpdatedAt: string | null;
+    docEnUpdatedAt: string | null;
+
     /** Таблица изменений и дополнений (ТИД) — null, если для этой редакции ТИД не требовался
      * (это первая редакция документа, number === 1) */
     tidFileId: number | null;
@@ -223,9 +233,19 @@ export interface VndRedactionResponse {
     requiresApproval: boolean;
     approvalStatus: RedactionApprovalStatus;
 
+    /** @deprecated Оставлено для обратной совместимости — используйте attachments (там есть
+     * настоящее имя файла, как при загрузке, а не "Вложение #id"). */
     attachmentFileIds: number[];
+    attachments: VndRedactionAttachmentResponse[];
 
     createdAt: string; // ISO datetime
+}
+
+/** Прочее вложение редакции — с оригинальным именем файла, под которым его загрузили. */
+export interface VndRedactionAttachmentResponse {
+    fileId: number;
+    fileName: string;
+    sizeBytes: number;
 }
 
 // --- Создание (загрузка) новой редакции

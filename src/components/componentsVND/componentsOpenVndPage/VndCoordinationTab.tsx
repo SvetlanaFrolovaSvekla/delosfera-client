@@ -40,8 +40,8 @@ import {
     RedactionViewModal
 } from "@/components/componentsCoordination/CoordinationRouteConstructor/viewComponents/RedactionViewModal.tsx";
 import {ConfirmActionModal} from "@/components/componentsGeneral/modal/ConfirmActionModal.tsx";
-import {AlertTriangle, CheckCircle2, Clock3, Columns2, FileCheck2, XCircle} from "lucide-react";
-import type {RedactionLanguage} from "@/utils/redactionLanguagePanelUtils.ts";
+import {AlertTriangle, CheckCircle2, Clock3, Columns2, FileCheck2, Info, XCircle} from "lucide-react";
+import type {RedactionViewTarget} from "@/utils/redactionLanguagePanelUtils.ts";
 import {useApprovalProcess} from "@/hooks/coordinationHooks/useApprovalProcess.ts";
 
 ///
@@ -67,7 +67,7 @@ const DECISION_MAP: Record<ResolutionChoice, ApprovalDecisionType> = {
 type CoordinationModal =
     | { kind: "startApproval" }
     | { kind: "compare" }
-    | { kind: "view"; redaction: VndRedactionResponse; language: RedactionLanguage };
+    | { kind: "view"; redaction: VndRedactionResponse; language: RedactionViewTarget };
 
 export function VndCoordinationTab({vnd, onVndChanged}: VndCoordinationTabProps) {
     const {user, hasPermission} = useAuth();
@@ -76,7 +76,7 @@ export function VndCoordinationTab({vnd, onVndChanged}: VndCoordinationTabProps)
     const {process, loading, error, reload} = useApprovalProcess(vnd.id); // Сами данные о согласовании
 
     const [modal, setModal] = useState<CoordinationModal | null>(null);
-    const openView = (redaction: VndRedactionResponse, language: RedactionLanguage) =>
+    const openView = (redaction: VndRedactionResponse, language: RedactionViewTarget) =>
         setModal({kind: "view", redaction, language});
 
     const [cancelling, setCancelling] = useState(false); // Отзыв согласования
@@ -101,7 +101,18 @@ export function VndCoordinationTab({vnd, onVndChanged}: VndCoordinationTabProps)
     const decisionInFlightRef = useRef(false);
 
     // Редакции ВНД грузим, чтобы достать ту, что связана с process.redactionId
-    const {data: redactions, loading: redactionsLoading, error: redactionsError} = useVndRedactions(vnd.id);
+    const {
+        data: redactions, loading: redactionsLoading, error: redactionsError, refetch: refetchRedactions,
+    } = useVndRedactions(vnd.id);
+
+    // После повторной отправки перезагружаем и процесс согласования, и список редакций —
+    // метка "Обновлено, <дата>" в "Данная редакция:" берётся из персистентных полей
+    // redaction.docRuUpdatedAt/docKgUpdatedAt/docEnUpdatedAt (см. RedactionDocumentsPanel),
+    // которые уже придут в свежих данных с бэка, отдельного состояния для этого не нужно.
+    const handleResubmitted = async () => {
+        await Promise.all([reload(), refetchRedactions()]);
+        toast.success("Отправлено на согласование", "Исправленная редакция отправлена дальше по маршруту");
+    };
 
     const download = useAsyncAction<number>();
     const handleDownload = (fileId: number, name: string) =>
@@ -206,6 +217,7 @@ export function VndCoordinationTab({vnd, onVndChanged}: VndCoordinationTabProps)
                 files: files.length > 0 ? files : undefined,
             });
             await reload();
+            toast.success("Резолюция отправлена", "Ваше решение по согласованию учтено");
         } catch (err) {
             setDecisionError(err instanceof Error ? err.message : "Не удалось отправить резолюцию");
         } finally {
@@ -271,6 +283,20 @@ export function VndCoordinationTab({vnd, onVndChanged}: VndCoordinationTabProps)
                     </div>
                 )}
 
+                {/* Плашка для согласующего на этапе "Согласование после внесённых изменений" —
+                    только для тех, чей этап участвует в повторном круге (participatesInRepeat,
+                    т.е. кто оставлял замечания/не согласовал чисто на первичном этапе - см.
+                    myStage выше), именно им нужно перепроверить обновлённые файлы. */}
+                {isRepeatedPhase && (
+                    <div className="mb-3 flex items-start gap-2.5 rounded-[12px] border border-[#bcd6f5] bg-[#eef5fd] px-3.5 py-3 max-w-full">
+                        <Info size={16} strokeWidth={2} className="mt-[1px] flex-none text-[#2f68c4]"/>
+                        <p className="text-[12.5px] leading-[1.55] text-[#1c4a80]">
+                            <span className="font-semibold">Файлы редакции были обновлены по вашим замечаниям.</span>
+                            {" "}Пожалуйста, проверьте обновлённые файлы ниже и вынесите решение по согласованию.
+                        </p>
+                    </div>
+                )}
+
                 <VndApprovalSummary process={process}/>
 
                 {redactionsError && (
@@ -314,8 +340,10 @@ export function VndCoordinationTab({vnd, onVndChanged}: VndCoordinationTabProps)
                 {modal?.kind === "compare" && redaction && previousRedaction && (
                     <RedactionCompareModal
                         vnd={vnd}
-                        redaction={redaction}
-                        previousRedaction={previousRedaction}
+                        redactions={redactions ?? []}
+                        initialLeft={redaction}
+                        initialRight={previousRedaction}
+                        reviewedRedactionId={redaction.id}
                         downloadingId={download.activeId}
                         onDownload={handleDownload}
                         onClose={() => setModal(null)}
@@ -391,8 +419,10 @@ export function VndCoordinationTab({vnd, onVndChanged}: VndCoordinationTabProps)
                 </div>
             )}
 
-            {/* Плашка для инициатора: редакцию отправили на доработку, есть замечания */}
-            {isRevisionNeeded && (
+            {/* Плашка для инициатора: редакцию отправили на доработку, есть замечания.
+                Только для него - согласующим адресована не эта плашка (у них другой статус
+                этапа, и это сообщение адресовано именно тому, кто должен исправлять). */}
+            {isRevisionNeeded && isInitiator && (
                 <div className="mx-auto mb-5 flex w-fit max-w-full items-start gap-2.5 rounded-[12px] border border-[#f0dcae] bg-[#fdf6e8] px-4 py-3">
                     <AlertTriangle size={16} strokeWidth={2} className="mt-[1px] flex-none text-[#9a6408]"/>
                     <p className="text-[12.5px] leading-[1.55] text-[#7a5006]">
@@ -451,8 +481,10 @@ export function VndCoordinationTab({vnd, onVndChanged}: VndCoordinationTabProps)
             {modal?.kind === "compare" && redaction && previousRedaction && (
                 <RedactionCompareModal
                     vnd={vnd}
-                    redaction={redaction}
-                    previousRedaction={previousRedaction}
+                    redactions={redactions ?? []}
+                    initialLeft={redaction}
+                    initialRight={previousRedaction}
+                    reviewedRedactionId={redaction.id}
                     downloadingId={download.activeId}
                     onDownload={handleDownload}
                     onClose={() => setModal(null)}
@@ -501,6 +533,7 @@ export function VndCoordinationTab({vnd, onVndChanged}: VndCoordinationTabProps)
                     redaction={redaction}
                     requiresTid={!!redaction && redaction.number > 1}
                     onChanged={reload}
+                    onResubmitted={handleResubmitted}
                 />
             )}
 

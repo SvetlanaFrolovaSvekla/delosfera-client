@@ -57,8 +57,8 @@ import {
     RedactionTidModal
 } from "@/components/componentsVND/componentsOpenVndPage/componentsEditionsTab/RedactionTidModal.tsx";
 import {
-    RedactionCompareView
-} from "@/components/componentsVND/componentsOpenVndPage/componentsEditionsTab/RedactionCompareView.tsx";
+    RedactionCompareModal
+} from "@/components/componentsCoordination/CoordinationRouteConstructor/viewComponents/RedactionCompareModal.tsx";
 import {
     VndStartApprovalModal
 } from "@/components/componentsCoordination/CoordinationRouteConstructor/functionalComponents/VndStartApprovalModal.tsx";
@@ -173,9 +173,11 @@ export function VndEditionsTab({vnd, onVndChanged, onGoToApproval}: VndEditionsT
         startOpen: actualizeStartOpen, setStartOpen: setActualizeStartOpen,
         requestOpen: actualizeRequestOpen, setRequestOpen: setActualizeRequestOpen,
         performOpen: actualizePerformOpen, setPerformOpen: setActualizePerformOpen, performMode: actualizePerformMode,
+        editSettingsOpen: actualizeEditSettingsOpen, setEditSettingsOpen: setActualizeEditSettingsOpen,
         submitting: actualizeSubmitting, error: actualizeError, setError: setActualizeError,
         handleStart: handleActualizeStart, handleRequestAccess: handleActualizeRequestAccess,
         handlePerformConfirm: handleActualizePerformConfirm,
+        handleUpdatePerformedSettings: handleActualizeUpdatePerformedSettings,
         canWithoutApproval, canWithApproval,
         canRequestWithoutApproval, canRequestWithApproval,
     } = useVndActualizationFlow(vnd, () => onVndChanged?.());
@@ -338,8 +340,25 @@ export function VndEditionsTab({vnd, onVndChanged, onGoToApproval}: VndEditionsT
     let primaryDisabled: boolean;
     let primaryHint: string | undefined;
     let primaryAction: () => void;
+    let primarySecondaryLabel: string | undefined;
+    let primarySecondaryAction: (() => void) | undefined;
+    let primarySecondaryTooltip: string | undefined;
+    let primaryHintTooltip: string | undefined;
 
-    if (!hasCurrentRedaction) {
+    if (vnd.status === "consol") {
+        // Согласованная редакция ещё не консолидирована - загружать новую редакцию рано, сначала
+        // документ должен пройти консолидацию. ВАЖНО: эта проверка обязана идти РАНЬШЕ
+        // !hasCurrentRedaction - CurrentRedactionId не проставляется при входе в консолидацию
+        // (см. комментарий в VndApprovalService про VndActualizationService.PublishAsync), поэтому
+        // для самой первой редакции ВНД (ещё не было ни одной "действующей") hasCurrentRedaction
+        // в статусе "Консолидация" тоже false, и без этой проверки выше по цепочке ветка
+        // "!hasCurrentRedaction" ошибочно предлагала бы загрузить новую редакцию напрямую.
+        primaryVariant = "actualize";
+        primaryDisabled = true;
+        primaryHint = t("openVndPage.redactionsSidebar.consolidationHint");
+        primaryAction = () => {
+        };
+    } else if (!hasCurrentRedaction) {
         // Нет предыдущих актуальных редакций - добавление новой редакции напрямую, без актуализации
         primaryVariant = "new";
         primaryDisabled = uploadBlocked;
@@ -361,6 +380,14 @@ export function VndEditionsTab({vnd, onVndChanged, onGoToApproval}: VndEditionsT
                     primaryDisabled = false;
                     primaryHint = t("openVndPage.redactionsSidebar.noChangesApprovalHint");
                     primaryAction = () => setApprovalModalOpen(true);
+                    // Перед отправкой на согласование ответственный/главный редактор может ещё раз
+                    // изменить настройки, зафиксированные на шаге "Выполнить актуализацию"
+                    // (сдвиг срока/"без изменений") - открывает то же окно PerformActualizationModal.
+                    if (vnd.actualizationResponsibleUserId === user?.id || isChiefEditor) {
+                        primarySecondaryLabel = t("openVndPage.redactionsSidebar.editActualizationSettingsLink");
+                        primarySecondaryAction = () => setActualizeEditSettingsOpen(true);
+                        primarySecondaryTooltip = t("openVndPage.redactionsSidebar.editActualizationSettingsTooltip");
+                    }
                 } else {
                     // Согласование не требуется - подтверждаем отсутствие изменений напрямую,
                     // документ сразу уходит в консолидацию
@@ -374,10 +401,23 @@ export function VndEditionsTab({vnd, onVndChanged, onGoToApproval}: VndEditionsT
                 // изменения - загружаем актуализированную версию
                 primaryVariant = "uploadActualized";
                 primaryDisabled = uploadBlocked;
-                primaryHint = uploadBlocked
-                    ? t("openVndPage.redactionsSidebar.uploadBlockedHint", {number: lastByNumber?.number})
-                    : undefined;
+                if (uploadBlocked) {
+                    primaryHint = t("openVndPage.redactionsSidebar.uploadBlockedHint", {number: lastByNumber?.number});
+                } else {
+                    // Заявлено "с изменениями" - в отличие от ветки "без изменений" выше здесь
+                    // нужно явно загрузить новую редакцию, прежде чем можно будет отправить на
+                    // согласование (кнопка сама по себе только открывает загрузку файла).
+                    primaryHint = t("openVndPage.redactionsSidebar.changesUploadHint");
+                    primaryHintTooltip = t("openVndPage.redactionsSidebar.changesUploadHintTooltip");
+                }
                 primaryAction = () => setUploadOpen(true);
+                // Тот же путь, что и в ветке "без изменений" выше - настройки, зафиксированные на
+                // шаге "Выполнить актуализацию", можно поменять и здесь, до загрузки новой версии
+                // (например, снова отметить "без изменений", если галочку сняли по ошибке).
+                if (vnd.actualizationResponsibleUserId === user?.id || isChiefEditor) {
+                    primarySecondaryLabel = t("openVndPage.redactionsSidebar.editActualizationSettingsLink");
+                    primarySecondaryAction = () => setActualizeEditSettingsOpen(true);
+                }
             }
         } else if (needsPerform) {
             // Шаг "Выполнить актуализацию" ещё не пройден, но я могу его выполнить (ответственный
@@ -426,7 +466,8 @@ export function VndEditionsTab({vnd, onVndChanged, onGoToApproval}: VndEditionsT
             };
         }
     } else {
-        // Согласование/консолидация/архив/черновик - актуализацию сейчас не начать
+        // Согласование/архив/черновик - актуализацию сейчас не начать (статус "Консолидация"
+        // обработан отдельной веткой в самом начале цепочки - см. выше)
         primaryVariant = "actualize";
         primaryDisabled = true;
         primaryHint = undefined;
@@ -467,9 +508,17 @@ export function VndEditionsTab({vnd, onVndChanged, onGoToApproval}: VndEditionsT
                     primaryActionVariant={primaryVariant}
                     primaryActionDisabled={primaryDisabled}
                     primaryActionHint={primaryHint}
+                    primaryActionHintTooltip={primaryHintTooltip}
                     onPrimaryAction={primaryAction}
+                    secondaryActionLabel={primarySecondaryLabel}
+                    onSecondaryAction={primarySecondaryAction}
+                    secondaryActionTooltip={primarySecondaryTooltip}
                     compareMode={compareMode}
-                    onToggleCompare={() => setCompareMode((v) => !v)}
+                    onToggleCompare={() => {
+                        // Модалка сравнения требует обе стороны - если у выбранной редакции нет
+                        // соседней (единственная редакция ВНД), сравнивать пока не с чем.
+                        if (compareTarget) setCompareMode(true);
+                    }}
                     contentsOpen={contentsOpen}
                     onToggleContents={() => setContentsOpen((v) => !v)}
                     canEditLastRevision={hasPermission(PermissionCode.EditLastRevisionDirectly)}
@@ -521,26 +570,16 @@ export function VndEditionsTab({vnd, onVndChanged, onGoToApproval}: VndEditionsT
                         </div>
                     )}
 
-                    {!compareMode ? (
-                        <RedactionTextView
-                            ref={textViewRef}
-                            vnd={vnd}
-                            selected={selected}
-                            activeLanguage={activeLanguage}
-                            downloadingId={download.activeId}
-                            onDownload={handleDownload}
-                            searchQuery={searchQuery}
-                            onClearSearch={() => setSearchQuery("")}
-                        />
-                    ) : (
-                        <RedactionCompareView
-                            vnd={vnd}
-                            selected={selected}
-                            compareTarget={compareTarget}
-                            downloadingId={download.activeId}
-                            onDownload={handleDownload}
-                        />
-                    )}
+                    <RedactionTextView
+                        ref={textViewRef}
+                        vnd={vnd}
+                        selected={selected}
+                        activeLanguage={activeLanguage}
+                        downloadingId={download.activeId}
+                        onDownload={handleDownload}
+                        searchQuery={searchQuery}
+                        onClearSearch={() => setSearchQuery("")}
+                    />
                 </div>
             </div>
 
@@ -613,6 +652,26 @@ export function VndEditionsTab({vnd, onVndChanged, onGoToApproval}: VndEditionsT
                         setActualizeError(null);
                     }}
                     onConfirm={handleActualizePerformConfirm}
+                />
+            )}
+
+            {/* Изменить настройки актуализации (сдвиг срока/"без изменений") перед отправкой на
+                согласование - то же окно, что и "Выполнить актуализацию", но уже с текущими
+                значениями и без повторного прохождения самого шага ActualizationPerformed. */}
+            {actualizeEditSettingsOpen && (
+                <PerformActualizationModal
+                    mode="direct"
+                    title={t("openVndPage.redactionsSidebar.editActualizationSettingsTitle")}
+                    initialShiftNextPeriod={vnd.actualizationShiftNextPeriod}
+                    initialPlannedNoChanges={vnd.actualizationPlannedNoChanges}
+                    submitting={actualizeSubmitting}
+                    error={actualizeError}
+                    onClose={() => {
+                        if (actualizeSubmitting) return;
+                        setActualizeEditSettingsOpen(false);
+                        setActualizeError(null);
+                    }}
+                    onConfirm={handleActualizeUpdatePerformedSettings}
                 />
             )}
 
@@ -697,10 +756,27 @@ export function VndEditionsTab({vnd, onVndChanged, onGoToApproval}: VndEditionsT
             {/* Просмотр ТИД редакции */}
             {tidRedaction && (
                 <RedactionTidModal
+                    vnd={vnd}
                     redaction={tidRedaction}
                     downloadingId={download.activeId}
                     onDownload={handleDownload}
                     onClose={() => setTidRedaction(null)}
+                />
+            )}
+
+            {/* Просмотр и сравнение редакций - слева выбранная сейчас редакция, справа
+                соседняя по номеру; обе стороны можно переключить на любую другую редакцию
+                прямо в модалке. Вне контекста согласования - без пометки "необходимо
+                согласовать". */}
+            {compareMode && compareTarget && (
+                <RedactionCompareModal
+                    vnd={vnd}
+                    redactions={sortedDesc}
+                    initialLeft={selected}
+                    initialRight={compareTarget}
+                    downloadingId={download.activeId}
+                    onDownload={handleDownload}
+                    onClose={() => setCompareMode(false)}
                 />
             )}
         </div>

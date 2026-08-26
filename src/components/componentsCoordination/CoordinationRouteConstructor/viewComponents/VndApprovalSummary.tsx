@@ -4,7 +4,7 @@ import {useNavigate} from "react-router-dom";
 import {useAuth} from "@/context/AuthContext.ts";
 import type {ApprovalProcessResponse} from "@/service/coordinationService/coordinationServiceTypes.ts";
 import {PHASE_LABELS, PROCESS_STATUS_META, type ApprovalPhase} from "@/constants/coordinationParams.ts";
-import {User, Calendar, CheckCircle2, Hourglass} from "lucide-react";
+import {User, Calendar, CheckCircle2, Hourglass, MessageSquareText} from "lucide-react";
 import {getInitials} from "@/utils/getInitials.ts";
 
 interface VndApprovalSummaryProps {
@@ -205,6 +205,21 @@ export function VndApprovalSummary({process}: VndApprovalSummaryProps) {
                     </div>
                 </div>
             </div>
+
+            {/* Комментарий инициатора о внесённых исправлениях — виден и согласующим на
+                этапе "Согласование после внесённых изменений" (repeated), и самому
+                инициатору. Появляется только после повторной отправки на согласование. */}
+            {process.repeatInitiatorComment && (
+                <div className="mt-3 border-t border-[#eef0f5] pt-3">
+                    <div className="mb-1.5 flex items-center gap-[7px] text-[11.5px] font-bold uppercase tracking-[.04em] text-[#a3adbd]">
+                        <MessageSquareText size={14} className="flex-none text-[#4e57d6]"/>
+                        Комментарий инициатора о внесённых исправлениях
+                    </div>
+                    <p className="whitespace-pre-wrap rounded-[10px] bg-[#f6f8fb] px-3.5 py-3 text-[13px] leading-[1.6] text-[#3c424a]">
+                        {process.repeatInitiatorComment}
+                    </p>
+                </div>
+            )}
         </div>
     );
 }

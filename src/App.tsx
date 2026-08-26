@@ -99,8 +99,8 @@ const MainLayout = () => {
                 <Sidebar/>
                 <main className="flex-1 flex flex-col min-w-0 overflow-hidden bg-[#edecf5]">
                     <Header/>
-                    <div className="flex-1 overflow-y-auto overflow-x-hidden">
-                        <Outlet/> {/* Место для вложенных маршрутов */}
+                    <div id="main-scroll-container" className="flex-1 overflow-y-auto overflow-x-hidden">
+                    <Outlet/> {/* Место для вложенных маршрутов */}
                     </div>
                 </main>
             </div>

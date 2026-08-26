@@ -1,5 +1,6 @@
 import {ACTUALIZATION_MODE_OPTIONS, type ActualizationMode} from "@/utils/vndActualizationUtils.ts";
 import {DatePickerInput} from "@/components/componentsGeneral/datePickers/DatePickerInput.tsx";
+import {Tooltip} from "@/components/componentsGeneral/Tooltip.tsx";
 
 interface VndActualizationCardProps {
     actualizationMode: ActualizationMode;
@@ -16,6 +17,7 @@ export function VndActualizationCard({
                                          onManualDueDateChange,
                                          periodicityLabel,
                                      }: VndActualizationCardProps) {
+    const isDateFieldDisabled = actualizationMode !== "date";
     return (
         <div className="bg-white border border-[#e9edf3] rounded-2xl p-5 flex-1 flex flex-col">
             <div className="text-[11px] font-bold uppercase tracking-[.04em] text-[#a3adbd]">
@@ -55,13 +57,19 @@ export function VndActualizationCard({
                 })}
             </div>
 
-            <DatePickerInput
-                value={computedDueDateDisplay}
-                onChange={onManualDueDateChange}
-                disabled={actualizationMode !== "date"}
-                modal
-                modalTitle="Срок актуализации"
-            />
+            <Tooltip
+                content='Срок первой актуализации. Редактирование доступно только в режиме "Ввод даты"'
+                disabled={!isDateFieldDisabled}
+                className="w-full"
+            >
+                <DatePickerInput
+                    value={computedDueDateDisplay}
+                    onChange={onManualDueDateChange}
+                    disabled={isDateFieldDisabled}
+                    modal
+                    modalTitle="Срок актуализации"
+                />
+            </Tooltip>
 
             <div className="mt-3 pt-3 border-t border-[#eef2f7] text-[12px] text-[#55617a] leading-[1.55]">
                 Периодичность: <b className="text-[#1c2740]">{periodicityLabel}</b>

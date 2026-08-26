@@ -1,5 +1,5 @@
 // Таб "Редакции" открытой страницы ВНД
-import {useRef} from "react";
+import {useMemo, useRef} from "react";
 import {useEffect, useState} from "react";
 import {useAuth} from "@/context/AuthContext.ts";
 import {useTranslation} from "react-i18next";
@@ -12,6 +12,8 @@ import {useAsyncAction} from "@/hooks/useAsyncAction.ts";
 import {useAvailableHeight} from "@/hooks/vndHooks/useAvailableHeight.ts";
 import {useVndActualizationFlow} from "@/hooks/vndHooks/useVndActualizationFlow.ts";
 import {actualizationService} from "@/service/actualizationService/actualizationService.ts";
+import {coordinationService} from "@/service/coordinationService/coordinationService.ts";
+import type {ApprovalProcessResponse} from "@/service/coordinationService/coordinationServiceTypes.ts";
 
 import {downloadWithToast} from "@/utils/downloadFile.ts";
 import {getRedactionDisplayStatus} from "@/utils/redactionStatus.ts";
@@ -69,16 +71,30 @@ import {
 
 import {EmptyState} from "@/components/componentsGeneral/EmptyState.tsx";
 import {Loader} from "@/components/componentsGeneral/Loader";
+import {Clue} from "@/components/componentsGeneral/knowledgeBaseComponents/Clue.tsx";
 import {Upload} from "lucide-react";
 import {SearchBar} from "@/components/componentsGeneral/SearchBar.tsx";
+import {ConfirmActionModal} from "@/components/componentsGeneral/modal/ConfirmActionModal.tsx";
+import {vndService} from "@/service/vndService/vndService.ts";
 
 
 interface VndEditionsTabProps {
     vnd: VndResponse;
     onVndChanged?: () => void;
+    /** Переключить страницу ВНД на таб «Ход согласования» — вызывается сразу после
+     * успешного запуска согласования, чтобы пользователь увидел маршрут, а не
+     * остался на «Редакциях», где дальше делать нечего. */
+    onGoToApproval?: () => void;
 }
 
-export function VndEditionsTab({vnd, onVndChanged}: VndEditionsTabProps) {
+const PUBLISH_WITHOUT_APPROVAL_PERMISSIONS: number[] = [
+    PermissionCode.CreateVndWithApproval,
+    PermissionCode.CreateVndWithoutApproval,
+    PermissionCode.ActualizeAnyVndWithApproval,
+    PermissionCode.ActualizeAnyVndWithoutApproval,
+];
+
+export function VndEditionsTab({vnd, onVndChanged, onGoToApproval}: VndEditionsTabProps) {
     const {t} = useTranslation();
     const {data: redactions, loading, error, refetch} = useVndRedactions(vnd.id);
     const [uploadOpen, setUploadOpen] = useState(false);
@@ -92,7 +108,13 @@ export function VndEditionsTab({vnd, onVndChanged}: VndEditionsTabProps) {
     const {sortedDesc, lastByNumber, current, selected, compareTarget, uploadBlocked} =
         useRedactionSelection(redactions, selectedId);
 
-    const {ref: containerRef, height: availableHeight} = useAvailableHeight();
+    const hasStatusBannerAbove = vnd.status === "draft" || vnd.status === "consol";
+
+    const {ref: containerRef, height: rawAvailableHeight} = useAvailableHeight();
+    const availableHeight =
+        rawAvailableHeight !== undefined && hasStatusBannerAbove
+            ? rawAvailableHeight - 30
+            : rawAvailableHeight;
 
     const download = useAsyncAction<number>();
     const submit = useAsyncAction<number>();
@@ -101,6 +123,49 @@ export function VndEditionsTab({vnd, onVndChanged}: VndEditionsTabProps) {
 
     const {hasPermission, user} = useAuth();
     const [editOpen, setEditOpen] = useState(false);
+
+    // Зеркалит бэковый IsChiefEditor() (VndService/VndApprovalService) - см. те же права
+    // в VndCoordinationTab.tsx/OpenVndPage.tsx. Только главному редактору доступна кнопка
+    // "Сделать актуальной редакцией без согласования".
+    const isChiefEditor =
+        hasPermission(PermissionCode.CreateVndWithApproval) ||
+        hasPermission(PermissionCode.CreateVndWithoutApproval) ||
+        hasPermission(PermissionCode.ActualizeAnyVndWithApproval) ||
+        hasPermission(PermissionCode.ActualizeAnyVndWithoutApproval);
+
+    const [publishWithoutApprovalConfirmOpen, setPublishWithoutApprovalConfirmOpen] = useState(false);
+    const [publishingWithoutApproval, setPublishingWithoutApproval] = useState(false);
+    const [publishWithoutApprovalError, setPublishWithoutApprovalError] = useState<string | null>(null);
+
+    const publishWithoutApprovalRoleNames = useMemo(() => {
+        if (!isChiefEditor || !user) return [];
+        return user.roles
+            .filter((role) =>
+                role.permissionCodes.some((code) =>
+                    PUBLISH_WITHOUT_APPROVAL_PERMISSIONS.includes(code)
+                )
+            )
+            .map((role) => role.name);
+    }, [isChiefEditor, user]);
+
+    // Процесс согласования - нужен только чтобы решить, кому показать кнопку "Перейти к
+    // согласованию" в статус-баннере редакции ("pending"): участвующему согласующему,
+    // инициатору согласования и инициатору самой ВНД. Грузим один раз при открытии вкладки -
+    // отсутствие процесса (ВНД ещё не отправлялась) не ошибка, просто кнопка не покажется.
+    const [approvalProcess, setApprovalProcess] = useState<ApprovalProcessResponse | null>(null);
+    useEffect(() => {
+        let cancelled = false;
+        coordinationService.getByVndId(vnd.id)
+            .then((data) => {
+                if (!cancelled) setApprovalProcess(data);
+            })
+            .catch(() => {
+                if (!cancelled) setApprovalProcess(null);
+            });
+        return () => {
+            cancelled = true;
+        };
+    }, [vnd.id]);
 
     const {
         canDirectly, canByRequest,
@@ -231,6 +296,39 @@ export function VndEditionsTab({vnd, onVndChanged}: VndEditionsTabProps) {
 
     const selectedStatus = getRedactionDisplayStatus(selected, vnd.status, lastByNumber?.id === selected.id);
 
+    // Кнопка "Перейти к согласованию" в статус-баннере ("pending") — только для тех, кому есть
+    // смысл сразу перейти на "Ход согласования": участвующий согласующий, инициатор
+    // согласования, инициатор самой ВНД.
+    const isApprovalParticipant = !!approvalProcess && !!user &&
+        approvalProcess.stages.some((s) => s.approverUserId === user.id);
+    const isApprovalInitiator = !!approvalProcess && approvalProcess.initiatorUserId === user?.id;
+    const isVndInitiator = vnd.createdByUserId !== null && vnd.createdByUserId === user?.id;
+    const canGoToApprovalFromBanner = isApprovalParticipant || isApprovalInitiator || isVndInitiator;
+
+    // Редакция, по которой последний процесс согласования был отклонён - она вернулась в
+    // черновик (как и после отзыва), поэтому по одному только approvalStatus не отличить
+    // "никогда не отправлялась" от "отклонена, нужно доработать". Сверяемся с историей
+    // процесса согласования, чтобы показать в сайдбаре подсказку именно для этого случая.
+    const rejectedRedactionId =
+        approvalProcess?.status === "rejected" ? approvalProcess.redactionId : undefined;
+
+    const handlePublishWithoutApproval = async () => {
+        setPublishingWithoutApproval(true);
+        setPublishWithoutApprovalError(null);
+        try {
+            await vndService.publishRedactionWithoutApproval(vnd.id, selected.id);
+            setPublishWithoutApprovalConfirmOpen(false);
+            toast.success("Редакция стала действующей", "Согласование пропущено решением главного редактора");
+            refetch();
+            onVndChanged?.();
+        } catch (err) {
+            setPublishWithoutApprovalError(
+                err instanceof Error ? err.message : "Не удалось сделать редакцию действующей без согласования");
+        } finally {
+            setPublishingWithoutApproval(false);
+        }
+    };
+
     // --- Главная кнопка сайдбара редакций: что она делает, зависит от того, есть ли у ВНД уже
     // действующая редакция, и, если да, от текущего статуса цикла актуализации.
     const hasCurrentRedaction = !!current;
@@ -295,14 +393,16 @@ export function VndEditionsTab({vnd, onVndChanged}: VndEditionsTabProps) {
             primaryVariant = "performActualization";
             primaryDisabled = true;
             primaryHint = t("openVndPage.redactionsSidebar.waitingPerformHint");
-            primaryAction = () => {};
+            primaryAction = () => {
+            };
         }
     } else if (vnd.status === "active") {
         if (myAccessState.kind === "pending") {
             primaryVariant = "actualize";
             primaryDisabled = true;
             primaryHint = t("openVndPage.redactionsSidebar.pendingRequestHint");
-            primaryAction = () => {};
+            primaryAction = () => {
+            };
         } else if (needsConfirmStartAfterRequest) {
             // Заявка одобрена - остаётся выполнить актуализацию (совмещает старт цикла и сам
             // шаг для этого пути), тоже прямо здесь, без перехода на вкладку «Актуализация».
@@ -314,7 +414,8 @@ export function VndEditionsTab({vnd, onVndChanged}: VndEditionsTabProps) {
             primaryVariant = "actualize";
             primaryDisabled = true;
             primaryHint = t("openVndPage.redactionsSidebar.noPermissionHint");
-            primaryAction = () => {};
+            primaryAction = () => {
+            };
         } else {
             primaryVariant = "actualize";
             primaryDisabled = false;
@@ -329,7 +430,8 @@ export function VndEditionsTab({vnd, onVndChanged}: VndEditionsTabProps) {
         primaryVariant = "actualize";
         primaryDisabled = true;
         primaryHint = undefined;
-        primaryAction = () => {};
+        primaryAction = () => {
+        };
     }
 
     return (
@@ -338,7 +440,7 @@ export function VndEditionsTab({vnd, onVndChanged}: VndEditionsTabProps) {
             style={{height: availableHeight}}
             className={`px-2 grid items-start gap-[15px] overflow-hidden ${
                 contentsOpen ? "grid-cols-[260px_1fr_260px]" : "grid-cols-[260px_1fr]"
-            }`}
+            } ${hasStatusBannerAbove ? "mb-[20px]" : ""}`}
         >
 
             {/* Левая панель */}
@@ -360,6 +462,7 @@ export function VndEditionsTab({vnd, onVndChanged}: VndEditionsTabProps) {
                     redactions={sortedDesc}
                     selectedId={selected.id}
                     vndStatus={vnd.status}
+                    rejectedRedactionId={rejectedRedactionId}
                     onSelect={setSelectedId}
                     primaryActionVariant={primaryVariant}
                     primaryActionDisabled={primaryDisabled}
@@ -396,17 +499,24 @@ export function VndEditionsTab({vnd, onVndChanged}: VndEditionsTabProps) {
                     currentNumber={current?.number}
                     isSubmitting={false}
                     onSubmit={() => setApprovalModalOpen(true)}
+                    onGoToApproval={canGoToApprovalFromBanner ? onGoToApproval : undefined}
+                    onPublishWithoutApproval={
+                        isChiefEditor ? () => setPublishWithoutApprovalConfirmOpen(true) : undefined
+                    }
+                    isPublishingWithoutApproval={publishingWithoutApproval}
                 />
 
                 <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
                     {submit.error && (
-                        <div className="border-b border-[#f2c2c2] bg-[#fdf1f1] px-5 py-[10px] text-[12px] text-[#c0392b]">
+                        <div
+                            className="border-b border-[#f2c2c2] bg-[#fdf1f1] px-5 py-[10px] text-[12px] text-[#c0392b]">
                             {submit.error}
                         </div>
                     )}
 
                     {download.error && (
-                        <div className="border-b border-[#f2c2c2] bg-[#fdf1f1] px-5 py-[10px] text-[12px] text-[#c0392b]">
+                        <div
+                            className="border-b border-[#f2c2c2] bg-[#fdf1f1] px-5 py-[10px] text-[12px] text-[#c0392b]">
                             {download.error}
                         </div>
                     )}
@@ -514,9 +624,47 @@ export function VndEditionsTab({vnd, onVndChanged}: VndEditionsTabProps) {
                     onStarted={() => {
                         setApprovalModalOpen(false);
                         onVndChanged?.();
+                        onGoToApproval?.();
                     }}
                 />
             )}
+
+            {/* Сделать редакцию действующей без согласования (только главный редактор) */}
+            <ConfirmActionModal
+                open={publishWithoutApprovalConfirmOpen}
+                onClose={() => {
+                    if (publishingWithoutApproval) return;
+                    setPublishWithoutApprovalConfirmOpen(false);
+                    setPublishWithoutApprovalError(null);
+                }}
+                onConfirm={handlePublishWithoutApproval}
+                title="Сделать редакцию действующей без согласования?"
+                message="Редакция станет действующей сразу, минуя процесс согласования полностью. Это решение фиксируется как выполненное главным редактором."
+                confirmLabel="Сделать действующей"
+                loadingLabel="Применяю…"
+                loading={publishingWithoutApproval}
+                error={publishWithoutApprovalError}
+                variant="primary"
+            >
+                {publishWithoutApprovalRoleNames.length > 0 && (
+                    <Clue>
+                        <span className="flex flex-wrap items-center gap-x-1.5 gap-y-1.5">
+                            <span>
+                                Это право Вам дают
+                                {publishWithoutApprovalRoleNames.length === 1 ? " роль:" : " роли:"}
+                            </span>
+                            {publishWithoutApprovalRoleNames.map((name) => (
+                                <span
+                                    key={name}
+                                    className="inline-flex items-center px-[9px] py-[3px] rounded-full bg-[#ececfc] text-[11.5px] font-semibold text-[#4e57d6] whitespace-nowrap"
+                                >
+                                    {name}
+                                </span>
+                            ))}
+                        </span>
+                    </Clue>
+                )}
+            </ConfirmActionModal>
 
             {/* Редактирование редакции */}
             {editOpen && selected && (

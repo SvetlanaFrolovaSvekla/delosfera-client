@@ -1,5 +1,6 @@
 import {useState} from "react";
 import {VND_TITLE_MAX_LENGTH, VND_TITLE_MIN_LENGTH} from "@/constants/validation/vndValidation.ts";
+import {CharCounter} from "@/components/componentsGeneral/CharCounter.tsx";
 
 interface VndTitlesSectionProps {
     titleRu: string;
@@ -18,19 +19,6 @@ const normalInputClass =
 
 const errorInputClass =
     "border-[#e0a5a0] focus:border-[#c0392b] focus:ring-[3px] focus:ring-[#fdecec]";
-
-function CharCounter({length}: { length: number }) {
-    const nearLimit = VND_TITLE_MAX_LENGTH - length <= 20;
-    return (
-        <span
-            className={`text-[11px] font-medium tabular-nums ${
-                nearLimit ? "text-[#c0392b]" : "text-[#a3adbd]"
-            }`}
-        >
-            {length}/{VND_TITLE_MAX_LENGTH}
-        </span>
-    );
-}
 
 interface TitleFieldProps {
     label: string;
@@ -55,7 +43,7 @@ function TitleField({label, required = false, boldLabel = true, value, onChange,
                 <label className={`text-[12px] ${boldLabel ? "font-semibold" : "font-medium"} text-[#3a4560]`}>
                     {label} {required && <span className="text-[#c0392b]">*</span>}
                 </label>
-                <CharCounter length={value.length}/>
+                <CharCounter length={value.length} max={VND_TITLE_MAX_LENGTH}/>
             </div>
             <input
                 value={value}

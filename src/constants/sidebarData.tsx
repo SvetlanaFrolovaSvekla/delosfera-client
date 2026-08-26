@@ -16,7 +16,9 @@ interface NavGroup {
 }
 
 export const navGroups: NavGroup[] = [
-    { items: [{ id: "home", icon: "dash", labelKey: "sidebar.items.home", path: "/" }] },
+    { items: [{ id: "home", icon: "dash", labelKey: "sidebar.items.home", path: "/" },
+            { id: "notif", icon: "bell", labelKey: "sidebar.items.notif", path: "/notifications" },
+        ] },
     {
         titleKey: "sidebar.groups.normotvorchestvo",
         items: [

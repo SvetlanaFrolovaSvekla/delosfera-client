@@ -1,9 +1,10 @@
 // Общая модалка подтверждения действия (удаление, блокировка, разблокировка и т.п.)
 import {useTranslation} from "react-i18next";
 import {useModalShake} from "@/hooks/useModalShake.ts";
-import {AlertTriangle, Lock, Unlock, type LucideIcon} from "lucide-react";
+import {AlertTriangle, Lock, Unlock, ShieldCheck, type LucideIcon} from "lucide-react";
+import type {ReactNode} from "react";
 
-export type ConfirmActionVariant = "danger" | "warning" | "success";
+export type ConfirmActionVariant = "danger" | "warning" | "success" | "primary";
 
 interface VariantStyle {
     haloBg: string;
@@ -31,6 +32,12 @@ const VARIANT_STYLES: Record<ConfirmActionVariant, VariantStyle> = {
         confirmBg: "bg-[#1a8a5f]",
         Icon: Unlock,
     },
+    primary: {
+        haloBg: "bg-[#ececfc]",
+        circleBg: "bg-[#4e57d6]",
+        confirmBg: "bg-[#4e57d6]",
+        Icon: ShieldCheck,
+    },
 };
 
 interface ConfirmActionModalProps {
@@ -45,6 +52,9 @@ interface ConfirmActionModalProps {
     error?: string | null;
     variant?: ConfirmActionVariant;
     icon?: LucideIcon;
+    /** Произвольный доп. контент между текстом и блоком ошибки —
+     * например, подсказка (Clue) о том, какие роли дают это право. */
+    children?: ReactNode;
 }
 
 export function ConfirmActionModal({
@@ -59,6 +69,7 @@ export function ConfirmActionModal({
                                        error = null,
                                        variant = "warning",
                                        icon,
+                                       children,
                                    }: ConfirmActionModalProps) {
     const {t} = useTranslation();
     const {panelRef, handleBackdropClick} = useModalShake();
@@ -92,6 +103,12 @@ export function ConfirmActionModal({
                 <p className="text-center text-[13px] text-[#8b97ab] leading-[1.5] mb-5">
                     {message}
                 </p>
+
+                {children && (
+                    <div className="mb-5">
+                        {children}
+                    </div>
+                )}
 
                 {error && (
                     <div className="mb-4 px-3 py-2 rounded-[9px] bg-[#fdeceb] text-[#c0392b] text-[12.5px] text-center">

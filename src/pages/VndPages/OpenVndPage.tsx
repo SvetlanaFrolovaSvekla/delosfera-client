@@ -242,7 +242,9 @@ export function OpenVndPage() {
             </div>
 
             {/* Редакции */}
-            {activeTab === "editions" && <VndEditionsTab vnd={vnd} onVndChanged={refetch}/>}
+            {activeTab === "editions" && (
+                <VndEditionsTab vnd={vnd} onVndChanged={refetch} onGoToApproval={() => setTab("approval")}/>
+            )}
             {/* Реквизиты */}
             {activeTab === "passport" && (
                 <VndPassportTab

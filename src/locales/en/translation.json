@@ -184,7 +184,7 @@
   "openVndPage": {
     "loadError": "Failed to load document: {{error}}",
     "dictionariesErrorTitle": "Failed to load data!",
-    "createdAtLabel": "Created: {{date}}",
+    "createdAtLabel": "Created VND: {{date}}",
     "deleteDraftButton": "Delete draft",
     "deleteConfirmTitle": "Delete draft?",
     "deleteConfirmMessage": "Delete VND draft «{{name}}»? This action cannot be undone.",

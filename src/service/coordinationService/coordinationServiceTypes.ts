@@ -56,6 +56,10 @@ export interface ApprovalDecisionRequest {
     decision: ApprovalDecisionType; // Решение, резолюция
     /** Обязателен для ApproveWithComment и Reject */
     comment?: string; // Комментарий к решению
+    /** Файлы, приложенные согласующим к своей резолюции (необязательно). Хранятся, пока идёт
+     * согласование — как только редакция становится согласованной, вложения удаляются,
+     * текст комментария остаётся. */
+    files?: File[];
 }
 
 export interface ResubmitAfterRevisionRequest {
@@ -90,6 +94,15 @@ export interface DisagreementMatrixRowResponse {
     createdAt: string;
 }
 
+/** Файл, приложенный согласующим к резолюции. Список пуст, если редакция уже согласована —
+ * вложения к этому моменту физически удалены, остаётся только текст комментария. */
+export interface ApprovalStageAttachmentResponse {
+    id: number;
+    fileId: number;
+    fileName: string;
+    sizeBytes: number;
+}
+
 export interface ApprovalStageResponse {
     id: number;
     order: number;
@@ -101,13 +114,16 @@ export interface ApprovalStageResponse {
     primaryDecision: ApprovalStageDecisionResponse;
     primaryComment: string | null;
     primaryDecidedAt: string | null;
+    primaryAttachments: ApprovalStageAttachmentResponse[];
     participatesInRepeat: boolean;
     repeatDecision: ApprovalStageDecisionResponse | null;
     repeatComment: string | null;
     repeatDecidedAt: string | null;
+    repeatAttachments: ApprovalStageAttachmentResponse[];
     finalHoldDecision: ApprovalStageDecisionResponse | null;
     finalHoldComment: string | null;
     finalHoldDecidedAt: string | null;
+    finalHoldAttachments: ApprovalStageAttachmentResponse[];
 }
 
 export interface ApprovalProcessResponse {

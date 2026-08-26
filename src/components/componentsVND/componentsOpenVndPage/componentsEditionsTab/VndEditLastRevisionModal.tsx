@@ -4,6 +4,8 @@ import {createPortal} from "react-dom";
 import {FileUp, Loader2, Trash2, X} from "lucide-react";
 import {vndService} from "@/service/vndService/vndService.ts";
 import type {VndRedactionResponse} from "@/service/vndService/vndServiceType.ts";
+import {CharCounter} from "@/components/componentsGeneral/CharCounter.tsx";
+import {VND_REDACTION_DESCRIPTION_MAX_LENGTH} from "@/constants/validation/vndValidation.ts";
 
 interface VndEditLastRevisionModalProps {
     vndId: number;
@@ -86,8 +88,7 @@ export function VndEditLastRevisionModal({vndId, redaction, onClose, onSaved}: V
 
     return createPortal(
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 p-4">
-            <div className="max-h-[90vh] w-full max-w-[480px] overflow-y-auto rounded-[16px] bg-white p-6 shadow-xl">
-                <div className="mb-2 flex items-center justify-between">
+            <div className="max-h-[90vh] w-full max-w-[560px] overflow-y-auto rounded-[16px] bg-white p-6 shadow-xl">                <div className="mb-2 flex items-center justify-between">
                     <h2 className="text-[16px] font-bold text-[#1c2740]">Редактировать редакцию {redaction.code}</h2>
                     <button onClick={onClose} className="cursor-pointer text-[#8b97ab] hover:text-[#3a4560]">
                         <X size={20}/>
@@ -104,11 +105,17 @@ export function VndEditLastRevisionModal({vndId, redaction, onClose, onSaved}: V
                     <ReplaceFileSlot label="English" file={docEn} onChange={setDocEn}/>
 
                     <div>
-                        <div className="mb-[6px] text-[12.5px] font-semibold text-[#26324a]">Описание редакции</div>
+                        <div className="mb-[6px] flex items-center justify-between">
+                            <span className="text-[12.5px] font-semibold text-[#26324a]">
+                                Описание редакции <span className="text-[#8b97ab] font-normal">(необязательно)</span>
+                            </span>
+                            <CharCounter length={description.length} max={VND_REDACTION_DESCRIPTION_MAX_LENGTH}/>
+                        </div>
                         <textarea
                             value={description}
                             onChange={(e) => setDescription(e.target.value)}
-                            rows={3}
+                            rows={6}
+                            maxLength={VND_REDACTION_DESCRIPTION_MAX_LENGTH}
                             className="w-full resize-none rounded-[10px] border border-[#e5e9f0] bg-[#f9fafc] p-3 text-[13px] text-[#26324a] outline-none focus:border-[#4e57d6] focus:bg-white"
                         />
                     </div>

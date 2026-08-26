@@ -184,7 +184,7 @@
   "openVndPage": {
     "loadError": "Документти жүктөп алуу мүмкүн болгон жок: {{error}}",
     "dictionariesErrorTitle": "Маалыматтарды жүктөп алуу мүмкүн болгон жок!",
-    "createdAtLabel": "Түзүлгөн күнү: {{date}}",
+    "createdAtLabel": "Түзүлгөн күнү ВНД: {{date}}",
     "deleteDraftButton": "Долбоорду өчүрүү",
     "deleteConfirmTitle": "Долбоорду өчүрөсүзбү?",
     "deleteConfirmMessage": "«{{name}}» ИНДнин долбоорун өчүрөсүзбү? Бул аракетти артка кайтаруу мүмкүн эмес.",

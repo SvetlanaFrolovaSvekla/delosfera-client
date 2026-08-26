@@ -9,8 +9,10 @@ import {getElapsedLabel} from "@/utils/dateUtils.ts";
 
 interface VndApprovalRouteViewProps {
     process: ApprovalProcessResponse;
-    /** id этапа текущего пользователя — если задан, карточка этого этапа подсвечивается как "В рассмотрении" */
     highlightStageId?: number;
+    /** true — не рисовать собственную внешнюю рамку/скругление/фон (используется, когда
+     * компонент вложен как тело под цветной шапкой-баннером, и рамку рисует родитель) */
+    frameless?: boolean;
 }
 
 // Статус фазы «Первичное согласование»
@@ -33,7 +35,7 @@ function getFinalHoldPhaseStatus(process: ApprovalProcessResponse): NormPhaseSta
     return "upcoming";
 }
 
-// Сколько времени осталось до дедлайна фазы (или "просрочено" / "—")
+// Сколько времени осталось до дедлайна (дни, часы, минуты)
 function getRemainingLabel(deadlineAt: string | null | undefined): string {
     if (!deadlineAt) return "—";
 
@@ -48,7 +50,7 @@ function getRemainingLabel(deadlineAt: string | null | undefined): string {
     const parts: string[] = [];
     if (days > 0) parts.push(`${days} дн`);
     if (hours > 0) parts.push(`${hours} ч`);
-    if (days === 0 && minutes > 0) parts.push(`${minutes} мин`);
+    if (minutes > 0) parts.push(`${minutes} мин`);
 
     return parts.length > 0 ? parts.join(" ") : "меньше минуты";
 }
@@ -62,17 +64,17 @@ interface CurrentPhaseHintProps {
 function CurrentPhaseHint({startedAt, deadlineAt}: CurrentPhaseHintProps) {
     return (
         <div className="absolute left-full top-1/2 ml-3 flex -translate-y-1/2 items-center gap-2 whitespace-nowrap">
-            <ArrowLeft size={16} className="flex-none text-[#2f68f5]"/>
+            <ArrowLeft size={16} className="flex-none"/>
             <div className="flex flex-col text-[11.5px] leading-[1.5]">
-                <span className="font-semibold text-[#2f68f5]">Текущий этап</span>
-                <span className="text-[#8b97ab]">Прошло: {startedAt ? getElapsedLabel(startedAt) : "—"}</span>
-                <span className="text-[#8b97ab]">Осталось: {getRemainingLabel(deadlineAt)}</span>
+                <span className="font-semibold">Текущий этап</span>
+                <span className="text-[#8b97ab]">Прошло с начала этапа: {startedAt ? getElapsedLabel(startedAt) : "—"}</span>
+                <span className="text-[#8b97ab]">Осталось до дедлайна: {getRemainingLabel(deadlineAt)}</span>
             </div>
         </div>
     );
 }
 
-export function VndApprovalRouteView({process, highlightStageId}: VndApprovalRouteViewProps) {
+export function VndApprovalRouteView({process, highlightStageId, frameless}: VndApprovalRouteViewProps) {
     const stagesWithLocalId = useMemo(
         () => process.stages.map((s) => ({...s, localId: String(s.id)})),
         [process.stages],
@@ -82,13 +84,21 @@ export function VndApprovalRouteView({process, highlightStageId}: VndApprovalRou
     const repeatPhaseStatus = useMemo(() => getRepeatPhaseStatus(process), [process]);
     const finalHoldPhaseStatus = useMemo(() => getFinalHoldPhaseStatus(process), [process]);
 
+    // Процесс завершён без результата (отклонён/отозван) - этапы, на которых решение так и не
+    // было принято, больше не "В ожидании": ждать уже нечего, весь процесс прекращён.
+    const isProcessEnded = process.status === "rejected" || process.status === "cancelled";
+
     const {funnelWrapperRef, targetRef, cardsScrollRef, paths, recomputePaths, registerStageRef} =
         useApprovalRouteLines(stagesWithLocalId);
 
     return (
         <div
             ref={funnelWrapperRef}
-            className="relative rounded-[16px] border border-[#e5e9f0] bg-[#fbfcfe] bg-[radial-gradient(#e4e9f1_1px,transparent_1px)] bg-[length:18px_18px] p-6"
+            className={
+                frameless
+                    ? "relative bg-[#fbfcfe] bg-[radial-gradient(#e4e9f1_1px,transparent_1px)] bg-[length:18px_18px] p-6"
+                    : "relative rounded-[16px] border border-[#e5e9f0] bg-[#fbfcfe] bg-[radial-gradient(#e4e9f1_1px,transparent_1px)] bg-[length:18px_18px] p-6"
+            }
         >
             <div
                 ref={cardsScrollRef}
@@ -101,6 +111,7 @@ export function VndApprovalRouteView({process, highlightStageId}: VndApprovalRou
                         stage={stage}
                         cardRef={registerStageRef(stage.localId)}
                         isCurrentUserStage={stage.id === highlightStageId}
+                        isProcessEnded={isProcessEnded}
                     />
                 ))}
             </div>

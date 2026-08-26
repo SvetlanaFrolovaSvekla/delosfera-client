@@ -5,19 +5,10 @@ import {useAuth} from "@/context/AuthContext.ts";
 import type {ApprovalProcessResponse} from "@/service/coordinationService/coordinationServiceTypes.ts";
 import {PHASE_LABELS, PROCESS_STATUS_META, type ApprovalPhase} from "@/constants/coordinationParams.ts";
 import {User, Calendar, CheckCircle2, Hourglass} from "lucide-react";
+import {getInitials} from "@/utils/getInitials.ts";
 
 interface VndApprovalSummaryProps {
     process: ApprovalProcessResponse;
-}
-
-function getInitials(fullName: string): string {
-    return fullName
-        .split(" ")
-        .filter(Boolean)
-        .map((part) => part[0])
-        .join("")
-        .toUpperCase()
-        .slice(0, 2);
 }
 
 function getResolvedCount(process: ApprovalProcessResponse): { resolved: number; total: number } {

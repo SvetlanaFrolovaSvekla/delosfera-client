@@ -17,19 +17,9 @@ import {
 import {
     AttachmentRow
 } from "@/components/componentsCoordination/CoordinationRouteConstructor/functionalComponents/AttachmentRow.tsx";
+import {getInitials} from "@/utils/getInitials.ts";
 
 const COMMENT_TRUNCATE_LENGTH = 500; // Лимит обрезки комментария/замечания в карточке
-
-
-function getInitials(fullName: string): string {
-    return fullName
-        .split(" ")
-        .filter(Boolean)
-        .map((part) => part[0])
-        .join("")
-        .toUpperCase()
-        .slice(0, 2);
-}
 
 interface StageCardViewProps {
     stage: ApprovalStageResponse;
@@ -185,7 +175,7 @@ export function StageCardView({stage, cardRef, isCurrentUserStage, isProcessEnde
                         <button
                             type="button"
                             onClick={() => setIsCommentModalOpen(true)}
-                            className="cursor-pointer flex-none self-start rounded-[7px] border border-[#d7dee8] bg-white px-2.5 py-[6px] text-[11.5px] font-semibold text-[#4e57d6] hover:bg-[#ececfc]"
+                            className="cursor-pointer flex-none self-center rounded-[7px] border border-[#d7dee8] bg-white px-2.5 py-[6px] text-[11.5px] font-semibold text-[#4e57d6] hover:bg-[#ececfc]"
                         >
                             {commentSectionTitle}
                         </button>
@@ -210,9 +200,12 @@ export function StageCardView({stage, cardRef, isCurrentUserStage, isProcessEnde
                 <CommentViewModal
                     title={commentSectionTitle}
                     approverName={stage.approverName}
+                    approverUserId={stage.approverUserId}
                     decidedAt={decidedAt}
                     comment={comment}
                     attachments={attachments}
+                    decisionLabel={badgeLabel}
+                    decisionBadgeClass={badgeClass}
                     onClose={() => setIsCommentModalOpen(false)}
                 />
             )}

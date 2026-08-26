@@ -391,6 +391,18 @@ export function VndCoordinationTab({vnd, onVndChanged}: VndCoordinationTabProps)
                 </div>
             )}
 
+            {/* Плашка для инициатора: редакцию отправили на доработку, есть замечания */}
+            {isRevisionNeeded && (
+                <div className="mx-auto mb-5 flex w-fit max-w-full items-start gap-2.5 rounded-[12px] border border-[#f0dcae] bg-[#fdf6e8] px-4 py-3">
+                    <AlertTriangle size={16} strokeWidth={2} className="mt-[1px] flex-none text-[#9a6408]"/>
+                    <p className="text-[12.5px] leading-[1.55] text-[#7a5006]">
+                        <span className="font-semibold">Редакцию ВНД отправили на доработку — есть замечания.</span>
+                        {" "}Пожалуйста, исправьте их: после отправки согласование перейдёт на следующий этап
+                        «Согласование после внесённых изменений».
+                    </p>
+                </div>
+            )}
+
             {/* Информационный блок */}
             <VndApprovalSummary process={process}/>
 
@@ -484,7 +496,9 @@ export function VndCoordinationTab({vnd, onVndChanged}: VndCoordinationTabProps)
             {isRevisionNeeded && isInitiator && (
                 <VndRevisionNeededPanel
                     vndId={vnd.id}
+                    vnd={vnd}
                     process={process}
+                    redaction={redaction}
                     requiresTid={!!redaction && redaction.number > 1}
                     onChanged={reload}
                 />

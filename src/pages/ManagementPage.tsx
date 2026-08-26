@@ -1,6 +1,6 @@
 import {NavLink, Outlet, useLocation} from "react-router-dom";
 import {
-    Building2, Eye, FileCog, History, KeyRound,
+    Building2, Eye, FileCog, FileStack, History, KeyRound,
     MessageSquareWarning, ScrollText, Settings2, ShieldCheck, UserCog, Users,
 } from "lucide-react";
 import {useAuth} from "@/context/AuthContext.ts";
@@ -58,6 +58,13 @@ const GROUPS: {title: string; items: Item[]}[] = [
                 title: "Справочники",
                 hint: "Подразделения, должности, виды документов",
                 icon: Building2,
+            },
+            {
+                path: "/management/document-types",
+                title: "Типы документов",
+                hint: "Свои виды документов: поля карточки и маршрут",
+                icon: FileStack,
+                permission: PermissionCode.ManageSystemSettings,
             },
         ],
     },

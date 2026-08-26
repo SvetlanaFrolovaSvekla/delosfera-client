@@ -78,6 +78,7 @@ const ObligationsPage = lazy(() => import("@/pages/ObligationsPage.tsx").then(m 
 const AgendaCandidatesPage = lazy(() => import("@/pages/MeetingsPages/AgendaCandidatesPage.tsx").then(m => ({default: m.AgendaCandidatesPage})));
 const ActualizationBucketSettingsPage = lazy(() => import("@/pages/DictionariesPages/ActualizationBucketSettingsPage.tsx").then(m => ({default: m.ActualizationBucketSettingsPage})));
 const ManagementPage = lazy(() => import("@/pages/ManagementPage.tsx").then(m => ({default: m.ManagementPage})));
+const DocumentTypesPage = lazy(() => import("@/pages/DocumentTypesPage.tsx").then(m => ({default: m.DocumentTypesPage})));
 const SettingsChangesPage = lazy(() => import("@/pages/SettingsChangesPage.tsx").then(m => ({default: m.SettingsChangesPage})));
 const HrOrdersPage = lazy(() => import("@/pages/HrOrdersPage.tsx").then(m => ({default: m.HrOrdersPage})));
 const SzStatisticsPage = lazy(() => import("@/pages/SzStatisticsPage.tsx").then(m => ({default: m.SzStatisticsPage})));
@@ -179,6 +180,7 @@ function App() {
                                     <Route path="users/:id" element={<UserCardPage/>}/>
 
                                     <Route path="refs" element={<DictionariesPages/>}/>
+                                    <Route path="document-types" element={<DocumentTypesPage/>}/>
                                     <Route path="refs/approval-body" element={<ApprovalBodyPage/>}/>
                                     <Route path="refs/organization-unit" element={<OrganizationUnitPage/>}/>
                                     <Route path="refs/position" element={<PositionPage/>}/>

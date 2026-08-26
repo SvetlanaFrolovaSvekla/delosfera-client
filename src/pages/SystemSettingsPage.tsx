@@ -5,6 +5,7 @@ import {SignatureLevelForm} from "@/components/system/SignatureLevelForm.tsx";
 import {CertificateAuthoritiesForm} from "@/components/system/CertificateAuthoritiesForm.tsx";
 import {SigningSettingsForm} from "@/components/system/SigningSettingsForm.tsx";
 import {OrgStructureIntegrationForm} from "@/components/system/OrgStructureIntegrationForm.tsx";
+import {MailSettingsForm} from "@/components/system/MailSettingsForm.tsx";
 
 type IntegrationState = { enabled: boolean; hasError: boolean } | null;
 
@@ -70,7 +71,7 @@ const INTEGRATIONS: Integration[] = [
         id: "mail",
         title: "Почтовые уведомления",
         subtitle: "SMTP · письма о задачах и сроках",
-        note: "Пока задаётся в конфигурации сервера (раздел Mail). Перенос в этот раздел — следующим шагом.",
+        render: (report) => <MailSettingsForm onStateChange={report}/>,
     },
 ];
 

@@ -1,28 +1,36 @@
-// Карточка редакции, вынесенной на согласование
-import {FileText, Calendar} from "lucide-react";
+// Панель с редакциями (панель ниже "Данная редакция:")
 import type {VndRedactionResponse, VndResponse} from "@/service/vndService/vndServiceType.ts";
+import type {RedactionLanguage} from "@/utils/redactionLanguagePanelUtils.ts";
 import {formatDate} from "@/utils/dateUtils.ts";
 import {
     RedactionDocumentsPanel
 } from "@/components/componentsVND/componentsOpenVndPage/componentsEditionsTab/RedactionDocumentsPanel.tsx";
+import {FileText, Calendar} from "lucide-react";
+import {Tooltip} from "@/components/componentsGeneral/Tooltip.tsx";
 
 interface RedactionSummaryCardProps {
     vnd: VndResponse;
     redaction: VndRedactionResponse;
-    /** Предыдущая (действовавшая до старта актуализации) редакция ВНД. Если передана —
-     * карточка становится сплошным блоком с двумя колонками: новая редакция слева,
-     * предыдущая справа. Если не передана — рендерится одна колонка, как раньше. */
     previousRedaction?: VndRedactionResponse;
     downloadingId: number | null;
     downloadError: string | null;
     onDownload: (fileId: number, name: string) => void;
+    /*Открыть просмотр конкретной редакции (новой или предыдущей) на выбранном языке*/
+    onView?: (redaction: VndRedactionResponse, language: RedactionLanguage) => void;
 }
 
 export function RedactionSummaryCard({
-                                         vnd, redaction, previousRedaction, downloadingId, downloadError, onDownload,
+                                         vnd,
+                                         redaction,
+                                         previousRedaction,
+                                         downloadingId,
+                                         downloadError,
+                                         onDownload,
+                                         onView,
                                      }: RedactionSummaryCardProps) {
     return (
-        <div className="mx-auto mb-5 w-full max-w-[1240px] overflow-hidden rounded-[14px] border border-[#e9edf3] bg-white">
+        <div
+            className="mx-auto mb-5 w-full max-w-[1240px] overflow-hidden rounded-[14px] border border-[#e9edf3] bg-white">
             {downloadError && (
                 <div className="border-b border-[#f2c2c2] bg-[#fdf1f1] px-5 py-[10px] text-[12px] text-[#c0392b]">
                     {downloadError}
@@ -38,6 +46,7 @@ export function RedactionSummaryCard({
                         labelEmphasis=" (необходимо согласовать)"
                         downloadingId={downloadingId}
                         onDownload={onDownload}
+                        onView={onView ? (lang) => onView(redaction, lang) : undefined}
                         className="border-b border-[#eef2f7] md:border-b-0"
                     />
                     <RedactionColumn
@@ -46,6 +55,7 @@ export function RedactionSummaryCard({
                         label="Предыдущая редакция"
                         downloadingId={downloadingId}
                         onDownload={onDownload}
+                        onView={onView ? (lang) => onView(previousRedaction, lang) : undefined}
                     />
                 </div>
             ) : (
@@ -54,14 +64,16 @@ export function RedactionSummaryCard({
                     redaction={redaction}
                     downloadingId={downloadingId}
                     onDownload={onDownload}
+                    onView={onView ? (lang) => onView(redaction, lang) : undefined}
                 />
             )}
         </div>
     );
 }
 
+/* Если редакция является первой для этого ВНД */
 function RedactionColumn({
-                             vnd, redaction, label, labelEmphasis, downloadingId, onDownload, className = "",
+                             vnd, redaction, label, labelEmphasis, downloadingId, onDownload, onView, className = "",
                          }: {
     vnd: VndResponse;
     redaction: VndRedactionResponse;
@@ -69,10 +81,12 @@ function RedactionColumn({
     labelEmphasis?: string;
     downloadingId: number | null;
     onDownload: (fileId: number, name: string) => void;
+    onView?: (language: RedactionLanguage) => void;
     className?: string;
 }) {
     return (
         <div className={className}>
+            {/* Шапка: код редакции и дата создания */}
             <div className="flex flex-wrap items-center gap-3 border-b border-[#eef2f7] bg-[#fbfcfe] px-5 py-4">
                 <span className="grid h-9 w-9 flex-none place-items-center rounded-[10px] bg-[#ececfc] text-[#4e57d6]">
                     <FileText size={16} strokeWidth={1.8}/>
@@ -81,16 +95,19 @@ function RedactionColumn({
                     <div className="text-[14px] font-bold text-[#1c2740]">{redaction.code}</div>
                     {label && (
                         <div className="mt-[2px] text-[11px] font-medium text-[#8b97ab]">
-                            {label}
+                            {label} {/* Новая редакция/ Предыдущая редакция */}
                             {labelEmphasis && (
+                                /* Необходимо согласовать */
                                 <span className="font-bold text-[#1c2740]">{labelEmphasis}</span>
                             )}
                         </div>
                     )}
-                    <div className="mt-[2px] flex items-center gap-[5px] text-[11.5px] text-[#8b97ab]">
-                        <Calendar size={12} className="flex-none"/>
-                        {formatDate(redaction.createdAt)}
-                    </div>
+                    <Tooltip content="Дата создания редакции" side="top">
+                        <div className="mt-[2px] flex items-center gap-[5px] text-[11.5px] text-[#8b97ab]">
+                            <Calendar size={12} className="flex-none"/>
+                            {formatDate(redaction.createdAt)} {/* Дата создания */}
+                        </div>
+                    </Tooltip>
                 </div>
             </div>
 
@@ -108,6 +125,7 @@ function RedactionColumn({
                 selected={redaction}
                 downloadingId={downloadingId}
                 onDownload={onDownload}
+                onView={onView}
             />
         </div>
     );

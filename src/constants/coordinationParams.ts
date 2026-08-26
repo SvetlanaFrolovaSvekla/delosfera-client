@@ -7,6 +7,22 @@ import {BookOpen, type LucideIcon, Scale, ShieldAlert, ShieldCheck, User} from "
 // Максимальное число согласующих
 export const MAX_STAGES = 10;
 
+// Максимальное число файлов, которые согласующий может приложить к своей резолюции
+// (см. VndApproverResolutionPanel) — ограничивает нагрузку на хранилище документа,
+// вложения к резолюциям хранятся, только пока идёт согласование.
+export const MAX_RESOLUTION_ATTACHMENTS = 5;
+
+// Максимальный размер ОДНОГО файла, приложенного согласующим к резолюции
+// (см. VndApproverResolutionPanel) — лимит на каждый файл по отдельности, а не суммарно.
+// Должен совпадать с MaxResolutionAttachmentSizeBytes на бэкенде (VndApprovalService.DecideAsync) —
+// там это уже реальная защита от прямых запросов к API, здесь — блокировка выбора слишком
+// большого файла и подсказка пользователю.
+export const MAX_RESOLUTION_ATTACHMENT_SIZE_BYTES = 50 * 1024 * 1024;
+
+// Максимальная длина текста комментария/причины отклонения в резолюции согласующего
+// (см. VndApproverResolutionPanel).
+export const MAX_RESOLUTION_COMMENT_LENGTH = 35000;
+
 // Верхняя граница норматива срока согласования (в минутах) — 90 дней.
 // Ограничивает поля "ч." / "м." в NormBlock и должна совпадать с MaxDeadlineMinutes
 // на бэкенде (VndApprovalService.StartAsync), где является финальной защитой:

@@ -1,13 +1,12 @@
 // Таб "Ход согласования"
-import {useEffect, useState} from "react";
-import axios from "axios";
+import {useState} from "react";
 import {useAuth} from "@/context/AuthContext.ts";
 import {coordinationService} from "@/service/coordinationService/coordinationService.ts";
 import {
     ApprovalDecisionType,
-    type ApprovalProcessResponse,
+    type ApprovalStageResponse
 } from "@/service/coordinationService/coordinationServiceTypes.ts";
-import type {VndResponse} from "@/service/vndService/vndServiceType.ts";
+import type {VndRedactionResponse, VndResponse} from "@/service/vndService/vndServiceType.ts";
 import {toast} from "@/service/toastService.ts";
 import {PermissionCode} from "@/constants/permissions/permissions.ts";
 import {useVndRedactions} from "@/hooks/vndHooks/useVndRedactions.ts";
@@ -37,101 +36,70 @@ import {
 import {
     RedactionCompareModal
 } from "@/components/componentsCoordination/CoordinationRouteConstructor/viewComponents/RedactionCompareModal.tsx";
+import {
+    RedactionViewModal
+} from "@/components/componentsCoordination/CoordinationRouteConstructor/viewComponents/RedactionViewModal.tsx";
 import {ConfirmActionModal} from "@/components/componentsGeneral/modal/ConfirmActionModal.tsx";
 import {AlertTriangle, CheckCircle2, Clock3, Columns2, FileCheck2, XCircle} from "lucide-react";
+import type {RedactionLanguage} from "@/utils/redactionLanguagePanelUtils.ts";
+import {useApprovalProcess} from "@/hooks/coordinationHooks/useApprovalProcess.ts";
+
 ///
 
 interface VndCoordinationTabProps {
     vnd: VndResponse;
-    onVndChanged?: () => void;
+    onVndChanged?: () => void; // Для перезагрузки
 }
 
-
-// Статусы, из которых инициатор ещё может отозвать согласование
-const CANCELLABLE_STATUSES = ["primary", "repeated", "final_hold", "revision_needed"];
-
+// Этапы, из которых инициатор ещё может отозвать согласование
+// Первичное согласование, Согласование после внесённых изменений, Согласование после внесённых изменений, Доработка документа после правок
+// * approved - согласовано, rejected - отклонено;
+const CANCELLABLE_PHASE = ["primary", "repeated", "final_hold", "revision_needed"];
+// Резолюции
 const DECISION_MAP: Record<ResolutionChoice, ApprovalDecisionType> = {
     approve: ApprovalDecisionType.Approve,
     approveWithComment: ApprovalDecisionType.ApproveWithComment,
     reject: ApprovalDecisionType.Reject,
 };
 
+// Какая из модалок сейчас открыта: стартовая модалка согласования,
+// сравнение редакций или просмотр одной редакции.
+type CoordinationModal =
+    | { kind: "startApproval" }
+    | { kind: "compare" }
+    | { kind: "view"; redaction: VndRedactionResponse; language: RedactionLanguage };
+
 export function VndCoordinationTab({vnd, onVndChanged}: VndCoordinationTabProps) {
     const {user, hasPermission} = useAuth();
     const currentUserId = user?.id;
-    const [cancelling, setCancelling] = useState(false);
-    const [cancelModalOpen, setCancelModalOpen] = useState(false);
-    const [startApprovalOpen, setStartApprovalOpen] = useState(false);
-    const [compareModalOpen, setCompareModalOpen] = useState(false);
 
-    // Зеркалит бэковый IsChiefEditor() (VndApprovalService/VndService) - широкий набор прав на
-    // создание/актуализацию ВНД без запроса права. Используется там, где так же широко ведёт
-    // себя бэк (например, кто может стартовать проверку "актуализация без изменений").
+    const {process, loading, error, reload} = useApprovalProcess(vnd.id); // Сами данные о согласовании
+
+    const [modal, setModal] = useState<CoordinationModal | null>(null);
+    const openView = (redaction: VndRedactionResponse, language: RedactionLanguage) =>
+        setModal({kind: "view", redaction, language});
+
+    const [cancelling, setCancelling] = useState(false); // Отзыв согласования
+    const [cancelModalOpen, setCancelModalOpen] = useState(false); // Модалка отзыва согласования
+
+    // Набор прав на создание/актуализацию ВНД без запроса права.
     const isChiefEditor =
         hasPermission(PermissionCode.CreateVndWithApproval) ||
         hasPermission(PermissionCode.CreateVndWithoutApproval) ||
         hasPermission(PermissionCode.ActualizeAnyVndWithApproval) ||
         hasPermission(PermissionCode.ActualizeAnyVndWithoutApproval);
-
-    // Отдельное узкое право именно на отзыв ЧУЖОГО согласования (роль главного редактора).
-    // isChiefEditor тут не годится: правами создания/актуализации ВНД на практике обладает
-    // почти любой автор ВНД, из-за чего раньше отозвать согласование мог кто угодно.
+    // Право на отзыв чужого согласования (роль главного редактора).
     const canCancelAnyApproval = hasPermission(PermissionCode.CancelAnyVndApproval);
 
-    const [process, setProcess] = useState<ApprovalProcessResponse | null>(null);
-    const [loading, setLoading] = useState(true);
-    const [error, setError] = useState<string | null>(null);
-
-    const [decisionError, setDecisionError] = useState<string | null>(null);
-    const [submitting, setSubmitting] = useState(false);
-
-    const isNotStartedYet = (err: unknown) => axios.isAxiosError(err) && err.response?.status === 404;
-
-    const loadProcess = async () => {
-        try {
-            const data = await coordinationService.getByVndId(vnd.id);
-            setProcess(data);
-            setError(null);
-        } catch (err) {
-            setProcess(null);
-            setError(isNotStartedYet(err)
-                ? null
-                : err instanceof Error ? err.message : "Не удалось загрузить согласование");
-        }
-    };
-
-    useEffect(() => {
-        let cancelled = false;
-
-        (async () => {
-            setLoading(true);
-            setError(null);
-            try {
-                const data = await coordinationService.getByVndId(vnd.id);
-                if (!cancelled) setProcess(data);
-            } catch (err) {
-                if (!cancelled) {
-                    setProcess(null);
-                    setError(isNotStartedYet(err)
-                        ? null
-                        : err instanceof Error ? err.message : "Не удалось загрузить согласование");
-                }
-            } finally {
-                if (!cancelled) setLoading(false);
-            }
-        })();
-
-        return () => {
-            cancelled = true;
-        };
-    }, [vnd.id]);
+    const [submitting, setSubmitting] = useState(false); // Идёт ли отправка резолюции
+    const [decisionError, setDecisionError] = useState<string | null>(null); // Ошибка отправки резолюции
 
     // Редакции ВНД грузим, чтобы достать ту, что связана с process.redactionId
     const {data: redactions, loading: redactionsLoading, error: redactionsError} = useVndRedactions(vnd.id);
 
     const download = useAsyncAction<number>();
     const handleDownload = (fileId: number, name: string) =>
-        download.run(fileId, () => downloadWithToast(fileId, name), "Не удалось скачать файл");
+        download.run(fileId, () => downloadWithToast(fileId, name), "Не удалось скачать редакцию!");
 
     if (loading || redactionsLoading) {
         return <Loader label="Загрузка страницы хода согласования…" fullHeight={false}/>;
@@ -163,7 +131,7 @@ export function VndCoordinationTab({vnd, onVndChanged}: VndCoordinationTabProps)
                         </p>
                         <button
                             type="button"
-                            onClick={() => setStartApprovalOpen(true)}
+                            onClick={() => setModal({kind: "startApproval"})}
                             className="cursor-pointer inline-flex h-9 items-center gap-2 rounded-[9px] bg-[#4e57d6] px-3.5 text-[12.5px] font-semibold text-white hover:bg-[#3f47bd]"
                         >
                             Начать согласование (без изменений)
@@ -171,12 +139,12 @@ export function VndCoordinationTab({vnd, onVndChanged}: VndCoordinationTabProps)
                     </div>
                 )}
 
-                {startApprovalOpen && (
+                {modal?.kind === "startApproval" && (
                     <VndStartApprovalModal
                         vndId={vnd.id}
-                        onClose={() => setStartApprovalOpen(false)}
+                        onClose={() => setModal(null)}
                         onStarted={() => {
-                            setStartApprovalOpen(false);
+                            setModal(null);
                             onVndChanged?.();
                         }}
                     />
@@ -202,9 +170,8 @@ export function VndCoordinationTab({vnd, onVndChanged}: VndCoordinationTabProps)
     const isApproved = process.status === "approved";
     const isRejected = process.status === "rejected";
 
-    // На финальной выдержке решение может принять ЛЮБОЙ согласующий маршрута (participatesInRepeat
-    // здесь не фильтрует — бэк на этом этапе открывает FinalHoldDecision всем этапам сразу)
-    const myStage = process.stages.find((s) => {
+    // На финальной выдержке решение может принять ЛЮБОЙ согласующий маршрута
+    const myStage = process.stages.find((s: ApprovalStageResponse) => {
         if (isPrimaryPhase) return s.approverUserId === currentUserId;
         if (isRepeatedPhase) return s.approverUserId === currentUserId && s.participatesInRepeat;
         if (isFinalHoldPhase) return s.approverUserId === currentUserId;
@@ -214,9 +181,7 @@ export function VndCoordinationTab({vnd, onVndChanged}: VndCoordinationTabProps)
     const isInitiator = process.initiatorUserId === currentUserId;
     const isApprover = !isInitiator && !!myStage;
 
-    // На финальной выдержке участие добровольное: дедлайна как такового нет, "pending" здесь
-    // означает лишь "ещё не высказался", а не "просрочил" — просрочка на этом этапе не считается
-    // нарушением и обрабатывается на бэке отдельно (см. ProcessTimeoutsAsync)
+    // На финальной выдержке участие добровольное
     const isPendingForMe =
         !!myStage &&
         ((isPrimaryPhase && myStage.primaryDecision === "pending") ||
@@ -233,7 +198,7 @@ export function VndCoordinationTab({vnd, onVndChanged}: VndCoordinationTabProps)
                 comment: comment || undefined,
                 files: files.length > 0 ? files : undefined,
             });
-            await loadProcess();
+            await reload();
         } catch (err) {
             setDecisionError(err instanceof Error ? err.message : "Не удалось отправить резолюцию");
         } finally {
@@ -287,7 +252,8 @@ export function VndCoordinationTab({vnd, onVndChanged}: VndCoordinationTabProps)
         return (
             <div className="py-4 px-4 sm:px-6">
                 {vnd.actualizationPlannedNoChanges && (
-                    <div className="mb-3 inline-flex items-start gap-2.5 rounded-[12px] border border-[#dde0fa] bg-[#f4f5fd] px-3.5 py-3 max-w-full">
+                    <div
+                        className="mb-3 inline-flex items-start gap-2.5 rounded-[12px] border border-[#dde0fa] bg-[#f4f5fd] px-3.5 py-3 max-w-full">
                         <FileCheck2 size={16} strokeWidth={2} className="mt-[1px] flex-none text-[#4e57d6]"/>
                         <p className="text-[12.5px] leading-[1.55] text-[#3a4560]">
                             Обратите внимание: Инициатор текущего согласования считает, что актуализация данного ВНД
@@ -318,7 +284,7 @@ export function VndCoordinationTab({vnd, onVndChanged}: VndCoordinationTabProps)
                     {!isFirstRedaction && redaction && previousRedaction && (
                         <button
                             type="button"
-                            onClick={() => setCompareModalOpen(true)}
+                            onClick={() => setModal({kind: "compare"})}
                             className="cursor-pointer flex h-[35px] shrink-0 items-center justify-center gap-2 rounded-[10px] bg-[#4e57d6] px-4 text-[12.5px] font-semibold text-white hover:bg-[#3f47bd] disabled:cursor-not-allowed disabled:bg-[#c7cbe6]"
                         >
                             <Columns2 size={15} strokeWidth={2}/>
@@ -334,24 +300,38 @@ export function VndCoordinationTab({vnd, onVndChanged}: VndCoordinationTabProps)
                         downloadingId={download.activeId}
                         downloadError={download.error}
                         onDownload={handleDownload}
+                        onView={openView}
                     />
                 )}
-                {compareModalOpen && redaction && previousRedaction && (
+                {modal?.kind === "compare" && redaction && previousRedaction && (
                     <RedactionCompareModal
                         vnd={vnd}
                         redaction={redaction}
                         previousRedaction={previousRedaction}
                         downloadingId={download.activeId}
                         onDownload={handleDownload}
-                        onClose={() => setCompareModalOpen(false)}
+                        onClose={() => setModal(null)}
+                    />
+                )}
+                {modal?.kind === "view" && (
+                    <RedactionViewModal
+                        vnd={vnd}
+                        redaction={modal.redaction}
+                        initialLanguage={modal.language}
+                        downloadingId={download.activeId}
+                        onDownload={handleDownload}
+                        onClose={() => setModal(null)}
                     />
                 )}
 
                 <div className="mb-2 text-[13.5px] font-bold text-[#1c2740]">Установленный маршрут согласования:</div>
-                <div className={`rounded-[16px] border overflow-hidden ${routeHeaderConfig ? routeHeaderConfig.border : "border-[#e5e9f0]"}`}>
+                <div
+                    className={`rounded-[16px] border overflow-hidden ${routeHeaderConfig ? routeHeaderConfig.border : "border-[#e5e9f0]"}`}>
                     {routeHeaderConfig && (
-                        <div className={`flex items-start gap-3 border-b px-5 py-3 ${routeHeaderConfig.border} ${routeHeaderConfig.bg}`}>
-                            <routeHeaderConfig.icon size={18} className={`mt-[1px] flex-none ${routeHeaderConfig.iconColor}`}/>
+                        <div
+                            className={`flex items-start gap-3 border-b px-5 py-3 ${routeHeaderConfig.border} ${routeHeaderConfig.bg}`}>
+                            <routeHeaderConfig.icon size={18}
+                                                    className={`mt-[1px] flex-none ${routeHeaderConfig.iconColor}`}/>
                             <div>
                                 <div className={`text-[13px] font-semibold ${routeHeaderConfig.titleColor}`}>
                                     {routeHeaderConfig.title}
@@ -362,7 +342,8 @@ export function VndCoordinationTab({vnd, onVndChanged}: VndCoordinationTabProps)
                             </div>
                         </div>
                     )}
-                    <VndApprovalRouteView process={process} highlightStageId={myStage?.id} frameless={!!routeHeaderConfig}/>
+                    <VndApprovalRouteView process={process} highlightStageId={myStage?.id}
+                                          frameless={!!routeHeaderConfig}/>
                 </div>
 
                 {isPendingForMe && (
@@ -386,13 +367,13 @@ export function VndCoordinationTab({vnd, onVndChanged}: VndCoordinationTabProps)
         );
     }
 
-
-
     // --- Вид для инициатора согласования ---
     return (
         <div className="py-4 px-6">
+            {/* Если актуализация без изменений */}
             {vnd.actualizationPlannedNoChanges && (
-                <div className="mb-3 inline-flex items-start gap-2.5 rounded-[12px] border border-[#dde0fa] bg-[#f4f5fd] px-3.5 py-3 max-w-full">
+                <div
+                    className="mb-3 inline-flex items-start gap-2.5 rounded-[12px] border border-[#dde0fa] bg-[#f4f5fd] px-3.5 py-3 max-w-full">
                     <FileCheck2 size={16} strokeWidth={2} className="mt-[1px] flex-none text-[#4e57d6]"/>
                     <p className="text-[12.5px] leading-[1.55] text-[#3a4560]">
                         Обратите внимание: Вы заявили, что актуализация должна пройти без
@@ -415,7 +396,7 @@ export function VndCoordinationTab({vnd, onVndChanged}: VndCoordinationTabProps)
                 </div>
             )}
 
-            {/* Блок ознакомления с редакцией ("Данная редакция:") */}
+            {/* Блок ознакомления с редакцией ("Данная редакция:") (+ кнопка сравнения) */}
             <div className="mb-4 flex items-center justify-between gap-3">
                 <div className="text-[13.5px] font-bold text-[#1c2740]">
                     {isFirstRedaction
@@ -425,7 +406,7 @@ export function VndCoordinationTab({vnd, onVndChanged}: VndCoordinationTabProps)
                 {!isFirstRedaction && redaction && previousRedaction && (
                     <button
                         type="button"
-                        onClick={() => setCompareModalOpen(true)}
+                        onClick={() => setModal({kind: "compare"})}
                         className="cursor-pointer flex h-[35px] shrink-0 items-center justify-center gap-2 rounded-[10px] bg-[#4e57d6] px-4 text-[12.5px] font-semibold text-white hover:bg-[#3f47bd] disabled:cursor-not-allowed disabled:bg-[#c7cbe6]"
                     >
                         <Columns2 size={15} strokeWidth={2}/>
@@ -433,6 +414,8 @@ export function VndCoordinationTab({vnd, onVndChanged}: VndCoordinationTabProps)
                     </button>
                 )}
             </div>
+
+            {/* Панель с редакциями */}
             {redaction && (
                 <RedactionSummaryCard
                     vnd={vnd}
@@ -441,25 +424,41 @@ export function VndCoordinationTab({vnd, onVndChanged}: VndCoordinationTabProps)
                     downloadingId={download.activeId}
                     downloadError={download.error}
                     onDownload={handleDownload}
+                    onView={openView}
                 />
             )}
-            {compareModalOpen && redaction && previousRedaction && (
+            {/* Сравнение двух редакций */}
+            {modal?.kind === "compare" && redaction && previousRedaction && (
                 <RedactionCompareModal
                     vnd={vnd}
                     redaction={redaction}
                     previousRedaction={previousRedaction}
                     downloadingId={download.activeId}
                     onDownload={handleDownload}
-                    onClose={() => setCompareModalOpen(false)}
+                    onClose={() => setModal(null)}
+                />
+            )}
+            {/* Открытие одной редакции */}
+            {modal?.kind === "view" && (
+                <RedactionViewModal
+                    vnd={vnd}
+                    redaction={modal.redaction}
+                    initialLanguage={modal.language}
+                    downloadingId={download.activeId}
+                    onDownload={handleDownload}
+                    onClose={() => setModal(null)}
                 />
             )}
 
             {/* Установленный маршрут согласования — с цветной шапкой-статусом, если применимо */}
             <div className="mb-2 text-[13.5px] font-bold text-[#1c2740]">Установленный маршрут согласования:</div>
-            <div className={`rounded-[16px] border overflow-hidden ${routeHeaderConfig ? routeHeaderConfig.border : "border-[#e5e9f0]"}`}>
+            <div
+                className={`rounded-[16px] border overflow-hidden ${routeHeaderConfig ? routeHeaderConfig.border : "border-[#e5e9f0]"}`}>
                 {routeHeaderConfig && (
-                    <div className={`flex items-start gap-3 border-b px-5 py-3 ${routeHeaderConfig.border} ${routeHeaderConfig.bg}`}>
-                        <routeHeaderConfig.icon size={18} className={`mt-[1px] flex-none ${routeHeaderConfig.iconColor}`}/>
+                    <div
+                        className={`flex items-start gap-3 border-b px-5 py-3 ${routeHeaderConfig.border} ${routeHeaderConfig.bg}`}>
+                        <routeHeaderConfig.icon size={18}
+                                                className={`mt-[1px] flex-none ${routeHeaderConfig.iconColor}`}/>
                         <div>
                             <div className={`text-[13px] font-semibold ${routeHeaderConfig.titleColor}`}>
                                 {routeHeaderConfig.title}
@@ -473,22 +472,23 @@ export function VndCoordinationTab({vnd, onVndChanged}: VndCoordinationTabProps)
                 <VndApprovalRouteView process={process} frameless={!!routeHeaderConfig}/>
             </div>
 
-
+            {/* Панель с замечаниями (если они есть) на этапе исправления замечаний для инициатора */}
             {isRevisionNeeded && isInitiator && (
                 <VndRevisionNeededPanel
                     vndId={vnd.id}
                     process={process}
                     requiresTid={!!redaction && redaction.number > 1}
-                    onChanged={loadProcess}
+                    onChanged={reload}
                 />
             )}
 
-            {(isInitiator || canCancelAnyApproval) && CANCELLABLE_STATUSES.includes(process.status) && (
+            {/* Отзыв редакции с согласования */}
+            {(isInitiator || canCancelAnyApproval) && CANCELLABLE_PHASE.includes(process.status) && (
                 <div className="mt-8 rounded-[14px] border border-[#f0dede] overflow-hidden">
                     <div className="bg-[#fdf6f5] px-4 py-2.5 border-b border-[#f0dede]">
-            <span className="text-[11px] font-bold uppercase tracking-wide text-[#c0392b]">
-                Опасная зона
-            </span>
+                        <span className="text-[11px] font-bold uppercase tracking-wide text-[#c0392b]">
+                            Опасная зона
+                        </span>
                     </div>
                     <div className="flex items-center justify-between gap-3 px-4 py-3.5 bg-white">
                         <div>
@@ -496,8 +496,8 @@ export function VndCoordinationTab({vnd, onVndChanged}: VndCoordinationTabProps)
                                 Отозвать согласование
                             </div>
                             <span className="text-[12.5px] text-[#8b97ab]">
-                    Документ вернётся в черновик, задачи у согласующих будут сняты.
-                </span>
+                                Документ вернётся в черновик, задачи у согласующих будут сняты.
+                            </span>
                         </div>
                         <button
                             onClick={() => setCancelModalOpen(true)}
@@ -508,7 +508,6 @@ export function VndCoordinationTab({vnd, onVndChanged}: VndCoordinationTabProps)
                     </div>
                 </div>
             )}
-
             <ConfirmActionModal
                 open={cancelModalOpen}
                 onClose={() => setCancelModalOpen(false)}

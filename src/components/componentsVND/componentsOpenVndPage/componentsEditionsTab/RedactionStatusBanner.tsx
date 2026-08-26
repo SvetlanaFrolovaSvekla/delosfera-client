@@ -1,6 +1,7 @@
 // Компонента с header панели для скачивания ВНД
 import type {RedactionDisplayStatus} from "@/utils/redactionStatus.ts";
 import {Loader2} from "lucide-react";
+import {Tooltip} from "@/components/componentsGeneral/Tooltip.tsx";
 
 interface BannerConfig {
     border: string;
@@ -94,15 +95,20 @@ export function RedactionStatusBanner({
                 )}
 
                 {status === "draft" && onPublishWithoutApproval && (
-                    <button
-                        type="button"
-                        disabled={isPublishingWithoutApproval}
-                        onClick={onPublishWithoutApproval}
-                        className="cursor-pointer flex h-[30px] items-center gap-2 rounded-[8px] border border-[#d7dee8] bg-white px-3 text-[12px] font-semibold text-[#3a4560] hover:bg-[#f6f8fb] disabled:opacity-60"
+                    <Tooltip
+                        content="Редакция станет действующей сразу, минуя процесс согласования полностью. Это решение фиксируется как выполненное главным редактором."
+                        side="top"
                     >
-                        {isPublishingWithoutApproval && <Loader2 size={13} className="animate-spin"/>}
-                        Сделать актуальной редакцией без согласования
-                    </button>
+                        <button
+                            type="button"
+                            disabled={isPublishingWithoutApproval}
+                            onClick={onPublishWithoutApproval}
+                            className="cursor-pointer flex h-[30px] items-center gap-2 rounded-[8px] border border-[#d7dee8] bg-white px-3 text-[12px] font-semibold text-[#3a4560] hover:bg-[#f6f8fb] disabled:opacity-60"
+                        >
+                            {isPublishingWithoutApproval && <Loader2 size={13} className="animate-spin"/>}
+                            Сделать актуальной редакцией без согласования
+                        </button>
+                    </Tooltip>
                 )}
 
                 {status === "pending" && onGoToApproval && (

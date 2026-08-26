@@ -240,7 +240,8 @@
       "unavailableHint": "Текст на этом языке ещё не загружен"
     },
     "redactionTextView": {
-      "noTextInLanguage": "Текст на этом языке отсутствует"
+      "noTextInLanguage": "Текст на этом языке отсутствует",
+      "loadingPreview": "Загрузка документа..."
     }
   },
   "docxEditor": {

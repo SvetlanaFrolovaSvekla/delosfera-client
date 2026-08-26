@@ -2,6 +2,14 @@ import {useState} from "react";
 import {Check, MessageSquare, Paperclip, X, AlertCircle} from "lucide-react";
 import {ConfirmActionModal} from "@/components/componentsGeneral/modal/ConfirmActionModal.tsx";
 import {formatFileSize} from "@/service/documentService/attachmentService.ts";
+import {Tooltip} from "@/components/componentsGeneral/Tooltip.tsx";
+import {HelpTooltip} from "@/components/componentsGeneral/knowledgeBaseComponents/HelpTooltip.tsx";
+import {
+    MAX_RESOLUTION_ATTACHMENTS,
+    MAX_RESOLUTION_ATTACHMENT_SIZE_BYTES,
+    MAX_RESOLUTION_COMMENT_LENGTH,
+} from "@/constants/coordinationParams.ts";
+import {CharCounter} from "@/components/componentsGeneral/CharCounter.tsx";
 
 export type ResolutionChoice = "approve" | "approveWithComment" | "reject";
 export type ResolutionPhase = "primary" | "repeated" | "finalHold";
@@ -103,6 +111,8 @@ export function VndApproverResolutionPanel({
     const [choice, setChoice] = useState<ResolutionChoice>("approve");
     const [comment, setComment] = useState("");
     const [files, setFiles] = useState<File[]>([]);
+    const [attachmentCountLimitHit, setAttachmentCountLimitHit] = useState(false);
+    const [oversizedFileNames, setOversizedFileNames] = useState<string[]>([]);
     const [rejectConfirmOpen, setRejectConfirmOpen] = useState(false);
     // Пересоздаём сам <input type="file"> после каждого выбора (через key), а не просто
     // чистим его .value — второй способ на части машин (Windows, некоторые сборки Chrome/Edge)
@@ -119,9 +129,25 @@ export function VndApproverResolutionPanel({
     const commentMissing = commentRequired && comment.trim().length === 0;
     const canSubmit = !commentMissing;
 
+    const attachmentSlotsLeft = MAX_RESOLUTION_ATTACHMENTS - files.length;
+    const attachmentLimitReached = attachmentSlotsLeft <= 0;
+
     const handleFilesPicked = (picked: FileList | null) => {
         if (picked && picked.length > 0) {
-            setFiles((prev) => [...prev, ...Array.from(picked)]);
+            const incoming = Array.from(picked);
+            // Лимит по размеру — на КАЖДЫЙ файл отдельно (а не суммарно на все вложения):
+            // слишком большой файл не добавляем вообще, остальные (в пределах свободных
+            // слотов по количеству) добавляются как обычно.
+            const withinSizeLimit = incoming.filter((f) => f.size <= MAX_RESOLUTION_ATTACHMENT_SIZE_BYTES);
+            const oversized = incoming.filter((f) => f.size > MAX_RESOLUTION_ATTACHMENT_SIZE_BYTES);
+            const accepted = withinSizeLimit.slice(0, Math.max(0, attachmentSlotsLeft));
+
+            setFiles((prev) => [...prev, ...accepted]);
+            // Не влезло из-за лимита по количеству (файлы подходящего размера, для которых
+            // просто не хватило свободных слотов).
+            setAttachmentCountLimitHit(accepted.length < withinSizeLimit.length);
+            // Отдельно показываем, какие именно файлы отклонены как слишком большие.
+            setOversizedFileNames(oversized.map((f) => f.name));
         }
         // См. комментарий у fileInputKey — пересобираем input, а не чистим .value.
         setFileInputKey((k) => k + 1);
@@ -129,6 +155,7 @@ export function VndApproverResolutionPanel({
 
     const handleRemoveFile = (index: number) => {
         setFiles((prev) => prev.filter((_, i) => i !== index));
+        setAttachmentCountLimitHit(false);
     };
 
     const doSubmit = () => {
@@ -187,55 +214,127 @@ export function VndApproverResolutionPanel({
                 })}
             </div>
 
+            <div className="mt-3 flex items-center justify-between">
+                <span className="text-[12px] font-semibold text-[#1c2740]">
+                    Комментарий{commentRequired
+                        ? <span className="text-[#d62815]"> *</span>
+                        : <span className="font-normal text-[#8b97ab]"> (необязательно)</span>}
+                </span>
+                <CharCounter length={comment.length} max={MAX_RESOLUTION_COMMENT_LENGTH}/>
+            </div>
+
             <textarea
                 value={comment}
-                onChange={(e) => setComment(e.target.value)}
+                onChange={(e) => setComment(e.target.value.slice(0, MAX_RESOLUTION_COMMENT_LENGTH))}
                 placeholder={COMMENT_PLACEHOLDER[choice]}
+                maxLength={MAX_RESOLUTION_COMMENT_LENGTH}
                 rows={3}
-                className={`mt-3 w-full resize-none rounded-[10px] border bg-[#fbfcfe] px-3.5 py-2.5 text-[13px] text-[#1c2740] outline-none focus:border-[#4e57d6] ${
+                className={`mt-1.5 w-full resize-none rounded-[10px] border bg-[#fbfcfe] px-3.5 py-2.5 text-[13px] text-[#1c2740] outline-none focus:border-[#4e57d6] ${
                     commentMissing ? "border-[#e8b4b4]" : "border-[#e9edf3]"
                 }`}
             />
 
+            {commentMissing && (
+                <div className="mt-3 flex items-start gap-1.5 text-[11.5px] text-[#d62815]">
+                    <AlertCircle className="mt-[1px] h-3.5 w-3.5 shrink-0"/>
+                    <span>
+                        Поле "{choice === "reject" ? "Причина отклонения" : "Комментарий / текст замечаний"}" является обязательным при данном выборе
+                    </span>
+                </div>
+            )}
+
             <div className="mt-3">
-                {/* Label вместо button+ref.click(): активация файлового диалога через нативную
-                    связку <label>/<input> надёжнее программного .click() — не зависит от того,
-                    сохраняется ли между кликами "доверенность" пользовательского жеста, и не
-                    ломается на повторных открытиях диалога подряд. key у input пересобирает
-                    его после каждого выбора (см. fileInputKey выше). */}
-                <label
-                    className="cursor-pointer inline-flex items-center gap-1.5 text-[12.5px] font-semibold text-[#4e57d6] hover:text-[#3d45b8]"
-                >
-                    <input
-                        key={fileInputKey}
-                        type="file"
-                        multiple
-                        className="hidden"
-                        onChange={(e) => handleFilesPicked(e.target.files)}
-                    />
-                    <Paperclip size={14}/>
-                    Прикрепить файл
-                </label>
+                <div className="flex items-center justify-between gap-3">
+                    <span className="flex items-center gap-0.5 text-[11.5px] text-[#8b97ab]">
+                        Добавлено {files.length} из {MAX_RESOLUTION_ATTACHMENTS} файлов максимум
+                        <HelpTooltip
+                            content={`Количество файлов, прикладываемых к резолюции, ограничено — не более ${MAX_RESOLUTION_ATTACHMENTS}, и каждый файл не больше ${formatFileSize(MAX_RESOLUTION_ATTACHMENT_SIZE_BYTES)}. Вложения хранятся, пока идёт согласование, и удаляются, как только редакция становится согласованной (текст комментария остаётся).`}
+                            side="bottom"
+                            className="h-5 w-5"
+                        />
+                    </span>
+
+                    {/* Label вместо button+ref.click(): активация файлового диалога через нативную
+                        связку <label>/<input> надёжнее программного .click() — не зависит от того,
+                        сохраняется ли между кликами "доверенность" пользовательского жеста, и не
+                        ломается на повторных открытиях диалога подряд. key у input пересобирает
+                        его после каждого выбора (см. fileInputKey выше). */}
+                    {attachmentLimitReached ? (
+                        <Tooltip
+                            content={`Достигнут максимум — ${MAX_RESOLUTION_ATTACHMENTS} файлов на резолюцию`}
+                            side="top"
+                        >
+                            <span
+                                className="cursor-not-allowed inline-flex items-center gap-1.5 rounded-[8px] border border-[#e9edf3] bg-[#f6f8fb] px-3 py-[7px] text-[12.5px] font-semibold text-[#b7bfcc]"
+                            >
+                                <Paperclip size={14}/>
+                                Прикрепить файл
+                            </span>
+                        </Tooltip>
+                    ) : (
+                        <label
+                            className="cursor-pointer inline-flex items-center gap-1.5 rounded-[8px] border border-[#d7dee8] bg-white px-3 py-[7px] text-[12.5px] font-semibold text-[#4e57d6] hover:bg-[#ececfc]"
+                        >
+                            <input
+                                key={fileInputKey}
+                                type="file"
+                                multiple
+                                className="hidden"
+                                onChange={(e) => handleFilesPicked(e.target.files)}
+                            />
+                            <Paperclip size={14}/>
+                            Прикрепить файл
+                        </label>
+                    )}
+                </div>
 
                 {files.length > 0 && (
-                    <div className="mt-2 flex flex-col gap-1.5">
-                        {files.map((file, index) => (
-                            <div
-                                key={`${file.name}-${index}`}
-                                className="flex items-center gap-2 rounded-[8px] border border-[#e9edf3] bg-[#fbfcfe] px-3 py-[7px] text-[12px] text-[#3a4560]"
-                            >
-                                <Paperclip size={13} className="flex-none text-[#8b97ab]"/>
-                                <span className="flex-1 truncate">{file.name}</span>
-                                <span className="flex-none text-[#8b97ab]">{formatFileSize(file.size)}</span>
-                                <button
-                                    type="button"
-                                    onClick={() => handleRemoveFile(index)}
-                                    className="cursor-pointer flex-none text-[#8b97ab] hover:text-[#c0392b]"
+                    <div className="mt-3 rounded-[10px] border border-[#e9edf3] bg-[#fbfcfe] p-3">
+                        <div className="mb-2 text-[11.5px] font-semibold text-[#8b97ab]">
+                            Ваши прикреплённые файлы:
+                        </div>
+                        <div className="flex flex-col gap-1.5">
+                            {files.map((file, index) => (
+                                <div
+                                    key={`${file.name}-${index}`}
+                                    className="flex items-center gap-2 rounded-[8px] border border-[#e9edf3] bg-white px-3 py-[7px] text-[12px] text-[#3a4560]"
                                 >
-                                    <X size={13}/>
-                                </button>
-                            </div>
-                        ))}
+                                    <Paperclip size={13} className="flex-none text-[#8b97ab]"/>
+                                    <Tooltip content={file.name} side="top" className="min-w-0 flex-1">
+                                        <span className="block truncate">{file.name}</span>
+                                    </Tooltip>
+                                    <span className="flex-none text-[#8b97ab]">{formatFileSize(file.size)}</span>
+                                    <Tooltip content="Удалить файл" side="top">
+                                        <button
+                                            type="button"
+                                            onClick={() => handleRemoveFile(index)}
+                                            className="cursor-pointer flex-none text-[#8b97ab] hover:text-[#c0392b]"
+                                        >
+                                            <X size={13}/>
+                                        </button>
+                                    </Tooltip>
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+                )}
+
+                {attachmentCountLimitHit && (
+                    <div className="mt-2 flex items-start gap-1.5 text-[11.5px] text-[#d62815]">
+                        <AlertCircle className="mt-[1px] h-3.5 w-3.5 shrink-0"/>
+                        <span>
+                            Часть выбранных файлов не добавлена — максимум {MAX_RESOLUTION_ATTACHMENTS} файлов на резолюцию.
+                        </span>
+                    </div>
+                )}
+
+                {oversizedFileNames.length > 0 && (
+                    <div className="mt-2 flex items-start gap-1.5 text-[11.5px] text-[#d62815]">
+                        <AlertCircle className="mt-[1px] h-3.5 w-3.5 shrink-0"/>
+                        <span>
+                            Не добавлен{oversizedFileNames.length > 1 ? "ы" : ""} «{oversizedFileNames.join("», «")}»
+                            {" "}— размер файла не должен превышать {formatFileSize(MAX_RESOLUTION_ATTACHMENT_SIZE_BYTES)}.
+                        </span>
                     </div>
                 )}
             </div>
@@ -255,15 +354,6 @@ export function VndApproverResolutionPanel({
                 <SubmitIcon className="h-4 w-4" strokeWidth={2.5}/>
                 {submitting ? "Отправка…" : SUBMIT_LABEL[choice]}
             </button>
-
-            {commentMissing && (
-                <div className="mt-3 flex items-start gap-1.5 text-[11.5px] text-[#d62815]">
-                    <AlertCircle className="mt-[1px] h-3.5 w-3.5 shrink-0"/>
-                    <span>
-                        Поле "{choice === "reject" ? "Причина отклонения" : "Комментарий / текст замечаний"}" является обязательным при данном выборе
-                    </span>
-                </div>
-            )}
 
             <ConfirmActionModal
                 open={rejectConfirmOpen}

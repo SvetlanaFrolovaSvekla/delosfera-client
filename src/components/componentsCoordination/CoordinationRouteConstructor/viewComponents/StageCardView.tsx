@@ -105,7 +105,7 @@ export function StageCardView({stage, cardRef, isCurrentUserStage, isProcessEnde
         : comment;
     // "Комментарий" — при согласовании, "Замечания" — во всех остальных решениях
     // (отклонено/возвращено/на доработку и т.п.)
-    const commentSectionTitle = decisionMeta.label === "Согласовано" ? "Комментарий" : "Замечания";
+    const commentSectionTitle = decisionMeta.label === "Согласовано" ? "См. комментарий полностью" : "См. замечания полностью";
 
     const badgeLabel = isPendingForCurrentUser
         ? "В рассмотрении (мой этап)"
@@ -194,10 +194,15 @@ export function StageCardView({stage, cardRef, isCurrentUserStage, isProcessEnde
             )}
 
             {attachments.length > 0 && (
-                <div className="flex flex-col gap-1">
-                    {attachments.map((a) => (
-                        <AttachmentRow key={a.id} fileId={a.fileId} fileName={a.fileName}/>
-                    ))}
+                <div className="rounded-[10px] border border-[#e9edf3] bg-[#fbfcfe] p-2.5">
+                    <div className="mb-1.5 text-[10.5px] font-semibold text-[#8b97ab]">
+                        Прикреплённые файлы:
+                    </div>
+                    <div className="flex flex-col gap-1.5">
+                        {attachments.map((a) => (
+                            <AttachmentRow key={a.id} fileId={a.fileId} fileName={a.fileName}/>
+                        ))}
+                    </div>
                 </div>
             )}
 

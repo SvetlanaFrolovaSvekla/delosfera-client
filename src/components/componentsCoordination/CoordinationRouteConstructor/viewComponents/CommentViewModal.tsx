@@ -59,17 +59,21 @@ export function CommentViewModal({
                 </div>
 
                 <div className="min-h-0 flex-1 overflow-y-auto px-6 py-4">
+                    {attachments.length > 0 && (
+                        <div className="mb-4 rounded-[10px] border border-[#e9edf3] bg-[#fbfcfe] p-3">
+                            <div className="mb-1.5 text-[11.5px] font-semibold text-[#8b97ab]">
+                                Прикреплённые файлы:
+                            </div>
+                            <div className="flex flex-col gap-1.5">
+                                {attachments.map((a) => (
+                                    <AttachmentRow key={a.id} fileId={a.fileId} fileName={a.fileName}/>
+                                ))}
+                            </div>
+                        </div>
+                    )}
                     <div className="whitespace-pre-wrap text-[13px] leading-relaxed text-[#3c4356]">
                         {comment}
                     </div>
-
-                    {attachments.length > 0 && (
-                        <div className="mt-4 flex flex-col gap-1.5">
-                            {attachments.map((a) => (
-                                <AttachmentRow key={a.id} fileId={a.fileId} fileName={a.fileName}/>
-                            ))}
-                        </div>
-                    )}
                 </div>
             </div>
         </div>,

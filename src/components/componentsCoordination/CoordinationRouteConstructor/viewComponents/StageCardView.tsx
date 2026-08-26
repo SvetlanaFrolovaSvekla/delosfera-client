@@ -1,7 +1,6 @@
 // Read-only карточка этапа уже построенного маршрута согласования
 import {useLayoutEffect, useRef, useState} from "react";
 import {Link} from "react-router-dom";
-import {Paperclip} from "lucide-react";
 import {useAuth} from "@/context/AuthContext.ts";
 import type {ApprovalStageResponse} from "@/service/coordinationService/coordinationServiceTypes.ts";
 import {
@@ -12,40 +11,15 @@ import {
 } from "@/constants/coordinationParams.ts";
 import {formatDateTime} from "@/utils/dateUtils.ts";
 import {Tooltip} from "@/components/componentsGeneral/Tooltip.tsx";
-import {downloadWithToast} from "@/utils/downloadFile.ts";
+import {
+    CommentViewModal
+} from "@/components/componentsCoordination/CoordinationRouteConstructor/viewComponents/CommentViewModal.tsx";
+import {
+    AttachmentRow
+} from "@/components/componentsCoordination/CoordinationRouteConstructor/functionalComponents/AttachmentRow.tsx";
 
-// Строка одного вложения резолюции — со своим тултипом на полное имя файла,
-// если оно обрезано по ширине. Вынесено отдельным компонентом, т.к. каждая строка
-// отслеживает обрезку независимо (свой ref/своё состояние).
-function AttachmentRow({fileId, fileName}: {fileId: number; fileName: string}) {
-    const textRef = useRef<HTMLSpanElement>(null);
-    const [isTruncated, setIsTruncated] = useState(false);
+const COMMENT_TRUNCATE_LENGTH = 500; // Лимит обрезки комментария/замечания в карточке
 
-    useLayoutEffect(() => {
-        const el = textRef.current;
-        if (!el) return;
-
-        const checkTruncation = () => setIsTruncated(el.scrollWidth > el.clientWidth);
-        checkTruncation();
-
-        const observer = new ResizeObserver(checkTruncation);
-        observer.observe(el);
-        return () => observer.disconnect();
-    }, [fileName]);
-
-    return (
-        <Tooltip content={fileName} disabled={!isTruncated} side="top" className="w-full">
-            <button
-                type="button"
-                onClick={() => void downloadWithToast(fileId, fileName)}
-                className="cursor-pointer flex w-full items-center gap-1.5 rounded-[7px] border border-[#e5e9f0] bg-[#fbfcfe] px-2 py-1 text-left text-[11px] text-[#4e57d6] hover:border-[#4e57d6]/40 hover:bg-white"
-            >
-                <Paperclip size={11} className="flex-none"/>
-                <span ref={textRef} className="truncate">{fileName}</span>
-            </button>
-        </Tooltip>
-    );
-}
 
 function getInitials(fullName: string): string {
     return fullName
@@ -123,6 +97,16 @@ export function StageCardView({stage, cardRef, isCurrentUserStage, isProcessEnde
     // этапе) — этап не "в ожидании", он просто больше не актуален.
     const isStalePending = decision === "pending" && isProcessEnded;
 
+    const [isCommentModalOpen, setIsCommentModalOpen] = useState(false);
+
+    const isCommentLong = !!comment && comment.length > COMMENT_TRUNCATE_LENGTH;
+    const displayedComment = isCommentLong
+        ? comment!.slice(0, COMMENT_TRUNCATE_LENGTH).trimEnd() + "…"
+        : comment;
+    // "Комментарий" — при согласовании, "Замечания" — во всех остальных решениях
+    // (отклонено/возвращено/на доработку и т.п.)
+    const commentSectionTitle = decisionMeta.label === "Согласовано" ? "Комментарий" : "Замечания";
+
     const badgeLabel = isPendingForCurrentUser
         ? "В рассмотрении (мой этап)"
         : isStalePending
@@ -193,8 +177,19 @@ export function StageCardView({stage, cardRef, isCurrentUserStage, isProcessEnde
             )}
 
             {comment && (
-                <div className="text-[11.5px] leading-snug text-[#6b7488]">
-                    {comment}
+                <div className="flex flex-col gap-1">
+                    <div className="text-[11.5px] leading-snug text-[#6b7488] whitespace-pre-wrap">
+                        {displayedComment}
+                    </div>
+                    {isCommentLong && (
+                        <button
+                            type="button"
+                            onClick={() => setIsCommentModalOpen(true)}
+                            className="cursor-pointer flex-none self-start rounded-[7px] border border-[#d7dee8] bg-white px-2.5 py-[6px] text-[11.5px] font-semibold text-[#4e57d6] hover:bg-[#ececfc]"
+                        >
+                            {commentSectionTitle}
+                        </button>
+                    )}
                 </div>
             )}
 
@@ -204,6 +199,17 @@ export function StageCardView({stage, cardRef, isCurrentUserStage, isProcessEnde
                         <AttachmentRow key={a.id} fileId={a.fileId} fileName={a.fileName}/>
                     ))}
                 </div>
+            )}
+
+            {isCommentModalOpen && comment && (
+                <CommentViewModal
+                    title={commentSectionTitle}
+                    approverName={stage.approverName}
+                    decidedAt={decidedAt}
+                    comment={comment}
+                    attachments={attachments}
+                    onClose={() => setIsCommentModalOpen(false)}
+                />
             )}
         </div>
     );

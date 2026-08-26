@@ -1,5 +1,5 @@
 // Таб "Ход согласования"
-import {useState} from "react";
+import {useRef, useState} from "react";
 import {useAuth} from "@/context/AuthContext.ts";
 import {coordinationService} from "@/service/coordinationService/coordinationService.ts";
 import {
@@ -93,6 +93,12 @@ export function VndCoordinationTab({vnd, onVndChanged}: VndCoordinationTabProps)
 
     const [submitting, setSubmitting] = useState(false); // Идёт ли отправка резолюции
     const [decisionError, setDecisionError] = useState<string | null>(null); // Ошибка отправки резолюции
+    // Синхронный лок поверх стейта submitting — на случай двойного клика/повторного вызова
+    // раньше, чем успеет прийти обновлённый проп submitting (см. подробный комментарий
+    // у submitLockRef в VndApproverResolutionPanel). Хук должен стоять здесь, ДО всех
+    // условных return ниже (loading/error/!process) — иначе порядок хуков между рендерами
+    // не совпадает, и React падает с "Rendered more hooks than during the previous render".
+    const decisionInFlightRef = useRef(false);
 
     // Редакции ВНД грузим, чтобы достать ту, что связана с process.redactionId
     const {data: redactions, loading: redactionsLoading, error: redactionsError} = useVndRedactions(vnd.id);
@@ -189,7 +195,8 @@ export function VndCoordinationTab({vnd, onVndChanged}: VndCoordinationTabProps)
             (isFinalHoldPhase && (myStage.finalHoldDecision === null || myStage.finalHoldDecision === "pending")));
 
     const handleResolutionSubmit = async (choice: ResolutionChoice, comment: string, files: File[]) => {
-        if (!myStage) return;
+        if (!myStage || decisionInFlightRef.current) return;
+        decisionInFlightRef.current = true;
         setSubmitting(true);
         setDecisionError(null);
         try {
@@ -202,6 +209,7 @@ export function VndCoordinationTab({vnd, onVndChanged}: VndCoordinationTabProps)
         } catch (err) {
             setDecisionError(err instanceof Error ? err.message : "Не удалось отправить резолюцию");
         } finally {
+            decisionInFlightRef.current = false;
             setSubmitting(false);
         }
     };

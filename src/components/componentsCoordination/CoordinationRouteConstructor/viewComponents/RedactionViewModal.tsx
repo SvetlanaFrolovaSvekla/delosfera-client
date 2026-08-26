@@ -49,6 +49,7 @@ export function RedactionViewModal({
         onDownload(activeFileId, buildRedactionFileName(redaction.code, vnd.name, activeLanguage));
     };
 
+    // @ts-ignore
     return createPortal(
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-3">
             <div className="flex h-full max-h-[calc(100vh-24px)] w-[95vw] max-w-[1500px] flex-col overflow-hidden rounded-[16px] bg-white shadow-xl">

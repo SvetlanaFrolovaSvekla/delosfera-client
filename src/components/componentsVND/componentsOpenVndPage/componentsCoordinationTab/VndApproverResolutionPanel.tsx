@@ -1,4 +1,4 @@
-import {useState} from "react";
+import {useRef, useState} from "react";
 import {Check, MessageSquare, Paperclip, X, AlertCircle} from "lucide-react";
 import {ConfirmActionModal} from "@/components/componentsGeneral/modal/ConfirmActionModal.tsx";
 import {formatFileSize} from "@/service/documentService/attachmentService.ts";
@@ -158,22 +158,37 @@ export function VndApproverResolutionPanel({
         setAttachmentCountLimitHit(false);
     };
 
-    const doSubmit = () => {
-        void onSubmit(choice, comment.trim(), files);
+    // Синхронная защита от повторной отправки. Одного React-стейта `submitting` (которым
+    // мы дизейблим кнопку) недостаточно: он обновляется у родителя асинхронно, и если
+    // пользователь успевает кликнуть (или дважды сработать клик) до перерисовки — оба
+    // клика проходят проверку `!submitting`, и на сервер улетает два запроса подряд.
+    // Первый решает этап успешно, второй получает 409 "уже принято", и пользователь видит
+    // ошибку, хотя резолюция на самом деле уже сохранилась. Ref обновляется мгновенно,
+    // без ожидания рендера, поэтому второй клик блокируется гарантированно.
+    const submitLockRef = useRef(false);
+
+    const doSubmit = async () => {
+        if (submitLockRef.current) return;
+        submitLockRef.current = true;
+        try {
+            await onSubmit(choice, comment.trim(), files);
+        } finally {
+            submitLockRef.current = false;
+        }
     };
 
     const handleSubmit = () => {
-        if (!canSubmit || submitting) return;
+        if (!canSubmit || submitting || submitLockRef.current) return;
         if (choice === "reject") {
             setRejectConfirmOpen(true);
             return;
         }
-        doSubmit();
+        void doSubmit();
     };
 
     const handleConfirmReject = () => {
         setRejectConfirmOpen(false);
-        doSubmit();
+        void doSubmit();
     };
 
     return (
@@ -234,15 +249,6 @@ export function VndApproverResolutionPanel({
                 }`}
             />
 
-            {commentMissing && (
-                <div className="mt-3 flex items-start gap-1.5 text-[11.5px] text-[#d62815]">
-                    <AlertCircle className="mt-[1px] h-3.5 w-3.5 shrink-0"/>
-                    <span>
-                        Поле "{choice === "reject" ? "Причина отклонения" : "Комментарий / текст замечаний"}" является обязательным при данном выборе
-                    </span>
-                </div>
-            )}
-
             <div className="mt-3">
                 <div className="flex items-center justify-between gap-3">
                     <span className="flex items-center gap-0.5 text-[11.5px] text-[#8b97ab]">
@@ -288,6 +294,25 @@ export function VndApproverResolutionPanel({
                     )}
                 </div>
 
+                {attachmentCountLimitHit && (
+                    <div className="mt-2 flex items-start gap-1.5 text-[11.5px] text-[#d62815]">
+                        <AlertCircle className="mt-[1px] h-3.5 w-3.5 shrink-0"/>
+                        <span>
+                            Часть выбранных файлов не добавлена — максимум {MAX_RESOLUTION_ATTACHMENTS} файлов на резолюцию.
+                        </span>
+                    </div>
+                )}
+
+                {oversizedFileNames.length > 0 && (
+                    <div className="mt-2 flex items-start gap-1.5 text-[11.5px] text-[#d62815]">
+                        <AlertCircle className="mt-[1px] h-3.5 w-3.5 shrink-0"/>
+                        <span>
+                            Не добавлен{oversizedFileNames.length > 1 ? "ы" : ""} «{oversizedFileNames.join("», «")}»
+                            {" "}— размер файла не должен превышать {formatFileSize(MAX_RESOLUTION_ATTACHMENT_SIZE_BYTES)}.
+                        </span>
+                    </div>
+                )}
+
                 {files.length > 0 && (
                     <div className="mt-3 rounded-[10px] border border-[#e9edf3] bg-[#fbfcfe] p-3">
                         <div className="mb-2 text-[11.5px] font-semibold text-[#8b97ab]">
@@ -318,25 +343,6 @@ export function VndApproverResolutionPanel({
                         </div>
                     </div>
                 )}
-
-                {attachmentCountLimitHit && (
-                    <div className="mt-2 flex items-start gap-1.5 text-[11.5px] text-[#d62815]">
-                        <AlertCircle className="mt-[1px] h-3.5 w-3.5 shrink-0"/>
-                        <span>
-                            Часть выбранных файлов не добавлена — максимум {MAX_RESOLUTION_ATTACHMENTS} файлов на резолюцию.
-                        </span>
-                    </div>
-                )}
-
-                {oversizedFileNames.length > 0 && (
-                    <div className="mt-2 flex items-start gap-1.5 text-[11.5px] text-[#d62815]">
-                        <AlertCircle className="mt-[1px] h-3.5 w-3.5 shrink-0"/>
-                        <span>
-                            Не добавлен{oversizedFileNames.length > 1 ? "ы" : ""} «{oversizedFileNames.join("», «")}»
-                            {" "}— размер файла не должен превышать {formatFileSize(MAX_RESOLUTION_ATTACHMENT_SIZE_BYTES)}.
-                        </span>
-                    </div>
-                )}
             </div>
 
             {error && (
@@ -354,6 +360,15 @@ export function VndApproverResolutionPanel({
                 <SubmitIcon className="h-4 w-4" strokeWidth={2.5}/>
                 {submitting ? "Отправка…" : SUBMIT_LABEL[choice]}
             </button>
+
+            {commentMissing && (
+                <div className="mt-3 flex items-start gap-1.5 text-[11.5px] text-[#d62815]">
+                    <AlertCircle className="mt-[1px] h-3.5 w-3.5 shrink-0"/>
+                    <span>
+                        Поле "{choice === "reject" ? "Причина отклонения" : "Комментарий / текст замечаний"}" является обязательным при данном выборе
+                    </span>
+                </div>
+            )}
 
             <ConfirmActionModal
                 open={rejectConfirmOpen}

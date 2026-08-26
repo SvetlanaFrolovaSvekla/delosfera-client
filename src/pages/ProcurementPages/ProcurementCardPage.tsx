@@ -77,6 +77,7 @@ export const ProcurementCardPage = () => {
 
     const tone = STATUS_TONE[card.statusCode] ?? colors.status.draft;
     const canSubmit = card.statusCode === "Draft" || card.statusCode === "OnRevision";
+    const конкурс = card.methodShortTitle.startsWith("Конкурс");
 
     return (
         <div style={{padding: "22px 26px", display: "flex", flexDirection: "column", gap: 18, maxWidth: 1120}}>
@@ -221,14 +222,15 @@ export const ProcurementCardPage = () => {
                 <ProcurementRoutePanel routeInstanceId={card.routeInstanceId} onResolved={load}/>
             )}
 
-            {/* Сбор предложений идёт после согласования заявки, но черновик тоже показываем —
-                Сектор закупок нередко собирает КП параллельно с визированием. */}
-            <ProposalsPanel requestId={card.id} documentId={card.documentId} onChanged={load}/>
-
-            {/* Конкурс показывается только для конкурсных способов: у простой закупки
-                отбор идёт по коммерческим предложениям выше. */}
-            {card.methodShortTitle.startsWith("Конкурс") && (
+            {/* Отбор идёт одним из двух способов, и показывать надо ровно один.
+                До 500 000 — запрос ценовых предложений: собирают не менее трёх КП,
+                комиссия не создаётся. Свыше — конкурс: заявки подают в срок, вскрывает
+                и оценивает комиссия. Раньше обе панели висели рядом, и при конкурсе
+                выходило, будто предложения собирают дважды. */}
+            {конкурс ? (
                 <TenderPanel requestId={card.id} documentId={card.documentId} onChanged={load}/>
+            ) : (
+                <ProposalsPanel requestId={card.id} documentId={card.documentId} onChanged={load}/>
             )}
 
             <ContractPanel requestId={card.id} onChanged={load}/>

@@ -637,8 +637,12 @@ export function VndEditionsTab({vnd, onVndChanged, onGoToApproval}: VndEditionsT
                 <VndUploadTidModal
                     vndId={vnd.id}
                     redactionCode={selected.code}
+                    vndTitle={vnd.titleRu}
                     previousFileId={current && current.id !== selected.id ? current.docFileRuId : null}
                     draftFileId={selected.docFileRuId}
+                    defaultResponsibleUserId={vnd.actualizationResponsibleUserId}
+                    defaultResponsibleUserName={vnd.actualizationResponsibleUserName}
+                    canSelectResponsible={isChiefEditor}
                     onClose={() => setUploadTidOpen(false)}
                     onUploaded={handleTidUploaded}
                 />

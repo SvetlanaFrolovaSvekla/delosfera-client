@@ -18,7 +18,9 @@ interface RichDiffEditorProps {
     /** Подпись кнопки покраски, напр. "Красным" / "Зелёным". */
     highlightLabel: string;
     disabled?: boolean;
-    minHeightClass?: string;
+    /** Фиксированная высота блока (с прокруткой внутри, если текст не помещается) - чтобы одна
+     * длинная строка не растягивала всю таблицу. */
+    heightClass?: string;
     /** Вызывается при любом изменении содержимого - для черновых полей формы "Добавить строку",
      * чтобы проверять "есть ли текст" и сохранить итоговый HTML при добавлении строки. */
     onChangeText?: (plainText: string, html: string) => void;
@@ -50,7 +52,7 @@ function applyColorToSelection(root: HTMLElement, color: string): boolean {
 
 export function RichDiffEditor({
                                     initialHtml, placeholder, highlightColor, highlightLabel, disabled,
-                                    minHeightClass = "min-h-[64px]", onChangeText,
+                                    heightClass = "h-[200px]", onChangeText,
                                 }: RichDiffEditorProps) {
     const ref = useRef<HTMLDivElement>(null);
     const initializedRef = useRef(false);
@@ -92,7 +94,7 @@ export function RichDiffEditor({
                 data-placeholder={placeholder}
                 onInput={emitChange}
                 onBlur={emitChange}
-                className={`rd-editor w-full ${minHeightClass} whitespace-pre-wrap break-words rounded-[8px] border border-[#e0e5ee] bg-white px-2 py-[6px] text-[13px] text-[#1c2740] outline-none focus:border-[#4e57d6] ${disabled ? "cursor-default bg-[#f6f8fb]" : ""}`}
+                className={`rd-editor w-full ${heightClass} overflow-y-auto whitespace-pre-wrap break-words rounded-[8px] border border-[#e0e5ee] bg-white px-2 py-[6px] text-[13px] text-[#1c2740] outline-none focus:border-[#4e57d6] ${disabled ? "cursor-default bg-[#f6f8fb]" : ""}`}
             />
         </div>
     );

@@ -15,11 +15,18 @@ import {TidChangesTable} from "@/components/componentsVND/componentsOpenVndPage/
 interface VndUploadTidModalProps {
     vndId: number;
     redactionCode: string;
+    /** Название ВНД на русском (vnd.titleRu) - подставляется в заголовок "к «…»" шаблона ТИД. */
+    vndTitle: string;
     /** RU-файл действующей редакции (до этого черновика) — источник для автосравнения. null,
      * если действующей редакции нет (первая редакция ВНД ТИД не требует, сюда попасть не должна). */
     previousFileId: number | null;
     /** RU-файл черновика редакции, к которому прикладывается ТИД. */
     draftFileId: number | null;
+    /** Ответственный за актуализацию этой ВНД - предзаполняет строку "Разработано:" под таблицей. */
+    defaultResponsibleUserId: number | null;
+    defaultResponsibleUserName: string | null;
+    /** Главному редактору доступен выбор другого сотрудника вместо ответственного по умолчанию. */
+    canSelectResponsible: boolean;
     onClose: () => void;
     onUploaded: (redaction: VndRedactionResponse) => void;
 }
@@ -33,7 +40,9 @@ function formatBytes(bytes: number): string {
 }
 
 export function VndUploadTidModal({
-                                       vndId, redactionCode, previousFileId, draftFileId, onClose, onUploaded,
+                                       vndId, redactionCode, vndTitle, previousFileId, draftFileId,
+                                       defaultResponsibleUserId, defaultResponsibleUserName, canSelectResponsible,
+                                       onClose, onUploaded,
                                    }: VndUploadTidModalProps) {
     const [tid, setTid] = useState<File | null>(null);
     const [submitting, setSubmitting] = useState(false);
@@ -132,6 +141,11 @@ export function VndUploadTidModal({
                         autoRows={rows}
                         loading={status === "loading"}
                         unavailable={status === "unavailable" || status === "error"}
+                        exportFileName={`ТИД_${redactionCode}.docx`}
+                        defaultResponsibleUserId={defaultResponsibleUserId}
+                        defaultResponsibleUserName={defaultResponsibleUserName}
+                        canSelectResponsible={canSelectResponsible}
+                        vndTitle={vndTitle}
                     />
 
                     <div className="mt-6 rounded-[10px] border border-[#e5e9f0] bg-[#f9fafc] px-3 py-[10px] text-[11.5px] leading-[1.5] text-[#8b97ab]">

@@ -16,6 +16,10 @@ import {attachmentService} from "@/service/documentService/attachmentService.ts"
 import type {OrganizationUnitResponse} from "@/service/dictionariesService/organizationUnitService/organizationUnitServiceType.ts";
 import {formatDate} from "@/utils/dateUtils.ts";
 import {MatrixNotesList} from "@/components/procurement/MatrixNotesList.tsx";
+import {OrgUnitPicker} from "@/components/procurement/OrgUnitPicker.tsx";
+import {PlanItemPicker} from "@/components/procurement/PlanItemPicker.tsx";
+import type {PlanItemLookup} from "@/service/procurementService/planItemLookupService.ts";
+import {useAuth} from "@/context/AuthContext.ts";
 
 /**
  * Мастер новой заявки на закупку (экран v8 isPrcNew), три шага:
@@ -40,6 +44,12 @@ export const ProcurementNewPage = () => {
     const [error, setError] = useState<string | null>(null);
     const [resolved, setResolved] = useState<MatrixResolveResult | null>(null);
     const [units, setUnits] = useState<OrganizationUnitResponse[]>([]);
+    const [planItem, setPlanItem] = useState<PlanItemLookup | null>(null);
+
+    // Подразделение инициатора — из его профиля: почти всякая заявка подаётся
+    // от своего подразделения, и заставлять выбирать его руками незачем.
+    const {user} = useAuth();
+    const ownUnitId = user?.orgUnit?.id ?? null;
 
     // Обоснование и ТЗ приходят файлами, но заявки ещё нет — файлы ждут её создания.
     const [files, setFiles] = useState<File[]>([]);
@@ -51,7 +61,6 @@ export const ProcurementNewPage = () => {
         amount: 0,
         isAffiliated: false,
         hasBudget: true,
-        planItem: "",
         hasSpecification: false,
         preferredMethod: undefined,
         methodJustification: "",
@@ -73,6 +82,16 @@ export const ProcurementNewPage = () => {
     useEffect(() => {
         organizationUnitService.getAll().then(setUnits).catch(() => undefined);
     }, []);
+
+    // Как только справочник подразделений загрузился, подставляем своё — вместе
+    // с его куратором. Инициатор может переопределить выбор: закупку иногда
+    // подают в интересах другого подразделения.
+    useEffect(() => {
+        if (form.initiatorUnitId || units.length === 0 || ownUnitId === null) return;
+        const own = units.find(u => u.id === ownUnitId);
+        if (own) patch({initiatorUnitId: own.id, curatorUserId: own.curatorUserId ?? undefined});
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [units, ownUnitId]);
 
     /** Куратор подразделения — тот же, что и куратор закупки по умолчанию (PRC-01). */
     const selectUnit = (unitId: number) => {
@@ -109,7 +128,6 @@ export const ProcurementNewPage = () => {
             const card = await procurementService.create({
                 ...form,
                 justification: form.justification?.trim() || undefined,
-                planItem: form.planItem?.trim() || undefined,
                 methodJustification: form.methodJustification?.trim() || undefined,
             });
             // Заявка создана — файлы, собранные в мастере, цепляются к её карточке.
@@ -269,16 +287,12 @@ export const ProcurementNewPage = () => {
                             </label>
 
                             <label style={{...fieldLabel, marginTop: 14}}>Инициирующее подразделение</label>
-                            <select
-                                value={form.initiatorUnitId ?? ""}
-                                onChange={e => selectUnit(Number(e.target.value))}
-                                style={input}
-                            >
-                                <option value="">— выберите подразделение —</option>
-                                {units.map(u => (
-                                    <option key={u.id} value={u.id}>{u.titleRu}</option>
-                                ))}
-                            </select>
+                            <OrgUnitPicker
+                                units={units}
+                                value={form.initiatorUnitId ?? null}
+                                onChange={selectUnit}
+                                ownUnitId={ownUnitId}
+                            />
                             {form.curatorUserId && (
                                 <div style={{marginTop: 5, fontSize: 11.5, color: "#8b97ab"}}>
                                     Куратор подразделения подставлен как куратор закупки
@@ -286,13 +300,13 @@ export const ProcurementNewPage = () => {
                             )}
 
                             <label style={{...fieldLabel, marginTop: 14}}>Позиция Плана закупок</label>
-                            <input
-                                value={form.planItem}
-                                onChange={e => patch({planItem: e.target.value})}
-                                placeholder="напр. п. 4.2 Плана закупок на 2026 год"
-                                style={input}
+                            <PlanItemPicker
+                                value={planItem}
+                                onChange={item => { setPlanItem(item); patch({planItemId: item?.id}); }}
+                                orgUnitId={form.initiatorUnitId ?? ownUnitId}
+                                amount={form.amount}
                             />
-                            {!form.hasBudget && !form.planItem?.trim() && (
+                            {!form.hasBudget && planItem === null && (
                                 <div style={{marginTop: 6, fontSize: 11.5, color: "#c77700"}}>
                                     Закупка вне бюджета и без позиции Плана пойдёт по ветке внеплановой закупки (PRC-03)
                                     {resolved?.regulationDocumentId && (

@@ -2,6 +2,7 @@
 import type {RedactionDisplayStatus} from "@/utils/redactionStatus.ts";
 import {Loader2} from "lucide-react";
 import {Tooltip} from "@/components/componentsGeneral/Tooltip.tsx";
+import {formatDate} from "@/utils/dateUtils.ts";
 
 interface BannerConfig {
     border: string;
@@ -11,6 +12,12 @@ interface BannerConfig {
 }
 
 const BANNER_STYLES: Partial<Record<RedactionDisplayStatus, BannerConfig>> = {
+    pendingEffective: {
+        border: "border-[#f3d0a8]",
+        bg: "bg-[#fff7ed]",
+        textColor: "text-[#7c2d12]",
+        align: "center",
+    },
     draft: {
         border: "border-[#e0e2f7]",
         bg: "bg-[#f5f6fd]",
@@ -45,6 +52,8 @@ interface RedactionStatusBannerProps {
     status: RedactionDisplayStatus;
     redactionNumber?: number;
     currentNumber?: number;
+    /** Дата вступления в силу ВНД — нужна только для текста статуса "pendingEffective" */
+    effectiveDate?: string | null;
     onSubmit?: () => void;
     isSubmitting?: boolean;
     /** Переход на таб «Ход согласования» — кнопка появляется в статусе "pending" и только
@@ -55,23 +64,36 @@ interface RedactionStatusBannerProps {
      * согласование. Кнопка появляется рядом с "Отправить на согласование" в статусе "draft". */
     onPublishWithoutApproval?: () => void;
     isPublishingWithoutApproval?: boolean;
+    /** true — редакция актуализации (Number > 1) без файла ТИД: "Отправить на согласование" и
+     * "Сделать актуальной редакцией без согласования" скрываются, вместо них показывается кнопка
+     * "Сформировать или загрузить ТИД" (заметка про автоформирование в разработке — уже внутри
+     * той модалки, не здесь). */
+    tidMissing?: boolean;
+    onUploadTid?: () => void;
 }
 
 export function RedactionStatusBanner({
                                           status,
                                           currentNumber,
+                                          effectiveDate,
                                           onSubmit,
                                           isSubmitting,
                                           onGoToApproval,
                                           onPublishWithoutApproval,
                                           isPublishingWithoutApproval,
+                                          tidMissing,
+                                          onUploadTid,
                                       }: RedactionStatusBannerProps) {
     const config = BANNER_STYLES[status];
     if (!config) return null;
 
-    const message = getBannerMessage(status, currentNumber);
     const isCentered = config.align === "center";
     const isBetween = config.align === "between";
+
+    const showTidMissing = status === "draft" && tidMissing;
+    const message = showTidMissing
+        ? "Чтобы перейти к согласованию — необходимо добавить ТИД:"
+        : getBannerMessage(status, currentNumber, effectiveDate);
 
     return (
         <div
@@ -82,7 +104,7 @@ export function RedactionStatusBanner({
             <span className={`text-[12px] ${config.textColor}`}>{message}</span>
 
             <div className="ml-auto flex items-center gap-3">
-                {status === "draft" && onSubmit && (
+                {status === "draft" && !tidMissing && onSubmit && (
                     <button
                         type="button"
                         disabled={isSubmitting}
@@ -94,7 +116,7 @@ export function RedactionStatusBanner({
                     </button>
                 )}
 
-                {status === "draft" && onPublishWithoutApproval && (
+                {status === "draft" && !tidMissing && onPublishWithoutApproval && (
                     <Tooltip
                         content="Редакция станет действующей сразу, минуя процесс согласования полностью. Это решение фиксируется как выполненное главным редактором."
                         side="top"
@@ -111,6 +133,16 @@ export function RedactionStatusBanner({
                     </Tooltip>
                 )}
 
+                {showTidMissing && onUploadTid && (
+                    <button
+                        type="button"
+                        onClick={onUploadTid}
+                        className="cursor-pointer flex h-[30px] items-center gap-2 rounded-[8px] bg-[#4e57d6] px-3 text-[12px] font-semibold text-white hover:bg-[#3f47bd]"
+                    >
+                        Сформировать или загрузить ТИД
+                    </button>
+                )}
+
                 {status === "pending" && onGoToApproval && (
                     <button
                         type="button"
@@ -125,8 +157,11 @@ export function RedactionStatusBanner({
     );
 }
 
-function getBannerMessage(status: RedactionDisplayStatus, currentNumber?: number): string {
+function getBannerMessage(status: RedactionDisplayStatus, currentNumber?: number, effectiveDate?: string | null): string {
     switch (status) {
+        case "pendingEffective":
+            return `Дата вступления в силу — ${formatDate(effectiveDate)}, дата, с которой редакция ` +
+                "становится действующей; до этого момента документ находится в статусе «Ожидание вступления в силу».";
         case "draft":
             return "Черновик редакции. Пока редакция не отправлена на согласование — она доступна для Ваших правок (сейчас данный черновик видите только Вы и главный редактор ВНД)...";
         case "pending":

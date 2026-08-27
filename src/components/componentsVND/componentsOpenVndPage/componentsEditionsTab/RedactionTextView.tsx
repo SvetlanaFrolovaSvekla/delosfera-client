@@ -113,7 +113,7 @@ export const RedactionTextView = forwardRef<RedactionTextViewHandle, RedactionTe
                                         type="button"
                                         onClick={goPrev}
                                         disabled={matchCount === 0}
-                                        className="grid h-[24px] w-[24px] place-items-center rounded-[6px] text-[#5a6478] transition-colors hover:bg-[#f2f4f8] hover:text-[#4e57d6] disabled:opacity-30 disabled:hover:bg-transparent"
+                                        className="cursor-pointer grid h-[24px] w-[24px] place-items-center rounded-[6px] text-[#5a6478] transition-colors hover:bg-[#f2f4f8] hover:text-[#4e57d6] disabled:opacity-30 disabled:hover:bg-transparent"
                                     >
                                         <ChevronUp size={15}/>
                                     </button>
@@ -121,7 +121,7 @@ export const RedactionTextView = forwardRef<RedactionTextViewHandle, RedactionTe
                                         type="button"
                                         onClick={goNext}
                                         disabled={matchCount === 0}
-                                        className="grid h-[24px] w-[24px] place-items-center rounded-[6px] text-[#5a6478] transition-colors hover:bg-[#f2f4f8] hover:text-[#4e57d6] disabled:opacity-30 disabled:hover:bg-transparent"
+                                        className="cursor-pointer grid h-[24px] w-[24px] place-items-center rounded-[6px] text-[#5a6478] transition-colors hover:bg-[#f2f4f8] hover:text-[#4e57d6] disabled:opacity-30 disabled:hover:bg-transparent"
                                     >
                                         <ChevronDown size={15}/>
                                     </button>
@@ -132,7 +132,7 @@ export const RedactionTextView = forwardRef<RedactionTextViewHandle, RedactionTe
                                 <button
                                     type="button"
                                     onClick={onClearSearch}
-                                    className="grid h-[24px] w-[24px] place-items-center rounded-[6px] text-[#a3adbd] transition-colors hover:bg-[#fdecec] hover:text-[#c0392b]"
+                                    className="cursor-pointer grid h-[24px] w-[24px] place-items-center rounded-[6px] text-[#a3adbd] transition-colors hover:bg-[#fdecec] hover:text-[#c0392b]"
                                 >
                                     <X size={15}/>
                                 </button>

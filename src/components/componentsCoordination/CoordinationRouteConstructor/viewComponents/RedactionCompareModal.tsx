@@ -7,13 +7,16 @@
 // сравнить и две более старые редакции между собой.
 import React, {useEffect, useRef, useState} from "react";
 import {createPortal} from "react-dom";
-import {ChevronDown, Columns2, Download, Loader2, Table2, X, ZoomIn, ZoomOut} from "lucide-react";
+import {ChevronDown, Columns2, Download, ListTree, Loader2, Table2, X, ZoomIn, ZoomOut} from "lucide-react";
 import type {VndRedactionResponse, VndResponse} from "@/service/vndService/vndServiceType.ts";
 import {
     RedactionTextView, type RedactionTextViewHandle
 } from "@/components/componentsVND/componentsOpenVndPage/componentsEditionsTab/RedactionTextView.tsx";
 import {
-    getAvailableLanguages, type RedactionLanguage
+    RedactionContentsPanel
+} from "@/components/componentsVND/componentsOpenVndPage/componentsEditionsTab/RedactionContentsPanel.tsx";
+import {
+    getAvailableLanguages, getRedactionFileId, type RedactionLanguage
 } from "@/utils/redactionLanguagePanelUtils.ts";
 import {useDocxDiffHighlight} from "@/hooks/vndHooks/useDocxDiffHighlight.ts";
 
@@ -251,8 +254,15 @@ function CompareColumn({
     const hasTid = redaction.tidFileId !== null;
     const showTid = tidOpen && hasTid;
 
+    // Содержание документа этой колонки - как и ТИД, своя кнопка и своё состояние с каждой
+    // стороны сравнения. В отличие от ТИД (делит колонку по высоте) показывается всплывающей
+    // панелью поверх текста - оглавление не нужно держать развёрнутым постоянно, только пока
+    // ищешь нужный раздел.
+    const [contentsOpen, setContentsOpen] = useState(false);
+    const activeFileId = getRedactionFileId(redaction, activeLanguage);
+
     return (
-        <div className="flex min-h-0 flex-col overflow-hidden">
+        <div className="relative flex min-h-0 flex-col overflow-hidden">
             <div className="flex flex-none flex-wrap items-center justify-between gap-3 border-b border-[#eef2f7] bg-[#fbfcfe] px-5 py-3">
                 <div className="min-w-0">
                     <RedactionPicker
@@ -292,6 +302,21 @@ function CompareColumn({
 
                     <button
                         type="button"
+                        onClick={() => setContentsOpen((v) => !v)}
+                        disabled={activeFileId === null}
+                        className="cursor-pointer inline-flex h-7 flex-none items-center justify-center gap-[5px] rounded-[7px] border px-[10px] text-[11px] font-semibold transition-colors disabled:cursor-not-allowed disabled:opacity-50"
+                        style={
+                            contentsOpen
+                                ? {borderColor: "#4e57d6", background: "#ececfc", color: "#4e57d6"}
+                                : {borderColor: "#e5e9f0", background: "#fff", color: "#3a4560"}
+                        }
+                    >
+                        <ListTree size={12} strokeWidth={2} className="flex-none"/>
+                        Содержание
+                    </button>
+
+                    <button
+                        type="button"
                         onClick={() => setTidOpen((v) => !v)}
                         disabled={!hasTid}
                         className="cursor-pointer inline-flex h-7 flex-none items-center justify-center gap-[5px] rounded-[7px] border px-[10px] text-[11px] font-semibold transition-colors disabled:cursor-not-allowed disabled:opacity-50"
@@ -306,6 +331,17 @@ function CompareColumn({
                     </button>
                 </div>
             </div>
+
+            {contentsOpen && (
+                <div className="absolute right-3 top-[64px] z-30 max-h-[calc(100%-80px)] w-[280px] overflow-hidden rounded-[14px] shadow-[0_14px_38px_rgba(20,25,40,0.22)]">
+                    <RedactionContentsPanel
+                        fileId={activeFileId}
+                        getContainer={() => textViewRef.current?.getContainer() ?? null}
+                        onClose={() => setContentsOpen(false)}
+                        maxHeightClass="max-h-full"
+                    />
+                </div>
+            )}
 
             {showTid && (
                 <div className="flex h-1/3 flex-none flex-col overflow-hidden border-b border-[#eef2f7]">

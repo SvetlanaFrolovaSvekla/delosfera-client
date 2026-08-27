@@ -3,6 +3,7 @@ import {
     AlertOctagon,
     AlertTriangle,
     Archive,
+    CalendarClock,
     Check,
     CheckCircle2,
     Clock,
@@ -25,6 +26,36 @@ export const STATUS_META: Record<
     arch: {label: "В архиве", color: "#c0392b", bg: "#fdecea", icon: Archive},
     draft: {label: "Черновик", color: "#5b6472", bg: "#eef0f3", icon: FileEdit}
 };
+
+// "Ожидание вступления в силу" — вычисляемый статус, НЕ хранится в БД отдельным значением
+// VndStatus и не заводится как новый VndStatusKey (см. обсуждение): документ уже прошёл
+// консолидацию (status === "active"), но указанная при консолидации "Дата вступления в силу"
+// ещё не наступила (см. ConsolidateVndModal/VndActualizationService.PublishAsync). Как только
+// дата наступает, следующий же запрос сам перестаёт считать документ "ожидающим" — фоновые
+// задачи/миграции статуса не нужны.
+export function isVndPendingEffective(status: VndStatusKey, effectiveDate: string | null | undefined): boolean {
+    if (status !== "active" || !effectiveDate) return false;
+    return effectiveDate.slice(0, 10) > todayIso();
+}
+
+function todayIso(): string {
+    return new Date().toISOString().slice(0, 10);
+}
+
+export const PENDING_EFFECTIVE_META: { label: string; color: string; bg: string; icon: typeof Check } = {
+    label: "Ожидание вступления в силу",
+    color: "#c2410c",
+    bg: "#ffedd5",
+    icon: CalendarClock,
+};
+
+// Мета для отображения статуса "последней редакции" с учётом "Ожидания вступления в силу" —
+// использовать вместо прямого STATUS_META[status] везде, где статус показывается пользователю
+// (колонка реестра, статус-баннер и т.п.). Сам STATUS_META/VndStatusKey не трогаем, чтобы не
+// задевать фильтры/вкладки/поиск, которые опираются на реальный статус документа в БД.
+export function getVndDisplayMeta(status: VndStatusKey, effectiveDate: string | null | undefined) {
+    return isVndPendingEffective(status, effectiveDate) ? PENDING_EFFECTIVE_META : STATUS_META[status];
+}
 
 // Упрощённый статус ВНД (для значка первой колонки у пользователей без права
 // ViewVndRegistryExtended): действующие/архивированные/черновики — без деталей о том,

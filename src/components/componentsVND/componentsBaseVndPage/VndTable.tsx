@@ -3,7 +3,7 @@ import {Link} from "react-router-dom";
 import {useActualizationBucketMeta} from "@/hooks/actualizationHooks/useActualizationBucketMeta.ts";
 import {HighlightText} from "@/utils/HighlightText.tsx";
 import type {VndResponse} from "@/service/vndService/vndServiceType.ts";
-import {getSimplifiedVndStatus, SIMPLE_STATUS_META, STATUS_META} from "@/constants/vndStatus.ts";
+import {getSimplifiedVndStatus, getVndDisplayMeta, SIMPLE_STATUS_META} from "@/constants/vndStatus.ts";
 import {LINKED_TO_ME_RELATION_META, type LinkedToMeRelationKey} from "@/constants/linkedToMeRelations.ts";
 import type {ColDef} from "@/constants/columnsFilters/vndColumns.ts";
 import {EmptyState} from "@/components/componentsGeneral/EmptyState.tsx";
@@ -78,7 +78,9 @@ export function VndTable({
                     // Без права ViewVndRegistryExtended значок первой колонки показывает только
                     // упрощённый статус ВНД (действующий/архивированный/черновик), без деталей
                     // о стадии жизненного цикла (на актуализации/согласовании/консолидации)
-                    const meta = canViewExtended ? STATUS_META[r.status] : SIMPLE_STATUS_META[getSimplifiedVndStatus(r.status)];
+                    const meta = canViewExtended
+                        ? getVndDisplayMeta(r.status, r.effectiveDate)
+                        : SIMPLE_STATUS_META[getSimplifiedVndStatus(r.status)];
                     const StatusIcon = meta.icon;
                     const days = daysUntil(r.dueActualizationDate);
                     const bucketMeta = r.actualizationBucket ? bucketMetaMap[r.actualizationBucket] : null;
@@ -361,6 +363,19 @@ export function VndTable({
                                             <div key={c.key} className="min-w-0">
                                                 <span
                                                     className="text-[12px] text-[#55617a]">{secrecyLevelName(r.secrecyLevelId)}</span>
+                                            </div>
+                                        );
+                                    case "redactionCount":
+                                        return (
+                                            <div key={c.key} className="min-w-0 flex justify-center">
+                                                <Tooltip content="Кол-во редакций (актуальных и нет)" side="top">
+                                                    <span
+                                                        className="inline-flex items-center justify-center rounded-full bg-[#f2f5f9] text-[#55617a] text-[11px] font-bold"
+                                                        style={{minWidth: 22, height: 22, padding: "0 6px"}}
+                                                    >
+                                                        {r.redactionIds.length}
+                                                    </span>
+                                                </Tooltip>
                                             </div>
                                         );
                                     case "userGroups":

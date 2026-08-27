@@ -1,16 +1,20 @@
 // Модалка "Просмотр редакции" (одиночно)
-import {useRef, useState} from "react";
+import {useEffect, useRef, useState} from "react";
 import {createPortal} from "react-dom";
 import type {VndRedactionResponse, VndResponse} from "@/service/vndService/vndServiceType.ts";
 import {
     RedactionTextView, type RedactionTextViewHandle
 } from "@/components/componentsVND/componentsOpenVndPage/componentsEditionsTab/RedactionTextView.tsx";
 import {
+    RedactionContentsPanel
+} from "@/components/componentsVND/componentsOpenVndPage/componentsEditionsTab/RedactionContentsPanel.tsx";
+import {
     getAvailableLanguages, type RedactionLanguage, type RedactionViewTarget
 } from "@/utils/redactionLanguagePanelUtils.ts";
 import {buildRedactionFileName} from "@/utils/fileNaming.ts";
 import {Tooltip} from "@/components/componentsGeneral/Tooltip.tsx";
-import {Download, FileText, Loader2, X} from "lucide-react";
+import {SearchBar} from "@/components/componentsGeneral/SearchBar.tsx";
+import {Download, FileText, ListTree, Loader2, X} from "lucide-react";
 
 interface RedactionViewModalProps {
     vnd: VndResponse;
@@ -47,6 +51,15 @@ export function RedactionViewModal({
     );
     const textViewRef = useRef<RedactionTextViewHandle>(null);
 
+    // Панель "Содержание" (заголовки документа, построенные из стилей Word) - как и в основной
+    // вкладке "Редакции" (VndEditionsTab), открывается/закрывается кнопкой рядом со скачиванием.
+    const [contentsOpen, setContentsOpen] = useState(false);
+
+    const [searchQuery, setSearchQuery] = useState("");
+    useEffect(() => {
+        setSearchQuery("");
+    }, [activeLanguage, redaction.id]);
+
     const activeFileId = activeLanguage === "tid"
         ? redaction.tidFileId
         : redaction[LANG_FILE_KEYS[activeLanguage]] as number | null;
@@ -62,10 +75,12 @@ export function RedactionViewModal({
     // @ts-ignore
     return createPortal(
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-3">
-            <div className="flex h-full max-h-[calc(100vh-24px)] w-[95vw] max-w-[1500px] flex-col overflow-hidden rounded-[16px] bg-white shadow-xl">
-                <div className="flex flex-none flex-wrap items-center justify-between gap-3 border-b border-[#eef2f7] px-6 py-4">
-                    <div className="flex items-center gap-3 min-w-0">
-                        <span className="grid h-10 w-10 flex-none place-items-center rounded-[11px] bg-[#ececfc] text-[#4e57d6]">
+            <div
+                className="flex h-full max-h-[calc(100vh-24px)] w-[95vw] max-w-[1500px] flex-col overflow-hidden rounded-[16px] bg-white shadow-xl">
+                <div className="flex flex-none flex-wrap items-center gap-4 border-b border-[#eef2f7] px-6 py-4">
+                    <div className="flex flex-none items-center gap-3 min-w-0">
+                        <span
+                            className="grid h-10 w-10 flex-none place-items-center rounded-[11px] bg-[#ececfc] text-[#4e57d6]">
                             <FileText size={19} strokeWidth={1.8}/>
                         </span>
                         <div className="min-w-0">
@@ -78,7 +93,18 @@ export function RedactionViewModal({
                         </div>
                     </div>
 
-                    <div className="flex items-center gap-4">
+                    {/* растягивается и занимает всё свободное место между заголовком и кнопками */}
+                    <div className="min-w-0 flex-1">
+                        <SearchBar
+                            variant="white"
+                            placeholder="Поиск по тексту редакции…"
+                            value={searchQuery}
+                            onChange={setSearchQuery}
+                            onSubmit={() => textViewRef.current?.goNext()}
+                        />
+                    </div>
+
+                    <div className="flex flex-none items-center gap-4">
                         {availableViews.length > 1 && (
                             <div className="flex flex-none gap-1 rounded-[8px] bg-[#f2f5f9] p-[3px]">
                                 {availableViews.map((lang) => (
@@ -89,7 +115,11 @@ export function RedactionViewModal({
                                         className="h-7 cursor-pointer rounded-[6px] px-2.5 text-[11.5px] font-semibold transition-colors"
                                         style={
                                             activeLanguage === lang
-                                                ? {background: "#fff", color: "#4e57d6", boxShadow: "0 1px 2px rgba(15,27,45,.08)"}
+                                                ? {
+                                                    background: "#fff",
+                                                    color: "#4e57d6",
+                                                    boxShadow: "0 1px 2px rgba(15,27,45,.08)"
+                                                }
                                                 : {color: "#5d616c"}
                                         }
                                     >
@@ -98,6 +128,21 @@ export function RedactionViewModal({
                                 ))}
                             </div>
                         )}
+
+                        <Tooltip content="Содержание документа" side="bottom">
+                            <button
+                                type="button"
+                                onClick={() => setContentsOpen((v) => !v)}
+                                className="cursor-pointer flex-none grid h-9 w-9 place-items-center rounded-[9px] border transition-colors"
+                                style={
+                                    contentsOpen
+                                        ? {borderColor: "#4e57d6", background: "#ececfc", color: "#4e57d6"}
+                                        : {borderColor: "#d7dee8", background: "#fff", color: "#3a4560"}
+                                }
+                            >
+                                <ListTree size={16}/>
+                            </button>
+                        </Tooltip>
 
                         <Tooltip content="Скачать документ" side="bottom">
                             <button
@@ -123,15 +168,30 @@ export function RedactionViewModal({
                     </div>
                 </div>
 
-                <div className="flex min-h-0 flex-1 flex-col overflow-hidden py-4">
-                    <RedactionTextView
-                        ref={textViewRef}
-                        vnd={vnd}
-                        selected={redaction}
-                        activeLanguage={activeLanguage}
-                        downloadingId={downloadingId}
-                        onDownload={onDownload}
-                    />
+                <div className="flex min-h-0 flex-1 gap-4 overflow-hidden px-6 py-4">
+                    <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
+                        <RedactionTextView
+                            ref={textViewRef}
+                            vnd={vnd}
+                            selected={redaction}
+                            activeLanguage={activeLanguage}
+                            downloadingId={downloadingId}
+                            onDownload={onDownload}
+                            searchQuery={searchQuery}
+                            onClearSearch={() => setSearchQuery("")}
+                        />
+                    </div>
+
+                    {contentsOpen && (
+                        <div className="w-[280px] flex-none">
+                            <RedactionContentsPanel
+                                fileId={activeFileId}
+                                getContainer={() => textViewRef.current?.getContainer() ?? null}
+                                onClose={() => setContentsOpen(false)}
+                                maxHeightClass="h-full"
+                            />
+                        </div>
+                    )}
                 </div>
             </div>
         </div>,

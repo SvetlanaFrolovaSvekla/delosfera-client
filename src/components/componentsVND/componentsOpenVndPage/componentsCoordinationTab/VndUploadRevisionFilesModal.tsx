@@ -40,7 +40,7 @@ function FileSlot({label, required, file, onChange}: FileSlotProps) {
                     className="flex h-[70px] cursor-pointer flex-col items-center justify-center gap-1 rounded-[10px] border border-dashed border-[#d5dae3] bg-[#fbfcfe] text-[#8b97ab] transition-colors hover:border-[#4e57d6]/50 hover:bg-[#f6f8fb]"
                 >
                     <FileUp size={18}/>
-                    <span className="text-[11.5px]">Выбрать файл (DOC/DOCX/PDF)</span>
+                    <span className="text-[11.5px]">Выбрать файл (DOCX)</span>
                     <input
                         id={inputId}
                         type="file"

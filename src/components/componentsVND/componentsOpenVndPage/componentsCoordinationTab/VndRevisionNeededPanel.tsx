@@ -758,7 +758,7 @@ export function VndRevisionNeededPanel({
 
                     <div className="flex flex-col gap-2 px-5 py-4">
                         <div className="mb-1 rounded-[10px] border border-[#e5e9f0] bg-[#f9fafc] px-3 py-[10px] text-[11.5px] leading-[1.5] text-[#8b97ab]">
-                            Допустимые форматы: DOC, DOCX, PDF, XLS, XLSX, PPT, PPTX. Максимальный
+                            Допустимый формат: DOCX. Максимальный
                             размер каждого файла — {formatFileSize(MAX_FILE_SIZE)}.
                         </div>
                         {docSlots.length === 0 && (

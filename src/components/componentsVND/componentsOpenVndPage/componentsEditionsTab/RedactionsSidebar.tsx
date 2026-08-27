@@ -46,6 +46,9 @@ export type RedactionsPrimaryActionVariant =
 interface RedactionsSidebarProps {
     redactions: VndRedactionResponse[];
     vndStatus: VndStatusKey;
+    /** Дата вступления в силу ВНД — определяет, показывать ли действующей редакции статус
+     * "ожидание вступления в силу" вместо "актуальная" (см. getRedactionDisplayStatus). */
+    effectiveDate?: string | null;
     selectedId: number | undefined;
     /** id редакции, чей последний процесс согласования был отклонён - под ней покажем
      * подсказку "отредактируйте, чтобы отправить вновь" (см. VndEditionsTab) */
@@ -90,6 +93,7 @@ const PRIMARY_ACTION_META: Record<
 export function RedactionsSidebar({
                                       redactions,
                                       vndStatus,
+                                      effectiveDate,
                                       selectedId,
                                       rejectedRedactionId,
                                       onSelect,
@@ -133,6 +137,7 @@ export function RedactionsSidebar({
                             <RedactionListItem
                                 redaction={e}
                                 vndStatus={vndStatus}
+                                effectiveDate={effectiveDate}
                                 isLatest={e.id === lastRedactionId}
                                 active={e.id === selectedId}
                                 onClick={() => onSelect(e.id)}
@@ -229,6 +234,7 @@ export function RedactionsSidebar({
 function RedactionListItem({
                                redaction,
                                vndStatus,
+                               effectiveDate,
                                isLatest,
                                active,
                                onClick,
@@ -242,6 +248,7 @@ function RedactionListItem({
     redaction: VndRedactionResponse;
     active: boolean;
     vndStatus: VndStatusKey;
+    effectiveDate?: string | null;
     isLatest: boolean;
     onClick: () => void;
     showEditButton: boolean;
@@ -253,7 +260,7 @@ function RedactionListItem({
     onOpenTid: () => void;
 }) {
     const {t} = useTranslation();
-    const status = getRedactionDisplayStatus(redaction, vndStatus, isLatest);
+    const status = getRedactionDisplayStatus(redaction, vndStatus, isLatest, effectiveDate);
     const meta = REDACTION_STATUS_META[status];
     const hasAttachments = redaction.attachmentFileIds.length > 0;
     const hasTid = redaction.tidFileId !== null;

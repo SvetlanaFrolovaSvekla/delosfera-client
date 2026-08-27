@@ -251,7 +251,15 @@ export function VndPassportTab({
                             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 [&>*]:min-w-0">
                                 <EditableDateField label="Дата принятия" value={draft.adoptionDate} onChange={(v) => update("adoptionDate", v)}/>
                                 <EditableTextField label="№ принятия" value={draft.adoptionCode} onChange={(v) => update("adoptionCode", v)}/>
-                                <EditableDateField label="Дата вступления в силу" value={draft.effectiveDate} onChange={(v) => update("effectiveDate", v)}/>
+                                <EditableDateField
+                                    label="Дата вступления в силу"
+                                    value={draft.effectiveDate}
+                                    onChange={(v) => update("effectiveDate", v)}
+                                    helpText={
+                                        "Дата, с которой редакция становится действующей; до этого момента " +
+                                        "документ находится в статусе «Ожидание вступления в силу»."
+                                    }
+                                />
                             </div>
                         ) : (
                             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">

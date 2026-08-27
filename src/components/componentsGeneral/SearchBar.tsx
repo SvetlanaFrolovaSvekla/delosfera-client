@@ -52,7 +52,7 @@ export function SearchBar({
                     onClick={() => onChange?.("")}
                     className="absolute right-[10px] top-1/2 -translate-y-1/2 w-[20px] h-[20px] grid place-items-center rounded-full text-[#a3adbd] hover:bg-[#e5e9f0] hover:text-[#55617a] cursor-pointer"
                 >
-                    <X className="w-[13px] h-[13px]" strokeWidth={2.5}/>
+                    <X className="cursor-pointer w-[13px] h-[13px]" strokeWidth={2.5}/>
                 </button>
             )}
         </div>

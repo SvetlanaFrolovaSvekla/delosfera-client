@@ -1,6 +1,7 @@
 // Поля для ввода/выбора для редактирования реквизитов ВНД
 import {DatePickerInput} from "@/components/componentsGeneral/datePickers/DatePickerInput.tsx";
 import {formatDate, parseDDMMYYYYToISO} from "@/utils/dateUtils.ts";
+import {HelpTooltip} from "@/components/componentsGeneral/knowledgeBaseComponents/HelpTooltip.tsx";
 
 interface EditableTextFieldProps {
     label: string;
@@ -32,15 +33,18 @@ interface EditableDateFieldProps {
     value: string; // ISO
     onChange: (value: string) => void; // ISO
     required?: boolean;
+    /** Текст подсказки — если задан, рядом с лейблом появляется значок HelpTooltip */
+    helpText?: string;
 }
 
-export function EditableDateField({label, value, onChange, required}: EditableDateFieldProps) {
+export function EditableDateField({label, value, onChange, required, helpText}: EditableDateFieldProps) {
     const displayValue = value ? formatDate(value) : "";
 
     return (
         <div className="min-w-0">
-            <span className="block text-[11.5px] text-[#8b97ab] mb-[5px]">
+            <span className="flex items-center gap-1 text-[11.5px] text-[#8b97ab] mb-[5px]">
                 {label} {required && <span className="text-[#c0392b]">*</span>}
+                {helpText && <HelpTooltip content={helpText} className="w-4 h-4 -my-1.5"/>}
             </span>
             <DatePickerInput
                 modal

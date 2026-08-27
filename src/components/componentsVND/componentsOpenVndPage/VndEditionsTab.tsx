@@ -17,6 +17,7 @@ import type {ApprovalProcessResponse} from "@/service/coordinationService/coordi
 
 import {downloadWithToast} from "@/utils/downloadFile.ts";
 import {getRedactionDisplayStatus} from "@/utils/redactionStatus.ts";
+import {isVndPendingEffective} from "@/constants/vndStatus.ts";
 import {buildRedactionFileName} from "@/utils/fileNaming.ts";
 import {
     getAvailableLanguages,
@@ -29,6 +30,9 @@ import {PermissionCode} from "@/constants/permissions/permissions.ts";
 import {
     VndUploadRedactionModal
 } from "@/components/componentsVND/componentsOpenVndPage/componentsEditionsTab/VndUploadRedactionModal.tsx";
+import {
+    VndUploadTidModal
+} from "@/components/componentsVND/componentsOpenVndPage/componentsEditionsTab/VndUploadTidModal.tsx";
 import {
     RedactionsSidebar, type RedactionsPrimaryActionVariant
 } from "@/components/componentsVND/componentsOpenVndPage/componentsEditionsTab/RedactionsSidebar.tsx";
@@ -108,7 +112,8 @@ export function VndEditionsTab({vnd, onVndChanged, onGoToApproval}: VndEditionsT
     const {sortedDesc, lastByNumber, current, selected, compareTarget, uploadBlocked} =
         useRedactionSelection(redactions, selectedId);
 
-    const hasStatusBannerAbove = vnd.status === "draft" || vnd.status === "consol";
+    const hasStatusBannerAbove =
+        vnd.status === "draft" || vnd.status === "consol" || isVndPendingEffective(vnd.status, vnd.effectiveDate);
 
     const {ref: containerRef, height: rawAvailableHeight} = useAvailableHeight();
     const availableHeight =
@@ -204,6 +209,9 @@ export function VndEditionsTab({vnd, onVndChanged, onGoToApproval}: VndEditionsT
 
     const [attachmentsRedaction, setAttachmentsRedaction] = useState<VndRedactionResponse | null>(null);
     const [tidRedaction, setTidRedaction] = useState<VndRedactionResponse | null>(null);
+    // Модалка "Сформировать или загрузить ТИД" - открывается кнопкой в RedactionStatusBanner,
+    // когда у актуализационной редакции (Number > 1) ещё нет файла ТИД (см. tidMissing ниже).
+    const [uploadTidOpen, setUploadTidOpen] = useState(false);
 
     useEffect(() => {
         if (!selected) return;
@@ -250,6 +258,13 @@ export function VndEditionsTab({vnd, onVndChanged, onGoToApproval}: VndEditionsT
         }
     };
 
+    const handleTidUploaded = (redaction: VndRedactionResponse) => {
+        setUploadTidOpen(false);
+        refetch();
+        onVndChanged?.();
+        toast.success("ТИД загружен", `Файл ТИД приложен к редакции ${redaction.code}`);
+    };
+
     const handleEditRedaction = (redactionId: number) => {
         setSelectedId(redactionId);
         setEditOpen(true);
@@ -287,7 +302,6 @@ export function VndEditionsTab({vnd, onVndChanged, onGoToApproval}: VndEditionsT
                 {uploadOpen && (
                     <VndUploadRedactionModal
                         vndId={vnd.id}
-                        requiresTid={vnd.redactionIds.length > 0}
                         onClose={() => setUploadOpen(false)}
                         onUploaded={handleRedactionUploaded}
                     />
@@ -296,7 +310,9 @@ export function VndEditionsTab({vnd, onVndChanged, onGoToApproval}: VndEditionsT
         );
     }
 
-    const selectedStatus = getRedactionDisplayStatus(selected, vnd.status, lastByNumber?.id === selected.id);
+    const selectedStatus = getRedactionDisplayStatus(
+        selected, vnd.status, lastByNumber?.id === selected.id, vnd.effectiveDate
+    );
 
     // Кнопка "Перейти к согласованию" в статус-баннере ("pending") — только для тех, кому есть
     // смысл сразу перейти на "Ход согласования": участвующий согласующий, инициатор
@@ -313,6 +329,12 @@ export function VndEditionsTab({vnd, onVndChanged, onGoToApproval}: VndEditionsT
     // процесса согласования, чтобы показать в сайдбаре подсказку именно для этого случая.
     const rejectedRedactionId =
         approvalProcess?.status === "rejected" ? approvalProcess.redactionId : undefined;
+
+    // Актуализационная редакция (Number > 1) без файла ТИД - нельзя отправить на согласование
+    // или опубликовать без согласования (см. VndApprovalService.StartAsync и
+    // VndService.PublishRedactionWithoutApprovalAsync на бэке), поэтому в статус-баннере вместо
+    // этих кнопок показывается "Сформировать или загрузить ТИД".
+    const selectedTidMissing = selected.number > 1 && selected.tidFileId === null;
 
     const handlePublishWithoutApproval = async () => {
         setPublishingWithoutApproval(true);
@@ -503,6 +525,7 @@ export function VndEditionsTab({vnd, onVndChanged, onGoToApproval}: VndEditionsT
                     redactions={sortedDesc}
                     selectedId={selected.id}
                     vndStatus={vnd.status}
+                    effectiveDate={vnd.effectiveDate}
                     rejectedRedactionId={rejectedRedactionId}
                     onSelect={setSelectedId}
                     primaryActionVariant={primaryVariant}
@@ -546,6 +569,7 @@ export function VndEditionsTab({vnd, onVndChanged, onGoToApproval}: VndEditionsT
                 <RedactionStatusBanner
                     status={selectedStatus}
                     currentNumber={current?.number}
+                    effectiveDate={vnd.effectiveDate}
                     isSubmitting={false}
                     onSubmit={() => setApprovalModalOpen(true)}
                     onGoToApproval={canGoToApprovalFromBanner ? onGoToApproval : undefined}
@@ -553,6 +577,8 @@ export function VndEditionsTab({vnd, onVndChanged, onGoToApproval}: VndEditionsT
                         isChiefEditor ? () => setPublishWithoutApprovalConfirmOpen(true) : undefined
                     }
                     isPublishingWithoutApproval={publishingWithoutApproval}
+                    tidMissing={selectedTidMissing}
+                    onUploadTid={() => setUploadTidOpen(true)}
                 />
 
                 <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
@@ -587,7 +613,8 @@ export function VndEditionsTab({vnd, onVndChanged, onGoToApproval}: VndEditionsT
             {contentsOpen && selected && (
                 <div style={{height: availableHeight}} className="min-h-0">
                     <RedactionContentsPanel
-                        redactionCode={selected.code}
+                        fileId={selectedFileId}
+                        getContainer={() => textViewRef.current?.getContainer() ?? null}
                         onClose={() => setContentsOpen(false)}
                     />
                 </div>
@@ -598,11 +625,22 @@ export function VndEditionsTab({vnd, onVndChanged, onGoToApproval}: VndEditionsT
             {uploadOpen && (
                 <VndUploadRedactionModal
                     vndId={vnd.id}
-                    requiresTid={vnd.redactionIds.length > 0}
                     mode={uploadMode}
                     lockedRequiresApproval={vnd.actualizationRequiresApproval}
                     onClose={() => setUploadOpen(false)}
                     onUploaded={handleRedactionUploaded}
+                />
+            )}
+
+            {/* Сформировать или загрузить ТИД - для актуализационной редакции без файла ТИД */}
+            {uploadTidOpen && selected && (
+                <VndUploadTidModal
+                    vndId={vnd.id}
+                    redactionCode={selected.code}
+                    previousFileId={current && current.id !== selected.id ? current.docFileRuId : null}
+                    draftFileId={selected.docFileRuId}
+                    onClose={() => setUploadTidOpen(false)}
+                    onUploaded={handleTidUploaded}
                 />
             )}
 

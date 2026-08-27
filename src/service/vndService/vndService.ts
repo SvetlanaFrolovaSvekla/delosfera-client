@@ -176,6 +176,20 @@ export const vndService = {
         return handleResponse<VndRedactionResponse>(response);
     },
 
+    /** Кнопка "Сформировать или загрузить ТИД" — прикладывает файл ТИД к черновику последней
+     * редакции отдельным шагом (поле ТИД убрано из формы загрузки редакции). */
+    async uploadTidForLastRedaction(vndId: number, tid: File): Promise<VndRedactionResponse> {
+        const formData = new FormData();
+        formData.append("Tid", tid);
+
+        const response = await fetch(`${API_BASE}/vnd/${vndId}/redactions/last/tid`, {
+            method: "PUT",
+            headers: authHeaders(),
+            body: formData,
+        });
+        return handleResponse<VndRedactionResponse>(response);
+    },
+
     async quickSearch(query: string, limit = 8, signal?: AbortSignal): Promise<VndQuickSearchResult[]> {
         const params = new URLSearchParams({q: query, limit: String(limit)});
         const response = await fetch(`${API_BASE}/vnd/quick-search?${params}`, {

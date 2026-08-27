@@ -13,7 +13,7 @@ import {useVndById} from "@/hooks/vndHooks/useVndById.ts";
 import {useVndDictionaries} from "@/hooks/vndHooks/useVndDictionaries.ts";
 import {useVndRedactions} from "@/hooks/vndHooks/useVndRedactions.ts";
 import {formatDate} from "@/utils/dateUtils.ts";
-import {STATUS_META} from "@/constants/vndStatus.ts";
+import {getVndDisplayMeta} from "@/constants/vndStatus.ts";
 import {getVndTabs, type VndTabId} from "@/constants/vndTabs.ts";
 import {PermissionCode} from "@/constants/permissions/permissions.ts";
 
@@ -23,7 +23,9 @@ import {VndLinksTab} from "@/components/componentsVND/componentsOpenVndPage/VndL
 import {VndHistoryTab} from "@/components/componentsVND/componentsOpenVndPage/VndHistoryTab.tsx";
 import {VndActualizationTab} from "@/components/componentsVND/componentsOpenVndPage/VndActualizationTab.tsx";
 import {VndCoordinationTab} from "@/components/componentsVND/componentsOpenVndPage/VndCoordinationTab.tsx";
-import {ConsolidateVndModal} from "@/components/componentsVND/componentsOpenVndPage/ConsolidateVndModal.tsx";
+import {
+    ConsolidateVndModal, type ConsolidateRequisites
+} from "@/components/componentsVND/componentsOpenVndPage/ConsolidateVndModal.tsx";
 
 import {Loader} from "@/components/componentsGeneral/Loader.tsx";
 import {EmptyState} from "@/components/componentsGeneral/EmptyState.tsx";
@@ -123,12 +125,12 @@ export function OpenVndPage() {
             : approvalInitiatorId !== null && approvalInitiatorId === user?.id)
         : false;
 
-    const handleConsolidate = async (hadChanges: boolean) => {
+    const handleConsolidate = async (hadChanges: boolean, requisites: ConsolidateRequisites) => {
         if (!vnd) return;
         setConsolidating(true);
         setConsolidateError(null);
         try {
-            await actualizationService.publish(vnd.id, {hadChanges});
+            await actualizationService.publish(vnd.id, {hadChanges, ...requisites});
             setConsolidateOpen(false);
             toast.success(t("openVndPage.consolidatedToastTitle"), t("openVndPage.consolidatedToastDescription"));
             refetch();
@@ -167,7 +169,7 @@ export function OpenVndPage() {
 
     if (!vnd) return null;
 
-    const meta = STATUS_META[vnd.status];
+    const meta = getVndDisplayMeta(vnd.status, vnd.effectiveDate);
     const tabs = getVndTabs(vnd.status);
     // Если сменился статус и текущий выбранный таб для него больше не доступен - откатываемся на «Реквизиты»
     const activeTab = tabs.some((t) => t.id === tab) ? tab : "passport";
@@ -180,6 +182,7 @@ export function OpenVndPage() {
             <div className="px-10">
                 <VndStatusBanner
                     status={vnd.status}
+                    effectiveDate={vnd.effectiveDate}
                     onSecondaryAction={() => setConsolidateOpen(true)}
                     canConsolidate={canConsolidate}
                 />
@@ -281,6 +284,11 @@ export function OpenVndPage() {
                 <ConsolidateVndModal
                     isFirstRedaction={isFirstRedaction}
                     plannedNoChanges={vnd.actualizationPlannedNoChanges}
+                    initialRequisites={{
+                        adoptionCode: vnd.adoptionCode ?? "",
+                        adoptionDate: vnd.adoptionDate ?? "",
+                        effectiveDate: vnd.effectiveDate ?? "",
+                    }}
                     submitting={consolidating}
                     error={consolidateError}
                     onClose={() => {

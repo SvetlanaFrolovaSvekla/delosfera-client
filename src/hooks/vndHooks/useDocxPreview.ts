@@ -1,6 +1,7 @@
 import React, {useEffect, useRef, useState} from "react";
 import {renderAsync} from "docx-preview";
 import {fetchFileBlob} from "@/utils/downloadFile.ts";
+import {DOCX_PREVIEW_CLASS_NAME} from "@/constants/docxPreview.ts";
 
 interface UseDocxPreviewResult {
     containerRef: React.RefObject<HTMLDivElement | null>;
@@ -48,7 +49,7 @@ export function useDocxPreview(
                 containerRef.current.innerHTML = "";
 
                 await renderAsync(blob, containerRef.current, undefined, {
-                    className: "docx-preview-content",
+                    className: DOCX_PREVIEW_CLASS_NAME,
                     inWrapper: false,
                     ignoreWidth,   // true — не навязываем ширину страницы A4, подстраиваемся под контейнер
                     ignoreHeight: true,

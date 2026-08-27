@@ -17,10 +17,6 @@ import {
 
 interface VndUploadRedactionModalProps {
     vndId: number;
-    /** Обязателен ли файл ТИД (Таблица изменений и дополнений) — true, если у ВНД уже есть
-     * хотя бы одна предыдущая редакция, то есть документ актуализируется, а не создаётся впервые.
-     * Родитель вычисляет это по vnd.redactionIds.length > 0. */
-    requiresTid: boolean;
     /** "actualization" — модалка открыта из цикла актуализации (ВНД в статусе "На актуализации"):
      * меняется заголовок, а решение "требуется ли согласование" больше не выбирается здесь -
      * оно уже зафиксировано при старте цикла (см. lockedRequiresApproval). */
@@ -80,7 +76,7 @@ function FileSlot({
                     }`}
                 >
                     <FileUp size={18}/>
-                    <span className="text-[11.5px]">Выбрать файл (DOC/DOCX/PDF)</span>
+                    <span className="text-[11.5px]">Выбрать файл (DOCX)</span>
                     <input
                         id={inputId}
                         type="file"
@@ -117,7 +113,7 @@ function formatBytes(bytes: number): string {
 const MAX_FILE_SIZE = 50 * 1024 * 1024; // 50 МБ
 
 export function VndUploadRedactionModal({
-                                            vndId, requiresTid, mode = "default", lockedRequiresApproval,
+                                            vndId, mode = "default", lockedRequiresApproval,
                                             onClose, onUploaded,
                                         }: VndUploadRedactionModalProps) {
     const {user, hasPermission} = useAuth();
@@ -138,7 +134,6 @@ export function VndUploadRedactionModal({
     const [docRu, setDocRu] = useState<File | null>(null);
     const [docKg, setDocKg] = useState<File | null>(null);
     const [docEn, setDocEn] = useState<File | null>(null);
-    const [tid, setTid] = useState<File | null>(null);
     const [attachments, setAttachments] = useState<File[]>([]);
     const [attachmentCountLimitHit, setAttachmentCountLimitHit] = useState(false);
     const [description, setDescription] = useState("");
@@ -149,8 +144,7 @@ export function VndUploadRedactionModal({
     const [submitting, setSubmitting] = useState(false);
     const [error, setError] = useState<string | null>(null);
 
-    const tidMissing = requiresTid && !tid;
-    const canSubmit = docRu !== null && !tidMissing && !submitting;
+    const canSubmit = docRu !== null && !submitting;
 
     const attachmentSlotsLeft = VND_REDACTION_MAX_ATTACHMENTS - attachments.length;
     const attachmentLimitReached = attachmentSlotsLeft <= 0;
@@ -178,10 +172,6 @@ export function VndUploadRedactionModal({
 
     const handleSubmit = async () => {
         if (!docRu) return;
-        if (tidMissing) {
-            setError("Приложите файл ТИД (Таблица изменений и дополнений) — он обязателен при актуализации ВНД");
-            return;
-        }
         setSubmitting(true);
         setError(null);
         try {
@@ -189,7 +179,6 @@ export function VndUploadRedactionModal({
                 docRu,
                 docKg,
                 docEn,
-                tid,
                 description: description.trim() || undefined,
                 // В режиме актуализации - решение, зафиксированное на старте цикла. Иначе, если
                 // права на согласование без него нет - всегда true, независимо от чекбокса.
@@ -216,7 +205,8 @@ export function VndUploadRedactionModal({
                 на всём модальном окне с max-h-[110vh] — бо́льше высоты экрана, из-за чего при
                 большом количестве вложений низ окна (в т.ч. кнопки "Отмена"/"Загрузить")
                 уходил за пределы видимой области и не был доступен для прокрутки. */}
-            <div className="flex max-h-[90vh] w-full max-w-[520px] flex-col overflow-hidden rounded-[16px] bg-white shadow-xl">
+            <div
+                className="flex max-h-[90vh] w-full max-w-[520px] flex-col overflow-hidden rounded-[16px] bg-white shadow-xl">
                 <div className="flex flex-none items-center justify-between px-6 pt-6 pb-5">
                     <h2 className="text-[16px] font-bold text-[#1c2740]">
                         {mode === "actualization"
@@ -229,49 +219,44 @@ export function VndUploadRedactionModal({
                 </div>
 
                 <div className="flex-1 overflow-y-auto px-6">
-                <div className="mb-2 rounded-[10px] border border-[#e5e9f0] bg-[#f9fafc] px-3 py-[10px] text-[11.5px] leading-[1.5] text-[#8b97ab]">
-                    Допустимые форматы: DOC, DOCX, PDF, XLS, XLSX, PPT, PPTX. Максимальный
-                    размер каждого файла — {formatBytes(MAX_FILE_SIZE)}.
-                </div>
-                <div className="flex flex-col gap-4">
-                    <FileSlot label="Русский" required file={docRu} onChange={setDocRu} onError={setError}/>
-                    <FileSlot label="Кыргызча" file={docKg} onChange={setDocKg} onError={setError}/>
-                    <FileSlot label="English" file={docEn} onChange={setDocEn} onError={setError}/>
+                    <div
+                        className="mb-2 rounded-[10px] border border-[#e5e9f0] bg-[#f9fafc] px-3 py-[10px] text-[11.5px] leading-[1.5] text-[#8b97ab]">
+                        Допустимый формат: DOCX. Максимальный
+                        размер каждого файла — {formatBytes(MAX_FILE_SIZE)}.
+                        {isActualization && (
+                            <>
+                                {" "}ТИД (Таблицу изменений и дополнений) для этой редакции вы
+                                сможете загрузить позже — после её загрузки, отдельным шагом.
+                            </>
+                        )}
+                    </div>
+                    <div className="flex flex-col gap-4">
+                        <FileSlot label="Русский" required file={docRu} onChange={setDocRu} onError={setError}/>
+                        <FileSlot label="Кыргызча" file={docKg} onChange={setDocKg} onError={setError}/>
+                        <FileSlot label="English" file={docEn} onChange={setDocEn} onError={setError}/>
 
-                    {requiresTid && (
-                        <FileSlot
-                            label="ТИД (Таблица изменений и дополнений)"
-                            required
-                            hint="Обязательна при актуализации ВНД — документ уже имеет предыдущую редакцию"
-                            accept=".doc,.docx"
-                            file={tid}
-                            onChange={setTid}
-                            onError={setError}
-                        />
-                    )}
+                        <div>
+                            <div className="mb-[6px] flex flex-col gap-1">
+                            <span className="text-[12.5px] font-semibold text-[#26324a]">
+                                Вложения <span
+                                className="text-[#8b97ab] font-normal">(необязательно, можно несколько)</span>
+                            </span>
+                                <span className="flex items-center gap-0.5 text-[11.5px] text-[#8b97ab]">
+                                    Добавлено {attachments.length} из {VND_REDACTION_MAX_ATTACHMENTS} файлов максимум
+                                    <HelpTooltip
+                                        content={`Количество вложений к редакции ограничено — не более ${VND_REDACTION_MAX_ATTACHMENTS}, каждый файл не больше 50 МБ.`}
+                                        side="top"
+                                        className="h-5 w-5"
+                                    />
+                                </span>
+                            </div>
 
-                    <div>
-                        <div className="mb-[6px] flex flex-col gap-1">
-    <span className="text-[12.5px] font-semibold text-[#26324a]">
-        Вложения <span
-        className="text-[#8b97ab] font-normal">(необязательно, можно несколько)</span>
-    </span>
-                            <span className="flex items-center gap-0.5 text-[11.5px] text-[#8b97ab]">
-        Добавлено {attachments.length} из {VND_REDACTION_MAX_ATTACHMENTS} файлов максимум
-        <HelpTooltip
-            content={`Количество вложений к редакции ограничено — не более ${VND_REDACTION_MAX_ATTACHMENTS}, каждый файл не больше 50 МБ.`}
-            side="top"
-            className="h-5 w-5"
-        />
-    </span>
-                        </div>
-
-                        {attachmentLimitReached ? (
-                            <Tooltip
-                                content={`Достигнут максимум — ${VND_REDACTION_MAX_ATTACHMENTS} вложений на редакцию`}
-                                side="top"
-                                className="w-full"
-                            >
+                            {attachmentLimitReached ? (
+                                <Tooltip
+                                    content={`Достигнут максимум — ${VND_REDACTION_MAX_ATTACHMENTS} вложений на редакцию`}
+                                    side="top"
+                                    className="w-full"
+                                >
                                 <span
                                     className="flex h-[56px] w-full cursor-not-allowed flex-col items-center justify-center gap-1 rounded-[10px] border border-dashed border-[#e5e9f0] bg-[#f6f8fb] text-[#b7bfcc]"
                                 >
@@ -280,99 +265,100 @@ export function VndUploadRedactionModal({
                                         Добавить файлы
                                     </span>
                                 </span>
-                            </Tooltip>
-                        ) : (
-                            <label
-                                htmlFor="redaction-attachments"
-                                className="flex h-[56px] cursor-pointer flex-col items-center justify-center gap-1 rounded-[10px] border border-dashed border-[#d5dae3] bg-[#fbfcfe] text-[#8b97ab] transition-colors hover:border-[#4e57d6]/50 hover:bg-[#f6f8fb]"
-                            >
+                                </Tooltip>
+                            ) : (
+                                <label
+                                    htmlFor="redaction-attachments"
+                                    className="flex h-[56px] cursor-pointer flex-col items-center justify-center gap-1 rounded-[10px] border border-dashed border-[#d5dae3] bg-[#fbfcfe] text-[#8b97ab] transition-colors hover:border-[#4e57d6]/50 hover:bg-[#f6f8fb]"
+                                >
                                 <span className="flex items-center gap-2 text-[11.5px]">
                                     <Paperclip size={15}/>
                                     Добавить файлы
                                 </span>
-                                <input
-                                    id="redaction-attachments"
-                                    type="file"
-                                    multiple
-                                    accept=".doc,.docx,.pdf,.xls,.xlsx,.ppt,.pptx"
-                                    className="hidden"
-                                    onChange={(e) => {
-                                        handleAddAttachments(e.target.files);
-                                        e.target.value = ""; // сброс, чтобы можно было выбрать тот же файл повторно
-                                    }}
-                                />
-                            </label>
-                        )}
+                                    <input
+                                        id="redaction-attachments"
+                                        type="file"
+                                        multiple
+                                        accept=".doc,.docx,.pdf,.xls,.xlsx,.ppt,.pptx"
+                                        className="hidden"
+                                        onChange={(e) => {
+                                            handleAddAttachments(e.target.files);
+                                            e.target.value = ""; // сброс, чтобы можно было выбрать тот же файл повторно
+                                        }}
+                                    />
+                                </label>
+                            )}
 
-                        {attachmentCountLimitHit && (
-                            <div className="mt-2 flex items-start gap-1.5 text-[11.5px] text-[#d62815]">
+                            {attachmentCountLimitHit && (
+                                <div className="mt-2 flex items-start gap-1.5 text-[11.5px] text-[#d62815]">
                                 <span>
                                     Часть выбранных файлов не добавлена — максимум {VND_REDACTION_MAX_ATTACHMENTS} вложений на редакцию.
                                 </span>
-                            </div>
-                        )}
+                                </div>
+                            )}
 
-                        {attachments.length > 0 && (
-                            <div className="mt-2 flex flex-col gap-[6px]">
-                                {attachments.map((file, index) => (
-                                    <div
-                                        key={`${file.name}-${index}`}
-                                        className="flex items-center gap-2 rounded-[9px] border border-[#e5e9f0] bg-white px-3 py-[8px]"
-                                    >
-                                        <Paperclip size={14} className="flex-none text-[#8b97ab]"/>
-                                        <span className="flex-1 truncate text-[12px] text-[#26324a]">{file.name}</span>
-                                        <span className="flex-none text-[11px] text-[#a3adbd]">
+                            {attachments.length > 0 && (
+                                <div className="mt-2 flex flex-col gap-[6px]">
+                                    {attachments.map((file, index) => (
+                                        <div
+                                            key={`${file.name}-${index}`}
+                                            className="flex items-center gap-2 rounded-[9px] border border-[#e5e9f0] bg-white px-3 py-[8px]"
+                                        >
+                                            <Paperclip size={14} className="flex-none text-[#8b97ab]"/>
+                                            <span
+                                                className="flex-1 truncate text-[12px] text-[#26324a]">{file.name}</span>
+                                            <span className="flex-none text-[11px] text-[#a3adbd]">
                                             {formatBytes(file.size)}
                                         </span>
-                                        <button
-                                            type="button"
-                                            onClick={() => removeAttachment(index)}
-                                            className="cursor-pointer flex-none text-[#8b97ab] hover:text-[#c0392b]"
-                                        >
-                                            <Trash2 size={14}/>
-                                        </button>
-                                    </div>
-                                ))}
-                            </div>
-                        )}
-                    </div>
+                                            <button
+                                                type="button"
+                                                onClick={() => removeAttachment(index)}
+                                                className="cursor-pointer flex-none text-[#8b97ab] hover:text-[#c0392b]"
+                                            >
+                                                <Trash2 size={14}/>
+                                            </button>
+                                        </div>
+                                    ))}
+                                </div>
+                            )}
+                        </div>
 
-                    <div>
-                        <div className="mb-[6px] flex items-center justify-between">
+                        <div>
+                            <div className="mb-[6px] flex items-center justify-between">
                             <span className="text-[12.5px] font-semibold text-[#26324a]">
                                 Описание редакции <span className="text-[#8b97ab] font-normal">(необязательно)</span>
                             </span>
-                            <CharCounter length={description.length} max={VND_REDACTION_DESCRIPTION_MAX_LENGTH}/>
+                                <CharCounter length={description.length} max={VND_REDACTION_DESCRIPTION_MAX_LENGTH}/>
+                            </div>
+                            <textarea
+                                value={description}
+                                onChange={(e) => setDescription(e.target.value)}
+                                placeholder="Что изменилось в этой редакции…"
+                                rows={3}
+                                maxLength={VND_REDACTION_DESCRIPTION_MAX_LENGTH}
+                                className="w-full resize-none rounded-[10px] border border-[#e5e9f0] bg-[#f9fafc] p-3 text-[13px] text-[#26324a] outline-none focus:border-[#4e57d6] focus:bg-white"
+                            />
                         </div>
-                        <textarea
-                            value={description}
-                            onChange={(e) => setDescription(e.target.value)}
-                            placeholder="Что изменилось в этой редакции…"
-                            rows={3}
-                            maxLength={VND_REDACTION_DESCRIPTION_MAX_LENGTH}
-                            className="w-full resize-none rounded-[10px] border border-[#e5e9f0] bg-[#f9fafc] p-3 text-[13px] text-[#26324a] outline-none focus:border-[#4e57d6] focus:bg-white"
-                        />
-                    </div>
 
-                    {/* В режиме актуализации решение "с согласованием / без" уже зафиксировано при
+                        {/* В режиме актуализации решение "с согласованием / без" уже зафиксировано при
                         старте цикла - показываем как информацию, менять здесь нельзя */}
-                    {isActualization && (
-                        <div
-                            className="rounded-[10px] border border-[#e5e9f0] bg-[#f9fafc] px-3 py-[10px] text-[12.5px] text-[#55617a]">
-                            Согласование: <span className="font-semibold text-[#26324a]">
+                        {isActualization && (
+                            <div
+                                className="rounded-[10px] border border-[#e5e9f0] bg-[#f9fafc] px-3 py-[10px] text-[12.5px] text-[#55617a]">
+                                Согласование: <span className="font-semibold text-[#26324a]">
                                 {effectiveRequiresApproval ? "требуется" : "не требуется"}
                             </span> — определено при старте актуализации
-                        </div>
-                    )}
+                            </div>
+                        )}
 
-                    {/* Чекбокс показываем только тем, у кого есть права на публикацию редакции без согласования */}
-                    {canSkipApproval && (
-                        <>
-                            <button
-                                type="button"
-                                onClick={() => setRequiresApproval((v) => !v)}
-                                className="inline-flex items-center gap-2  rounded-[9px]  bg-white text-[#3a4560] font-semibold text-[12.5px] cursor-pointer select-none w-fit"
-                            >
+                        {/* Чекбокс показываем только тем, у кого есть права на публикацию редакции без согласования */}
+                        {canSkipApproval && (
+                            <>
+                                <button
+                                    type="button"
+                                    onClick={() => setRequiresApproval((v) => !v)}
+                                    className="inline-flex items-center gap-2  rounded-[9px]  bg-white text-[#3a4560] font-semibold text-[12.5px] cursor-pointer select-none w-fit"
+                                >
                                 <span
                                     className="w-5 h-5 flex-none rounded-md grid place-items-center border-[1.5px]"
                                     style={{
@@ -386,10 +372,10 @@ export function VndUploadRedactionModal({
                                         style={{opacity: requiresApproval ? 1 : 0}}
                                     />
                                 </span>
-                                Требуется согласование
-                            </button>
+                                    Требуется согласование
+                                </button>
 
-                            <Clue>
+                                <Clue>
                                 <span className="flex flex-wrap items-center gap-x-1.5 gap-y-1.5">
                                     <span>
                                         Вы можете загрузить редакцию без согласования — это право Вам дают
@@ -404,18 +390,18 @@ export function VndUploadRedactionModal({
                                         </span>
                                     ))}
                                 </span>
-                            </Clue>
-                        </>
-                    )}
+                                </Clue>
+                            </>
+                        )}
 
-                    {error && (
-                        <div
-                            className="rounded-md border border-[#f2c2c2] bg-[#fdf1f1] px-3 py-2 text-[12.5px] text-[#c0392b]">
-                            {error}
-                        </div>
-                    )}
-                </div>
-                <div className="pb-6"/>
+                        {error && (
+                            <div
+                                className="rounded-md border border-[#f2c2c2] bg-[#fdf1f1] px-3 py-2 text-[12.5px] text-[#c0392b]">
+                                {error}
+                            </div>
+                        )}
+                    </div>
+                    <div className="pb-6"/>
                 </div>
 
                 <div className="flex flex-none justify-end gap-2 border-t border-[#eef0f5] px-6 py-4">

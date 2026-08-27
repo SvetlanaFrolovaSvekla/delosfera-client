@@ -1,10 +1,4 @@
-// Автоформирование строк таблицы ТИД (см. TidChangesTable / VndUploadTidModal): построчное
-// (по абзацам) сравнение действующей и новой (черновой) редакции. Абзацы сравниваются
-// diffArrays'ом (кто добавлен/удалён/не изменился), последовательные добавленные/удалённые
-// абзацы схлопываются в одну строку-"ганк" (как в самой матрице разногласий — попадают только
-// реальные расхождения), а внутри ганка ещё раз считается пословный diffWords — тот же
-// алгоритм и те же диапазоны, что использует useDocxDiffHighlight.ts в "Просмотр и сравнение
-// редакций", только результат рендерится не в DOM, а как обычные React-сегменты в ячейках таблицы.
+// Автоформирование строк таблицы ТИД
 import {useEffect, useState} from "react";
 import {fetchFileBlob} from "@/utils/downloadFile.ts";
 import {extractDocxParagraphs} from "@/utils/docxParagraphs.ts";
@@ -27,7 +21,7 @@ export type TidDiffStatus = "idle" | "loading" | "done" | "error" | "unavailable
 function buildSegments(oldText: string, newText: string): {oldSegments: TidDiffSegment[]; newSegments: TidDiffSegment[]} {
     const ops = diffWords(oldText, newText);
     if (ops === null) {
-        // Слишком большие различия для пословной подсветки — показываем куски целиком
+        // Слишком большие различия для пословной подсветки - показываем куски целиком
         return {
             oldSegments: oldText ? [{text: oldText, hl: true}] : [],
             newSegments: newText ? [{text: newText, hl: true}] : [],
@@ -79,10 +73,8 @@ function buildRows(oldParagraphs: string[], newParagraphs: string[]): TidAutoRow
 
 /**
  * Скачивает docx действующей и новой (черновой) редакции, извлекает тексты абзацев и строит
- * diff — изменённые/добавленные/удалённые куски помечаются hl:true (подсветка — красным в
- * старой, зелёным в новой колонке, см. REMOVE_STYLE/ADD_STYLE в TidChangesTable, повторяющие
- * цвета useDocxDiffHighlight.ts). oldFileId/newFileId === null — сравнение недоступно (нет
- * действующей редакции, напр. это первая редакция ВНД).
+ * diff - изменённые/добавленные/удалённые куски помечаются hl:true (подсветка - красным в
+ * старой, зелёным в новой колонке).
  */
 export function useTidDiffRows(oldFileId: number | null, newFileId: number | null): {
     rows: TidAutoRow[];
@@ -93,6 +85,7 @@ export function useTidDiffRows(oldFileId: number | null, newFileId: number | nul
 
     useEffect(() => {
         if (oldFileId === null || newFileId === null) {
+            // eslint-disable-next-line react-hooks/set-state-in-effect
             setRows([]);
             setStatus("idle");
             return;

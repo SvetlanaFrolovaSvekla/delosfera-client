@@ -1,28 +1,23 @@
-// Табличка "Действующая редакция / Суть-обоснование / Новая редакция" в модалке "Загрузка ТИД"
-// (VndUploadTidModal) — визуально и по интеракциям повторяет матрицу разногласий
-// (DisagreementMatrixTable): та же обводка таблицы, тот же способ добавления строк отдельным
-// блоком снизу. Отличие — для авто-строк (см. useTidDiffRows) колонки "Действующая"/"Новая
-// редакция" заполняются автоматически из построчного сравнения редакций, с покраской изменений
-// цветом текста (красный/зелёный, без подсветки фона и зачёркивания) — и весь этот текст
-// (и авто-, и добавленный вручную) можно свободно редактировать и точечно перекрашивать
-// выделение через RichDiffEditor.
+// Таблица ТИД с автоматическим формированием изменений в редакции (редактируемая)
+// - можно её скачать и приложить, как файл-тид для последующего согласования
 import {useState} from "react";
-import {Download, Loader2, Trash2} from "lucide-react";
 import type {TidAutoRow, TidDiffSegment} from "@/hooks/vndHooks/useTidDiffRows.ts";
+import {useResponsibleEmployeeOptions} from "@/hooks/useResponsibleEmployeeOptions.ts";
+import {downloadBlob, generateTidDocx, type TidExportRow} from "@/utils/docxTidExport.ts";
 import {
     RichDiffEditor
 } from "@/components/componentsVND/componentsOpenVndPage/componentsEditionsTab/RichDiffEditor.tsx";
-import {downloadBlob, generateTidDocx, type TidExportRow} from "@/utils/docxTidExport.ts";
-import {useResponsibleEmployeeOptions} from "@/hooks/useResponsibleEmployeeOptions.ts";
+import {colors} from "@/design/tokens";
+import {Download, Loader2, Trash2} from "lucide-react";
 
-const REMOVE_COLOR = "#c0392b";
-const ADD_COLOR = "#1c7a4d";
+const REMOVE_COLOR = colors.ryg.red.fg;
+const ADD_COLOR = colors.ryg.green.fg;
 
 function escapeHtml(text: string): string {
     return text.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
 }
 
-/** Сегменты автосравнения (см. useTidDiffRows) -> HTML для начального содержимого
+/** Сегменты автосравнения в HTML для начального содержимого
  * RichDiffEditor: изменённые куски (hl: true) оборачиваются в цветной <span>, остальной текст
  * идёт как есть - никакой заливки фона и зачёркивания, просто цвет текста. */
 function segmentsToHtml(segments: TidDiffSegment[], color: string): string {

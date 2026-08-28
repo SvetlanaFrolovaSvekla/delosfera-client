@@ -49,7 +49,8 @@ interface TidChangesTableProps {
      * предзаполняется им. */
     defaultResponsibleUserId?: number | null;
     defaultResponsibleUserName?: string | null;
-    /** Главному редактору доступен выбор другого сотрудника вместо ответственного по умолчанию. */
+    /** Главному редактору и администратору доступен выбор другого сотрудника вместо
+     * ответственного по умолчанию. */
     canSelectResponsible?: boolean;
     /** Название ВНД на русском - подставляется в заголовок "к «…»" шаблона ТИД. */
     vndTitle?: string;

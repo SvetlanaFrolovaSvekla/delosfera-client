@@ -138,6 +138,15 @@ export function VndEditionsTab({vnd, onVndChanged, onGoToApproval}: VndEditionsT
         hasPermission(PermissionCode.ActualizeAnyVndWithApproval) ||
         hasPermission(PermissionCode.ActualizeAnyVndWithoutApproval);
 
+    // Системная роль "Администратор" - id === 1 (см. комментарий у RoleResponse в
+    // userServiceType.ts: 1 - Администратор, 2 - Рядовой пользователь, 3 - Редактор ВНД,
+    // 4 - Главный редактор ВНД).
+    const isAdmin = user?.roles.some((role) => role.id === 1) ?? false;
+
+    // Право менять поле "Разработчик" сформированного ТИД (VndUploadTidModal) - доступно
+    // главному редактору и администратору; остальные видят поле без выпадающего списка.
+    const canChangeTidDeveloper = isChiefEditor || isAdmin;
+
     const [publishWithoutApprovalConfirmOpen, setPublishWithoutApprovalConfirmOpen] = useState(false);
     const [publishingWithoutApproval, setPublishingWithoutApproval] = useState(false);
     const [publishWithoutApprovalError, setPublishWithoutApprovalError] = useState<string | null>(null);
@@ -642,7 +651,8 @@ export function VndEditionsTab({vnd, onVndChanged, onGoToApproval}: VndEditionsT
                     draftFileId={selected.docFileRuId}
                     defaultResponsibleUserId={vnd.actualizationResponsibleUserId}
                     defaultResponsibleUserName={vnd.actualizationResponsibleUserName}
-                    canSelectResponsible={isChiefEditor}
+                    canSelectResponsible={canChangeTidDeveloper}
+                    canUploadWithoutApproval={canWithoutApproval}
                     onClose={() => setUploadTidOpen(false)}
                     onUploaded={handleTidUploaded}
                 />

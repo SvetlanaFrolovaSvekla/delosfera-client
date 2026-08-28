@@ -77,6 +77,24 @@ export const ProcurementCardPage = () => {
 
     const tone = STATUS_TONE[card.statusCode] ?? colors.status.draft;
     const canSubmit = card.statusCode === "Draft" || card.statusCode === "OnRevision";
+
+    // Заявку, сохранённую неполной, надо чем-то исправлять: без правки она
+    // оставалась в реестре навсегда — отправить нельзя, изменить нечем.
+    const canEdit = canSubmit;
+    const canDelete = card.statusCode === "Draft";
+
+    const remove = async () => {
+        if (!window.confirm(`Удалить черновик заявки «${card.subject}»?`)) return;
+        try {
+            setBusy(true);
+            await procurementService.remove(card.id);
+            navigate("/prc");
+        } catch (e) {
+            const message = (e as {response?: {data?: {message?: string}}}).response?.data?.message;
+            setError(message ?? "Не удалось удалить заявку");
+            setBusy(false);
+        }
+    };
     const конкурс = card.methodShortTitle.startsWith("Конкурс");
 
     return (
@@ -103,6 +121,34 @@ export const ProcurementCardPage = () => {
                         </span>
                     </div>
                 </div>
+
+                {canEdit && (
+                    <button
+                        onClick={() => navigate(`/prc/${card.id}/edit`)}
+                        disabled={busy}
+                        style={{
+                            height: 38, padding: "0 18px", borderRadius: 10, cursor: "pointer",
+                            border: "1px solid #e5e9f0", background: "#fff", color: "#55617a",
+                            font: "inherit", fontSize: 13, fontWeight: 600,
+                        }}
+                    >
+                        Изменить
+                    </button>
+                )}
+
+                {canDelete && (
+                    <button
+                        onClick={remove}
+                        disabled={busy}
+                        style={{
+                            height: 38, padding: "0 18px", borderRadius: 10, cursor: "pointer",
+                            border: "1px solid #f1c9c2", background: "#fff", color: "#c0392b",
+                            font: "inherit", fontSize: 13, fontWeight: 600,
+                        }}
+                    >
+                        Удалить
+                    </button>
+                )}
 
                 {canSubmit && (
                     <button

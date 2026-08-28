@@ -1,5 +1,5 @@
-import {useCallback, useEffect, useState} from "react";
-import {Link, useNavigate} from "react-router-dom";
+import {useCallback, useEffect, useMemo, useState} from "react";
+import {Link, useNavigate, useParams} from "react-router-dom";
 import {
     procurementService,
     SUBJECT_KIND_LABEL,
@@ -39,6 +39,11 @@ const SUBJECT_KINDS: SubjectKind[] = [
 export const ProcurementNewPage = () => {
     const navigate = useNavigate();
 
+    // Тот же мастер правит существующую заявку: поля и проверки те же, и
+    // разводить два экрана с одними правилами значит однажды поправить один.
+    const {id} = useParams<{id: string}>();
+    const правка = !!id;
+
     const [step, setStep] = useState(0);
     const [saving, setSaving] = useState(false);
     const [error, setError] = useState<string | null>(null);
@@ -53,6 +58,11 @@ export const ProcurementNewPage = () => {
 
     // Обоснование и ТЗ приходят файлами, но заявки ещё нет — файлы ждут её создания.
     const [files, setFiles] = useState<File[]>([]);
+
+    // Техническое задание — отдельным файлом, а не галочкой: без него заявку не
+    // отправить, и проверка должна опираться на документ, а не на отметку,
+    // поставленную, чтобы она не мешала двигаться дальше.
+    const [specFile, setSpecFile] = useState<File | null>(null);
 
     const [form, setForm] = useState<ProcurementCreateRequest>({
         subject: "",
@@ -82,6 +92,32 @@ export const ProcurementNewPage = () => {
     useEffect(() => {
         organizationUnitService.getAll().then(setUnits).catch(() => undefined);
     }, []);
+
+    // Правим существующую — подтягиваем её поля в форму.
+    useEffect(() => {
+        if (!id) return;
+
+        procurementService.get(Number(id))
+            .then((card) => {
+                setForm({
+                    subject: card.subject,
+                    justification: card.justification ?? "",
+                    subjectKind: card.subjectKind,
+                    amount: card.amount,
+                    isAffiliated: card.isAffiliated,
+                    hasBudget: card.hasBudget,
+                    hasSpecification: card.hasSpecification,
+                    specificationAttachmentId: card.specificationAttachmentId ?? undefined,
+                    planItemId: card.planItemId ?? undefined,
+                    initiatorUnitId: card.initiatorUnitId ?? undefined,
+                    curatorUserId: card.curatorUserId ?? undefined,
+                    announcementFrom: card.announcementFrom ?? undefined,
+                    announcementTo: card.announcementTo ?? undefined,
+                    methodJustification: card.methodJustification ?? "",
+                });
+            })
+            .catch(() => setError("Заявка не найдена"));
+    }, [id]);
 
     // Как только справочник подразделений загрузился, подставляем своё — вместе
     // с его куратором. Инициатор может переопределить выбор: закупку иногда
@@ -125,11 +161,15 @@ export const ProcurementNewPage = () => {
         try {
             setSaving(true);
             setError(null);
-            const card = await procurementService.create({
+            const payload = {
                 ...form,
                 justification: form.justification?.trim() || undefined,
                 methodJustification: form.methodJustification?.trim() || undefined,
-            });
+            };
+
+            const card = правка
+                ? await procurementService.update(Number(id), payload)
+                : await procurementService.create(payload);
             // Заявка создана — файлы, собранные в мастере, цепляются к её карточке.
             // Сбой загрузки заявку не отменяет: недостающий файл прикладывается на
             // карточке, и туда мы пользователя и уводим, назвав, что не прошло.
@@ -139,6 +179,22 @@ export const ProcurementNewPage = () => {
                     await attachmentService.upload(card.documentId, file);
                 } catch {
                     failed.push(file.name);
+                }
+            }
+
+            // Техническое задание грузится последним и сразу привязывается к
+            // заявке: без ссылки это просто ещё один файл среди вложений, и
+            // проверка «ТЗ приложено» его не увидит.
+            if (specFile) {
+                try {
+                    const вложение = await attachmentService.upload(card.documentId, specFile);
+                    await procurementService.update(card.id, {
+                        ...payload,
+                        specificationAttachmentId: вложение.id,
+                        hasSpecification: true,
+                    });
+                } catch {
+                    failed.push(specFile.name);
                 }
             }
 
@@ -155,9 +211,36 @@ export const ProcurementNewPage = () => {
         }
     };
 
+    /**
+     * Чего не хватает, чтобы заявку можно было отправить на согласование.
+     *
+     * Те же условия, что и на сервере. Раньше человек узнавал о них после
+     * создания заявки: она сохранялась, он уходил на карточку и там читал
+     * «Заявку нельзя отправить на согласование: не указано инициирующее
+     * подразделение». Заполнять это надо было до, а не после.
+     */
+    const чегоНеХватает = useMemo(() => {
+        const список: string[] = [];
+
+        if (!form.initiatorUnitId) список.push("Инициирующее подразделение");
+        if (!form.justification?.trim()) список.push("Обоснование необходимости закупки");
+        const тзЕсть = specFile !== null
+            || form.specificationAttachmentId !== undefined
+            || form.hasSpecification;
+
+        if (!тзЕсть) список.push("Техническое задание (спецификация)");
+
+        if (resolved?.requiresJustification && !form.methodJustification?.trim())
+            список.push("Обоснование применения способа закупки");
+
+        return список;
+    }, [specFile, form.specificationAttachmentId,
+        form.initiatorUnitId, form.justification, form.hasSpecification,
+        form.methodJustification, resolved?.requiresJustification]);
+
     const canNext =
         (step === 0 && form.subject.trim().length > 0 && form.amount > 0) ||
-        (step === 1 && !announcementProblem) ||
+        (step === 1 && !announcementProblem && чегоНеХватает.length === 0) ||
         step === 2;
 
     return (
@@ -260,18 +343,45 @@ export const ProcurementNewPage = () => {
                                 onPendingChange={setFiles}
                             />
 
-                            <label style={{...checkboxRow, marginTop: 14}}>
-                                <input
-                                    type="checkbox"
-                                    checked={form.hasSpecification}
-                                    onChange={e => patch({hasSpecification: e.target.checked})}
-                                    style={checkbox}
-                                />
-                                <span>
-                                    <span style={checkboxTitle}>Техническое задание (спецификация) приложено</span>
-                                    <span style={checkboxHint}>Характеристики, объём, требования к продукции и поставщику</span>
-                                </span>
+                            <label style={{...fieldLabel, marginTop: 14}}>
+                                Техническое задание (спецификация)
                             </label>
+                            <div style={{
+                                border: "1px dashed #cfd8e6", borderRadius: 10, padding: "12px 14px",
+                                background: specFile || form.specificationAttachmentId ? "#f4faf6" : "#fbfcfe",
+                            }}>
+                                {specFile ? (
+                                    <div style={{display: "flex", alignItems: "center", gap: 10}}>
+                                        <span style={{flex: 1, fontSize: 13, color: "#26324a"}}>{specFile.name}</span>
+                                        <button
+                                            type="button"
+                                            onClick={() => setSpecFile(null)}
+                                            style={{
+                                                border: "none", background: "none", cursor: "pointer",
+                                                color: "#8b97ab", font: "inherit", fontSize: 12.5,
+                                            }}
+                                        >
+                                            Убрать
+                                        </button>
+                                    </div>
+                                ) : form.specificationAttachmentId ? (
+                                    <div style={{fontSize: 13, color: "#26324a"}}>
+                                        Задание уже приложено к заявке
+                                    </div>
+                                ) : (
+                                    <>
+                                        <input
+                                            type="file"
+                                            onChange={e => setSpecFile(e.target.files?.[0] ?? null)}
+                                            style={{fontSize: 12.5}}
+                                        />
+                                        <div style={{marginTop: 6, fontSize: 11.5, color: "#8b97ab"}}>
+                                            Характеристики, объём, требования к продукции и поставщику.
+                                            Без задания заявку не отправить на согласование.
+                                        </div>
+                                    </>
+                                )}
+                            </div>
 
                             <label style={{...checkboxRow, marginTop: 10}}>
                                 <input
@@ -293,6 +403,12 @@ export const ProcurementNewPage = () => {
                                 onChange={selectUnit}
                                 ownUnitId={ownUnitId}
                             />
+                            {ownUnitId === null && !form.initiatorUnitId && (
+                                <div style={{marginTop: 5, fontSize: 11.5, color: "#c77700"}}>
+                                    В вашем профиле подразделение не указано — выберите его здесь.
+                                    Без него заявку не отправить на согласование.
+                                </div>
+                            )}
                             {form.curatorUserId && (
                                 <div style={{marginTop: 5, fontSize: 11.5, color: "#8b97ab"}}>
                                     Куратор подразделения подставлен как куратор закупки
@@ -410,7 +526,18 @@ export const ProcurementNewPage = () => {
                         >
                             {step === 0 ? "Отмена" : "Назад"}
                         </button>
-                        <div style={{flex: 1}}/>
+
+                        {step > 0 && чегоНеХватает.length > 0 && (
+                            <div style={{
+                                flex: 1, margin: "0 16px", fontSize: 12,
+                                color: "#8a5a00", lineHeight: 1.5,
+                            }}>
+                                Заполните, иначе заявку не отправить на согласование:{" "}
+                                {чегоНеХватает.join(", ").toLowerCase()}
+                            </div>
+                        )}
+
+                        {(step === 0 || чегоНеХватает.length === 0) && <div style={{flex: 1}}/>}
                         {step < STEPS.length - 1 ? (
                             <button
                                 onClick={() => setStep(step + 1)}
@@ -422,10 +549,13 @@ export const ProcurementNewPage = () => {
                         ) : (
                             <button
                                 onClick={submit}
-                                disabled={saving || !resolved}
-                                style={{...primaryButton, opacity: saving || !resolved ? 0.5 : 1}}
+                                disabled={saving || !resolved || чегоНеХватает.length > 0}
+                                style={{
+                                    ...primaryButton,
+                                    opacity: saving || !resolved || чегоНеХватает.length > 0 ? 0.5 : 1,
+                                }}
                             >
-                                {saving ? "Создание…" : "Создать заявку"}
+                                {saving ? "Сохранение…" : правка ? "Сохранить заявку" : "Создать заявку"}
                             </button>
                         )}
                     </div>
@@ -443,7 +573,7 @@ export const ProcurementNewPage = () => {
                         label="Инициирующее СП"
                         value={units.find(u => u.id === form.initiatorUnitId)?.titleRu ?? "—"}
                     />
-                    <Row label="ТЗ приложено" value={form.hasSpecification ? "да" : "нет"}/>
+                    <Row label="ТЗ приложено" value={specFile?.name ?? (form.specificationAttachmentId || form.hasSpecification ? "да" : "нет")}/>
                     <Row
                         label="Объявление"
                         value={form.announcementFrom && form.announcementTo

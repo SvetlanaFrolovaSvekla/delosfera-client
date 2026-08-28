@@ -382,12 +382,17 @@ export function SzCardPage() {
             applyDetails(updated);
             await reload();
             setNotice(action === "submit"
-                ? "Записка отправлена на регистрацию"
+                ? "Записка отправлена на согласование"
                 : `Зарегистрирована: ${updated.regNumber} · срок исполнения ${formatDate(updated.dueDate)}`);
-        } catch {
-            setError(action === "submit"
+        } catch (e) {
+            // Сервер объясняет отказ по существу: не выбран согласующий, не задан
+            // маршрут, записка не в том статусе. Подменяя это общей фразой, мы
+            // заставляем человека гадать и звать разработчика — что и произошло.
+            const message = (e as {response?: {data?: {message?: string}}}).response?.data?.message;
+
+            setError(message ?? (action === "submit"
                 ? "Не удалось отправить: проверьте текст и адресата"
-                : "Не удалось зарегистрировать записку");
+                : "Не удалось зарегистрировать записку"));
         } finally {
             setSaving(false);
         }

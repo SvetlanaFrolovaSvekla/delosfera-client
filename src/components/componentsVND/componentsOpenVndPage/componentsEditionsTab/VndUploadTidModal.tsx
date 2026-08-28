@@ -1,12 +1,14 @@
 // Модалка "Сформировать или загрузить ТИД/ Загрузка ТИД"
 import {useState} from "react";
 import {createPortal} from "react-dom";
-import {FileUp, Loader2, Trash2, X} from "lucide-react";
+import {Download, FileUp, Loader2, Trash2, X} from "lucide-react";
 import {vndService} from "@/service/vndService/vndService.ts";
 import type {VndRedactionResponse} from "@/service/vndService/vndServiceType.ts";
 import {useTidDiffRows} from "@/hooks/vndHooks/useTidDiffRows.ts";
 import {TidChangesTable} from "@/components/componentsVND/componentsOpenVndPage/componentsEditionsTab/TidChangesTable.tsx";
 import {Clue} from "@/components/componentsGeneral/knowledgeBaseComponents/Clue.tsx";
+import {downloadBlob} from "@/utils/docxTidExport.ts";
+import tidTemplateBlankUrl from "@/assets/tid/tidTemplateBlank.docx?url";
 
 interface VndUploadTidModalProps {
     vndId: number;
@@ -48,6 +50,17 @@ export function VndUploadTidModal({
     const [tid, setTid] = useState<File | null>(null);
     const [submitting, setSubmitting] = useState(false);
     const [error, setError] = useState<string | null>(null);
+
+    const handleDownloadTemplate = async () => {
+        try {
+            const response = await fetch(tidTemplateBlankUrl);
+            if (!response.ok) throw new Error("Не удалось скачать шаблон ТИД");
+            const blob = await response.blob();
+            downloadBlob(blob, "ТИД_шаблон.docx");
+        } catch (e) {
+            setError(e instanceof Error ? e.message : "Не удалось скачать шаблон ТИД");
+        }
+    };
 
     // Публикация без согласования доступна этому пользователю только если он одновременно может
     // и загружать редакции без согласования, и менять разработчика ТИД - иначе текст ниже говорит
@@ -107,8 +120,18 @@ export function VndUploadTidModal({
 
                     <div className="mb-6 flex flex-col gap-3 rounded-[14px] border border-[#e5e9f0] bg-[#f9fafc] p-4 sm:flex-row sm:items-center">
                         <div className="flex-1">
-                            <div className="mb-[6px] text-[12.5px] font-semibold text-[#26324a]">
-                                Загрузите ТИД (Таблица изменений и дополнений) к данной редакции: <span className="text-[#c0392b]">*</span>
+                            <div className="mb-[6px] flex flex-wrap items-center justify-between gap-2">
+                                <div className="text-[12.5px] font-semibold text-[#26324a]">
+                                    Загрузите ТИД (Таблица изменений и дополнений) к данной редакции: <span className="text-[#c0392b]">*</span>
+                                </div>
+                                <button
+                                    type="button"
+                                    onClick={handleDownloadTemplate}
+                                    className="flex flex-none cursor-pointer items-center gap-[6px] rounded-[8px] border border-[#e5e9f0] bg-white px-[10px] py-[5px] text-[11.5px] font-semibold text-[#4e57d6] hover:bg-[#f6f8fb]"
+                                >
+                                    <Download size={13}/>
+                                    Скачать шаблон ТИД в формате DOCX
+                                </button>
                             </div>
                             {!tid ? (
                                 <label

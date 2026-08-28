@@ -7,6 +7,10 @@
 import {useEffect, useRef} from "react";
 import {Tooltip} from "@/components/componentsGeneral/Tooltip.tsx";
 
+// Обычный текстовый цвет приложения ("чёрный" в терминах кнопок покраски) - на случай, если
+// нужно вернуть кусок ранее покрашенного текста обратно к обычному цвету.
+const BLACK_COLOR = "#1c2740";
+
 interface RichDiffEditorProps {
     /** HTML начального содержимого (напр. авто-diff, уже с покрашенными <span>) — применяется
      * только один раз при монтировании; дальше содержимое полностью под контролем
@@ -65,29 +69,50 @@ export function RichDiffEditor({
     }, [initialHtml]);
 
     const emitChange = () => {
-        if (!ref.current || !onChangeText) return;
+        if (!ref.current) return;
+        // Некоторые браузеры оставляют пустой <br> или текстовый узел в contentEditable после
+        // удаления всего текста - div тогда не попадает под CSS-селектор :empty, и плейсхолдер
+        // (data-placeholder) не показывается, хотя текста реально не осталось. Принудительно
+        // чистим innerHTML в этом случае, чтобы плейсхолдер всегда возвращался после стирания.
+        if (!ref.current.textContent?.trim() && ref.current.innerHTML !== "") {
+            ref.current.innerHTML = "";
+        }
+        if (!onChangeText) return;
         onChangeText(ref.current.textContent ?? "", ref.current.innerHTML);
     };
 
-    const handleHighlight = () => {
+    const handleHighlight = (color: string) => {
         if (!ref.current || disabled) return;
-        if (applyColorToSelection(ref.current, highlightColor)) emitChange();
+        if (applyColorToSelection(ref.current, color)) emitChange();
     };
 
     return (
         <div>
             {!disabled && (
-                <Tooltip content={`Выделить отмеченный ${highlightLabel.toLowerCase()} цветом`} side="top">
-                    <button
-                        type="button"
-                        onMouseDown={(e) => e.preventDefault()}
-                        onClick={handleHighlight}
-                        className="mb-1 cursor-pointer rounded-[6px] border px-[7px] py-[2px] text-[10.5px] font-semibold transition-colors"
-                        style={{borderColor: `${highlightColor}55`, color: highlightColor, background: `${highlightColor}0f`}}
-                    >
-                        Выделить {highlightLabel.toLowerCase()}
-                    </button>
-                </Tooltip>
+                <div className="mb-1 flex flex-wrap gap-1.5">
+                    <Tooltip content={`Выделить отмеченный ${highlightLabel.toLowerCase()} цветом`} side="top">
+                        <button
+                            type="button"
+                            onMouseDown={(e) => e.preventDefault()}
+                            onClick={() => handleHighlight(highlightColor)}
+                            className="cursor-pointer rounded-[6px] border px-[7px] py-[2px] text-[10.5px] font-semibold transition-colors"
+                            style={{borderColor: `${highlightColor}55`, color: highlightColor, background: `${highlightColor}0f`}}
+                        >
+                            Выделить {highlightLabel.toLowerCase()}
+                        </button>
+                    </Tooltip>
+                    <Tooltip content="Выделить отмеченный чёрным цветом" side="top">
+                        <button
+                            type="button"
+                            onMouseDown={(e) => e.preventDefault()}
+                            onClick={() => handleHighlight(BLACK_COLOR)}
+                            className="cursor-pointer rounded-[6px] border px-[7px] py-[2px] text-[10.5px] font-semibold transition-colors"
+                            style={{borderColor: `${BLACK_COLOR}55`, color: BLACK_COLOR, background: `${BLACK_COLOR}0f`}}
+                        >
+                            Выделить чёрным
+                        </button>
+                    </Tooltip>
+                </div>
             )}
             <div
                 ref={ref}

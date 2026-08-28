@@ -254,7 +254,7 @@ export function TidChangesTable({
                             <td className="border border-[#c9ced8] px-2 py-2">
                                 <RichDiffEditor
                                     initialHtml={segmentsToHtml(row.oldSegments, REMOVE_COLOR)}
-                                    placeholder="Действующая редакция…"
+                                    placeholder="Действующая редакция"
                                     highlightColor={REMOVE_COLOR}
                                     highlightLabel="красным"
                                     disabled={disabled}
@@ -268,7 +268,7 @@ export function TidChangesTable({
                                     value={justifications[row.id] ?? ""}
                                     onChange={(e) => setJustifications((prev) => ({...prev, [row.id]: e.target.value}))}
                                     disabled={disabled}
-                                    placeholder="Обоснование изменения…"
+                                    placeholder="Суть/обоснование предлагаемых изменений"
                                     rows={2}
                                     className="h-[220px] w-full resize-y rounded-[8px] border border-[#e0e5ee] bg-white px-2 py-[6px] text-[12.5px] outline-none focus:border-[#4e57d6] disabled:bg-[#f6f8fb]"
                                 />
@@ -276,7 +276,7 @@ export function TidChangesTable({
                             <td className="border border-[#c9ced8] px-2 py-2">
                                 <RichDiffEditor
                                     initialHtml={segmentsToHtml(row.newSegments, ADD_COLOR)}
-                                    placeholder="Новая редакция…"
+                                    placeholder="Новая редакция"
                                     highlightColor={ADD_COLOR}
                                     highlightLabel="зелёным"
                                     disabled={disabled}
@@ -334,7 +334,6 @@ export function TidChangesTable({
                             placeholder="Действующая редакция"
                             highlightColor={REMOVE_COLOR}
                             highlightLabel="красным"
-                            heightClass="h-[90px]"
                             onChangeText={(text, html) => {
                                 setDraftOldText(text);
                                 setDraftOldHtml(html);
@@ -345,14 +344,13 @@ export function TidChangesTable({
                             onChange={(e) => setDraftJustification(e.target.value)}
                             placeholder="Суть/обоснование предлагаемых изменений"
                             rows={2}
-                            className="rounded-[10px] border border-[#e0e5ee] bg-white px-3 py-2 text-[13px] outline-none focus:border-[#4e57d6]"
+                            className="h-[220px] resize-y rounded-[8px] border border-[#e0e5ee] bg-white px-2 py-[6px] text-[12.5px] outline-none focus:border-[#4e57d6]"
                         />
                         <RichDiffEditor
                             key={`draft-new-${draftKey}`}
                             placeholder="Новая редакция"
                             highlightColor={ADD_COLOR}
                             highlightLabel="зелёным"
-                            heightClass="h-[90px]"
                             onChangeText={(text, html) => {
                                 setDraftNewText(text);
                                 setDraftNewHtml(html);

@@ -137,3 +137,80 @@ export const usageService = {
         return data;
     },
 };
+
+// ── Отчёт целиком: одним запросом, как показывает страница ──────────────────
+
+export interface UsageSummary {
+    /** Сколько сотрудников заходило за период. */
+    reached: number;
+    /** Сколько всего активных учётных записей. */
+    enabled: number;
+    /** Доля справочника — ответ на вопрос «внедрилось ли». */
+    share: number;
+    totalOpens: number;
+    today: number;
+    week: number;
+    /** Ни разу не заходили за всё время, а не за период. */
+    neverVisited: number;
+}
+
+export interface UsageDay {
+    day: string;
+    users: number;
+}
+
+export interface UsageSection {
+    title: string;
+    count: number;
+}
+
+export interface UsageEmployee {
+    userId: number;
+    fullName: string;
+    position: string | null;
+    orgUnit: string | null;
+    days: number;
+    opens: number;
+    lastVisit: string | null;
+}
+
+export interface UsageReport {
+    days: number;
+    from: string;
+    to: string;
+    summary: UsageSummary;
+    byDay: UsageDay[];
+    sections: UsageSection[];
+    employees: UsageEmployee[];
+}
+
+/** Периоды как на экране: неделя, месяц, квартал, год. */
+export const PERIODS: {days: number; title: string}[] = [
+    {days: 7, title: "Неделя"},
+    {days: 30, title: "Месяц"},
+    {days: 90, title: "Квартал"},
+    {days: 365, title: "Год"},
+];
+
+export async function usageReport(days = 30): Promise<UsageReport> {
+    const {data} = await apiClient.get<UsageReport>(`${BASE}/report`, {params: {days}});
+    return data;
+}
+
+/**
+ * Скачивает выгрузку. Через сервис, а не ссылкой: тег не понесёт заголовок
+ * с токеном, и вместо файла пришёл бы отказ.
+ */
+export async function downloadUsageCsv(days: number): Promise<void> {
+    const {data} = await apiClient.get<Blob>(`${BASE}/report.csv`, {
+        params: {days},
+        responseType: "blob",
+    });
+
+    const url = URL.createObjectURL(data);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = `посещения-${days}дн.csv`;
+    link.click();
+    URL.revokeObjectURL(url);
+}

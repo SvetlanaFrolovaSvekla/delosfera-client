@@ -14,7 +14,7 @@ export function TypeVndPage() {
             canManage={hasPermission(PermissionCode.ManageVndDictionaries)}
             pageKey="typeVndPage"
             icon={FileText}
-            backTo="/refs"
+            backTo="/management/refs"
             backLabelKey="dictionaries.navigateGeneral"
         />
     );

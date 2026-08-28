@@ -24,7 +24,7 @@ interface DictionaryTreePageProps<T extends TreeDictItem> {
     // Конфиг страницы
     pageKey: string;       // "approvalBodyPage" / "organizationUnitPage" - префикс i18n ключей
     icon: LucideIcon;
-    backTo: string;        // куда ведёт кнопка "Назад", напр. "/refs"
+    backTo: string;        // куда ведёт кнопка "Назад", напр. "/management/refs"
     backLabelKey: string;  // "dictionaries.navigateGeneral" и т.п.
 }
 

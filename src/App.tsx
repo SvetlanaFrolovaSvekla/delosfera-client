@@ -29,7 +29,6 @@ const UserGroupPage = lazy(() => import("@/pages/DictionariesPages/UserGroupPage
 const RubricPage = lazy(() => import("@/pages/DictionariesPages/RubricPage.tsx").then(m => ({default: m.RubricPage})));
 const KeywordPage = lazy(() => import("@/pages/DictionariesPages/KeywordPage.tsx").then(m => ({default: m.KeywordPage})));
 const CoordinationApproversPage = lazy(() => import("@/pages/DictionariesPages/CoordinationApproversPage.tsx").then(m => ({default: m.CoordinationApproversPage})));
-const ActualizationBucketSettingsPage = lazy(() => import("@/pages/DictionariesPages/ActualizationBucketSettingsPage.tsx").then(m => ({default: m.ActualizationBucketSettingsPage})));
 const RolesPermissionPage = lazy(() => import("@/pages/RolesPermissionPage.tsx").then(m => ({default: m.RolesPermissionPage})));
 const BaseVndPage = lazy(() => import("@/pages/VndPages/BaseVndPage.tsx").then(m => ({default: m.BaseVndPage})));
 const CreateVndPage = lazy(() => import("@/pages/VndPages/CreateVndPage.tsx").then(m => ({default: m.CreateVndPage})));
@@ -73,6 +72,15 @@ const AcknowledgementPage = lazy(() => import("@/pages/AcknowledgementPage.tsx")
 const HelpPage = lazy(() => import("@/pages/HelpPage.tsx").then(m => ({default: m.HelpPage})));
 const FeedbackInboxPage = lazy(() => import("@/pages/FeedbackInboxPage.tsx").then(m => ({default: m.FeedbackInboxPage})));
 const UsageAnalyticsPage = lazy(() => import("@/pages/UsageAnalyticsPage.tsx").then(m => ({default: m.UsageAnalyticsPage})));
+const PoaRegistryPage = lazy(() => import("@/pages/PoaRegistryPage.tsx").then(m => ({default: m.PoaRegistryPage})));
+const CorrespondencePage = lazy(() => import("@/pages/CorrespondencePage.tsx").then(m => ({default: m.CorrespondencePage})));
+const ObligationsPage = lazy(() => import("@/pages/ObligationsPage.tsx").then(m => ({default: m.ObligationsPage})));
+const AgendaCandidatesPage = lazy(() => import("@/pages/MeetingsPages/AgendaCandidatesPage.tsx").then(m => ({default: m.AgendaCandidatesPage})));
+const ActualizationBucketSettingsPage = lazy(() => import("@/pages/DictionariesPages/ActualizationBucketSettingsPage.tsx").then(m => ({default: m.ActualizationBucketSettingsPage})));
+const ManagementPage = lazy(() => import("@/pages/ManagementPage.tsx").then(m => ({default: m.ManagementPage})));
+const DocumentTypesPage = lazy(() => import("@/pages/DocumentTypesPage.tsx").then(m => ({default: m.DocumentTypesPage})));
+const SettingsChangesPage = lazy(() => import("@/pages/SettingsChangesPage.tsx").then(m => ({default: m.SettingsChangesPage})));
+const HrOrdersPage = lazy(() => import("@/pages/HrOrdersPage.tsx").then(m => ({default: m.HrOrdersPage})));
 const SzStatisticsPage = lazy(() => import("@/pages/SzStatisticsPage.tsx").then(m => ({default: m.SzStatisticsPage})));
 const SubstitutionsPage = lazy(() => import("@/pages/UsersPages/SubstitutionsPage.tsx").then(m => ({default: m.SubstitutionsPage})));
 const SupplierRegistryPage = lazy(() => import("@/pages/ProcurementPages/SupplierRegistryPage.tsx").then(m => ({default: m.SupplierRegistryPage})));
@@ -149,7 +157,6 @@ function App() {
                                 <Route path="/prc/:id/protocol" element={<ProcurementProtocolPage/>}/>
 
                                 <Route path="/base-know" element={<BaseKnowPage/>}/>
-                                <Route path="/system/settings" element={<SystemSettingsPage/>}/>
                                 <Route path="/search" element={<SearchPage/>}/>
 
                                 <Route path="/meetings" element={<MeetingRegistryPage/>}/>
@@ -160,38 +167,69 @@ function App() {
                                 <Route path="/sz/:id" element={<SzCardPage/>}/>
                                 <Route path="/sz-analytics" element={<SzStatisticsPage/>}/>
 
-                                <Route path="/users" element={<UsersPage/>}/>
-                                <Route path="/users/new" element={<UserCardPage/>}/>
-                                <Route path="/users/:id" element={<UserCardPage/>}/>
-                                <Route path="/substitutions" element={<SubstitutionsPage/>}/>
-                                <Route path="/audit-log" element={<AuditLogPage/>}/>
                                 <Route path="/signing-workplace" element={<SigningWorkplacePage/>}/>
                                 <Route path="/hr-ack" element={<AcknowledgementPage/>}/>
                                 <Route path="/help" element={<HelpPage/>}/>
 
+                                {/* Управление: настройки, справочники, доступы, наблюдение.
+                                    Собрано в один раздел с подменю — пунктов настройки
+                                    полтора десятка, и в общем меню они вытесняли бы работу. */}
+                                <Route path="/management" element={<ManagementPage/>}>
+                                    <Route path="users" element={<UsersPage/>}/>
+                                    <Route path="users/new" element={<UserCardPage/>}/>
+                                    <Route path="users/:id" element={<UserCardPage/>}/>
+
+                                    <Route path="refs" element={<DictionariesPages/>}/>
+                                    <Route path="document-types" element={<DocumentTypesPage/>}/>
+                                    <Route path="refs/approval-body" element={<ApprovalBodyPage/>}/>
+                                    <Route path="refs/organization-unit" element={<OrganizationUnitPage/>}/>
+                                    <Route path="refs/position" element={<PositionPage/>}/>
+                                    <Route path="refs/keyword" element={<KeywordPage/>}/>
+                                    <Route path="refs/type-vnd" element={<TypeVndPage/>}/>
+                                    <Route path="refs/security-level" element={<SecurityLevelPage/>}/>
+                                    <Route path="refs/user-group" element={<UserGroupPage/>}/>
+                                    <Route path="refs/rubric" element={<RubricPage/>}/>
+                                    <Route path="refs/coordination-users" element={<CoordinationApproversPage/>}/>
+                                    <Route path="refs/actualization-thresholds" element={<ActualizationBucketSettingsPage/>}/>
+
+
+                                    <Route element={<RequirePermission code={PermissionCode.ManageRoles}/>}>
+                                        <Route path="roles" element={<RolesPermissionPage/>}/>
+                                    </Route>
+                                    <Route element={<RequirePermission code={PermissionCode.ManageUsers}/>}>
+                                        <Route path="substitutions" element={<SubstitutionsPage/>}/>
+                                        <Route path="audit" element={<AuditLogPage/>}/>
+                                    </Route>
+                                    <Route element={<RequirePermission code={PermissionCode.ViewFullStatistics}/>}>
+                                        <Route path="usage" element={<UsageAnalyticsPage/>}/>
+                                    </Route>
+                                    <Route element={<RequirePermission code={PermissionCode.ManageSystemSettings}/>}>
+                                        <Route path="feedback" element={<FeedbackInboxPage/>}/>
+                                        <Route path="changes" element={<SettingsChangesPage/>}/>
+                                        <Route path="integrations" element={<SystemSettingsPage/>}/>
+                                        <Route path="signing" element={<SystemSettingsPage/>}/>
+                                        <Route path="help" element={<HelpPage/>}/>
+                                    </Route>
+                                </Route>
+
                                 {/* Обкатка подразделениями: разбор пожеланий и учёт посещаемости */}
-                                <Route element={<RequirePermission code={PermissionCode.ManageSystemSettings}/>}>
-                                    <Route path="/feedback" element={<FeedbackInboxPage/>}/>
+                                {/* Доверенности и книга регистрации корреспонденции */}
+                                <Route element={<RequirePermission code={PermissionCode.ViewPowersOfAttorney}/>}>
+                                    <Route path="/poa" element={<PoaRegistryPage/>}/>
                                 </Route>
-                                <Route element={<RequirePermission code={PermissionCode.ViewFullStatistics}/>}>
-                                    <Route path="/usage" element={<UsageAnalyticsPage/>}/>
-                                </Route>
-
-                                <Route element={<RequirePermission code={PermissionCode.ManageRoles}/>}>
-                                    <Route path="/roles" element={<RolesPermissionPage/>}/>
+                                <Route element={<RequirePermission code={PermissionCode.ViewCorrespondence}/>}>
+                                    <Route path="/correspondence" element={<CorrespondencePage/>}/>
                                 </Route>
 
-                                <Route path="/refs" element={<DictionariesPages/>}/>
-                                <Route path="/refs/approval-body" element={<ApprovalBodyPage/>}/>
-                                <Route path="/refs/organization-unit" element={<OrganizationUnitPage/>}/>
-                                <Route path="/refs/position" element={<PositionPage/>}/>
-                                <Route path="/refs/keyword" element={<KeywordPage/>}/>
-                                <Route path="/refs/type-vnd" element={<TypeVndPage/>}/>
-                                <Route path="/refs/security-level" element={<SecurityLevelPage/>}/>
-                                <Route path="/refs/user-group" element={<UserGroupPage/>}/>
-                                <Route path="/refs/rubric" element={<RubricPage/>}/>
-                                <Route path="/refs/coordination-users" element={<CoordinationApproversPage/>}/>
-                                <Route path="/refs/actualization-thresholds" element={<ActualizationBucketSettingsPage/>}/>
+                                {/* Периодичность заседаний и отчётов; отбор вопросов секретарём */}
+                                <Route path="/obligations" element={<ObligationsPage/>}/>
+                                <Route element={<RequirePermission code={PermissionCode.ViewHrOrders}/>}>
+                                    <Route path="/hr/orders" element={<HrOrdersPage/>}/>
+                                </Route>
+                                <Route element={<RequirePermission code={PermissionCode.ViewMeetings}/>}>
+                                    <Route path="/meetings/candidates" element={<AgendaCandidatesPage/>}/>
+                                </Route>
+
                             </Route>
                         </Route>
 

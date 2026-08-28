@@ -124,7 +124,7 @@ export function UserCardPage() {
                 roleIds: form.roleIds,
             });
 
-            navigate(`/users/${created.id}`, {replace: true});
+            navigate(`/management/users/${created.id}`, {replace: true});
             return;
         }
 
@@ -167,7 +167,7 @@ export function UserCardPage() {
     return (
         <div className="p-6">
             <button
-                onClick={() => navigate("/users")}
+                onClick={() => navigate("/management/users")}
                 className="inline-flex items-center gap-1.5 border-none bg-transparent p-0 text-[12.5px] text-[#55617a] cursor-pointer hover:text-[#2f68f5]"
             >
                 <ArrowLeft size={14}/>

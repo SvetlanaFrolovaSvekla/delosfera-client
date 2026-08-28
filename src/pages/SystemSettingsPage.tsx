@@ -4,6 +4,8 @@ import {ProcurementParametersForm} from "@/components/system/ProcurementParamete
 import {SignatureLevelForm} from "@/components/system/SignatureLevelForm.tsx";
 import {CertificateAuthoritiesForm} from "@/components/system/CertificateAuthoritiesForm.tsx";
 import {SigningSettingsForm} from "@/components/system/SigningSettingsForm.tsx";
+import {OrgStructureIntegrationForm} from "@/components/system/OrgStructureIntegrationForm.tsx";
+import {MailSettingsForm} from "@/components/system/MailSettingsForm.tsx";
 
 type IntegrationState = { enabled: boolean; hasError: boolean } | null;
 
@@ -32,6 +34,12 @@ const INTEGRATIONS: Integration[] = [
         title: "Служба каталогов",
         subtitle: "LDAP · пользователи домена",
         render: (report) => <DirectoryIntegrationForm onStateChange={report}/>,
+    },
+    {
+        id: "org-structure",
+        title: "Организационная структура",
+        subtitle: "Портал банка · подразделения и подчинённость",
+        render: (report) => <OrgStructureIntegrationForm onStateChange={report}/>,
     },
     {
         // Не интеграция, но живёт по тем же правилам: значения, которые задаёт
@@ -63,7 +71,7 @@ const INTEGRATIONS: Integration[] = [
         id: "mail",
         title: "Почтовые уведомления",
         subtitle: "SMTP · письма о задачах и сроках",
-        note: "Пока задаётся в конфигурации сервера (раздел Mail). Перенос в этот раздел — следующим шагом.",
+        render: (report) => <MailSettingsForm onStateChange={report}/>,
     },
 ];
 

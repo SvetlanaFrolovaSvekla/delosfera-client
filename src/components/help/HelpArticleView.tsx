@@ -1,6 +1,7 @@
 import {useNavigate} from "react-router-dom";
 import {ArrowRight, BookOpen, Info, TriangleAlert} from "lucide-react";
 import type {HelpBlock} from "@/service/helpService/helpService.ts";
+import {HelpScreenshot} from "@/components/help/HelpScreenshot.tsx";
 
 /**
  * Отрисовка тела статьи.
@@ -32,6 +33,16 @@ export const HelpArticleView = ({body}: Props) => {
         <div className="flex flex-col gap-4">
             {body.map((block, i) => {
                 switch (block.kind) {
+                    case "image":
+                        return (
+                            <HelpScreenshot
+                                key={i}
+                                fileId={block.fileId}
+                                caption={block.caption}
+                                markers={block.markers}
+                            />
+                        );
+
                     case "text":
                         return (
                             <p key={i} className="m-0 max-w-[70ch] text-[14px] leading-[1.75] text-[#26324a]">

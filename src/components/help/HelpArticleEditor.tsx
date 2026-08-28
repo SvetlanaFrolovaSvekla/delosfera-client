@@ -1,5 +1,6 @@
 import {useState} from "react";
 import {ArrowDown, ArrowUp, Trash2} from "lucide-react";
+import {HelpScreenshot} from "@/components/help/HelpScreenshot.tsx";
 import {
     helpService,
     SECTION_ORDER,
@@ -32,7 +33,11 @@ const ВИДЫ: {kind: HelpBlock["kind"]; label: string; hint: string}[] = [
     {kind: "note", label: "Замечание", hint: "Важное или предупреждение"},
     {kind: "link", label: "Переход", hint: "Кнопка в раздел системы"},
     {kind: "vnd", label: "Документ", hint: "Ссылка на ВНД"},
+    {kind: "image", label: "Снимок экрана", hint: "С выносками: куда нажимать"},
 ];
+
+/** Общий вид поля ввода — используется и в статье, и в редакторе снимка. */
+const поле = "w-full rounded-[9px] border border-[#e5e9f0] bg-white px-3 py-2 text-[13px] outline-none focus:border-[#2f68f5]";
 
 export const HelpArticleEditor = ({article, onClose, onSaved}: Props) => {
     const [section, setSection] = useState<HelpSection>(article?.section ?? "Start");
@@ -53,6 +58,7 @@ export const HelpArticleEditor = ({article, onClose, onSaved}: Props) => {
             note: {kind: "note", tone: "info", text: ""},
             link: {kind: "link", label: "", path: ""},
             vnd: {kind: "vnd", label: "", documentId: 0},
+            image: {kind: "image", fileId: 0, caption: "", markers: []},
         };
         setBody([...body, пустой[kind]]);
     };
@@ -102,7 +108,7 @@ export const HelpArticleEditor = ({article, onClose, onSaved}: Props) => {
         }
     };
 
-    const поле = "w-full rounded-[9px] border border-[#e5e9f0] bg-white px-3 py-2 text-[13px] outline-none focus:border-[#2f68f5]";
+
 
     return (
         <div className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-black/40 p-4"
@@ -264,6 +270,13 @@ export const HelpArticleEditor = ({article, onClose, onSaved}: Props) => {
                                 </div>
                             )}
 
+                            {block.kind === "image" && (
+                                <HelpImageBlockEditor
+                                    block={block}
+                                    onChange={(next) => заменить(i, next)}
+                                />
+                            )}
+
                             {block.kind === "vnd" && (
                                 <div className="grid gap-2" style={{gridTemplateColumns: "1fr 140px"}}>
                                     <input className={поле} value={block.label} placeholder="Название документа"
@@ -299,3 +312,104 @@ export const HelpArticleEditor = ({article, onClose, onSaved}: Props) => {
         </div>
     );
 };
+
+/**
+ * Редактор снимка экрана.
+ *
+ * Выноски ставятся щелчком по картинке, а не вводом координат: попасть мышью в
+ * нужную кнопку проще, чем угадать её положение в процентах. Щелчок по самой
+ * выноске её убирает.
+ */
+function HelpImageBlockEditor({block, onChange}: {
+    block: Extract<HelpBlock, {kind: "image"}>;
+    onChange: (block: HelpBlock) => void;
+}) {
+    const [загрузка, setЗагрузка] = useState(false);
+    const [ошибка, setОшибка] = useState<string | null>(null);
+
+    const markers = block.markers ?? [];
+
+    const загрузить = async (file: File) => {
+        setЗагрузка(true);
+        setОшибка(null);
+        try {
+            const {fileId} = await helpService.uploadImage(file);
+            // Новый снимок — старые выноски к нему не относятся.
+            onChange({...block, fileId, markers: []});
+        } catch (e) {
+            const текст = (e as {response?: {data?: {message?: string}}})?.response?.data?.message;
+            setОшибка(текст ?? "Не удалось загрузить снимок.");
+        } finally {
+            setЗагрузка(false);
+        }
+    };
+
+    return (
+        <div className="flex flex-col gap-2">
+            <div className="flex flex-wrap items-center gap-2">
+                <label className="cursor-pointer rounded-[9px] border border-[#e5e9f0] px-3 py-1.5
+                                  text-[13px] text-[#55617a] transition hover:border-[#2f68f5]">
+                    {block.fileId > 0 ? "Заменить снимок" : "Загрузить снимок"}
+                    <input
+                        type="file"
+                        accept="image/png,image/jpeg,image/webp,image/gif"
+                        className="hidden"
+                        onChange={(e) => {
+                            const file = e.target.files?.[0];
+                            if (file) void загрузить(file);
+                            e.target.value = "";
+                        }}
+                    />
+                </label>
+
+                {загрузка && <span className="text-[12.5px] text-[#8b97ab]">Загружаем…</span>}
+
+                {block.fileId > 0 && (
+                    <span className="text-[12.5px] text-[#8b97ab]">
+                        Щёлкните по снимку, чтобы поставить выноску
+                    </span>
+                )}
+            </div>
+
+            {ошибка && <p className="m-0 text-[13px] text-[#c0392b]">{ошибка}</p>}
+
+            {block.fileId > 0 && (
+                <>
+                    <HelpScreenshot
+                        fileId={block.fileId}
+                        markers={markers}
+                        onPick={(x, y) => onChange({...block, markers: [...markers, {x, y, text: ""}]})}
+                        onRemoveMarker={(index) =>
+                            onChange({...block, markers: markers.filter((_, j) => j !== index)})}
+                    />
+
+                    {markers.map((marker, index) => (
+                        <div key={index} className="flex items-center gap-2">
+                            <span className="grid h-[20px] w-[20px] flex-none place-items-center
+                                             rounded-full bg-[#c0392b] text-[11px] font-bold text-white">
+                                {index + 1}
+                            </span>
+                            <input
+                                className={поле}
+                                value={marker.text ?? ""}
+                                placeholder="Что здесь нажать"
+                                onChange={(e) => onChange({
+                                    ...block,
+                                    markers: markers.map((m, j) =>
+                                        j === index ? {...m, text: e.target.value} : m),
+                                })}
+                            />
+                        </div>
+                    ))}
+
+                    <input
+                        className={поле}
+                        value={block.caption ?? ""}
+                        placeholder="Подпись под снимком — необязательно"
+                        onChange={(e) => onChange({...block, caption: e.target.value})}
+                    />
+                </>
+            )}
+        </div>
+    );
+}

@@ -138,4 +138,28 @@ export const workflowService = {
     async confirmRemark(remarkId: number): Promise<void> {
         await apiClient.post(`${BASE}/remarks/${remarkId}/confirm`);
     },
+
+    /**
+     * Шаблоны маршрутов — для выбора при настройке типа документа и при отправке.
+     *
+     * Без отбора отдаются все: у своего типа документа маршрут может быть любым,
+     * и ограничивать выбор встроенными видами значило бы запретить банку то,
+     * ради чего типы и заводятся.
+     */
+    async templates(documentType?: string): Promise<RouteTemplateBrief[]> {
+        const {data} = await apiClient.get<RouteTemplateBrief[]>(`${BASE}/templates`, {
+            params: documentType ? {documentType} : undefined,
+        });
+        return data;
+    },
 };
+
+/** Шаблон маршрута в списке выбора. */
+export interface RouteTemplateBrief {
+    id: number;
+    name: string;
+    /** Вид документа, под который заведён шаблон. */
+    documentType: string;
+    /** Применяется ко всем документам вида, а не выбирается вручную. */
+    isGlobalRule: boolean;
+}

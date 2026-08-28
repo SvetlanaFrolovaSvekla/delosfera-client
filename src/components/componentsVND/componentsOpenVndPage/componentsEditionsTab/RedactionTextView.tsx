@@ -148,7 +148,11 @@ export const RedactionTextView = forwardRef<RedactionTextViewHandle, RedactionTe
                     )}
                     <div
                         ref={containerRef}
-                        className="docx-preview-wrapper mx-auto max-w-[1700px]"
+                        // scrollX (ТИД) - реальная ширина страницы/таблиц (docx-preview-scroll,
+                        // без mx-auto/max-width - иначе широкая таблица схлопывается вместо
+                        // горизонтального скролла, см. .docx-preview-fit в index.css). Обычный
+                        // просмотр - как раньше, подгонка под ширину контейнера.
+                        className={`docx-preview-wrapper ${scrollX ? "docx-preview-scroll" : "docx-preview-fit mx-auto max-w-[1700px]"}`}
                         style={{display: loading ? "none" : "block"}}
                     />
                 </div>

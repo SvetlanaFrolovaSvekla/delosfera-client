@@ -108,11 +108,15 @@ function DocReplaceSlot({def, file, removed, onFileSelected, onRevert, onDownloa
 
             <span className="flex min-w-0 flex-1 flex-col">
                 <span className="text-[9.5px] font-bold uppercase tracking-[0.04em] text-[#a3adbd]">
-                    {def.label} {def.required && <span className="text-[#c0392b]">*</span>}
+                    {def.label} {def.required
+                    ? <span className="text-[#c0392b]">*</span>
+                    : <span className="normal-case font-normal">(необязательно)</span>}
                 </span>
-                <span className={`truncate text-[13px] ${removed ? "text-[#c0392b] line-through" : "text-[#26324a]"}`}>
-                    {isUpdated ? file!.name : def.title ?? "Документ не загружен"}
-                </span>
+                <Tooltip content={isUpdated ? file!.name : def.title ?? "Документ не загружен"} side="top" className="w-full min-w-0">
+                    <span className={`block truncate text-[13px] ${removed ? "text-[#c0392b] line-through" : "text-[#26324a]"}`}>
+                        {isUpdated ? file!.name : def.title ?? "Документ не загружен"}
+                    </span>
+                </Tooltip>
             </span>
 
             {removed ? (
@@ -336,6 +340,44 @@ export function VndEditLastRevisionModal({vndId, vnd, redaction, roleNames, onCl
                                 />
                             ))}
 
+                            {/* ТИД (Таблица изменений и дополнений) - показываем отдельным полем,
+                                только если она есть у этой редакции. Только просмотр/скачивание -
+                                загрузка/замена ТИД делается через отдельную модалку
+                                (VndUploadTidModal), не отсюда. */}
+                            {redaction.tidFileId !== null && (
+                                <div className="flex flex-wrap items-center gap-2.5 rounded-[9px] border border-[#e5e9f0] bg-white px-3 py-[10px]">
+                                    <FileText size={16} className="flex-none text-[#4e57d6]"/>
+                                    <span className="flex min-w-0 flex-1 flex-col">
+                                        <span className="text-[9.5px] font-bold uppercase tracking-[0.04em] text-[#a3adbd]">
+                                            ТИД <span className="text-[#c0392b]">*</span>
+                                        </span>
+                                        <Tooltip content={`${redaction.code}_ТИД.docx`} side="top" className="w-full min-w-0">
+                                            <span className="block truncate text-[13px] text-[#26324a]">
+                                                {`${redaction.code}_ТИД.docx`}
+                                            </span>
+                                        </Tooltip>
+                                    </span>
+                                    <Tooltip content="Просмотреть Таблицу изменений и дополнений" side="top">
+                                        <button
+                                            type="button"
+                                            onClick={() => setViewLang("tid")}
+                                            className="cursor-pointer flex-none rounded-[7px] border border-[#e5e9f0] bg-white p-[6px] text-[#8b97ab] hover:border-[#4e57d6]/40 hover:text-[#4e57d6]"
+                                        >
+                                            <Eye size={14}/>
+                                        </button>
+                                    </Tooltip>
+                                    <Tooltip content="Скачать ТИД" side="top">
+                                        <button
+                                            type="button"
+                                            onClick={() => handleViewDownload(redaction.tidFileId as number, `${redaction.code}_ТИД.docx`)}
+                                            className="cursor-pointer flex-none rounded-[7px] border border-[#e5e9f0] bg-white p-[6px] text-[#8b97ab] hover:border-[#4e57d6]/40 hover:text-[#4e57d6]"
+                                        >
+                                            <Download size={14}/>
+                                        </button>
+                                    </Tooltip>
+                                </div>
+                            )}
+
                             <div>
                                 <div className="mb-[6px] flex items-center justify-between gap-2">
                                     <span className="text-[12.5px] font-semibold text-[#26324a]">
@@ -365,13 +407,15 @@ export function VndEditLastRevisionModal({vndId, vnd, redaction, roleNames, onCl
                                                 }`}
                                             >
                                                 <Paperclip size={14} className="flex-none text-[#8b97ab]"/>
-                                                <span
-                                                    className={`flex-1 truncate text-[12.5px] ${
-                                                        willBeRemoved ? "text-[#c0392b] line-through" : "text-[#26324a]"
-                                                    }`}
-                                                >
-                                                    {attachment.fileName}
-                                                </span>
+                                                <Tooltip content={attachment.fileName} side="top" className="min-w-0 flex-1">
+                                                    <span
+                                                        className={`block truncate text-[12.5px] ${
+                                                            willBeRemoved ? "text-[#c0392b] line-through" : "text-[#26324a]"
+                                                        }`}
+                                                    >
+                                                        {attachment.fileName}
+                                                    </span>
+                                                </Tooltip>
                                                 {!willBeRemoved && (
                                                     <Tooltip content="Скачать" side="top">
                                                         <button
@@ -404,7 +448,9 @@ export function VndEditLastRevisionModal({vndId, vnd, redaction, roleNames, onCl
                                             className="flex items-center gap-2 rounded-[9px] border border-[#e5e9f0] bg-[#fbfcfe] px-3 py-[8px]"
                                         >
                                             <Paperclip size={14} className="flex-none text-[#8b97ab]"/>
-                                            <span className="flex-1 truncate text-[12.5px] text-[#26324a]">{file.name}</span>
+                                            <Tooltip content={file.name} side="top" className="min-w-0 flex-1">
+                                                <span className="block truncate text-[12.5px] text-[#26324a]">{file.name}</span>
+                                            </Tooltip>
                                             <span className="flex-none text-[11px] text-[#a3adbd]">
                                                 {formatFileSize(file.size)}
                                             </span>

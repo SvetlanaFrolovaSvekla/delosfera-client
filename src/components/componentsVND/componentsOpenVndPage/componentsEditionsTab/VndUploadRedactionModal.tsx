@@ -72,7 +72,9 @@ function FileSlot({
     return (
         <div>
             <div className="mb-[6px] text-[12.5px] font-semibold text-[#26324a]">
-                {label} {required && <span className="text-[#c0392b]">*</span>}
+                {label} {required
+                ? <span className="text-[#c0392b]">*</span>
+                : <span className="text-[#8b97ab] font-normal">(необязательно)</span>}
             </div>
             {hint && <div className="mb-[6px] text-[11.5px] text-[#8b97ab]">{hint}</div>}
             {!file ? (
@@ -97,7 +99,9 @@ function FileSlot({
                 </label>
             ) : (
                 <div className="flex items-center gap-2 rounded-[10px] border border-[#e5e9f0] bg-white px-3 py-[10px]">
-                    <span className="flex-1 truncate text-[12.5px] text-[#26324a]">{file.name}</span>
+                    <Tooltip content={file.name} side="top" className="min-w-0 flex-1">
+                        <span className="block truncate text-[12.5px] text-[#26324a]">{file.name}</span>
+                    </Tooltip>
                     <button
                         type="button"
                         onClick={() => onChange(null)}
@@ -277,7 +281,7 @@ export function VndUploadRedactionModal({
                                 убрать/вернуть. Сама передача существующих id (без повторной
                                 загрузки файла) исключает дублирование в БД и хранилище. */}
                             {previousAttachments && previousAttachments.length > 0 && (
-                                <Clue className="mb-[12px]">
+                                <Clue className="mb-[6px]">
                                     Вложения перенесены из предыдущей редакции. Если что-то здесь
                                     изменить, добавить или удалить — это затронет только новую
                                     редакцию, предыдущая останется без изменений.
@@ -296,13 +300,15 @@ export function VndUploadRedactionModal({
                                                 }`}
                                             >
                                                 <Paperclip size={14} className="flex-none text-[#8b97ab]"/>
-                                                <span
-                                                    className={`flex-1 truncate text-[12px] ${
-                                                        willBeRemoved ? "text-[#c0392b] line-through" : "text-[#26324a]"
-                                                    }`}
-                                                >
-                                                    {attachment.fileName}
-                                                </span>
+                                                <Tooltip content={attachment.fileName} side="top" className="min-w-0 flex-1">
+                                                    <span
+                                                        className={`block truncate text-[12px] ${
+                                                            willBeRemoved ? "text-[#c0392b] line-through" : "text-[#26324a]"
+                                                        }`}
+                                                    >
+                                                        {attachment.fileName}
+                                                    </span>
+                                                </Tooltip>
                                                 {!willBeRemoved && (
                                                     <span className="flex-none text-[10.5px] font-semibold text-[#8b97ab]">
                                                         из предыдущей редакции
@@ -390,8 +396,10 @@ export function VndUploadRedactionModal({
                                             className="flex items-center gap-2 rounded-[9px] border border-[#e5e9f0] bg-white px-3 py-[8px]"
                                         >
                                             <Paperclip size={14} className="flex-none text-[#8b97ab]"/>
-                                            <span
-                                                className="flex-1 truncate text-[12px] text-[#26324a]">{file.name}</span>
+                                            <Tooltip content={file.name} side="top" className="min-w-0 flex-1">
+                                                <span
+                                                    className="block truncate text-[12px] text-[#26324a]">{file.name}</span>
+                                            </Tooltip>
                                             <span className="flex-none text-[11px] text-[#a3adbd]">
                                             {formatBytes(file.size)}
                                         </span>

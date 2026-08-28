@@ -23,8 +23,16 @@ a:hover { color: #1b4fd0; }
 
 .docx-preview-content table {
     border-collapse: collapse;
-    width: 100%;
     margin: 12px 0;
+}
+
+/* Обычный просмотр (RU/KG/EN) — таблица подгоняется под ширину страницы контейнера
+   (useDocxPreview вызывается с ignoreWidth: true). Для ТИД (scrollX в RedactionTextView,
+   ignoreWidth: false) реальная ширина страницы/таблиц сохраняется как в самом документе,
+   поэтому здесь width:100% не навязываем — иначе широкие таблицы схлопываются в узкие
+   колонки вместо горизонтального скролла (см. docx-preview-scroll ниже). */
+.docx-preview-fit .docx-preview-content table {
+    width: 100%;
 }
 
 .docx-preview-content table td,

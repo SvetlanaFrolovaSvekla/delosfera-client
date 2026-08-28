@@ -3,6 +3,7 @@ import type {SzAssignmentDraft} from "@/service/szService/szExecutionService.ts"
 
 export type SzStatusCode =
     | "Draft" | "OnApproval" | "PendingRegistration" | "OnSigning"
+    | "OnSignerDecision" | "OnBoardReview"
     | "Registered" | "OnRevision"
     | "OnAddresseeDecision"
     | "OnExecution" | "Executed" | "Rejected" | "Withdrawn" | "Archived";
@@ -185,6 +186,33 @@ export interface SzHistoryEntry {
 
 const BASE = "/sz";
 
+/** Куда записка идёт после подписания. */
+export const SZ_SIGNER_ROUTE = {
+    Board: 1,
+    Procurement: 2,
+    Execution: 3,
+} as const;
+
+export type SzSignerRoute = (typeof SZ_SIGNER_ROUTE)[keyof typeof SZ_SIGNER_ROUTE];
+
+/** Коллегиальные органы — куда выносится вопрос. */
+export const MEETING_BODY = {
+    Board: 1,
+    Kpa: 2,
+    CreditCommittee: 3,
+} as const;
+
+export type MeetingBody = (typeof MEETING_BODY)[keyof typeof MEETING_BODY];
+
+export interface SzSignerDecisionRequest {
+    route: SzSignerRoute;
+    /** Орган — только для вынесения на заседание. */
+    body?: MeetingBody;
+    /** Формулировка вопроса либо предмет закупки; пусто — берётся тема записки. */
+    subject?: string;
+    note?: string;
+}
+
 export const szService = {
     async search(request: SzSearchRequest): Promise<SzPage> {
         const {data} = await apiClient.post<SzPage>(`${BASE}/search`, request);
@@ -248,6 +276,15 @@ export const szService = {
         return data;
     },
 
+    /**
+     * Решение подписанта о дальнейшем ходе записки: на коллегиальный орган,
+     * в Сектор закупок либо на исполнение.
+     */
+    async signerDecision(id: number, request: SzSignerDecisionRequest): Promise<SzDetails> {
+        const {data} = await apiClient.post<SzDetails>(`${BASE}/${id}/signer-decision`, request);
+        return data;
+    },
+
     async withdraw(id: number, reason: string): Promise<SzDetails> {
         const {data} = await apiClient.post<SzDetails>(`${BASE}/${id}/withdraw`, {reason});
         return data;
@@ -284,6 +321,8 @@ export const SZ_STATUS_LABEL: Record<SzStatusCode, string> = {
     OnApproval: "На согласовании",
     PendingRegistration: "Согласована, ждёт регистрации",
     OnSigning: "На подписании",
+    OnSignerDecision: "Решение подписанта",
+    OnBoardReview: "Вынесена на заседание",
     // Прежний статус: номер присваивался до согласования. Остаётся ради записок,
     // заведённых до перестройки порядка.
     Registered: "Зарегистрирована",

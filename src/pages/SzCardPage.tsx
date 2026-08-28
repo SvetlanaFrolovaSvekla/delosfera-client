@@ -31,6 +31,10 @@ import {
     hrForms as szHrForms,
     type HrFormSchema,
     SZ_STATUS_LABEL,
+    SZ_SIGNER_ROUTE,
+    MEETING_BODY,
+    type SzSignerRoute,
+    type MeetingBody,
     szService,
     type SzDetails,
     type SzHrKind,
@@ -200,6 +204,39 @@ export function SzCardPage() {
     // причинам вне системы: уволился согласующий, маршрут собрали не так. Без
     // этой возможности такие записки правят прямо в базе.
     const canForceStatus = hasPermission(PermissionCode.ManageSystemSettings);
+
+    // Решение о дальнейшем ходе выносит подписант — и только после подписания.
+    // Подпись говорит «с текстом согласен», но не говорит, что делать дальше.
+    const isSigner = !!sz && !!user && sz.signerUserId === user.id;
+    const canDecideAsSigner = isSigner && sz?.statusCode === "OnSignerDecision";
+
+    const [signerRoute, setSignerRoute] = useState<SzSignerRoute>(SZ_SIGNER_ROUTE.Execution);
+    const [body, setBody] = useState<MeetingBody>(MEETING_BODY.Board);
+    const [routeSubject, setRouteSubject] = useState("");
+
+    const decideAsSigner = async () => {
+        if (!sz) return;
+        setSaving(true);
+        setError(null);
+        try {
+            applyDetails(await szService.signerDecision(sz.id, {
+                route: signerRoute,
+                body: signerRoute === SZ_SIGNER_ROUTE.Board ? body : undefined,
+                subject: routeSubject.trim() || undefined,
+            }));
+            await reload();
+            setNotice(signerRoute === SZ_SIGNER_ROUTE.Board
+                ? "Вопрос вынесен: секретарь включит его в повестку"
+                : signerRoute === SZ_SIGNER_ROUTE.Procurement
+                    ? "Заявка на закупку заведена"
+                    : "Записка передана на исполнение");
+        } catch (e) {
+            const message = (e as {response?: {data?: {message?: string}}}).response?.data?.message;
+            setError(message ?? "Не удалось вынести решение");
+        } finally {
+            setSaving(false);
+        }
+    };
     const [forceOpen, setForceOpen] = useState(false);
     const [forceStatusCode, setForceStatusCode] = useState<SzStatusCode>("Draft");
     const [forceReason, setForceReason] = useState("");
@@ -504,6 +541,68 @@ export function SzCardPage() {
             {error && (
                 <div className="mt-4 rounded-[10px] border border-[#f1c9c2] bg-[#fbeae7] px-4 py-2.5 text-[13px] text-[#c0392b]">
                     {error}
+                </div>
+            )}
+
+            {canDecideAsSigner && (
+                <div className="mt-4 rounded-[12px] border border-[#cfe0ff] bg-[#f7faff] p-4">
+                    <div className="text-[13px] font-semibold text-[#0f1b2d]">Куда записка идёт дальше</div>
+                    <p className="mt-1 mb-3 text-[12.5px] text-[#55617a]">
+                        Записка подписана. Решите, выносить ли вопрос на коллегиальный орган,
+                        передавать ли потребность в Сектор закупок или пустить её на исполнение.
+                    </p>
+
+                    <div className="flex flex-col gap-2">
+                        {[
+                            {v: SZ_SIGNER_ROUTE.Board, t: "На коллегиальный орган", h: "Появится у секретаря в «Вопросах на рассмотрение»"},
+                            {v: SZ_SIGNER_ROUTE.Procurement, t: "В Сектор закупок", h: "Заведётся заявка на закупку, связанная с запиской"},
+                            {v: SZ_SIGNER_ROUTE.Execution, t: "На исполнение", h: "Обычный ход: решение адресата и поручения"},
+                        ].map((o) => (
+                            <label key={o.v} className="flex cursor-pointer items-start gap-2 text-[13px] text-[#26324a]">
+                                <input
+                                    type="radio"
+                                    className="mt-1"
+                                    checked={signerRoute === o.v}
+                                    onChange={() => setSignerRoute(o.v)}
+                                />
+                                <span>
+                                    {o.t}
+                                    <span className="block text-[11.5px] text-[#8b97ab]">{o.h}</span>
+                                </span>
+                            </label>
+                        ))}
+                    </div>
+
+                    {signerRoute === SZ_SIGNER_ROUTE.Board && (
+                        <select
+                            className={inputClass + " mt-3 max-w-[320px]"}
+                            value={body}
+                            onChange={(e) => setBody(Number(e.target.value) as MeetingBody)}
+                        >
+                            <option value={MEETING_BODY.Board}>Правление Банка</option>
+                            <option value={MEETING_BODY.Kpa}>Комитет по проблемным активам</option>
+                            <option value={MEETING_BODY.CreditCommittee}>Кредитный комитет</option>
+                        </select>
+                    )}
+
+                    {signerRoute !== SZ_SIGNER_ROUTE.Execution && (
+                        <input
+                            className={inputClass + " mt-2"}
+                            value={routeSubject}
+                            onChange={(e) => setRouteSubject(e.target.value)}
+                            placeholder={signerRoute === SZ_SIGNER_ROUTE.Board
+                                ? "Формулировка вопроса для повестки — пусто, возьмём тему записки"
+                                : "Предмет закупки — пусто, возьмём тему записки"}
+                        />
+                    )}
+
+                    <button
+                        onClick={decideAsSigner}
+                        disabled={saving}
+                        className="mt-3 h-10 px-4 rounded-[10px] border-none bg-[#2f68f5] text-white font-semibold text-[13px] cursor-pointer hover:brightness-[1.06] disabled:opacity-50"
+                    >
+                        Вынести решение
+                    </button>
                 </div>
             )}
 

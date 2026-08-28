@@ -91,10 +91,14 @@ interface VndEditionsTabProps {
     onGoToApproval?: () => void;
 }
 
+// ВАЖНО: только права "...WithoutApproval" реально дают возможность обойти согласование.
+// CreateVndWithApproval/ActualizeAnyVndWithApproval позволяют создавать/актуализировать ВНД,
+// но по итогу всё равно требуют согласования - наличие только этих прав (например, у роли
+// "Редактор ВНД") не должно давать кнопку "Сделать актуальной редакцией без согласования"
+// (см. isChiefEditor ниже - тот шире и используется для доступа к документам в целом, а не
+// для этого конкретного действия).
 const PUBLISH_WITHOUT_APPROVAL_PERMISSIONS: number[] = [
-    PermissionCode.CreateVndWithApproval,
     PermissionCode.CreateVndWithoutApproval,
-    PermissionCode.ActualizeAnyVndWithApproval,
     PermissionCode.ActualizeAnyVndWithoutApproval,
 ];
 
@@ -151,8 +155,16 @@ export function VndEditionsTab({vnd, onVndChanged, onGoToApproval}: VndEditionsT
     const [publishingWithoutApproval, setPublishingWithoutApproval] = useState(false);
     const [publishWithoutApprovalError, setPublishWithoutApprovalError] = useState<string | null>(null);
 
+    // Именно право обойти согласование (см. комментарий у PUBLISH_WITHOUT_APPROVAL_PERMISSIONS
+    // выше) - уже, чем isChiefEditor, чтобы кнопку/право "Сделать актуальной редакцией без
+    // согласования" не получал тот, у кого есть только CreateVndWithApproval/
+    // ActualizeAnyVndWithApproval (например, роль "Редактор ВНД").
+    const canPublishWithoutApproval =
+        hasPermission(PermissionCode.CreateVndWithoutApproval) ||
+        hasPermission(PermissionCode.ActualizeAnyVndWithoutApproval);
+
     const publishWithoutApprovalRoleNames = useMemo(() => {
-        if (!isChiefEditor || !user) return [];
+        if (!canPublishWithoutApproval || !user) return [];
         return user.roles
             .filter((role) =>
                 role.permissionCodes.some((code) =>
@@ -160,7 +172,7 @@ export function VndEditionsTab({vnd, onVndChanged, onGoToApproval}: VndEditionsT
                 )
             )
             .map((role) => role.name);
-    }, [isChiefEditor, user]);
+    }, [canPublishWithoutApproval, user]);
 
     // Роли, дающие право "Редактировать последнюю редакцию напрямую" (см. canEditLastRevision
     // ниже) - для подсказки в самой модалке VndEditLastRevisionModal, тот же паттерн, что и
@@ -593,7 +605,7 @@ export function VndEditionsTab({vnd, onVndChanged, onGoToApproval}: VndEditionsT
                     onSubmit={() => setApprovalModalOpen(true)}
                     onGoToApproval={canGoToApprovalFromBanner ? onGoToApproval : undefined}
                     onPublishWithoutApproval={
-                        isChiefEditor ? () => setPublishWithoutApprovalConfirmOpen(true) : undefined
+                        canPublishWithoutApproval ? () => setPublishWithoutApprovalConfirmOpen(true) : undefined
                     }
                     isPublishingWithoutApproval={publishingWithoutApproval}
                     tidMissing={selectedTidMissing}

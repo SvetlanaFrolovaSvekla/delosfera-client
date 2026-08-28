@@ -51,13 +51,13 @@ export function useJournalViews(
             .then((list) => {
                 if (cancelled) return;
 
-                const своё = list.find((v) => v.isDefault && !v.isShared);
-                const общее = list.find((v) => v.isDefault && v.isShared);
-                const выбранное = своё ?? общее;
+                const own = list.find((v) => v.isDefault && !v.isShared);
+                const sharedDefault = list.find((v) => v.isDefault && v.isShared);
+                const chosen = own ?? sharedDefault;
 
-                if (выбранное) {
-                    setActiveId(выбранное.id);
-                    applyColumns(выбранное.columns);
+                if (chosen) {
+                    setActiveId(chosen.id);
+                    applyColumns(chosen.columns);
                 }
             })
             .finally(() => {
@@ -135,10 +135,10 @@ export function useJournalViews(
      * переключил колонки после того, как применил его. Кнопка «сохранить»
      * должна появляться именно тогда, а не висеть всегда.
      */
-    const изменено =
+    const isDirty =
         active !== null &&
         (active.columns.length !== currentColumns.length ||
             active.columns.some((c, i) => c !== currentColumns[i]));
 
-    return {views, active, activeId, изменено, loading, error, apply, reset, save, update, remove};
+    return {views, active, activeId, isDirty, loading, error, apply, reset, save, update, remove};
 }

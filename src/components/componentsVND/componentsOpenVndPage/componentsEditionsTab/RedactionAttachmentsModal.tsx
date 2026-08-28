@@ -37,17 +37,17 @@ export function RedactionAttachmentsModal({
                 </div>
 
                 <div className="flex flex-col gap-2">
-                    {redaction.attachmentFileIds.map((fid) => (
+                    {redaction.attachments.map((attachment) => (
                         <button
-                            key={fid}
+                            key={attachment.fileId}
                             type="button"
-                            disabled={downloadingId === fid}
-                            onClick={() => onDownload(fid, `Вложение_${fid}`)}
+                            disabled={downloadingId === attachment.fileId}
+                            onClick={() => onDownload(attachment.fileId, attachment.fileName)}
                             className="cursor-pointer flex items-center gap-2 rounded-[10px] border border-[#e5e9f0] px-3 py-[10px] text-left text-[13px] text-[#3a4560] hover:border-[#4e57d6]/40 hover:bg-[#f6f8fb] disabled:opacity-60"
                         >
                             <Paperclip size={16} className="flex-none text-[#8b97ab]"/>
-                            <span className="flex-1">Вложение #{fid}</span>
-                            {downloadingId === fid ? (
+                            <span className="flex-1 truncate">{attachment.fileName}</span>
+                            {downloadingId === attachment.fileId ? (
                                 <Loader2 size={14} className="flex-none animate-spin text-[#8b97ab]"/>
                             ) : (
                                 <Download size={14} className="flex-none text-[#8b97ab]"/>

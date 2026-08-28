@@ -162,6 +162,16 @@ export function VndEditionsTab({vnd, onVndChanged, onGoToApproval}: VndEditionsT
             .map((role) => role.name);
     }, [isChiefEditor, user]);
 
+    // Роли, дающие право "Редактировать последнюю редакцию напрямую" (см. canEditLastRevision
+    // ниже) - для подсказки в самой модалке VndEditLastRevisionModal, тот же паттерн, что и
+    // publishWithoutApprovalRoleNames выше.
+    const editLastRevisionRoleNames = useMemo(() => {
+        if (!user) return [];
+        return user.roles
+            .filter((role) => role.permissionCodes.includes(PermissionCode.EditLastRevisionDirectly))
+            .map((role) => role.name);
+    }, [user]);
+
     // Процесс согласования - нужен только чтобы решить, кому показать кнопку "Перейти к
     // согласованию" в статус-баннере редакции ("pending"): участвующему согласующему,
     // инициатору согласования и инициатору самой ВНД. Грузим один раз при открытии вкладки -
@@ -636,6 +646,7 @@ export function VndEditionsTab({vnd, onVndChanged, onGoToApproval}: VndEditionsT
                     vndId={vnd.id}
                     mode={uploadMode}
                     lockedRequiresApproval={vnd.actualizationRequiresApproval}
+                    previousAttachments={selected.attachments}
                     onClose={() => setUploadOpen(false)}
                     onUploaded={handleRedactionUploaded}
                 />
@@ -781,7 +792,9 @@ export function VndEditionsTab({vnd, onVndChanged, onGoToApproval}: VndEditionsT
             {editOpen && selected && (
                 <VndEditLastRevisionModal
                     vndId={vnd.id}
+                    vnd={vnd}
                     redaction={selected}
+                    roleNames={editLastRevisionRoleNames}
                     onClose={() => setEditOpen(false)}
                     onSaved={() => {
                         setEditOpen(false);

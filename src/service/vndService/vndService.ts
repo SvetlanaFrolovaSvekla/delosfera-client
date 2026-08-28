@@ -79,6 +79,9 @@ export const vndService = {
         for (const file of request.attachments ?? []) {
             formData.append("Attachments", file);
         }
+        for (const fileId of request.existingAttachmentFileIds ?? []) {
+            formData.append("ExistingAttachmentFileIds", String(fileId));
+        }
 
         const response = await fetch(`${API_BASE}/vnd/${vndId}/redactions`, {
             method: "POST",
@@ -165,8 +168,16 @@ export const vndService = {
         const formData = new FormData();
         if (request.docRu) formData.append("DocRu", request.docRu);
         if (request.docKg) formData.append("DocKg", request.docKg);
+        else if (request.removeDocKg) formData.append("RemoveDocKg", "true");
         if (request.docEn) formData.append("DocEn", request.docEn);
+        else if (request.removeDocEn) formData.append("RemoveDocEn", "true");
         if (request.description !== undefined) formData.append("Description", request.description);
+        for (const file of request.newAttachments ?? []) {
+            formData.append("NewAttachments", file);
+        }
+        for (const fileId of request.removedAttachmentFileIds ?? []) {
+            formData.append("RemovedAttachmentFileIds", String(fileId));
+        }
 
         const response = await fetch(`${API_BASE}/vnd/${vndId}/redactions/last`, {
             method: "PUT",

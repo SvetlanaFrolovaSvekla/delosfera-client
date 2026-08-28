@@ -2,14 +2,15 @@
 import {useMemo, useState} from "react";
 import {createPortal} from "react-dom";
 import {vndService} from "@/service/vndService/vndService.ts";
-import type {VndRedactionResponse} from "@/service/vndService/vndServiceType.ts";
+import type {VndRedactionAttachmentResponse, VndRedactionResponse} from "@/service/vndService/vndServiceType.ts";
 import {useAuth} from "@/context/AuthContext.ts";
 import {PermissionCode} from "@/constants/permissions/permissions.ts";
 import {Clue} from "@/components/componentsGeneral/knowledgeBaseComponents/Clue.tsx";
 import {HelpTooltip} from "@/components/componentsGeneral/knowledgeBaseComponents/HelpTooltip.tsx";
 import {Tooltip} from "@/components/componentsGeneral/Tooltip.tsx";
-import {FileUp, Loader2, Paperclip, Trash2, X, Check} from "lucide-react";
+import {Download, FileUp, Loader2, Paperclip, Trash2, X, Check} from "lucide-react";
 import {CharCounter} from "@/components/componentsGeneral/CharCounter.tsx";
+import {downloadWithToast} from "@/utils/downloadFile.ts";
 import {
     VND_REDACTION_DESCRIPTION_MAX_LENGTH,
     VND_REDACTION_MAX_ATTACHMENTS,
@@ -25,6 +26,12 @@ interface VndUploadRedactionModalProps {
      * согласованием / без", зафиксированное при старте текущего цикла актуализации. Чекбокс
      * "Требуется согласование" в этом режиме скрыт, значение берётся отсюда. */
     lockedRequiresApproval?: boolean;
+    /** Вложения предыдущей редакции этого же ВНД - предзаполняют блок "Вложения" (по умолчанию
+     * все перенесены), чтобы не грузить одни и те же файлы заново при каждой актуализации.
+     * Можно убрать ненужные и добавить новые - см. removedExistingAttachmentIds. Сервер к тому
+     * же сам не дублирует новые вложения, совпадающие по содержимому с уже приложенными к этому
+     * ВНД (см. AddRedactionAsync). Не передаётся для самой первой редакции нового ВНД. */
+    previousAttachments?: VndRedactionAttachmentResponse[];
     onClose: () => void;
     onUploaded: (redaction: VndRedactionResponse) => void;
 }
@@ -113,7 +120,7 @@ function formatBytes(bytes: number): string {
 const MAX_FILE_SIZE = 50 * 1024 * 1024; // 50 МБ
 
 export function VndUploadRedactionModal({
-                                            vndId, mode = "default", lockedRequiresApproval,
+                                            vndId, mode = "default", lockedRequiresApproval, previousAttachments,
                                             onClose, onUploaded,
                                         }: VndUploadRedactionModalProps) {
     const {user, hasPermission} = useAuth();
@@ -136,6 +143,19 @@ export function VndUploadRedactionModal({
     const [docEn, setDocEn] = useState<File | null>(null);
     const [attachments, setAttachments] = useState<File[]>([]);
     const [attachmentCountLimitHit, setAttachmentCountLimitHit] = useState(false);
+    // Вложения предыдущей редакции, перенесённые в новую "как есть" - по умолчанию все
+    // перенесены (kept), можно убрать ненужные (тогда id уходит в removedExistingAttachmentIds).
+    const [removedExistingAttachmentIds, setRemovedExistingAttachmentIds] = useState<Set<number>>(new Set());
+    const keptExistingAttachments = (previousAttachments ?? [])
+        .filter((a) => !removedExistingAttachmentIds.has(a.fileId));
+    const toggleRemoveExistingAttachment = (fileId: number) => {
+        setRemovedExistingAttachmentIds((prev) => {
+            const next = new Set(prev);
+            if (next.has(fileId)) next.delete(fileId);
+            else next.add(fileId);
+            return next;
+        });
+    };
     const [description, setDescription] = useState("");
     const [requiresApproval, setRequiresApproval] = useState(true);
     // В режиме актуализации решение уже зафиксировано на старте цикла - используем его напрямую,
@@ -146,7 +166,8 @@ export function VndUploadRedactionModal({
 
     const canSubmit = docRu !== null && !submitting;
 
-    const attachmentSlotsLeft = VND_REDACTION_MAX_ATTACHMENTS - attachments.length;
+    const totalAttachmentCount = keptExistingAttachments.length + attachments.length;
+    const attachmentSlotsLeft = VND_REDACTION_MAX_ATTACHMENTS - totalAttachmentCount;
     const attachmentLimitReached = attachmentSlotsLeft <= 0;
 
     const handleAddAttachments = (files: FileList | null) => {
@@ -188,6 +209,7 @@ export function VndUploadRedactionModal({
                     ? effectiveRequiresApproval
                     : (canSkipApproval ? requiresApproval : true),
                 attachments,
+                existingAttachmentFileIds: keptExistingAttachments.map((a) => a.fileId),
             });
             onUploaded(result);
         } catch (e) {
@@ -242,7 +264,7 @@ export function VndUploadRedactionModal({
                                 className="text-[#8b97ab] font-normal">(необязательно, можно несколько)</span>
                             </span>
                                 <span className="flex items-center gap-0.5 text-[11.5px] text-[#8b97ab]">
-                                    Добавлено {attachments.length} из {VND_REDACTION_MAX_ATTACHMENTS} файлов максимум
+                                    Добавлено {totalAttachmentCount} из {VND_REDACTION_MAX_ATTACHMENTS} файлов максимум
                                     <HelpTooltip
                                         content={`Количество вложений к редакции ограничено — не более ${VND_REDACTION_MAX_ATTACHMENTS}, каждый файл не больше 50 МБ.`}
                                         side="top"
@@ -250,6 +272,69 @@ export function VndUploadRedactionModal({
                                     />
                                 </span>
                             </div>
+
+                            {/* Вложения предыдущей редакции - перенесены по умолчанию, можно
+                                убрать/вернуть. Сама передача существующих id (без повторной
+                                загрузки файла) исключает дублирование в БД и хранилище. */}
+                            {previousAttachments && previousAttachments.length > 0 && (
+                                <Clue className="mb-[12px]">
+                                    Вложения перенесены из предыдущей редакции. Если что-то здесь
+                                    изменить, добавить или удалить — это затронет только новую
+                                    редакцию, предыдущая останется без изменений.
+                                </Clue>
+                            )}
+
+                            {previousAttachments && previousAttachments.length > 0 && (
+                                <div className="mb-[6px] flex flex-col gap-[6px]">
+                                    {previousAttachments.map((attachment) => {
+                                        const willBeRemoved = removedExistingAttachmentIds.has(attachment.fileId);
+                                        return (
+                                            <div
+                                                key={attachment.fileId}
+                                                className={`flex items-center gap-2 rounded-[9px] border px-3 py-[8px] ${
+                                                    willBeRemoved ? "border-[#f0c4c4] bg-[#fdf5f5]" : "border-[#e5e9f0] bg-white"
+                                                }`}
+                                            >
+                                                <Paperclip size={14} className="flex-none text-[#8b97ab]"/>
+                                                <span
+                                                    className={`flex-1 truncate text-[12px] ${
+                                                        willBeRemoved ? "text-[#c0392b] line-through" : "text-[#26324a]"
+                                                    }`}
+                                                >
+                                                    {attachment.fileName}
+                                                </span>
+                                                {!willBeRemoved && (
+                                                    <span className="flex-none text-[10.5px] font-semibold text-[#8b97ab]">
+                                                        из предыдущей редакции
+                                                    </span>
+                                                )}
+                                                {!willBeRemoved && (
+                                                    <Tooltip content="Скачать" side="top">
+                                                        <button
+                                                            type="button"
+                                                            onClick={() => downloadWithToast(attachment.fileId, attachment.fileName)}
+                                                            className="cursor-pointer flex-none rounded-[7px] border border-[#e5e9f0] bg-white p-[6px] text-[#8b97ab] hover:border-[#4e57d6]/40 hover:text-[#4e57d6]"
+                                                        >
+                                                            <Download size={14}/>
+                                                        </button>
+                                                    </Tooltip>
+                                                )}
+                                                <button
+                                                    type="button"
+                                                    onClick={() => toggleRemoveExistingAttachment(attachment.fileId)}
+                                                    className={`cursor-pointer flex-none rounded-[7px] border px-2.5 py-[5px] text-[11px] font-semibold transition-colors ${
+                                                        willBeRemoved
+                                                            ? "border-[#e0473e] bg-[#fdecec] text-[#c0392b]"
+                                                            : "border-[#e5e9f0] bg-white text-[#8b97ab] hover:border-[#e0473e]/50 hover:text-[#c0392b]"
+                                                    }`}
+                                                >
+                                                    {willBeRemoved ? "Отменить удаление" : "Удалить"}
+                                                </button>
+                                            </div>
+                                        );
+                                    })}
+                                </div>
+                            )}
 
                             {attachmentLimitReached ? (
                                 <Tooltip

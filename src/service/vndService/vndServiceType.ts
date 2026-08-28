@@ -258,6 +258,11 @@ export interface CreateVndRedactionRequest {
      * должна проверить это сама, ориентируясь на наличие уже существующих редакций у ВНД. */
     tid?: File | null;
     attachments?: File[];
+    /** Id уже существующих файлов вложений (из предыдущей редакции этого же ВНД), переносимых
+     * в новую редакцию как есть, без повторной загрузки - см. previousAttachments в
+     * VndUploadRedactionModal. Дубли по содержимому (SHA-256) среди новых attachments сервер
+     * тоже не грузит повторно сам - см. AddRedactionAsync/BuildAttachmentEntitiesAsync. */
+    existingAttachmentFileIds?: number[];
     description?: string;
     requiresApproval: boolean;
 }
@@ -316,7 +321,15 @@ export interface EditLastRevisionDirectlyRequest {
     docRu?: File;
     docKg?: File;
     docEn?: File;
+    /** Убрать документ на кыргызском без замены - игнорируется, если одновременно передан docKg. */
+    removeDocKg?: boolean;
+    /** Убрать документ на английском без замены - игнорируется, если одновременно передан docEn. */
+    removeDocEn?: boolean;
     description?: string;
+    /** Новые вложения, добавляемые к редакции. */
+    newAttachments?: File[];
+    /** Id файлов существующих вложений редакции, которые нужно удалить. */
+    removedAttachmentFileIds?: number[];
 }
 
 export interface VndQuickSearchResult {

@@ -32,6 +32,7 @@ import {
 import {
     CommentViewModal
 } from "@/components/componentsCoordination/CoordinationRouteConstructor/viewComponents/CommentViewModal.tsx";
+import {MAX_FILE_SIZE} from "@/constants/validation/totalValidatuon.ts";
 
 
 interface VndRevisionNeededPanelProps {
@@ -297,9 +298,6 @@ interface DocSlot {
 
 const DOC_ACCEPT = ".doc,.docx,.pdf,.xls,.xlsx,.ppt,.pptx";
 
-// Максимальный размер одного файла (документа редакции или вложения) — совпадает с
-// ограничением в VndUploadRedactionModal, см. formatFileSize для вывода в UI.
-const MAX_FILE_SIZE = 50 * 1024 * 1024; // 50 МБ
 
 /** Строка одного документа редакции: для существующего - "требует замены" (открывает
  * "Заменить") либо удаление (для необязательных KG/EN); для отсутствующего языка -

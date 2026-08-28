@@ -34,7 +34,8 @@ import {toast} from "@/service/toastService.ts";
 // раскрасить круговую диаграмму статусов в те же цвета, что и бейджи статуса по всему приложению
 const STATUS_KEY_BY_ID: Array<keyof typeof STATUS_META> = ["active", "onact", "review", "consol", "arch", "draft"];
 
-export function ReportVndPage() {
+/** embedded — страница показывается вкладкой раздела «Аналитика», без своей шапки. */
+export function ReportVndPage({embedded}: {embedded?: boolean} = {}) {
     const {hasPermission} = useAuth();
     const canView = hasPermission(PermissionCode.ViewFullStatistics);
     const canExport = hasPermission(PermissionCode.ExportFullStatisticsReport);
@@ -121,15 +122,21 @@ export function ReportVndPage() {
     const actualizationLabels = actualizationTrend.map((d) => d.periodLabel);
 
     return (
-        <div className="w-full max-w-[1700px] mx-auto px-4 sm:px-6 pt-5 sm:pt-[26px] pb-10 sm:pb-[60px]">
+        <div className={embedded
+            ? "w-full"
+            : "w-full max-w-[1700px] mx-auto px-4 sm:px-6 pt-5 sm:pt-[26px] pb-10 sm:pb-[60px]"}>
             <div className="flex items-start justify-between gap-3 flex-wrap mb-5">
                 <div>
-                    <h1 className="m-0 text-[23px] font-bold tracking-[-0.02em] text-[#0f1b2d]">
-                        Отчётность по ВНД
-                    </h1>
-                    <p className="m-0 mt-1 text-[13px] text-[#8b97ab]">
-                        Сводная аналитика по документам, согласованию и актуализации
-                    </p>
+                    {!embedded && (
+                        <>
+                            <h1 className="m-0 text-[23px] font-bold tracking-[-0.02em] text-[#0f1b2d]">
+                                Отчётность по ВНД
+                            </h1>
+                            <p className="m-0 mt-1 text-[13px] text-[#8b97ab]">
+                                Сводная аналитика по документам, согласованию и актуализации
+                            </p>
+                        </>
+                    )}
                 </div>
                 {canExport && (
                     <div className="flex items-center gap-2">

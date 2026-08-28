@@ -138,7 +138,8 @@ export interface ProcurementCreateRequest {
     amount: number;
     isAffiliated: boolean;
     hasBudget: boolean;
-    planItem?: string;
+    /** Ссылка на позицию Плана закупок; пусто — закупка внеплановая. */
+    planItemId?: number;
     hasSpecification: boolean;
 
     /** Желаемое окно объявления закупки: обе даты или ни одной. */

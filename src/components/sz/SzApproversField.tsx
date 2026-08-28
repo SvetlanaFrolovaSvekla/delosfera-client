@@ -8,6 +8,19 @@ export interface ApproverOption {
     /** Должность и подразделение — по ним отличают однофамильцев. */
     position?: string | null;
     orgUnit?: string | null;
+
+    /** Член Правления — идёт первым в подборе. */
+    isBoardMember?: boolean;
+
+    /** Руководит подразделением — идёт вторым. */
+    isUnitHead?: boolean;
+}
+
+/** Старшинство в подборе: Правление → руководители → остальные. */
+function старшинство(u: ApproverOption): number {
+    if (u.isBoardMember) return 0;
+    if (u.isUnitHead) return 1;
+    return 2;
 }
 
 interface Props {
@@ -45,12 +58,19 @@ export function SzApproversField({
 
     const найденные = useMemo(() => {
         const q = поиск.trim().toLowerCase();
-        if (!q) return users;
 
-        return users.filter((u) =>
-            u.fullName.toLowerCase().includes(q) ||
-            (u.position ?? "").toLowerCase().includes(q) ||
-            (u.orgUnit ?? "").toLowerCase().includes(q));
+        const подходят = q
+            ? users.filter((u) =>
+                u.fullName.toLowerCase().includes(q) ||
+                (u.position ?? "").toLowerCase().includes(q) ||
+                (u.orgUnit ?? "").toLowerCase().includes(q))
+            : users;
+
+        // Порядок подбора — по старшинству: Правление, затем руководители, затем
+        // остальные. Так виза собирается сверху вниз, как её и подписывают, а не
+        // по алфавиту, где председатель стоит между двумя специалистами.
+        return [...подходят].sort((a, b) =>
+            старшинство(a) - старшинство(b) || a.fullName.localeCompare(b.fullName, "ru"));
     }, [users, поиск]);
 
     const переключить = (id: number) =>

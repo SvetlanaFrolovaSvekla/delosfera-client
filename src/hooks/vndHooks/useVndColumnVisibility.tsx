@@ -78,10 +78,33 @@ export function useVndColumnVisibility(scope: VndScope, canViewExtended: boolean
             [scope]: Object.fromEntries(getToggleableColumns(scope, canViewExtended, linkedToMeOnly).map((c) => [c.key, false])),
         }));
 
+    // Применить готовый набор — представление журнала. Ключи, которых в этой
+    // вкладке нет (право забрано, чекбокс выключен), молча отбрасываются: набор
+    // сохранён однажды, а состав колонок зависит от прав и вкладки.
+    const applyColumns = (keys: string[]) =>
+        setVisibleColsByScope((prev) => ({
+            ...prev,
+            [scope]: Object.fromEntries(
+                getToggleableColumns(scope, canViewExtended, linkedToMeOnly)
+                    .map((c) => [c.key, keys.includes(c.key)]),
+            ),
+        }));
+
     const allColumns = getColumnsForScope(scope, canViewExtended, linkedToMeOnly);
     const columns = allColumns.filter((c) => c.fixed || visibleCols[c.key] === true);
     const gridTemplate = columns.map((c) => c.width).join(" ");
     const toggleableColumns = getToggleableColumns(scope, canViewExtended, linkedToMeOnly);
 
-    return {visibleCols, toggleColumn, selectAllColumns, deselectAllColumns, columns, gridTemplate, toggleableColumns};
+    // Что показано сейчас — в порядке колонок журнала, а не в порядке отметок.
+    // Порядок значим: он и есть порядок столбцов при следующем применении.
+    const currentColumns = toggleableColumns
+        .filter((c) => visibleCols[c.key] === true)
+        .map((c) => c.key as string);
+
+    return {
+        visibleCols, toggleColumn, selectAllColumns, deselectAllColumns,
+        columns, gridTemplate, toggleableColumns,
+        currentColumns, applyColumns,
+        defaultColumns: defaultVisibleForScope(scope),
+    };
 }

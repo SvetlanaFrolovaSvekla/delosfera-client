@@ -62,7 +62,8 @@ function Разрез({заголовок, строки}: { заголовок: 
     );
 }
 
-export function SzStatisticsPage() {
+/** embedded — страница показывается вкладкой раздела «Аналитика», без своей шапки. */
+export function SzStatisticsPage({embedded}: {embedded?: boolean} = {}) {
     const {orgUnits} = useDictionaries();
     const [виды, setВиды] = useState<SzKind[]>([]);
     const [сводка, setСводка] = useState<SzStatistics | null>(null);
@@ -110,11 +111,15 @@ export function SzStatisticsPage() {
     const итог = сводка ?? {...пусто, from: null, to: null, byUnit: {}, byKind: {}, byMonth: {}} as SzStatistics;
 
     return (
-        <div className="flex flex-col gap-4 p-[22px_26px] max-w-[1080px]">
-            <div>
-                <div className="text-[12.5px] text-[#8b97ab]">Служебные записки</div>
-                <h1 className="m-0 mt-[3px] text-[19px] font-bold text-[#0f1b2d]">Аналитика</h1>
-            </div>
+        <div className={embedded
+            ? "flex flex-col gap-4 max-w-[1080px]"
+            : "flex flex-col gap-4 p-[22px_26px] max-w-[1080px]"}>
+            {!embedded && (
+                <div>
+                    <div className="text-[12.5px] text-[#8b97ab]">Служебные записки</div>
+                    <h1 className="m-0 mt-[3px] text-[19px] font-bold text-[#0f1b2d]">Аналитика</h1>
+                </div>
+            )}
 
             {ошибка && (
                 <div className="rounded-[9px] border border-[#f1c9c2] bg-[#fbeae7] px-4 py-2.5 text-[13px] text-[#c0392b]">

@@ -1,4 +1,5 @@
 // Расширенный поиск для реестра ВНД
+import type {ReactNode} from "react";
 import {useDictionaries} from "@/context/DictionariesContext.tsx";
 import {useVndAdvancedFiltersDraft, type AdvancedDraft} from "@/hooks/vndHooks/useVndAdvancedFiltersDraft.ts";
 import {useVndHasActiveFilters} from "@/hooks/vndHooks/useVndHasActiveFilters.ts";
@@ -52,6 +53,9 @@ interface VndFiltersProps {
     totalCount: number;
 
     onResetFilters: () => void;
+
+    /** Выбор представления журнала. Стоит рядом с «Колонки» — им и распоряжается. */
+    viewPicker?: ReactNode;
 
     toggleableColumns: ColDef[];
     visibleCols: Record<string, boolean>;
@@ -133,6 +137,7 @@ export function VndFilters(props: VndFiltersProps) {
         advOpen, onToggleAdv, onCloseAdv,
         rubricFilters, onRubricFiltersChange,
         resultCount, totalCount, onResetFilters,
+        viewPicker,
         toggleableColumns, visibleCols, onToggleColumn, onSelectAllColumns, onDeselectAllColumns,
         onDocTypeFiltersChange, docTypeFilters,
         organFilters, onOrganFiltersChange,
@@ -303,6 +308,8 @@ export function VndFilters(props: VndFiltersProps) {
                     searchThreshold={8}
                     searchPlaceholder="Поиск колонки…"
                 />
+
+                {viewPicker}
 
                 {scope !== "draft" && canFilterLinkedToMe && (
                     <>

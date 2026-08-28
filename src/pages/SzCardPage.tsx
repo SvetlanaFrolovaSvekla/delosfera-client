@@ -4,6 +4,9 @@ import {ArrowLeft} from "lucide-react";
 import {colors} from "@/design/tokens";
 import {useDictionaries} from "@/context/DictionariesContext.tsx";
 import {useAuth} from "@/context/AuthContext.ts";
+import {PermissionCode} from "@/constants/permissions/permissions.ts";
+import {UserPicker, type PickableUser} from "@/components/componentsGeneral/UserPicker.tsx";
+import {OrgUnitPicker} from "@/components/procurement/OrgUnitPicker.tsx";
 import {userService} from "@/service/userService/userService.ts";
 import {SzExecutionPanel} from "@/components/sz/SzExecutionPanel.tsx";
 import {SzOriginalPanel} from "@/components/sz/SzOriginalPanel.tsx";
@@ -28,6 +31,10 @@ import {
     hrForms as szHrForms,
     type HrFormSchema,
     SZ_STATUS_LABEL,
+    SZ_SIGNER_ROUTE,
+    MEETING_BODY,
+    type SzSignerRoute,
+    type MeetingBody,
     szService,
     type SzDetails,
     type SzHrKind,
@@ -38,7 +45,9 @@ import {
 
 const STATUS_TONE: Partial<Record<SzStatusCode, { fg: string; bg: string }>> = {
     Draft: colors.status.draft,
+    OnApproval: colors.status.review,
     PendingRegistration: colors.status.onact,
+    OnSigning: colors.status.review,
     Registered: colors.status.review,
     OnRevision: colors.status.onact,
     OnAddresseeDecision: colors.status.review,
@@ -110,10 +119,10 @@ export function SzCardPage() {
         addresseeUserId: null, signerUserId: null, approverUserIds: [], approvalIsParallel: false,
     });
 
-    const {user} = useAuth();
+    const {user, hasPermission} = useAuth();
     const [route, setRoute] = useState<RouteInstance | null>(null);
     const [users, setUsers] = useState<Record<number, string>>({});
-    const [userList, setUserList] = useState<{ id: number; fullName: string }[]>([]);
+    const [userList, setUserList] = useState<PickableUser[]>([]);
     const [comment, setComment] = useState("");
     const [withdrawReason, setWithdrawReason] = useState("");
     const [withdrawOpen, setWithdrawOpen] = useState(false);
@@ -125,6 +134,9 @@ export function SzCardPage() {
                 setUserList(list.map((u) => ({
                     id: u.id, fullName: u.fullName,
                     position: u.position ?? null, orgUnit: u.orgUnit ?? null,
+                    orgUnitId: u.orgUnitId ?? null,
+                    isBoardMember: u.isBoardMember ?? false,
+                    isUnitHead: u.isUnitHead ?? false,
                 })));
             })
             .catch(() => {});
@@ -187,7 +199,66 @@ export function SzCardPage() {
     // Правка доступна автору, пока записка не ушла дальше него: согласующий,
     // открывший карточку, редактировать текст записки не должен.
     const isAuthor = !!sz && !!user && sz.authorId === user.id;
-    const editable = isNew || (isAuthor && (sz?.statusCode === "Draft" || sz?.statusCode === "OnRevision"));
+
+    // Ручной перевод статуса — администратору системы. Записка застревает по
+    // причинам вне системы: уволился согласующий, маршрут собрали не так. Без
+    // этой возможности такие записки правят прямо в базе.
+    const canForceStatus = hasPermission(PermissionCode.ManageSystemSettings);
+
+    // Решение о дальнейшем ходе выносит подписант — и только после подписания.
+    // Подпись говорит «с текстом согласен», но не говорит, что делать дальше.
+    const isSigner = !!sz && !!user && sz.signerUserId === user.id;
+    const canDecideAsSigner = isSigner && sz?.statusCode === "OnSignerDecision";
+
+    const [signerRoute, setSignerRoute] = useState<SzSignerRoute>(SZ_SIGNER_ROUTE.Execution);
+    const [body, setBody] = useState<MeetingBody>(MEETING_BODY.Board);
+    const [routeSubject, setRouteSubject] = useState("");
+
+    const decideAsSigner = async () => {
+        if (!sz) return;
+        setSaving(true);
+        setError(null);
+        try {
+            applyDetails(await szService.signerDecision(sz.id, {
+                route: signerRoute,
+                body: signerRoute === SZ_SIGNER_ROUTE.Board ? body : undefined,
+                subject: routeSubject.trim() || undefined,
+            }));
+            await reload();
+            setNotice(signerRoute === SZ_SIGNER_ROUTE.Board
+                ? "Вопрос вынесен: секретарь включит его в повестку"
+                : signerRoute === SZ_SIGNER_ROUTE.Procurement
+                    ? "Заявка на закупку заведена"
+                    : "Записка передана на исполнение");
+        } catch (e) {
+            const message = (e as {response?: {data?: {message?: string}}}).response?.data?.message;
+            setError(message ?? "Не удалось вынести решение");
+        } finally {
+            setSaving(false);
+        }
+    };
+    const [forceOpen, setForceOpen] = useState(false);
+    const [forceStatusCode, setForceStatusCode] = useState<SzStatusCode>("Draft");
+    const [forceReason, setForceReason] = useState("");
+
+    const forceStatus = async () => {
+        if (!sz || !forceReason.trim()) return;
+        setSaving(true);
+        setError(null);
+        try {
+            applyDetails(await szService.forceStatus(sz.id, forceStatusCode, forceReason.trim()));
+            setNotice(`Статус переведён в «${SZ_STATUS_LABEL[forceStatusCode]}»`);
+            setForceOpen(false);
+            setForceReason("");
+        } catch (e) {
+            const message = (e as {response?: {data?: {message?: string}}}).response?.data?.message;
+            setError(message ?? "Не удалось перевести статус");
+        } finally {
+            setSaving(false);
+        }
+    };
+    const editable = isNew || (isAuthor
+        && ["Draft", "OnRevision", "Withdrawn"].includes(sz?.statusCode ?? ""));
 
     const set = <K extends keyof SzSaveRequest>(key: K, value: SzSaveRequest[K]) =>
         setForm((f) => ({...f, [key]: value}));
@@ -348,12 +419,17 @@ export function SzCardPage() {
             applyDetails(updated);
             await reload();
             setNotice(action === "submit"
-                ? "Записка отправлена на регистрацию"
+                ? "Записка отправлена на согласование"
                 : `Зарегистрирована: ${updated.regNumber} · срок исполнения ${formatDate(updated.dueDate)}`);
-        } catch {
-            setError(action === "submit"
+        } catch (e) {
+            // Сервер объясняет отказ по существу: не выбран согласующий, не задан
+            // маршрут, записка не в том статусе. Подменяя это общей фразой, мы
+            // заставляем человека гадать и звать разработчика — что и произошло.
+            const message = (e as {response?: {data?: {message?: string}}}).response?.data?.message;
+
+            setError(message ?? (action === "submit"
                 ? "Не удалось отправить: проверьте текст и адресата"
-                : "Не удалось зарегистрировать записку");
+                : "Не удалось зарегистрировать записку"));
         } finally {
             setSaving(false);
         }
@@ -398,13 +474,13 @@ export function SzCardPage() {
                             {saving ? "Сохранение…" : "Сохранить"}
                         </button>
                     )}
-                    {sz && isAuthor && (sz.statusCode === "Draft" || sz.statusCode === "OnRevision") && (
+                    {sz && isAuthor && ["Draft", "OnRevision", "Withdrawn"].includes(sz.statusCode) && (
                         <button
                             onClick={() => runAction("submit")}
                             disabled={saving}
                             className="h-10 px-4 rounded-[10px] border border-[#e5e9f0] bg-white text-[#2f68f5] font-semibold text-[13px] cursor-pointer hover:bg-[#f6f8fb] disabled:opacity-50"
                         >
-                            Отправить на регистрацию
+                            Отправить на согласование
                         </button>
                     )}
                     {sz?.statusCode === "PendingRegistration" && (
@@ -427,13 +503,22 @@ export function SzCardPage() {
                             Печатная форма
                         </a>
                     )}
-                    {sz && isAuthor && ["PendingRegistration", "Registered", "OnRevision"].includes(sz.statusCode) && (
+                    {sz && isAuthor && ["OnApproval", "PendingRegistration", "OnSigning", "Registered", "OnRevision"].includes(sz.statusCode) && (
                         <button
                             onClick={() => setWithdrawOpen((v) => !v)}
                             disabled={saving}
                             className="h-10 px-4 rounded-[10px] border border-[#e5e9f0] bg-white text-[#55617a] font-semibold text-[13px] cursor-pointer hover:bg-[#f6f8fb] disabled:opacity-50"
                         >
                             Отозвать
+                        </button>
+                    )}
+                    {sz && canForceStatus && (
+                        <button
+                            onClick={() => setForceOpen((v) => !v)}
+                            disabled={saving}
+                            className="h-10 px-4 rounded-[10px] border border-[#e5e9f0] bg-white text-[#55617a] font-semibold text-[13px] cursor-pointer hover:bg-[#f6f8fb] disabled:opacity-50"
+                        >
+                            Перевести статус
                         </button>
                     )}
                     {sz?.statusCode === "Draft" && isAuthor && (
@@ -459,11 +544,107 @@ export function SzCardPage() {
                 </div>
             )}
 
+            {canDecideAsSigner && (
+                <div className="mt-4 rounded-[12px] border border-[#cfe0ff] bg-[#f7faff] p-4">
+                    <div className="text-[13px] font-semibold text-[#0f1b2d]">Куда записка идёт дальше</div>
+                    <p className="mt-1 mb-3 text-[12.5px] text-[#55617a]">
+                        Записка подписана. Решите, выносить ли вопрос на коллегиальный орган,
+                        передавать ли потребность в Сектор закупок или пустить её на исполнение.
+                    </p>
+
+                    <div className="flex flex-col gap-2">
+                        {[
+                            {v: SZ_SIGNER_ROUTE.Board, t: "На коллегиальный орган", h: "Появится у секретаря в «Вопросах на рассмотрение»"},
+                            {v: SZ_SIGNER_ROUTE.Procurement, t: "В Сектор закупок", h: "Заведётся заявка на закупку, связанная с запиской"},
+                            {v: SZ_SIGNER_ROUTE.Execution, t: "На исполнение", h: "Обычный ход: решение адресата и поручения"},
+                        ].map((o) => (
+                            <label key={o.v} className="flex cursor-pointer items-start gap-2 text-[13px] text-[#26324a]">
+                                <input
+                                    type="radio"
+                                    className="mt-1"
+                                    checked={signerRoute === o.v}
+                                    onChange={() => setSignerRoute(o.v)}
+                                />
+                                <span>
+                                    {o.t}
+                                    <span className="block text-[11.5px] text-[#8b97ab]">{o.h}</span>
+                                </span>
+                            </label>
+                        ))}
+                    </div>
+
+                    {signerRoute === SZ_SIGNER_ROUTE.Board && (
+                        <select
+                            className={inputClass + " mt-3 max-w-[320px]"}
+                            value={body}
+                            onChange={(e) => setBody(Number(e.target.value) as MeetingBody)}
+                        >
+                            <option value={MEETING_BODY.Board}>Правление Банка</option>
+                            <option value={MEETING_BODY.Kpa}>Комитет по проблемным активам</option>
+                            <option value={MEETING_BODY.CreditCommittee}>Кредитный комитет</option>
+                        </select>
+                    )}
+
+                    {signerRoute !== SZ_SIGNER_ROUTE.Execution && (
+                        <input
+                            className={inputClass + " mt-2"}
+                            value={routeSubject}
+                            onChange={(e) => setRouteSubject(e.target.value)}
+                            placeholder={signerRoute === SZ_SIGNER_ROUTE.Board
+                                ? "Формулировка вопроса для повестки — пусто, возьмём тему записки"
+                                : "Предмет закупки — пусто, возьмём тему записки"}
+                        />
+                    )}
+
+                    <button
+                        onClick={decideAsSigner}
+                        disabled={saving}
+                        className="mt-3 h-10 px-4 rounded-[10px] border-none bg-[#2f68f5] text-white font-semibold text-[13px] cursor-pointer hover:brightness-[1.06] disabled:opacity-50"
+                    >
+                        Вынести решение
+                    </button>
+                </div>
+            )}
+
+            {forceOpen && (
+                <div className="mt-4 rounded-[12px] border border-[#f0c98a] bg-[#fffaf0] p-4">
+                    <div className="text-[13px] font-semibold text-[#8a5a00]">Перевод статуса вручную</div>
+                    <p className="mt-1 mb-2.5 text-[12.5px] text-[#8a5a00]">
+                        Обходит обычный ход записки: незавершённое согласование прервётся, а перевод
+                        попадёт в журнал действий вместе с основанием.
+                    </p>
+                    <div className="flex flex-wrap items-start gap-2">
+                        <select
+                            className={inputClass + " max-w-[260px]"}
+                            value={forceStatusCode}
+                            onChange={(e) => setForceStatusCode(e.target.value as SzStatusCode)}
+                        >
+                            {(Object.keys(SZ_STATUS_LABEL) as SzStatusCode[]).map((code) => (
+                                <option key={code} value={code}>{SZ_STATUS_LABEL[code]}</option>
+                            ))}
+                        </select>
+                        <input
+                            className={inputClass + " flex-1 min-w-[240px]"}
+                            value={forceReason}
+                            onChange={(e) => setForceReason(e.target.value)}
+                            placeholder="Основание перевода"
+                        />
+                        <button
+                            onClick={forceStatus}
+                            disabled={saving || !forceReason.trim()}
+                            className="h-10 px-4 rounded-[10px] border-none bg-[#8a5a00] text-white font-semibold text-[13px] cursor-pointer hover:brightness-[1.08] disabled:opacity-50"
+                        >
+                            Перевести
+                        </button>
+                    </div>
+                </div>
+            )}
+
             {withdrawOpen && (
                 <div className="mt-4 rounded-[12px] border border-[#e5e9f0] bg-white p-4">
                     <div className="text-[13px] font-semibold text-[#0f1b2d]">Отзыв записки</div>
                     <p className="mt-1 mb-2.5 text-[12.5px] text-[#8b97ab]">
-                        Согласование прервётся, записка вернётся вам в черновик. Повторная отправка пойдёт с первого этапа.
+                        Согласование прервётся, записка получит статус «Отозвана». Отправить её снова можно — согласование пойдёт с первого этапа.
                     </p>
                     <textarea
                         value={withdrawReason}
@@ -509,18 +690,30 @@ export function SzCardPage() {
                         </select>
                     </Field>
                     <Field label="Кому">
-                        <select className={inputClass} value={form.addresseeUserId ?? ""} disabled={!editable}
-                                onChange={(e) => set("addresseeUserId", e.target.value ? Number(e.target.value) : null)}>
-                            <option value="">Не выбрано</option>
-                            {userList.map((u) => <option key={u.id} value={u.id}>{u.fullName}</option>)}
-                        </select>
+                        <UserPicker
+                            users={userList}
+                            value={form.addresseeUserId ?? null}
+                            disabled={!editable}
+                            bySeniority
+                            placeholder="Найти по фамилии, должности или подразделению"
+                            onChange={(u) => {
+                                // Подразделение адресата подставляется само: записка почти
+                                // всегда идёт человеку в его подразделении, и заполнять это
+                                // второй раз руками незачем. Переопределить можно ниже.
+                                setForm((f) => ({
+                                    ...f,
+                                    addresseeUserId: u?.id ?? null,
+                                    correspondentUnitId: u?.orgUnitId ?? f.correspondentUnitId ?? null,
+                                }));
+                            }}
+                        />
                     </Field>
                     <Field label="Адресат — структурное подразделение">
-                        <select className={inputClass} value={form.correspondentUnitId ?? ""} disabled={!editable}
-                                onChange={(e) => set("correspondentUnitId", e.target.value ? Number(e.target.value) : null)}>
-                            <option value="">Не выбрано</option>
-                            {ORG_UNITS.map((u) => <option key={u.id} value={u.id}>{u.name}</option>)}
-                        </select>
+                        <OrgUnitPicker
+                            units={ORG_UNITS.map((u) => ({...u, id: Number(u.id), titleRu: u.name}))}
+                            value={form.correspondentUnitId ?? null}
+                            onChange={(unitId) => set("correspondentUnitId", unitId)}
+                        />
                     </Field>
                     <label className="flex items-end gap-2 pb-2.5 text-[13px] text-[#55617a]">
                         <input type="checkbox" checked={form.isPaperCarrier ?? kind?.isPaperByDefault ?? false}
@@ -638,11 +831,14 @@ export function SzCardPage() {
                 */}
                 <div className="mt-4">
                     <Field label="Подписант">
-                        <select className={inputClass} value={form.signerUserId ?? ""} disabled={!editable}
-                                onChange={(e) => set("signerUserId", e.target.value ? Number(e.target.value) : null)}>
-                            <option value="">Без подписания</option>
-                            {userList.map((u) => <option key={u.id} value={u.id}>{u.fullName}</option>)}
-                        </select>
+                        <UserPicker
+                            users={userList}
+                            value={form.signerUserId ?? null}
+                            disabled={!editable}
+                            bySeniority
+                            placeholder="Без подписания"
+                            onChange={(u) => set("signerUserId", u?.id ?? null)}
+                        />
                     </Field>
                     <div className="mt-1 text-[11.5px] text-[#8b97ab]">
                         Подписывает записку последним, после согласования

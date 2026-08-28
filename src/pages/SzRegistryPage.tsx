@@ -17,7 +17,8 @@ import {
 } from "@/service/szService/szExecutionService.ts";
 import {szPaperService, type SzOriginal} from "@/service/szService/szPaperService.ts";
 
-type ScopeId = "all" | "inbox" | "assignments" | "originals" | "mine" | "drafts" | "pending" | "archive";
+type ScopeId = "all" | "inbox" | "assignments" | "originals" | "mine" | "drafts"
+    | "approval" | "pending" | "signing" | "archive";
 
 const SCOPES: { id: ScopeId; label: string; statuses?: SzStatusCode[]; mineOnly?: boolean }[] = [
     {id: "all", label: "Реестр"},
@@ -26,13 +27,17 @@ const SCOPES: { id: ScopeId; label: string; statuses?: SzStatusCode[]; mineOnly?
     {id: "originals", label: "Оригиналы на руках"},
     {id: "mine", label: "СЗ, инициирую я", mineOnly: true},
     {id: "drafts", label: "Черновики", statuses: ["Draft"], mineOnly: true},
+    {id: "approval", label: "На согласовании", statuses: ["OnApproval"]},
     {id: "pending", label: "Ждут регистрации", statuses: ["PendingRegistration"]},
+    {id: "signing", label: "На подписании", statuses: ["OnSigning"]},
     {id: "archive", label: "Архив", statuses: ["Archived"]},
 ];
 
 const STATUS_TONE: Partial<Record<SzStatusCode, { fg: string; bg: string }>> = {
     Draft: colors.status.draft,
+    OnApproval: colors.status.review,
     PendingRegistration: colors.status.onact,
+    OnSigning: colors.status.review,
     Registered: colors.status.review,
     OnRevision: colors.status.onact,
     OnAddresseeDecision: colors.status.review,

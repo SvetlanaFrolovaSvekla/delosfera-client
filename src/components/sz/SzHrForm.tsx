@@ -5,6 +5,7 @@ import type {
     HrFormSchema,
     SzEmployee,
 } from "@/service/szService/szService.ts";
+import {UserPicker, type PickableUser} from "@/components/componentsGeneral/UserPicker.tsx";
 
 /**
  * Поля кадровой записки, свои для каждого вида.
@@ -27,7 +28,7 @@ interface Props {
     values: Record<string, unknown>;
     onValuesChange: (values: Record<string, unknown>) => void;
 
-    users: {id: number; fullName: string; position?: string | null; orgUnit?: string | null}[];
+    users: PickableUser[];
     orgUnits: {id: number; name: string}[];
     editable: boolean;
 }
@@ -68,6 +69,7 @@ export function SzHrForm({
             userId: u.id,
             fullName: u.fullName,
             position: u.position ?? employees[i].position,
+            orgUnitId: u.orgUnitId ?? employees[i].orgUnitId,
         });
     };
 
@@ -168,13 +170,13 @@ export function SzHrForm({
                                         ) : (
                                             <label className="flex flex-col gap-1">
                                                 <span className="text-[11px] text-[#8b97ab]">Сотрудник</span>
-                                                <select className={поле} value={e.userId ?? ""} disabled={!editable}
-                                                        onChange={(ev) => выбратьСотрудника(i, Number(ev.target.value))}>
-                                                    <option value="">Не выбран</option>
-                                                    {users.map((u) => (
-                                                        <option key={u.id} value={u.id}>{u.fullName}</option>
-                                                    ))}
-                                                </select>
+                                                <UserPicker
+                                                    users={users}
+                                                    value={e.userId ?? null}
+                                                    disabled={!editable}
+                                                    placeholder="Найти сотрудника"
+                                                    onChange={(u) => u && выбратьСотрудника(i, u.id)}
+                                                />
                                             </label>
                                         )}
 

@@ -1,5 +1,6 @@
 import {useCallback, useEffect, useState} from "react";
 import {Link} from "react-router-dom";
+import {VndTasksPanel} from "@/components/componentsTasks/VndTasksPanel.tsx";
 import {
     taskInboxService,
     taskLink,
@@ -16,6 +17,7 @@ import {
 
 const FILTERS: { id: string; label: string; type?: string }[] = [
     {id: "all", label: "Все контуры"},
+    {id: "vnd", label: "ВНД"},
     {id: "sz", label: "Служебные записки", type: "Sz"},
     {id: "prc", label: "Закупки", type: "Procurement"},
 ];
@@ -30,7 +32,11 @@ export const TaskInboxPage = () => {
     const [inbox, setInbox] = useState<TaskInbox | null>(null);
     const [loading, setLoading] = useState(true);
 
+    const вндВкладка = filter === "vnd";
+
     const load = useCallback(async () => {
+        if (filter === "vnd") return;
+
         const current = FILTERS.find(f => f.id === filter);
         try {
             setLoading(true);
@@ -49,7 +55,9 @@ export const TaskInboxPage = () => {
             <div>
                 <h1 style={{margin: 0, fontSize: 19, fontWeight: 700, color: "#0f1b2d"}}>Мои задачи</h1>
                 <div style={{marginTop: 4, fontSize: 12.5, color: "#8b97ab"}}>
-                    {inbox
+                    {вндВкладка
+                        ? "Согласование, актуализация и консолидация ВНД"
+                        : inbox
                         ? `Всего ${inbox.total}` +
                           (inbox.overdue > 0 ? ` · просрочено ${inbox.overdue}` : "") +
                           (inbox.delegated > 0 ? ` · по замещению ${inbox.delegated}` : "")
@@ -75,6 +83,9 @@ export const TaskInboxPage = () => {
                 ))}
             </div>
 
+            {вндВкладка && <VndTasksPanel/>}
+
+            {!вндВкладка && (
             <section style={{background: "#fff", border: "1px solid #e5e9f0", borderRadius: 13, overflow: "hidden"}}>
                 {inbox?.tasks.map((task: InboxTask) => (
                     <Link
@@ -124,6 +135,7 @@ export const TaskInboxPage = () => {
                     <div style={{padding: 28, textAlign: "center", color: "#8b97ab", fontSize: 13}}>Загрузка…</div>
                 )}
             </section>
+            )}
         </div>
     );
 };

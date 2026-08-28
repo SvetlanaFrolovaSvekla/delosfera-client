@@ -9,6 +9,9 @@ import {useVndColumnVisibility} from "@/hooks/vndHooks/useVndColumnVisibility.ts
 import {useVndScopeCounts} from "@/hooks/vndHooks/useVndScopeCounts.tsx";
 import {useVndFilteredRows} from "@/hooks/vndHooks/useVndFilteredRows.tsx";
 import {useVndDictionaryResolvers} from "@/hooks/vndHooks/useVndDictionaryResolvers.ts";
+import {useJournalViews} from "@/hooks/useJournalViews.ts";
+import {JOURNAL} from "@/service/journalViewService/journalViewService.ts";
+import {JournalViewPicker} from "@/components/componentsGeneral/JournalViewPicker.tsx";
 
 import {type VndScope, type VndStatusKey} from '@/constants/vndTabs.ts';
 import {STATUS_META} from "@/constants/vndStatus.ts";
@@ -65,8 +68,14 @@ export function BaseVndPage() {
 
     useRubricsFromUrl(filters.setRubricFilters, setAdvOpen);
 
-    const {visibleCols, toggleColumn, selectAllColumns, deselectAllColumns, columns, gridTemplate, toggleableColumns} =
-        useVndColumnVisibility(scope, canViewVndRegistryExtended, filters.linkedToMeOnly);
+    const {
+        visibleCols, toggleColumn, selectAllColumns, deselectAllColumns,
+        columns, gridTemplate, toggleableColumns, currentColumns, applyColumns, defaultColumns,
+    } = useVndColumnVisibility(scope, canViewVndRegistryExtended, filters.linkedToMeOnly);
+
+    // Представление своё у каждой вкладки: в архиве и в действующих нужны разные
+    // колонки, и один набор на все вкладки означал бы, что где-то он лишний.
+    const views = useJournalViews(`${JOURNAL.Vnd}:${scope}`, currentColumns, applyColumns);
 
     const counts = useVndScopeCounts(canCreateVnd);
     const {filteredRows, loading, error} = useVndFilteredRows(filters.searchRequest, filters.search);
@@ -155,6 +164,21 @@ export function BaseVndPage() {
                         scope === "draft" ? counts.draft :
                             scope === "arch" ? counts.arch :
                                 counts.all
+                }
+                viewPicker={
+                    <JournalViewPicker
+                        views={views.views}
+                        active={views.active}
+                        изменено={views.изменено}
+                        canShare={hasPermission(PermissionCode.ManageSystemSettings)}
+                        error={views.error}
+                        onApply={views.apply}
+                        onReset={() => views.reset(defaultColumns)}
+                        onSaveNew={(name, isShared, isDefault) =>
+                            void views.save({name, columns: currentColumns, isShared, isDefault})}
+                        onUpdate={(v) => void views.update(v)}
+                        onRemove={(v) => void views.remove(v)}
+                    />
                 }
                 toggleableColumns={toggleableColumns}
                 visibleCols={visibleCols}

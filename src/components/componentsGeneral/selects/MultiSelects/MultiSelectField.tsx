@@ -20,6 +20,8 @@ interface SelectListFieldProps {
     showChevron?: boolean;
 }
 
+const MAX_VISIBLE_CHIPS = 5;
+
 function PillLabel({label}: { label: string }) {
     const ref = useRef<HTMLSpanElement>(null);
     const [isTruncated, setIsTruncated] = useState(false);
@@ -38,10 +40,13 @@ function PillLabel({label}: { label: string }) {
     }, [label]);
 
     return (
-        <Tooltip content={label} disabled={!isTruncated} side="top">
+        // min-w-0 на самой обёртке Tooltip обязателен: без него flex-item по умолчанию не
+        // сжимается уже её content (min-width: auto), и truncate у span ниже просто не срабатывает -
+        // чипс вылезает за пределы узкой колонки фильтра вместо обрезания текста с многоточием.
+        <Tooltip content={label} disabled={!isTruncated} side="top" className="min-w-0 max-w-full">
             <span
                 ref={ref}
-                className="truncate min-w-0 max-w-[220px] hover:underline cursor-pointer"
+                className="block truncate min-w-0 max-w-full hover:underline cursor-pointer"
             >
                 {label}
             </span>
@@ -67,6 +72,11 @@ export function MultiSelectField({
 
     const selectedOptions = options.filter((o) => selectedKeys.includes(o.key));
     const allSelected = options.length > 0 && selectedKeys.length === options.length;
+
+    // Чтобы поле не растягивалось на весь экран при большом количестве выбранных пунктов,
+    // показываем не больше MAX_VISIBLE_CHIPS чипсов, а остальные сворачиваем в "+N" с тултипом.
+    const visibleOptions = selectedOptions.slice(0, MAX_VISIBLE_CHIPS);
+    const hiddenOptions = selectedOptions.slice(MAX_VISIBLE_CHIPS);
 
     const removeOne = (key: string) => {
         onChange(selectedKeys.filter((k) => k !== key));
@@ -100,11 +110,12 @@ export function MultiSelectField({
                                 {t("general.selectAll")}
                             </span>
                         ) : (
-                            selectedOptions.map((o) => (
-                                <span
-                                    key={o.key}
-                                    className="inline-flex min-w-0 max-w-full items-center gap-[6px] pl-[9px] pr-[6px] py-[3px] rounded-full bg-[#f2f5f9] text-[12px] text-[#3a4560] font-medium"
-                                >
+                            <>
+                                {visibleOptions.map((o) => (
+                                    <span
+                                        key={o.key}
+                                        className="inline-flex min-w-0 max-w-full items-center gap-[6px] pl-[9px] pr-[6px] py-[3px] rounded-full bg-[#f2f5f9] text-[12px] text-[#3a4560] font-medium"
+                                    >
         <PillLabel label={o.label}/>
         <button
             type="button"
@@ -117,7 +128,20 @@ export function MultiSelectField({
             <X className="w-[10px] h-[10px]" strokeWidth={2.5}/>
         </button>
     </span>
-                            ))
+                                ))}
+                                {hiddenOptions.length > 0 && (
+                                    <Tooltip
+                                        content={hiddenOptions.map((o) => o.label).join(", ")}
+                                        side="top"
+                                    >
+                                        <span
+                                            className="inline-flex flex-none cursor-default items-center px-[9px] py-[3px] rounded-full bg-[#ececfc] text-[12px] font-semibold text-[#4e57d6]"
+                                        >
+                                            +{hiddenOptions.length}
+                                        </span>
+                                    </Tooltip>
+                                )}
+                            </>
                         )}
                     </div>
                     {showChevron && (

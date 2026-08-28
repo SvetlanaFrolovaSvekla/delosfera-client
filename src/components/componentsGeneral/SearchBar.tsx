@@ -11,6 +11,7 @@ interface SearchBarProps {
     maxWidth?: string; // ограничить рост, если понадобится в другом месте
     variant?: "gray" | "white"; // фон поля, серый по умолчанию
     onSubmit?: (value: string) => void; // Enter в поле: там, где строка ведёт к выдаче
+    autoFocus?: boolean; // фокус сразу при монтировании - напр. поиск в только что открытой модалке
 }
 
 export function SearchBar({
@@ -21,6 +22,7 @@ export function SearchBar({
                               maxWidth,
                               variant = "gray",
                               onSubmit,
+                              autoFocus = false,
                           }: SearchBarProps) {
     const {t} = useTranslation();
 
@@ -36,6 +38,7 @@ export function SearchBar({
                 className="pointer-events-none absolute left-[13px] top-1/2 -translate-y-1/2 text-[#8b97ab]"
             />
             <input
+                autoFocus={autoFocus}
                 placeholder={placeholder ?? t("general.search")}
                 value={value}
                 onChange={(e) => onChange?.(e.target.value)}

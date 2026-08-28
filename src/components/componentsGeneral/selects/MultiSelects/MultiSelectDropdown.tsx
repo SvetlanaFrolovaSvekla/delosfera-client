@@ -4,10 +4,15 @@ import {Check, ChevronDown, Search, X} from "lucide-react";
 import {HighlightText} from "@/utils/HighlightText.tsx";
 import * as React from "react";
 import {useClickOutside} from "@/hooks/useClickOutside.ts";
+import {Tooltip} from "@/components/componentsGeneral/Tooltip.tsx";
 
 export interface MultiSelectOption {
     key: string;
     label: string;
+    /** Переопределяет цвет чипса выбора в кнопке-триггере (напр. фирменные цвета источника
+     * учётной записи, как в бейджах на странице "Пользователи") - используется, только когда
+     * выбран единственный пункт с этим цветом; при нескольких выбранных - обычный цвет. */
+    chipClassName?: string;
 }
 
 interface MultiSelectDropdownProps {
@@ -20,6 +25,12 @@ interface MultiSelectDropdownProps {
     label?: string;                        // подпись сверху (например "Колонки")
     icon?: React.ReactNode;                 // иконка внутри кнопки (например Filter)
     triggerLabel: string;                   // текст на самой кнопке ("Колонки")
+
+    /** Показать triggerLabel отдельной подписью НАД кнопкой (как у MultiSelectField) - тогда
+     * плейсхолдер внутри самой кнопки, пока ничего не выбрано, становится общим "Открыть список…"
+     * вместо "{triggerLabel}…". По умолчанию выключено - не меняет старые места использования
+     * (напр. панель фильтров страницы "Пользователи", где подписи над кнопками нет). */
+    showFieldLabel?: boolean;
 
     searchable?: boolean;                   // явно включить поиск
     searchThreshold?: number;               // авто-включение поиска, если пунктов больше этого числа
@@ -38,6 +49,7 @@ export function MultiSelectDropdown({
                                         label,
                                         icon,
                                         triggerLabel,
+                                        showFieldLabel = false,
                                         searchable = false,
                                         searchThreshold = 8,
                                         searchPlaceholder,
@@ -60,27 +72,68 @@ export function MultiSelectDropdown({
         ? options.filter((o) => o.label.toLowerCase().includes(query.trim().toLowerCase()))
         : options;
 
+    const selectedOptions = options.filter((o) => selectedKeys.includes(o.key));
     const allSelected = options.length > 0 && selectedKeys.length === options.length;
     const noneSelected = selectedKeys.length === 0;
+    const someSelected = !allSelected && !noneSelected;
+
+    // Единственный выбранный пункт может задать свой цвет чипса (напр. источник учётной записи -
+    // как бейджи на странице "Пользователи"); при нескольких выбранных смешивать цвета не имеет
+    // смысла - используем обычный фирменный.
+    const chipClassName =
+        selectedOptions.length === 1 && selectedOptions[0].chipClassName
+            ? selectedOptions[0].chipClassName
+            : "bg-[#ececfc] text-[#4e57d6]";
+
+    // Пока ничего не выбрано - серым "{triggerLabel}…" (или общим "Открыть список…", если подпись
+    // уже показана отдельно над кнопкой - см. showFieldLabel); когда выбрано всё - "Все" (как в
+    // MultiSelectField); иначе - чипс с выбором (первый + "+N" при нескольких), а полный список
+    // выбранного - в тултипе при наведении.
+    const triggerButton = (
+        <button
+            type="button"
+            onClick={() => setOpen((v) => !v)}
+            className={`inline-flex items-center gap-2 h-9 px-3 rounded-[9px] border text-[12.5px] cursor-pointer hover:bg-[#f6f8fb] ${
+                open
+                    ? "border-[#4e57d6] ring-[3px] ring-[#ececfc] bg-[#f6f8fb]"
+                    : "border-[#e5e9f0] bg-white"
+            }`}
+        >
+            {icon}
+            {allSelected ? (
+                <span className="font-semibold text-[#3a4560]">{t("general.selectAll")}</span>
+            ) : noneSelected ? (
+                <span className="font-normal text-[#8b97ab]">
+                    {showFieldLabel ? t("general.openList") : `${triggerLabel}…`}
+                </span>
+            ) : (
+                <span className={`max-w-[140px] truncate rounded-full px-2 py-[2px] text-[11px] font-semibold whitespace-nowrap ${chipClassName}`}>
+                    {selectedOptions.length === 1
+                        ? selectedOptions[0].label
+                        : `${selectedOptions[0].label} +${selectedOptions.length - 1}`}
+                </span>
+            )}
+            <ChevronDown
+                className={`w-[15px] h-[15px] flex-none text-[#a3adbd] transition-transform ${open ? "rotate-180" : ""}`}
+                strokeWidth={2}
+            />
+        </button>
+    );
 
     return (
         <div ref={rootRef} className={`relative ${className}`}>
-            <button
-                type="button"
-                onClick={() => setOpen((v) => !v)}
-                className={`inline-flex items-center gap-2 h-9 px-3 rounded-[9px] border text-[#3a4560] font-semibold text-[12.5px] cursor-pointer hover:bg-[#f6f8fb] ${
-                    open
-                        ? "border-[#4e57d6] ring-[3px] ring-[#ececfc] bg-[#f6f8fb]"
-                        : "border-[#e5e9f0] bg-white"
-                }`}
-            >
-                {icon}
-                {triggerLabel}
-                <ChevronDown
-                    className={`w-[15px] h-[15px] flex-none text-[#a3adbd] transition-transform ${open ? "rotate-180" : ""}`}
-                    strokeWidth={2}
-                />
-            </button>
+            {showFieldLabel && (
+                <span className="block text-[12px] font-semibold text-[#3a4560] mb-2">
+                    {triggerLabel}
+                </span>
+            )}
+            {someSelected ? (
+                <Tooltip content={selectedOptions.map((o) => o.label).join(", ")} side="bottom">
+                    {triggerButton}
+                </Tooltip>
+            ) : (
+                triggerButton
+            )}
 
             {open && (
                 <div

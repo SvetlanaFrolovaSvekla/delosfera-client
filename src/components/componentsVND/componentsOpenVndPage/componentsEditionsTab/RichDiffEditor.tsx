@@ -5,6 +5,7 @@
 // и нажав кнопку над полем — он тоже красится нужным цветом. Это касается и черновых полей формы
 // "Добавить строку" — до добавления строки в таблицу текст там так же можно писать и красить.
 import {useEffect, useRef} from "react";
+import {Tooltip} from "@/components/componentsGeneral/Tooltip.tsx";
 
 interface RichDiffEditorProps {
     /** HTML начального содержимого (напр. авто-diff, уже с покрашенными <span>) — применяется
@@ -76,16 +77,17 @@ export function RichDiffEditor({
     return (
         <div>
             {!disabled && (
-                <button
-                    type="button"
-                    onMouseDown={(e) => e.preventDefault()}
-                    onClick={handleHighlight}
-                    className="mb-1 cursor-pointer rounded-[6px] border px-[7px] py-[2px] text-[10.5px] font-semibold transition-colors"
-                    style={{borderColor: `${highlightColor}55`, color: highlightColor, background: `${highlightColor}0f`}}
-                    title={`Выделить отмеченный текст цветом (${highlightLabel.toLowerCase()})`}
-                >
-                    Выделить {highlightLabel.toLowerCase()}
-                </button>
+                <Tooltip content={`Выделить отмеченный ${highlightLabel.toLowerCase()} цветом`} side="top">
+                    <button
+                        type="button"
+                        onMouseDown={(e) => e.preventDefault()}
+                        onClick={handleHighlight}
+                        className="mb-1 cursor-pointer rounded-[6px] border px-[7px] py-[2px] text-[10.5px] font-semibold transition-colors"
+                        style={{borderColor: `${highlightColor}55`, color: highlightColor, background: `${highlightColor}0f`}}
+                    >
+                        Выделить {highlightLabel.toLowerCase()}
+                    </button>
+                </Tooltip>
             )}
             <div
                 ref={ref}

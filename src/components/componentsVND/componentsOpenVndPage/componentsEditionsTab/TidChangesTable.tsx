@@ -1,14 +1,27 @@
 // Таблица ТИД с автоматическим формированием изменений в редакции (редактируемая)
 // - можно её скачать и приложить, как файл-тид для последующего согласования
-import {useState} from "react";
+import {useEffect, useState} from "react";
 import type {TidAutoRow, TidDiffSegment} from "@/hooks/vndHooks/useTidDiffRows.ts";
-import {useResponsibleEmployeeOptions} from "@/hooks/useResponsibleEmployeeOptions.ts";
+import {userService} from "@/service/userService/userService.ts";
 import {downloadBlob, generateTidDocx, type TidExportRow} from "@/utils/docxTidExport.ts";
 import {
     RichDiffEditor
 } from "@/components/componentsVND/componentsOpenVndPage/componentsEditionsTab/RichDiffEditor.tsx";
+import {
+    TidDeveloperPickerModal, type TidDeveloperOption
+} from "@/components/componentsVND/componentsOpenVndPage/componentsEditionsTab/TidDeveloperPickerModal.tsx";
 import {colors} from "@/design/tokens";
-import {Download, Loader2, Trash2} from "lucide-react";
+import {ChevronDown, Download, Loader2, Trash2, X} from "lucide-react";
+
+function getInitials(fullName: string): string {
+    return fullName
+        .split(" ")
+        .filter(Boolean)
+        .map((part) => part[0])
+        .join("")
+        .toUpperCase()
+        .slice(0, 2);
+}
 
 const REMOVE_COLOR = colors.ryg.red.fg;
 const ADD_COLOR = colors.ryg.green.fg;
@@ -73,16 +86,40 @@ export function TidChangesTable({
     const [exportError, setExportError] = useState<string | null>(null);
 
     // "Разработано:" - по умолчанию ответственный за актуализацию текущей ВНД (см.
-    // vnd.actualizationResponsibleUserId/Name), главный редактор может выбрать другого сотрудника.
-    const {options: employeeOptions, loading: employeesLoading} = useResponsibleEmployeeOptions();
-    const [responsibleUserId, setResponsibleUserId] = useState<number | null>(defaultResponsibleUserId ?? null);
-    const selectedEmployee = employeeOptions.find((o) => o.id === responsibleUserId);
-    const developedBy = responsibleUserId === null
-        ? null
-        : {
-            fullName: selectedEmployee?.fullName ?? defaultResponsibleUserName ?? "",
-            positionName: selectedEmployee?.positionName ?? null,
+    // vnd.actualizationResponsibleUserId/Name), главный редактор и администратор могут выбрать
+    // другого сотрудника через TidDeveloperPickerModal (см. ниже).
+    const [developerPickerOpen, setDeveloperPickerOpen] = useState(false);
+    const [responsibleUser, setResponsibleUser] = useState<TidDeveloperOption | null>(
+        defaultResponsibleUserId != null
+            ? {id: defaultResponsibleUserId, fullName: defaultResponsibleUserName ?? "", positionName: null}
+            : null
+    );
+
+    // Должность ответственного по умолчанию отдельным запросом - defaultResponsibleUserName
+    // приходит с ВНД без должности, а она нужна для строки "Разработано:" под таблицей.
+    useEffect(() => {
+        if (defaultResponsibleUserId == null) return;
+        let cancelled = false;
+        userService.getById(defaultResponsibleUserId)
+            .then((u) => {
+                if (cancelled) return;
+                setResponsibleUser((prev) =>
+                    prev && prev.id === defaultResponsibleUserId
+                        ? {...prev, positionName: u.position?.titleRu ?? null}
+                        : prev
+                );
+            })
+            .catch(() => {
+                // Не критично - строка "Разработано:" просто останется без должности.
+            });
+        return () => {
+            cancelled = true;
         };
+    }, [defaultResponsibleUserId]);
+
+    const developedBy = responsibleUser === null
+        ? null
+        : {fullName: responsibleUser.fullName, positionName: responsibleUser.positionName};
 
     const [draftOldHtml, setDraftOldHtml] = useState("");
     const [draftOldText, setDraftOldText] = useState("");
@@ -288,37 +325,6 @@ export function TidChangesTable({
                 </table>
             </div>
 
-            <div className="mt-4 flex flex-wrap items-center gap-2 text-[13px]">
-                <span className="font-semibold text-[#1c2740]">Разработчик:</span>
-                {canSelectResponsible && !disabled ? (
-                    <select
-                        value={responsibleUserId ?? ""}
-                        onChange={(e) => setResponsibleUserId(e.target.value ? Number(e.target.value) : null)}
-                        disabled={employeesLoading}
-                        className="h-8 min-w-[240px] rounded-[8px] border border-[#e0e5ee] bg-white px-2 text-[12.5px] text-[#26324a] disabled:opacity-50"
-                    >
-                        <option value="">— не выбран —</option>
-                        {defaultResponsibleUserId !== null && defaultResponsibleUserId !== undefined
-                            && !employeeOptions.some((o) => o.id === defaultResponsibleUserId) && (
-                            <option value={defaultResponsibleUserId}>
-                                {defaultResponsibleUserName ?? `Пользователь #${defaultResponsibleUserId}`}
-                            </option>
-                        )}
-                        {employeeOptions.map((o) => (
-                            <option key={o.id} value={o.id}>
-                                {[o.positionName, o.fullName].filter(Boolean).join(" — ")}
-                            </option>
-                        ))}
-                    </select>
-                ) : (
-                    <span className="text-[#26324a]">
-                        {developedBy
-                            ? [developedBy.positionName, developedBy.fullName].filter(Boolean).join(", ")
-                            : <span className="text-[#8b97ab]">не указан</span>}
-                    </span>
-                )}
-            </div>
-
             {!disabled && (
                 <div className="mt-4 rounded-[10px] px-1 py-4">
                     <div className="mb-3 text-[12.5px] font-semibold text-[#1c2740]">Добавить строку</div>
@@ -363,6 +369,54 @@ export function TidChangesTable({
                         Добавить строку
                     </button>
                 </div>
+            )}
+
+            <div className="mt-4 flex flex-wrap items-center gap-2 text-[13px]">
+                <span className="font-semibold text-[#1c2740]">Разработчик:</span>
+                {canSelectResponsible && !disabled ? (
+                    <div className="flex items-center gap-1.5">
+                        <button
+                            type="button"
+                            onClick={() => setDeveloperPickerOpen(true)}
+                            className="flex h-9 min-w-[240px] cursor-pointer items-center justify-between gap-2 rounded-[9px] border border-[#e0e5ee] bg-white px-3 text-left text-[12.5px] outline-none hover:border-[#4e57d6]/50 focus:border-[#4e57d6]"
+                        >
+                            {responsibleUser ? (
+                                <span className="flex min-w-0 items-center gap-1.5">
+                                    <span className="flex h-6 w-6 flex-none items-center justify-center rounded-full bg-[#ececfc] text-[9px] font-bold text-[#4e57d6]">
+                                        {getInitials(responsibleUser.fullName)}
+                                    </span>
+                                    <span className="truncate text-[#26324a]">{responsibleUser.fullName}</span>
+                                </span>
+                            ) : (
+                                <span className="text-[#a3adbd]">Выбрать разработчика…</span>
+                            )}
+                            <ChevronDown size={14} className="flex-none text-[#8b97ab]"/>
+                        </button>
+                        {responsibleUser && (
+                            <button
+                                type="button"
+                                onClick={() => setResponsibleUser(null)}
+                                title="Очистить"
+                                className="cursor-pointer flex-none text-[#8b97ab] hover:text-[#c0392b]"
+                            >
+                                <X size={15}/>
+                            </button>
+                        )}
+                    </div>
+                ) : (
+                    <span className="text-[#26324a]">
+                        {developedBy
+                            ? [developedBy.positionName, developedBy.fullName].filter(Boolean).join(", ")
+                            : <span className="text-[#8b97ab]">не указан</span>}
+                    </span>
+                )}
+            </div>
+
+            {developerPickerOpen && (
+                <TidDeveloperPickerModal
+                    onClose={() => setDeveloperPickerOpen(false)}
+                    onSelect={(u) => setResponsibleUser(u)}
+                />
             )}
         </div>
     );

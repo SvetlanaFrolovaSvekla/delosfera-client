@@ -2,7 +2,8 @@ import {apiClient} from "@/service/apiClient.ts";
 import type {SzAssignmentDraft} from "@/service/szService/szExecutionService.ts";
 
 export type SzStatusCode =
-    | "Draft" | "PendingRegistration" | "Registered" | "OnRevision"
+    | "Draft" | "OnApproval" | "PendingRegistration" | "OnSigning"
+    | "Registered" | "OnRevision"
     | "OnAddresseeDecision"
     | "OnExecution" | "Executed" | "Rejected" | "Withdrawn" | "Archived";
 
@@ -238,6 +239,15 @@ export const szService = {
     },
 
     /** Отозвать записку с согласования — вернётся автору в черновик. */
+    /**
+     * Ручной перевод записки в другой статус — право администратора системы.
+     * Обоснование обязательно: перевод обходит обычный ход записки.
+     */
+    async forceStatus(id: number, statusCode: SzStatusCode, reason: string): Promise<SzDetails> {
+        const {data} = await apiClient.post<SzDetails>(`${BASE}/${id}/force-status`, {statusCode, reason});
+        return data;
+    },
+
     async withdraw(id: number, reason: string): Promise<SzDetails> {
         const {data} = await apiClient.post<SzDetails>(`${BASE}/${id}/withdraw`, {reason});
         return data;
@@ -271,7 +281,11 @@ export const szApprovalService = {
 
 export const SZ_STATUS_LABEL: Record<SzStatusCode, string> = {
     Draft: "Черновик",
-    PendingRegistration: "В ожидании регистрации",
+    OnApproval: "На согласовании",
+    PendingRegistration: "Согласована, ждёт регистрации",
+    OnSigning: "На подписании",
+    // Прежний статус: номер присваивался до согласования. Остаётся ради записок,
+    // заведённых до перестройки порядка.
     Registered: "Зарегистрирована",
     OnRevision: "На доработке",
     OnAddresseeDecision: "На решении адресата",

@@ -39,6 +39,7 @@ const OpenNotificationPage = lazy(() => import("@/pages/NotificationsPage/OpenNo
 const ActualizationPlanPage = lazy(() => import("@/pages/ActualizationPage/ActualizationPlanPage.tsx").then(m => ({default: m.ActualizationPlanPage})));
 const ActualizationPage = lazy(() => import("@/pages/ActualizationPage/ActualizationPage.tsx").then(m => ({default: m.ActualizationPage})));
 const ReportVndPage = lazy(() => import("@/pages/ReportPages/ReportVndPages/ReportVndPage.tsx").then(m => ({default: m.ReportVndPage})));
+const AnalyticsPage = lazy(() => import("@/pages/AnalyticsPage.tsx").then(m => ({default: m.AnalyticsPage})));
 const TasksVndPage = lazy(() => import("@/pages/TasksPages/TasksVndPage.tsx").then(m => ({default: m.TasksVndPage})));
 const UsersPage = lazy(() => import("@/pages/UsersPages/UsersPage.tsx").then(m => ({default: m.UsersPage})));
 
@@ -142,6 +143,7 @@ function App() {
                                 </Route>
 
                                 <Route path="/reportvnd" element={<ReportVndPage/>}/>
+                                <Route path="/analytics" element={<AnalyticsPage/>}/>
 
                                 <Route path="/notifications" element={<NotificationsPage/>}/>
                                 <Route path="/notifications/:id" element={<OpenNotificationPage/>}/>

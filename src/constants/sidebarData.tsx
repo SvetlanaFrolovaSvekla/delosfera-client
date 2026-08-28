@@ -18,6 +18,10 @@ interface NavGroup {
 export const navGroups: NavGroup[] = [
     { items: [{ id: "home", icon: "dash", labelKey: "sidebar.items.home", path: "/" },
             { id: "notif", icon: "bell", labelKey: "sidebar.items.notif", path: "/notifications" },
+            // Отчёты всех контуров в одном месте: раньше отчётность ВНД и аналитика
+            // записок лежали каждая в своём разделе, и человек, которому нужны обе,
+            // ходил за ними в разные концы меню.
+            { id: "analytics", icon: "rpt", labelKey: "Аналитика", path: "/analytics", permission: PermissionCode.ViewFullStatistics },
         ] },
     {
         titleKey: "sidebar.groups.normotvorchestvo",
@@ -31,10 +35,6 @@ export const navGroups: NavGroup[] = [
             { id: "pln", icon: "pln", labelKey: "sidebar.items.pln", badge: 3, path: "/actualization", permission: PermissionCode.ViewVndActualizationPage },
             // Годовой план актуализации: светофор сроков, импорт из Excel, отчёт (PLN-01..07)
             { id: "pln-plan", icon: "pln", labelKey: "План актуализации", path: "/actualization/plan", permission: PermissionCode.ViewVndActualizationPage },
-            { id: "tasks", icon: "tasks", labelKey: "sidebar.items.tasks", badge: 4, path: "/tasks" },
-            // Аналитика закрыта правом: без него страница отдаёт одни отказы и выглядит
-            // пустой — пользователь не понимает, сломалось или не положено.
-            { id: "rpt", icon: "rpt", labelKey: "sidebar.items.rpt", path: "/reportvnd", permission: PermissionCode.ViewFullStatistics },
         ],
     },
     {
@@ -49,7 +49,6 @@ export const navGroups: NavGroup[] = [
         items: [
             // Реестр служебных записок: карточка, согласование, исполнение, архив, закупка
             { id: "sz", icon: "sz", labelKey: "sidebar.items.sz", path: "/sz" },
-            { id: "sz-analytics", icon: "rpt", labelKey: "Аналитика СЗ", path: "/sz-analytics" },
         ],
     },
     {

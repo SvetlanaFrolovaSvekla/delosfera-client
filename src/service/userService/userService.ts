@@ -58,6 +58,15 @@ export interface UserLookupItem {
     fullName: string;
     position: string | null;
     orgUnit: string | null;
+
+    /** Идентификатор подразделения — по нему оно подставляется в поля карточки. */
+    orgUnitId: number | null;
+
+    /** Член Правления — идёт первым в подборе согласующих и подписанта. */
+    isBoardMember: boolean;
+
+    /** Руководит подразделением — идёт вторым в том же подборе. */
+    isUnitHead: boolean;
 }
 
 export const userService = {

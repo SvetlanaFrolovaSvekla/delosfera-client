@@ -4,7 +4,9 @@ import {type ReactNode} from "react";
 interface TabItem<T extends string> {
     id: T;
     label: string;
-    n: number;
+    /** Счётчик рядом с названием. Не задан — не рисуется: на вкладках, где
+     *  считать нечего, ноль в кружке читается как «пусто», а не «без счёта». */
+    n?: number;
     alignRight?: boolean;
     icon?: ReactNode;
 }
@@ -36,15 +38,17 @@ export function Tabs<T extends string>({tabs, value, onChange}: TabsProps<T>) {
                         <span className={active ? "text-[#4e57d6] font-bold" : "text-[#8b97ab] font-medium"}>
                             {tab.label}
                         </span>
-                        <span
-                            className={`font-mono text-[11px] font-bold py-[1px] px-[7px] rounded-full ${
-                                active
-                                    ? "bg-[#ececfc] text-[#4e57d6]"
-                                    : "bg-[#f2f5f9] text-[#a3adbd]"
-                            }`}
-                        >
-                            {tab.n}
-                        </span>
+                        {tab.n !== undefined && (
+                            <span
+                                className={`font-mono text-[11px] font-bold py-[1px] px-[7px] rounded-full ${
+                                    active
+                                        ? "bg-[#ececfc] text-[#4e57d6]"
+                                        : "bg-[#f2f5f9] text-[#a3adbd]"
+                                }`}
+                            >
+                                {tab.n}
+                            </span>
+                        )}
                         {active && (
                             <span className="absolute left-0 right-0 -bottom-px h-[1px] rounded-full bg-[#4e57d6]"/>
                         )}

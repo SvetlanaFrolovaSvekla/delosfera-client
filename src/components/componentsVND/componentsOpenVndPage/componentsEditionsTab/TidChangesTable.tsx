@@ -11,7 +11,7 @@ import {
     TidDeveloperPickerModal, type TidDeveloperOption
 } from "@/components/componentsVND/componentsOpenVndPage/componentsEditionsTab/TidDeveloperPickerModal.tsx";
 import {colors} from "@/design/tokens";
-import {ChevronDown, Download, Loader2, Trash2, X} from "lucide-react";
+import {ChevronDown, Download, Loader2, Trash2, Wand2, X} from "lucide-react";
 
 function getInitials(fullName: string): string {
     return fullName
@@ -67,6 +67,10 @@ interface TidChangesTableProps {
     canSelectResponsible?: boolean;
     /** Название ВНД на русском - подставляется в заголовок "к «…»" шаблона ТИД. */
     vndTitle?: string;
+    /** Пока не сформировано - вместо таблицы показывается кнопка "Сформировать ТИД" (см.
+     * VndUploadTidModal - там же от этого флага зависит появление блока ручной загрузки файла). */
+    formed: boolean;
+    onForm: () => void;
 }
 
 let manualRowCounter = 0;
@@ -74,7 +78,7 @@ let manualRowCounter = 0;
 export function TidChangesTable({
                                      autoRows, loading, unavailable, disabled, exportFileName,
                                      defaultResponsibleUserId, defaultResponsibleUserName, canSelectResponsible,
-                                     vndTitle,
+                                     vndTitle, formed, onForm,
                                  }: TidChangesTableProps) {
     const [justifications, setJustifications] = useState<Record<string, string>>({});
     const [manualRows, setManualRows] = useState<ManualTidRow[]>([]);
@@ -186,6 +190,30 @@ export function TidChangesTable({
         <div>
             <style>{`.rd-editor:empty:before { content: attr(data-placeholder); color: #c3c9d4; }`}</style>
 
+            {!formed ? (
+                <>
+                    <div className="mb-[10px] flex items-center justify-between gap-3">
+                        <span className="ml-[16px] text-[12.5px] font-semibold text-[#26324a]">Автоформирование ТИД:</span>
+                    </div>
+
+                    <div className="flex flex-col items-center justify-center gap-3 rounded-[14px] border border-dashed border-[#d5dae3] bg-[#f9fafc] px-4 py-9 text-center">
+                    <span className="text-[13px] text-[#8b97ab]">
+                        Автоматически сформируйте таблицу изменений между действующей и новой редакцией
+                    </span>
+                        <button
+                            type="button"
+                            onClick={onForm}
+                            disabled={loading}
+                            className="cursor-pointer flex items-center gap-2 rounded-[10px] bg-[#4e57d6] px-4 py-[9px] text-[13px] font-semibold text-white transition-colors hover:bg-[#3f47bd] disabled:cursor-not-allowed disabled:opacity-50"
+                        >
+                            {loading ? <Loader2 size={14} className="animate-spin"/> : <Wand2 size={14}/>}
+                            Сформировать ТИД
+                        </button>
+                    </div>
+                </>
+
+            ) : (
+            <>
             <div className="mb-[10px] flex items-center justify-between gap-3">
                 <span className="text-[13.5px] font-bold text-[#1c2740]">Автоформирование ТИД</span>
                 <button
@@ -415,6 +443,8 @@ export function TidChangesTable({
                     onClose={() => setDeveloperPickerOpen(false)}
                     onSelect={(u) => setResponsibleUser(u)}
                 />
+            )}
+            </>
             )}
         </div>
     );

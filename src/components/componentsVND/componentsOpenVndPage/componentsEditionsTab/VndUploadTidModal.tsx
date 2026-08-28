@@ -50,6 +50,9 @@ export function VndUploadTidModal({
     const [tid, setTid] = useState<File | null>(null);
     const [submitting, setSubmitting] = useState(false);
     const [error, setError] = useState<string | null>(null);
+    // Пока таблица изменений не сформирована по кнопке "Сформировать ТИД" (см. TidChangesTable),
+    // сама таблица не показывается - вместо неё там просто кнопка формирования.
+    const [tidFormed, setTidFormed] = useState(false);
 
     const handleDownloadTemplate = async () => {
         try {
@@ -94,7 +97,7 @@ export function VndUploadTidModal({
 
     return createPortal(
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 p-4">
-            <div className="flex h-full max-h-[90vh] w-[95vw] max-w-[1240px] flex-col overflow-hidden rounded-[16px] bg-white shadow-xl">
+            <div className="flex max-h-[90vh] w-[95vw] max-w-[1240px] flex-col overflow-hidden rounded-[16px] bg-white shadow-xl">
 
                 <div className="flex flex-none items-center justify-between border-b border-[#eef2f7] px-6 py-4">
                     <h2 className="text-[16px] font-bold text-[#1c2740]">
@@ -166,12 +169,6 @@ export function VndUploadTidModal({
                         </div>
                     </div>
 
-                    {error && (
-                        <div className="mb-6 rounded-md border border-[#f2c2c2] bg-[#fdf1f1] px-3 py-2 text-[12.5px] text-[#c0392b]">
-                            {error}
-                        </div>
-                    )}
-
                     <TidChangesTable
                         autoRows={rows}
                         loading={status === "loading"}
@@ -181,12 +178,15 @@ export function VndUploadTidModal({
                         defaultResponsibleUserName={defaultResponsibleUserName}
                         canSelectResponsible={canSelectResponsible}
                         vndTitle={vndTitle}
+                        formed={tidFormed}
+                        onForm={() => setTidFormed(true)}
                     />
 
-                    <div className="mt-6 rounded-[10px] border border-[#e5e9f0] bg-[#f9fafc] px-3 py-[10px] text-[11.5px] leading-[1.5] text-[#8b97ab]">
-                        Автоформирование самого файла ТИД по этой таблице находится в разработке — пока
-                        таблица служит вспомогательным материалом, а файл ТИД прикладывается вручную.
-                    </div>
+                    {error && (
+                        <div className="mb-6 rounded-md border border-[#f2c2c2] bg-[#fdf1f1] px-3 py-2 text-[12.5px] text-[#c0392b]">
+                            {error}
+                        </div>
+                    )}
                 </div>
 
                 <div className="flex flex-none justify-end gap-2 border-t border-[#eef2f7] px-6 py-4">

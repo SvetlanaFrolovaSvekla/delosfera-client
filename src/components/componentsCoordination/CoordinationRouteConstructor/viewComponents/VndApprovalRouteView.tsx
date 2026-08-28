@@ -4,8 +4,9 @@ import type {ApprovalProcessResponse} from "@/service/coordinationService/coordi
 import {useApprovalRouteLines} from "@/hooks/coordinationHooks/useApprovalRouteLines.ts";
 import {StageCardView} from "./StageCardView";
 import {NormBlockView, type NormPhaseStatus} from "./NormBlockView";
-import {ArrowDown, ArrowLeft} from "lucide-react";
+import {ArrowDown, ArrowLeft, MessageSquareText} from "lucide-react";
 import {getElapsedLabel} from "@/utils/dateUtils.ts";
+import {getInitials} from "@/utils/getInitials.ts";
 
 interface VndApprovalRouteViewProps {
     process: ApprovalProcessResponse;
@@ -100,6 +101,31 @@ export function VndApprovalRouteView({process, highlightStageId, frameless}: Vnd
                     : "relative rounded-[16px] border border-[#e5e9f0] bg-[#fbfcfe] bg-[radial-gradient(#e4e9f1_1px,transparent_1px)] bg-[length:18px_18px] p-6"
             }
         >
+            {/* Комментарий инициатора о внесённых исправлениях (см. "Комментарий о внесённых
+                исправлениях" в VndRevisionNeededPanel - отправляется вместе с повторной подачей
+                редакции после устранения замечаний). Раньше приходил с бэка, но нигде не
+                отображался - согласующие не видели, что именно исправил инициатор. Показываем
+                один раз для всего маршрута (не привязан к конкретному этапу), если он есть. */}
+            {process.repeatInitiatorComment && (
+                <div className="mx-auto mb-5 flex w-fit max-w-[640px] flex-col gap-1.5 rounded-[12px] border border-[#d4d6f8] bg-[#f5f6fd] px-4 py-3">
+                    <div className="flex items-center gap-2">
+                        <span className="flex h-6 w-6 flex-none items-center justify-center rounded-md bg-[#ececfc] text-[9px] font-bold text-[#4e57d6]">
+                            {getInitials(process.initiatorName)}
+                        </span>
+                        <span className="text-[11.5px] font-semibold text-[#26324a]">
+                            {process.initiatorName}
+                        </span>
+                        <span className="inline-flex items-center gap-1 text-[11px] font-medium text-[#4e57d6]">
+                            <MessageSquareText size={12} className="flex-none"/>
+                            комментарий к исправлениям
+                        </span>
+                    </div>
+                    <div className="whitespace-pre-wrap text-[12px] leading-snug text-[#3c424a]">
+                        {process.repeatInitiatorComment}
+                    </div>
+                </div>
+            )}
+
             <div
                 ref={cardsScrollRef}
                 onScroll={recomputePaths}
@@ -129,6 +155,7 @@ export function VndApprovalRouteView({process, highlightStageId, frameless}: Vnd
                         value={process.primaryDeadlineMinutes}
                         phaseStatus={primaryPhaseStatus}
                         blockRef={targetRef}
+                        startedAt={process.primaryStartedAt}
                     />
                     {primaryPhaseStatus === "current" && (
                         <CurrentPhaseHint
@@ -145,6 +172,7 @@ export function VndApprovalRouteView({process, highlightStageId, frameless}: Vnd
                         label="Согласование после внесённых изменений"
                         value={process.repeatDeadlineMinutes}
                         phaseStatus={repeatPhaseStatus}
+                        startedAt={process.repeatStartedAt}
                     />
                     {repeatPhaseStatus === "current" && (
                         <CurrentPhaseHint
@@ -161,6 +189,7 @@ export function VndApprovalRouteView({process, highlightStageId, frameless}: Vnd
                         label="Финальная выдержка"
                         value={process.finalHoldDeadlineMinutes}
                         phaseStatus={finalHoldPhaseStatus}
+                        startedAt={process.finalHoldStartedAt}
                     />
                     {finalHoldPhaseStatus === "current" && (
                         <CurrentPhaseHint

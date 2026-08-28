@@ -2,7 +2,11 @@
 import {useLayoutEffect, useRef, useState} from "react";
 import {Link} from "react-router-dom";
 import {useAuth} from "@/context/AuthContext.ts";
-import type {ApprovalStageResponse} from "@/service/coordinationService/coordinationServiceTypes.ts";
+import type {
+    ApprovalStageAttachmentResponse,
+    ApprovalStageDecisionResponse,
+    ApprovalStageResponse,
+} from "@/service/coordinationService/coordinationServiceTypes.ts";
 import {
     STAGE_DECISION_META,
     STAGE_ICONS,
@@ -20,6 +24,62 @@ import {
 import {getInitials} from "@/utils/getInitials.ts";
 
 const COMMENT_TRUNCATE_LENGTH = 500; // Лимит обрезки комментария/замечания в карточке
+
+/** Системные автосгенерированные тексты резолюций (см. AutoApproveInitiatorStages,
+ * ResetFinalHoldDecisions в VndApprovalService.cs на бэке) — техническая пометка, а не
+ * пояснение от реального согласующего. Не показываем их в истории комментариев (тот же список,
+ * что и в VndRevisionNeededPanel.tsx). */
+const AUTO_GENERATED_COMMENT_TEXTS = new Set([
+    "Согласовано автоматически — инициатор является согласующим на этом этапе",
+    "Согласовано автоматически — вы уже согласовали эту редакцию без замечаний ранее",
+]);
+
+interface PhaseCommentEntry {
+    phaseLabel: string;
+    decision: ApprovalStageDecisionResponse;
+    comment: string;
+    decidedAt: string | null;
+    attachments: ApprovalStageAttachmentResponse[];
+}
+
+/** Резолюции этого согласующего по ВСЕМ пройденным фазам (первичная/повторная/финальная
+ * выдержка), у которых есть текст комментария/замечания — не только последняя. Раньше карточка
+ * показывала комментарий только к самой последней фазе, из-за чего замечания/комментарии
+ * из более ранних кругов согласования пропадали из вида, как только у этого же согласующего
+ * появлялась резолюция следующей фазы — другие согласующие, решающие позже, их уже не видели. */
+function collectPhaseComments(stage: ApprovalStageResponse): PhaseCommentEntry[] {
+    const entries: PhaseCommentEntry[] = [];
+
+    if (stage.primaryComment && !AUTO_GENERATED_COMMENT_TEXTS.has(stage.primaryComment)) {
+        entries.push({
+            phaseLabel: "Первичное согласование",
+            decision: stage.primaryDecision,
+            comment: stage.primaryComment,
+            decidedAt: stage.primaryDecidedAt,
+            attachments: stage.primaryAttachments,
+        });
+    }
+    if (stage.repeatComment && stage.repeatDecision && !AUTO_GENERATED_COMMENT_TEXTS.has(stage.repeatComment)) {
+        entries.push({
+            phaseLabel: "Повторное согласование",
+            decision: stage.repeatDecision,
+            comment: stage.repeatComment,
+            decidedAt: stage.repeatDecidedAt,
+            attachments: stage.repeatAttachments,
+        });
+    }
+    if (stage.finalHoldComment && stage.finalHoldDecision && !AUTO_GENERATED_COMMENT_TEXTS.has(stage.finalHoldComment)) {
+        entries.push({
+            phaseLabel: "Финальная выдержка",
+            decision: stage.finalHoldDecision,
+            comment: stage.finalHoldComment,
+            decidedAt: stage.finalHoldDecidedAt,
+            attachments: stage.finalHoldAttachments,
+        });
+    }
+
+    return entries;
+}
 
 interface StageCardViewProps {
     stage: ApprovalStageResponse;
@@ -59,26 +119,20 @@ export function StageCardView({stage, cardRef, isCurrentUserStage, isProcessEnde
         return () => observer.disconnect();
     }, [stage.approverName]);
 
-    // Показываем самое актуальное решение по фазам: финальная выдержка > повторное > первичное
+    // Для верхнего бейджа статуса показываем самое актуальное решение по фазам: финальная
+    // выдержка > повторное > первичное.
     const decision = stage.finalHoldDecision ?? stage.repeatDecision ?? stage.primaryDecision;
     const decisionMeta = STAGE_DECISION_META[decision];
-    const comment = stage.finalHoldDecision
-        ? stage.finalHoldComment
-        : stage.repeatDecision
-            ? stage.repeatComment
-            : stage.primaryComment;
-    const decidedAt = stage.finalHoldDecision
+    const latestDecidedAt = stage.finalHoldDecision
         ? stage.finalHoldDecidedAt
         : stage.repeatDecision
             ? stage.repeatDecidedAt
             : stage.primaryDecidedAt;
-    // Вложения к той же фазе, что и показанный комментарий. Пропадают, как только редакция
-    // становится согласованной (текст резолюции при этом остаётся).
-    const attachments = stage.finalHoldDecision
-        ? stage.finalHoldAttachments
-        : stage.repeatDecision
-            ? stage.repeatAttachments
-            : stage.primaryAttachments;
+
+    // История резолюций/комментариев этого согласующего по ВСЕМ пройденным фазам - не только
+    // самой последней (см. collectPhaseComments) - чтобы более ранние замечания/комментарии не
+    // пропадали из вида для остальных согласующих, решающих позже.
+    const phaseComments = collectPhaseComments(stage);
 
     // Пока решение не принято, а это этап текущего пользователя — показываем отдельный жёлтый статус
     const isPendingForCurrentUser = isCurrentUserStage && decision === "pending" && !isProcessEnded;
@@ -87,15 +141,7 @@ export function StageCardView({stage, cardRef, isCurrentUserStage, isProcessEnde
     // этапе) — этап не "в ожидании", он просто больше не актуален.
     const isStalePending = decision === "pending" && isProcessEnded;
 
-    const [isCommentModalOpen, setIsCommentModalOpen] = useState(false);
-
-    const isCommentLong = !!comment && comment.length > COMMENT_TRUNCATE_LENGTH;
-    const displayedComment = isCommentLong
-        ? comment!.slice(0, COMMENT_TRUNCATE_LENGTH).trimEnd() + "…"
-        : comment;
-    // "Комментарий" — при согласовании, "Замечания" — во всех остальных решениях
-    // (отклонено/возвращено/на доработку и т.п.)
-    const commentSectionTitle = decisionMeta.label === "Согласовано" ? "См. комментарий полностью" : "См. замечания полностью";
+    const [openCommentEntry, setOpenCommentEntry] = useState<PhaseCommentEntry | null>(null);
 
     const badgeLabel = isPendingForCurrentUser
         ? "В рассмотрении (мой этап)"
@@ -160,53 +206,88 @@ export function StageCardView({stage, cardRef, isCurrentUserStage, isProcessEnde
                 {badgeLabel}
             </span>
 
-            {isAutoTimeout && decidedAt && (
+            {isAutoTimeout && latestDecidedAt && (
                 <div className="text-[11px] text-[#8b97ab]">
-                    Автоматически {formatDateTime(decidedAt)} — согласующий не отреагировал в срок
+                    Автоматически {formatDateTime(latestDecidedAt)} — согласующий не отреагировал в срок
                 </div>
             )}
 
-            {comment && (
-                <div className="flex flex-col gap-1">
-                    <div className="text-[11.5px] leading-snug text-[#6b7488] whitespace-pre-wrap">
-                        {displayedComment}
-                    </div>
-                    {isCommentLong && (
-                        <button
-                            type="button"
-                            onClick={() => setIsCommentModalOpen(true)}
-                            className="cursor-pointer flex-none self-center rounded-[7px] border border-[#d7dee8] bg-white px-2.5 py-[6px] text-[11.5px] font-semibold text-[#4e57d6] hover:bg-[#ececfc]"
-                        >
-                            {commentSectionTitle}
-                        </button>
-                    )}
+            {/* История резолюций по фазам - каждая со своим текстом, если он есть, помеченная
+                фазой (и меткой решения, если решений на разных фазах у этого согласующего было
+                разное - например, "Согласовано с замечаниями" в первичном, затем "Согласовано"
+                в повторном) - чтобы более ранние замечания/комментарии оставались видны и после
+                того, как у согласующего появилась резолюция следующей фазы. */}
+            {phaseComments.length > 0 && (
+                <div className="flex flex-col gap-2.5">
+                    {phaseComments.map((entry, i) => {
+                        const entryMeta = STAGE_DECISION_META[entry.decision];
+                        const isCommentLong = entry.comment.length > COMMENT_TRUNCATE_LENGTH;
+                        const displayedComment = isCommentLong
+                            ? entry.comment.slice(0, COMMENT_TRUNCATE_LENGTH).trimEnd() + "…"
+                            : entry.comment;
+                        // "Комментарий" — при согласовании, "Замечания" — во всех остальных
+                        // решениях (отклонено/возвращено/на доработку и т.п.)
+                        const sectionTitle = entryMeta.label === "Согласовано"
+                            ? "См. комментарий полностью"
+                            : "См. замечания полностью";
+
+                        return (
+                            <div key={i} className="flex flex-col gap-1 border-t border-[#eef1f6] pt-2 first:border-t-0 first:pt-0">
+                                {phaseComments.length > 1 && (
+                                    <div className="flex flex-wrap items-center justify-between gap-1">
+                                        <span className="text-[10px] font-semibold uppercase tracking-[0.03em] text-[#a3adbd]">
+                                            {entry.phaseLabel}
+                                        </span>
+                                        <span className={`inline-flex w-fit flex-none items-center rounded-full px-[7px] py-0.5 text-[10px] font-semibold ${entryMeta.badgeClass}`}>
+                                            {entryMeta.label}
+                                        </span>
+                                    </div>
+                                )}
+                                <div className="text-[11.5px] leading-snug text-[#6b7488] whitespace-pre-wrap">
+                                    {displayedComment}
+                                </div>
+                                {entry.attachments.length > 0 && (
+                                    <div className="rounded-[10px] border border-[#e9edf3] bg-[#fbfcfe] p-2.5">
+                                        <div className="mb-1.5 text-[10.5px] font-semibold text-[#8b97ab]">
+                                            Прикреплённые файлы:
+                                        </div>
+                                        <div className="flex flex-col gap-1.5">
+                                            {entry.attachments.map((a) => (
+                                                <AttachmentRow key={a.id} fileId={a.fileId} fileName={a.fileName}/>
+                                            ))}
+                                        </div>
+                                    </div>
+                                )}
+                                {isCommentLong && (
+                                    <button
+                                        type="button"
+                                        onClick={() => setOpenCommentEntry(entry)}
+                                        className="cursor-pointer flex-none self-center rounded-[7px] border border-[#d7dee8] bg-white px-2.5 py-[6px] text-[11.5px] font-semibold text-[#4e57d6] hover:bg-[#ececfc]"
+                                    >
+                                        {sectionTitle}
+                                    </button>
+                                )}
+                            </div>
+                        );
+                    })}
                 </div>
             )}
 
-            {attachments.length > 0 && (
-                <div className="rounded-[10px] border border-[#e9edf3] bg-[#fbfcfe] p-2.5">
-                    <div className="mb-1.5 text-[10.5px] font-semibold text-[#8b97ab]">
-                        Прикреплённые файлы:
-                    </div>
-                    <div className="flex flex-col gap-1.5">
-                        {attachments.map((a) => (
-                            <AttachmentRow key={a.id} fileId={a.fileId} fileName={a.fileName}/>
-                        ))}
-                    </div>
-                </div>
-            )}
-
-            {isCommentModalOpen && comment && (
+            {openCommentEntry && (
                 <CommentViewModal
-                    title={commentSectionTitle}
+                    title={
+                        STAGE_DECISION_META[openCommentEntry.decision].label === "Согласовано"
+                            ? "См. комментарий полностью"
+                            : "См. замечания полностью"
+                    }
                     approverName={stage.approverName}
                     approverUserId={stage.approverUserId}
-                    decidedAt={decidedAt}
-                    comment={comment}
-                    attachments={attachments}
-                    decisionLabel={badgeLabel}
-                    decisionBadgeClass={badgeClass}
-                    onClose={() => setIsCommentModalOpen(false)}
+                    decidedAt={openCommentEntry.decidedAt}
+                    comment={openCommentEntry.comment}
+                    attachments={openCommentEntry.attachments}
+                    decisionLabel={STAGE_DECISION_META[openCommentEntry.decision].label}
+                    decisionBadgeClass={STAGE_DECISION_META[openCommentEntry.decision].badgeClass}
+                    onClose={() => setOpenCommentEntry(null)}
                 />
             )}
         </div>

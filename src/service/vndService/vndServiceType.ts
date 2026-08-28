@@ -230,6 +230,11 @@ export interface VndRedactionResponse {
      * (это первая редакция документа, number === 1) */
     tidFileId: number | null;
 
+    /** Лист согласования — формируется автоматически, когда согласование редакции окончательно
+     * завершается. Null, пока редакция не согласована. Показывается отдельным блоком
+     * "Специальные вложения" (см. RedactionDocumentsPanel). */
+    approvalSheetFileId: number | null;
+
     requiresApproval: boolean;
     approvalStatus: RedactionApprovalStatus;
 

@@ -1,5 +1,6 @@
 // Read-only блок норматива (уже установленное значение по запущенному согласованию)
 import React from "react";
+import {formatDateTime} from "@/utils/dateUtils.ts";
 
 export type NormPhaseStatus = "passed" | "current" | "upcoming";
 
@@ -9,6 +10,9 @@ interface NormBlockViewProps {
     value: number;
     phaseStatus: NormPhaseStatus;
     blockRef?: React.Ref<HTMLDivElement>;
+    /** Дата и время начала этой фазы - показывается только у уже начавшихся фаз (passed/current),
+     * для "upcoming" фаза ещё не наступила и даты начала попросту нет. */
+    startedAt?: string | null;
 }
 
 const PHASE_STYLES: Record<
@@ -48,7 +52,7 @@ function formatDuration(totalMinutes: number): string {
     return parts.length > 0 ? parts.join(" ") : "0 м.";
 }
 
-export function NormBlockView({label, value, phaseStatus, blockRef}: NormBlockViewProps) {
+export function NormBlockView({label, value, phaseStatus, blockRef, startedAt}: NormBlockViewProps) {
     const style = PHASE_STYLES[phaseStatus];
 
     return (
@@ -56,8 +60,15 @@ export function NormBlockView({label, value, phaseStatus, blockRef}: NormBlockVi
             ref={blockRef}
             className={`relative flex w-[280px] flex-none items-start gap-3 rounded-2xl p-4 ${style.container}`}
         >
-            <span className={`min-w-0 flex-1 text-[12px] font-medium leading-tight ${style.text}`}>
-                {label}
+            <span className="flex min-w-0 flex-1 flex-col gap-0.5">
+                <span className={`text-[12px] font-medium leading-tight ${style.text}`}>
+                    {label}
+                </span>
+                {startedAt && (
+                    <span className="text-[10.5px] leading-tight text-[#a3adbd]">
+                        Этап начался {formatDateTime(startedAt)}
+                    </span>
+                )}
             </span>
             <span
                 className={`flex-none whitespace-nowrap rounded-[8px] border bg-white px-2.5 py-1 text-[12.5px] font-semibold ${style.badgeBorder} ${style.badgeText}`}

@@ -62,6 +62,11 @@ export function RedactionDocumentsPanel({
     // не через buildRedactionFileName (та функция заточена под языковые варианты документа).
     const tidFileName = `${selected.code}_ТИД.docx`;
 
+    // Лист согласования формируется автоматически сервером (см. VndApprovalService.
+    // FinalizeApprovalAsync) - имя файла тоже собираем отдельно, оригинальное имя сохранённого
+    // на сервере вложения совпадает с этим шаблоном.
+    const approvalSheetFileName = `${selected.code}_Лист_согласования.docx`;
+
     return (
         <div className="p-[20px]">
             <SectionLabel>Документы редакции</SectionLabel>
@@ -105,6 +110,29 @@ export function RedactionDocumentsPanel({
                                 </span>
                                 <span className="truncate text-[13px] text-[#26324a]">
                                     Таблица изменений и дополнений
+                                </span>
+                            </span>
+                        </DownloadRow>
+                    </div>
+                </>
+            )}
+
+            {selected.approvalSheetFileId !== null && (
+                <>
+                    <SectionLabel className="mt-5">Специальные вложения</SectionLabel>
+                    <div className="flex flex-col gap-2">
+                        <DownloadRow
+                            icon={<FileText size={16} className="flex-none text-[#4e57d6]"/>}
+                            isDownloading={downloadingId === selected.approvalSheetFileId}
+                            onClick={() => onDownload(selected.approvalSheetFileId as number, approvalSheetFileName)}
+                            onView={onView ? () => onView("approvalSheet") : undefined}
+                        >
+                            <span className="flex min-w-0 flex-1 flex-col">
+                                <span className="text-[9.5px] font-bold uppercase tracking-[0.04em] text-[#a3adbd]">
+                                    Лист согласования
+                                </span>
+                                <span className="truncate text-[13px] text-[#26324a]">
+                                    {approvalSheetFileName}
                                 </span>
                             </span>
                         </DownloadRow>

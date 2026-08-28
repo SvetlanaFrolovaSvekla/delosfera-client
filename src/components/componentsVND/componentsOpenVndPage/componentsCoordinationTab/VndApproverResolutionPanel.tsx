@@ -244,7 +244,7 @@ export function VndApproverResolutionPanel({
                 placeholder={COMMENT_PLACEHOLDER[choice]}
                 maxLength={MAX_RESOLUTION_COMMENT_LENGTH}
                 rows={3}
-                className={`mt-1.5 w-full resize-none rounded-[10px] border bg-[#fbfcfe] px-3.5 py-2.5 text-[13px] text-[#1c2740] outline-none focus:border-[#4e57d6] ${
+                className={`h-[250px] mt-1.5 w-full resize-none rounded-[10px] border bg-[#fbfcfe] px-3.5 py-2.5 text-[13px] text-[#1c2740] outline-none focus:border-[#4e57d6] ${
                     commentMissing ? "border-[#e8b4b4]" : "border-[#e9edf3]"
                 }`}
             />

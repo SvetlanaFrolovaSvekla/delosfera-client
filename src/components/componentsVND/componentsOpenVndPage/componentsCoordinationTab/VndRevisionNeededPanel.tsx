@@ -32,7 +32,6 @@ import {
 import {
     CommentViewModal
 } from "@/components/componentsCoordination/CoordinationRouteConstructor/viewComponents/CommentViewModal.tsx";
-import {MAX_FILE_SIZE} from "@/constants/validation/totalValidatuon.ts";
 
 
 interface VndRevisionNeededPanelProps {
@@ -63,6 +62,33 @@ interface RemarkItem {
     comment: string;
     decidedAt: string | null;
     attachments: ApprovalStageAttachmentResponse[];
+}
+
+type RevisionPhaseKey = "primary" | "repeat" | "finalHold";
+
+const PHASE_LABEL_BY_KEY: Record<RevisionPhaseKey, string> = {
+    primary: "Первичное согласование",
+    repeat: "Повторное согласование",
+    finalHold: "Финальная выдержка",
+};
+
+/** Каким этапом вызван ТЕКУЩИЙ статус "На доработке" - нужно, чтобы отделить ещё не устранённые
+ * замечания (с этого этапа) от уже устранённых (с более раннего этапа - см. RemarkCard ниже,
+ * блок "Устранённые замечания"). Согласование может возвращаться на доработку несколько раз
+ * подряд (первичное → доработка → повторное → снова доработка → снова повторное → ... →
+ * финальная выдержка → доработка и т.д. - см. CompleteRepeatPhaseAsync/
+ * ReturnToRevisionFromFinalHoldAsync на бэке), и при каждой повторной отправке (resubmit)
+ * комментарии предыдущего "своего" круга обнуляются (RepeatComment/FinalHoldComment) - то есть
+ * непустой repeatComment/finalHoldComment у этапа всегда относится именно к последнему кругу.
+ * Поэтому "последний начавшийся из двух" (по repeatStartedAt/finalHoldStartedAt) и есть источник
+ * текущих активных замечаний; всё, что осталось непустым в более ранних этапах (чаще всего -
+ * первичное согласование) - уже устранённая история. */
+function getActiveRevisionPhase(process: ApprovalProcessResponse): RevisionPhaseKey {
+    const repeatTs = process.repeatStartedAt ? new Date(process.repeatStartedAt).getTime() : -1;
+    const finalHoldTs = process.finalHoldStartedAt ? new Date(process.finalHoldStartedAt).getTime() : -1;
+    if (finalHoldTs > -1 && finalHoldTs > repeatTs) return "finalHold";
+    if (repeatTs > -1) return "repeat";
+    return "primary";
 }
 
 /** Собираем замечания по редакции - с любого этапа (первичный / повторный / финальная
@@ -187,14 +213,19 @@ function pluralizeRemarkCount(n: number): string {
 const COMMENT_TRUNCATE_LENGTH = 260;
 
 /** Карточка одного замечания/комментария - в духе StageCardView: обрезанный текст,
- * кнопка на полный просмотр (модалка) и список прикреплённых файлов. */
+ * кнопка на полный просмотр (модалка) и список прикреплённых файлов.
+ * resolved=true - замечание уже устранено на более раннем круге доработки (см. resolvedRemarks
+ * в VndRevisionNeededPanel) - оформляем серым, не жёлтым/красным, чтобы визуально не путать
+ * с тем, что требует исправления прямо сейчас. */
 function RemarkCard({
                         item,
                         isRemark,
+                        resolved,
                         onOpenFull,
                     }: {
     item: RemarkItem;
     isRemark: boolean;
+    resolved?: boolean;
     onOpenFull: () => void;
 }) {
     const isLong = item.comment.length > COMMENT_TRUNCATE_LENGTH;
@@ -206,15 +237,19 @@ function RemarkCard({
     return (
         <div
             className={`flex flex-col gap-2 rounded-[12px] border p-3.5 ${
-                isRemark ? "border-[#f0dcae] bg-[#fffcf5]" : "border-[#e9edf3] bg-white"
+                resolved
+                    ? "border-[#e9edf3] bg-[#fafbfc]"
+                    : isRemark ? "border-[#f0dcae] bg-[#fffcf5]" : "border-[#e9edf3] bg-white"
             }`}
         >
             <div className="flex flex-wrap items-center justify-between gap-2">
-                <span className="text-[12.5px] font-semibold text-[#1c2740]">{item.approverName}</span>
+                <span className={`text-[12.5px] font-semibold ${resolved ? "text-[#8b97ab]" : "text-[#1c2740]"}`}>
+                    {item.approverName}
+                </span>
                 <span className="text-[11px] font-medium text-[#8b97ab]">{item.phase}</span>
             </div>
 
-            <div className="whitespace-pre-wrap text-[12.5px] leading-[1.55] text-[#3c424a]">
+            <div className={`whitespace-pre-wrap text-[12.5px] leading-[1.55] ${resolved ? "text-[#8b97ab]" : "text-[#3c424a]"}`}>
                 {displayedComment}
             </div>
 
@@ -298,6 +333,9 @@ interface DocSlot {
 
 const DOC_ACCEPT = ".doc,.docx,.pdf,.xls,.xlsx,.ppt,.pptx";
 
+// Максимальный размер одного файла (документа редакции или вложения) — совпадает с
+// ограничением в VndUploadRedactionModal, см. formatFileSize для вывода в UI.
+const MAX_FILE_SIZE = 50 * 1024 * 1024; // 50 МБ
 
 /** Строка одного документа редакции: для существующего - "требует замены" (открывает
  * "Заменить") либо удаление (для необязательных KG/EN); для отсутствующего языка -
@@ -480,7 +518,13 @@ export function VndRevisionNeededPanel({
         setPendingRemoval(null);
     };
 
-    const remarks = collectRemarks(process);
+    const allRemarks = collectRemarks(process);
+    const activePhaseLabel = PHASE_LABEL_BY_KEY[getActiveRevisionPhase(process)];
+    // Замечания, требующие исправления ПРЯМО СЕЙЧАС (с последнего пройденного этапа) - отдельно
+    // от уже устранённых замечаний более раннего этапа (см. resolvedRemarks ниже - те остаются
+    // видны для истории/контекста, но серым отдельным блоком, не как активное "надо исправить").
+    const remarks = allRemarks.filter((r) => r.phase === activePhaseLabel);
+    const resolvedRemarks = allRemarks.filter((r) => r.phase !== activePhaseLabel);
     const approvalComments = collectApprovalComments(process);
     const rows = process.disagreementMatrixRows;
 
@@ -659,6 +703,31 @@ export function VndRevisionNeededPanel({
                     </div>
                 )}
             </div>
+
+            {/* Замечания более раннего круга доработки - уже устранены (иначе согласование не
+                дошло бы до следующего этапа и не вернулось сюда заново) - показываем для
+                контекста отдельным серым блоком, не смешивая с тем, что нужно исправить сейчас. */}
+            {resolvedRemarks.length > 0 && (
+                <div className="overflow-hidden rounded-[14px] border border-[#e9edf3] bg-[#fbfcfe]">
+                    <div className="flex items-center gap-1.5 border-b border-[#eef2f7] px-5 py-[13px]">
+                        <CheckCircle2 className="h-3.5 w-3.5 shrink-0 text-[#a3adbd]"/>
+                        <span className="text-[13.5px] font-bold text-[#8b97ab]">
+                            Устранённые замечания предыдущего этапа
+                        </span>
+                    </div>
+                    <div className="flex flex-col gap-3 p-4">
+                        {resolvedRemarks.map((r, i) => (
+                            <RemarkCard
+                                key={i}
+                                item={r}
+                                isRemark
+                                resolved
+                                onOpenFull={() => setOpenRemark({item: r, isRemark: true})}
+                            />
+                        ))}
+                    </div>
+                </div>
+            )}
 
             {approvalComments.length > 0 && (
                 <div className="overflow-hidden rounded-[14px] border border-[#e9edf3] bg-white">

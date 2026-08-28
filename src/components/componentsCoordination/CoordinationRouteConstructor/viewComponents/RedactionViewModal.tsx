@@ -27,7 +27,9 @@ interface RedactionViewModalProps {
     onClose: () => void;
 }
 
-const LANG_LABELS: Record<RedactionViewTarget, string> = {ru: "RU", kg: "KG", en: "EN", tid: "ТИД"};
+const LANG_LABELS: Record<RedactionViewTarget, string> = {
+    ru: "RU", kg: "KG", en: "EN", tid: "ТИД", approvalSheet: "Лист согласования",
+};
 
 const LANG_FILE_KEYS: Record<RedactionLanguage, "docFileRuId" | "docFileKgId" | "docFileEnId"> = {
     ru: "docFileRuId",
@@ -39,11 +41,13 @@ export function RedactionViewModal({
                                        vnd, redaction, initialLanguage, downloadingId, onDownload, onClose,
                                    }: RedactionViewModalProps) {
     const availableLanguages = getAvailableLanguages(redaction);
-    // ТИД доступен как отдельная "вкладка" просмотра наравне с языками, только если у редакции
-    // вообще есть файл ТИД.
-    const availableViews: RedactionViewTarget[] = redaction.tidFileId !== null
-        ? [...availableLanguages, "tid"]
-        : availableLanguages;
+    // ТИД и Лист согласования доступны как отдельные "вкладки" просмотра наравне с языками,
+    // только если у редакции вообще есть соответствующий файл.
+    const availableViews: RedactionViewTarget[] = [
+        ...availableLanguages,
+        ...(redaction.tidFileId !== null ? (["tid"] as const) : []),
+        ...(redaction.approvalSheetFileId !== null ? (["approvalSheet"] as const) : []),
+    ];
     const [activeLanguage, setActiveLanguage] = useState<RedactionViewTarget>(
         initialLanguage && availableViews.includes(initialLanguage)
             ? initialLanguage
@@ -62,13 +66,17 @@ export function RedactionViewModal({
 
     const activeFileId = activeLanguage === "tid"
         ? redaction.tidFileId
-        : redaction[LANG_FILE_KEYS[activeLanguage]] as number | null;
+        : activeLanguage === "approvalSheet"
+            ? redaction.approvalSheetFileId
+            : redaction[LANG_FILE_KEYS[activeLanguage]] as number | null;
 
     const handleDownloadActive = () => {
         if (activeFileId === null) return;
         const name = activeLanguage === "tid"
             ? `${redaction.code}_ТИД.docx`
-            : buildRedactionFileName(redaction.code, vnd.name, activeLanguage);
+            : activeLanguage === "approvalSheet"
+                ? `${redaction.code}_Лист_согласования.docx`
+                : buildRedactionFileName(redaction.code, vnd.name, activeLanguage);
         onDownload(activeFileId, name);
     };
 

@@ -1,5 +1,6 @@
 import {apiClient} from "@/service/apiClient.ts";
 import type {
+    UserPage,
     BlockUserRequest,
     CreateUserRequest,
     GetUsersParams,
@@ -40,9 +41,11 @@ function buildQuery(params?: GetUsersParams): string {
     const query = new URLSearchParams();
     if (!params) return query.toString();
 
+    if (params.page) query.set("page", String(params.page));
+    if (params.pageSize) query.set("pageSize", String(params.pageSize));
     if (params.sortBy) query.set("sortBy", params.sortBy);
     if (params.search) query.set("search", params.search);
-    if (params.source) query.set("source", params.source);
+    params.sources?.forEach((s) => query.append("sources", s));
     if (params.isBlocked !== undefined) query.set("isBlocked", String(params.isBlocked));
     params.orgUnitIds?.forEach((id) => query.append("orgUnitIds", String(id)));
     params.positionIds?.forEach((id) => query.append("positionIds", String(id)));
@@ -90,11 +93,16 @@ export const userService = {
         return data;
     },
 
-    async getAll(params?: GetUsersParams): Promise<UserResponse[]> {
+    /**
+     * Страница списка сотрудников. Полного списка здесь нет намеренно: на
+     * пятистах учётных записях это семьсот килобайт на каждое открытие, и
+     * дальше только больше. Для выбора человека в форме есть lookup.
+     */
+    async getPage(params?: GetUsersParams): Promise<UserPage> {
         const response = await fetch(`${API_BASE}/users?${buildQuery(params)}`, {
             headers: buildHeaders(),
         });
-        return handleResponse<UserResponse[]>(response);
+        return handleResponse<UserPage>(response);
     },
 
     async getMe(): Promise<UserResponse> {

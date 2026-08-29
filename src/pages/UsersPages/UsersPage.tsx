@@ -37,6 +37,7 @@ export function UsersPage() {
         roles,
         resetFilters,
         users, counts,
+        page, setPage, total, pageSize,
         loading, error,
         blockUser, unblockUser,
     } = useUsersList();
@@ -115,7 +116,8 @@ export function UsersPage() {
     // Текст справа от фильтров
     let countLabel: string;
     if (isSearching || hasActiveFilters) {
-        countLabel = `Найдено учётных записей: ${users.length} из ${counts.all}`;
+        // total, а не число строк на экране: показывается одна страница, а найдено больше.
+        countLabel = `Найдено учётных записей: ${total} из ${counts.all}`;
     } else if (statusScope === "active") {
         countLabel = `Всего активных учётных записей: ${counts.active}`;
     } else if (statusScope === "blocked") {
@@ -193,14 +195,46 @@ export function UsersPage() {
                     description="Попробуйте изменить условия поиска или фильтры"
                 />
             ) : (
-                <UsersTable
-                    users={users}
-                    columns={columns}
-                    gridTemplate={gridTemplate}
-                    onEdit={(u) => navigate(`/management/users/${u.id}`)}
-                    onBlock={openBlockConfirm}
-                    onUnblock={openUnblockConfirm}
-                />
+                <>
+                    <UsersTable
+                        users={users}
+                        columns={columns}
+                        gridTemplate={gridTemplate}
+                        onEdit={(u) => navigate(`/management/users/${u.id}`)}
+                        onBlock={openBlockConfirm}
+                        onUnblock={openUnblockConfirm}
+                    />
+
+                    {total > pageSize && (
+                        <div className="flex items-center justify-between gap-4 py-3 text-sm">
+                            <span className="text-gray-500">
+                                {(page - 1) * pageSize + 1}–{Math.min(page * pageSize, total)} из {total}
+                            </span>
+
+                            <div className="flex items-center gap-2">
+                                <button
+                                    type="button"
+                                    className="rounded border px-3 py-1 disabled:opacity-40"
+                                    disabled={page <= 1}
+                                    onClick={() => setPage(page - 1)}
+                                >
+                                    Назад
+                                </button>
+                                <span className="text-gray-500">
+                                    {page} из {Math.ceil(total / pageSize)}
+                                </span>
+                                <button
+                                    type="button"
+                                    className="rounded border px-3 py-1 disabled:opacity-40"
+                                    disabled={page >= Math.ceil(total / pageSize)}
+                                    onClick={() => setPage(page + 1)}
+                                >
+                                    Вперёд
+                                </button>
+                            </div>
+                        </div>
+                    )}
+                </>
             )}
 
             </>}

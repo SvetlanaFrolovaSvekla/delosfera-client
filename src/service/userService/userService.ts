@@ -1,4 +1,5 @@
 import {apiClient} from "@/service/apiClient.ts";
+import {cached, invalidate} from "@/service/dictionaryCache.ts";
 import type {
     UserPage,
     BlockUserRequest,
@@ -89,8 +90,12 @@ export const userService = {
      * и заблокированные не приходят — назначать им задачу бессмысленно.
      */
     async lookup(): Promise<UserLookupItem[]> {
-        const {data} = await apiClient.get<UserLookupItem[]>("/users/lookup");
-        return data;
+        // Подставляется почти в каждую форму: согласующие, исполнители, адресат.
+        // Состав сотрудников за время работы вкладки меняется редко.
+        return cached("users:lookup", async () => {
+            const {data} = await apiClient.get<UserLookupItem[]>("/users/lookup");
+            return data;
+        });
     },
 
     /**
@@ -125,7 +130,11 @@ export const userService = {
             headers: buildHeaders(true),
             body: JSON.stringify(request),
         });
-        return handleResponse<UserResponse>(response);
+        const created = await handleResponse<UserResponse>(response);
+        // Состав сотрудников изменился — список выбора должен это увидеть,
+        // иначе нового человека нельзя назначить ещё пять минут.
+        invalidate("users:");
+        return created;
     },
 
     async update(id: number, request: UpdateUserRequest): Promise<UserResponse> {
@@ -134,7 +143,9 @@ export const userService = {
             headers: buildHeaders(true),
             body: JSON.stringify(request),
         });
-        return handleResponse<UserResponse>(response);
+        const updated = await handleResponse<UserResponse>(response);
+        invalidate("users:");
+        return updated;
     },
 
     async block(id: number, request: BlockUserRequest = {}): Promise<UserResponse> {
@@ -143,7 +154,10 @@ export const userService = {
             headers: buildHeaders(true),
             body: JSON.stringify(request),
         });
-        return handleResponse<UserResponse>(response);
+        const blocked = await handleResponse<UserResponse>(response);
+        // Заблокированные из списка выбора исчезают: назначать им задачу бессмысленно.
+        invalidate("users:");
+        return blocked;
     },
 
     async unblock(id: number): Promise<UserResponse> {
@@ -151,7 +165,9 @@ export const userService = {
             method: "POST",
             headers: buildHeaders(),
         });
-        return handleResponse<UserResponse>(response);
+        const unblocked = await handleResponse<UserResponse>(response);
+        invalidate("users:");
+        return unblocked;
     },
 
     async remove(id: number): Promise<void> {
@@ -159,6 +175,7 @@ export const userService = {
             method: "DELETE",
             headers: buildHeaders(),
         });
-        return handleResponse<void>(response);
+        await handleResponse<void>(response);
+        invalidate("users:");
     },
 };

@@ -1,4 +1,5 @@
 import {apiClient} from "@/service/apiClient.ts";
+import {cached} from "@/service/dictionaryCache.ts";
 
 /**
  * Дерево подразделений.
@@ -34,8 +35,12 @@ export interface OrgTree {
 }
 
 export async function orgTree(): Promise<OrgTree> {
-    const {data} = await apiClient.get<OrgTree>("/org-tree");
-    return data;
+    // Дерево подразделений открывают из полей адресата и из раздела оргструктуры.
+    // Меняется оно синхронизацией с порталом, а не в течение сеанса работы.
+    return cached("org-tree", async () => {
+        const {data} = await apiClient.get<OrgTree>("/org-tree");
+        return data;
+    });
 }
 
 /** Сколько людей в подразделении вместе со всеми вложенными. */

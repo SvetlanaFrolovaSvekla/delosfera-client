@@ -107,19 +107,16 @@ export function OpenVndPage() {
     const lastRedactionNumber = redactions.reduce((max, r) => Math.max(max, r.number), 0);
     const isFirstRedaction = lastRedactionNumber <= 1;
 
-    // Зеркалит право публикации из VndActualizationService.PublishAsync на бэке (после унификации
-    // с общим IsChiefEditor() — тем же, что используют VndService/VndApprovalService/
-    // VndCoordinationTab: CreateVnd... тоже считается главным редактором, не только Actualize...):
-    // - если есть открытый цикл актуализации - только назначенный ответственный или главред;
-    // - если цикла нет - только инициатор согласования или главред.
-    const isChiefEditor =
-        hasPermission(PermissionCode.CreateVndWithApproval) ||
-        hasPermission(PermissionCode.CreateVndWithoutApproval) ||
-        hasPermission(PermissionCode.ActualizeAnyVndWithApproval) ||
-        hasPermission(PermissionCode.ActualizeAnyVndWithoutApproval);
+    // Зеркалит право публикации из VndActualizationService.PublishAsync на бэке:
+    // - если есть открытый цикл актуализации - только назначенный ответственный или главный методолог;
+    // - если цикла нет - только инициатор согласования или главный методолог.
+    // Раньше здесь стоял общий IsChiefEditor() (CreateVnd.../ActualizeAnyVnd...) - тот же набор
+    // прав, что почти у любого автора ВНД, из-за чего консолидировать чужую редакцию мог
+    // практически кто угодно. ConsolidateAnyVnd - отдельное узкое право именно для этого шага.
+    const canConsolidateAnyVnd = hasPermission(PermissionCode.ConsolidateAnyVnd);
 
     const canConsolidate = vnd
-        ? isChiefEditor ||
+        ? canConsolidateAnyVnd ||
         (vnd.actualizationResponsibleUserId
             ? vnd.actualizationResponsibleUserId === user?.id
             : approvalInitiatorId !== null && approvalInitiatorId === user?.id)

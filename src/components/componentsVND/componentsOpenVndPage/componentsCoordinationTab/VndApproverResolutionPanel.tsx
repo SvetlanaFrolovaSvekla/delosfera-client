@@ -254,7 +254,7 @@ export function VndApproverResolutionPanel({
                     <span className="flex items-center gap-0.5 text-[11.5px] text-[#8b97ab]">
                         Добавлено {files.length} из {MAX_RESOLUTION_ATTACHMENTS} файлов максимум
                         <HelpTooltip
-                            content={`Количество файлов, прикладываемых к резолюции, ограничено — не более ${MAX_RESOLUTION_ATTACHMENTS}, и каждый файл не больше ${formatFileSize(MAX_RESOLUTION_ATTACHMENT_SIZE_BYTES)}. Вложения хранятся, пока идёт согласование, и удаляются, как только редакция становится согласованной (текст комментария остаётся).`}
+                            content={`Количество файлов, прикладываемых к резолюции, ограничено — не более ${MAX_RESOLUTION_ATTACHMENTS}, и каждый файл не больше ${formatFileSize(MAX_RESOLUTION_ATTACHMENT_SIZE_BYTES)}. Вложения сохраняются в истории согласования бессрочно, наравне с текстом комментария.`}
                             side="bottom"
                             className="h-5 w-5"
                         />

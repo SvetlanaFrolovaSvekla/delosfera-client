@@ -1032,7 +1032,7 @@ export function VndRevisionNeededPanel({
                             <span className="flex items-center gap-0.5 text-[11px] text-[#8b97ab]">
                                 Добавлено {commentAttachments.length} из {MAX_RESOLUTION_ATTACHMENTS} файлов максимум
                                 <HelpTooltip
-                                    content={`Файлы, приложенные к комментарию — не более ${MAX_RESOLUTION_ATTACHMENTS}, каждый не больше ${formatFileSize(MAX_RESOLUTION_ATTACHMENT_SIZE_BYTES)}. Хранятся, пока идёт согласование, и удаляются, как только редакция становится согласованной (текст комментария остаётся).`}
+                                    content={`Файлы, приложенные к комментарию — не более ${MAX_RESOLUTION_ATTACHMENTS}, каждый не больше ${formatFileSize(MAX_RESOLUTION_ATTACHMENT_SIZE_BYTES)}. Сохраняются в истории согласования бессрочно, наравне с текстом комментария.`}
                                     side="top"
                                     className="h-5 w-5"
                                 />

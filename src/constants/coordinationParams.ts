@@ -8,8 +8,8 @@ import {BookOpen, type LucideIcon, Scale, ShieldAlert, ShieldCheck, User} from "
 export const MAX_STAGES = 10;
 
 // Максимальное число файлов, которые согласующий может приложить к своей резолюции
-// (см. VndApproverResolutionPanel) — ограничивает нагрузку на хранилище документа,
-// вложения к резолюциям хранятся, только пока идёт согласование.
+// (см. VndApproverResolutionPanel) — ограничивает нагрузку на хранилище документа;
+// вложения хранятся бессрочно как часть истории согласования.
 export const MAX_RESOLUTION_ATTACHMENTS = 5;
 
 // Максимальный размер ОДНОГО файла, приложенного согласующим к резолюции

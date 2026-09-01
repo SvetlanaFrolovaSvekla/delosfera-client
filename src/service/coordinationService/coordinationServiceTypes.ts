@@ -56,9 +56,9 @@ export interface ApprovalDecisionRequest {
     decision: ApprovalDecisionType; // Решение, резолюция
     /** Обязателен для ApproveWithComment и Reject */
     comment?: string; // Комментарий к решению
-    /** Файлы, приложенные согласующим к своей резолюции (необязательно). Хранятся, пока идёт
-     * согласование — как только редакция становится согласованной, вложения удаляются,
-     * текст комментария остаётся. */
+    /** Файлы, приложенные согласующим к своей резолюции (необязательно). Хранятся бессрочно,
+     * наравне с текстом комментария — остаются частью истории согласования и после того,
+     * как редакция станет согласованной. */
     files?: File[];
 }
 
@@ -105,8 +105,8 @@ export interface DisagreementMatrixRowResponse {
     createdAt: string;
 }
 
-/** Файл, приложенный согласующим к резолюции. Список пуст, если редакция уже согласована —
- * вложения к этому моменту физически удалены, остаётся только текст комментария. */
+/** Файл, приложенный согласующим к резолюции. Остаётся доступен и после того, как редакция
+ * станет согласованной — часть истории согласования наравне с текстом резолюции. */
 export interface ApprovalStageAttachmentResponse {
     id: number;
     fileId: number;
@@ -155,8 +155,8 @@ export interface ApprovalProcessResponse {
     repeatDeadlineAt: string | null;
     /** Комментарий инициатора при повторной отправке на согласование */
     repeatInitiatorComment: string | null;
-    /** Файлы, приложенные инициатором к repeatInitiatorComment. Пусто, если редакция уже
-     * согласована — вложения к этому моменту физически удалены. */
+    /** Файлы, приложенные инициатором к repeatInitiatorComment. Остаются доступны и после
+     * согласования редакции — часть истории согласования. */
     repeatInitiatorCommentAttachments: ApprovalStageAttachmentResponse[];
     finalHoldStartedAt: string | null;
     finalHoldDeadlineAt: string | null;

@@ -3,6 +3,11 @@ import {useNavigate} from "react-router-dom";
 import type {UserResponse, UserSource} from "@/service/userService/userServiceType.ts";
 import {useUsersList, type UserStatusScope} from "@/hooks/userHooks/useUsersList.ts";
 import {useUsersColumnVisibility} from "@/hooks/userHooks/useUsersColumnVisibility.ts";
+import {useJournalViews} from "@/hooks/useJournalViews.ts";
+import {JOURNAL} from "@/service/journalViewService/journalViewService.ts";
+import {JournalViewPicker} from "@/components/componentsGeneral/JournalViewPicker.tsx";
+import {useAuth} from "@/context/AuthContext.ts";
+import {PermissionCode} from "@/constants/permissions/permissions.ts";
 import {Tabs} from "@/components/componentsGeneral/Tabs.tsx";
 import {Loader} from "@/components/componentsGeneral/Loader";
 import {EmptyState} from "@/components/componentsGeneral/EmptyState.tsx";
@@ -45,7 +50,11 @@ export function UsersPage() {
     const {
         visibleCols, toggleColumn, selectAllColumns, deselectAllColumns,
         columns, gridTemplate, toggleableColumns,
+        currentColumns, applyColumns, defaultColumns,
     } = useUsersColumnVisibility();
+
+    const {hasPermission} = useAuth();
+    const views = useJournalViews(JOURNAL.Users, currentColumns, applyColumns);
 
     const [advOpen, setAdvOpen] = useState(false);
 
@@ -168,6 +177,21 @@ export function UsersPage() {
                     });
                 }}
                 onDeselectAllSources={() => sourceFilters.forEach((s) => toggleSourceFilter(s))}
+                viewPicker={
+                    <JournalViewPicker
+                        views={views.views}
+                        active={views.active}
+                        изменено={views.изменено}
+                        canShare={hasPermission(PermissionCode.ManageSystemSettings)}
+                        error={views.error}
+                        onApply={views.apply}
+                        onReset={() => views.reset(defaultColumns)}
+                        onSaveNew={(name, isShared, isDefault) =>
+                            void views.save({name, columns: currentColumns, isShared, isDefault})}
+                        onUpdate={(v) => void views.update(v)}
+                        onRemove={(v) => void views.remove(v)}
+                    />
+                }
                 toggleableColumns={toggleableColumns}
                 visibleCols={visibleCols}
                 onToggleColumn={toggleColumn}

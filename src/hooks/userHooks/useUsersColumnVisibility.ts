@@ -21,9 +21,28 @@ export function useUsersColumnVisibility() {
     const deselectAllColumns = () =>
         setVisibleCols(Object.fromEntries(getToggleableUserColumns().map((c) => [c.key, false])));
 
+    // Применить готовый набор — представление журнала. Ключи, которых в списке
+    // нет, молча отбрасываются: набор сохранён однажды, а состав колонок может
+    // с тех пор измениться.
+    const applyColumns = (keys: string[]) =>
+        setVisibleCols(Object.fromEntries(
+            getToggleableUserColumns().map((c) => [c.key, keys.includes(c.key)]),
+        ));
+
     const columns = USER_COLUMNS.filter((c) => c.fixed || visibleCols[c.key] === true);
     const gridTemplate = columns.map((c) => c.width).join(" ");
     const toggleableColumns = getToggleableUserColumns();
 
-    return {visibleCols, toggleColumn, selectAllColumns, deselectAllColumns, columns, gridTemplate, toggleableColumns};
+    // Что показано сейчас — в порядке колонок журнала, а не в порядке отметок.
+    // Порядок значим: он и есть порядок столбцов при следующем применении.
+    const currentColumns = toggleableColumns
+        .filter((c) => visibleCols[c.key] === true)
+        .map((c) => c.key);
+
+    return {
+        visibleCols, toggleColumn, selectAllColumns, deselectAllColumns,
+        columns, gridTemplate, toggleableColumns,
+        currentColumns, applyColumns,
+        defaultColumns: DEFAULT_VISIBLE,
+    };
 }

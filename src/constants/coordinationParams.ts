@@ -23,6 +23,11 @@ export const MAX_RESOLUTION_ATTACHMENT_SIZE_BYTES = 50 * 1024 * 1024;
 // (см. VndApproverResolutionPanel).
 export const MAX_RESOLUTION_COMMENT_LENGTH = 35000;
 
+// Длина, после которой комментарий/замечание обрезается в списках с кнопкой "См. полностью"
+// (см. RemarkCard в VndRevisionNeededPanel, VndApprovalSummary, VndApprovalRouteView) —
+// полный текст открывается в CommentViewModal.
+export const COMMENT_TRUNCATE_LENGTH = 260;
+
 // Верхняя граница норматива срока согласования (в минутах) — 90 дней.
 // Ограничивает поля "ч." / "м." в NormBlock и должна совпадать с MaxDeadlineMinutes
 // на бэкенде (VndApprovalService.StartAsync), где является финальной защитой:

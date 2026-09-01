@@ -1,11 +1,17 @@
 // Сводка по процессу согласования: статус, инициатор, прогресс резолюций, дата запуска
-import {useMemo} from "react";
+import {useMemo, useState} from "react";
 import {useNavigate} from "react-router-dom";
 import {useAuth} from "@/context/AuthContext.ts";
 import type {ApprovalProcessResponse} from "@/service/coordinationService/coordinationServiceTypes.ts";
-import {PHASE_LABELS, PROCESS_STATUS_META, type ApprovalPhase} from "@/constants/coordinationParams.ts";
+import {COMMENT_TRUNCATE_LENGTH, PHASE_LABELS, PROCESS_STATUS_META, type ApprovalPhase} from "@/constants/coordinationParams.ts";
 import {User, Calendar, CheckCircle2, Hourglass, MessageSquareText} from "lucide-react";
 import {getInitials} from "@/utils/getInitials.ts";
+import {
+    AttachmentRow
+} from "@/components/componentsCoordination/CoordinationRouteConstructor/functionalComponents/AttachmentRow.tsx";
+import {
+    CommentViewModal
+} from "@/components/componentsCoordination/CoordinationRouteConstructor/viewComponents/CommentViewModal.tsx";
 
 interface VndApprovalSummaryProps {
     process: ApprovalProcessResponse;
@@ -73,6 +79,7 @@ export function VndApprovalSummary({process}: VndApprovalSummaryProps) {
     const {user} = useAuth();
     const navigate = useNavigate();
     const isMeInitiator = process.initiatorUserId === user?.id;
+    const [initiatorCommentOpen, setInitiatorCommentOpen] = useState(false);
 
     const handleInitiatorClick = () => {
         if (isMeInitiator) {
@@ -215,10 +222,44 @@ export function VndApprovalSummary({process}: VndApprovalSummaryProps) {
                         <MessageSquareText size={14} className="flex-none text-[#4e57d6]"/>
                         Комментарий инициатора о внесённых исправлениях
                     </div>
-                    <p className="whitespace-pre-wrap rounded-[10px] bg-[#f6f8fb] px-3.5 py-3 text-[13px] leading-[1.6] text-[#3c424a]">
-                        {process.repeatInitiatorComment}
-                    </p>
+                    <div className="rounded-[10px] bg-[#f6f8fb] px-3.5 py-3">
+                        <p className="whitespace-pre-wrap text-[13px] leading-[1.6] text-[#3c424a]">
+                            {process.repeatInitiatorComment.length > COMMENT_TRUNCATE_LENGTH
+                                ? process.repeatInitiatorComment.slice(0, COMMENT_TRUNCATE_LENGTH).trimEnd() + "…"
+                                : process.repeatInitiatorComment}
+                        </p>
+
+                        {process.repeatInitiatorCommentAttachments.length > 0 && (
+                            <div className="mt-2 flex flex-col gap-1">
+                                {process.repeatInitiatorCommentAttachments.map((a) => (
+                                    <AttachmentRow key={a.id} fileId={a.fileId} fileName={a.fileName}/>
+                                ))}
+                            </div>
+                        )}
+
+                        {(process.repeatInitiatorComment.length > COMMENT_TRUNCATE_LENGTH ||
+                            process.repeatInitiatorCommentAttachments.length > 0) && (
+                            <button
+                                type="button"
+                                onClick={() => setInitiatorCommentOpen(true)}
+                                className="cursor-pointer mt-2 rounded-[7px] border border-[#d7dee8] bg-white px-2.5 py-[6px] text-[11.5px] font-semibold text-[#4e57d6] hover:bg-[#ececfc]"
+                            >
+                                См. комментарий полностью
+                            </button>
+                        )}
+                    </div>
                 </div>
+            )}
+
+            {initiatorCommentOpen && (
+                <CommentViewModal
+                    title="См. комментарий полностью"
+                    approverName={process.initiatorName}
+                    approverUserId={process.initiatorUserId}
+                    comment={process.repeatInitiatorComment ?? ""}
+                    attachments={process.repeatInitiatorCommentAttachments}
+                    onClose={() => setInitiatorCommentOpen(false)}
+                />
             )}
         </div>
     );

@@ -80,6 +80,9 @@ export interface ResubmitAfterRevisionRequest {
     removedAttachmentFileIds?: number[];
     /** Комментарий инициатора о внесённых исправлениях */
     comment?: string;
+    /** Файлы, приложенные к комментарию о внесённых исправлениях (необязательно). Полностью
+     * заменяют предыдущий набор вложений — актуальны только для последней отправки. */
+    commentAttachments?: File[];
     /** Согласен ли инициатор со всеми замечаниями.
      * false → нужна заполненная матрица разногласий, повторное согласование
      * пропускается, процесс сразу переходит на финальную выдержку. */
@@ -152,6 +155,9 @@ export interface ApprovalProcessResponse {
     repeatDeadlineAt: string | null;
     /** Комментарий инициатора при повторной отправке на согласование */
     repeatInitiatorComment: string | null;
+    /** Файлы, приложенные инициатором к repeatInitiatorComment. Пусто, если редакция уже
+     * согласована — вложения к этому моменту физически удалены. */
+    repeatInitiatorCommentAttachments: ApprovalStageAttachmentResponse[];
     finalHoldStartedAt: string | null;
     finalHoldDeadlineAt: string | null;
     completedAt: string | null;

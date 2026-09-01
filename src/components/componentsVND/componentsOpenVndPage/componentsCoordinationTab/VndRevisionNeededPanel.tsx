@@ -4,7 +4,13 @@ import type {
     ApprovalProcessResponse,
     ApprovalStageAttachmentResponse,
 } from "@/service/coordinationService/coordinationServiceTypes.ts";
-import {MAX_RESOLUTION_COMMENT_LENGTH, STAGE_DECISION_META} from "@/constants/coordinationParams.ts";
+import {
+    COMMENT_TRUNCATE_LENGTH,
+    MAX_RESOLUTION_ATTACHMENTS,
+    MAX_RESOLUTION_ATTACHMENT_SIZE_BYTES,
+    MAX_RESOLUTION_COMMENT_LENGTH,
+    STAGE_DECISION_META,
+} from "@/constants/coordinationParams.ts";
 import {VND_REDACTION_MAX_ATTACHMENTS} from "@/constants/validation/vndValidation.ts";
 import type {VndRedactionResponse, VndResponse} from "@/service/vndService/vndServiceType.ts";
 import {resolveVndDocTitle} from "@/utils/fileNaming.ts";
@@ -209,8 +215,6 @@ function pluralizeRemarkCount(n: number): string {
     if (mod10 >= 2 && mod10 <= 4 && (mod100 < 12 || mod100 > 14)) return "замечания";
     return "замечаний";
 }
-
-const COMMENT_TRUNCATE_LENGTH = 260;
 
 /** Карточка одного замечания/комментария - в духе StageCardView: обрезанный текст,
  * кнопка на полный просмотр (модалка) и список прикреплённых файлов.
@@ -499,6 +503,12 @@ export function VndRevisionNeededPanel({
     const [attachmentCountLimitHit, setAttachmentCountLimitHit] = useState(false);
     const [removedAttachmentIds, setRemovedAttachmentIds] = useState<Set<number>>(new Set());
 
+    // Вложения к самому комментарию о внесённых исправлениях (отдельно от "Вложений редакции"
+    // выше) - см. VndApproverResolutionPanel для того же паттерна на стороне согласующего.
+    const [commentAttachments, setCommentAttachments] = useState<File[]>([]);
+    const [commentAttachmentCountLimitHit, setCommentAttachmentCountLimitHit] = useState(false);
+    const [oversizedCommentFileNames, setOversizedCommentFileNames] = useState<string[]>([]);
+
     const [submitting, setSubmitting] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const [openRemark, setOpenRemark] = useState<{item: RemarkItem; isRemark: boolean} | null>(null);
@@ -645,6 +655,28 @@ export function VndRevisionNeededPanel({
         setAttachmentCountLimitHit(false);
     };
 
+    const commentAttachmentSlotsLeft = MAX_RESOLUTION_ATTACHMENTS - commentAttachments.length;
+    const commentAttachmentLimitReached = commentAttachmentSlotsLeft <= 0;
+
+    const handleAddCommentAttachments = (files: FileList | null) => {
+        if (!files || files.length === 0) return;
+        const incoming = Array.from(files);
+
+        // Лимит по размеру - на каждый файл отдельно, как в VndApproverResolutionPanel.
+        const withinSizeLimit = incoming.filter((f) => f.size <= MAX_RESOLUTION_ATTACHMENT_SIZE_BYTES);
+        const oversized = incoming.filter((f) => f.size > MAX_RESOLUTION_ATTACHMENT_SIZE_BYTES);
+        const accepted = withinSizeLimit.slice(0, Math.max(0, commentAttachmentSlotsLeft));
+
+        setCommentAttachments((prev) => [...prev, ...accepted]);
+        setCommentAttachmentCountLimitHit(accepted.length < withinSizeLimit.length);
+        setOversizedCommentFileNames(oversized.map((f) => f.name));
+    };
+
+    const removeCommentAttachment = (index: number) => {
+        setCommentAttachments((prev) => prev.filter((_, i) => i !== index));
+        setCommentAttachmentCountLimitHit(false);
+    };
+
     const toggleRemoveExistingAttachment = (fileId: number) => {
         setRemovedAttachmentIds((prev) => {
             const next = new Set(prev);
@@ -668,6 +700,7 @@ export function VndRevisionNeededPanel({
                 newAttachments: newAttachments.length > 0 ? newAttachments : undefined,
                 removedAttachmentFileIds: removedAttachmentIds.size > 0 ? Array.from(removedAttachmentIds) : undefined,
                 comment: comment.trim() || undefined,
+                commentAttachments: commentAttachments.length > 0 ? commentAttachments : undefined,
                 agreesWithAllRemarks,
             });
             await onResubmitted();
@@ -994,6 +1027,86 @@ export function VndRevisionNeededPanel({
                             rows={3}
                             className="w-full resize-none rounded-[10px] border border-[#e5e9f0] bg-[#f9fafc] p-3 text-[13px] font-normal text-[#26324a] outline-none focus:border-[#4e57d6] focus:bg-white"
                         />
+
+                        <div className="mt-2 flex items-center justify-between gap-3">
+                            <span className="flex items-center gap-0.5 text-[11px] text-[#8b97ab]">
+                                Добавлено {commentAttachments.length} из {MAX_RESOLUTION_ATTACHMENTS} файлов максимум
+                                <HelpTooltip
+                                    content={`Файлы, приложенные к комментарию — не более ${MAX_RESOLUTION_ATTACHMENTS}, каждый не больше ${formatFileSize(MAX_RESOLUTION_ATTACHMENT_SIZE_BYTES)}. Хранятся, пока идёт согласование, и удаляются, как только редакция становится согласованной (текст комментария остаётся).`}
+                                    side="top"
+                                    className="h-5 w-5"
+                                />
+                            </span>
+
+                            {commentAttachmentLimitReached ? (
+                                <Tooltip
+                                    content={`Достигнут максимум — ${MAX_RESOLUTION_ATTACHMENTS} файлов на комментарий`}
+                                    side="top"
+                                >
+                                    <span className="cursor-not-allowed inline-flex items-center gap-1.5 rounded-[8px] border border-[#e5e9f0] bg-[#f6f8fb] px-3 py-[6px] text-[11.5px] font-semibold text-[#b7bfcc]">
+                                        <Paperclip size={13}/>
+                                        Прикрепить файл
+                                    </span>
+                                </Tooltip>
+                            ) : (
+                                <label className="cursor-pointer inline-flex items-center gap-1.5 rounded-[8px] border border-[#d7dee8] bg-white px-3 py-[6px] text-[11.5px] font-semibold text-[#4e57d6] hover:bg-[#ececfc]">
+                                    <input
+                                        type="file"
+                                        multiple
+                                        className="hidden"
+                                        onChange={(e) => {
+                                            handleAddCommentAttachments(e.target.files);
+                                            e.target.value = "";
+                                        }}
+                                    />
+                                    <Paperclip size={13}/>
+                                    Прикрепить файл
+                                </label>
+                            )}
+                        </div>
+
+                        {commentAttachmentCountLimitHit && (
+                            <div className="mt-2 flex items-start gap-1.5 text-[11.5px] text-[#d62815]">
+                                <AlertCircle className="mt-[1px] h-3.5 w-3.5 shrink-0"/>
+                                <span>
+                                    Часть выбранных файлов не добавлена — максимум {MAX_RESOLUTION_ATTACHMENTS} файлов на комментарий.
+                                </span>
+                            </div>
+                        )}
+
+                        {oversizedCommentFileNames.length > 0 && (
+                            <div className="mt-2 flex items-start gap-1.5 text-[11.5px] text-[#d62815]">
+                                <AlertCircle className="mt-[1px] h-3.5 w-3.5 shrink-0"/>
+                                <span>
+                                    Не добавлен{oversizedCommentFileNames.length > 1 ? "ы" : ""} «{oversizedCommentFileNames.join("», «")}»
+                                    {" "}— размер файла не должен превышать {formatFileSize(MAX_RESOLUTION_ATTACHMENT_SIZE_BYTES)}.
+                                </span>
+                            </div>
+                        )}
+
+                        {commentAttachments.length > 0 && (
+                            <div className="mt-2 flex flex-col gap-[6px]">
+                                {commentAttachments.map((file, index) => (
+                                    <div
+                                        key={`${file.name}-${index}`}
+                                        className="flex items-center gap-2 rounded-[9px] border border-[#e5e9f0] bg-[#fbfcfe] px-3 py-[7px] text-[12px] text-[#3a4560]"
+                                    >
+                                        <Paperclip size={13} className="flex-none text-[#8b97ab]"/>
+                                        <Tooltip content={file.name} side="top" className="min-w-0 flex-1">
+                                            <span className="block truncate">{file.name}</span>
+                                        </Tooltip>
+                                        <span className="flex-none text-[11px] text-[#a3adbd]">{formatFileSize(file.size)}</span>
+                                        <button
+                                            type="button"
+                                            onClick={() => removeCommentAttachment(index)}
+                                            className="cursor-pointer flex-none text-[#8b97ab] hover:text-[#c0392b]"
+                                        >
+                                            <Trash2 size={13}/>
+                                        </button>
+                                    </div>
+                                ))}
+                            </div>
+                        )}
                     </div>
                     </>
                 )}

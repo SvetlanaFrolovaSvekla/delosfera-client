@@ -1,5 +1,5 @@
 // Read-only маршрут уже запущенного/завершённого согласования
-import {useMemo} from "react";
+import {useMemo, useState} from "react";
 import type {ApprovalProcessResponse} from "@/service/coordinationService/coordinationServiceTypes.ts";
 import {useApprovalRouteLines} from "@/hooks/coordinationHooks/useApprovalRouteLines.ts";
 import {StageCardView} from "./StageCardView";
@@ -7,6 +7,11 @@ import {NormBlockView, type NormPhaseStatus} from "./NormBlockView";
 import {ArrowDown, ArrowLeft, MessageSquareText} from "lucide-react";
 import {getElapsedLabel} from "@/utils/dateUtils.ts";
 import {getInitials} from "@/utils/getInitials.ts";
+import {COMMENT_TRUNCATE_LENGTH} from "@/constants/coordinationParams.ts";
+import {
+    AttachmentRow
+} from "@/components/componentsCoordination/CoordinationRouteConstructor/functionalComponents/AttachmentRow.tsx";
+import {CommentViewModal} from "./CommentViewModal.tsx";
 
 interface VndApprovalRouteViewProps {
     process: ApprovalProcessResponse;
@@ -76,6 +81,8 @@ function CurrentPhaseHint({startedAt, deadlineAt}: CurrentPhaseHintProps) {
 }
 
 export function VndApprovalRouteView({process, highlightStageId, frameless}: VndApprovalRouteViewProps) {
+    const [initiatorCommentOpen, setInitiatorCommentOpen] = useState(false);
+
     const stagesWithLocalId = useMemo(
         () => process.stages.map((s) => ({...s, localId: String(s.id)})),
         [process.stages],
@@ -121,9 +128,41 @@ export function VndApprovalRouteView({process, highlightStageId, frameless}: Vnd
                         </span>
                     </div>
                     <div className="whitespace-pre-wrap text-[12px] leading-snug text-[#3c424a]">
-                        {process.repeatInitiatorComment}
+                        {process.repeatInitiatorComment.length > COMMENT_TRUNCATE_LENGTH
+                            ? process.repeatInitiatorComment.slice(0, COMMENT_TRUNCATE_LENGTH).trimEnd() + "…"
+                            : process.repeatInitiatorComment}
                     </div>
+
+                    {process.repeatInitiatorCommentAttachments.length > 0 && (
+                        <div className="flex flex-col gap-1">
+                            {process.repeatInitiatorCommentAttachments.map((a) => (
+                                <AttachmentRow key={a.id} fileId={a.fileId} fileName={a.fileName}/>
+                            ))}
+                        </div>
+                    )}
+
+                    {(process.repeatInitiatorComment.length > COMMENT_TRUNCATE_LENGTH ||
+                        process.repeatInitiatorCommentAttachments.length > 0) && (
+                        <button
+                            type="button"
+                            onClick={() => setInitiatorCommentOpen(true)}
+                            className="cursor-pointer self-start rounded-[7px] border border-[#d7dee8] bg-white px-2.5 py-[6px] text-[11px] font-semibold text-[#4e57d6] hover:bg-[#ececfc]"
+                        >
+                            См. комментарий полностью
+                        </button>
+                    )}
                 </div>
+            )}
+
+            {initiatorCommentOpen && (
+                <CommentViewModal
+                    title="См. комментарий полностью"
+                    approverName={process.initiatorName}
+                    approverUserId={process.initiatorUserId}
+                    comment={process.repeatInitiatorComment ?? ""}
+                    attachments={process.repeatInitiatorCommentAttachments}
+                    onClose={() => setInitiatorCommentOpen(false)}
+                />
             )}
 
             <div

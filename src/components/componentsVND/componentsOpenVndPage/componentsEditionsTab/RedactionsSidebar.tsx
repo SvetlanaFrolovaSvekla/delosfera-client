@@ -21,6 +21,7 @@ import {
 } from "lucide-react";
 import type {VndStatusKey} from "@/constants/vndTabs.ts";
 import {HelpTooltip} from "@/components/componentsGeneral/knowledgeBaseComponents/HelpTooltip.tsx";
+import {Tooltip} from "@/components/componentsGeneral/Tooltip.tsx";
 
 /** Какое действие выполняет главная кнопка сайдбара:
  * - "new" — добавить редакцию напрямую (у ВНД ещё нет действующей редакции)
@@ -122,6 +123,7 @@ export function RedactionsSidebar({
     const firstRedactionId = redactions[redactions.length - 1]?.id;
     const primaryMeta = PRIMARY_ACTION_META[primaryActionVariant];
     const PrimaryIcon = primaryMeta.icon;
+    const compareDisabled = redactions.length < 2;
 
     return (
         <div className="flex max-h-[500px] flex-col rounded-[14px] border border-[#e9edf3] bg-white p-[14px]">
@@ -216,17 +218,26 @@ export function RedactionsSidebar({
                 {t("openVndPage.redactionsSidebar.contentsButton")}
             </button>
 
-            <button
-                onClick={onToggleCompare}
-                className={`cursor-pointer mt-2 flex h-[38px] w-full flex-none items-center justify-center gap-2 rounded-[10px] border text-[12.5px] font-semibold transition-colors ${
-                    compareMode
-                        ? "border-[#4e57d6]/30 bg-[#4e57d6]/[0.06] text-[#4e57d6]"
-                        : "border-[#e5e9f0] bg-white text-[#3a4560] hover:bg-[#f6f8fb]"
-                }`}
+            <Tooltip
+                content="Сравнение доступно, если у документа есть хотя бы две редакции"
+                disabled={!compareDisabled}
+                side="top"
             >
-                <Columns2 size={16} strokeWidth={1.8}/>
-                {t("openVndPage.redactionsSidebar.compareButton")}
-            </button>
+                <button
+                    onClick={onToggleCompare}
+                    disabled={compareDisabled}
+                    className={`cursor-pointer mt-2 flex h-[38px] w-full flex-none items-center justify-center gap-2 rounded-[10px] border text-[12.5px] font-semibold transition-colors ${
+                        compareDisabled
+                            ? "disabled:cursor-not-allowed border-[#e5e9f0] bg-[#f6f8fb] text-[#a3adbd]"
+                            : compareMode
+                                ? "border-[#4e57d6]/30 bg-[#4e57d6]/[0.06] text-[#4e57d6]"
+                                : "border-[#e5e9f0] bg-white text-[#3a4560] hover:bg-[#f6f8fb]"
+                    }`}
+                >
+                    <Columns2 size={16} strokeWidth={1.8}/>
+                    {t("openVndPage.redactionsSidebar.compareButton")}
+                </button>
+            </Tooltip>
         </div>
     );
 }

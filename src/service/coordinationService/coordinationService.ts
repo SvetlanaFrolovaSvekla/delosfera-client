@@ -78,6 +78,9 @@ class CoordinationService {
             formData.append("RemovedAttachmentFileIds", String(fileId));
         }
         if (request.comment) formData.append("Comment", request.comment);
+        for (const file of request.commentAttachments ?? []) {
+            formData.append("CommentAttachments", file);
+        }
         formData.append("AgreesWithAllRemarks", String(request.agreesWithAllRemarks));
 
         // См. комментарий в decide() выше — Content-Type не задаём вручную.

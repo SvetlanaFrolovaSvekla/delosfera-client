@@ -27,7 +27,6 @@ import {useAuth} from "@/context/AuthContext.ts";
 import {PermissionCode} from "@/constants/permissions/permissions.ts";
 import {FileEdit} from "lucide-react";
 
-
 const ALL_STATUS_OPTIONS: { key: VndStatusKey; label: string }[] = (
     Object.keys(STATUS_META) as VndStatusKey[]
 ).map((key) => ({key, label: STATUS_META[key].label}));
@@ -38,11 +37,11 @@ export function BaseVndPage() {
     const navigate = useNavigate();
     const {hasPermission} = useAuth();
     const canViewOtherUsersDrafts = hasPermission(PermissionCode.ViewOtherUsersDrafts);
-    // Право создавать ВНД — от него зависит видимость вкладки "Черновики" и состав таба "Все"
+    // Право создавать ВНД - от него зависит видимость вкладки "Черновики" и состав таба "Все"
     const canCreateVnd =
         hasPermission(PermissionCode.CreateVndWithApproval) ||
         hasPermission(PermissionCode.CreateVndWithoutApproval);
-    // Право "Просмотр реестра ВНД в расширенном режиме" — колонки/фильтры
+    // Право "Просмотр реестра ВНД в расширенном режиме" - колонки/фильтры
     // "Статус последней редакции" и "Актуализация"
     const canViewVndRegistryExtended = hasPermission(PermissionCode.ViewVndRegistryExtended);
     // Чекбокс "Только связанные со мной" — только для "редакторов ВНД": тех, кто может

@@ -29,8 +29,10 @@ export function CommentViewModal({
     decidedAt?: string | null;
     comment: string;
     attachments: {id: number; fileId: number; fileName: string}[];
-    decisionLabel: string;
-    decisionBadgeClass: string;
+    /** Не указывается, если модалка открыта не для резолюции согласующего, а для, например,
+     * комментария инициатора о внесённых исправлениях — тогда строка "Резолюция..." не рисуется. */
+    decisionLabel?: string;
+    decisionBadgeClass?: string;
     onClose: () => void;
 }) {
     const {user} = useAuth();
@@ -106,14 +108,16 @@ export function CommentViewModal({
                             </Link>
                         </div>
 
-                        <div className="flex flex-none items-center gap-2.5">
-                            <span className="truncate text-[11px] text-[#8b97ab]">
-                                Резолюция данного согласующего:
-                            </span>
-                            <span className={`inline-flex w-fit flex-none items-center rounded-full px-[9px] py-0.5 text-[11px] font-semibold ${decisionBadgeClass}`}>
-                                {decisionLabel}
-                            </span>
-                        </div>
+                        {decisionLabel && (
+                            <div className="flex flex-none items-center gap-2.5">
+                                <span className="truncate text-[11px] text-[#8b97ab]">
+                                    Резолюция данного согласующего:
+                                </span>
+                                <span className={`inline-flex w-fit flex-none items-center rounded-full px-[9px] py-0.5 text-[11px] font-semibold ${decisionBadgeClass}`}>
+                                    {decisionLabel}
+                                </span>
+                            </div>
+                        )}
                     </div>
                 </div>
 

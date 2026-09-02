@@ -143,27 +143,50 @@ function Node({node, depth, collapsed, toggle, forceOpen}: {
                     <span className="h-5 w-5 flex-none"/>
                 )}
 
-                <span className="grid h-8 w-8 flex-none place-items-center rounded-[8px]
-                                 border border-[#e8edf5] bg-white">
-                    <Icon size={15} className="text-[#5b6b85]"/>
-                </span>
+                {node.isPerson ? (
+                    <span className="grid h-8 w-8 flex-none place-items-center rounded-full
+                                     bg-[#1e3a8a] text-[11px] font-semibold text-white">
+                        {инициалы(node.title)}
+                    </span>
+                ) : (
+                    <span className="grid h-8 w-8 flex-none place-items-center rounded-[8px]
+                                     border border-[#e8edf5] bg-white">
+                        <Icon size={15} className="text-[#5b6b85]"/>
+                    </span>
+                )}
 
                 <span className="min-w-0 flex-1">
                     <span className="block truncate text-[13.5px] font-semibold text-[#101a2c]">
                         {node.title}
                     </span>
                     <span className="block truncate text-[11.5px] text-[#8593a8]">
-                        {node.kind && <>{node.kind} · </>}
-                        {node.head
-                            ? <>нач. {node.head}</>
-                            : <span className="text-[#a8b3c4]">начальник не назначен</span>}
-                        {node.curator && <> · куратор {node.curator}</>}
-                        {node.staffCount > 0 && <> · {node.staffCount} чел.</>}
-                        {hasChildren && inside !== node.staffCount && <> · всего {inside}</>}
+                        {node.isPerson ? (
+                            <>
+                                {node.kind ? <>{node.kind} · </> : null}
+                                курирует подразделения
+                            </>
+                        ) : (
+                            <>
+                                {node.kind && <>{node.kind} · </>}
+                                {node.head
+                                    ? <>нач. {node.head}</>
+                                    : <span className="text-[#a8b3c4]">начальник не назначен</span>}
+                                {node.curator && <> · куратор {node.curator}</>}
+                                {node.staffCount > 0 && <> · {node.staffCount} чел.</>}
+                                {hasChildren && inside !== node.staffCount && <> · всего {inside}</>}
+                            </>
+                        )}
                     </span>
                 </span>
 
-                {!node.fromPortal && (
+                {node.isPerson ? (
+                    <span
+                        title="Подразделения ниже подчинены этому человеку, а не подразделению"
+                        className="flex-none rounded-[5px] bg-[#e8effc] px-2 py-0.5 text-[10.5px] text-[#1e3a8a]"
+                    >
+                        сотрудник
+                    </span>
+                ) : !node.fromPortal && (
                     <span
                         title="Заведено здесь, в портале такого подразделения нет"
                         className="flex-none rounded-[5px] bg-[#eef2f7] px-2 py-0.5 text-[10.5px] text-[#5b6b85]"
@@ -185,6 +208,16 @@ function Node({node, depth, collapsed, toggle, forceOpen}: {
             ))}
         </>
     );
+}
+
+/** Две первые буквы: фамилия и имя. Отчество не берём — кружок узкий. */
+function инициалы(fullName: string): string {
+    return fullName
+        .split(/\s+/)
+        .filter(Boolean)
+        .slice(0, 2)
+        .map((word) => word[0]?.toUpperCase() ?? "")
+        .join("");
 }
 
 function Figure({value, label, hint, alert}: {

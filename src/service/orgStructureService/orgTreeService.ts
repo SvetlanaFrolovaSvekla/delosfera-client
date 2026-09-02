@@ -24,6 +24,8 @@ export interface OrgTreeNode {
     /** Пришло из портала. Заведённые руками — нет. */
     fromPortal: boolean;
     children: OrgTreeNode[];
+    /** Узел — не подразделение, а человек, которому подчинены нижние. */
+    isPerson?: boolean;
 }
 
 export interface OrgTree {

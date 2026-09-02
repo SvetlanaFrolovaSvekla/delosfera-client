@@ -110,7 +110,11 @@ function Node({node, depth, collapsed, toggle, forceOpen}: {
     toggle: (id: number) => void;
     forceOpen: boolean;
 }) {
-    const hasChildren = node.children.length > 0;
+    const staff = node.staff ?? [];
+
+    // Раскрывается и подразделение без вложенных: сотрудники внутри — тоже
+    // содержимое, и отдел из шести человек не должен выглядеть пустым.
+    const hasChildren = node.children.length > 0 || staff.length > 0;
     const open = forceOpen || !collapsed.has(node.id);
 
     // Значок по виду из портала. Раньше вид угадывался по вложенности, и
@@ -205,6 +209,40 @@ function Node({node, depth, collapsed, toggle, forceOpen}: {
                     toggle={toggle}
                     forceOpen={forceOpen}
                 />
+            ))}
+
+            {/* Сотрудники после вложенных подразделений: иначе список из
+                девяти фамилий разрывает структуру посередине. */}
+            {open && staff.map((человек) => (
+                <div
+                    key={`u${человек.id}`}
+                    className="flex items-center gap-2 border-b border-[#f2f5f9] px-3 py-2
+                               transition last:border-b-0 hover:bg-[#f8fafc]"
+                    style={{paddingLeft: 12 + (depth + 1) * 22}}
+                >
+                    <span className="h-5 w-5 flex-none"/>
+
+                    <span className="grid h-7 w-7 flex-none place-items-center rounded-full
+                                     bg-[#eef2f7] text-[10px] font-semibold text-[#5b6b85]">
+                        {инициалы(человек.fullName)}
+                    </span>
+
+                    <span className="min-w-0 flex-1">
+                        <span className="block truncate text-[12.5px] text-[#101a2c]">
+                            {человек.fullName}
+                        </span>
+                        <span className="block truncate text-[11px] text-[#8593a8]">
+                            {человек.position ?? "должность не указана"}
+                        </span>
+                    </span>
+
+                    {человек.isHead && (
+                        <span className="flex-none rounded-[5px] bg-[#eef2f7] px-2 py-0.5
+                                         text-[10.5px] text-[#5b6b85]">
+                            начальник
+                        </span>
+                    )}
+                </div>
             ))}
         </>
     );

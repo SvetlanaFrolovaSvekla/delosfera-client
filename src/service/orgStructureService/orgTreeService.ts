@@ -26,6 +26,16 @@ export interface OrgTreeNode {
     children: OrgTreeNode[];
     /** Узел — не подразделение, а человек, которому подчинены нижние. */
     isPerson?: boolean;
+    /** Кто числится в подразделении. У узла-человека пусто. */
+    staff?: OrgTreeStaff[];
+}
+
+export interface OrgTreeStaff {
+    id: number;
+    fullName: string;
+    position: string | null;
+    /** Начальник подразделения — он стоит первым. */
+    isHead: boolean;
 }
 
 export interface OrgTree {
@@ -50,7 +60,13 @@ export function totalStaff(node: OrgTreeNode): number {
     return node.staffCount + node.children.reduce((sum, child) => sum + totalStaff(child), 0);
 }
 
-/** Отбор по названию: узел остаётся, если совпал сам или совпал кто-то внутри. */
+/**
+ * Отбор по названию: узел остаётся, если совпал сам или совпал кто-то внутри.
+ *
+ * Сотрудники ищутся наравне с подразделениями: структуру открывают и затем,
+ * чтобы найти человека. У совпавшего подразделения список остаётся целиком —
+ * искали отдел, а не фамилию; у остальных остаются только совпавшие.
+ */
 export function filterTree(nodes: OrgTreeNode[], needle: string): OrgTreeNode[] {
     const text = needle.trim().toLowerCase();
     if (!text) return nodes;
@@ -60,8 +76,12 @@ export function filterTree(nodes: OrgTreeNode[], needle: string): OrgTreeNode[] 
         const matches = node.title.toLowerCase().includes(text)
             || (node.head?.toLowerCase().includes(text) ?? false);
 
-        if (!matches && children.length === 0) return null;
-        return {...node, children};
+        const staff = matches
+            ? node.staff
+            : (node.staff ?? []).filter((x) => x.fullName.toLowerCase().includes(text));
+
+        if (!matches && children.length === 0 && (staff?.length ?? 0) === 0) return null;
+        return {...node, children, staff};
     };
 
     return nodes.map(keep).filter((n): n is OrgTreeNode => n !== null);

@@ -23,6 +23,10 @@ export type ActualizationPeriod =
 
 // --- Обновление реквизитов ---
 export interface UpdateVndRequisitesRequest {
+    /** Какую редакцию редактируем (вкладки Р1/Р2/.../Рn на вкладке "Реквизиты") — если не
+     * передать, бэк сам возьмёт текущую/последнюю редакцию. titleRu/En/Kg и typeId общие
+     * на весь документ и от этого поля не зависят. */
+    redactionId?: number | null;
     typeId: number;
     organId: number;
     developerId?: number | null;
@@ -242,6 +246,34 @@ export interface VndRedactionResponse {
      * настоящее имя файла, как при загрузке, а не "Вложение #id"). */
     attachmentFileIds: number[];
     attachments: VndRedactionAttachmentResponse[];
+
+    // --- Реквизиты ИМЕННО этой редакции (см. миграцию "реквизиты по редакции") — используются
+    // для вкладок Р1/Р2/.../Рn на вкладке "Реквизиты" и для подсветки изменений по сравнению
+    // с предыдущей редакцией.
+    titleRu: string;
+    titleEn: string | null;
+    titleKg: string | null;
+    typeId: number;
+    typeName: string;
+
+    adoptionDate: string | null;
+    adoptionCode: string | null;
+    effectiveDate: string | null;
+    period: ActualizationPeriod;
+
+    developerId: number;
+    developerName: string;
+    curatorDeveloperId: number | null;
+    curatorDeveloperName: string | null;
+
+    organId: number;
+    organName: string;
+
+    secrecyLevelId: number;
+
+    responsibleExecutorIds: number[];
+    keywordIds: number[];
+    rubricIds: number[];
 
     createdAt: string; // ISO datetime
 }

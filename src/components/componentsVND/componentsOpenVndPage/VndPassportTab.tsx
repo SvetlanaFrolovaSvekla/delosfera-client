@@ -1,5 +1,7 @@
+import {useEffect, useMemo, useState} from "react";
 import {Archive, CalendarCheck, FileText, History, Pencil, RotateCw, Tags, Type, X, Loader2} from "lucide-react";
-import type {VndResponse} from "@/service/vndService/vndServiceType.ts";
+import type {VndRedactionResponse, VndResponse} from "@/service/vndService/vndServiceType.ts";
+import {vndService} from "@/service/vndService/vndService.ts";
 import {Section} from "@/components/componentsGeneral/Section.tsx";
 import {ReadOnlyField} from "@/components/componentsGeneral/readOnlySelects/ReadOnlyField.tsx";
 import {ReadOnlyChipsField} from "@/components/componentsGeneral/readOnlySelects/ReadOnlyChipsField.tsx";
@@ -64,10 +66,77 @@ export function VndPassportTab({
         userGroupNames,
     } = useVndDictionaryResolvers();
 
+    // --- Реквизиты по редакциям (вкладки Р1/Р2/.../Рn) — см. миграцию "реквизиты по редакции".
+    // TitleRu/En/Kg и TypeId остаются общими на весь документ (vnd), всё остальное показываем/
+    // редактируем по конкретной редакции.
+    const [redactions, setRedactions] = useState<VndRedactionResponse[]>([]);
+    const [selectedRedactionId, setSelectedRedactionId] = useState<number | null>(null);
+    const [showDiff, setShowDiff] = useState(false);
+
+    const loadRedactions = () => {
+        vndService.getRedactions(vnd.id).then((list) => {
+            setRedactions(list);
+            setSelectedRedactionId((prev) => {
+                if (prev !== null && list.some((r) => r.id === prev)) return prev;
+                const current = list.find((r) => r.isCurrent) ?? list[list.length - 1];
+                return current ? current.id : null;
+            });
+        });
+    };
+
+    useEffect(loadRedactions, [vnd.id]);
+
+    const selectedRedaction = redactions.find((r) => r.id === selectedRedactionId) ?? null;
+    const previousRedaction = selectedRedaction
+        ? redactions.find((r) => r.number === selectedRedaction.number - 1) ?? null
+        : null;
+
     const {
         isEditing, draft, saving, error, startEdit, cancelEdit, update, save,
         setActualizationMode, updateDueDateManually,
-    } = useVndRequisitesForm(vnd, onVndChanged);
+    } = useVndRequisitesForm(vnd, selectedRedaction, (updated) => {
+        onVndChanged?.(updated);
+        loadRedactions();
+    });
+
+    // Реквизиты, которые сейчас показываем — из выбранной редакции, либо (пока у ВНД ещё нет
+    // ни одной редакции — черновик) из самого документа, как было раньше.
+    const activeRequisites = useMemo(() => ({
+        titleRu: selectedRedaction?.titleRu ?? vnd.titleRu,
+        titleEn: selectedRedaction?.titleEn ?? vnd.titleEn,
+        titleKg: selectedRedaction?.titleKg ?? vnd.titleKg,
+        typeId: selectedRedaction?.typeId ?? vnd.typeId,
+        typeName: selectedRedaction?.typeName ?? vnd.typeName,
+        organId: selectedRedaction?.organId ?? vnd.organId,
+        organName: selectedRedaction?.organName ?? vnd.organName,
+        developerId: selectedRedaction?.developerId ?? vnd.developerId,
+        developerName: selectedRedaction?.developerName ?? vnd.developerName,
+        curatorDeveloperId: selectedRedaction?.curatorDeveloperId ?? vnd.curatorDeveloperId,
+        curatorDeveloperName: selectedRedaction?.curatorDeveloperName ?? vnd.curatorDeveloperName,
+        responsibleExecutorIds: selectedRedaction?.responsibleExecutorIds ?? vnd.responsibleExecutorIds,
+        adoptionDate: selectedRedaction?.adoptionDate ?? vnd.adoptionDate,
+        adoptionCode: selectedRedaction?.adoptionCode ?? vnd.adoptionCode,
+        effectiveDate: selectedRedaction?.effectiveDate ?? vnd.effectiveDate,
+        keywordIds: selectedRedaction?.keywordIds ?? vnd.keywordIds,
+        rubricIds: selectedRedaction?.rubricIds ?? vnd.rubricIds,
+        secrecyLevelId: selectedRedaction?.secrecyLevelId ?? vnd.secrecyLevelId,
+    }), [selectedRedaction, vnd]);
+
+    // Подсветка отличий от предыдущей редакции (чекбокс "Показать изменения") — работает только
+    // когда обе редакции загружены и есть с чем сравнивать (для Р1 предыдущей нет).
+    const canShowDiff = Boolean(selectedRedaction && previousRedaction);
+
+    function diffScalar(getter: (r: VndRedactionResponse) => string | number | null): boolean {
+        if (!showDiff || !selectedRedaction || !previousRedaction) return false;
+        return getter(selectedRedaction) !== getter(previousRedaction);
+    }
+
+    function diffArray(getter: (r: VndRedactionResponse) => number[]): boolean {
+        if (!showDiff || !selectedRedaction || !previousRedaction) return false;
+        const a = [...getter(selectedRedaction)].sort((x, y) => x - y);
+        const b = [...getter(previousRedaction)].sort((x, y) => x - y);
+        return a.length !== b.length || a.some((v, i) => v !== b[i]);
+    }
 
     function isoToDisplayDate(iso: string): string {
         if (!iso) return "";
@@ -127,6 +196,44 @@ export function VndPassportTab({
                     )}
                 </div>
             </div>
+
+            {redactions.length > 0 && (
+                <div className="px-4 sm:px-6 flex flex-wrap items-center justify-between gap-3 mb-[15px]">
+                    <div className="flex flex-wrap gap-1.5">
+                        {redactions.map((r) => (
+                            <button
+                                key={r.id}
+                                type="button"
+                                disabled={isEditing}
+                                onClick={() => setSelectedRedactionId(r.id)}
+                                title={r.code}
+                                className={`inline-flex items-center h-8 px-3.5 rounded-[10px] text-[13px] font-semibold cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed ${
+                                    r.id === selectedRedactionId
+                                        ? "bg-[#4e57d6] text-white"
+                                        : "bg-[#f6f8fb] text-[#55617a] hover:bg-[#eef2f7]"
+                                }`}
+                            >
+                                Р{r.number}
+                            </button>
+                        ))}
+                    </div>
+
+                    <label
+                        className={`inline-flex items-center gap-2 text-[13px] text-[#55617a] select-none ${
+                            canShowDiff ? "cursor-pointer" : "opacity-50 cursor-not-allowed"
+                        }`}
+                    >
+                        <input
+                            type="checkbox"
+                            checked={showDiff}
+                            disabled={!canShowDiff}
+                            onChange={(e) => setShowDiff(e.target.checked)}
+                            className="w-[15px] h-[15px] cursor-pointer disabled:cursor-not-allowed"
+                        />
+                        Показать изменения в связи с предыдущей редакцией
+                    </label>
+                </div>
+            )}
 
             {error && (
                 <div className="mb-[15px] px-3.5 py-2.5 rounded-[10px] bg-[#fdecea] text-[#c0392b] text-[13px]">
@@ -206,18 +313,35 @@ export function VndPassportTab({
                     ) : (
                         <>
                             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
-                                <ReadOnlyField label="Вид документа" value={vnd.typeName || "—"}/>
+                                <ReadOnlyField
+                                    label="Вид документа"
+                                    value={activeRequisites.typeName || "—"}
+                                    highlighted={diffScalar((r) => r.typeId)}
+                                />
                             </div>
                             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
-                                <ReadOnlyField label="Орган утверждения" value={vnd.organName || "—"}/>
+                                <ReadOnlyField
+                                    label="Орган утверждения"
+                                    value={activeRequisites.organName || "—"}
+                                    highlighted={diffScalar((r) => r.organId)}
+                                />
                                 <ReadOnlyField
                                     label="Ответственные исполнители"
-                                    value={responsibleExecutorNames(vnd.responsibleExecutorIds)}
+                                    value={responsibleExecutorNames(activeRequisites.responsibleExecutorIds)}
+                                    highlighted={diffArray((r) => r.responsibleExecutorIds)}
                                 />
                             </div>
                             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                                <ReadOnlyField label="Разработчик (СП)" value={vnd.developerName || "—"}/>
-                                <ReadOnlyField label="Куратор разработчика" value={vnd.curatorDeveloperName || "—"}/>
+                                <ReadOnlyField
+                                    label="Разработчик (СП)"
+                                    value={activeRequisites.developerName || "—"}
+                                    highlighted={diffScalar((r) => r.developerId)}
+                                />
+                                <ReadOnlyField
+                                    label="Куратор разработчика"
+                                    value={activeRequisites.curatorDeveloperName || "—"}
+                                    highlighted={diffScalar((r) => r.curatorDeveloperId ?? 0)}
+                                />
                             </div>
                         </>
                     )}
@@ -233,9 +357,21 @@ export function VndPassportTab({
                         </div>
                     ) : (
                         <div className="flex flex-col gap-3 mx-auto px-22">
-                            <ReadOnlyField label="Заголовок (рус)" value={vnd.titleRu}/>
-                            <ReadOnlyField label="Заголовок (кырг)" value={vnd.titleKg || "—"}/>
-                            <ReadOnlyField label="Заголовок (англ)" value={vnd.titleEn || "—"}/>
+                            <ReadOnlyField
+                                label="Заголовок (рус)"
+                                value={activeRequisites.titleRu}
+                                highlighted={diffScalar((r) => r.titleRu)}
+                            />
+                            <ReadOnlyField
+                                label="Заголовок (кырг)"
+                                value={activeRequisites.titleKg || "—"}
+                                highlighted={diffScalar((r) => r.titleKg)}
+                            />
+                            <ReadOnlyField
+                                label="Заголовок (англ)"
+                                value={activeRequisites.titleEn || "—"}
+                                highlighted={diffScalar((r) => r.titleEn)}
+                            />
                         </div>
                     )}
                 </Section>
@@ -263,9 +399,21 @@ export function VndPassportTab({
                             </div>
                         ) : (
                             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                                <ReadOnlyField label="Дата принятия" value={formatDate(vnd.adoptionDate)}/>
-                                <ReadOnlyField label="№ принятия" value={vnd.adoptionCode || "—"}/>
-                                <ReadOnlyField label="Дата вступления в силу" value={formatDate(vnd.effectiveDate)}/>
+                                <ReadOnlyField
+                                    label="Дата принятия"
+                                    value={formatDate(activeRequisites.adoptionDate)}
+                                    highlighted={diffScalar((r) => r.adoptionDate)}
+                                />
+                                <ReadOnlyField
+                                    label="№ принятия"
+                                    value={activeRequisites.adoptionCode || "—"}
+                                    highlighted={diffScalar((r) => r.adoptionCode)}
+                                />
+                                <ReadOnlyField
+                                    label="Дата вступления в силу"
+                                    value={formatDate(activeRequisites.effectiveDate)}
+                                    highlighted={diffScalar((r) => r.effectiveDate)}
+                                />
                             </div>
                         )}
                     </Section>
@@ -430,11 +578,13 @@ export function VndPassportTab({
                         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
                             <ReadOnlyChipsField
                                 label="Ключевые слова"
-                                items={vnd.keywordIds.length ? keywordNames(vnd.keywordIds).split(", ") : []}
+                                items={activeRequisites.keywordIds.length ? keywordNames(activeRequisites.keywordIds).split(", ") : []}
+                                highlighted={diffArray((r) => r.keywordIds)}
                             />
                             <ReadOnlyChipsField
                                 label="Рубрикатор"
-                                items={vnd.rubricIds.length ? rubricNames(vnd.rubricIds).split(", ") : []}
+                                items={activeRequisites.rubricIds.length ? rubricNames(activeRequisites.rubricIds).split(", ") : []}
+                                highlighted={diffArray((r) => r.rubricIds)}
                             />
                             <ReadOnlyChipsField
                                 label="Группы доступа"
@@ -442,7 +592,8 @@ export function VndPassportTab({
                             />
                             <ReadOnlyChipsField
                                 label="Уровень секретности"
-                                items={[secrecyLevelName(vnd.secrecyLevelId)]}
+                                items={[secrecyLevelName(activeRequisites.secrecyLevelId)]}
+                                highlighted={diffScalar((r) => r.secrecyLevelId)}
                             />
                         </div>
                     )}

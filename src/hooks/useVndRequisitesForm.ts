@@ -1,6 +1,6 @@
 import {useState} from "react";
 import {vndService} from "@/service/vndService/vndService.ts";
-import type {UpdateVndRequisitesRequest, VndResponse} from "@/service/vndService/vndServiceType.ts";
+import type {UpdateVndRequisitesRequest, VndRedactionResponse, VndResponse} from "@/service/vndService/vndServiceType.ts";
 import {toast} from "@/service/toastService.ts";
 
 export type ActualizationModeKey = "Quarterly" | "HalfYear" | "Annual" | "Biennial" | "Triennial" | "Custom";
@@ -78,21 +78,43 @@ export interface VndRequisitesDraft {
     userGroupIds: string[];
 }
 
-function toDraft(vnd: VndResponse): VndRequisitesDraft {
+/**
+ * ВСЕ реквизиты, кроме служебных дат цикла актуализации/отмены-архивации/групп доступа,
+ * принадлежат КОНКРЕТНОЙ редакции (redaction) — включая заголовок и вид документа (см. миграцию
+ * "реквизиты по редакции"). Если redaction не передан (например, у черновика ВНД ещё нет ни
+ * одной загруженной редакции), эта часть временно берётся из vnd (как было раньше) — ровно тот
+ * же fallback, что и на бэке (см. UpdateRequisitesAsync).
+ */
+function toDraft(vnd: VndResponse, redaction: VndRedactionResponse | null): VndRequisitesDraft {
+    const typeId = redaction ? redaction.typeId : vnd.typeId;
+    const titleRu = redaction ? redaction.titleRu : vnd.titleRu;
+    const titleEn = redaction ? redaction.titleEn : vnd.titleEn;
+    const titleKg = redaction ? redaction.titleKg : vnd.titleKg;
+    const organId = redaction ? redaction.organId : vnd.organId;
+    const developerId = redaction ? redaction.developerId : vnd.developerId;
+    const curatorDeveloperId = redaction ? redaction.curatorDeveloperId : vnd.curatorDeveloperId;
+    const responsibleExecutorIds = redaction ? redaction.responsibleExecutorIds : vnd.responsibleExecutorIds;
+    const adoptionDate = redaction ? redaction.adoptionDate : vnd.adoptionDate;
+    const adoptionCode = redaction ? redaction.adoptionCode : vnd.adoptionCode;
+    const effectiveDate = redaction ? redaction.effectiveDate : vnd.effectiveDate;
+    const keywordIds = redaction ? redaction.keywordIds : vnd.keywordIds;
+    const rubricIds = redaction ? redaction.rubricIds : vnd.rubricIds;
+    const secrecyLevelId = redaction ? redaction.secrecyLevelId : vnd.secrecyLevelId;
+
     return {
-        typeId: String(vnd.typeId),
-        organId: String(vnd.organId),
-        developerId: vnd.developerId ? String(vnd.developerId) : "",
-        curatorDeveloperId: vnd.curatorDeveloperId ? String(vnd.curatorDeveloperId) : "",
-        responsibleExecutorIds: vnd.responsibleExecutorIds.map(String),
+        typeId: String(typeId),
+        organId: String(organId),
+        developerId: developerId ? String(developerId) : "",
+        curatorDeveloperId: curatorDeveloperId ? String(curatorDeveloperId) : "",
+        responsibleExecutorIds: responsibleExecutorIds.map(String),
 
-        titleRu: vnd.titleRu,
-        titleEn: vnd.titleEn ?? "",
-        titleKg: vnd.titleKg ?? "",
+        titleRu: titleRu,
+        titleEn: titleEn ?? "",
+        titleKg: titleKg ?? "",
 
-        adoptionDate: vnd.adoptionDate ?? "",
-        adoptionCode: vnd.adoptionCode ?? "",
-        effectiveDate: vnd.effectiveDate ?? "",
+        adoptionDate: adoptionDate ?? "",
+        adoptionCode: adoptionCode ?? "",
+        effectiveDate: effectiveDate ?? "",
 
         actualizationMode: "Custom",
         dueActualizationDate: vnd.dueActualizationDate ?? "",
@@ -105,15 +127,16 @@ function toDraft(vnd: VndResponse): VndRequisitesDraft {
         archivedDate: vnd.archivedDate ?? "",
         daysInArchive: vnd.archivedDate ? String(vnd.daysInArchive) : "",
 
-        keywordIds: vnd.keywordIds.map(String),
-        rubricIds: vnd.rubricIds.map(String),
-        secrecyLevelId: String(vnd.secrecyLevelId),
+        keywordIds: keywordIds.map(String),
+        rubricIds: rubricIds.map(String),
+        secrecyLevelId: String(secrecyLevelId),
         userGroupIds: vnd.userGroupIds.map(String),
     };
 }
 
-function toRequest(draft: VndRequisitesDraft): UpdateVndRequisitesRequest {
+function toRequest(draft: VndRequisitesDraft, redactionId: number | null): UpdateVndRequisitesRequest {
     return {
+        redactionId,
         typeId: Number(draft.typeId),
         organId: Number(draft.organId),
         developerId: draft.developerId ? Number(draft.developerId) : null,
@@ -146,20 +169,31 @@ function toRequest(draft: VndRequisitesDraft): UpdateVndRequisitesRequest {
     };
 }
 
-export function useVndRequisitesForm(vnd: VndResponse, onSaved?: (updated: VndResponse) => void) {
+/**
+ * @param vnd документ — источник общих реквизитов (заголовки, вид документа)
+ * @param redaction редакция, чьи реквизиты сейчас показаны/редактируются (активная вкладка
+ *   Р1/Р2/.../Рn на вкладке "Реквизиты") — null, пока у ВНД ещё нет ни одной редакции
+ * @param onSaved вызывается с обновлённым vnd после сохранения; вызывающая сторона также должна
+ *   перезапросить список редакций (vndService.getRedactions), т.к. реквизиты редакции в VndResponse не входят
+ */
+export function useVndRequisitesForm(
+    vnd: VndResponse,
+    redaction: VndRedactionResponse | null,
+    onSaved?: (updated: VndResponse) => void,
+) {
     const [isEditing, setIsEditing] = useState(false);
-    const [draft, setDraft] = useState<VndRequisitesDraft>(() => toDraft(vnd));
+    const [draft, setDraft] = useState<VndRequisitesDraft>(() => toDraft(vnd, redaction));
     const [saving, setSaving] = useState(false);
     const [error, setError] = useState<string | null>(null);
 
     const startEdit = () => {
-        setDraft(toDraft(vnd));
+        setDraft(toDraft(vnd, redaction));
         setError(null);
         setIsEditing(true);
     };
 
     const cancelEdit = () => {
-        setDraft(toDraft(vnd));
+        setDraft(toDraft(vnd, redaction));
         setError(null);
         setIsEditing(false);
     };
@@ -188,7 +222,7 @@ export function useVndRequisitesForm(vnd: VndResponse, onSaved?: (updated: VndRe
         setSaving(true);
         setError(null);
         try {
-            const updated = await vndService.updateRequisites(vnd.id, toRequest(draft));
+            const updated = await vndService.updateRequisites(vnd.id, toRequest(draft, redaction?.id ?? null));
             onSaved?.(updated);
             setIsEditing(false);
             toast.success("Реквизиты обновлены", `Изменения по документу «${updated.code}» сохранены`);

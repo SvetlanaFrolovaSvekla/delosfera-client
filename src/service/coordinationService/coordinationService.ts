@@ -3,6 +3,7 @@ import type {
     ApprovalDecisionRequest,
     ResubmitAfterRevisionRequest,
     AddDisagreementMatrixRowRequest,
+    UpdateDisagreementMatrixRowRequest,
     ApprovalProcessResponse,
     DisagreementMatrixRowResponse,
 } from "./coordinationServiceTypes";
@@ -81,7 +82,8 @@ class CoordinationService {
         for (const file of request.commentAttachments ?? []) {
             formData.append("CommentAttachments", file);
         }
-        formData.append("AgreesWithAllRemarks", String(request.agreesWithAllRemarks));
+        formData.append("RemarksAgreement", request.remarksAgreement);
+        if (request.disagreementMatrix) formData.append("DisagreementMatrix", request.disagreementMatrix);
 
         // См. комментарий в decide() выше — Content-Type не задаём вручную.
         const { data } = await axiosInstance.post<ApprovalProcessResponse>(
@@ -98,6 +100,19 @@ class CoordinationService {
     ): Promise<DisagreementMatrixRowResponse> {
         const { data } = await axiosInstance.post<DisagreementMatrixRowResponse>(
             `${this.basePath(vndId)}/disagreement-matrix/rows`,
+            request,
+        );
+        return data;
+    }
+
+    /** Изменить строку матрицы разногласий */
+    async updateDisagreementRow(
+        vndId: number,
+        rowId: number,
+        request: UpdateDisagreementMatrixRowRequest,
+    ): Promise<DisagreementMatrixRowResponse> {
+        const { data } = await axiosInstance.put<DisagreementMatrixRowResponse>(
+            `${this.basePath(vndId)}/disagreement-matrix/rows/${rowId}`,
             request,
         );
         return data;

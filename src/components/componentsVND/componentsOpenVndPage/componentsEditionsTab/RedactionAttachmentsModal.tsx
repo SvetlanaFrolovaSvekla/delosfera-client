@@ -6,7 +6,7 @@ import type {VndRedactionResponse} from "@/service/vndService/vndServiceType.ts"
 /** Специальные вложения открываются просмотрщиком (RedactionTidModal/RedactionApprovalSheetModal
  * из VndEditionsTab), а не просто скачиваются - в отличие от обычных вложений произвольного
  * формата (см. ниже), для которых предпросмотра нет и не планируется. */
-export type SpecialAttachmentTarget = "tid" | "approvalSheet";
+export type SpecialAttachmentTarget = "tid" | "approvalSheet" | "disagreementMatrix";
 
 interface RedactionAttachmentsModalProps {
     redaction: VndRedactionResponse;
@@ -41,8 +41,6 @@ export function RedactionAttachmentsModal({
     // как ВНД проходит консолидацию (см. VndActualizationService.PublishAsync на бэке - поля
     // TidFileId/ApprovalSheetFileId консолидацией не затрагиваются), поэтому должны быть видны
     // здесь и для уже действующих ВНД, а не только со страницы согласования.
-    // TODO: когда на бэке появится файл матрицы разногласий у редакции - добавить сюда третьей
-    // строкой по той же схеме (см. VndDisagreementMatrixRow).
     const specialAttachments: SpecialAttachment[] = [
         ...(redaction.tidFileId !== null
             ? [{
@@ -60,6 +58,15 @@ export function RedactionAttachmentsModal({
                 fileId: redaction.approvalSheetFileId,
                 label: "Лист согласования",
                 fileName: `${redaction.code}_Лист_согласования.docx`,
+            }]
+            : []),
+        ...(redaction.disagreementMatrixFileId !== null
+            ? [{
+                key: "disagreementMatrix",
+                target: "disagreementMatrix" as const,
+                fileId: redaction.disagreementMatrixFileId,
+                label: "Матрица разногласий",
+                fileName: `${redaction.code}_Матрица_разногласий.docx`,
             }]
             : []),
     ];

@@ -29,6 +29,7 @@ interface RedactionViewModalProps {
 
 const LANG_LABELS: Record<RedactionViewTarget, string> = {
     ru: "RU", kg: "KG", en: "EN", tid: "ТИД", approvalSheet: "Лист согласования",
+    disagreementMatrix: "Матрица разногласий",
 };
 
 const LANG_FILE_KEYS: Record<RedactionLanguage, "docFileRuId" | "docFileKgId" | "docFileEnId"> = {
@@ -47,6 +48,7 @@ export function RedactionViewModal({
         ...availableLanguages,
         ...(redaction.tidFileId !== null ? (["tid"] as const) : []),
         ...(redaction.approvalSheetFileId !== null ? (["approvalSheet"] as const) : []),
+        ...(redaction.disagreementMatrixFileId !== null ? (["disagreementMatrix"] as const) : []),
     ];
     const [activeLanguage, setActiveLanguage] = useState<RedactionViewTarget>(
         initialLanguage && availableViews.includes(initialLanguage)
@@ -68,7 +70,9 @@ export function RedactionViewModal({
         ? redaction.tidFileId
         : activeLanguage === "approvalSheet"
             ? redaction.approvalSheetFileId
-            : redaction[LANG_FILE_KEYS[activeLanguage]] as number | null;
+            : activeLanguage === "disagreementMatrix"
+                ? redaction.disagreementMatrixFileId
+                : redaction[LANG_FILE_KEYS[activeLanguage]] as number | null;
 
     const handleDownloadActive = () => {
         if (activeFileId === null) return;
@@ -76,7 +80,9 @@ export function RedactionViewModal({
             ? `${redaction.code}_ТИД.docx`
             : activeLanguage === "approvalSheet"
                 ? `${redaction.code}_Лист_согласования.docx`
-                : buildRedactionFileName(redaction.code, vnd.name, activeLanguage);
+                : activeLanguage === "disagreementMatrix"
+                    ? `${redaction.code}_Матрица_разногласий.docx`
+                    : buildRedactionFileName(redaction.code, vnd.name, activeLanguage);
         onDownload(activeFileId, name);
     };
 

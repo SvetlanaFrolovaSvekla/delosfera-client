@@ -3,9 +3,10 @@ import type {VndRedactionResponse} from "@/service/vndService/vndServiceType.ts"
 export type RedactionLanguage = "ru" | "kg" | "en";
 
 /** То же, что RedactionLanguage, плюс "tid" - для просмотра Таблицы изменений и дополнений,
- * и "approvalSheet" - для просмотра Листа согласования (оба - файлы без привязки к языку) через
- * те же компоненты просмотра/RedactionViewModal. */
-export type RedactionViewTarget = RedactionLanguage | "tid" | "approvalSheet";
+ * "approvalSheet" - для просмотра Листа согласования, и "disagreementMatrix" - для просмотра
+ * матрицы разногласий (все три - файлы без привязки к языку) через те же компоненты
+ * просмотра/RedactionViewModal. */
+export type RedactionViewTarget = RedactionLanguage | "tid" | "approvalSheet" | "disagreementMatrix";
 
 export const LANGUAGE_TABS: {
     code: RedactionLanguage;

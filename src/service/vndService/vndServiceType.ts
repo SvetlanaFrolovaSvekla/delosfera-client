@@ -239,6 +239,10 @@ export interface VndRedactionResponse {
      * "Специальные вложения" (см. RedactionDocumentsPanel). */
     approvalSheetFileId: number | null;
 
+    /** Матрица разногласий - null, пока инициатор не отправил редакцию с несогласием (частичным
+     * или полным) по замечаниям. Показывается в "Специальные вложения" (см. RedactionDocumentsPanel). */
+    disagreementMatrixFileId: number | null;
+
     requiresApproval: boolean;
     approvalStatus: RedactionApprovalStatus;
 

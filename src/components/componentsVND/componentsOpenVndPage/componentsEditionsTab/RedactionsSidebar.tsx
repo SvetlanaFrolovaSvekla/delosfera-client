@@ -289,7 +289,9 @@ function RedactionListItem({
     // (после консолидации), выглядела так, будто вложений нет вовсе, и открыть модалку было
     // нельзя - посмотреть лист согласования можно было только со страницы согласования.
     const specialAttachmentsCount =
-        (redaction.tidFileId !== null ? 1 : 0) + (redaction.approvalSheetFileId !== null ? 1 : 0);
+        (redaction.tidFileId !== null ? 1 : 0)
+        + (redaction.approvalSheetFileId !== null ? 1 : 0)
+        + (redaction.disagreementMatrixFileId !== null ? 1 : 0);
     const totalAttachmentsCount = redaction.attachmentFileIds.length + specialAttachmentsCount;
     const hasAttachments = totalAttachmentsCount > 0;
     const hasTid = redaction.tidFileId !== null;

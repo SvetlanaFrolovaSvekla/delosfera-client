@@ -64,6 +64,9 @@ import {
     RedactionApprovalSheetModal
 } from "@/components/componentsVND/componentsOpenVndPage/componentsEditionsTab/RedactionApprovalSheetModal.tsx";
 import {
+    RedactionDisagreementMatrixModal
+} from "@/components/componentsVND/componentsOpenVndPage/componentsEditionsTab/RedactionDisagreementMatrixModal.tsx";
+import {
     RedactionCompareModal
 } from "@/components/componentsCoordination/CoordinationRouteConstructor/viewComponents/RedactionCompareModal.tsx";
 import {
@@ -244,6 +247,7 @@ export function VndEditionsTab({vnd, onVndChanged, onGoToApproval}: VndEditionsT
     const [attachmentsRedaction, setAttachmentsRedaction] = useState<VndRedactionResponse | null>(null);
     const [tidRedaction, setTidRedaction] = useState<VndRedactionResponse | null>(null);
     const [approvalSheetRedaction, setApprovalSheetRedaction] = useState<VndRedactionResponse | null>(null);
+    const [disagreementMatrixRedaction, setDisagreementMatrixRedaction] = useState<VndRedactionResponse | null>(null);
     // Модалка "Сформировать или загрузить ТИД" - открывается кнопкой в RedactionStatusBanner,
     // когда у актуализационной редакции (Number > 1) ещё нет файла ТИД (см. tidMissing ниже).
     const [uploadTidOpen, setUploadTidOpen] = useState(false);
@@ -832,7 +836,8 @@ export function VndEditionsTab({vnd, onVndChanged, onGoToApproval}: VndEditionsT
                     onDownload={handleDownload}
                     onView={(target) => {
                         if (target === "tid") setTidRedaction(attachmentsRedaction);
-                        else setApprovalSheetRedaction(attachmentsRedaction);
+                        else if (target === "approvalSheet") setApprovalSheetRedaction(attachmentsRedaction);
+                        else setDisagreementMatrixRedaction(attachmentsRedaction);
                     }}
                     onClose={() => setAttachmentsRedaction(null)}
                 />
@@ -857,6 +862,17 @@ export function VndEditionsTab({vnd, onVndChanged, onGoToApproval}: VndEditionsT
                     downloadingId={download.activeId}
                     onDownload={handleDownload}
                     onClose={() => setApprovalSheetRedaction(null)}
+                />
+            )}
+
+            {/* Просмотр матрицы разногласий редакции */}
+            {disagreementMatrixRedaction && (
+                <RedactionDisagreementMatrixModal
+                    vnd={vnd}
+                    redaction={disagreementMatrixRedaction}
+                    downloadingId={download.activeId}
+                    onDownload={handleDownload}
+                    onClose={() => setDisagreementMatrixRedaction(null)}
                 />
             )}
 

@@ -44,7 +44,9 @@ export const RedactionTextView = forwardRef<RedactionTextViewHandle, RedactionTe
             ? selected.tidFileId
             : activeLanguage === "approvalSheet"
                 ? selected.approvalSheetFileId
-                : selected[FILE_KEY_BY_LANG[activeLanguage]] as number | null;
+                : activeLanguage === "disagreementMatrix"
+                    ? selected.disagreementMatrixFileId
+                    : selected[FILE_KEY_BY_LANG[activeLanguage]] as number | null;
 
         // scrollX=true (мини-окно ТИД) - сохраняем реальную ширину документа/таблиц, чтобы
         // широкие таблицы не сжимались, а скроллились по горизонтали (см. RedactionTextView
@@ -80,7 +82,9 @@ export const RedactionTextView = forwardRef<RedactionTextViewHandle, RedactionTe
                 ? `${selected.code}_ТИД.docx`
                 : activeLanguage === "approvalSheet"
                     ? `${selected.code}_Лист_согласования.docx`
-                    : buildRedactionFileName(selected.code, vnd.name, activeLanguage);
+                    : activeLanguage === "disagreementMatrix"
+                        ? `${selected.code}_Матрица_разногласий.docx`
+                        : buildRedactionFileName(selected.code, vnd.name, activeLanguage);
             return (
                 <div
                     className="flex h-full flex-col items-center justify-center gap-2 p-[48px] text-center text-[13px] text-[#c0392b]">

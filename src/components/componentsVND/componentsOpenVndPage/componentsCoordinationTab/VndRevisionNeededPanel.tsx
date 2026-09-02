@@ -1,5 +1,6 @@
 import {useRef, useState} from "react";
 import {coordinationService} from "@/service/coordinationService/coordinationService.ts";
+import {RemarksAgreement} from "@/service/coordinationService/coordinationServiceTypes.ts";
 import type {
     ApprovalProcessResponse,
     ApprovalStageAttachmentResponse,
@@ -31,7 +32,10 @@ import {
     RefreshCcw,
     Trash2,
 } from "lucide-react";
-import {DisagreementMatrixTable} from "./DisagreementMatrixTable.tsx";
+import {
+    VndDisagreementMatrixSection, type DisagreementMatrixMode
+} from "./VndDisagreementMatrixSection.tsx";
+import {generateDisagreementMatrixDocx} from "@/utils/docxDisagreementMatrixExport.ts";
 import {
     AttachmentRow
 } from "@/components/componentsCoordination/CoordinationRouteConstructor/functionalComponents/AttachmentRow.tsx";
@@ -497,7 +501,13 @@ export function VndRevisionNeededPanel({
     });
     const [tid, setTid] = useState<File | null>(null);
     const [comment, setComment] = useState("");
-    const [agreesWithAllRemarks, setAgreesWithAllRemarks] = useState<boolean | null>(null);
+    const [remarksAgreement, setRemarksAgreement] = useState<RemarksAgreement | null>(null);
+
+    // Матрица разногласий - способ заполнения (сформировать построчно в системе / загрузить
+    // готовый DOCX) и файл, если выбран режим загрузки. См. VndDisagreementMatrixSection.
+    const [matrixMode, setMatrixMode] = useState<DisagreementMatrixMode>("generate");
+    const [matrixFile, setMatrixFile] = useState<File | null>(null);
+    const [matrixFileError, setMatrixFileError] = useState<string | null>(null);
 
     const [newAttachments, setNewAttachments] = useState<File[]>([]);
     const [attachmentCountLimitHit, setAttachmentCountLimitHit] = useState(false);
@@ -569,12 +579,21 @@ export function VndRevisionNeededPanel({
 
     // Причина, по которой отправка сейчас заблокирована - показываем тултипом на кнопке
     let disabledReason: string | null = null;
-    if (agreesWithAllRemarks === null) {
+    if (remarksAgreement === null) {
         disabledReason = "Сначала укажите, согласны ли вы со всеми замечаниями";
-    } else if (agreesWithAllRemarks === true && !hasAnyDocChange && !hasAnyAttachmentChange) {
+    } else if (
+        (remarksAgreement === RemarksAgreement.FullyAgree || remarksAgreement === RemarksAgreement.PartiallyAgree)
+        && !hasAnyDocChange && !hasAnyAttachmentChange
+    ) {
         disabledReason = "Отметьте хотя бы один документ как «требует замены» (или добавьте/удалите вложение) и загрузите обновлённый файл";
-    } else if (agreesWithAllRemarks === false && rows.length === 0) {
+    } else if (
+        remarksAgreement !== RemarksAgreement.FullyAgree && matrixMode === "generate" && rows.length === 0
+    ) {
         disabledReason = "Добавьте хотя бы одну строку в матрицу разногласий, чтобы отправить";
+    } else if (
+        remarksAgreement !== RemarksAgreement.FullyAgree && matrixMode === "upload" && !matrixFile
+    ) {
+        disabledReason = "Загрузите файл матрицы разногласий, чтобы отправить";
     } else if (tidMissing) {
         disabledReason = "Приложите файл ТИД (Таблица изменений и дополнений) — он обязателен при актуализации ВНД";
     }
@@ -587,6 +606,15 @@ export function VndRevisionNeededPanel({
         developerJustification?: string;
     }) => {
         await coordinationService.addDisagreementRow(vndId, row);
+        await onChanged();
+    };
+
+    const handleUpdateRow = async (rowId: number, row: {
+        developerPosition: string;
+        opponentPosition: string;
+        developerJustification?: string;
+    }) => {
+        await coordinationService.updateDisagreementRow(vndId, rowId, row);
         await onChanged();
     };
 
@@ -686,10 +714,33 @@ export function VndRevisionNeededPanel({
     };
 
     const handleSubmit = async () => {
-        if (!canSubmit || agreesWithAllRemarks === null) return;
+        if (!canSubmit || remarksAgreement === null) return;
         setSubmitting(true);
         setError(null);
         try {
+            // Матрица разногласий - если инициатор не согласен со всеми замечаниями (частично
+            // или полностью), к отправке прикладывается итоговый файл: либо уже загруженный
+            // готовый DOCX, либо сформированный прямо сейчас по строкам, набранным в таблице.
+            let disagreementMatrix: File | undefined;
+            if (remarksAgreement !== RemarksAgreement.FullyAgree) {
+                if (matrixMode === "upload") {
+                    disagreementMatrix = matrixFile ?? undefined;
+                } else {
+                    const blob = await generateDisagreementMatrixDocx(
+                        rows.map((row, index) => ({
+                            number: index + 1,
+                            developerPositionHtml: row.developerPosition,
+                            opponentPositionHtml: row.opponentPosition,
+                            developerJustificationHtml: row.developerJustification ?? "",
+                        })),
+                        vnd.titleRu,
+                    );
+                    disagreementMatrix = new File(
+                        [blob], `Матрица разногласий_${redaction?.code ?? vndId}.docx`, {type: blob.type},
+                    );
+                }
+            }
+
             await coordinationService.resubmit(vndId, {
                 docRu: docState.ru.file ?? undefined,
                 docKg: docState.kg.file ?? undefined,
@@ -701,7 +752,8 @@ export function VndRevisionNeededPanel({
                 removedAttachmentFileIds: removedAttachmentIds.size > 0 ? Array.from(removedAttachmentIds) : undefined,
                 comment: comment.trim() || undefined,
                 commentAttachments: commentAttachments.length > 0 ? commentAttachments : undefined,
-                agreesWithAllRemarks,
+                remarksAgreement,
+                disagreementMatrix,
             });
             await onResubmitted();
         } catch (err) {
@@ -811,19 +863,20 @@ export function VndRevisionNeededPanel({
                     Согласны ли вы со всеми замечаниями?
                 </div>
                 <div className="px-5 py-4">
-                    <div role="radiogroup" className="flex gap-3">
+                    <div role="radiogroup" className="flex flex-wrap gap-3">
                         {([
-                            {label: "Да", value: true},
-                            {label: "Нет", value: false},
+                            {label: "Да", value: RemarksAgreement.FullyAgree},
+                            {label: "Частично согласен", value: RemarksAgreement.PartiallyAgree},
+                            {label: "Нет", value: RemarksAgreement.FullyDisagree},
                         ] as const).map(({label, value}) => {
-                            const isSelected = agreesWithAllRemarks === value;
+                            const isSelected = remarksAgreement === value;
                             return (
                                 <button
                                     key={label}
                                     type="button"
                                     role="radio"
                                     aria-checked={isSelected}
-                                    onClick={() => setAgreesWithAllRemarks(value)}
+                                    onClick={() => setRemarksAgreement(value)}
                                     className={`bg-white text-[#3a4560] font-medium hover:bg-[#f6f8fb] inline-flex items-center gap-2 h-9 px-4 rounded-[9px] text-[13px] cursor-pointer transition-colors`}
                                 >
                                     <span
@@ -840,17 +893,12 @@ export function VndRevisionNeededPanel({
                     </div>
                 </div>
 
-                {agreesWithAllRemarks === false && (
-                    <div>
-                        <DisagreementMatrixTable rows={rows} onAddRow={handleAddRow} onDeleteRow={handleDeleteRow}/>
-                    </div>
-                )}
-
                 {/* Раньше это была отдельная карточка ниже - визуально "отваливалась" от блока
                     с вопросом "Согласны ли вы...", тогда как матрица разногласий (ветка "Нет"
                     выше) остаётся внутри той же карточки. Встраиваем сюда же для единообразия -
                     один блок продолжается заголовком с border-t вместо новой карточки. */}
-                {agreesWithAllRemarks === true && (
+                {(remarksAgreement === RemarksAgreement.FullyAgree
+                    || remarksAgreement === RemarksAgreement.PartiallyAgree) && (
                     <>
                     <div className="border-t border-[#eef2f7] px-5 py-[13px] text-[13.5px] font-bold text-[#1c2740]">
                         Загрузить редакцию с исправленными замечаниями:
@@ -1110,6 +1158,23 @@ export function VndRevisionNeededPanel({
                     </div>
                     </>
                 )}
+
+                {remarksAgreement !== null && remarksAgreement !== RemarksAgreement.FullyAgree && (
+                    <VndDisagreementMatrixSection
+                        mode={matrixMode}
+                        onModeChange={setMatrixMode}
+                        rows={rows}
+                        onAddRow={handleAddRow}
+                        onUpdateRow={handleUpdateRow}
+                        onDeleteRow={handleDeleteRow}
+                        uploadedFile={matrixFile}
+                        onUploadedFileChange={setMatrixFile}
+                        fileError={matrixFileError}
+                        onFileError={setMatrixFileError}
+                        vndTitle={vnd.titleRu}
+                        exportFileName={`Матрица разногласий_${redaction?.code ?? vndId}.docx`}
+                    />
+                )}
             </div>
 
             {requiresTid && (
@@ -1186,9 +1251,9 @@ export function VndRevisionNeededPanel({
                     >
                         {submitting
                             ? "Отправка…"
-                            : agreesWithAllRemarks === false
-                                ? "Отправить на финальную выдержку"
-                                : "Отправить на повторное согласование"}
+                            : remarksAgreement === RemarksAgreement.FullyAgree
+                                ? "Отправить на повторное согласование"
+                                : "Отправить на финальную выдержку"}
                     </button>
                 </Tooltip>
 

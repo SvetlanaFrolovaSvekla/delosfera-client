@@ -283,8 +283,7 @@ export function TidChangesTable({
                                 <RichDiffEditor
                                     initialHtml={segmentsToHtml(row.oldSegments, REMOVE_COLOR)}
                                     placeholder="Действующая редакция"
-                                    highlightColor={REMOVE_COLOR}
-                                    highlightLabel="красным"
+                                    highlightOptions={[{color: REMOVE_COLOR, label: "красным"}]}
                                     disabled={disabled}
                                     onChangeText={(_text, html) =>
                                         setAutoEdits((prev) => ({...prev, [row.id]: {...prev[row.id], oldHtml: html}}))
@@ -305,8 +304,7 @@ export function TidChangesTable({
                                 <RichDiffEditor
                                     initialHtml={segmentsToHtml(row.newSegments, ADD_COLOR)}
                                     placeholder="Новая редакция"
-                                    highlightColor={ADD_COLOR}
-                                    highlightLabel="зелёным"
+                                    highlightOptions={[{color: ADD_COLOR, label: "зелёным"}]}
                                     disabled={disabled}
                                     onChangeText={(_text, html) =>
                                         setAutoEdits((prev) => ({...prev, [row.id]: {...prev[row.id], newHtml: html}}))
@@ -360,8 +358,7 @@ export function TidChangesTable({
                         <RichDiffEditor
                             key={`draft-old-${draftKey}`}
                             placeholder="Действующая редакция"
-                            highlightColor={REMOVE_COLOR}
-                            highlightLabel="красным"
+                            highlightOptions={[{color: REMOVE_COLOR, label: "красным"}]}
                             onChangeText={(text, html) => {
                                 setDraftOldText(text);
                                 setDraftOldHtml(html);
@@ -377,8 +374,7 @@ export function TidChangesTable({
                         <RichDiffEditor
                             key={`draft-new-${draftKey}`}
                             placeholder="Новая редакция"
-                            highlightColor={ADD_COLOR}
-                            highlightLabel="зелёным"
+                            highlightOptions={[{color: ADD_COLOR, label: "зелёным"}]}
                             onChangeText={(text, html) => {
                                 setDraftNewText(text);
                                 setDraftNewHtml(html);

@@ -1,15 +1,29 @@
-// Редактируемая ("rich text") ячейка для таблицы изменений ТИД (см. TidChangesTable) —
-// в отличие от обычного textarea, поддерживает частичную покраску текста (красным/зелёным),
-// как в подсветке различий редакций, но именно цветом текста, а не подсветкой фона/зачёркиванием.
-// Автоматически сформированный текст (из diff) можно свободно редактировать; выделив кусок текста
-// и нажав кнопку над полем — он тоже красится нужным цветом. Это касается и черновых полей формы
+// Редактируемая ("rich text") ячейка для таблицы изменений ТИД (см. TidChangesTable) и для
+// матрицы разногласий (см. DisagreementMatrixTable) - в отличие от обычного textarea,
+// поддерживает частичную покраску текста (красным/зелёным/...), как в подсветке различий
+// редакций, но именно цветом текста, а не подсветкой фона/зачёркиванием. Автоматически
+// сформированный текст (из diff) можно свободно редактировать; выделив кусок текста и нажав
+// кнопку над полем — он тоже красится нужным цветом. Это касается и черновых полей формы
 // "Добавить строку" — до добавления строки в таблицу текст там так же можно писать и красить.
+//
+// Число цветов покраски параметризовано (highlightOptions): у ТИД-а это один цвет на колонку
+// (красный "было" / зелёный "стало"), у матрицы разногласий — сразу три (красный/зелёный/чёрный)
+// в каждой ячейке, как при формировании ТИД-а (см. требование "должно быть в каждой строке ещё
+// «выделить красным», «выделить зеленым» «выделить черным»").
 import {useEffect, useRef} from "react";
 import {Tooltip} from "@/components/componentsGeneral/Tooltip.tsx";
 
 // Обычный текстовый цвет приложения ("чёрный" в терминах кнопок покраски) - на случай, если
-// нужно вернуть кусок ранее покрашенного текста обратно к обычному цвету.
+// нужно вернуть кусок ранее покрашенного текста обратно к обычному цвету. Кнопка "Выделить
+// чёрным" доступна всегда, дополнительно к highlightOptions ниже.
 const BLACK_COLOR = "#1c2740";
+
+export interface RichDiffHighlightOption {
+    color: string;
+    /** Подпись кнопки покраски, напр. "красным" / "зелёным" (со строчной буквы - подставляется
+     * в "Выделить {label}"). */
+    label: string;
+}
 
 interface RichDiffEditorProps {
     /** HTML начального содержимого (напр. авто-diff, уже с покрашенными <span>) — применяется
@@ -17,11 +31,10 @@ interface RichDiffEditorProps {
      * contentEditable, чтобы не сбрасывать курсор/правки пользователя при ре-рендерах. */
     initialHtml?: string;
     placeholder?: string;
-    /** Цвет, которым красится выделенный текст по нажатию кнопки - разный для колонок
-     * "Действующая"/"Новая редакция" (красный/зелёный). */
-    highlightColor: string;
-    /** Подпись кнопки покраски, напр. "Красным" / "Зелёным". */
-    highlightLabel: string;
+    /** Цвета, которыми можно покрасить выделенный текст (кнопки над полем) - один (ТИД: красный
+     * либо зелёный для своей колонки) или несколько сразу (матрица разногласий: красный + зелёный
+     * в одной и той же ячейке). Кнопка "Выделить чёрным" добавляется к ним автоматически. */
+    highlightOptions: RichDiffHighlightOption[];
     disabled?: boolean;
     /** Фиксированная высота блока (с прокруткой внутри, если текст не помещается) - чтобы одна
      * длинная строка не растягивала всю таблицу. */
@@ -56,7 +69,7 @@ function applyColorToSelection(root: HTMLElement, color: string): boolean {
 }
 
 export function RichDiffEditor({
-                                    initialHtml, placeholder, highlightColor, highlightLabel, disabled,
+                                    initialHtml, placeholder, highlightOptions, disabled,
                                     heightClass = "h-[200px]", onChangeText,
                                 }: RichDiffEditorProps) {
     const ref = useRef<HTMLDivElement>(null);
@@ -86,32 +99,25 @@ export function RichDiffEditor({
         if (applyColorToSelection(ref.current, color)) emitChange();
     };
 
+    const buttons: RichDiffHighlightOption[] = [...highlightOptions, {color: BLACK_COLOR, label: "чёрным"}];
+
     return (
         <div>
             {!disabled && (
                 <div className="mb-1 flex flex-wrap gap-1.5">
-                    <Tooltip content={`Выделить отмеченный ${highlightLabel.toLowerCase()} цветом`} side="top">
-                        <button
-                            type="button"
-                            onMouseDown={(e) => e.preventDefault()}
-                            onClick={() => handleHighlight(highlightColor)}
-                            className="cursor-pointer rounded-[6px] border px-[7px] py-[2px] text-[10.5px] font-semibold transition-colors"
-                            style={{borderColor: `${highlightColor}55`, color: highlightColor, background: `${highlightColor}0f`}}
-                        >
-                            Выделить {highlightLabel.toLowerCase()}
-                        </button>
-                    </Tooltip>
-                    <Tooltip content="Выделить отмеченный чёрным цветом" side="top">
-                        <button
-                            type="button"
-                            onMouseDown={(e) => e.preventDefault()}
-                            onClick={() => handleHighlight(BLACK_COLOR)}
-                            className="cursor-pointer rounded-[6px] border px-[7px] py-[2px] text-[10.5px] font-semibold transition-colors"
-                            style={{borderColor: `${BLACK_COLOR}55`, color: BLACK_COLOR, background: `${BLACK_COLOR}0f`}}
-                        >
-                            Выделить чёрным
-                        </button>
-                    </Tooltip>
+                    {buttons.map((option) => (
+                        <Tooltip key={option.color} content={`Выделить отмеченный ${option.label} цветом`} side="top">
+                            <button
+                                type="button"
+                                onMouseDown={(e) => e.preventDefault()}
+                                onClick={() => handleHighlight(option.color)}
+                                className="cursor-pointer rounded-[6px] border px-[7px] py-[2px] text-[10.5px] font-semibold transition-colors"
+                                style={{borderColor: `${option.color}55`, color: option.color, background: `${option.color}0f`}}
+                            >
+                                Выделить {option.label}
+                            </button>
+                        </Tooltip>
+                    ))}
                 </div>
             )}
             <div

@@ -1,5 +1,5 @@
-import {useRef, useState} from "react";
-import {Check, MessageSquare, Paperclip, X, AlertCircle} from "lucide-react";
+import {forwardRef, useImperativeHandle, useRef, useState} from "react";
+import {Check, MessageSquare, Paperclip, Quote, X, AlertCircle, ExternalLink} from "lucide-react";
 import {ConfirmActionModal} from "@/components/componentsGeneral/modal/ConfirmActionModal.tsx";
 import {formatFileSize} from "@/service/documentService/attachmentService.ts";
 import {Tooltip} from "@/components/componentsGeneral/Tooltip.tsx";
@@ -10,15 +10,67 @@ import {
     MAX_RESOLUTION_COMMENT_LENGTH,
 } from "@/constants/coordinationParams.ts";
 import {CharCounter} from "@/components/componentsGeneral/CharCounter.tsx";
+import type {ApprovalQuoteItem} from "@/service/coordinationService/coordinationServiceTypes.ts";
+import type {RedactionViewTarget} from "@/utils/redactionLanguagePanelUtils.ts";
 
 export type ResolutionChoice = "approve" | "approveWithComment" | "reject";
 export type ResolutionPhase = "primary" | "repeated" | "finalHold";
 
 interface VndApproverResolutionPanelProps {
-    onSubmit: (choice: ResolutionChoice, comment: string, files: File[]) => Promise<void> | void;
+    onSubmit: (
+        choice: ResolutionChoice, comment: string, files: File[], quotes: ApprovalQuoteItem[],
+    ) => Promise<void> | void;
     submitting?: boolean;
     error?: string | null;
     phase?: ResolutionPhase;
+    /** Открыть просмотр проверяемой редакции в режиме "сослаться на текст" (см. insertQuote
+     * у VndApproverResolutionPanelHandle). Кнопка "Сослаться на текст редакции" рисуется только
+     * если передан этот проп - вызывающая сторона должна знать, какую редакцию открывать. */
+    onCiteRequest?: () => void;
+    /** Открыть просмотр редакции, сразу проскроллив к месту одной из уже вставленных цитат
+     * (см. список "Ваши цитаты" ниже под комментарием) - см. RedactionViewModal.initialSearchQuery. */
+    onJumpToQuote?: (quote: ApprovalQuoteItem) => void;
+}
+
+export interface VndApproverResolutionPanelHandle {
+    /** Вставляет цитату выделенного в редакции текста в поле "Комментарий" на месте курсора
+     * (см. RedactionViewModal.onInsertQuote). Панель сама оборачивает текст в "Цитата: «...»".
+     * documentTarget - вкладка документа (язык/ТИД/...), с которой процитировали - нужна, чтобы
+     * потом правильно подсветить маркер в тексте на нужной вкладке (см. VndApprovalStageQuote). */
+    insertQuote: (selectedText: string, documentTarget: RedactionViewTarget) => void;
+}
+
+// Совсем длинные выделения (например, случайно выделенный целый раздел) обрезаем - иначе
+// комментарий резолюции превращается в нечитаемую простыню. 35000 символов лимита поля
+// с запасом хватает даже без обрезки, ограничение здесь чисто про читаемость.
+const MAX_QUOTE_SOURCE_LENGTH = 600;
+
+// Схлопываем переносы строк/лишние пробелы - многострочный фрагмент документа, вставленный
+// как есть, в plain-text поле резолюции выглядит неряшливо. Общее и для текста, вставляемого
+// в комментарий, и для текста, который отправляется на бэк для подсветки маркера в документе.
+function collapseQuoteText(rawText: string): string {
+    return rawText.replace(/\s+/g, " ").trim();
+}
+
+// Текст цитаты, как он вставляется в поле "Комментарий" - обрезан до MAX_QUOTE_SOURCE_LENGTH с
+// многоточием (чисто ради читаемости комментария). ВАЖНО: этот вариант не годится для поиска
+// цитаты в самом документе (см. matchTextFor ниже) - многоточие "…" не входит в исходный текст
+// документа, и обрезанная с многоточием строка никогда не найдётся как подстрока.
+function formatQuote(rawText: string): string {
+    const collapsed = collapseQuoteText(rawText);
+    const clipped = collapsed.length > MAX_QUOTE_SOURCE_LENGTH
+        ? `${collapsed.slice(0, MAX_QUOTE_SOURCE_LENGTH).trimEnd()}…`
+        : collapsed;
+    return `Цитата: «${clipped}»`;
+}
+
+// Текст цитаты, как он отправляется на бэк и используется для подсветки маркера в тексте
+// документа (см. useDocxQuoteMarks) - только схлопывание пробелов, БЕЗ обрезки/многоточия,
+// чтобы остаться точной подстрокой исходного текста документа. Бэк на всякий случай подрежет
+// сам (простым slice, без многоточия - см. MaxQuoteTextLength в VndApprovalService), это тоже
+// остаётся точной подстрокой.
+function matchTextFor(rawText: string): string {
+    return collapseQuoteText(rawText);
 }
 
 interface OptionConfig {
@@ -102,14 +154,27 @@ const COMMENT_PLACEHOLDER: Record<ResolutionChoice, string> = {
     reject: "Причина отклонения…",
 };
 
-export function VndApproverResolutionPanel({
-                                               onSubmit,
-                                               submitting,
-                                               error,
-                                               phase = "primary",
-                                           }: VndApproverResolutionPanelProps) {
+export const VndApproverResolutionPanel = forwardRef<
+    VndApproverResolutionPanelHandle, VndApproverResolutionPanelProps
+>(function VndApproverResolutionPanel({
+                                          onSubmit,
+                                          submitting,
+                                          error,
+                                          phase = "primary",
+                                          onCiteRequest,
+                                          onJumpToQuote,
+                                      }, ref) {
     const [choice, setChoice] = useState<ResolutionChoice>("approve");
     const [comment, setComment] = useState("");
+    const textareaRef = useRef<HTMLTextAreaElement>(null);
+    // Цитаты, вставленные через "+ Сослаться на текст редакции" - структурированно, отдельно от
+    // текста комментария (куда они попадают в виде "Цитата: «...»") - нужны, чтобы при отправке
+    // резолюции сохранить их на бэке как маркеры для подсветки в тексте документа (см.
+    // VndApprovalStageQuote). displayLine - ровно та строка, что вставлена в textarea, по ней
+    // при отправке проверяем, что цитату не удалили из комментария вручную.
+    const [quotes, setQuotes] = useState<
+        {documentTarget: RedactionViewTarget; text: string; displayLine: string}[]
+    >([]);
     const [files, setFiles] = useState<File[]>([]);
     const [attachmentCountLimitHit, setAttachmentCountLimitHit] = useState(false);
     const [oversizedFileNames, setOversizedFileNames] = useState<string[]>([]);
@@ -158,6 +223,44 @@ export function VndApproverResolutionPanel({
         setAttachmentCountLimitHit(false);
     };
 
+    // Вставка цитаты из просмотра редакции (см. RedactionViewModal.onInsertQuote) - в позицию
+    // курсора, которая была в textarea до открытия окна просмотра (selectionStart/End у
+    // textarea сохраняются, даже когда фокус временно уходит на модалку поверх). Блок цитаты
+    // всегда начинается с новой строки, чтобы не разрывать уже напечатанный текст посередине.
+    const insertQuote = (selectedText: string, documentTarget: RedactionViewTarget) => {
+        const quoted = formatQuote(selectedText);
+        if (!quoted) return;
+
+        const el = textareaRef.current;
+        const start = el?.selectionStart ?? comment.length;
+        const end = el?.selectionEnd ?? comment.length;
+        const before = comment.slice(0, start);
+        const after = comment.slice(end);
+        const needsLeadingNewline = before.length > 0 && !before.endsWith("\n");
+        const block = `${needsLeadingNewline ? "\n" : ""}${quoted}\n`;
+        const next = `${before}${block}${after}`.slice(0, MAX_RESOLUTION_COMMENT_LENGTH);
+
+        setComment(next);
+        setQuotes((prev) => [
+            ...prev,
+            {documentTarget, text: matchTextFor(selectedText), displayLine: quoted},
+        ]);
+
+        // Курсор и фокус возвращаем уже после перерисовки - до неё textarea ещё не содержит
+        // новый текст, и setSelectionRange встанет на старую (короткую) позицию.
+        requestAnimationFrame(() => {
+            const pos = Math.min(before.length + block.length, next.length);
+            el?.focus();
+            el?.setSelectionRange(pos, pos);
+        });
+    };
+
+    useImperativeHandle(ref, () => ({insertQuote}), [comment]);
+
+    const handleRemoveQuote = (index: number) => {
+        setQuotes((prev) => prev.filter((_, i) => i !== index));
+    };
+
     // Синхронная защита от повторной отправки. Одного React-стейта `submitting` (которым
     // мы дизейблим кнопку) недостаточно: он обновляется у родителя асинхронно, и если
     // пользователь успевает кликнуть (или дважды сработать клик) до перерисовки — оба
@@ -171,7 +274,14 @@ export function VndApproverResolutionPanel({
         if (submitLockRef.current) return;
         submitLockRef.current = true;
         try {
-            await onSubmit(choice, comment.trim(), files);
+            const trimmedComment = comment.trim();
+            // Цитата, чей блок пользователь вручную стёр из текста комментария перед отправкой,
+            // маркером в документе становиться не должна - иначе появится "осиротевший" маркер
+            // без соответствующего текста в самой резолюции.
+            const quotesToSend: ApprovalQuoteItem[] = quotes
+                .filter((q) => trimmedComment.includes(q.displayLine))
+                .map((q) => ({documentTarget: q.documentTarget, text: q.text}));
+            await onSubmit(choice, trimmedComment, files, quotesToSend);
         } finally {
             submitLockRef.current = false;
         }
@@ -229,16 +339,29 @@ export function VndApproverResolutionPanel({
                 })}
             </div>
 
-            <div className="mt-3 flex items-center justify-between">
+            <div className="mt-3 flex flex-wrap items-center justify-between gap-2">
                 <span className="text-[12px] font-semibold text-[#1c2740]">
                     Комментарий{commentRequired
                         ? <span className="text-[#d62815]"> *</span>
                         : <span className="font-normal text-[#8b97ab]"> (необязательно)</span>}
                 </span>
-                <CharCounter length={comment.length} max={MAX_RESOLUTION_COMMENT_LENGTH}/>
+                <div className="flex items-center gap-3">
+                    {onCiteRequest && (
+                        <button
+                            type="button"
+                            onClick={onCiteRequest}
+                            className="cursor-pointer flex items-center gap-1 text-[11.5px] font-semibold text-[#4e57d6] hover:text-[#3f47bd]"
+                        >
+                            <Quote size={13}/>
+                            + Сослаться на текст редакции
+                        </button>
+                    )}
+                    <CharCounter length={comment.length} max={MAX_RESOLUTION_COMMENT_LENGTH}/>
+                </div>
             </div>
 
             <textarea
+                ref={textareaRef}
                 value={comment}
                 onChange={(e) => setComment(e.target.value.slice(0, MAX_RESOLUTION_COMMENT_LENGTH))}
                 placeholder={COMMENT_PLACEHOLDER[choice]}
@@ -248,6 +371,44 @@ export function VndApproverResolutionPanel({
                     commentMissing ? "border-[#e8b4b4]" : "border-[#e9edf3]"
                 }`}
             />
+
+            {/* Список вставленных цитат - у каждой можно открыть текст редакции сразу с
+                прокруткой к этому месту (см. onJumpToQuote/RedactionViewModal.initialSearchQuery),
+                либо убрать цитату из списка (сам текст "Цитата: «...»" в комментарии при этом
+                остаётся - его пользователь при желании стирает вручную прямо в textarea). */}
+            {quotes.length > 0 && (
+                <div className="mt-2 flex flex-col gap-1.5">
+                    {quotes.map((q, index) => (
+                        <div
+                            key={index}
+                            className="flex items-center gap-2 rounded-[8px] border border-[#e9edf3] bg-[#fbfcfe] px-2.5 py-[6px] text-[11.5px] text-[#5c6780]"
+                        >
+                            <Quote size={12} className="flex-none text-[#8b97ab]"/>
+                            <span className="min-w-0 flex-1 truncate">«{q.text}»</span>
+                            {onJumpToQuote && (
+                                <Tooltip content="Показать в тексте" side="top">
+                                    <button
+                                        type="button"
+                                        onClick={() => onJumpToQuote(q)}
+                                        className="cursor-pointer flex-none text-[#4e57d6] hover:text-[#3f47bd]"
+                                    >
+                                        <ExternalLink size={13}/>
+                                    </button>
+                                </Tooltip>
+                            )}
+                            <Tooltip content="Убрать из списка" side="top">
+                                <button
+                                    type="button"
+                                    onClick={() => handleRemoveQuote(index)}
+                                    className="cursor-pointer flex-none text-[#8b97ab] hover:text-[#c0392b]"
+                                >
+                                    <X size={13}/>
+                                </button>
+                            </Tooltip>
+                        </div>
+                    ))}
+                </div>
+            )}
 
             <div className="mt-3">
                 <div className="flex items-center justify-between gap-3">
@@ -384,4 +545,4 @@ export function VndApproverResolutionPanel({
             />
         </div>
     );
-}
+});

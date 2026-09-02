@@ -43,6 +43,12 @@ class CoordinationService {
         for (const file of request.files ?? []) {
             formData.append("Files", file);
         }
+        // Цитаты передаются одним JSON-полем, а не как список сложных объектов через
+        // FormData (см. комментарий у QuotesJson в ApprovalDecisionRequest на бэке) —
+        // комплексный биндинг списков через [FromForm] в ASP.NET Core ненадёжен.
+        if (request.quotes && request.quotes.length > 0) {
+            formData.append("QuotesJson", JSON.stringify(request.quotes));
+        }
 
         // Content-Type НЕ задаём вручную: axios/браузер сам подставит
         // "multipart/form-data; boundary=...". Если прописать заголовок явно без

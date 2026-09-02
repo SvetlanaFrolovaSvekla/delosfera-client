@@ -6,6 +6,8 @@ import type {RedactionLanguage, RedactionViewTarget} from "@/utils/redactionLang
 import {FileText, Loader2, ChevronUp, ChevronDown, X} from "lucide-react";
 import {useDocxPreview} from "@/hooks/vndHooks/useDocxPreview.ts";
 import {useDocxTextSearch} from "@/hooks/vndHooks/useDocxTextSearch.ts";
+import {useDocxQuoteMarks} from "@/hooks/vndHooks/useDocxQuoteMarks.ts";
+import type {QuoteMarkInfo} from "@/utils/redactionQuoteMarks.ts";
 
 interface RedactionTextViewProps {
     vnd: VndResponse;
@@ -20,6 +22,14 @@ interface RedactionTextViewProps {
      * умолчанию выключен (документ вписывается по ширине). Используется, например, для мини-окна
      * просмотра ТИД в RedactionCompareModal. */
     scrollX?: boolean;
+    /** Маркеры цитат из резолюций согласующих (см. collectQuoteMarks) для подсветки поверх
+     * текста - см. useDocxQuoteMarks. Без этого пропа подсветки маркеров нет. */
+    quoteMarks?: QuoteMarkInfo[];
+    /** Кликабельны ли маркеры (открывают резолюцию целиком) - только во время активного
+     * согласования этой редакции. */
+    quoteMarksClickable?: boolean;
+    onHoverQuoteMark?: (mark: QuoteMarkInfo | null, rect: DOMRect | null) => void;
+    onClickQuoteMark?: (mark: QuoteMarkInfo) => void;
 }
 
 export interface RedactionTextViewHandle {
@@ -38,7 +48,10 @@ const FILE_KEY_BY_LANG: Record<RedactionLanguage, "docFileRuId" | "docFileKgId" 
 };
 
 export const RedactionTextView = forwardRef<RedactionTextViewHandle, RedactionTextViewProps>(
-    function RedactionTextView({vnd, selected, activeLanguage, searchQuery = "", onClearSearch, scrollX = false}, ref) {
+    function RedactionTextView({
+                                    vnd, selected, activeLanguage, searchQuery = "", onClearSearch, scrollX = false,
+                                    quoteMarks, quoteMarksClickable, onHoverQuoteMark, onClickQuoteMark,
+                                }, ref) {
         const {t} = useTranslation();
         const fileId = activeLanguage === "tid"
             ? selected.tidFileId
@@ -58,6 +71,18 @@ export const RedactionTextView = forwardRef<RedactionTextViewHandle, RedactionTe
             searchQuery,
             !loading && fileId !== null,
             `${fileId}-${activeLanguage}`, // сброс подсветки при смене редакции/языка
+        );
+
+        useDocxQuoteMarks(
+            containerRef,
+            quoteMarks ?? [],
+            !loading && fileId !== null,
+            `${fileId}-${activeLanguage}`,
+            {
+                clickable: !!quoteMarksClickable,
+                onHoverMark: onHoverQuoteMark ?? (() => {}),
+                onClickMark: onClickQuoteMark ?? (() => {}),
+            },
         );
 
         useImperativeHandle(ref, () => ({

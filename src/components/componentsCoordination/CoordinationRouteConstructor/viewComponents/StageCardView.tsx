@@ -18,6 +18,7 @@ import {Tooltip} from "@/components/componentsGeneral/Tooltip.tsx";
 import {
     CommentViewModal
 } from "@/components/componentsCoordination/CoordinationRouteConstructor/viewComponents/CommentViewModal.tsx";
+import {FormattedResolutionComment} from "./FormattedResolutionComment.tsx";
 import {
     AttachmentRow
 } from "@/components/componentsCoordination/CoordinationRouteConstructor/functionalComponents/AttachmentRow.tsx";
@@ -244,7 +245,7 @@ export function StageCardView({stage, cardRef, isCurrentUserStage, isProcessEnde
                                     </div>
                                 )}
                                 <div className="text-[11.5px] leading-snug text-[#6b7488] whitespace-pre-wrap">
-                                    {displayedComment}
+                                    <FormattedResolutionComment text={displayedComment}/>
                                 </div>
                                 {entry.attachments.length > 0 && (
                                     <div className="rounded-[10px] border border-[#e9edf3] bg-[#fbfcfe] p-2.5">

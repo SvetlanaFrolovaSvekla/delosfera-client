@@ -11,6 +11,7 @@ import {
 } from "@/components/componentsCoordination/CoordinationRouteConstructor/functionalComponents/AttachmentRow.tsx";
 import {createPortal} from "react-dom";
 import {getInitials} from "@/utils/getInitials.ts";
+import {FormattedResolutionComment} from "./FormattedResolutionComment.tsx";
 
 export function CommentViewModal({
                                      title,
@@ -136,7 +137,7 @@ export function CommentViewModal({
                     )}
 
                     <div className="whitespace-pre-wrap text-[13px] leading-relaxed text-[#3c4356]">
-                        {comment}
+                        <FormattedResolutionComment text={comment}/>
                     </div>
                 </div>
             </div>

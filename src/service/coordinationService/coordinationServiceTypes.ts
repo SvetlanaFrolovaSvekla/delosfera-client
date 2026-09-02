@@ -72,6 +72,17 @@ export interface ApprovalDecisionRequest {
      * наравне с текстом комментария — остаются частью истории согласования и после того,
      * как редакция станет согласованной. */
     files?: File[];
+    /** Цитаты из текста редакции, на которые согласующий сослался в comment (см.
+     * "+ Сослаться на текст редакции"). Хранятся бессрочно вместе с резолюцией и используются
+     * для подсветки маркеров в тексте редакции — см. ApprovalStageQuoteResponse. */
+    quotes?: ApprovalQuoteItem[];
+}
+
+/** Один элемент quotes в ApprovalDecisionRequest. */
+export interface ApprovalQuoteItem {
+    /** "ru"/"kg"/"en"/"tid"/"approvalSheet"/"disagreementMatrix" — см. RedactionViewTarget. */
+    documentTarget: string;
+    text: string;
 }
 
 export interface ResubmitAfterRevisionRequest {
@@ -137,6 +148,17 @@ export interface ApprovalStageAttachmentResponse {
     sizeBytes: number;
 }
 
+/** Цитата из текста редакции, на которую согласующий сослался в резолюции — маркер для
+ * подсветки в тексте (см. useDocxQuoteMarks). Отдельного комментария к цитате нет — по клику
+ * на маркер показывается вся резолюция фазы (primary/repeat/finalHoldComment), в которую эта
+ * цитата попадает. */
+export interface ApprovalStageQuoteResponse {
+    id: number;
+    /** "ru"/"kg"/"en"/"tid"/"approvalSheet"/"disagreementMatrix" — см. RedactionViewTarget. */
+    documentTarget: string;
+    text: string;
+}
+
 export interface ApprovalStageResponse {
     id: number;
     order: number;
@@ -149,15 +171,18 @@ export interface ApprovalStageResponse {
     primaryComment: string | null;
     primaryDecidedAt: string | null;
     primaryAttachments: ApprovalStageAttachmentResponse[];
+    primaryQuotes: ApprovalStageQuoteResponse[];
     participatesInRepeat: boolean;
     repeatDecision: ApprovalStageDecisionResponse | null;
     repeatComment: string | null;
     repeatDecidedAt: string | null;
     repeatAttachments: ApprovalStageAttachmentResponse[];
+    repeatQuotes: ApprovalStageQuoteResponse[];
     finalHoldDecision: ApprovalStageDecisionResponse | null;
     finalHoldComment: string | null;
     finalHoldDecidedAt: string | null;
     finalHoldAttachments: ApprovalStageAttachmentResponse[];
+    finalHoldQuotes: ApprovalStageQuoteResponse[];
 }
 
 export interface ApprovalProcessResponse {

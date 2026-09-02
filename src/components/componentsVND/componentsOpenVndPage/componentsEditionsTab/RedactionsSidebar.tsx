@@ -282,7 +282,16 @@ function RedactionListItem({
     const {t} = useTranslation();
     const status = getRedactionDisplayStatus(redaction, vndStatus, isLatest, effectiveDate);
     const meta = REDACTION_STATUS_META[status];
-    const hasAttachments = redaction.attachmentFileIds.length > 0;
+    // Кнопка-скрепка открывает "Вложения редакции" (RedactionAttachmentsModal), где помимо
+    // обычных вложений теперь показываются и "Специальные вложения" - ТИД и Лист согласования
+    // (см. RedactionAttachmentsModal). Раньше кнопка/счётчик учитывали только обычные вложения,
+    // из-за чего редакция без обычных вложений, но с уже сформированным Листом согласования
+    // (после консолидации), выглядела так, будто вложений нет вовсе, и открыть модалку было
+    // нельзя - посмотреть лист согласования можно было только со страницы согласования.
+    const specialAttachmentsCount =
+        (redaction.tidFileId !== null ? 1 : 0) + (redaction.approvalSheetFileId !== null ? 1 : 0);
+    const totalAttachmentsCount = redaction.attachmentFileIds.length + specialAttachmentsCount;
+    const hasAttachments = totalAttachmentsCount > 0;
     const hasTid = redaction.tidFileId !== null;
 
     return (
@@ -332,7 +341,7 @@ function RedactionListItem({
                                 className="cursor-pointer flex items-center gap-[4px] text-[#3c424a] hover:text-[#4e57d6]"
                             >
                                 <Paperclip size={12} className="flex-none"/>
-                                {redaction.attachmentFileIds.length}
+                                {totalAttachmentsCount}
                             </button>
                         ) : (
                             <span className="flex items-center gap-[4px] text-[#c3ccd8]">

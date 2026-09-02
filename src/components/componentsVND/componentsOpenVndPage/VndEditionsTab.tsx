@@ -61,6 +61,9 @@ import {
     RedactionTidModal
 } from "@/components/componentsVND/componentsOpenVndPage/componentsEditionsTab/RedactionTidModal.tsx";
 import {
+    RedactionApprovalSheetModal
+} from "@/components/componentsVND/componentsOpenVndPage/componentsEditionsTab/RedactionApprovalSheetModal.tsx";
+import {
     RedactionCompareModal
 } from "@/components/componentsCoordination/CoordinationRouteConstructor/viewComponents/RedactionCompareModal.tsx";
 import {
@@ -240,6 +243,7 @@ export function VndEditionsTab({vnd, onVndChanged, onGoToApproval}: VndEditionsT
 
     const [attachmentsRedaction, setAttachmentsRedaction] = useState<VndRedactionResponse | null>(null);
     const [tidRedaction, setTidRedaction] = useState<VndRedactionResponse | null>(null);
+    const [approvalSheetRedaction, setApprovalSheetRedaction] = useState<VndRedactionResponse | null>(null);
     // Модалка "Сформировать или загрузить ТИД" - открывается кнопкой в RedactionStatusBanner,
     // когда у актуализационной редакции (Number > 1) ещё нет файла ТИД (см. tidMissing ниже).
     const [uploadTidOpen, setUploadTidOpen] = useState(false);
@@ -826,6 +830,10 @@ export function VndEditionsTab({vnd, onVndChanged, onGoToApproval}: VndEditionsT
                     redaction={attachmentsRedaction}
                     downloadingId={download.activeId}
                     onDownload={handleDownload}
+                    onView={(target) => {
+                        if (target === "tid") setTidRedaction(attachmentsRedaction);
+                        else setApprovalSheetRedaction(attachmentsRedaction);
+                    }}
                     onClose={() => setAttachmentsRedaction(null)}
                 />
             )}
@@ -838,6 +846,17 @@ export function VndEditionsTab({vnd, onVndChanged, onGoToApproval}: VndEditionsT
                     downloadingId={download.activeId}
                     onDownload={handleDownload}
                     onClose={() => setTidRedaction(null)}
+                />
+            )}
+
+            {/* Просмотр Листа согласования редакции */}
+            {approvalSheetRedaction && (
+                <RedactionApprovalSheetModal
+                    vnd={vnd}
+                    redaction={approvalSheetRedaction}
+                    downloadingId={download.activeId}
+                    onDownload={handleDownload}
+                    onClose={() => setApprovalSheetRedaction(null)}
                 />
             )}
 

@@ -197,7 +197,7 @@ export function VndPassportTab({
                 </div>
             </div>
 
-            {redactions.length > 0 && (
+            {redactions.length > 1 && (
                 <div className="px-4 sm:px-6 flex flex-wrap items-center justify-between gap-3 mb-[15px]">
                     <div className="flex flex-wrap gap-1.5">
                         {redactions.map((r) => (

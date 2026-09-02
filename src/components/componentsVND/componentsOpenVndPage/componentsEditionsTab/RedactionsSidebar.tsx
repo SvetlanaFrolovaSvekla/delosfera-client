@@ -4,6 +4,15 @@ import {useTranslation} from "react-i18next";
 import type {VndRedactionResponse} from "@/service/vndService/vndServiceType.ts";
 import {formatDate} from "@/utils/dateUtils.ts";
 import {getRedactionDisplayStatus, REDACTION_STATUS_META} from "@/utils/redactionStatus.ts";
+
+/** Компактный формат для строки "Актуализация {дата} №{код}" / "Первая редакция {дата} №{код}" —
+ * ДД.ММ.ГГг. (двузначный год), как на макете. Отдельно от formatDate (там полный год) — это
+ * не дата загрузки файла, а дата ПРИНЯТИЯ конкретной редакции (реквизит редакции). */
+function formatShortYearDate(iso: string): string {
+    const [y, m, d] = iso.slice(0, 10).split("-");
+    if (!y || !m || !d) return "";
+    return `${d}.${m}.${y.slice(-2)}г.`;
+}
 import {
     Calendar,
     CheckCircle2,
@@ -332,6 +341,17 @@ function RedactionListItem({
                             </span>
                         )}
                     </span>
+
+                    {/* Дата принятия/№ принятия ИМЕННО этой редакции (см. миграцию "реквизиты по
+                        редакции") — не показываем, пока редакция ещё не консолидирована и этих
+                        реквизитов у неё ещё нет (adoptionDate пуст до PublishAsync). */}
+                    {redaction.adoptionDate && (
+                        <span className="mt-[4px] block text-[11px] leading-[1.4] text-[#55617a]">
+                            {redaction.number === 1 ? "Первая редакция" : "Актуализация"}{" "}
+                            {formatShortYearDate(redaction.adoptionDate)}
+                            {redaction.adoptionCode && ` №${redaction.adoptionCode}`}
+                        </span>
+                    )}
 
                     {redaction.description && (
                         <span className="mt-[5px] line-clamp-5 block text-[11.5px] leading-[1.5] text-[#55617a]">

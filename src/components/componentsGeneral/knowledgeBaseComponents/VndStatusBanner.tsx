@@ -19,6 +19,11 @@ interface VndStatusBannerProps {
      * Если не передано (undefined), баннер считает, что действие доступно (обратная совместимость),
      * поэтому для статуса "consol" это значение обязательно нужно вычислять и передавать явно. */
     canConsolidate?: boolean;
+    /** Актуализационная редакция (Number > 1) без файла ТИД — консолидировать документ нельзя
+     * (см. VndActualizationService.PublishAsync), поэтому кнопку "Консолидировать" прячем и
+     * поясняем, что сначала нужно приложить ТИД (во вкладке «Редакции»). Актуально только для
+     * статуса "consol". */
+    tidMissing?: boolean;
 }
 
 interface BannerConfig {
@@ -75,6 +80,12 @@ const BANNER_CONFIG: Partial<Record<VndStatusKey, BannerConfig>> = {
 const CONSOL_READONLY_TEXT =
     "Согласование завершено. Дождитесь решения руководства по консолидации.";
 
+// Текст для статуса "Консолидация", когда у актуализационной редакции ещё нет файла ТИД -
+// консолидировать нельзя, пока он не приложен (см. tidMissing выше)
+const CONSOL_TID_MISSING_TEXT =
+    "Прежде чем консолидировать документ, приложите файл ТИД (Таблица изменений и дополнений) " +
+    "во вкладке «Редакции».";
+
 // "Ожидание вступления в силу" — не заведён в BANNER_CONFIG (там ключ — реальный VndStatusKey,
 // а этот статус вычисляемый, см. isVndPendingEffective), только базовые цвета/иконка; текст
 // собирается ниже с подстановкой самой даты.
@@ -91,7 +102,7 @@ const PENDING_EFFECTIVE_CONFIG_BASE: Omit<BannerConfig, "text"> = {
     accentColor: "#c2410c",
 };
 
-export function VndStatusBanner({status, effectiveDate, onPrimaryAction, onSecondaryAction, compact, canConsolidate}: VndStatusBannerProps) {
+export function VndStatusBanner({status, effectiveDate, onPrimaryAction, onSecondaryAction, compact, canConsolidate, tidMissing}: VndStatusBannerProps) {
     const pendingEffective = isVndPendingEffective(status, effectiveDate);
 
     const config: BannerConfig | undefined = pendingEffective
@@ -104,11 +115,17 @@ export function VndStatusBanner({status, effectiveDate, onPrimaryAction, onSecon
     if (!config) return null;
 
     // Право действовать по консолидации проверяется только для статуса "consol";
-    // canConsolidate === false — единственный случай, когда прячем кнопку и меняем текст
+    // canConsolidate === false и tidMissing === true — два независимых случая, когда прячем
+    // кнопку и меняем текст (проверка прав первична - если прав нет, ТИД тут не при чём).
     const isConsolWithoutRights = status === "consol" && canConsolidate === false;
+    const isConsolTidMissing = status === "consol" && !isConsolWithoutRights && tidMissing === true;
 
-    const displayText = isConsolWithoutRights ? CONSOL_READONLY_TEXT : config.text;
-    const secondaryLabel = isConsolWithoutRights ? undefined : config.secondaryLabel;
+    const displayText = isConsolWithoutRights
+        ? CONSOL_READONLY_TEXT
+        : isConsolTidMissing
+            ? CONSOL_TID_MISSING_TEXT
+            : config.text;
+    const secondaryLabel = (isConsolWithoutRights || isConsolTidMissing) ? undefined : config.secondaryLabel;
 
     const hasActions = config.primaryLabel || secondaryLabel;
 

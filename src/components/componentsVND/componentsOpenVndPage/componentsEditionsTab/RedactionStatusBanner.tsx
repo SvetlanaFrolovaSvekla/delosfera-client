@@ -90,9 +90,19 @@ export function RedactionStatusBanner({
     const isCentered = config.align === "center";
     const isBetween = config.align === "between";
 
-    const showTidMissing = status === "draft" && tidMissing;
+    // tidMissing актуален и для статуса "consolidation": при актуализации без согласования
+    // редакция становится текущей сразу при загрузке (минуя "draft"), и приложить ТИД
+    // до этого момента было негде - см. комментарий в getRedactionDisplayStatus. Без ТИД
+    // консолидировать документ всё равно нельзя (см. VndActualizationService.PublishAsync),
+    // поэтому кнопка должна оставаться доступной и здесь.
+    const showTidMissing = (status === "draft" || status === "consolidation") && tidMissing;
     const message = showTidMissing
-        ? "Чтобы перейти к согласованию — необходимо добавить ТИД:"
+        ? status === "consolidation"
+            ? "Прежде чем консолидировать документ — необходимо приложить ТИД:"
+            // Формулировка нарочно не про "согласование" - этот черновик может как ждать
+            // отправки на согласование, так и (при актуализации без согласования) просто
+            // ждать приложения ТИД, чтобы стать текущей редакцией напрямую.
+            : "Чтобы продолжить — необходимо приложить ТИД:"
         : getBannerMessage(status, currentNumber, effectiveDate);
 
     return (

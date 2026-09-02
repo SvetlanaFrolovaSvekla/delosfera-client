@@ -13,17 +13,23 @@ export function getRedactionDisplayStatus(
      * показывается как "pendingEffective", а не "current" (см. isVndPendingEffective). */
     effectiveDate?: string | null,
 ): RedactionDisplayStatus {
-    if (r.isCurrent) {
-        if (vndStatus && isVndPendingEffective(vndStatus, effectiveDate)) return "pendingEffective";
-        return "current";
-    }
     // "Консолидация" относится только к редакции, которая СЕЙЧАС проходит консолидацию — это
     // всегда самая свежая (наибольший number). Раньше сюда попадала ЛЮБАЯ нетекущая редакция,
     // пока vndStatus === "consol" — из-за этого уже опубликованные в прошлом Р1/Р2/Р3 тоже
     // показывали "консолидация", хотя давно устарели (см. баг: "Р1 консолидация, Р2 консолидация,
-    // Р3 актуальная, Р4 консолидация"). isLatest должен передаваться вызывающей стороной
+    // Р3 актуальная, Р4 актуальная"). isLatest должен передаваться вызывающей стороной
     // (обычно — redaction.id === sortedDesc[0]?.id, самая свежая по number редакция).
+    //
+    // ВАЖНО: эта проверка идёт РАНЬШЕ r.isCurrent. При актуализации без согласования новая
+    // редакция становится "текущей" (CurrentRedactionId) сразу при загрузке — раньше самого
+    // подтверждения консолидации (даты принятия и т.п. проставляются только в PublishAsync).
+    // Поэтому пока vndStatus остаётся "consol", такая редакция должна показывать "консолидация",
+    // а не "актуальная" — иначе документ выглядит уже консолидированным, хотя это не так.
     if (vndStatus === "consol" && isLatest) return "consolidation";
+    if (r.isCurrent) {
+        if (vndStatus && isVndPendingEffective(vndStatus, effectiveDate)) return "pendingEffective";
+        return "current";
+    }
     if (r.approvalStatus === "Draft") return "draft";
     if (r.approvalStatus === "Pending") return "pending";
     if (r.approvalStatus === "Rejected") return "rejected";

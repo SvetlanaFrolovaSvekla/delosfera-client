@@ -106,6 +106,11 @@ export function OpenVndPage() {
 
     const lastRedactionNumber = redactions.reduce((max, r) => Math.max(max, r.number), 0);
     const isFirstRedaction = lastRedactionNumber <= 1;
+    // Актуализационная редакция (Number > 1) без файла ТИД — консолидировать документ нельзя
+    // (см. VndActualizationService.PublishAsync), поэтому кнопку "Консолидировать" в
+    // VndStatusBanner прячем, пока ТИД не приложен (во вкладке «Редакции»).
+    const latestRedaction = redactions.find((r) => r.number === lastRedactionNumber);
+    const consolidateTidMissing = !isFirstRedaction && !!latestRedaction && latestRedaction.tidFileId === null;
 
     // Зеркалит право публикации из VndActualizationService.PublishAsync на бэке:
     // - если есть открытый цикл актуализации - только назначенный ответственный или главный методолог;
@@ -182,6 +187,7 @@ export function OpenVndPage() {
                     effectiveDate={vnd.effectiveDate}
                     onSecondaryAction={() => setConsolidateOpen(true)}
                     canConsolidate={canConsolidate}
+                    tidMissing={consolidateTidMissing}
                 />
             </div>
 

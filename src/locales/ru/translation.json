@@ -14,7 +14,8 @@
     "loading": "Загрузка…",
     "deleting": "Удаление…",
     "delete": "Удалить",
-    "saving": "Сохранение…"
+    "saving": "Сохранение…",
+    "archiving": "Архивация…"
   },
   "sidebar": {
     "badgeTooltips": {
@@ -198,6 +199,10 @@
     "consolidatedToastTitle": "ВНД консолидирован",
     "consolidatedToastDescription": "Документ теперь в статусе «Действующий»",
     "consolidateError": "Не удалось консолидировать документ",
+    "archiveButton": "Архивировать",
+    "archivedToastTitle": "ВНД архивирован",
+    "archivedToastDescription": "«{{name}}» переведён в статус «В архиве»",
+    "archiveError": "Не удалось архивировать документ",
     "editionsTab": {
       "loadingRedactions": "Загрузка редакций…",
       "loadErrorTitle": "Не удалось загрузить редакции",

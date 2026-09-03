@@ -26,12 +26,15 @@ import {VndCoordinationTab} from "@/components/componentsVND/componentsOpenVndPa
 import {
     ConsolidateVndModal, type ConsolidateRequisites
 } from "@/components/componentsVND/componentsOpenVndPage/ConsolidateVndModal.tsx";
+import {
+    CancelVndModal, type CancelVndFields
+} from "@/components/componentsVND/componentsOpenVndPage/CancelVndModal.tsx";
 
 import {Loader} from "@/components/componentsGeneral/Loader.tsx";
 import {EmptyState} from "@/components/componentsGeneral/EmptyState.tsx";
 import {VndStatusBanner} from "@/components/componentsGeneral/knowledgeBaseComponents/VndStatusBanner.tsx";
 import {ConfirmActionModal} from "@/components/componentsGeneral/modal/ConfirmActionModal.tsx";
-import {Trash2} from "lucide-react";
+import {Archive, Trash2} from "lucide-react";
 
 export function OpenVndPage() {
     const {t} = useTranslation();
@@ -71,6 +74,33 @@ export function OpenVndPage() {
             setDeleteError(err instanceof Error ? err.message : t("openVndPage.deleteError"));
             toast.error(t("openVndPage.deleteFailedToastTitle"), err instanceof Error ? err.message : undefined);
             setDeleting(false);
+        }
+    };
+
+    // Кнопка "Архивировать" — на любом статусе, кроме черновика (тот только удаляется выше) и
+    // уже архивированного. Если ВНД сейчас "На согласовании" — согласование отзывается
+    // автоматически на бэке в рамках той же операции (см. VndService.CancelAsync).
+    const [cancelOpen, setCancelOpen] = useState(false);
+    const [canceling, setCanceling] = useState(false);
+    const [cancelError, setCancelError] = useState<string | null>(null);
+
+    const handleCancel = async (fields: CancelVndFields) => {
+        if (!vnd) return;
+        setCanceling(true);
+        setCancelError(null);
+        try {
+            await vndService.cancel(vnd.id, {
+                cancelCode: fields.cancelCode,
+                cancelDate: fields.cancelDate,
+                cancelReason: fields.cancelReason || null,
+            });
+            setCancelOpen(false);
+            toast.success(t("openVndPage.archivedToastTitle"), t("openVndPage.archivedToastDescription", {name: vnd.name}));
+            refetch();
+        } catch (err) {
+            setCancelError(err instanceof Error ? err.message : t("openVndPage.archiveError"));
+        } finally {
+            setCanceling(false);
         }
     };
 
@@ -286,7 +316,7 @@ export function OpenVndPage() {
                         </div>
                     )}
 
-                    {/* Кнопка удаления */}
+                    {/* Кнопка удаления (только черновик) */}
                     {vnd.status === "draft" && hasPermission(PermissionCode.DeleteVnd) && (
                         <button
                             onClick={() => setDeleteOpen(true)}
@@ -295,6 +325,18 @@ export function OpenVndPage() {
                         >
                             <Trash2 className="w-3.5 h-3.5" strokeWidth={2} />
                             {deleting ? t("general.deleting") : t("openVndPage.deleteDraftButton")}
+                        </button>
+                    )}
+
+                    {/* Кнопка архивации (любой статус, кроме черновика и уже архивированного) */}
+                    {vnd.status !== "draft" && vnd.status !== "arch" && hasPermission(PermissionCode.CancelVnd) && (
+                        <button
+                            onClick={() => setCancelOpen(true)}
+                            disabled={canceling}
+                            className="ml-auto shrink-0 flex items-center gap-1.5 rounded-[9px] border border-[#e0b4ae] bg-white px-3 py-1 text-[12px] font-semibold text-[#c0392b] cursor-pointer hover:bg-[#fbecea] transition-colors"
+                        >
+                            <Archive className="w-3.5 h-3.5" strokeWidth={2} />
+                            {canceling ? t("general.archiving") : t("openVndPage.archiveButton")}
                         </button>
                     )}
                 </div>
@@ -353,6 +395,21 @@ export function OpenVndPage() {
                         setConsolidateError(null);
                     }}
                     onConfirm={handleConsolidate}
+                />
+            )}
+
+            {/* Модальное окно архивации */}
+            {cancelOpen && (
+                <CancelVndModal
+                    hasActiveApproval={vnd.status === "review"}
+                    submitting={canceling}
+                    error={cancelError}
+                    onClose={() => {
+                        if (canceling) return;
+                        setCancelOpen(false);
+                        setCancelError(null);
+                    }}
+                    onConfirm={handleCancel}
                 />
             )}
 

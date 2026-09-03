@@ -62,6 +62,15 @@ export interface UpdateVndRequisitesRequest {
     userGroupIds?: number[];
 }
 
+// --- Архивация (отмена) ВНД ---
+export interface CancelVndRequest {
+    /** № отмены (реквизит служебной записки, которой оформлена отмена) */
+    cancelCode: string;
+    /** Дата отмены, ISO "YYYY-MM-DD" */
+    cancelDate: string;
+    cancelReason?: string | null;
+}
+
 // --- Запрос на поиск ---
 export interface VndSearchRequest {
     code?: string;

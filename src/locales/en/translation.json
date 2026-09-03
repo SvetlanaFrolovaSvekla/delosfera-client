@@ -14,7 +14,8 @@
     "loading": "Loading…",
     "deleting": "Deleting…",
     "delete": "Delete",
-    "saving": "Saving…"
+    "saving": "Saving…",
+    "archiving": "Archiving…"
   },
   "sidebar": {
     "badgeTooltips": {
@@ -195,6 +196,10 @@
     "consolidatedToastTitle": "VND consolidated",
     "consolidatedToastDescription": "The document is now in «Active» status",
     "consolidateError": "Failed to consolidate document",
+    "archiveButton": "Archive",
+    "archivedToastTitle": "VND archived",
+    "archivedToastDescription": "«{{name}}» was moved to «Archived» status",
+    "archiveError": "Failed to archive document",
     "editionsTab": {
       "loadingRedactions": "Loading revisions…",
       "loadErrorTitle": "Failed to load revisions",

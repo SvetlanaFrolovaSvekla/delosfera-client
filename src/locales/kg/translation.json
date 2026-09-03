@@ -14,7 +14,8 @@
     "loading": "Жүктөлүүдө…",
     "deleting": "Өчүрүлүүдө…",
     "delete": "Өчүрүү",
-    "saving": "Сакталууда…"
+    "saving": "Сакталууда…",
+    "archiving": "Архивдөө…"
   },
   "sidebar": {
     "badgeTooltips": {
@@ -195,6 +196,10 @@
     "consolidatedToastTitle": "ИНД консолидацияланды",
     "consolidatedToastDescription": "Документ азыр «Аракеттеги» статусунда",
     "consolidateError": "Документти консолидациялоо мүмкүн болгон жок",
+    "archiveButton": "Архивдөө",
+    "archivedToastTitle": "ИНД архивделди",
+    "archivedToastDescription": "«{{name}}» «Архивде» статусуна өткөрүлдү",
+    "archiveError": "Документти архивдөө мүмкүн болгон жок",
     "editionsTab": {
       "loadingRedactions": "Редакциялар жүктөлүүдө…",
       "loadErrorTitle": "Редакцияларды жүктөө мүмкүн болгон жок",

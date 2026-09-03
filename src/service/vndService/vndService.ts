@@ -1,4 +1,5 @@
 import type {
+    CancelVndRequest,
     CreateVndRedactionRequest,
     CreateVndRequest, EditLastRevisionDirectlyRequest,
     UpdateVndRequisitesRequest,
@@ -150,6 +151,18 @@ export const vndService = {
             const errorBody = await response.json().catch(() => null);
             throw new Error(errorBody?.message ?? `Ошибка запроса: ${response.status}`);
         }
+    },
+
+    /** Архивировать (отменить) ВНД — кнопка "Архивировать". Недоступно для черновика (его
+     * можно только удалить, см. remove) и для уже архивированного документа. Если ВНД на
+     * согласовании — оно будет отозвано автоматически на бэке (см. VndService.CancelAsync). */
+    async cancel(id: number, request: CancelVndRequest): Promise<VndResponse> {
+        const response = await fetch(`${API_BASE}/vnd/${id}/cancel`, {
+            method: "POST",
+            headers: {"Content-Type": "application/json", ...authHeaders()},
+            body: JSON.stringify(request),
+        });
+        return handleResponse<VndResponse>(response);
     },
 
     /** Удалить связь ВНД (можно с любой из сторон связи) */

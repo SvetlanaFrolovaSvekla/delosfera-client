@@ -1,5 +1,5 @@
 import {useMemo, useState} from "react";
-import type {VndSearchRequest} from "@/service/vndService/vndServiceType.ts";
+import type {DocumentStatusKey, VndSearchRequest} from "@/service/vndService/vndServiceType.ts";
 import type {VndScope, VndStatusKey} from "@/constants/vndTabs.ts";
 import {type DateFilterValue, EMPTY_DATE_FILTER} from "@/components/componentsGeneral/datePickers/DateFilterGroup.tsx";
 import {toDateRangeFilter} from "@/utils/dateUtils.ts";
@@ -57,10 +57,12 @@ export function useVndFilters(scope: VndScope, draftOwnerScope?: "mine" | "other
         );
 
     const searchRequest: VndSearchRequest = useMemo(() => {
+        // "Действующие" и "Ещё не действующие" — оба сужаются к одному и тому же набору
+        // редакционных статусов (active/onact/review/consol, без draft/arch): различие между
+        // ними не в Statuses, а в documentStatuses ниже (documentStatus === "active" против
+        // "notYetActive", см. VndResponse.documentStatus/ComputeDocumentStatus).
         const statuses: VndStatusKey[] =
-            // "Действующие" — все ВНД с хотя бы одной актуальной редакцией: сама актуальная,
-            // а также те, что сейчас на актуализации/согласовании/консолидации
-            scope === "active" ? ["active", "onact", "review", "consol"] :
+            scope === "active" || scope === "notYetActive" ? ["active", "onact", "review", "consol"] :
                 scope === "arch" ? ["arch"] :
                     scope === "draft" ? ["draft"] :
                         statusFilters.length > 0 ? (statusFilters as VndStatusKey[]) :
@@ -68,11 +70,23 @@ export function useVndFilters(scope: VndScope, draftOwnerScope?: "mine" | "other
                                 ? ["active", "onact", "review", "consol", "arch", "draft"]
                                 : ["active", "onact", "review", "consol", "arch"];
 
+        // "Статус ВНД" (документ-уровня) — теперь целиком определяется вкладкой (scope), а не
+        // отдельным фильтром: "Действующие" означает "по-настоящему действующие" (documentStatus
+        // === "active"), "Ещё не действующие" — свой отдельный таб (виден только при
+        // ViewVndRegistryExtended, см. BaseVndPage/useVndScopeCounts). На "Все"/"Архивированные"/
+        // "Черновики" доп. сужения по documentStatus нет — сервер и так уже вообще не отдаёт
+        // notYetActive пользователям без ViewVndRegistryExtended (см. VndService.SearchAsync).
+        const documentStatuses: DocumentStatusKey[] | undefined =
+            scope === "active" ? ["active"] :
+                scope === "notYetActive" ? ["notYetActive"] :
+                    undefined;
+
         return {
             code: advSearchCode || undefined,
             name: advSearchName || undefined,
             revisionText: advSearchRevisionText || undefined,
             statuses,
+            documentStatuses,
             typeIds: docTypeFilters.length ? docTypeFilters.map(Number) : undefined,
             organIds: organFilters.length ? organFilters.map(Number) : undefined,
             developerIds: developerFilters.length ? developerFilters.map(Number) : undefined,

@@ -3,7 +3,7 @@ import {Link} from "react-router-dom";
 import {useActualizationBucketMeta} from "@/hooks/actualizationHooks/useActualizationBucketMeta.ts";
 import {HighlightText} from "@/utils/HighlightText.tsx";
 import type {VndResponse} from "@/service/vndService/vndServiceType.ts";
-import {getSimplifiedVndStatus, getVndDisplayMeta, SIMPLE_STATUS_META} from "@/constants/vndStatus.ts";
+import {collapseDocumentStatus, DOCUMENT_STATUS_META, getVndDisplayMeta, SIMPLE_STATUS_META} from "@/constants/vndStatus.ts";
 import {LINKED_TO_ME_RELATION_META, type LinkedToMeRelationKey} from "@/constants/linkedToMeRelations.ts";
 import type {ColDef} from "@/constants/columnsFilters/vndColumns.ts";
 import {EmptyState} from "@/components/componentsGeneral/EmptyState.tsx";
@@ -76,11 +76,19 @@ export function VndTable({
 
                 {rows.map((r) => {
                     // Без права ViewVndRegistryExtended значок первой колонки показывает только
-                    // упрощённый статус ВНД (действующий/архивированный/черновик), без деталей
-                    // о стадии жизненного цикла (на актуализации/согласовании/консолидации)
+                    // "Статус ВНД" (действующий/архивированный — документы "ещё не действующие"
+                    // сервер таким пользователям в реестре вообще не отдаёт, см.
+                    // VndService.SearchAsync; collapseDocumentStatus здесь — защитный дубль на
+                    // случай прямого перехода по ссылке, где documentStatus всё ещё может прийти
+                    // свёрнутым из GetById, см. VndService.CollapseDocumentStatus), без деталей
+                    // о стадии жизненного цикла (на актуализации/согласовании/консолидации).
+                    // "Черновик" — отдельная, не связанная с ViewVndRegistryExtended ось видимости
+                    // (см. SimpleVndStatusKey), поэтому проверяется отдельно и первым.
                     const meta = canViewExtended
                         ? getVndDisplayMeta(r.status, r.effectiveDate)
-                        : SIMPLE_STATUS_META[getSimplifiedVndStatus(r.status)];
+                        : r.status === "draft"
+                            ? SIMPLE_STATUS_META.draft
+                            : DOCUMENT_STATUS_META[collapseDocumentStatus(r.documentStatus, canViewExtended)];
                     const StatusIcon = meta.icon;
                     const days = daysUntil(r.dueActualizationDate);
                     const bucketMeta = r.actualizationBucket ? bucketMetaMap[r.actualizationBucket] : null;

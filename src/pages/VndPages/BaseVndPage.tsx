@@ -88,11 +88,19 @@ export function BaseVndPage() {
     const selectAllStatuses = () => filters.setStatusFilters(ALL_STATUS_OPTIONS.map((o) => o.key));
     const deselectAllStatuses = () => filters.setStatusFilters([]);
 
-    // Вкладка "Черновики" видна только при праве создавать ВНД — и идёт сразу за
-    // "Архивированными", в общей группе табов (не отделяется вправо)
+    // Вкладка "Ещё не действующие" — "Статус ВНД" (документ-уровня) notYetActive, видна только
+    // при праве ViewVndRegistryExtended (обычным пользователям сервер такие документы вообще не
+    // отдаёт — см. VndService.SearchAsync — так что без права им и смотреть не на что). Идёт
+    // сразу за "Действующими", перед "Архивированными".
+    //
+    // Вкладка "Черновики" видна только при праве создавать ВНД — и идёт последней, в общей
+    // группе табов (не отделяется вправо)
     const scopeTabs = [
         {id: "all" as VndScope, label: "Все", n: counts.all},
         {id: "active" as VndScope, label: "Действующие", n: counts.active},
+        ...(canViewVndRegistryExtended
+            ? [{id: "notYetActive" as VndScope, label: "Ещё не действующие", n: counts.notYetActive}]
+            : []),
         {id: "arch" as VndScope, label: "Архивированные", n: counts.arch},
         ...(canCreateVnd
             ? [{id: "draft" as VndScope, label: "Черновики", n: counts.draft, icon: <FileEdit size={14}/>}]
@@ -160,9 +168,10 @@ export function BaseVndPage() {
                 resultCount={filteredRows.length}
                 totalCount={
                     scope === "active" ? counts.active :
-                        scope === "draft" ? counts.draft :
-                            scope === "arch" ? counts.arch :
-                                counts.all
+                        scope === "notYetActive" ? counts.notYetActive :
+                            scope === "draft" ? counts.draft :
+                                scope === "arch" ? counts.arch :
+                                    counts.all
                 }
                 viewPicker={
                     <JournalViewPicker

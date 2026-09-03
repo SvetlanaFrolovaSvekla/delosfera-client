@@ -296,6 +296,10 @@ export function VndFilters(props: VndFiltersProps) {
                     </div>
                 )}
 
+                {/* "Статус ВНД" (документ-уровня) больше не отдельный фильтр-дропдаун — теперь это
+                    сама вкладка (scope): "Действующие" против "Ещё не действующие" (последняя
+                    видна только при ViewVndRegistryExtended, см. BaseVndPage/useVndFilters). */}
+
                 <MultiSelectDropdown
                     icon={<Filter className="w-[15px] h-[15px]" strokeWidth={1.8}/>}
                     triggerLabel="Колонки"

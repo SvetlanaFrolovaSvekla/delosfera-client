@@ -1,5 +1,10 @@
 export type VndStatusKey = "draft" | "active" | "onact" | "review" | "consol" | "arch";
 
+// "Статус ВНД" (документ-уровня) — НЕ путать со VndStatusKey выше ("Статус последней редакции
+// ВНД"). Ровно 3 значения — см. подробности в VndResponse.documentStatus /
+// backend VndResponse.DocumentStatus / VndService.ComputeDocumentStatus.
+export type DocumentStatusKey = "active" | "notYetActive" | "arch";
+
 export type RedactionApprovalStatus = "NotRequired" | "Draft" | "Pending" | "Approved" | "Rejected";
 
 // --- Статус срока актуализации (вычисляется на бэке от dueActualizationDate) ---
@@ -64,6 +69,11 @@ export interface VndSearchRequest {
     revisionText?: string;
 
     statuses?: VndStatusKey[];
+
+    /** Фильтр по "Статусу ВНД" (документ-уровня, см. VndResponse.documentStatus) — независимая
+     * от statuses ось. Пусто = без фильтра. */
+    documentStatuses?: DocumentStatusKey[];
+
     typeIds?: number[];
     organIds?: number[];
     developerIds?: number[];
@@ -143,6 +153,11 @@ export interface VndResponse {
     titleEn: string | null;
     titleKg: string | null;
     status: VndStatusKey;
+
+    /** "Статус ВНД" (документ-уровня) — см. DocumentStatusKey. Уже свёрнут сервером с 3 значений
+     * до 2 (notYetActive → active), если у текущего пользователя нет права
+     * ViewVndRegistryExtended — см. backend VndService.CollapseDocumentStatus. */
+    documentStatus: DocumentStatusKey;
 
     typeId: number;
     typeName: string;

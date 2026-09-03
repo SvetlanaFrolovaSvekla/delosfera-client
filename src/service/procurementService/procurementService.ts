@@ -85,6 +85,11 @@ export interface ProcurementCard {
     hasBudget: boolean;
     planItem: string | null;
     hasSpecification: boolean;
+    initiatorUnitId: number | null;
+    curatorUserId: number | null;
+    planItemId: number | null;
+    specificationAttachmentId: number | null;
+    specificationFileName: string | null;
 
     /** Желаемое окно объявления закупки, заданное инициатором. */
     announcementFrom: string | null;
@@ -140,6 +145,9 @@ export interface ProcurementCreateRequest {
     hasBudget: boolean;
     /** Ссылка на позицию Плана закупок; пусто — закупка внеплановая. */
     planItemId?: number;
+
+    /** Вложение с техническим заданием — из вложений этой же заявки. */
+    specificationAttachmentId?: number;
     hasSpecification: boolean;
 
     /** Желаемое окно объявления закупки: обе даты или ни одной. */
@@ -180,6 +188,17 @@ export const procurementService = {
     async create(request: ProcurementCreateRequest): Promise<ProcurementCard> {
         const {data} = await apiClient.post<ProcurementCard>(`${BASE}/requests`, request);
         return data;
+    },
+
+    /** Править заявку, пока она черновик или вернулась на доработку. */
+    async update(id: number, request: ProcurementCreateRequest) {
+        const {data} = await apiClient.put<ProcurementCard>(`/procurement/requests/${id}`, request);
+        return data;
+    },
+
+    /** Удалить черновик — только свой и только до отправки. */
+    async remove(id: number) {
+        await apiClient.delete(`/procurement/requests/${id}`);
     },
 
     async submit(id: number): Promise<ProcurementCard> {

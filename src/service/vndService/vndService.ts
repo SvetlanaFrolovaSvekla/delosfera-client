@@ -92,14 +92,6 @@ export const vndService = {
         return handleResponse<VndRedactionResponse>(response);
     },
 
-    async submitRedaction(vndId: number, redactionId: number): Promise<VndRedactionResponse> {
-        const response = await fetch(`${API_BASE}/vnd/${vndId}/redactions/${redactionId}/submit`, {
-            method: "POST",
-            headers: authHeaders(),
-        });
-        return handleResponse<VndRedactionResponse>(response);
-    },
-
     /** Только для главного редактора: сделать черновик редакции действующим напрямую,
      * минуя согласование целиком. */
     async publishRedactionWithoutApproval(vndId: number, redactionId: number): Promise<VndRedactionResponse> {

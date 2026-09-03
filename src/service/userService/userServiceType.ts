@@ -89,13 +89,37 @@ export interface BlockUserRequest {
 }
 
 export interface GetUsersParams {
+    page?: number;
+    pageSize?: number;
     sortBy?: UserSortBy;
     search?: string;
     orgUnitIds?: number[];
     positionIds?: number[];
     roleIds?: number[];
-    source?: UserSource;
+    /** Несколько источников сразу: отбор идёт на сервере, а не по загруженной странице. */
+    sources?: UserSource[];
     isBlocked?: boolean;
+}
+
+/** Сколько сотрудников в каждом состоянии при текущих фильтрах. */
+export interface UserCounts {
+    all: number;
+    active: number;
+    blocked: number;
+}
+
+/**
+ * Страница списка сотрудников.
+ *
+ * Счётчики приходят с сервера: по одной странице их не посчитать, а вкладки
+ * должны показывать, сколько записей за каждой, а не сколько на открытой.
+ */
+export interface UserPage {
+    items: UserResponse[];
+    total: number;
+    page: number;
+    pageSize: number;
+    counts: UserCounts;
 }
 // Лента активности пользователя (GET /users/{id}/activity)
 export interface UserActivityItem {

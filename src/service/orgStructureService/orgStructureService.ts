@@ -1,4 +1,5 @@
 import {apiClient} from "@/service/apiClient.ts";
+import {invalidate} from "@/service/dictionaryCache.ts";
 
 /**
  * Оргструктуру ведёт портал банка, сюда она приходит копией.
@@ -91,6 +92,9 @@ export const orgStructureService = {
      */
     async syncNow() {
         const {data} = await apiClient.post<{message: string}>(`${BASE}/sync`);
+        // Синхронизация переписывает и подразделения, и состав сотрудников:
+        // после неё в памяти вкладки не должно остаться ничего прежнего.
+        invalidate();
         return data;
     },
 

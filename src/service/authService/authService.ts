@@ -1,6 +1,7 @@
 import {apiClient, refreshSession} from "@/service/apiClient.ts";
 import type {LoginRequest, LoginResponse} from "@/service/authService/authServiceType.ts";
 import {setAccessToken} from "@/service/tokenStore.ts";
+import {invalidate} from "@/service/dictionaryCache.ts";
 
 class AuthService {
     async login(request: LoginRequest): Promise<LoginResponse> {
@@ -32,6 +33,9 @@ class AuthService {
     async logout(): Promise<void> {
         // Сервер отзовёт refresh по cookie и очистит её; локально сбрасываем access-токен.
         setAccessToken(null);
+        // Справочники зависят от прав вошедшего — следующему за этим компьютером
+        // они должны прийти заново, а не достаться от предыдущего.
+        invalidate();
         await apiClient.post("/auth/logout").catch(() => {});
     }
 }

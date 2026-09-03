@@ -152,6 +152,7 @@ function App() {
 
                                 <Route path="/prc" element={<ProcurementRegistryPage/>}/>
                                 <Route path="/prc/new" element={<ProcurementNewPage/>}/>
+                                <Route path="/prc/:id/edit" element={<ProcurementNewPage/>}/>
                                 <Route path="/prc/matrix" element={<AuthorityMatrixPage/>}/>
                                 <Route path="/prc/suppliers" element={<SupplierRegistryPage/>}/>
                                 <Route path="/prc/plan" element={<ProcurementPlanPage/>}/>

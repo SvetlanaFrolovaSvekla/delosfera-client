@@ -52,7 +52,9 @@ export function useVndDictionaries(): VndDictionaries {
             typeVndService.getAll(),
             approvalBodyService.getAll(),
             organizationUnitService.getAll(),
-            userService.getAll(),
+            // Список кураторов: нужны имя и идентификатор, а не учётная запись
+            // целиком — полный список это семьсот килобайт на каждое открытие.
+            userService.lookup(),
             keywordService.getAll(),
             rubricService.getAll(),
             securityLevelService.getAll(),

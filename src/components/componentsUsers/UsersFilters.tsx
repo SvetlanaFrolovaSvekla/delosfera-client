@@ -1,5 +1,5 @@
 // Поиск и фильтры для страницы пользователей
-import React, {useRef, useState} from "react";
+import React, {type ReactNode, useRef, useState} from "react";
 import type {RoleResponse, UserSortBy, UserSource} from "@/service/userService/userServiceType.ts";
 import type {UserColDef} from "@/constants/columnsFilters/usersColumns.ts";
 import {useClickOutside} from "@/hooks/useClickOutside.ts";
@@ -109,6 +109,9 @@ interface UsersFiltersProps {
     onSelectAllSources: () => void;
     onDeselectAllSources: () => void;
 
+    /** Выбор представления журнала. Стоит рядом с «Колонки» — им и распоряжается. */
+    viewPicker?: ReactNode;
+
     toggleableColumns: UserColDef[];
     visibleCols: Record<string, boolean>;
     onToggleColumn: (key: string) => void;
@@ -135,6 +138,7 @@ export function UsersFilters({
                                  sortBy, onSortByChange,
                                  advOpen, onToggleAdv, onCloseAdv,
                                  sourceFilters, onToggleSourceFilter, onSelectAllSources, onDeselectAllSources,
+                                 viewPicker,
                                  toggleableColumns, visibleCols, onToggleColumn, onSelectAllColumns, onDeselectAllColumns,
                                  roles, positionFilters, onPositionFiltersChange,
                                  orgUnitFilters, onOrgUnitFiltersChange,
@@ -221,6 +225,8 @@ export function UsersFilters({
                     searchable={false}
                     searchThreshold={Infinity}
                 />
+
+                {viewPicker}
 
                 <div className="flex-1"/>
 

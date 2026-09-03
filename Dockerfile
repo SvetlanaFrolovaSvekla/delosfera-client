@@ -7,11 +7,13 @@ ARG VITE_API_BASE_URL
 ENV VITE_API_BASE_URL=$VITE_API_BASE_URL
 RUN npm run build
 
-FROM node:20-alpine
-WORKDIR /app
-COPY --from=builder /app/dist ./dist
-COPY --from=builder /app/package.json ./package.json
-COPY --from=builder /app/node_modules ./node_modules
-COPY --from=builder /app/vite.config.ts ./vite.config.ts
+# Готовое приложение — это статические файлы, и отдавать их должен веб-сервер.
+# Прежде здесь запускался `vite preview`: dev-инструмент, который держал в
+# образе весь node_modules и на каждый файл отвечал no-cache, заставляя
+# браузер переспрашивать чанки при каждом переходе между разделами.
+# Тег без версии намеренно: стенд банка не ходит в Docker Hub, и собраться
+# можно только тем образом, который на нём уже есть.
+FROM nginx:alpine
+COPY --from=builder /app/dist /usr/share/nginx/html
+COPY nginx.conf /etc/nginx/conf.d/default.conf
 EXPOSE 4173
-CMD ["npx", "vite", "preview", "--host", "0.0.0.0", "--port", "4173"]

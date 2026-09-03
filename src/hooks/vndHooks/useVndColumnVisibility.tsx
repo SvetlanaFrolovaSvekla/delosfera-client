@@ -29,6 +29,7 @@ export function useVndColumnVisibility(scope: VndScope, canViewExtended: boolean
     const [visibleColsByScope, setVisibleColsByScope] = useState<Record<VndScope, Record<string, boolean>>>({
         all: buildDefaultVisibility("all", canViewExtended, linkedToMeOnly),
         active: buildDefaultVisibility("active", canViewExtended, linkedToMeOnly),
+        notYetActive: buildDefaultVisibility("notYetActive", canViewExtended, linkedToMeOnly),
         draft: buildDefaultVisibility("draft", canViewExtended, linkedToMeOnly),
         arch: buildDefaultVisibility("arch", canViewExtended, linkedToMeOnly),
     });

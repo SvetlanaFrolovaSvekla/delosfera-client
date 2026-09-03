@@ -112,6 +112,17 @@ export function collapseDocumentStatus(status: DocumentStatusKey, canViewExtende
     return !canViewExtended && status === "notYetActive" ? "active" : status;
 }
 
+// Набор значений фильтра "Статус последней редакции" по вкладкам: на "Действующих"/"Ещё не
+// действующих" документ не может быть в архиве или черновиком, поэтому эти пункты там не
+// показываем — иначе выбор был бы заведомо пустым. Вкладки, которых нет в этой карте ("Все"
+// показывает все STATUS_META, "Архивированные"/"Черновики" фильтр вовсе не показывают — см.
+// VndFilters), берут полный список.
+export const STATUS_OPTIONS_BY_SCOPE: Partial<Record<VndScope, VndStatusKey[]>> = {
+    active: ["active", "onact", "review", "consol"],
+    notYetActive: ["onact", "review", "consol"],
+    all: ["active", "onact", "review", "consol", "arch", "draft"],
+};
+
 export const SCOPE_COUNT_LABELS: Record<VndScope, { total: string; found: string }> = {
     all: {
         total: "Всего ВНД",

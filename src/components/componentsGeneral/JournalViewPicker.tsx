@@ -4,6 +4,7 @@ import type {JournalView} from "@/service/journalViewService/journalViewService.
 import {useClickOutside} from "@/hooks/useClickOutside.ts";
 import {HelpTooltip} from "@/components/componentsGeneral/knowledgeBaseComponents/HelpTooltip.tsx";
 import {ConfirmActionModal} from "@/components/componentsGeneral/modal/ConfirmActionModal.tsx";
+import {Tooltip} from "@/components/componentsGeneral/Tooltip.tsx";
 
 /**
  * Выбор представления журнала — сохранённого набора колонок.
@@ -63,44 +64,57 @@ export function JournalViewPicker({
         close();
     };
 
+    // Триггер выглядит как "Тип связи" (LinkedToMeRelationDropdown) - всегда обычный чёрный текст
+    // "Представление", без "таблетки" с именем представления; какое представление применено,
+    // видно из зелёной точки рядом и из тултипа при наведении (см. ниже).
+    const trigger = (
+        <button
+            type="button"
+            onClick={() => setOpen((v) => !v)}
+            className={`inline-flex h-9 items-center gap-2 rounded-[9px] border px-3 text-[#3a4560]
+                        font-semibold text-[12.5px] cursor-pointer hover:bg-[#f6f8fb] ${
+                            open
+                                ? "border-[#4e57d6] bg-[#f6f8fb] ring-[3px] ring-[#ececfc]"
+                                : "border-[#e5e9f0] bg-white"
+                        }`}
+        >
+            Представление
+            {active?.isShared && <Users className="h-[13px] w-[13px] flex-none text-[#8b97ab]" strokeWidth={2}/>}
+            <ChevronDown
+                className={`h-[15px] w-[15px] flex-none text-[#a3adbd] transition-transform ${open ? "rotate-180" : ""}`}
+                strokeWidth={2}
+            />
+        </button>
+    );
+
     return (
         <div ref={ref} className="relative flex items-center gap-2">
-            <button
-                type="button"
-                onClick={() => setOpen((v) => !v)}
-                className={`inline-flex h-9 items-center gap-2 rounded-[9px] border px-3 text-[12.5px]
-                            cursor-pointer hover:bg-[#f6f8fb] ${
-                                open
-                                    ? "border-[#4e57d6] bg-[#f6f8fb] ring-[3px] ring-[#ececfc]"
-                                    : "border-[#e5e9f0] bg-white"
-                            }`}
-            >
+            <div className="relative">
                 {active ? (
-                    <span className="max-w-[160px] truncate rounded-full bg-[#ececfc] px-2 py-[2px]
-                                     text-[11px] font-semibold text-[#4e57d6]">
-                        {active.name}
-                    </span>
+                    <Tooltip content={`Представление: «${active.name}»`} side="bottom">
+                        {trigger}
+                    </Tooltip>
                 ) : (
-                    <span className="font-normal text-[#8b97ab]">Представление…</span>
+                    trigger
                 )}
-                {active?.isShared && <Users className="h-[13px] w-[13px] flex-none text-[#8b97ab]" strokeWidth={2}/>}
-                <ChevronDown
-                    className={`h-[15px] w-[15px] flex-none text-[#a3adbd] transition-transform ${open ? "rotate-180" : ""}`}
-                    strokeWidth={2}
-                />
-            </button>
+                {active && (
+                    <span className="absolute -top-1 -right-1 w-2.5 h-2.5 rounded-full bg-[#3fb36c] ring-2 ring-white pointer-events-none" />
+                )}
+            </div>
 
             {isDirty && active && active.canEdit && (
-                <button
-                    type="button"
-                    onClick={() => onUpdate(active)}
-                    title={`Запомнить показанные колонки в «${active.name}»`}
-                    className="inline-flex h-9 items-center gap-1.5 rounded-[9px] bg-[#ececfc] px-3
-                               text-[12.5px] font-semibold text-[#4e57d6] cursor-pointer hover:bg-[#e0e4fb]"
-                >
-                    <Save className="h-[14px] w-[14px]" strokeWidth={2}/>
-                    Сохранить
-                </button>
+                <Tooltip content={`Запомнить показанные колонки в «${active.name}»`} side="bottom">
+                    <button
+                        type="button"
+                        onClick={() => onUpdate(active)}
+                        className="inline-flex h-9 items-center gap-1.5 rounded-[9px] border border-[#e5e9f0]
+                                   bg-white px-3 text-[12.5px] font-semibold text-[#4e57d6] cursor-pointer
+                                   hover:bg-[#f6f8fb]"
+                    >
+                        <Save className="h-[14px] w-[14px]" strokeWidth={2}/>
+                        Сохранить
+                    </button>
+                </Tooltip>
             )}
 
             {open && (

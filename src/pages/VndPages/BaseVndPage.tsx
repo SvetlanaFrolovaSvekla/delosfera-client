@@ -1,4 +1,4 @@
-// Страница "База ВНД"
+// Страница "Реестр ВНД"
 import {useState} from "react";
 import {useNavigate} from "react-router-dom";
 import {useDictionaries} from "@/context/DictionariesContext.tsx";
@@ -14,7 +14,7 @@ import {JOURNAL} from "@/service/journalViewService/journalViewService.ts";
 import {JournalViewPicker} from "@/components/componentsGeneral/JournalViewPicker.tsx";
 
 import {type VndScope, type VndStatusKey} from '@/constants/vndTabs.ts';
-import {STATUS_META} from "@/constants/vndStatus.ts";
+import {STATUS_META, STATUS_OPTIONS_BY_SCOPE} from "@/constants/vndStatus.ts";
 
 import {VndPageHeader} from "@/components/componentsVND/componentsBaseVndPage/VndPageHeader.tsx";
 import {VndFilters} from "@/components/componentsVND/componentsBaseVndPage/VndFilters.tsx";
@@ -26,10 +26,6 @@ import {EmptyState} from "@/components/componentsGeneral/EmptyState.tsx";
 import {useAuth} from "@/context/AuthContext.ts";
 import {PermissionCode} from "@/constants/permissions/permissions.ts";
 import {FileEdit} from "lucide-react";
-
-const ALL_STATUS_OPTIONS: { key: VndStatusKey; label: string }[] = (
-    Object.keys(STATUS_META) as VndStatusKey[]
-).map((key) => ({key, label: STATUS_META[key].label}));
 
 type DraftOwnerScope = "mine" | "others" | "allDraft";
 
@@ -85,7 +81,13 @@ export function BaseVndPage() {
 
     const isArchScope = scope === "arch";
 
-    const selectAllStatuses = () => filters.setStatusFilters(ALL_STATUS_OPTIONS.map((o) => o.key));
+    // Набор значений фильтра "Статус последней редакции" — свой для каждой вкладки (см.
+    // STATUS_OPTIONS_BY_SCOPE): на "Действующих"/"Ещё не действующих" документ не может быть
+    // в архиве или черновиком, поэтому эти пункты там не показываем.
+    const statusOptionsForScope = (STATUS_OPTIONS_BY_SCOPE[scope] ?? (Object.keys(STATUS_META) as VndStatusKey[]))
+        .map((key) => ({key, label: STATUS_META[key].label}));
+
+    const selectAllStatuses = () => filters.setStatusFilters(statusOptionsForScope.map((o) => o.key));
     const deselectAllStatuses = () => filters.setStatusFilters([]);
 
     // Вкладка "Ещё не действующие" — "Статус ВНД" (документ-уровня) notYetActive, видна только
@@ -155,7 +157,7 @@ export function BaseVndPage() {
                 onDeselectAllLinkedToMeRelations={filters.deselectAllLinkedToMeRelations}
                 search={filters.search}
                 onSearchChange={filters.setSearch}
-                statusOptions={ALL_STATUS_OPTIONS}
+                statusOptions={statusOptionsForScope}
                 statusFilters={filters.statusFilters}
                 onToggleStatus={filters.toggleStatusFilter}
                 onSelectAllStatuses={selectAllStatuses}
@@ -177,7 +179,7 @@ export function BaseVndPage() {
                     <JournalViewPicker
                         views={views.views}
                         active={views.active}
-                        изменено={views.изменено}
+                        isDirty={views.isDirty}
                         canShare={hasPermission(PermissionCode.ManageSystemSettings)}
                         error={views.error}
                         onApply={views.apply}

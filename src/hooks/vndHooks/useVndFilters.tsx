@@ -1,6 +1,7 @@
 import {useMemo, useState} from "react";
 import type {DocumentStatusKey, VndSearchRequest} from "@/service/vndService/vndServiceType.ts";
 import type {VndScope, VndStatusKey} from "@/constants/vndTabs.ts";
+import {STATUS_OPTIONS_BY_SCOPE} from "@/constants/vndStatus.ts";
 import {type DateFilterValue, EMPTY_DATE_FILTER} from "@/components/componentsGeneral/datePickers/DateFilterGroup.tsx";
 import {toDateRangeFilter} from "@/utils/dateUtils.ts";
 import {ALL_LINKED_TO_ME_RELATION_KEYS, type LinkedToMeRelationKey} from "@/constants/linkedToMeRelations.ts";
@@ -57,12 +58,18 @@ export function useVndFilters(scope: VndScope, draftOwnerScope?: "mine" | "other
         );
 
     const searchRequest: VndSearchRequest = useMemo(() => {
-        // "Действующие" и "Ещё не действующие" — оба сужаются к одному и тому же набору
+        // "Действующие" и "Ещё не действующие" — оба сужаются к одному и тому же базовому набору
         // редакционных статусов (active/onact/review/consol, без draft/arch): различие между
         // ними не в Statuses, а в documentStatuses ниже (documentStatus === "active" против
-        // "notYetActive", см. VndResponse.documentStatus/ComputeDocumentStatus).
+        // "notYetActive", см. VndResponse.documentStatus/ComputeDocumentStatus). Фильтр "Статус
+        // последней редакции" на этих вкладках сужает этот базовый набор дальше (см.
+        // STATUS_OPTIONS_BY_SCOPE/VndFilters) — а не игнорируется, как было раньше.
         const statuses: VndStatusKey[] =
-            scope === "active" || scope === "notYetActive" ? ["active", "onact", "review", "consol"] :
+            scope === "active" || scope === "notYetActive" ? (() => {
+                const allowed = STATUS_OPTIONS_BY_SCOPE[scope]!;
+                const effective = statusFilters.filter((k) => (allowed as string[]).includes(k)) as VndStatusKey[];
+                return effective.length > 0 ? effective : allowed;
+            })() :
                 scope === "arch" ? ["arch"] :
                     scope === "draft" ? ["draft"] :
                         statusFilters.length > 0 ? (statusFilters as VndStatusKey[]) :

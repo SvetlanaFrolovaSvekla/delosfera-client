@@ -277,7 +277,26 @@ export function VndFilters(props: VndFiltersProps) {
                     )}
                 </button>
 
-                {scope === "all" && canViewExtended && (
+                <div className="relative">
+                    <MultiSelectDropdown
+                        icon={<Filter className="w-[15px] h-[15px]" strokeWidth={1.8}/>}
+                        triggerLabel="Колонки"
+                        label="Отображение колонок"
+                        options={toggleableColumns.map((c) => ({key: c.key, label: c.label}))}
+                        selectedKeys={selectedColumnKeys}
+                        onToggle={onToggleColumn}
+                        onSelectAll={onSelectAllColumns}
+                        onDeselectAll={onDeselectAllColumns}
+                        searchThreshold={8}
+                        searchPlaceholder="Поиск колонки…"
+                        plain
+                    />
+                    {selectedColumnKeys.length < toggleableColumns.length && (
+                        <span className="absolute -top-1 -right-1 w-2.5 h-2.5 rounded-full bg-[#3fb36c] ring-2 ring-white pointer-events-none" />
+                    )}
+                </div>
+
+                {(scope === "all" || scope === "active" || scope === "notYetActive") && canViewExtended && (
                     <div className="relative">
                         <MultiSelectDropdown
                             triggerLabel="Статус последней редакции"
@@ -289,31 +308,13 @@ export function VndFilters(props: VndFiltersProps) {
                             onDeselectAll={onDeselectAllStatuses}
                             searchable={false}
                             searchThreshold={Infinity}
+                            plain
                         />
                         {statusFilters.length > 0 && (
                             <span className="absolute -top-1 -right-1 w-2.5 h-2.5 rounded-full bg-[#3fb36c] ring-2 ring-white pointer-events-none" />
                         )}
                     </div>
                 )}
-
-                {/* "Статус ВНД" (документ-уровня) больше не отдельный фильтр-дропдаун — теперь это
-                    сама вкладка (scope): "Действующие" против "Ещё не действующие" (последняя
-                    видна только при ViewVndRegistryExtended, см. BaseVndPage/useVndFilters). */}
-
-                <MultiSelectDropdown
-                    icon={<Filter className="w-[15px] h-[15px]" strokeWidth={1.8}/>}
-                    triggerLabel="Колонки"
-                    label="Отображение колонок"
-                    options={toggleableColumns.map((c) => ({key: c.key, label: c.label}))}
-                    selectedKeys={selectedColumnKeys}
-                    onToggle={onToggleColumn}
-                    onSelectAll={onSelectAllColumns}
-                    onDeselectAll={onDeselectAllColumns}
-                    searchThreshold={8}
-                    searchPlaceholder="Поиск колонки…"
-                />
-
-                {viewPicker}
 
                 {scope !== "draft" && canFilterLinkedToMe && (
                     <>
@@ -354,6 +355,8 @@ export function VndFilters(props: VndFiltersProps) {
                         )}
                     </>
                 )}
+
+                {viewPicker}
 
                 <div className="flex-1"/>
 

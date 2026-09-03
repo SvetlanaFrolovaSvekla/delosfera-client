@@ -36,6 +36,14 @@ interface MultiSelectDropdownProps {
     searchThreshold?: number;               // авто-включение поиска, если пунктов больше этого числа
     searchPlaceholder?: string;
 
+    /** Кнопка-триггер как у "Тип связи" (LinkedToMeRelationDropdown) - всегда обычный текст
+     * triggerLabel чёрным, без "таблетки" с выбором и без замены на "Выбрать все". Индикатор
+     * наличия фильтра (зелёная точка) в этом варианте рисует сам вызывающий компонент рядом с
+     * кнопкой - см. VndFilters ("Колонки", "Статус последней редакции"), т.к. только ему известно,
+     * что в данном месте считается "фильтр активен" (не всегда просто "не все выбраны"). Список
+     * выбранного при наведении по-прежнему показывается тем же Tooltip, что и в обычном режиме. */
+    plain?: boolean;
+
     className?: string;
     menuWidth?: string;
 }
@@ -53,6 +61,7 @@ export function MultiSelectDropdown({
                                         searchable = false,
                                         searchThreshold = 8,
                                         searchPlaceholder,
+                                        plain = false,
                                         className = "",
                                         menuWidth = "260px",
                                     }: MultiSelectDropdownProps) {
@@ -89,7 +98,28 @@ export function MultiSelectDropdown({
     // уже показана отдельно над кнопкой - см. showFieldLabel); когда выбрано всё - "Все" (как в
     // MultiSelectField); иначе - чипс с выбором (первый + "+N" при нескольких), а полный список
     // выбранного - в тултипе при наведении.
-    const triggerButton = (
+    //
+    // В варианте plain (см. проп) кнопка выглядит как "Тип связи" - всегда обычный чёрный текст
+    // triggerLabel, без чипса и без подмены на "Выбрать все"/"Открыть список…": состав выбранного
+    // видно из зелёной точки рядом (её рисует вызывающий компонент) и из того же тултипа ниже.
+    const triggerButton = plain ? (
+        <button
+            type="button"
+            onClick={() => setOpen((v) => !v)}
+            className={`inline-flex items-center gap-2 h-9 px-3 rounded-[9px] border text-[#3a4560] font-semibold text-[12.5px] cursor-pointer hover:bg-[#f6f8fb] ${
+                open
+                    ? "border-[#4e57d6] ring-[3px] ring-[#ececfc] bg-[#f6f8fb]"
+                    : "border-[#e5e9f0] bg-white"
+            }`}
+        >
+            {icon}
+            {triggerLabel}
+            <ChevronDown
+                className={`w-[15px] h-[15px] flex-none text-[#a3adbd] transition-transform ${open ? "rotate-180" : ""}`}
+                strokeWidth={2}
+            />
+        </button>
+    ) : (
         <button
             type="button"
             onClick={() => setOpen((v) => !v)}

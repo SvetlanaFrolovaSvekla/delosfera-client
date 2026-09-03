@@ -47,6 +47,7 @@ export function useJournalViews(
     useEffect(() => {
         let cancelled = false;
 
+        // eslint-disable-next-line react-hooks/set-state-in-effect
         load()
             .then((list) => {
                 if (cancelled) return;

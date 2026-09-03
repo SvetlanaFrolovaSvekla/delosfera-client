@@ -1,6 +1,5 @@
 // Карточка этапа при согласовании
-import {ApprovalStageKind} from "@/service/coordinationService/coordinationServiceTypes.ts";
-import {STAGE_ICONS, STAGE_LABELS} from "@/constants/coordinationParams.ts";
+import {CUSTOM_STAGE_ICON, FIXED_STAGE_ICON} from "@/constants/coordinationParams.ts";
 import {ChevronDown, X} from "lucide-react";
 import type {StageDraft} from "@/hooks/coordinationHooks/useStageDrafts.ts";
 
@@ -22,8 +21,8 @@ function getInitials(fullName: string): string {
 }
 
 export function StageCard({stage, onOpenPicker, onRemove, cardRef}: StageCardProps) {
-    const Icon = STAGE_ICONS[stage.kind];
-    const isCustom = stage.kind === ApprovalStageKind.Custom;
+    const isCustom = stage.coordinationStageId === null;
+    const Icon = isCustom ? CUSTOM_STAGE_ICON : FIXED_STAGE_ICON;
 
     return (
         <div
@@ -53,7 +52,7 @@ export function StageCard({stage, onOpenPicker, onRemove, cardRef}: StageCardPro
                     <Icon size={16}/>
                 </div>
                 <span className="text-[12.5px] font-semibold leading-tight text-[#26324a]">
-                    {STAGE_LABELS[stage.kind]}
+                    {stage.title}
                 </span>
             </div>
 

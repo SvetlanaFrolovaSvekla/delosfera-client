@@ -9,9 +9,9 @@ import type {
 } from "@/service/coordinationService/coordinationServiceTypes.ts";
 import {
     STAGE_DECISION_META,
-    STAGE_ICONS,
-    STAGE_KIND_RESPONSE_TO_REQUEST,
-    STAGE_LABELS,
+    CUSTOM_STAGE_ICON,
+    FIXED_STAGE_ICON,
+    isCustomStageKind,
 } from "@/constants/coordinationParams.ts";
 import {formatDateTime} from "@/utils/dateUtils.ts";
 import {Tooltip} from "@/components/componentsGeneral/Tooltip.tsx";
@@ -96,9 +96,8 @@ interface StageCardViewProps {
 export function StageCardView({stage, cardRef, isCurrentUserStage, isProcessEnded}: StageCardViewProps) {
     const {user} = useAuth();
 
-    const kind = STAGE_KIND_RESPONSE_TO_REQUEST[stage.kind];
-    const Icon = STAGE_ICONS[kind];
-    const isCustom = kind === "Custom";
+    const isCustom = isCustomStageKind(stage.kind);
+    const Icon = isCustom ? CUSTOM_STAGE_ICON : FIXED_STAGE_ICON;
 
     const isMeApprover = stage.approverUserId === user?.id;
     const profileUrl = isMeApprover ? "/profile" : `/profile/${stage.approverUserId}`;
@@ -175,7 +174,7 @@ export function StageCardView({stage, cardRef, isCurrentUserStage, isProcessEnde
                     <Icon size={16}/>
                 </div>
                 <span className="text-[12.5px] font-semibold leading-tight text-[#26324a]">
-                    {STAGE_LABELS[kind]}
+                    {stage.title}
                 </span>
             </div>
 

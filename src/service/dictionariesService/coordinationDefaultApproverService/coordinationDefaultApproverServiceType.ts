@@ -1,13 +1,7 @@
-export type CoordinationStageKind =
-    | "legal"
-    | "risk_management"
-    | "compliance"
-    | "methodology";
-
 export interface CoordinationDefaultApproverResponse {
     id: number;
-    kind: CoordinationStageKind;
-    kindTitle: string;
+    title: string;
+    order: number;
     orgUnitId: number;
     orgUnitName: string;
     approverUserId: number | null;
@@ -16,6 +10,18 @@ export interface CoordinationDefaultApproverResponse {
     updatedAt: string;
 }
 
-export interface UpdateCoordinationDefaultApproverRequest {
+export interface CreateCoordinationDefaultApproverRequest {
+    title: string;
+    orgUnitId: number;
     approverUserId?: number | null;
+}
+
+export interface UpdateCoordinationDefaultApproverRequest {
+    title: string;
+    orgUnitId: number;
+    approverUserId?: number | null;
+}
+
+export interface ReorderCoordinationDefaultApproverRequest {
+    orderedIds: number[];
 }

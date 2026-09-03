@@ -8,11 +8,12 @@ export type ApprovalProcessStatus =
     | "rejected"; // Отклонен
 
 export type ApprovalStageKindResponse =
-    | "legal" // Юристы
-    | "risk_management" // Риск-менеджеры
-    | "compliance" // Комплаенс
-    | "custom" // Доп. участник
-    | "methodology"; // Методология
+    | "legal" // Юристы (только в маршрутах, построенных до перехода на динамический справочник)
+    | "risk_management" // Риск-менеджеры (legacy)
+    | "compliance" // Комплаенс (legacy)
+    | "custom" // Доп. этап, добавленный инициатором вручную
+    | "methodology" // Методология (legacy)
+    | "fixed"; // Обязательный этап, построенный из справочника coordination-users (см. title)
 
 export type ApprovalStageDecisionResponse =
     | "pending"  // в ожидании
@@ -20,17 +21,6 @@ export type ApprovalStageDecisionResponse =
     | "approved_with_comment" // отправлено на устранение замечаний
     | "rejected" // отклонено
     | "auto_approved_timeout"; // просрочка - засчитано как согласование
-
-// ===== Request enums (то, что реально можно ОТПРАВИТЬ на бэк - уже, чем response-типы) =====
-export const ApprovalStageKind = {
-    Legal: "Legal",
-    RiskManagement: "RiskManagement",
-    Compliance: "Compliance",
-    Custom: "Custom",
-    Methodology: "Methodology",
-} as const;
-
-export type ApprovalStageKind = (typeof ApprovalStageKind)[keyof typeof ApprovalStageKind];
 
 export const ApprovalDecisionType = {
     Approve: "Approve",
@@ -53,7 +43,10 @@ export const RemarksAgreement = {
 export type RemarksAgreement = (typeof RemarksAgreement)[keyof typeof RemarksAgreement];
 
 export interface ApprovalStageRequest {
-    kind: ApprovalStageKind; // Тип участника согласования
+    /** Id записи справочника обязательных этапов (dictionaries/coordination-users), если этот
+     * этап - один из обязательных. undefined/null - произвольный (Custom) этап, добавленный
+     * инициатором вручную. */
+    coordinationStageId?: number | null;
     approverUserId: number; // id согласующего пользователя
 }
 
@@ -163,6 +156,8 @@ export interface ApprovalStageResponse {
     id: number;
     order: number;
     kind: ApprovalStageKindResponse;
+    /** Название этапа - "Юридическое управление", "Доп. этап" и т.п. Всегда заполнено. */
+    title: string;
     orgUnitId: number;
     orgUnitName: string;
     approverUserId: number;

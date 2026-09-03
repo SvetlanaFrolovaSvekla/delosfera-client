@@ -1,6 +1,5 @@
 import {getDeadlineUrgency, getRemainingLabel} from "@/utils/dateUtils.ts";
 import {DEADLINE_URGENCY_META} from "@/constants/vndStatus.ts";
-import {STAGE_KIND_RESPONSE_TO_REQUEST, STAGE_LABELS} from "@/constants/coordinationParams.ts";
 import type {VndTaskResponse} from "@/service/tasksVndService/tasksServiceTypes.ts";
 
 export function getDeadlineTone(deadlineAt: string | null, totalHours: number | null): { label: string; color: string } {
@@ -12,12 +11,11 @@ export function getDeadlineTone(deadlineAt: string | null, totalHours: number | 
     return { label, color: DEADLINE_URGENCY_META[urgency].color };
 }
 
-// Лейбл этапа согласования ("Юридическое управление" и т.п.) по строковому
-// kind, который отдаёт бэкенд (VndTaskResponse.stageKind)
-export function getStageKindLabel(stageKind: VndTaskResponse["stageKind"]): string | null {
-    if (!stageKind) return null;
-    const requestKind = STAGE_KIND_RESPONSE_TO_REQUEST[stageKind];
-    return requestKind ? STAGE_LABELS[requestKind] : null;
+// Лейбл этапа согласования ("Юридическое управление" и т.п.) — бэкенд отдаёт готовое
+// название (VndTaskResponse.stageTitle), т.к. с динамическим справочником обязательных
+// этапов набор возможных названий не ограничен фиксированным списком.
+export function getStageKindLabel(stageTitle: VndTaskResponse["stageTitle"]): string | null {
+    return stageTitle ?? null;
 }
 
 // Название/суть задачи — само название ВНД показывается на карточке отдельной строкой
@@ -54,7 +52,7 @@ export function getMetaText(task: VndTaskResponse): string {
         const parts: string[] = [];
 
         if (task.redactionCode) parts.push(`Редакция ${task.redactionCode}`);
-        const stageLabel = getStageKindLabel(task.stageKind);
+        const stageLabel = getStageKindLabel(task.stageTitle);
         if (stageLabel) parts.push(stageLabel);
         if (task.initiatorName) parts.push(`Инициатор: ${task.initiatorName}`);
         if (task.deadlineMinutes) parts.push(`Норматив: ${task.deadlineMinutes} ч`);

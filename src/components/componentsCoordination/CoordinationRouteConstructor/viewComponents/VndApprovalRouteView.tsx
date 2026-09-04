@@ -1,11 +1,17 @@
 // Read-only маршрут уже запущенного/завершённого согласования
-import {useMemo} from "react";
+import {useMemo, useState} from "react";
 import type {ApprovalProcessResponse} from "@/service/coordinationService/coordinationServiceTypes.ts";
 import {useApprovalRouteLines} from "@/hooks/coordinationHooks/useApprovalRouteLines.ts";
 import {StageCardView} from "./StageCardView";
 import {NormBlockView, type NormPhaseStatus} from "./NormBlockView";
-import {ArrowDown, ArrowLeft} from "lucide-react";
+import {ArrowDown, ArrowLeft, MessageSquareText} from "lucide-react";
 import {getElapsedLabel} from "@/utils/dateUtils.ts";
+import {getInitials} from "@/utils/getInitials.ts";
+import {COMMENT_TRUNCATE_LENGTH} from "@/constants/coordinationParams.ts";
+import {
+    AttachmentRow
+} from "@/components/componentsCoordination/CoordinationRouteConstructor/functionalComponents/AttachmentRow.tsx";
+import {CommentViewModal} from "./CommentViewModal.tsx";
 
 interface VndApprovalRouteViewProps {
     process: ApprovalProcessResponse;
@@ -75,6 +81,8 @@ function CurrentPhaseHint({startedAt, deadlineAt}: CurrentPhaseHintProps) {
 }
 
 export function VndApprovalRouteView({process, highlightStageId, frameless}: VndApprovalRouteViewProps) {
+    const [initiatorCommentOpen, setInitiatorCommentOpen] = useState(false);
+
     const stagesWithLocalId = useMemo(
         () => process.stages.map((s) => ({...s, localId: String(s.id)})),
         [process.stages],
@@ -100,6 +108,63 @@ export function VndApprovalRouteView({process, highlightStageId, frameless}: Vnd
                     : "relative rounded-[16px] border border-[#e5e9f0] bg-[#fbfcfe] bg-[radial-gradient(#e4e9f1_1px,transparent_1px)] bg-[length:18px_18px] p-6"
             }
         >
+            {/* Комментарий инициатора о внесённых исправлениях (см. "Комментарий о внесённых
+                исправлениях" в VndRevisionNeededPanel - отправляется вместе с повторной подачей
+                редакции после устранения замечаний). Раньше приходил с бэка, но нигде не
+                отображался - согласующие не видели, что именно исправил инициатор. Показываем
+                один раз для всего маршрута (не привязан к конкретному этапу), если он есть. */}
+            {process.repeatInitiatorComment && (
+                <div className="mx-auto mb-5 flex w-fit max-w-[640px] flex-col gap-1.5 rounded-[12px] border border-[#d4d6f8] bg-[#f5f6fd] px-4 py-3">
+                    <div className="flex items-center gap-2">
+                        <span className="flex h-6 w-6 flex-none items-center justify-center rounded-md bg-[#ececfc] text-[9px] font-bold text-[#4e57d6]">
+                            {getInitials(process.initiatorName)}
+                        </span>
+                        <span className="text-[11.5px] font-semibold text-[#26324a]">
+                            {process.initiatorName}
+                        </span>
+                        <span className="inline-flex items-center gap-1 text-[11px] font-medium text-[#4e57d6]">
+                            <MessageSquareText size={12} className="flex-none"/>
+                            комментарий к исправлениям
+                        </span>
+                    </div>
+                    <div className="whitespace-pre-wrap text-[12px] leading-snug text-[#3c424a]">
+                        {process.repeatInitiatorComment.length > COMMENT_TRUNCATE_LENGTH
+                            ? process.repeatInitiatorComment.slice(0, COMMENT_TRUNCATE_LENGTH).trimEnd() + "…"
+                            : process.repeatInitiatorComment}
+                    </div>
+
+                    {process.repeatInitiatorCommentAttachments.length > 0 && (
+                        <div className="flex flex-col gap-1">
+                            {process.repeatInitiatorCommentAttachments.map((a) => (
+                                <AttachmentRow key={a.id} fileId={a.fileId} fileName={a.fileName}/>
+                            ))}
+                        </div>
+                    )}
+
+                    {(process.repeatInitiatorComment.length > COMMENT_TRUNCATE_LENGTH ||
+                        process.repeatInitiatorCommentAttachments.length > 0) && (
+                        <button
+                            type="button"
+                            onClick={() => setInitiatorCommentOpen(true)}
+                            className="cursor-pointer self-start rounded-[7px] border border-[#d7dee8] bg-white px-2.5 py-[6px] text-[11px] font-semibold text-[#4e57d6] hover:bg-[#ececfc]"
+                        >
+                            См. комментарий полностью
+                        </button>
+                    )}
+                </div>
+            )}
+
+            {initiatorCommentOpen && (
+                <CommentViewModal
+                    title="См. комментарий полностью"
+                    approverName={process.initiatorName}
+                    approverUserId={process.initiatorUserId}
+                    comment={process.repeatInitiatorComment ?? ""}
+                    attachments={process.repeatInitiatorCommentAttachments}
+                    onClose={() => setInitiatorCommentOpen(false)}
+                />
+            )}
+
             <div
                 ref={cardsScrollRef}
                 onScroll={recomputePaths}
@@ -129,6 +194,7 @@ export function VndApprovalRouteView({process, highlightStageId, frameless}: Vnd
                         value={process.primaryDeadlineMinutes}
                         phaseStatus={primaryPhaseStatus}
                         blockRef={targetRef}
+                        startedAt={process.primaryStartedAt}
                     />
                     {primaryPhaseStatus === "current" && (
                         <CurrentPhaseHint
@@ -145,6 +211,7 @@ export function VndApprovalRouteView({process, highlightStageId, frameless}: Vnd
                         label="Согласование после внесённых изменений"
                         value={process.repeatDeadlineMinutes}
                         phaseStatus={repeatPhaseStatus}
+                        startedAt={process.repeatStartedAt}
                     />
                     {repeatPhaseStatus === "current" && (
                         <CurrentPhaseHint
@@ -161,6 +228,7 @@ export function VndApprovalRouteView({process, highlightStageId, frameless}: Vnd
                         label="Финальная выдержка"
                         value={process.finalHoldDeadlineMinutes}
                         phaseStatus={finalHoldPhaseStatus}
+                        startedAt={process.finalHoldStartedAt}
                     />
                     {finalHoldPhaseStatus === "current" && (
                         <CurrentPhaseHint

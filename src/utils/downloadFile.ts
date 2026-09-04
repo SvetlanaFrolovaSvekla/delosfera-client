@@ -21,9 +21,17 @@ export async function fetchFileBlob(fileId: number, fallbackName = "файл"): 
         throw new Error(`Не удалось загрузить файл: ${response.status}`);
     }
 
+    // ASP.NET Core отдаёт оба варианта в заголовке: "filename=..." (ASCII-фолбэк, кириллица
+    // в нём заменяется на "_" или проценты) и "filename*=UTF-8''..." (корректное percent-encoded
+    // имя, RFC 5987). Раньше регэксп с необязательной "*" матчил первое попавшееся вхождение —
+    // то есть чаще всего именно испорченный ASCII-вариант, а не настоящее имя файла. Теперь явно
+    // предпочитаем filename*, а на обычный filename= падаем только если filename* нет вовсе.
     const disposition = response.headers.get("Content-Disposition");
-    const match = disposition?.match(/filename\*?=(?:UTF-8'')?"?([^";]+)"?/i);
-    const fileName = match ? decodeURIComponent(match[1]) : fallbackName;
+    const starMatch = disposition?.match(/filename\*=UTF-8''([^;]+)/i);
+    const plainMatch = disposition?.match(/filename="?([^";]+)"?/i);
+    const fileName = starMatch
+        ? decodeURIComponent(starMatch[1])
+        : (plainMatch ? plainMatch[1] : fallbackName);
 
     const blob = await response.blob();
     return {blob, fileName};

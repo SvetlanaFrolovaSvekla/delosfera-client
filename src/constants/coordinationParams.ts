@@ -1,15 +1,15 @@
 import {
-    ApprovalStageKind, type ApprovalStageDecisionResponse, type ApprovalStageKindResponse,
+    type ApprovalStageDecisionResponse, type ApprovalStageKindResponse,
     type ApprovalProcessStatus
 } from "@/service/coordinationService/coordinationServiceTypes.ts";
-import {BookOpen, type LucideIcon, Scale, ShieldAlert, ShieldCheck, User} from "lucide-react";
+import {ShieldCheck, User} from "lucide-react";
 
 // Максимальное число согласующих
 export const MAX_STAGES = 10;
 
 // Максимальное число файлов, которые согласующий может приложить к своей резолюции
-// (см. VndApproverResolutionPanel) — ограничивает нагрузку на хранилище документа,
-// вложения к резолюциям хранятся, только пока идёт согласование.
+// (см. VndApproverResolutionPanel) — ограничивает нагрузку на хранилище документа;
+// вложения хранятся бессрочно как часть истории согласования.
 export const MAX_RESOLUTION_ATTACHMENTS = 5;
 
 // Максимальный размер ОДНОГО файла, приложенного согласующим к резолюции
@@ -23,6 +23,11 @@ export const MAX_RESOLUTION_ATTACHMENT_SIZE_BYTES = 50 * 1024 * 1024;
 // (см. VndApproverResolutionPanel).
 export const MAX_RESOLUTION_COMMENT_LENGTH = 35000;
 
+// Длина, после которой комментарий/замечание обрезается в списках с кнопкой "См. полностью"
+// (см. RemarkCard в VndRevisionNeededPanel, VndApprovalSummary, VndApprovalRouteView) —
+// полный текст открывается в CommentViewModal.
+export const COMMENT_TRUNCATE_LENGTH = 260;
+
 // Верхняя граница норматива срока согласования (в минутах) — 90 дней.
 // Ограничивает поля "ч." / "м." в NormBlock и должна совпадать с MaxDeadlineMinutes
 // на бэкенде (VndApprovalService.StartAsync), где является финальной защитой:
@@ -30,48 +35,20 @@ export const MAX_RESOLUTION_COMMENT_LENGTH = 35000;
 export const MAX_DEADLINE_MINUTES = 90 * 24 * 60;
 export const MAX_DEADLINE_HOURS = Math.floor(MAX_DEADLINE_MINUTES / 60);
 
-// TODO: сделать настройку в приложении для администратора/главного редактора, чтоб был выбор фиксированных согласующих
-export const FIXED_STAGE_ORG_UNITS: Partial<Record<ApprovalStageKind, number>> = {
-    [ApprovalStageKind.Legal]: 34,
-    [ApprovalStageKind.RiskManagement]: 28,
-    [ApprovalStageKind.Compliance]: 5,
-    [ApprovalStageKind.Methodology]: 33,
-};
+// Обязательные (фиксированные) этапы теперь ведутся динамическим справочником
+// (dictionaries/coordination-users, см. useCoordinationApprovers) - их название, СП и
+// согласующий по умолчанию больше не хардкодятся на фронте. Иконка у всех обязательных
+// этапов одна общая (в отличие от произвольных Custom-этапов, добавляемых инициатором).
+export const FIXED_STAGE_ICON = ShieldCheck;
+export const CUSTOM_STAGE_ICON = User;
 
-// Заголовки фиксированных этапов
-export const STAGE_LABELS: Record<ApprovalStageKind, string> = {
-    [ApprovalStageKind.Legal]: "Юридическое управление",
-    [ApprovalStageKind.RiskManagement]: "Риск-менеджмент",
-    [ApprovalStageKind.Compliance]: "Комплаенс-контроль",
-    [ApprovalStageKind.Custom]: "Доп. этап",
-    [ApprovalStageKind.Methodology]: "Методология",
-};
+// Название для произвольного (не из справочника) этапа, добавленного инициатором вручную
+export const CUSTOM_STAGE_LABEL = "Доп. этап";
 
-// Иконки для фиксированных этапов
-export const STAGE_ICONS: Record<ApprovalStageKind, LucideIcon> = {
-    [ApprovalStageKind.Legal]: Scale,
-    [ApprovalStageKind.RiskManagement]: ShieldAlert,
-    [ApprovalStageKind.Compliance]: ShieldCheck,
-    [ApprovalStageKind.Custom]: User,
-    [ApprovalStageKind.Methodology]: BookOpen,
-};
-
-// Виды этапов для согласования
-export const FIXED_KIND_ORDER: ApprovalStageKind[] = [
-    ApprovalStageKind.Legal,
-    ApprovalStageKind.RiskManagement,
-    ApprovalStageKind.Compliance,
-    ApprovalStageKind.Methodology,
-];
-
-// ===== Маппинг response-кайнда (уже построенный этап с бэка) на request-кайнд (для лейблов/иконок) =====
-export const STAGE_KIND_RESPONSE_TO_REQUEST: Record<ApprovalStageKindResponse, ApprovalStageKind> = {
-    legal: ApprovalStageKind.Legal,
-    risk_management: ApprovalStageKind.RiskManagement,
-    compliance: ApprovalStageKind.Compliance,
-    custom: ApprovalStageKind.Custom,
-    methodology: ApprovalStageKind.Methodology,
-};
+/** true, если ответ бэка описывает произвольный (не обязательный) этап маршрута */
+export function isCustomStageKind(kind: ApprovalStageKindResponse): boolean {
+    return kind === "custom";
+}
 
 // ===== Оформление решения по этапу (для read-only карточек уже построенного маршрута) =====
 interface DecisionMeta {

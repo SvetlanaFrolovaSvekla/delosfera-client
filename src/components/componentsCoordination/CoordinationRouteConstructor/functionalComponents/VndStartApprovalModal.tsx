@@ -1,15 +1,13 @@
 // Модалка запуска согласования: конструктор маршрута + нормативы сроков
 import {createPortal} from "react-dom";
-import {
-    ApprovalStageKind,
-    type ApprovalProcessResponse,
-} from "@/service/coordinationService/coordinationServiceTypes.ts";
-import {MAX_STAGES, STAGE_LABELS} from "@/constants/coordinationParams.ts";
+import type {ApprovalProcessResponse} from "@/service/coordinationService/coordinationServiceTypes.ts";
+import {MAX_STAGES} from "@/constants/coordinationParams.ts";
 import {
     StageCard
 } from "@/components/componentsCoordination/CoordinationRouteConstructor/functionalComponents/StageCard.tsx";
 import {VndSelectApproverModal} from "./VndSelectApproverModal.tsx";
 import {ArrowDown, Clock, Loader2, Route, Lock, Plus, X, BadgeCheck} from "lucide-react";
+import {Loader} from "@/components/componentsGeneral/Loader.tsx";
 import {
     NormBlock
 } from "@/components/componentsCoordination/CoordinationRouteConstructor/functionalComponents/NormBlock.tsx";
@@ -55,6 +53,7 @@ const ROUTE_HINTS: RouteHint[] = [
 export function VndStartApprovalModal({vndId, onClose, onStarted}: VndStartApprovalModalProps) {
     const {
         stages,
+        catalogLoading,
         addCustomStage,
         removeCustomStage,
         setStageApprover,
@@ -142,32 +141,38 @@ export function VndStartApprovalModal({vndId, onClose, onStarted}: VndStartAppro
                         className="relative rounded-[16px] border border-[#e5e9f0] bg-[#fbfcfe] bg-[radial-gradient(#e4e9f1_1px,transparent_1px)] bg-[length:18px_18px] p-6"
                     >
                         {/* Ряд карточек этапов - всегда в одну строку (скролл по горизонтали при 5+ этапах) */}
-                        <div ref={cardsScrollRef} onScroll={recomputePaths} className="py-5 flex gap-6 overflow-x-auto">
-                            {stages.map((stage) => (
-                                <StageCard
-                                    key={stage.localId}
-                                    stage={stage}
-                                    onOpenPicker={() => setPickerStageId(stage.localId)}
-                                    onRemove={
-                                        stage.kind === ApprovalStageKind.Custom
-                                            ? () => removeCustomStage(stage.localId)
-                                            : undefined
-                                    }
-                                    cardRef={registerStageRef(stage.localId)}
-                                />
-                            ))}
+                        {catalogLoading ? (
+                            <div className="flex h-[140px] items-center justify-center">
+                                <Loader label="Загрузка обязательных этапов…"/>
+                            </div>
+                        ) : (
+                            <div ref={cardsScrollRef} onScroll={recomputePaths} className="py-5 flex gap-6 overflow-x-auto">
+                                {stages.map((stage) => (
+                                    <StageCard
+                                        key={stage.localId}
+                                        stage={stage}
+                                        onOpenPicker={() => setPickerStageId(stage.localId)}
+                                        onRemove={
+                                            stage.coordinationStageId === null
+                                                ? () => removeCustomStage(stage.localId)
+                                                : undefined
+                                        }
+                                        cardRef={registerStageRef(stage.localId)}
+                                    />
+                                ))}
 
-                            {stages.length < MAX_STAGES && (
-                                <button
-                                    type="button"
-                                    onClick={addCustomStage}
-                                    className="flex h-[110px] w-[210px] flex-none cursor-pointer flex-col items-center justify-center gap-2 rounded-[14px] border border-dashed border-[#d5dae3] bg-white text-[#8b97ab] transition-colors hover:border-[#4e57d6]/50 hover:bg-[#f6f8fb]"
-                                >
-                                    <Plus size={18}/>
-                                    <span className="text-[12px] font-medium">Добавить этап</span>
-                                </button>
-                            )}
-                        </div>
+                                {stages.length < MAX_STAGES && (
+                                    <button
+                                        type="button"
+                                        onClick={addCustomStage}
+                                        className="flex h-[110px] w-[210px] flex-none cursor-pointer flex-col items-center justify-center gap-2 rounded-[14px] border border-dashed border-[#d5dae3] bg-white text-[#8b97ab] transition-colors hover:border-[#4e57d6]/50 hover:bg-[#f6f8fb]"
+                                    >
+                                        <Plus size={18}/>
+                                        <span className="text-[12px] font-medium">Добавить этап</span>
+                                    </button>
+                                )}
+                            </div>
+                        )}
 
                         {/* SVG с прямоугольной разводкой линий */}
                         <svg className="pointer-events-none absolute inset-0 h-full w-full overflow-visible">
@@ -236,7 +241,7 @@ export function VndStartApprovalModal({vndId, onClose, onStarted}: VndStartAppro
                 <VndSelectApproverModal
                     lockedOrgUnitId={activePickerStage.orgUnitId}
                     lockedOrgUnitLabel={
-                        activePickerStage.orgUnitId ? STAGE_LABELS[activePickerStage.kind] : undefined
+                        activePickerStage.orgUnitId ? activePickerStage.title : undefined
                     }
                     excludedUserIds={selectedUserIds}
                     onClose={() => setPickerStageId(null)}

@@ -181,7 +181,7 @@ export function UsersPage() {
                     <JournalViewPicker
                         views={views.views}
                         active={views.active}
-                        изменено={views.изменено}
+                        isDirty={views.isDirty}
                         canShare={hasPermission(PermissionCode.ManageSystemSettings)}
                         error={views.error}
                         onApply={views.apply}

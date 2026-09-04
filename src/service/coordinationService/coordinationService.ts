@@ -3,6 +3,7 @@ import type {
     ApprovalDecisionRequest,
     ResubmitAfterRevisionRequest,
     AddDisagreementMatrixRowRequest,
+    UpdateDisagreementMatrixRowRequest,
     ApprovalProcessResponse,
     DisagreementMatrixRowResponse,
 } from "./coordinationServiceTypes";
@@ -29,8 +30,8 @@ class CoordinationService {
     }
 
     /** Решение согласующего по своему этапу. Можно приложить файлы к резолюции —
-     * они хранятся, пока идёт согласование, и удаляются, как только редакция
-     * становится согласованной (текст комментария остаётся). */
+     * они хранятся бессрочно, наравне с текстом комментария, и остаются частью истории
+     * согласования и после того, как редакция станет согласованной. */
     async decide(
         vndId: number,
         stageId: number,
@@ -41,6 +42,12 @@ class CoordinationService {
         if (request.comment) formData.append("Comment", request.comment);
         for (const file of request.files ?? []) {
             formData.append("Files", file);
+        }
+        // Цитаты передаются одним JSON-полем, а не как список сложных объектов через
+        // FormData (см. комментарий у QuotesJson в ApprovalDecisionRequest на бэке) —
+        // комплексный биндинг списков через [FromForm] в ASP.NET Core ненадёжен.
+        if (request.quotes && request.quotes.length > 0) {
+            formData.append("QuotesJson", JSON.stringify(request.quotes));
         }
 
         // Content-Type НЕ задаём вручную: axios/браузер сам подставит
@@ -68,9 +75,21 @@ class CoordinationService {
         if (request.docRu) formData.append("DocRu", request.docRu);
         if (request.docKg) formData.append("DocKg", request.docKg);
         if (request.docEn) formData.append("DocEn", request.docEn);
+        if (request.removeDocKg) formData.append("RemoveDocKg", "true");
+        if (request.removeDocEn) formData.append("RemoveDocEn", "true");
         if (request.tid) formData.append("Tid", request.tid);
+        for (const file of request.newAttachments ?? []) {
+            formData.append("NewAttachments", file);
+        }
+        for (const fileId of request.removedAttachmentFileIds ?? []) {
+            formData.append("RemovedAttachmentFileIds", String(fileId));
+        }
         if (request.comment) formData.append("Comment", request.comment);
-        formData.append("AgreesWithAllRemarks", String(request.agreesWithAllRemarks));
+        for (const file of request.commentAttachments ?? []) {
+            formData.append("CommentAttachments", file);
+        }
+        formData.append("RemarksAgreement", request.remarksAgreement);
+        if (request.disagreementMatrix) formData.append("DisagreementMatrix", request.disagreementMatrix);
 
         // См. комментарий в decide() выше — Content-Type не задаём вручную.
         const { data } = await axiosInstance.post<ApprovalProcessResponse>(
@@ -87,6 +106,19 @@ class CoordinationService {
     ): Promise<DisagreementMatrixRowResponse> {
         const { data } = await axiosInstance.post<DisagreementMatrixRowResponse>(
             `${this.basePath(vndId)}/disagreement-matrix/rows`,
+            request,
+        );
+        return data;
+    }
+
+    /** Изменить строку матрицы разногласий */
+    async updateDisagreementRow(
+        vndId: number,
+        rowId: number,
+        request: UpdateDisagreementMatrixRowRequest,
+    ): Promise<DisagreementMatrixRowResponse> {
+        const { data } = await axiosInstance.put<DisagreementMatrixRowResponse>(
+            `${this.basePath(vndId)}/disagreement-matrix/rows/${rowId}`,
             request,
         );
         return data;

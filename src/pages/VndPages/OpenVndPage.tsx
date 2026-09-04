@@ -13,7 +13,7 @@ import {useVndById} from "@/hooks/vndHooks/useVndById.ts";
 import {useVndDictionaries} from "@/hooks/vndHooks/useVndDictionaries.ts";
 import {useVndRedactions} from "@/hooks/vndHooks/useVndRedactions.ts";
 import {formatDate} from "@/utils/dateUtils.ts";
-import {STATUS_META} from "@/constants/vndStatus.ts";
+import {collapseDocumentStatus, DOCUMENT_STATUS_META, getVndDisplayMeta} from "@/constants/vndStatus.ts";
 import {getVndTabs, type VndTabId} from "@/constants/vndTabs.ts";
 import {PermissionCode} from "@/constants/permissions/permissions.ts";
 
@@ -23,13 +23,18 @@ import {VndLinksTab} from "@/components/componentsVND/componentsOpenVndPage/VndL
 import {VndHistoryTab} from "@/components/componentsVND/componentsOpenVndPage/VndHistoryTab.tsx";
 import {VndActualizationTab} from "@/components/componentsVND/componentsOpenVndPage/VndActualizationTab.tsx";
 import {VndCoordinationTab} from "@/components/componentsVND/componentsOpenVndPage/VndCoordinationTab.tsx";
-import {ConsolidateVndModal} from "@/components/componentsVND/componentsOpenVndPage/ConsolidateVndModal.tsx";
+import {
+    ConsolidateVndModal, type ConsolidateRequisites
+} from "@/components/componentsVND/componentsOpenVndPage/ConsolidateVndModal.tsx";
+import {
+    CancelVndModal, type CancelVndFields
+} from "@/components/componentsVND/componentsOpenVndPage/CancelVndModal.tsx";
 
 import {Loader} from "@/components/componentsGeneral/Loader.tsx";
 import {EmptyState} from "@/components/componentsGeneral/EmptyState.tsx";
 import {VndStatusBanner} from "@/components/componentsGeneral/knowledgeBaseComponents/VndStatusBanner.tsx";
 import {ConfirmActionModal} from "@/components/componentsGeneral/modal/ConfirmActionModal.tsx";
-import {Trash2} from "lucide-react";
+import {Archive, Trash2} from "lucide-react";
 
 export function OpenVndPage() {
     const {t} = useTranslation();
@@ -72,6 +77,33 @@ export function OpenVndPage() {
         }
     };
 
+    // Кнопка "Архивировать" — на любом статусе, кроме черновика (тот только удаляется выше) и
+    // уже архивированного. Если ВНД сейчас "На согласовании" — согласование отзывается
+    // автоматически на бэке в рамках той же операции (см. VndService.CancelAsync).
+    const [cancelOpen, setCancelOpen] = useState(false);
+    const [canceling, setCanceling] = useState(false);
+    const [cancelError, setCancelError] = useState<string | null>(null);
+
+    const handleCancel = async (fields: CancelVndFields) => {
+        if (!vnd) return;
+        setCanceling(true);
+        setCancelError(null);
+        try {
+            await vndService.cancel(vnd.id, {
+                cancelCode: fields.cancelCode,
+                cancelDate: fields.cancelDate,
+                cancelReason: fields.cancelReason || null,
+            });
+            setCancelOpen(false);
+            toast.success(t("openVndPage.archivedToastTitle"), t("openVndPage.archivedToastDescription", {name: vnd.name}));
+            refetch();
+        } catch (err) {
+            setCancelError(err instanceof Error ? err.message : t("openVndPage.archiveError"));
+        } finally {
+            setCanceling(false);
+        }
+    };
+
     // Инициатор согласования нужен только как fallback права на консолидацию - когда у ВНД
     // нет открытого цикла актуализации (ActualizationResponsibleUserId пуст). Подгружаем только
     // для статуса "Консолидация", чтобы не дёргать эндпоинт согласования лишний раз.
@@ -104,31 +136,33 @@ export function OpenVndPage() {
 
     const lastRedactionNumber = redactions.reduce((max, r) => Math.max(max, r.number), 0);
     const isFirstRedaction = lastRedactionNumber <= 1;
+    // Актуализационная редакция (Number > 1) без файла ТИД — консолидировать документ нельзя
+    // (см. VndActualizationService.PublishAsync), поэтому кнопку "Консолидировать" в
+    // VndStatusBanner прячем, пока ТИД не приложен (во вкладке «Редакции»).
+    const latestRedaction = redactions.find((r) => r.number === lastRedactionNumber);
+    const consolidateTidMissing = !isFirstRedaction && !!latestRedaction && latestRedaction.tidFileId === null;
 
-    // Зеркалит право публикации из VndActualizationService.PublishAsync на бэке (после унификации
-    // с общим IsChiefEditor() — тем же, что используют VndService/VndApprovalService/
-    // VndCoordinationTab: CreateVnd... тоже считается главным редактором, не только Actualize...):
-    // - если есть открытый цикл актуализации - только назначенный ответственный или главред;
-    // - если цикла нет - только инициатор согласования или главред.
-    const isChiefEditor =
-        hasPermission(PermissionCode.CreateVndWithApproval) ||
-        hasPermission(PermissionCode.CreateVndWithoutApproval) ||
-        hasPermission(PermissionCode.ActualizeAnyVndWithApproval) ||
-        hasPermission(PermissionCode.ActualizeAnyVndWithoutApproval);
+    // Зеркалит право публикации из VndActualizationService.PublishAsync на бэке:
+    // - если есть открытый цикл актуализации - только назначенный ответственный или главный методолог;
+    // - если цикла нет - только инициатор согласования или главный методолог.
+    // Раньше здесь стоял общий IsChiefEditor() (CreateVnd.../ActualizeAnyVnd...) - тот же набор
+    // прав, что почти у любого автора ВНД, из-за чего консолидировать чужую редакцию мог
+    // практически кто угодно. ConsolidateAnyVnd - отдельное узкое право именно для этого шага.
+    const canConsolidateAnyVnd = hasPermission(PermissionCode.ConsolidateAnyVnd);
 
     const canConsolidate = vnd
-        ? isChiefEditor ||
+        ? canConsolidateAnyVnd ||
         (vnd.actualizationResponsibleUserId
             ? vnd.actualizationResponsibleUserId === user?.id
             : approvalInitiatorId !== null && approvalInitiatorId === user?.id)
         : false;
 
-    const handleConsolidate = async (hadChanges: boolean) => {
+    const handleConsolidate = async (hadChanges: boolean, requisites: ConsolidateRequisites) => {
         if (!vnd) return;
         setConsolidating(true);
         setConsolidateError(null);
         try {
-            await actualizationService.publish(vnd.id, {hadChanges});
+            await actualizationService.publish(vnd.id, {hadChanges, ...requisites});
             setConsolidateOpen(false);
             toast.success(t("openVndPage.consolidatedToastTitle"), t("openVndPage.consolidatedToastDescription"));
             refetch();
@@ -167,7 +201,27 @@ export function OpenVndPage() {
 
     if (!vnd) return null;
 
-    const meta = STATUS_META[vnd.status];
+    const meta = getVndDisplayMeta(vnd.status, vnd.effectiveDate);
+    // "Статус ВНД" (документ-уровня) — см. DOCUMENT_STATUS_META. Сервер уже свернул значение
+    // с 3 до 2 вариантов для пользователей без ViewVndRegistryExtended (см.
+    // VndService.CollapseDocumentStatus); collapseDocumentStatus здесь — защитный дубль того же
+    // правила на фронте (идемпотентно, если пришедшие данные уже свёрнуты).
+    const canViewVndRegistryExtended = hasPermission(PermissionCode.ViewVndRegistryExtended);
+    const documentStatusMeta =
+        DOCUMENT_STATUS_META[collapseDocumentStatus(vnd.documentStatus, canViewVndRegistryExtended)];
+    // Строка "Статус ВНД:" видна только "редакторам ВНД" (тот же набор прав, что и
+    // canFilterLinkedToMe в BaseVndPage.tsx — согласование/создание/актуализация ВНД) и/или
+    // пользователям с расширенным просмотром реестра. Рядовой пользователь без этих прав строку
+    // вообще не видит (не просто свёрнутое значение — сам блок не рендерится).
+    const isVndEditor =
+        hasPermission(PermissionCode.ActAsApprover) ||
+        hasPermission(PermissionCode.CreateVndWithApproval) ||
+        hasPermission(PermissionCode.CreateVndWithoutApproval) ||
+        hasPermission(PermissionCode.ActualizeAnyVndWithApproval) ||
+        hasPermission(PermissionCode.ActualizeAnyVndWithoutApproval) ||
+        hasPermission(PermissionCode.ActualizeVndWithApprovalByRequest) ||
+        hasPermission(PermissionCode.ActualizeVndWithoutApprovalByRequest);
+    const canSeeDocumentStatus = isVndEditor || canViewVndRegistryExtended;
     const tabs = getVndTabs(vnd.status);
     // Если сменился статус и текущий выбранный таб для него больше не доступен - откатываемся на «Реквизиты»
     const activeTab = tabs.some((t) => t.id === tab) ? tab : "passport";
@@ -180,8 +234,10 @@ export function OpenVndPage() {
             <div className="px-10">
                 <VndStatusBanner
                     status={vnd.status}
+                    effectiveDate={vnd.effectiveDate}
                     onSecondaryAction={() => setConsolidateOpen(true)}
                     canConsolidate={canConsolidate}
+                    tidMissing={consolidateTidMissing}
                 />
             </div>
 
@@ -211,31 +267,76 @@ export function OpenVndPage() {
                     ))}
                 </div>
 
-                <div className="flex items-center gap-[9px] flex-none pb-3">
-                    <span
-                        className="font-mono text-[13px] font-semibold text-[#4e57d6] bg-[#ececfc] px-[10px] py-[3px] rounded-[7px]">
-                        {vnd.code}
-                    </span>
-                    <span
-                        className="inline-flex items-center text-[12px] font-semibold py-0.5 px-[9px] font-mono text-[12px] text-[#8b97ab]">
-                        {/* Дата создания: */}
-                        {t("openVndPage.createdAtLabel", {date: formatDate(vnd.createdAt)})}
-                    </span>
-                    <span
-                        className="inline-flex items-center text-[12px] font-semibold py-0.5 px-[9px] font-mono rounded-full"
-                        style={{color: meta.color, background: meta.bg}}
-                    >
-                        {meta.label}
-                    </span>
+                <div className="flex items-center gap-2 flex-none pb-3 text-[12px] font-mono font-semibold">
+                    {/* Блок 1: Код */}
+                    <div className="flex items-center gap-1.5">
+                        <span className="text-[#8b97ab]">Код ВНД:</span>
+                        <span className="text-[12px] text-[#4e57d6] bg-[#ececfc] px-2.5 py-0.5 rounded-[7px]">
+            {vnd.code}
+        </span>
+                    </div>
 
+
+                    {/* Блок 2: Дата создания */}
+                    <div className="flex items-center gap-1.5">
+                        <span className="text-[#8b97ab]">{t("openVndPage.createdAtLabel")}</span>
+                        <span className="text-[#2d3748] px-2 py-0.5 rounded-md">
+                            {formatDate(vnd.createdAt)}
+                        </span>
+                    </div>
+
+
+                    {/* Блок 3: Статус последней редакции (детальный, как и раньше — виден всем,
+                        без изменений) */}
+                    <div className="flex items-center gap-1.5">
+                        <span className="text-[#8b97ab]">Статус последней редакции ВНД:</span>
+                        <span
+                            className="px-2.5 py-0.5 rounded-full text-[12px]"
+                            style={{ color: meta.color, background: meta.bg }}
+                        >
+                            {meta.label}
+                        </span>
+                    </div>
+
+                    {/* Блок 3б: "Статус ВНД" (документ-уровня) — новое поле, отдельное от блока
+                        выше. Видно только "редакторам ВНД" и/или пользователям с
+                        ViewVndRegistryExtended (см. canSeeDocumentStatus) — рядовой пользователь
+                        без этих прав блок не видит вовсе. Значение при этом ещё и свёрнуто до
+                        действующий/архивированный для тех, кто без ViewVndRegistryExtended, но
+                        всё же попал сюда как редактор ВНД (см. documentStatusMeta). */}
+                    {canSeeDocumentStatus && (
+                        <div className="flex items-center gap-1.5">
+                            <span className="text-[#8b97ab]">Статус ВНД:</span>
+                            <span
+                                className="px-2.5 py-0.5 rounded-full text-[12px]"
+                                style={{ color: documentStatusMeta.color, background: documentStatusMeta.bg }}
+                            >
+                                {documentStatusMeta.label}
+                            </span>
+                        </div>
+                    )}
+
+                    {/* Кнопка удаления (только черновик) */}
                     {vnd.status === "draft" && hasPermission(PermissionCode.DeleteVnd) && (
                         <button
                             onClick={() => setDeleteOpen(true)}
                             disabled={deleting}
-                            className="shrink-0 flex items-center gap-1.5 rounded-[9px] border border-[#e0b4ae] bg-white px-[14px] py-[8px] text-[12.5px] font-semibold text-[#c0392b] cursor-pointer hover:bg-[#fbecea]"
+                            className="ml-auto shrink-0 flex items-center gap-1.5 rounded-[9px] border border-[#e0b4ae] bg-white px-3 py-1 text-[12px] font-semibold text-[#c0392b] cursor-pointer hover:bg-[#fbecea] transition-colors"
                         >
-                            <Trash2 className="w-3.5 h-3.5" strokeWidth={2}/>
+                            <Trash2 className="w-3.5 h-3.5" strokeWidth={2} />
                             {deleting ? t("general.deleting") : t("openVndPage.deleteDraftButton")}
+                        </button>
+                    )}
+
+                    {/* Кнопка архивации (любой статус, кроме черновика и уже архивированного) */}
+                    {vnd.status !== "draft" && vnd.status !== "arch" && hasPermission(PermissionCode.CancelVnd) && (
+                        <button
+                            onClick={() => setCancelOpen(true)}
+                            disabled={canceling}
+                            className="ml-auto shrink-0 flex items-center gap-1.5 rounded-[9px] border border-[#e0b4ae] bg-white px-3 py-1 text-[12px] font-semibold text-[#c0392b] cursor-pointer hover:bg-[#fbecea] transition-colors"
+                        >
+                            <Archive className="w-3.5 h-3.5" strokeWidth={2} />
+                            {canceling ? t("general.archiving") : t("openVndPage.archiveButton")}
                         </button>
                     )}
                 </div>
@@ -281,6 +382,11 @@ export function OpenVndPage() {
                 <ConsolidateVndModal
                     isFirstRedaction={isFirstRedaction}
                     plannedNoChanges={vnd.actualizationPlannedNoChanges}
+                    initialRequisites={{
+                        adoptionCode: vnd.adoptionCode ?? "",
+                        adoptionDate: vnd.adoptionDate ?? "",
+                        effectiveDate: vnd.effectiveDate ?? "",
+                    }}
                     submitting={consolidating}
                     error={consolidateError}
                     onClose={() => {
@@ -289,6 +395,21 @@ export function OpenVndPage() {
                         setConsolidateError(null);
                     }}
                     onConfirm={handleConsolidate}
+                />
+            )}
+
+            {/* Модальное окно архивации */}
+            {cancelOpen && (
+                <CancelVndModal
+                    hasActiveApproval={vnd.status === "review"}
+                    submitting={canceling}
+                    error={cancelError}
+                    onClose={() => {
+                        if (canceling) return;
+                        setCancelOpen(false);
+                        setCancelError(null);
+                    }}
+                    onConfirm={handleCancel}
                 />
             )}
 

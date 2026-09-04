@@ -10,6 +10,15 @@ export interface PublishVndActualizationRequest {
 
     /** Обязательно, если у ВНД Period === "Custom" и был выбран сдвиг периода актуализации */
     newDueActualizationDate?: string | null; // "YYYY-MM-DD"
+
+    // --- Реквизиты, обязательные к вводу прямо в модалке консолидации (см.
+    // ConsolidateVndModal) - бэк отклонит запрос без непустого AdoptionCode.
+    /** № принятия */
+    adoptionCode: string;
+    /** Дата принятия - "YYYY-MM-DD" */
+    adoptionDate: string;
+    /** Дата вступления в силу - "YYYY-MM-DD" */
+    effectiveDate: string;
 }
 
 export interface VndActualizationStateResponse {

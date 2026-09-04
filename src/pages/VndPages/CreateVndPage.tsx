@@ -42,7 +42,7 @@ export function CreateVndPage() {
                 className="inline-flex items-center gap-[7px] border-none bg-transparent text-[#8b97ab] text-[13px] font-medium cursor-pointer p-0 mb-1 hover:text-[#4e57d6]"
             >
                 <ArrowLeft className="w-4 h-4" strokeWidth={2}/>
-                База ВНД
+                Реестр ВНД
             </button>
 
             <h1 className="m-0 mb-1 text-[23px] font-bold tracking-[-0.02em]">

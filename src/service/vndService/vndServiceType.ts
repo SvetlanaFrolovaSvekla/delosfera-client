@@ -1,5 +1,10 @@
 export type VndStatusKey = "draft" | "active" | "onact" | "review" | "consol" | "arch";
 
+// "Статус ВНД" (документ-уровня) — НЕ путать со VndStatusKey выше ("Статус последней редакции
+// ВНД"). Ровно 3 значения — см. подробности в VndResponse.documentStatus /
+// backend VndResponse.DocumentStatus / VndService.ComputeDocumentStatus.
+export type DocumentStatusKey = "active" | "notYetActive" | "arch";
+
 export type RedactionApprovalStatus = "NotRequired" | "Draft" | "Pending" | "Approved" | "Rejected";
 
 // --- Статус срока актуализации (вычисляется на бэке от dueActualizationDate) ---
@@ -23,6 +28,10 @@ export type ActualizationPeriod =
 
 // --- Обновление реквизитов ---
 export interface UpdateVndRequisitesRequest {
+    /** Какую редакцию редактируем (вкладки Р1/Р2/.../Рn на вкладке "Реквизиты") — если не
+     * передать, бэк сам возьмёт текущую/последнюю редакцию. titleRu/En/Kg и typeId общие
+     * на весь документ и от этого поля не зависят. */
+    redactionId?: number | null;
     typeId: number;
     organId: number;
     developerId?: number | null;
@@ -53,6 +62,15 @@ export interface UpdateVndRequisitesRequest {
     userGroupIds?: number[];
 }
 
+// --- Архивация (отмена) ВНД ---
+export interface CancelVndRequest {
+    /** № отмены (реквизит служебной записки, которой оформлена отмена) */
+    cancelCode: string;
+    /** Дата отмены, ISO "YYYY-MM-DD" */
+    cancelDate: string;
+    cancelReason?: string | null;
+}
+
 // --- Запрос на поиск ---
 export interface VndSearchRequest {
     code?: string;
@@ -60,6 +78,11 @@ export interface VndSearchRequest {
     revisionText?: string;
 
     statuses?: VndStatusKey[];
+
+    /** Фильтр по "Статусу ВНД" (документ-уровня, см. VndResponse.documentStatus) — независимая
+     * от statuses ось. Пусто = без фильтра. */
+    documentStatuses?: DocumentStatusKey[];
+
     typeIds?: number[];
     organIds?: number[];
     developerIds?: number[];
@@ -140,6 +163,11 @@ export interface VndResponse {
     titleKg: string | null;
     status: VndStatusKey;
 
+    /** "Статус ВНД" (документ-уровня) — см. DocumentStatusKey. Уже свёрнут сервером с 3 значений
+     * до 2 (notYetActive → active), если у текущего пользователя нет права
+     * ViewVndRegistryExtended — см. backend VndService.CollapseDocumentStatus. */
+    documentStatus: DocumentStatusKey;
+
     typeId: number;
     typeName: string;
 
@@ -166,6 +194,9 @@ export interface VndResponse {
     actualizationRequiresApproval: boolean;
     /** Заявлено ли, что текущий цикл актуализации пройдёт без изменений документа. */
     actualizationPlannedNoChanges: boolean;
+    /** Сдвигать ли DueActualizationDate после публикации текущего цикла — зафиксировано на шаге
+     * "Выполнить актуализацию". Пока этот шаг не пройден, значение ещё не окончательное. */
+    actualizationShiftNextPeriod: boolean;
     /** Пройден ли шаг "Выполнить актуализацию" в текущем открытом цикле — пока false, загрузка
      * новой редакции заблокирована, и должна показываться кнопка "Выполнить актуализацию" вместо
      * загрузки/согласования. */
@@ -216,16 +247,70 @@ export interface VndRedactionResponse {
     docFileKgId: number | null;
     docFileEnId: number | null;
 
+    /** Когда документ на соответствующем языке в последний раз заменялся файлом (напр. при
+     * повторной отправке после замечаний) — null, если это исходный файл редакции, ни разу
+     * не заменявшийся. Используется для метки "Обновлено, дата" (см. RedactionDocumentsPanel). */
+    docRuUpdatedAt: string | null;
+    docKgUpdatedAt: string | null;
+    docEnUpdatedAt: string | null;
+
     /** Таблица изменений и дополнений (ТИД) — null, если для этой редакции ТИД не требовался
      * (это первая редакция документа, number === 1) */
     tidFileId: number | null;
 
+    /** Лист согласования — формируется автоматически, когда согласование редакции окончательно
+     * завершается. Null, пока редакция не согласована. Показывается отдельным блоком
+     * "Специальные вложения" (см. RedactionDocumentsPanel). */
+    approvalSheetFileId: number | null;
+
+    /** Матрица разногласий - null, пока инициатор не отправил редакцию с несогласием (частичным
+     * или полным) по замечаниям. Показывается в "Специальные вложения" (см. RedactionDocumentsPanel). */
+    disagreementMatrixFileId: number | null;
+
     requiresApproval: boolean;
     approvalStatus: RedactionApprovalStatus;
 
+    /** @deprecated Оставлено для обратной совместимости — используйте attachments (там есть
+     * настоящее имя файла, как при загрузке, а не "Вложение #id"). */
     attachmentFileIds: number[];
+    attachments: VndRedactionAttachmentResponse[];
+
+    // --- Реквизиты ИМЕННО этой редакции (см. миграцию "реквизиты по редакции") — используются
+    // для вкладок Р1/Р2/.../Рn на вкладке "Реквизиты" и для подсветки изменений по сравнению
+    // с предыдущей редакцией.
+    titleRu: string;
+    titleEn: string | null;
+    titleKg: string | null;
+    typeId: number;
+    typeName: string;
+
+    adoptionDate: string | null;
+    adoptionCode: string | null;
+    effectiveDate: string | null;
+    period: ActualizationPeriod;
+
+    developerId: number;
+    developerName: string;
+    curatorDeveloperId: number | null;
+    curatorDeveloperName: string | null;
+
+    organId: number;
+    organName: string;
+
+    secrecyLevelId: number;
+
+    responsibleExecutorIds: number[];
+    keywordIds: number[];
+    rubricIds: number[];
 
     createdAt: string; // ISO datetime
+}
+
+/** Прочее вложение редакции — с оригинальным именем файла, под которым его загрузили. */
+export interface VndRedactionAttachmentResponse {
+    fileId: number;
+    fileName: string;
+    sizeBytes: number;
 }
 
 // --- Создание (загрузка) новой редакции
@@ -238,6 +323,11 @@ export interface CreateVndRedactionRequest {
      * должна проверить это сама, ориентируясь на наличие уже существующих редакций у ВНД. */
     tid?: File | null;
     attachments?: File[];
+    /** Id уже существующих файлов вложений (из предыдущей редакции этого же ВНД), переносимых
+     * в новую редакцию как есть, без повторной загрузки - см. previousAttachments в
+     * VndUploadRedactionModal. Дубли по содержимому (SHA-256) среди новых attachments сервер
+     * тоже не грузит повторно сам - см. AddRedactionAsync/BuildAttachmentEntitiesAsync. */
+    existingAttachmentFileIds?: number[];
     description?: string;
     requiresApproval: boolean;
 }
@@ -296,7 +386,15 @@ export interface EditLastRevisionDirectlyRequest {
     docRu?: File;
     docKg?: File;
     docEn?: File;
+    /** Убрать документ на кыргызском без замены - игнорируется, если одновременно передан docKg. */
+    removeDocKg?: boolean;
+    /** Убрать документ на английском без замены - игнорируется, если одновременно передан docEn. */
+    removeDocEn?: boolean;
     description?: string;
+    /** Новые вложения, добавляемые к редакции. */
+    newAttachments?: File[];
+    /** Id файлов существующих вложений редакции, которые нужно удалить. */
+    removedAttachmentFileIds?: number[];
 }
 
 export interface VndQuickSearchResult {

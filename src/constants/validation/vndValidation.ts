@@ -13,3 +13,6 @@ export const VND_CANCEL_REASON_MAX_LENGTH = 2000;
 
 export const VND_SEARCH_TEXT_MAX_LENGTH = 200;
 export const VND_REDACTION_DESCRIPTION_MAX_LENGTH = 500;
+
+// Максимальное число вложений к редакции ВНД (см. VndUploadRedactionModal, VndRevisionNeededPanel)
+export const VND_REDACTION_MAX_ATTACHMENTS = 10;

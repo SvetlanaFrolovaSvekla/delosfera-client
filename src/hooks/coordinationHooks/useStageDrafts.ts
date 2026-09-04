@@ -1,16 +1,10 @@
 import {useEffect, useState} from "react";
-import {FIXED_KIND_ORDER, FIXED_STAGE_ORG_UNITS, MAX_STAGES} from "@/constants/coordinationParams.ts";
+import {MAX_STAGES, CUSTOM_STAGE_LABEL} from "@/constants/coordinationParams.ts";
 import type {ApproverOption} from "@/components/componentsCoordination/CoordinationRouteConstructor/functionalComponents/VndSelectApproverModal.tsx";
 
-import {ApprovalStageKind} from "@/service/coordinationService/coordinationServiceTypes.ts";
 import {
     coordinationApproverService
 } from "@/service/dictionariesService/coordinationDefaultApproverService/coordinationDefaultApproverService.ts";
-
-
-import type {
-    CoordinationStageKind
-} from "@/service/dictionariesService/coordinationDefaultApproverService/coordinationDefaultApproverServiceType.ts";
 import {useAuth} from "@/context/AuthContext.ts";
 
 // crypto.randomUUID() доступен только в secure context (https или localhost).
@@ -28,40 +22,27 @@ function generateUUID(): string {
 
 export interface StageDraft {
     localId: string;
-    kind: ApprovalStageKind; // вид этапа согласования
-    orgUnitId?: number; // из какого СП согласующий фиксированного этапа
+    /** Id записи справочника обязательных этапов (dictionaries/coordination-users) - null для
+     * произвольного (Custom) этапа, добавленного инициатором вручную. */
+    coordinationStageId: number | null;
+    title: string; // название этапа для отображения на карточке
+    orgUnitId?: number; // из какого СП согласующий фиксированного этапа (только для обязательных)
     approverUserId: number | null;
     approverName: string | null;
 }
 
-// Соответствие строковых kind из справочника (backend) значениям enum ApprovalStageKind (frontend)
-const KIND_STRING_TO_ENUM: Record<CoordinationStageKind, ApprovalStageKind> = {
-    legal: ApprovalStageKind.Legal,
-    risk_management: ApprovalStageKind.RiskManagement,
-    compliance: ApprovalStageKind.Compliance,
-    methodology: ApprovalStageKind.Methodology,
-};
-
-// Создание фиксированных этапов
-function createInitialStages(): StageDraft[] {
-    return FIXED_KIND_ORDER.map((kind) => ({
-        localId: generateUUID(),
-        kind,
-        orgUnitId: FIXED_STAGE_ORG_UNITS[kind],
-        approverUserId: null,
-        approverName: null,
-    }));
-}
-
 export function useStageDrafts() {
-    const [stages, setStages] = useState<StageDraft[]>(createInitialStages);
+    const [stages, setStages] = useState<StageDraft[]>([]);
+    // Пока справочник обязательных этапов не загружен - список этапов рисовать рано
+    // (иначе на долю секунды показался бы пустой маршрут, а потом форма запуска согласования
+    // "прыгнула" бы, добавив обязательные этапы).
+    const [catalogLoading, setCatalogLoading] = useState(true);
     // Этап, для которого открыта VndSelectApproverModal (выбор согласующего)
     const [pickerStageId, setPickerStageId] = useState<string | null>(null);
     const {user: currentUser} = useAuth();
 
-    // Подтягиваем дефолтных согласующих из справочника "Обязательные участники
-    // процесса согласования" и заполняем ими фиксированные этапы, если пользователь
-    // ещё не выбрал согласующего вручную
+    // Строим начальный список этапов из справочника "Обязательные этапы процесса
+    // согласования" - название/СП/согласующий по умолчанию берутся из него целиком.
     useEffect(() => {
         let cancelled = false;
 
@@ -70,30 +51,33 @@ export function useStageDrafts() {
             .then((defaults) => {
                 if (cancelled) return;
 
-                setStages((prev) =>
-                    prev.map((stage) => {
-                        if (stage.approverUserId !== null) return stage; // пользователь уже выбрал вручную
+                const sorted = [...defaults].sort((a, b) => a.order - b.order);
 
-                        const enumKind = stage.kind;
-                        const defaultEntry = defaults.find((d) => KIND_STRING_TO_ENUM[d.kind] === enumKind);
-
-                        if (!defaultEntry?.approverUserId) return stage;
-
+                setStages(
+                    sorted.map((d) => {
                         // Инициатор не может согласовывать сам себя — если дефолт совпадает
                         // с текущим пользователем, оставляем этап пустым, пусть выберет вручную
-                        if (defaultEntry.approverUserId === currentUser?.id) return stage;
+                        const useDefault = d.approverUserId != null && d.approverUserId !== currentUser?.id;
 
                         return {
-                            ...stage,
-                            approverUserId: defaultEntry.approverUserId,
-                            approverName: defaultEntry.approverName,
+                            localId: generateUUID(),
+                            coordinationStageId: d.id,
+                            title: d.title,
+                            orgUnitId: d.orgUnitId,
+                            approverUserId: useDefault ? d.approverUserId : null,
+                            approverName: useDefault ? d.approverName : null,
                         };
                     }),
                 );
             })
             .catch(() => {
-                // Не удалось подтянуть дефолты — не критично, просто оставляем поля пустыми,
-                // пользователь выберет согласующих вручную как раньше
+                // Не удалось подтянуть справочник — не критично для UI, но запустить
+                // согласование без обязательных этапов сервер всё равно не даст (см.
+                // BuildAndValidateStagesAsync), так что оставляем список пустым.
+                if (!cancelled) setStages([]);
+            })
+            .finally(() => {
+                if (!cancelled) setCatalogLoading(false);
             });
 
         return () => {
@@ -109,7 +93,8 @@ export function useStageDrafts() {
                 ...prev,
                 {
                     localId: generateUUID(),
-                    kind: ApprovalStageKind.Custom,
+                    coordinationStageId: null,
+                    title: CUSTOM_STAGE_LABEL,
                     approverUserId: null,
                     approverName: null,
                 },
@@ -134,11 +119,12 @@ export function useStageDrafts() {
     );
 
     const activePickerStage = stages.find((s) => s.localId === pickerStageId) ?? null;
-    const allApproversSelected = stages.every((s) => s.approverUserId !== null);
+    const allApproversSelected = stages.length > 0 && stages.every((s) => s.approverUserId !== null);
 
     return {
         stages,
         setStages,
+        catalogLoading,
         addCustomStage,
         removeCustomStage,
         setStageApprover,

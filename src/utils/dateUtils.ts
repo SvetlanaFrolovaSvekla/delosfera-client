@@ -137,19 +137,33 @@ export function getElapsedLabel(dateString: string): string {
     return "только что";
 }
 
-// Берем значение из UI (DatePicker/RangePicker), преобразуем в { exact, from, to } для фильтрации
+// Берем значение из UI (DatePicker/RangePicker), преобразуем в { exact, from, to } для фильтрации.
+// Значения из DatePickerInput/DateFilterGroup приходят в формате "дд.мм.гггг" (см. DatePickerInput) -
+// парсим их через parseDDMMYYYY, а не отдаём напрямую в formatISO/new Date(), иначе для дат вида
+// "03.09.2026" получим либо некорректный разбор (день/месяц перепутаны местами), либо Invalid Date.
 export function toDateRangeFilter(v: DateFilterValue): DateRangeFilter | null {
-    const exact = v.exact ? formatISO(v.exact) : null;
-    const from = v.from ? formatISO(v.from) : null;
-    const to = v.to ? formatISO(v.to) : null;
+    const exact = v.exact ? formatISO(parseDDMMYYYY(v.exact) ?? v.exact) : null;
+    const from = v.from ? formatISO(parseDDMMYYYY(v.from) ?? v.from) : null;
+    const to = v.to ? formatISO(parseDDMMYYYY(v.to) ?? v.to) : null;
     if (!exact && !from && !to) return null;
     return {exact, from, to};
 }
 
-// Приводит любую переданную дату (Date или строку) к строгому текстовому формату ISO: YYYY-MM-DD
+/**
+ * Приводит любую переданную дату (Date или строку) к строгому текстовому формату ISO: YYYY-MM-DD.
+ *
+ * ВАЖНО: раньше здесь использовался date.toISOString().slice(0, 10) - toISOString() всегда переводит
+ * дату в UTC, поэтому для Date, собранных из локальных полей (напр. parseDDMMYYYY/new Date(y, m-1, d)
+ * в date-picker'ах), в часовых поясах восточнее UTC (напр. Asia/Bishkek, UTC+6) при выборе дня
+ * получался предыдущий календарный день (полночь по местному времени уходила в предыдущие сутки по
+ * UTC). Собираем строку из локальных Y/M/D-компонент даты - без перехода через UTC.
+ */
 export function formatISO(d: Date | string) {
     const date = d instanceof Date ? d : new Date(d);
-    return date.toISOString().slice(0, 10);
+    const y = date.getFullYear();
+    const m = String(date.getMonth() + 1).padStart(2, "0");
+    const day = String(date.getDate()).padStart(2, "0");
+    return `${y}-${m}-${day}`;
 }
 
 // Сервер отдаёт даты в формате "YYYY-MM-DD", парсим в объект JS Data,

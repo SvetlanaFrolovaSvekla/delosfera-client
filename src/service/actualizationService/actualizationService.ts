@@ -54,6 +54,20 @@ class ActualizationService {
         return data;
     }
 
+    /** Изменить уже зафиксированные на шаге "Выполнить актуализацию" настройки (сдвиг срока/"без
+     * изменений") — пока цикл ещё не ушёл дальше OnActualization. Доступно ответственному за
+     * актуализацию или главному редактору ВНД. */
+    async updatePerformedSettings(
+        vndId: number,
+        request: PerformActualizationRequest,
+    ): Promise<VndActualizationStateResponse> {
+        const {data} = await axiosInstance.put<VndActualizationStateResponse>(
+            `${this.basePath(vndId)}/performed-settings`,
+            request,
+        );
+        return data;
+    }
+
     /** Подтвердить старт актуализации после одобренной заявки на доступ — совмещает старт цикла
      * и шаг "Выполнить актуализацию" (для пути "по заявке") */
     async confirmStart(

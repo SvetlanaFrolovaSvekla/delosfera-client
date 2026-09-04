@@ -1,4 +1,5 @@
 import type {
+    CancelVndRequest,
     CreateVndRedactionRequest,
     CreateVndRequest, EditLastRevisionDirectlyRequest,
     UpdateVndRequisitesRequest,
@@ -79,6 +80,9 @@ export const vndService = {
         for (const file of request.attachments ?? []) {
             formData.append("Attachments", file);
         }
+        for (const fileId of request.existingAttachmentFileIds ?? []) {
+            formData.append("ExistingAttachmentFileIds", String(fileId));
+        }
 
         const response = await fetch(`${API_BASE}/vnd/${vndId}/redactions`, {
             method: "POST",
@@ -141,6 +145,18 @@ export const vndService = {
         }
     },
 
+    /** Архивировать (отменить) ВНД — кнопка "Архивировать". Недоступно для черновика (его
+     * можно только удалить, см. remove) и для уже архивированного документа. Если ВНД на
+     * согласовании — оно будет отозвано автоматически на бэке (см. VndService.CancelAsync). */
+    async cancel(id: number, request: CancelVndRequest): Promise<VndResponse> {
+        const response = await fetch(`${API_BASE}/vnd/${id}/cancel`, {
+            method: "POST",
+            headers: {"Content-Type": "application/json", ...authHeaders()},
+            body: JSON.stringify(request),
+        });
+        return handleResponse<VndResponse>(response);
+    },
+
     /** Удалить связь ВНД (можно с любой из сторон связи) */
     async deleteLink(vndId: number, linkId: number): Promise<void> {
         const response = await fetch(`${API_BASE}/vnd/${vndId}/links/${linkId}`, {
@@ -157,10 +173,32 @@ export const vndService = {
         const formData = new FormData();
         if (request.docRu) formData.append("DocRu", request.docRu);
         if (request.docKg) formData.append("DocKg", request.docKg);
+        else if (request.removeDocKg) formData.append("RemoveDocKg", "true");
         if (request.docEn) formData.append("DocEn", request.docEn);
+        else if (request.removeDocEn) formData.append("RemoveDocEn", "true");
         if (request.description !== undefined) formData.append("Description", request.description);
+        for (const file of request.newAttachments ?? []) {
+            formData.append("NewAttachments", file);
+        }
+        for (const fileId of request.removedAttachmentFileIds ?? []) {
+            formData.append("RemovedAttachmentFileIds", String(fileId));
+        }
 
         const response = await fetch(`${API_BASE}/vnd/${vndId}/redactions/last`, {
+            method: "PUT",
+            headers: authHeaders(),
+            body: formData,
+        });
+        return handleResponse<VndRedactionResponse>(response);
+    },
+
+    /** Кнопка "Сформировать или загрузить ТИД" — прикладывает файл ТИД к черновику последней
+     * редакции отдельным шагом (поле ТИД убрано из формы загрузки редакции). */
+    async uploadTidForLastRedaction(vndId: number, tid: File): Promise<VndRedactionResponse> {
+        const formData = new FormData();
+        formData.append("Tid", tid);
+
+        const response = await fetch(`${API_BASE}/vnd/${vndId}/redactions/last/tid`, {
             method: "PUT",
             headers: authHeaders(),
             body: formData,

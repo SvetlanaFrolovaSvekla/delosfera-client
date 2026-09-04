@@ -34,6 +34,8 @@ export interface VndTaskResponse {
     /// Профиль этапа согласования (юр. управление, риск-менеджмент и т.д.) — только для
     /// coordination
     stageKind?: ApprovalStageKindResponse | null;
+    /// Название этапа согласования для отображения — только для coordination
+    stageTitle?: string | null;
     deadlineAt: string | null;
 
     initiatorName: string | null;

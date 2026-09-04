@@ -2,19 +2,34 @@ import {forwardRef, useImperativeHandle} from "react";
 import {useTranslation} from "react-i18next";
 import type {VndRedactionResponse, VndResponse} from "@/service/vndService/vndServiceType.ts";
 import {buildRedactionFileName} from "@/utils/fileNaming.ts";
-import type {RedactionLanguage} from "@/utils/redactionLanguagePanelUtils.ts";
+import type {RedactionLanguage, RedactionViewTarget} from "@/utils/redactionLanguagePanelUtils.ts";
 import {FileText, Loader2, ChevronUp, ChevronDown, X} from "lucide-react";
 import {useDocxPreview} from "@/hooks/vndHooks/useDocxPreview.ts";
 import {useDocxTextSearch} from "@/hooks/vndHooks/useDocxTextSearch.ts";
+import {useDocxQuoteMarks} from "@/hooks/vndHooks/useDocxQuoteMarks.ts";
+import type {QuoteMarkInfo} from "@/utils/redactionQuoteMarks.ts";
 
 interface RedactionTextViewProps {
     vnd: VndResponse;
     selected: VndRedactionResponse;
-    activeLanguage: RedactionLanguage;
+    /** Язык документа редакции, либо "tid" - показать вместо него Таблицу изменений и дополнений. */
+    activeLanguage: RedactionViewTarget;
     downloadingId: number | null;
     onDownload: (fileId: number, name: string) => void;
     searchQuery?: string;
     onClearSearch?: () => void;
+    /** Разрешить горизонтальный скролл содержимого (на случай широких таблиц/страниц) — по
+     * умолчанию выключен (документ вписывается по ширине). Используется, например, для мини-окна
+     * просмотра ТИД в RedactionCompareModal. */
+    scrollX?: boolean;
+    /** Маркеры цитат из резолюций согласующих (см. collectQuoteMarks) для подсветки поверх
+     * текста - см. useDocxQuoteMarks. Без этого пропа подсветки маркеров нет. */
+    quoteMarks?: QuoteMarkInfo[];
+    /** Кликабельны ли маркеры (открывают резолюцию целиком) - только во время активного
+     * согласования этой редакции. */
+    quoteMarksClickable?: boolean;
+    onHoverQuoteMark?: (mark: QuoteMarkInfo | null, rect: DOMRect | null) => void;
+    onClickQuoteMark?: (mark: QuoteMarkInfo) => void;
 }
 
 export interface RedactionTextViewHandle {
@@ -33,17 +48,41 @@ const FILE_KEY_BY_LANG: Record<RedactionLanguage, "docFileRuId" | "docFileKgId" 
 };
 
 export const RedactionTextView = forwardRef<RedactionTextViewHandle, RedactionTextViewProps>(
-    function RedactionTextView({vnd, selected, activeLanguage, searchQuery = "", onClearSearch}, ref) {
+    function RedactionTextView({
+                                    vnd, selected, activeLanguage, searchQuery = "", onClearSearch, scrollX = false,
+                                    quoteMarks, quoteMarksClickable, onHoverQuoteMark, onClickQuoteMark,
+                                }, ref) {
         const {t} = useTranslation();
-        const fileId = selected[FILE_KEY_BY_LANG[activeLanguage]] as number | null;
+        const fileId = activeLanguage === "tid"
+            ? selected.tidFileId
+            : activeLanguage === "approvalSheet"
+                ? selected.approvalSheetFileId
+                : activeLanguage === "disagreementMatrix"
+                    ? selected.disagreementMatrixFileId
+                    : selected[FILE_KEY_BY_LANG[activeLanguage]] as number | null;
 
-        const {containerRef, loading, error} = useDocxPreview(fileId);
+        // scrollX=true (мини-окно ТИД) - сохраняем реальную ширину документа/таблиц, чтобы
+        // широкие таблицы не сжимались, а скроллились по горизонтали (см. RedactionTextView
+        // ниже - overflow-x-auto - и useDocxPreview - ignoreWidth).
+        const {containerRef, loading, error} = useDocxPreview(fileId, {ignoreWidth: !scrollX});
 
         const {matchCount, currentIndex, goNext, goPrev} = useDocxTextSearch(
             containerRef,
             searchQuery,
             !loading && fileId !== null,
             `${fileId}-${activeLanguage}`, // сброс подсветки при смене редакции/языка
+        );
+
+        useDocxQuoteMarks(
+            containerRef,
+            quoteMarks ?? [],
+            !loading && fileId !== null,
+            `${fileId}-${activeLanguage}`,
+            {
+                clickable: !!quoteMarksClickable,
+                onHoverMark: onHoverQuoteMark ?? (() => {}),
+                onClickMark: onClickQuoteMark ?? (() => {}),
+            },
         );
 
         useImperativeHandle(ref, () => ({
@@ -64,7 +103,13 @@ export const RedactionTextView = forwardRef<RedactionTextViewHandle, RedactionTe
         }
 
         if (error) {
-            const fileName = buildRedactionFileName(selected.code, vnd.name, activeLanguage);
+            const fileName = activeLanguage === "tid"
+                ? `${selected.code}_ТИД.docx`
+                : activeLanguage === "approvalSheet"
+                    ? `${selected.code}_Лист_согласования.docx`
+                    : activeLanguage === "disagreementMatrix"
+                        ? `${selected.code}_Матрица_разногласий.docx`
+                        : buildRedactionFileName(selected.code, vnd.name, activeLanguage);
             return (
                 <div
                     className="flex h-full flex-col items-center justify-center gap-2 p-[48px] text-center text-[13px] text-[#c0392b]">
@@ -77,7 +122,7 @@ export const RedactionTextView = forwardRef<RedactionTextViewHandle, RedactionTe
 
         return (
             <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
-                <div className="min-h-0 flex-1 overflow-y-auto overflow-x-hidden rounded-[12px] bg-white">
+                <div className={`min-h-0 flex-1 overflow-y-auto rounded-[12px] bg-white ${scrollX ? "overflow-x-auto" : "overflow-x-hidden"}`}>
 
                     {/* Плавающая панель поиска — sticky внутри скролла, занимает место в потоке */}
                     {searchQuery.trim() && !loading && (
@@ -101,7 +146,7 @@ export const RedactionTextView = forwardRef<RedactionTextViewHandle, RedactionTe
                                         type="button"
                                         onClick={goPrev}
                                         disabled={matchCount === 0}
-                                        className="grid h-[24px] w-[24px] place-items-center rounded-[6px] text-[#5a6478] transition-colors hover:bg-[#f2f4f8] hover:text-[#4e57d6] disabled:opacity-30 disabled:hover:bg-transparent"
+                                        className="cursor-pointer grid h-[24px] w-[24px] place-items-center rounded-[6px] text-[#5a6478] transition-colors hover:bg-[#f2f4f8] hover:text-[#4e57d6] disabled:opacity-30 disabled:hover:bg-transparent"
                                     >
                                         <ChevronUp size={15}/>
                                     </button>
@@ -109,7 +154,7 @@ export const RedactionTextView = forwardRef<RedactionTextViewHandle, RedactionTe
                                         type="button"
                                         onClick={goNext}
                                         disabled={matchCount === 0}
-                                        className="grid h-[24px] w-[24px] place-items-center rounded-[6px] text-[#5a6478] transition-colors hover:bg-[#f2f4f8] hover:text-[#4e57d6] disabled:opacity-30 disabled:hover:bg-transparent"
+                                        className="cursor-pointer grid h-[24px] w-[24px] place-items-center rounded-[6px] text-[#5a6478] transition-colors hover:bg-[#f2f4f8] hover:text-[#4e57d6] disabled:opacity-30 disabled:hover:bg-transparent"
                                     >
                                         <ChevronDown size={15}/>
                                     </button>
@@ -120,7 +165,7 @@ export const RedactionTextView = forwardRef<RedactionTextViewHandle, RedactionTe
                                 <button
                                     type="button"
                                     onClick={onClearSearch}
-                                    className="grid h-[24px] w-[24px] place-items-center rounded-[6px] text-[#a3adbd] transition-colors hover:bg-[#fdecec] hover:text-[#c0392b]"
+                                    className="cursor-pointer grid h-[24px] w-[24px] place-items-center rounded-[6px] text-[#a3adbd] transition-colors hover:bg-[#fdecec] hover:text-[#c0392b]"
                                 >
                                     <X size={15}/>
                                 </button>
@@ -136,7 +181,11 @@ export const RedactionTextView = forwardRef<RedactionTextViewHandle, RedactionTe
                     )}
                     <div
                         ref={containerRef}
-                        className="docx-preview-wrapper mx-auto max-w-[1700px]"
+                        // scrollX (ТИД) - реальная ширина страницы/таблиц (docx-preview-scroll,
+                        // без mx-auto/max-width - иначе широкая таблица схлопывается вместо
+                        // горизонтального скролла, см. .docx-preview-fit в index.css). Обычный
+                        // просмотр - как раньше, подгонка под ширину контейнера.
+                        className={`docx-preview-wrapper ${scrollX ? "docx-preview-scroll" : "docx-preview-fit mx-auto max-w-[1700px]"}`}
                         style={{display: loading ? "none" : "block"}}
                     />
                 </div>

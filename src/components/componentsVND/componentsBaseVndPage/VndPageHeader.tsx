@@ -8,7 +8,7 @@ interface VndPageHeaderProps {
 export function VndPageHeader({onCreateClick}: VndPageHeaderProps) {
     return (
         <PageHeader
-            title="База данных ВНД"
+            title="Реестр ВНД"
             description="Централизованный реестр действующих ВНД · поиск и фильтрация по всем реквизитам и по тексту редакций"
             actions={
                 <button

@@ -1,4 +1,4 @@
-// Страница "База ВНД"
+// Страница "Реестр ВНД"
 import {useState} from "react";
 import {useNavigate} from "react-router-dom";
 import {useDictionaries} from "@/context/DictionariesContext.tsx";
@@ -14,7 +14,7 @@ import {JOURNAL} from "@/service/journalViewService/journalViewService.ts";
 import {JournalViewPicker} from "@/components/componentsGeneral/JournalViewPicker.tsx";
 
 import {type VndScope, type VndStatusKey} from '@/constants/vndTabs.ts';
-import {STATUS_META} from "@/constants/vndStatus.ts";
+import {STATUS_META, STATUS_OPTIONS_BY_SCOPE} from "@/constants/vndStatus.ts";
 
 import {VndPageHeader} from "@/components/componentsVND/componentsBaseVndPage/VndPageHeader.tsx";
 import {VndFilters} from "@/components/componentsVND/componentsBaseVndPage/VndFilters.tsx";
@@ -27,22 +27,17 @@ import {useAuth} from "@/context/AuthContext.ts";
 import {PermissionCode} from "@/constants/permissions/permissions.ts";
 import {FileEdit} from "lucide-react";
 
-
-const ALL_STATUS_OPTIONS: { key: VndStatusKey; label: string }[] = (
-    Object.keys(STATUS_META) as VndStatusKey[]
-).map((key) => ({key, label: STATUS_META[key].label}));
-
 type DraftOwnerScope = "mine" | "others" | "allDraft";
 
 export function BaseVndPage() {
     const navigate = useNavigate();
     const {hasPermission} = useAuth();
     const canViewOtherUsersDrafts = hasPermission(PermissionCode.ViewOtherUsersDrafts);
-    // Право создавать ВНД — от него зависит видимость вкладки "Черновики" и состав таба "Все"
+    // Право создавать ВНД - от него зависит видимость вкладки "Черновики" и состав таба "Все"
     const canCreateVnd =
         hasPermission(PermissionCode.CreateVndWithApproval) ||
         hasPermission(PermissionCode.CreateVndWithoutApproval);
-    // Право "Просмотр реестра ВНД в расширенном режиме" — колонки/фильтры
+    // Право "Просмотр реестра ВНД в расширенном режиме" - колонки/фильтры
     // "Статус последней редакции" и "Актуализация"
     const canViewVndRegistryExtended = hasPermission(PermissionCode.ViewVndRegistryExtended);
     // Чекбокс "Только связанные со мной" — только для "редакторов ВНД": тех, кто может
@@ -86,14 +81,28 @@ export function BaseVndPage() {
 
     const isArchScope = scope === "arch";
 
-    const selectAllStatuses = () => filters.setStatusFilters(ALL_STATUS_OPTIONS.map((o) => o.key));
+    // Набор значений фильтра "Статус последней редакции" — свой для каждой вкладки (см.
+    // STATUS_OPTIONS_BY_SCOPE): на "Действующих"/"Ещё не действующих" документ не может быть
+    // в архиве или черновиком, поэтому эти пункты там не показываем.
+    const statusOptionsForScope = (STATUS_OPTIONS_BY_SCOPE[scope] ?? (Object.keys(STATUS_META) as VndStatusKey[]))
+        .map((key) => ({key, label: STATUS_META[key].label}));
+
+    const selectAllStatuses = () => filters.setStatusFilters(statusOptionsForScope.map((o) => o.key));
     const deselectAllStatuses = () => filters.setStatusFilters([]);
 
-    // Вкладка "Черновики" видна только при праве создавать ВНД — и идёт сразу за
-    // "Архивированными", в общей группе табов (не отделяется вправо)
+    // Вкладка "Ещё не действующие" — "Статус ВНД" (документ-уровня) notYetActive, видна только
+    // при праве ViewVndRegistryExtended (обычным пользователям сервер такие документы вообще не
+    // отдаёт — см. VndService.SearchAsync — так что без права им и смотреть не на что). Идёт
+    // сразу за "Действующими", перед "Архивированными".
+    //
+    // Вкладка "Черновики" видна только при праве создавать ВНД — и идёт последней, в общей
+    // группе табов (не отделяется вправо)
     const scopeTabs = [
         {id: "all" as VndScope, label: "Все", n: counts.all},
         {id: "active" as VndScope, label: "Действующие", n: counts.active},
+        ...(canViewVndRegistryExtended
+            ? [{id: "notYetActive" as VndScope, label: "Ещё не действующие", n: counts.notYetActive}]
+            : []),
         {id: "arch" as VndScope, label: "Архивированные", n: counts.arch},
         ...(canCreateVnd
             ? [{id: "draft" as VndScope, label: "Черновики", n: counts.draft, icon: <FileEdit size={14}/>}]
@@ -148,7 +157,7 @@ export function BaseVndPage() {
                 onDeselectAllLinkedToMeRelations={filters.deselectAllLinkedToMeRelations}
                 search={filters.search}
                 onSearchChange={filters.setSearch}
-                statusOptions={ALL_STATUS_OPTIONS}
+                statusOptions={statusOptionsForScope}
                 statusFilters={filters.statusFilters}
                 onToggleStatus={filters.toggleStatusFilter}
                 onSelectAllStatuses={selectAllStatuses}
@@ -161,15 +170,16 @@ export function BaseVndPage() {
                 resultCount={filteredRows.length}
                 totalCount={
                     scope === "active" ? counts.active :
-                        scope === "draft" ? counts.draft :
-                            scope === "arch" ? counts.arch :
-                                counts.all
+                        scope === "notYetActive" ? counts.notYetActive :
+                            scope === "draft" ? counts.draft :
+                                scope === "arch" ? counts.arch :
+                                    counts.all
                 }
                 viewPicker={
                     <JournalViewPicker
                         views={views.views}
                         active={views.active}
-                        изменено={views.изменено}
+                        isDirty={views.isDirty}
                         canShare={hasPermission(PermissionCode.ManageSystemSettings)}
                         error={views.error}
                         onApply={views.apply}

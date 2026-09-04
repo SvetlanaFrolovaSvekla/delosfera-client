@@ -1,9 +1,15 @@
 import type {ReactNode} from "react";
-import {FilePlus2, Layers} from "lucide-react";
+import {CalendarClock, FilePlus2, Layers} from "lucide-react";
 import type {VndStatusKey} from "@/service/vndService/vndServiceType.ts";
+import {isVndPendingEffective} from "@/constants/vndStatus.ts";
+import {formatDate} from "@/utils/dateUtils.ts";
 
 interface VndStatusBannerProps {
     status: VndStatusKey;
+    /** Дата вступления в силу — если она в будущем, а статус уже "active" (документ
+     * консолидирован), баннер показывает "Ожидание вступления в силу" вместо того, чтобы
+     * молчать (для "active" своего BANNER_CONFIG нет — обычно баннер здесь вообще не рисуется). */
+    effectiveDate?: string | null;
     /** Клик по первичному действию */
     onPrimaryAction?: () => void;
     /** Клик по вторичному действию (напр. «Консолидировать согласованную версию») */
@@ -13,6 +19,11 @@ interface VndStatusBannerProps {
      * Если не передано (undefined), баннер считает, что действие доступно (обратная совместимость),
      * поэтому для статуса "consol" это значение обязательно нужно вычислять и передавать явно. */
     canConsolidate?: boolean;
+    /** Актуализационная редакция (Number > 1) без файла ТИД — консолидировать документ нельзя
+     * (см. VndActualizationService.PublishAsync), поэтому кнопку "Консолидировать" прячем и
+     * поясняем, что сначала нужно приложить ТИД (во вкладке «Редакции»). Актуально только для
+     * статуса "consol". */
+    tidMissing?: boolean;
 }
 
 interface BannerConfig {
@@ -69,16 +80,52 @@ const BANNER_CONFIG: Partial<Record<VndStatusKey, BannerConfig>> = {
 const CONSOL_READONLY_TEXT =
     "Согласование завершено. Дождитесь решения руководства по консолидации.";
 
-export function VndStatusBanner({status, onPrimaryAction, onSecondaryAction, compact, canConsolidate}: VndStatusBannerProps) {
-    const config = BANNER_CONFIG[status];
+// Текст для статуса "Консолидация", когда у актуализационной редакции ещё нет файла ТИД -
+// консолидировать нельзя, пока он не приложен (см. tidMissing выше)
+const CONSOL_TID_MISSING_TEXT =
+    "Прежде чем консолидировать документ, приложите файл ТИД (Таблица изменений и дополнений) " +
+    "во вкладке «Редакции».";
+
+// "Ожидание вступления в силу" — не заведён в BANNER_CONFIG (там ключ — реальный VndStatusKey,
+// а этот статус вычисляемый, см. isVndPendingEffective), только базовые цвета/иконка; текст
+// собирается ниже с подстановкой самой даты.
+const PENDING_EFFECTIVE_CONFIG_BASE: Omit<BannerConfig, "text"> = {
+    icon: <CalendarClock className="w-[21px] h-[21px]" strokeWidth={1.8}/>,
+    iconColor: "#c2410c",
+    iconBg: "#ffedd5",
+    borderColor: "#f3d0a8",
+    gradientFrom: "#fff7ed",
+    gradientTo: "#fffbf5",
+    titleColor: "#7c2d12",
+    title: "Документ ожидает вступления в силу",
+    textColor: "#9a5b2e",
+    accentColor: "#c2410c",
+};
+
+export function VndStatusBanner({status, effectiveDate, onPrimaryAction, onSecondaryAction, compact, canConsolidate, tidMissing}: VndStatusBannerProps) {
+    const pendingEffective = isVndPendingEffective(status, effectiveDate);
+
+    const config: BannerConfig | undefined = pendingEffective
+        ? {
+            ...PENDING_EFFECTIVE_CONFIG_BASE,
+            text: `Дата вступления в силу — ${formatDate(effectiveDate)}. До этого момента документ ` +
+                "находится в статусе «Ожидание вступления в силу».",
+        }
+        : BANNER_CONFIG[status];
     if (!config) return null;
 
     // Право действовать по консолидации проверяется только для статуса "consol";
-    // canConsolidate === false — единственный случай, когда прячем кнопку и меняем текст
+    // canConsolidate === false и tidMissing === true — два независимых случая, когда прячем
+    // кнопку и меняем текст (проверка прав первична - если прав нет, ТИД тут не при чём).
     const isConsolWithoutRights = status === "consol" && canConsolidate === false;
+    const isConsolTidMissing = status === "consol" && !isConsolWithoutRights && tidMissing === true;
 
-    const displayText = isConsolWithoutRights ? CONSOL_READONLY_TEXT : config.text;
-    const secondaryLabel = isConsolWithoutRights ? undefined : config.secondaryLabel;
+    const displayText = isConsolWithoutRights
+        ? CONSOL_READONLY_TEXT
+        : isConsolTidMissing
+            ? CONSOL_TID_MISSING_TEXT
+            : config.text;
+    const secondaryLabel = (isConsolWithoutRights || isConsolTidMissing) ? undefined : config.secondaryLabel;
 
     const hasActions = config.primaryLabel || secondaryLabel;
 

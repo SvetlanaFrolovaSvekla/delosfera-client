@@ -4,7 +4,7 @@
 import {useLayoutEffect, useRef, useState} from "react";
 import {Tooltip} from "@/components/componentsGeneral/Tooltip.tsx";
 import {downloadWithToast} from "@/utils/downloadFile.ts";
-import {Paperclip} from "lucide-react";
+import {Paperclip, Download} from "lucide-react";
 
 export function AttachmentRow({fileId, fileName}: {fileId: number; fileName: string}) {
     const textRef = useRef<HTMLSpanElement>(null);
@@ -27,10 +27,11 @@ export function AttachmentRow({fileId, fileName}: {fileId: number; fileName: str
             <button
                 type="button"
                 onClick={() => void downloadWithToast(fileId, fileName)}
-                className="cursor-pointer flex w-full items-center gap-1.5 rounded-[7px] border border-[#e5e9f0] bg-[#fbfcfe] px-2 py-1 text-left text-[11px] text-[#4e57d6] hover:border-[#4e57d6]/40 hover:bg-white"
+                className="group cursor-pointer flex w-full items-center gap-1.5 rounded-[7px] border border-[#e5e9f0] bg-[#fbfcfe] px-2 py-1 text-left text-[11px] text-[#4e57d6] hover:border-[#4e57d6]/40 hover:bg-white"
             >
                 <Paperclip size={11} className="flex-none"/>
-                <span ref={textRef} className="truncate">{fileName}</span>
+                <span ref={textRef} className="truncate flex-1 min-w-0">{fileName}</span>
+                <Download size={11} className="flex-none text-[#4e57d6]/60 group-hover:text-[#4e57d6]"/>
             </button>
         </Tooltip>
     );

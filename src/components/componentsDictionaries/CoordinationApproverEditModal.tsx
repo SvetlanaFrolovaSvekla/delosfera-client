@@ -64,8 +64,11 @@ export function CoordinationApproverEditModal({
             >
                 <div className="flex items-center justify-between px-5 py-4 border-b border-[#eef2f7]">
                     <h3 className="m-0 text-[15px] font-semibold text-[#1c2740]">
-                        {/* Согласующий: {kindTitle} */}
-                        {t("coordinationApproversPage.formTitle", {kind: item.kindTitle})}
+                        {/* УСТАРЕЛО: этот компонент больше не используется (заменён на
+                            CoordinationStageFormModal.tsx), оставлен только чтобы не ломать
+                            сборку - item.kindTitle раньше отдавал бэк, теперь у записи
+                            справочника просто есть Title. */}
+                        {t("coordinationApproversPage.formTitle", {kind: item.title})}
                     </h3>
                     <button
                         onClick={onClose}

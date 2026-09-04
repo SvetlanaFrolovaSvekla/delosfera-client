@@ -30,6 +30,7 @@ export type ColKey =
     | "keywords"
     | "secrecyLevel"
     | "userGroups"
+    | "redactionCount" // серый кружок с общим кол-вом редакций (актуальных и нет) - только при праве ViewVndRegistryExtended
     | "actualizationBucket" // статус срока актуализации (normal/approaching/critical/overdue) - для страницы планирования актуализации
     | "linkedToMe"; // виды связи текущего пользователя с документом - только при включённом чекбоксе "Только связанные со мной"
 
@@ -43,6 +44,7 @@ export interface ColDef {
 // --- Дополнительные колонки, общие для обоих scope
 const EXTRA_COLUMNS: ColDef[] = [
     {key: "linkedToMe", label: "Связь со мной", width: "220px"},
+    {key: "redactionCount", label: "Кол-во редакций", width: "140px"},
     {key: "responsibleExecutors", label: "Ответственные исполнители", width: "220px"},
     {key: "adoptionDate", label: "Дата принятия", width: "140px"},
     {key: "adoptionCode", label: "№ принятия", width: "140px"},
@@ -103,7 +105,7 @@ const HIDDEN_ON_ARCH: ColKey[] = [
 
 // Колонки, доступные только при праве ViewVndRegistryExtended ("Просмотр реестра ВНД
 // в расширенном режиме: статус последней редакции, актуализация")
-const EXTENDED_PERMISSION_COLUMNS: ColKey[] = ["status", "act"];
+const EXTENDED_PERMISSION_COLUMNS: ColKey[] = ["status", "act", "redactionCount"];
 
 // Колонки, доступные только при включённом чекбоксе "Только связанные со мной"
 const LINKED_TO_ME_ONLY_COLUMNS: ColKey[] = ["linkedToMe"];

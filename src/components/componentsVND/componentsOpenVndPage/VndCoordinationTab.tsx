@@ -4,6 +4,7 @@ import {useAuth} from "@/context/AuthContext.ts";
 import {coordinationService} from "@/service/coordinationService/coordinationService.ts";
 import {
     ApprovalDecisionType,
+    type ApprovalQuoteItem,
     type ApprovalStageResponse
 } from "@/service/coordinationService/coordinationServiceTypes.ts";
 import type {VndRedactionResponse, VndResponse} from "@/service/vndService/vndServiceType.ts";
@@ -26,6 +27,7 @@ import {
 import {
     VndApproverResolutionPanel,
     type ResolutionChoice,
+    type VndApproverResolutionPanelHandle,
 } from "./componentsCoordinationTab/VndApproverResolutionPanel.tsx";
 import {VndRevisionNeededPanel} from "./componentsCoordinationTab/VndRevisionNeededPanel.tsx";
 import {Loader} from "@/components/componentsGeneral/Loader.tsx";
@@ -40,8 +42,8 @@ import {
     RedactionViewModal
 } from "@/components/componentsCoordination/CoordinationRouteConstructor/viewComponents/RedactionViewModal.tsx";
 import {ConfirmActionModal} from "@/components/componentsGeneral/modal/ConfirmActionModal.tsx";
-import {AlertTriangle, CheckCircle2, Clock3, Columns2, FileCheck2, XCircle} from "lucide-react";
-import type {RedactionLanguage} from "@/utils/redactionLanguagePanelUtils.ts";
+import {AlertTriangle, CheckCircle2, Clock3, Columns2, FileCheck2, Info, XCircle} from "lucide-react";
+import type {RedactionViewTarget} from "@/utils/redactionLanguagePanelUtils.ts";
 import {useApprovalProcess} from "@/hooks/coordinationHooks/useApprovalProcess.ts";
 
 ///
@@ -67,7 +69,21 @@ const DECISION_MAP: Record<ResolutionChoice, ApprovalDecisionType> = {
 type CoordinationModal =
     | { kind: "startApproval" }
     | { kind: "compare" }
-    | { kind: "view"; redaction: VndRedactionResponse; language: RedactionLanguage };
+    | {
+        kind: "view";
+        redaction: VndRedactionResponse;
+        /* Не указывается для режима "сослаться на текст" (см. handleCiteRequest) - там нет
+         конкретной вкладки, с которой имело бы смысл начинать, открываем как есть (первый
+         доступный язык), и пользователь сам переключается, если нужно). Для "перейти к цитате"
+         (см. handleJumpToQuote) - вкладка, к которой относится сама цитата. */
+        language?: RedactionViewTarget;
+        /* Передаётся только когда модалка открыта через "+ Сослаться на текст редакции" -
+         превращает обычный просмотр в режим цитирования (см. RedactionViewModal.onInsertQuote). */
+        onInsertQuote?: (selectedText: string, documentTarget: RedactionViewTarget) => void;
+        /* Передаётся только когда модалка открыта, чтобы сразу проскроллить к месту одной из
+         уже вставленных цитат (см. handleJumpToQuote/RedactionViewModal.initialSearchQuery). */
+        initialSearchQuery?: string;
+    };
 
 export function VndCoordinationTab({vnd, onVndChanged}: VndCoordinationTabProps) {
     const {user, hasPermission} = useAuth();
@@ -76,7 +92,7 @@ export function VndCoordinationTab({vnd, onVndChanged}: VndCoordinationTabProps)
     const {process, loading, error, reload} = useApprovalProcess(vnd.id); // Сами данные о согласовании
 
     const [modal, setModal] = useState<CoordinationModal | null>(null);
-    const openView = (redaction: VndRedactionResponse, language: RedactionLanguage) =>
+    const openView = (redaction: VndRedactionResponse, language: RedactionViewTarget) =>
         setModal({kind: "view", redaction, language});
 
     const [cancelling, setCancelling] = useState(false); // Отзыв согласования
@@ -100,8 +116,25 @@ export function VndCoordinationTab({vnd, onVndChanged}: VndCoordinationTabProps)
     // не совпадает, и React падает с "Rendered more hooks than during the previous render".
     const decisionInFlightRef = useRef(false);
 
+    // "+ Сослаться на текст редакции" в "Ваша резолюция" - ref должен стоять здесь же, ДО
+    // условных return ниже (см. комментарий у decisionInFlightRef чуть выше) - иначе он не
+    // вызывается при early return и React падает с "Rendered more hooks than during the
+    // previous render". Сам handleCiteRequest (не хук) определён ниже, рядом с redaction.
+    const resolutionPanelRef = useRef<VndApproverResolutionPanelHandle>(null);
+
     // Редакции ВНД грузим, чтобы достать ту, что связана с process.redactionId
-    const {data: redactions, loading: redactionsLoading, error: redactionsError} = useVndRedactions(vnd.id);
+    const {
+        data: redactions, loading: redactionsLoading, error: redactionsError, refetch: refetchRedactions,
+    } = useVndRedactions(vnd.id);
+
+    // После повторной отправки перезагружаем и процесс согласования, и список редакций —
+    // метка "Обновлено, <дата>" в "Данная редакция:" берётся из персистентных полей
+    // redaction.docRuUpdatedAt/docKgUpdatedAt/docEnUpdatedAt (см. RedactionDocumentsPanel),
+    // которые уже придут в свежих данных с бэка, отдельного состояния для этого не нужно.
+    const handleResubmitted = async () => {
+        await Promise.all([reload(), refetchRedactions()]);
+        toast.success("Отправлено на согласование", "Исправленная редакция отправлена дальше по маршруту");
+    };
 
     const download = useAsyncAction<number>();
     const handleDownload = (fileId: number, name: string) =>
@@ -175,6 +208,10 @@ export function VndCoordinationTab({vnd, onVndChanged}: VndCoordinationTabProps)
     const isRevisionNeeded = process.status === "revision_needed";
     const isApproved = process.status === "approved";
     const isRejected = process.status === "rejected";
+    // Согласование ещё идёт - маркеры цитат в тексте редакции кликабельны (открывают резолюцию
+    // целиком) только пока это так; после завершения (согласовано/отклонено) маркеры остаются
+    // видны, но клик по ним больше ничего не открывает - см. RedactionViewModal.quoteMarksClickable.
+    const isProcessActive = !isApproved && !isRejected;
 
     // На финальной выдержке решение может принять ЛЮБОЙ согласующий маршрута
     const myStage = process.stages.find((s: ApprovalStageResponse) => {
@@ -194,7 +231,9 @@ export function VndCoordinationTab({vnd, onVndChanged}: VndCoordinationTabProps)
             (isRepeatedPhase && (myStage.repeatDecision === null || myStage.repeatDecision === "pending")) ||
             (isFinalHoldPhase && (myStage.finalHoldDecision === null || myStage.finalHoldDecision === "pending")));
 
-    const handleResolutionSubmit = async (choice: ResolutionChoice, comment: string, files: File[]) => {
+    const handleResolutionSubmit = async (
+        choice: ResolutionChoice, comment: string, files: File[], quotes: ApprovalQuoteItem[],
+    ) => {
         if (!myStage || decisionInFlightRef.current) return;
         decisionInFlightRef.current = true;
         setSubmitting(true);
@@ -204,14 +243,43 @@ export function VndCoordinationTab({vnd, onVndChanged}: VndCoordinationTabProps)
                 decision: DECISION_MAP[choice],
                 comment: comment || undefined,
                 files: files.length > 0 ? files : undefined,
+                quotes: quotes.length > 0 ? quotes : undefined,
             });
             await reload();
+            toast.success("Резолюция отправлена", "Ваше решение по согласованию учтено");
         } catch (err) {
             setDecisionError(err instanceof Error ? err.message : "Не удалось отправить резолюцию");
         } finally {
             decisionInFlightRef.current = false;
             setSubmitting(false);
         }
+    };
+
+    // "+ Сослаться на текст редакции" в "Ваша резолюция" - открывает просмотр проверяемой
+    // редакции в режиме цитирования, а вставка выделенного текста в комментарий делегируется
+    // самой панели резолюции через imperative handle (resolutionPanelRef объявлен выше, до
+    // условных return - см. комментарий там).
+    const handleCiteRequest = () => {
+        if (!redaction) return;
+        setModal({
+            kind: "view",
+            redaction,
+            onInsertQuote: (selectedText, documentTarget) =>
+                resolutionPanelRef.current?.insertQuote(selectedText, documentTarget),
+        });
+    };
+
+    // "Показать в тексте" у уже вставленной (но ещё не отправленной) цитаты в "Ваша резолюция" -
+    // открывает просмотр редакции сразу на нужной вкладке, с прокруткой к месту цитаты (через
+    // обычный поиск по тексту - см. RedactionViewModal.initialSearchQuery).
+    const handleJumpToQuote = (quote: ApprovalQuoteItem) => {
+        if (!redaction) return;
+        setModal({
+            kind: "view",
+            redaction,
+            language: quote.documentTarget as RedactionViewTarget,
+            initialSearchQuery: quote.text,
+        });
     };
 
     const handleCancel = async () => {
@@ -271,6 +339,20 @@ export function VndCoordinationTab({vnd, onVndChanged}: VndCoordinationTabProps)
                     </div>
                 )}
 
+                {/* Плашка для согласующего на этапе "Согласование после внесённых изменений" —
+                    только для тех, чей этап участвует в повторном круге (participatesInRepeat,
+                    т.е. кто оставлял замечания/не согласовал чисто на первичном этапе - см.
+                    myStage выше), именно им нужно перепроверить обновлённые файлы. */}
+                {isRepeatedPhase && (
+                    <div className="mb-3 flex items-start gap-2.5 rounded-[12px] border border-[#bcd6f5] bg-[#eef5fd] px-3.5 py-3 max-w-full">
+                        <Info size={16} strokeWidth={2} className="mt-[1px] flex-none text-[#2f68c4]"/>
+                        <p className="text-[12.5px] leading-[1.55] text-[#1c4a80]">
+                            <span className="font-semibold">Файлы редакции были обновлены по вашим замечаниям.</span>
+                            {" "}Пожалуйста, проверьте обновлённые файлы ниже и вынесите решение по согласованию.
+                        </p>
+                    </div>
+                )}
+
                 <VndApprovalSummary process={process}/>
 
                 {redactionsError && (
@@ -314,8 +396,10 @@ export function VndCoordinationTab({vnd, onVndChanged}: VndCoordinationTabProps)
                 {modal?.kind === "compare" && redaction && previousRedaction && (
                     <RedactionCompareModal
                         vnd={vnd}
-                        redaction={redaction}
-                        previousRedaction={previousRedaction}
+                        redactions={redactions ?? []}
+                        initialLeft={redaction}
+                        initialRight={previousRedaction}
+                        reviewedRedactionId={redaction.id}
                         downloadingId={download.activeId}
                         onDownload={handleDownload}
                         onClose={() => setModal(null)}
@@ -326,9 +410,13 @@ export function VndCoordinationTab({vnd, onVndChanged}: VndCoordinationTabProps)
                         vnd={vnd}
                         redaction={modal.redaction}
                         initialLanguage={modal.language}
+                        initialSearchQuery={modal.initialSearchQuery}
                         downloadingId={download.activeId}
                         onDownload={handleDownload}
                         onClose={() => setModal(null)}
+                        onInsertQuote={modal.onInsertQuote}
+                        approvalProcess={process}
+                        quoteMarksClickable={isProcessActive}
                     />
                 )}
 
@@ -364,10 +452,13 @@ export function VndCoordinationTab({vnd, onVndChanged}: VndCoordinationTabProps)
                             </div>
                         )}
                         <VndApproverResolutionPanel
+                            ref={resolutionPanelRef}
                             onSubmit={handleResolutionSubmit}
                             submitting={submitting}
                             error={decisionError}
                             phase={isFinalHoldPhase ? "finalHold" : isRepeatedPhase ? "repeated" : "primary"}
+                            onCiteRequest={redaction ? handleCiteRequest : undefined}
+                            onJumpToQuote={redaction ? handleJumpToQuote : undefined}
                         />
                     </div>
                 )}
@@ -387,6 +478,20 @@ export function VndCoordinationTab({vnd, onVndChanged}: VndCoordinationTabProps)
                         Обратите внимание: Вы заявили, что актуализация должна пройти без
                         изменений. На согласовании действующая редакция как есть, без нового
                         файла. Согласующие также увидят соответствующее сообщение.
+                    </p>
+                </div>
+            )}
+
+            {/* Плашка для инициатора: редакцию отправили на доработку, есть замечания.
+                Только для него - согласующим адресована не эта плашка (у них другой статус
+                этапа, и это сообщение адресовано именно тому, кто должен исправлять). */}
+            {isRevisionNeeded && isInitiator && (
+                <div className="mx-auto mb-5 flex w-fit max-w-full items-start gap-2.5 rounded-[12px] border border-[#f0dcae] bg-[#fdf6e8] px-4 py-3">
+                    <AlertTriangle size={16} strokeWidth={2} className="mt-[1px] flex-none text-[#9a6408]"/>
+                    <p className="text-[12.5px] leading-[1.55] text-[#7a5006]">
+                        <span className="font-semibold">Редакцию ВНД отправили на доработку — есть замечания.</span>
+                        {" "}Пожалуйста, исправьте их: после отправки согласование перейдёт на следующий этап
+                        «Согласование после внесённых изменений».
                     </p>
                 </div>
             )}
@@ -439,8 +544,10 @@ export function VndCoordinationTab({vnd, onVndChanged}: VndCoordinationTabProps)
             {modal?.kind === "compare" && redaction && previousRedaction && (
                 <RedactionCompareModal
                     vnd={vnd}
-                    redaction={redaction}
-                    previousRedaction={previousRedaction}
+                    redactions={redactions ?? []}
+                    initialLeft={redaction}
+                    initialRight={previousRedaction}
+                    reviewedRedactionId={redaction.id}
                     downloadingId={download.activeId}
                     onDownload={handleDownload}
                     onClose={() => setModal(null)}
@@ -452,9 +559,12 @@ export function VndCoordinationTab({vnd, onVndChanged}: VndCoordinationTabProps)
                     vnd={vnd}
                     redaction={modal.redaction}
                     initialLanguage={modal.language}
+                    initialSearchQuery={modal.initialSearchQuery}
                     downloadingId={download.activeId}
                     onDownload={handleDownload}
                     onClose={() => setModal(null)}
+                    approvalProcess={process}
+                    quoteMarksClickable={isProcessActive}
                 />
             )}
 
@@ -484,9 +594,12 @@ export function VndCoordinationTab({vnd, onVndChanged}: VndCoordinationTabProps)
             {isRevisionNeeded && isInitiator && (
                 <VndRevisionNeededPanel
                     vndId={vnd.id}
+                    vnd={vnd}
                     process={process}
+                    redaction={redaction}
                     requiresTid={!!redaction && redaction.number > 1}
                     onChanged={reload}
+                    onResubmitted={handleResubmitted}
                 />
             )}
 

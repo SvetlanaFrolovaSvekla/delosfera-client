@@ -37,7 +37,7 @@ export function useStartApproval({
         try {
             const request: StartApprovalRequest = {
                 stages: stages.map((s) => ({
-                    kind: s.kind,
+                    coordinationStageId: s.coordinationStageId,
                     approverUserId: s.approverUserId as number,
                 })),
                 primaryDeadlineMinutes: Number(primaryMinutes),

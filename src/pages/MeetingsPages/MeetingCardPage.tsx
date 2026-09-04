@@ -9,6 +9,7 @@ import {
 import {formatDate, formatTime} from "@/service/meetingsService/formatMeetingDate.ts";
 import {userService, type UserLookupItem} from "@/service/userService/userService.ts";
 import {AgendaItemCard} from "@/components/meetings/AgendaItemCard.tsx";
+import {MeetingAttendancePanel} from "@/components/meetings/MeetingAttendancePanel.tsx";
 
 /**
  * Карточка заседания: реквизиты и повестка дня.
@@ -119,6 +120,10 @@ export const MeetingCardPage = () => {
                       value={meeting.materialsUrl ? "по ссылке" : "не заданы"}
                       note={meeting.materialsUrl ?? undefined}/>
             </div>
+
+            {/* Кто из органа был на заседании: по этому списку считается кворум,
+                и с него начинается протокол. */}
+            <MeetingAttendancePanel meetingId={meeting.id} canEdit={meeting.canEdit}/>
 
             {meeting.items.map(item => (
                 <AgendaItemCard

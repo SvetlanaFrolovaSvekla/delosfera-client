@@ -53,6 +53,14 @@ export const getRefSections = (t: TFunction): RefSection[] => [
                 path: "/management/refs/organization-unit",
             },
             {
+                key: "body-members",
+                code: "03",
+                title: "Состав коллегиальных органов",
+                subtitle: "Кто входит в Правление, КПА и Кредитный комитет — и кем",
+                icon: Landmark,
+                path: "/management/refs/body-members",
+            },
+            {
                 key: "position",
                 code: "03",
                 title: t("refSections.general.position.title"),

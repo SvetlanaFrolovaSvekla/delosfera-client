@@ -1,3 +1,4 @@
+import type {BoardReview} from "@/components/componentsGeneral/BoardReviewCard.tsx";
 import {apiClient} from "@/service/apiClient.ts";
 import type {SzAssignmentDraft} from "@/service/szService/szExecutionService.ts";
 
@@ -82,6 +83,14 @@ export interface SzDetails extends SzListItem {
 
     /** Записка уже включена в повестку — менять отметку поздно. */
     inAgenda: boolean;
+
+    /** Рассмотрение на коллегиальном органе; пусто — вопрос ещё не включён. */
+    boardReview: BoardReview | null;
+
+    /** Заявка на закупку, выросшая из записки. */
+    procurementRequestId: number | null;
+    procurementRegNumber: string | null;
+    procurementStatusCode: string | null;
     registeredByUserId: number | null;
     rubricIds: number[];
     rubrics: string[];

@@ -20,7 +20,9 @@ export interface PickableUser {
     position?: string | null;
     orgUnit?: string | null;
     orgUnitId?: number | null;
-    /** Член Правления — идёт первым в подборе. */
+    /** Председатель Правления — идёт первым в подборе. */
+    isChairman?: boolean;
+    /** Член Правления — идёт следом за председателем. */
     isBoardMember?: boolean;
     /** Руководит подразделением — идёт вторым. */
     isUnitHead?: boolean;
@@ -38,11 +40,12 @@ interface Props {
     bySeniority?: boolean;
 }
 
-/** Старшинство: Правление → руководители → остальные. */
+/** Старшинство: председатель → Правление → руководители → остальные. */
 export function seniority(u: PickableUser): number {
-    if (u.isBoardMember) return 0;
-    if (u.isUnitHead) return 1;
-    return 2;
+    if (u.isChairman) return 0;
+    if (u.isBoardMember) return 1;
+    if (u.isUnitHead) return 2;
+    return 3;
 }
 
 export function UserPicker({

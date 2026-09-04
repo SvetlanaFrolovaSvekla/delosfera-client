@@ -9,18 +9,21 @@ export interface ApproverOption {
     position?: string | null;
     orgUnit?: string | null;
 
-    /** Член Правления — идёт первым в подборе. */
+    /** Председатель Правления — идёт первым в подборе. */
+    isChairman?: boolean;
+    /** Член Правления — идёт следом за председателем. */
     isBoardMember?: boolean;
 
     /** Руководит подразделением — идёт вторым. */
     isUnitHead?: boolean;
 }
 
-/** Старшинство в подборе: Правление → руководители → остальные. */
+/** Старшинство в подборе: председатель → Правление → руководители → остальные. */
 function старшинство(u: ApproverOption): number {
-    if (u.isBoardMember) return 0;
-    if (u.isUnitHead) return 1;
-    return 2;
+    if (u.isChairman) return 0;
+    if (u.isBoardMember) return 1;
+    if (u.isUnitHead) return 2;
+    return 3;
 }
 
 interface Props {

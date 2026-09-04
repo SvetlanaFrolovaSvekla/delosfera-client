@@ -588,15 +588,6 @@ export function VndFilters(props: VndFiltersProps) {
                                     searchPlaceholder="Поиск ключевых слов…"
                                     hierarchical
                                 />
-                                <MultiSelectField
-                                    label="Рубрикатор"
-                                    modalTitle="Рубрикатор"
-                                    options={dictionaries.rubricOptions}
-                                    selectedKeys={draft.rubricFilters}
-                                    onChange={(v) => updateDraft("rubricFilters", v)}
-                                    searchPlaceholder="Поиск рубрики…"
-                                    hierarchical
-                                />
                             </div>
 
                             <div
@@ -616,6 +607,15 @@ export function VndFilters(props: VndFiltersProps) {
                                     selectedKeys={draft.userGroupFilters}
                                     onChange={(v) => updateDraft("userGroupFilters", v)}
                                     searchPlaceholder="Поиск группы…"
+                                />
+                                <MultiSelectField
+                                    label="Рубрикатор"
+                                    modalTitle="Рубрикатор"
+                                    options={dictionaries.rubricOptions}
+                                    selectedKeys={draft.rubricFilters}
+                                    onChange={(v) => updateDraft("rubricFilters", v)}
+                                    searchPlaceholder="Поиск рубрики…"
+                                    hierarchical
                                 />
                             </div>
                         </div>

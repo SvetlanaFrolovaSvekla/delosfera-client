@@ -68,6 +68,20 @@ export function SzExecutionPanel({sz, onChanged}: Props) {
     const live = assignments.filter((a) => a.state === "Open" || a.state === "Reported");
     const onExecution = sz.statusCode === "OnExecution";
 
+    /**
+     * Закрывать записку руками нужно только тогда, когда сама она не закроется.
+     *
+     * Записка становится исполненной сама, как только принято последнее
+     * поручение. Пока поручения в работе, кнопка бесполезна — сервер откажет,
+     * пересчитав незакрытые; а нажатая в момент приёмки последнего отчёта, она
+     * отвечала «Исполненной отмечается записка на исполнении», потому что
+     * записка к этому мгновению уже закрылась.
+     *
+     * Остаётся случай, ради которого кнопка и нужна: поручений нет вовсе или
+     * все они сняты — закрывать тогда некому, кроме автора.
+     */
+    const closesItself = live.length > 0;
+
     /** Мои поручения по этой записке — по ним видна форма отчёта. */
     const mine = useMemo(
         () => assignments.filter((a) => a.assigneeUserId === user?.id && (a.state === "Open" || a.state === "Reported")),
@@ -343,12 +357,21 @@ export function SzExecutionPanel({sz, onChanged}: Props) {
                     >
                         Продлить срок
                     </button>
-                    <button
-                        onClick={() => setCompleteOpen((v) => !v)}
-                        className="h-9 px-4 rounded-[9px] border border-[#c9e6d5] bg-white text-[#1c7a4d] font-semibold text-[12.5px] cursor-pointer hover:bg-[#eef8f2]"
-                    >
-                        Отметить исполненной
-                    </button>
+                    {!closesItself && (
+                        <button
+                            onClick={() => setCompleteOpen((v) => !v)}
+                            className="h-9 px-4 rounded-[9px] border border-[#c9e6d5] bg-white text-[#1c7a4d] font-semibold text-[12.5px] cursor-pointer hover:bg-[#eef8f2]"
+                        >
+                            Отметить исполненной
+                        </button>
+                    )}
+
+                    {closesItself && (
+                        <span className="self-center text-[12.5px] text-[#8b97ab]">
+                            Записка закроется сама, когда будет принято последнее поручение
+                            ({live.length} в работе)
+                        </span>
+                    )}
                 </div>
             )}
 

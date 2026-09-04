@@ -9,6 +9,7 @@ import {UserPicker, type PickableUser} from "@/components/componentsGeneral/User
 import {OrgUnitPicker} from "@/components/procurement/OrgUnitPicker.tsx";
 import {userService} from "@/service/userService/userService.ts";
 import {SzExecutionPanel} from "@/components/sz/SzExecutionPanel.tsx";
+import {SzSubmitToBodyPanel} from "@/components/sz/SzSubmitToBodyPanel.tsx";
 import {SzOriginalPanel} from "@/components/sz/SzOriginalPanel.tsx";
 import {SzArchivePanel} from "@/components/sz/SzArchivePanel.tsx";
 import {SzProcurementPanel} from "@/components/sz/SzProcurementPanel.tsx";
@@ -886,6 +887,21 @@ export function SzCardPage() {
             {/* Исполнение начинается после согласования — панель ведёт поручения и сроки. */}
             {sz && (sz.statusCode === "OnExecution" || sz.statusCode === "Executed") && (
                 <SzExecutionPanel sz={sz} onChanged={reload}/>
+            )}
+
+            {/* Вынесение на коллегиальный орган. Панель была написана, но нигде не
+                подключена — отметку негде было поставить, и записка до Правления
+                не доходила. Отметка ставится по зарегистрированной записке: до
+                регистрации выносить нечего. */}
+            {sz && (sz.statusCode === "Registered" || sz.statusCode === "OnBoardReview") && (
+                <SzSubmitToBodyPanel
+                    szId={sz.id}
+                    body={sz.submitToBody}
+                    question={sz.submitToBodyQuestion}
+                    inAgenda={sz.inAgenda}
+                    canEdit={hasPermission(PermissionCode.SubmitSzToBody)}
+                    onChanged={reload}
+                />
             )}
 
             {/* Бумажный контур: оригинал существует только у зарегистрированной записки. */}

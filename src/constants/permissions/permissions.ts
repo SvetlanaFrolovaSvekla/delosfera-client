@@ -137,4 +137,7 @@ export const PermissionCode = {
      * иначе кнопка на экране есть, а действие не проходит.
      */
     CancelAnyVndApproval: 44,
+
+    /** Вынести подписанную записку на коллегиальный орган — право председателя. */
+    SubmitSzToBody: 56,
 } as const;

@@ -25,6 +25,7 @@ const OrganizationUnitPage = lazy(() => import("@/pages/DictionariesPages/Organi
 const PositionPage = lazy(() => import("@/pages/DictionariesPages/PositionPage.tsx").then(m => ({default: m.PositionPage})));
 const BodyMembersPage = lazy(() => import("@/pages/DictionariesPages/BodyMembersPage.tsx").then(m => ({default: m.BodyMembersPage})));
 const RouteTemplatesPage = lazy(() => import("@/pages/RouteTemplatesPage.tsx").then(m => ({default: m.RouteTemplatesPage})));
+const AuthorityMatrixSettingsPage = lazy(() => import("@/pages/ProcurementPages/AuthorityMatrixSettingsPage.tsx").then(m => ({default: m.AuthorityMatrixSettingsPage})));
 const TypeVndPage = lazy(() => import("@/pages/DictionariesPages/TypeVndPage.tsx").then(m => ({default: m.TypeVndPage})));
 const SecurityLevelPage = lazy(() => import("@/pages/DictionariesPages/SecurityLevelPage.tsx").then(m => ({default: m.SecurityLevelPage})));
 const UserGroupPage = lazy(() => import("@/pages/DictionariesPages/UserGroupPage.tsx").then(m => ({default: m.UserGroupPage})));
@@ -211,6 +212,7 @@ function App() {
                                     </Route>
                                     <Route element={<RequirePermission code={PermissionCode.ManageSystemSettings}/>}>
                                         <Route path="route-templates" element={<RouteTemplatesPage/>}/>
+                                        <Route path="matrix-settings" element={<AuthorityMatrixSettingsPage/>}/>
                                         <Route path="feedback" element={<FeedbackInboxPage/>}/>
                                         <Route path="changes" element={<SettingsChangesPage/>}/>
                                         <Route path="integrations" element={<SystemSettingsPage/>}/>

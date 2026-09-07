@@ -70,6 +70,14 @@ export const getRefSections = (t: TFunction): RefSection[] => [
                 path: "/management/route-templates",
             },
             {
+                key: "matrix-settings",
+                code: "03",
+                title: "Матрица полномочий",
+                subtitle: "Пороги сумм, минимум КП и состав согласования по закупкам",
+                icon: Scale,
+                path: "/management/matrix-settings",
+            },
+            {
                 key: "position",
                 code: "03",
                 title: t("refSections.general.position.title"),

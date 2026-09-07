@@ -37,6 +37,14 @@ function toDateRangeFilter(v: DateFilterValue): VndSearchRequest["dueActualizati
         : undefined;
 }
 
+// "Планирование актуализации" — планируем сроки только для документов, которые в принципе уже
+// существуют как ВНД: действующих (active) и ещё не действующих, но уже прошедших согласование
+// хотя бы раз (onact/review/consol — в процессе актуализации, на согласовании или на консолидации,
+// т.е. "ещё не действующие" в терминах DocumentStatusKey). Черновики (draft — ещё ни разу не
+// отправленные на согласование) и архивные (arch) документы актуализировать нельзя/не нужно —
+// поэтому они сюда никогда не должны попадать, независимо от прочих фильтров на странице.
+const ACTUALIZATION_PLANNING_STATUSES: VndSearchRequest["statuses"] = ["active", "onact", "review", "consol"];
+
 export function ActualizationPage() {
     const {hasPermission} = useAuth();
     const isChiefEditor =
@@ -95,6 +103,7 @@ export function ActualizationPage() {
 
     const searchRequest = useMemo<VndSearchRequest>(() => ({
         name: search || undefined,
+        statuses: ACTUALIZATION_PLANNING_STATUSES,
         actualizationBuckets: bucketFilter === "all" ? [] : [bucketFilter],
         typeIds: typeFilters.length ? typeFilters.map(Number) : undefined,
         developerIds: developerFilters.length ? developerFilters.map(Number) : undefined,

@@ -390,6 +390,16 @@ export interface EditLastRevisionDirectlyRequest {
     removeDocKg?: boolean;
     /** Убрать документ на английском без замены - игнорируется, если одновременно передан docEn. */
     removeDocEn?: boolean;
+
+    // --- Специальные вложения - см. EditLastRevisionDirectlyRequest на бэке. Можно загрузить или
+    // заменить даже там, где их изначально не было (например, у редакций, перенесённых из isrib).
+    tid?: File;
+    removeTid?: boolean;
+    approvalSheet?: File;
+    removeApprovalSheet?: boolean;
+    disagreementMatrix?: File;
+    removeDisagreementMatrix?: boolean;
+
     description?: string;
     /** Новые вложения, добавляемые к редакции. */
     newAttachments?: File[];

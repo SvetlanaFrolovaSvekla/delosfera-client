@@ -152,7 +152,14 @@ export function RedactionsSidebar({
                                 isLatest={e.id === lastRedactionId}
                                 active={e.id === selectedId}
                                 onClick={() => onSelect(e.id)}
-                                showEditButton={canEditLastRevision && e.id === lastRedactionId && e.approvalStatus !== "Pending"}
+                                // Раньше кнопка "Редактировать" показывалась только у последней редакции — прямое
+                                // редактирование (VndEditLastRevisionModal → EditRedactionDirectlyAsync на бэке)
+                                // теперь работает для любой редакции документа, а не только последней (по просьбе
+                                // главного редактора: нужно править файлы/специальные вложения и старых редакций).
+                                // Ограничение на "на согласовании" (Pending) остаётся - пока редакция ожидает
+                                // решения согласующих, подменять её файлы напрямую нельзя (см. ту же проверку
+                                // на бэке в EditRedactionDirectlyAsync).
+                                showEditButton={canEditLastRevision && e.approvalStatus !== "Pending"}
                                 showTidButton={e.id !== firstRedactionId}
                                 wasRejected={e.id === rejectedRedactionId}
                                 onEdit={() => onEditRedaction(e.id)}

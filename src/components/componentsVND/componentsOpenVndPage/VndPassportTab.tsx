@@ -114,9 +114,29 @@ export function VndPassportTab({
         curatorDeveloperId: selectedRedaction?.curatorDeveloperId ?? vnd.curatorDeveloperId,
         curatorDeveloperName: selectedRedaction?.curatorDeveloperName ?? vnd.curatorDeveloperName,
         responsibleExecutorIds: selectedRedaction?.responsibleExecutorIds ?? vnd.responsibleExecutorIds,
-        adoptionDate: selectedRedaction?.adoptionDate ?? vnd.adoptionDate,
-        adoptionCode: selectedRedaction?.adoptionCode ?? vnd.adoptionCode,
-        effectiveDate: selectedRedaction?.effectiveDate ?? vnd.effectiveDate,
+        // ⚠ 07.09.2026: раньше здесь был "?? vnd.adoptionDate/adoptionCode/effectiveDate" — с `??`
+        // это срабатывало не только когда selectedRedaction === null (черновик без единой редакции —
+        // тут фолбэк на vnd.* по-прежнему нужен, см. комментарий выше), но и когда редакция ВЫБРАНА,
+        // а её собственное значение легитимно пустое (у прошлых редакций adoptionCode/effectiveDate
+        // намеренно null — см. миграцию, там должен быть прочерк). `??` не различает эти два случая —
+        // подставлял значения ТЕКУЩЕЙ редакции (vnd.* всегда равны её значениям) вместо прочерка при
+        // просмотре Р1/Р2/.../Рn. Явная проверка на selectedRedaction вместо `??` разруливает оба
+        // случая правильно: нет редакции вообще -> vnd.*; редакция выбрана -> ровно её значение,
+        // пусть даже пустое.
+        adoptionDate: selectedRedaction ? selectedRedaction.adoptionDate : vnd.adoptionDate,
+        adoptionCode: selectedRedaction ? selectedRedaction.adoptionCode : vnd.adoptionCode,
+        effectiveDate: selectedRedaction ? selectedRedaction.effectiveDate : vnd.effectiveDate,
+        // "Изменение редакции": момент, когда файл ИМЕННО ЭТОЙ редакции реально заменялся в
+        // системе (docRuUpdatedAt — проставляется в EditLastRevisionDirectlyAsync /
+        // ResubmitAfterRevisionAsync на бэке). Если редакцию ни разу не трогали после переноса/
+        // создания (docRuUpdatedAt === null — типичный случай для мигрированных из isrib
+        // документов), берём дату принятия этой же редакции — для старых документов файл и есть
+        // "дата принятия", отдельного факта изменения не было. Раньше здесь было document-level
+        // vnd.revisionChangedDate — одно значение на весь документ, поэтому во всех вкладках
+        // Р1/Р2/.../Рn показывалась одна и та же (последняя) дата вместо даты именно этой редакции.
+        revisionChangedDate: selectedRedaction
+            ? (selectedRedaction.docRuUpdatedAt ?? selectedRedaction.adoptionDate ?? selectedRedaction.createdAt)
+            : vnd.revisionChangedDate,
         keywordIds: selectedRedaction?.keywordIds ?? vnd.keywordIds,
         rubricIds: selectedRedaction?.rubricIds ?? vnd.rubricIds,
         secrecyLevelId: selectedRedaction?.secrecyLevelId ?? vnd.secrecyLevelId,
@@ -156,7 +176,7 @@ export function VndPassportTab({
         <>
             <div className="px-4 sm:px-6 flex items-center justify-between gap-2 mb-[15px]">
                 <p className="m-0 text-[#8b97ab] text-[13px]">
-                    Реквизиты документа
+                    Реквизиты по редакциям
                 </p>
 
                 <div className="flex gap-2.5">
@@ -426,12 +446,18 @@ export function VndPassportTab({
                     >
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-3">
                             <ReadOnlyField label="Изменение реквизитов" value={formatDate(vnd.requisitesChangedDate)}/>
-                            <ReadOnlyField label="Изменение редакции" value={formatDate(vnd.revisionChangedDate)}/>
+                            <ReadOnlyField
+                                label="Изменение редакции"
+                                value={formatDate(activeRequisites.revisionChangedDate)}
+                                highlighted={diffScalar((r) => r.docRuUpdatedAt ?? r.adoptionDate ?? r.createdAt)}
+                            />
                         </div>
 
                         <Clue>
                             Эти даты проставляются автоматически: «Изменение реквизитов» — при сохранении реквизитов
-                            документа, «Изменение редакции» — при согласовании новой редакции. Вручную их изменить нельзя.
+                            документа, «Изменение редакции» — при замене файла именно этой редакции (для старых
+                            документов, перенесённых без единой правки — датой принятия этой редакции). Вручную их
+                            изменить нельзя.
                         </Clue>
                     </Section>
                 </div>

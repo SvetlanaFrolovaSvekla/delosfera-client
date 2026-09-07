@@ -189,12 +189,151 @@ function DocReplaceSlot({def, file, removed, onFileSelected, onRevert, onDownloa
     );
 }
 
+/** Определение одного специального вложения (ТИД/Лист согласования/Матрица разногласий) для
+ * SpecialFileSlot ниже - тот же смысл, что и DocSlotDef, но без языка и без обязательности: любое
+ * из трёх можно как заменить, так и приложить с нуля там, где его никогда не было (например, у
+ * редакции, перенесённой из isrib) - см. EditLastRevisionDirectlyRequest на бэке. */
+interface SpecialSlotDef {
+    key: "tid" | "approvalSheet" | "disagreementMatrix";
+    label: string;
+    exists: boolean;
+    fileId: number | null;
+    fileName: string;
+}
+
+/** Строка одного специального вложения - тот же визуальный паттерн, что и DocReplaceSlot, но
+ * проще: не обязательно, всегда можно и заменить, и убрать, и приложить с нуля. */
+function SpecialFileSlot({def, file, removed, onFileSelected, onRevert, onDownload, onView, onToggleRemove}: {
+    def: SpecialSlotDef;
+    file: File | null;
+    removed: boolean;
+    onFileSelected: (file: File) => void;
+    onRevert: () => void;
+    onDownload: () => void;
+    onView: () => void;
+    onToggleRemove: () => void;
+}) {
+    const isUpdated = file !== null;
+    const [inputKey, setInputKey] = useState(0);
+
+    const handlePick = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const picked = e.target.files?.[0];
+        if (picked) onFileSelected(picked);
+        setInputKey((k) => k + 1);
+    };
+
+    return (
+        <div
+            className={`flex flex-wrap items-center gap-2.5 rounded-[9px] border px-3 py-[10px] ${
+                removed
+                    ? "border-[#f0c4c4] bg-[#fdf5f5]"
+                    : isUpdated
+                        ? "border-[#bfe3cc] bg-[#f4fbf6]"
+                        : def.exists
+                            ? "border-[#e5e9f0] bg-white"
+                            : "border-dashed border-[#d5dae3] bg-[#fbfcfe]"
+            }`}
+        >
+            <FileText
+                size={16}
+                className={`flex-none ${removed ? "text-[#c0392b]" : def.exists || isUpdated ? "text-[#4e57d6]" : "text-[#c3c9d4]"}`}
+            />
+
+            <span className="flex min-w-0 flex-1 flex-col">
+                <span className="text-[9.5px] font-bold uppercase tracking-[0.04em] text-[#a3adbd]">
+                    {def.label} <span className="normal-case font-normal">(необязательно)</span>
+                </span>
+                <Tooltip content={isUpdated ? file!.name : def.exists ? def.fileName : "Файл не загружен"} side="top" className="w-full min-w-0">
+                    <span className={`block truncate text-[13px] ${removed ? "text-[#c0392b] line-through" : "text-[#26324a]"}`}>
+                        {isUpdated ? file!.name : def.exists ? def.fileName : "Файл не загружен"}
+                    </span>
+                </Tooltip>
+            </span>
+
+            {removed ? (
+                <span className="flex-none text-[11px] font-semibold text-[#c0392b]">Будет удалено</span>
+            ) : isUpdated && (
+                <span className="flex-none inline-flex items-center gap-1 text-[11px] font-semibold text-[#1e8e3e]">
+                    <CheckCircle2 size={12} className="flex-none"/>
+                    {def.exists ? "Обновлено" : "Добавлено"}
+                </span>
+            )}
+
+            {def.exists && !removed && (
+                <>
+                    <Tooltip content="Просмотреть документ" side="top">
+                        <button
+                            type="button"
+                            onClick={onView}
+                            className="cursor-pointer flex-none rounded-[7px] border border-[#e5e9f0] bg-white p-[6px] text-[#8b97ab] hover:border-[#4e57d6]/40 hover:text-[#4e57d6]"
+                        >
+                            <Eye size={14}/>
+                        </button>
+                    </Tooltip>
+                    <Tooltip content="Скачать текущий файл" side="top">
+                        <button
+                            type="button"
+                            onClick={onDownload}
+                            className="cursor-pointer flex-none rounded-[7px] border border-[#e5e9f0] bg-white p-[6px] text-[#8b97ab] hover:border-[#4e57d6]/40 hover:text-[#4e57d6]"
+                        >
+                            <Download size={14}/>
+                        </button>
+                    </Tooltip>
+                </>
+            )}
+
+            {!removed && (
+                isUpdated ? (
+                    <button
+                        type="button"
+                        onClick={onRevert}
+                        className="cursor-pointer flex-none inline-flex items-center gap-1.5 rounded-[7px] border border-[#e5e9f0] bg-white px-2.5 py-[6px] text-[11.5px] font-semibold text-[#8b97ab] hover:border-[#c0392b]/40 hover:text-[#c0392b]"
+                    >
+                        <RotateCcw size={13}/>
+                        Вернуть
+                    </button>
+                ) : (
+                    <label
+                        className="cursor-pointer flex-none inline-flex items-center gap-1.5 rounded-[7px] border border-[#d7dee8] bg-white px-2.5 py-[6px] text-[11.5px] font-semibold text-[#4e57d6] hover:bg-[#ececfc]"
+                    >
+                        <input key={inputKey} type="file" accept={DOC_ACCEPT} className="hidden" onChange={handlePick}/>
+                        {def.exists ? <RefreshCcw size={13}/> : <Paperclip size={13}/>}
+                        {def.exists ? "Заменить" : "Загрузить"}
+                    </label>
+                )
+            )}
+
+            {def.exists && !isUpdated && (
+                <button
+                    type="button"
+                    onClick={onToggleRemove}
+                    className={`cursor-pointer flex-none rounded-[7px] border px-2.5 py-[6px] text-[11.5px] font-semibold transition-colors ${
+                        removed
+                            ? "border-[#e0473e] bg-[#fdecec] text-[#c0392b]"
+                            : "border-[#e5e9f0] bg-white text-[#8b97ab] hover:border-[#e0473e]/50 hover:text-[#c0392b]"
+                    }`}
+                >
+                    {removed ? "Отменить удаление" : "Удалить"}
+                </button>
+            )}
+        </div>
+    );
+}
+
 export function VndEditLastRevisionModal({vndId, vnd, redaction, roleNames, onClose, onSaved}: VndEditLastRevisionModalProps) {
     const [docRu, setDocRu] = useState<File | null>(null);
     const [docKg, setDocKg] = useState<File | null>(null);
     const [docEn, setDocEn] = useState<File | null>(null);
     const [removedDocLangs, setRemovedDocLangs] = useState<Set<"kg" | "en">>(new Set());
     const [description, setDescription] = useState(redaction.description ?? "");
+
+    // Специальные вложения (ТИД/Лист согласования/Матрица разногласий) - тот же паттерн
+    // File|null + Set "на удаление", что и у основных документов выше (docRu/docKg/docEn +
+    // removedDocLangs), только общий на все три вида, а не по языкам.
+    const [specialFiles, setSpecialFiles] = useState<Record<SpecialSlotDef["key"], File | null>>({
+        tid: null, approvalSheet: null, disagreementMatrix: null,
+    });
+    const [removedSpecial, setRemovedSpecial] = useState<Set<SpecialSlotDef["key"]>>(new Set());
 
     // Вложения редакции - новые (добавленные сейчас) и id уже существующих, помеченных на
     // удаление (само удаление произойдёт только при сохранении, см. handleSubmit).
@@ -252,6 +391,30 @@ export function VndEditLastRevisionModal({vndId, vnd, redaction, roleNames, onCl
         });
     };
 
+    const specialSlots: SpecialSlotDef[] = [
+        {
+            key: "tid", label: "ТИД", exists: redaction.tidFileId !== null,
+            fileId: redaction.tidFileId, fileName: `${redaction.code}_ТИД.docx`,
+        },
+        {
+            key: "approvalSheet", label: "Лист согласования", exists: redaction.approvalSheetFileId !== null,
+            fileId: redaction.approvalSheetFileId, fileName: `${redaction.code}_Лист_согласования.docx`,
+        },
+        {
+            key: "disagreementMatrix", label: "Матрица разногласий", exists: redaction.disagreementMatrixFileId !== null,
+            fileId: redaction.disagreementMatrixFileId, fileName: `${redaction.code}_Матрица_разногласий.docx`,
+        },
+    ];
+
+    const toggleRemoveSpecial = (key: SpecialSlotDef["key"]) => {
+        setRemovedSpecial((prev) => {
+            const next = new Set(prev);
+            if (next.has(key)) next.delete(key);
+            else next.add(key);
+            return next;
+        });
+    };
+
     const existingAttachmentCount = redaction.attachments.filter((a) => !removedAttachmentIds.has(a.fileId)).length;
     const totalAttachmentCount = existingAttachmentCount + newAttachments.length;
     const attachmentLimitReached = totalAttachmentCount >= VND_REDACTION_MAX_ATTACHMENTS;
@@ -276,6 +439,8 @@ export function VndEditLastRevisionModal({vndId, vnd, redaction, roleNames, onCl
     const hasChanges =
         docRu !== null || docKg !== null || docEn !== null
         || removedDocLangs.size > 0
+        || specialFiles.tid !== null || specialFiles.approvalSheet !== null || specialFiles.disagreementMatrix !== null
+        || removedSpecial.size > 0
         || description !== (redaction.description ?? "")
         || newAttachments.length > 0 || removedAttachmentIds.size > 0;
 
@@ -283,12 +448,21 @@ export function VndEditLastRevisionModal({vndId, vnd, redaction, roleNames, onCl
         setSubmitting(true);
         setError(null);
         try {
-            const result = await vndService.editLastRevisionDirectly(vndId, {
+            // Редактируем именно ЭТУ редакцию (не обязательно последнюю) - см.
+            // vndService.editRedactionDirectly/VndService.EditRedactionDirectlyAsync на бэке.
+            const result = await vndService.editRedactionDirectly(vndId, redaction.id, {
                 docRu: docRu ?? undefined,
                 docKg: docKg ?? undefined,
                 docEn: docEn ?? undefined,
                 removeDocKg: docKg === null && removedDocLangs.has("kg"),
                 removeDocEn: docEn === null && removedDocLangs.has("en"),
+                tid: specialFiles.tid ?? undefined,
+                removeTid: specialFiles.tid === null && removedSpecial.has("tid"),
+                approvalSheet: specialFiles.approvalSheet ?? undefined,
+                removeApprovalSheet: specialFiles.approvalSheet === null && removedSpecial.has("approvalSheet"),
+                disagreementMatrix: specialFiles.disagreementMatrix ?? undefined,
+                removeDisagreementMatrix:
+                    specialFiles.disagreementMatrix === null && removedSpecial.has("disagreementMatrix"),
                 description,
                 newAttachments: newAttachments.length > 0 ? newAttachments : undefined,
                 removedAttachmentFileIds: removedAttachmentIds.size > 0 ? Array.from(removedAttachmentIds) : undefined,
@@ -340,43 +514,27 @@ export function VndEditLastRevisionModal({vndId, vnd, redaction, roleNames, onCl
                                 />
                             ))}
 
-                            {/* ТИД (Таблица изменений и дополнений) - показываем отдельным полем,
-                                только если она есть у этой редакции. Только просмотр/скачивание -
-                                загрузка/замена ТИД делается через отдельную модалку
-                                (VndUploadTidModal), не отсюда. */}
-                            {redaction.tidFileId !== null && (
-                                <div className="flex flex-wrap items-center gap-2.5 rounded-[9px] border border-[#e5e9f0] bg-white px-3 py-[10px]">
-                                    <FileText size={16} className="flex-none text-[#4e57d6]"/>
-                                    <span className="flex min-w-0 flex-1 flex-col">
-                                        <span className="text-[9.5px] font-bold uppercase tracking-[0.04em] text-[#a3adbd]">
-                                            ТИД <span className="text-[#c0392b]">*</span>
-                                        </span>
-                                        <Tooltip content={`${redaction.code}_ТИД.docx`} side="top" className="w-full min-w-0">
-                                            <span className="block truncate text-[13px] text-[#26324a]">
-                                                {`${redaction.code}_ТИД.docx`}
-                                            </span>
-                                        </Tooltip>
-                                    </span>
-                                    <Tooltip content="Просмотреть Таблицу изменений и дополнений" side="top">
-                                        <button
-                                            type="button"
-                                            onClick={() => setViewLang("tid")}
-                                            className="cursor-pointer flex-none rounded-[7px] border border-[#e5e9f0] bg-white p-[6px] text-[#8b97ab] hover:border-[#4e57d6]/40 hover:text-[#4e57d6]"
-                                        >
-                                            <Eye size={14}/>
-                                        </button>
-                                    </Tooltip>
-                                    <Tooltip content="Скачать ТИД" side="top">
-                                        <button
-                                            type="button"
-                                            onClick={() => handleViewDownload(redaction.tidFileId as number, `${redaction.code}_ТИД.docx`)}
-                                            className="cursor-pointer flex-none rounded-[7px] border border-[#e5e9f0] bg-white p-[6px] text-[#8b97ab] hover:border-[#4e57d6]/40 hover:text-[#4e57d6]"
-                                        >
-                                            <Download size={14}/>
-                                        </button>
-                                    </Tooltip>
-                                </div>
-                            )}
+                            {/* Специальные вложения (ТИД/Лист согласования/Матрица разногласий) -
+                                в обычном режиме формируются автоматически или грузятся в рамках
+                                согласования, но главный редактор может приложить/заменить/убрать
+                                любое из них здесь вручную для ЛЮБОЙ редакции - в т.ч. там, где его
+                                никогда не было (например, у редакции, перенесённой из isrib). */}
+                            {specialSlots.map((def) => (
+                                <SpecialFileSlot
+                                    key={def.key}
+                                    def={def}
+                                    file={specialFiles[def.key]}
+                                    removed={removedSpecial.has(def.key)}
+                                    onFileSelected={(file) => setSpecialFiles((prev) => ({...prev, [def.key]: file}))}
+                                    onRevert={() => setSpecialFiles((prev) => ({...prev, [def.key]: null}))}
+                                    onDownload={() => {
+                                        if (def.fileId === null) return;
+                                        handleViewDownload(def.fileId, def.fileName);
+                                    }}
+                                    onView={() => setViewLang(def.key)}
+                                    onToggleRemove={() => toggleRemoveSpecial(def.key)}
+                                />
+                            ))}
 
                             <div>
                                 <div className="mb-[6px] flex items-center justify-between gap-2">

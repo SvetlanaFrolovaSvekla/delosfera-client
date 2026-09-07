@@ -9,6 +9,7 @@ import {
     Folder,
     Gauge,
     Landmark, type LucideIcon,
+    Waypoints,
     Scale,
     ShieldCheck,
     Tag,
@@ -59,6 +60,14 @@ export const getRefSections = (t: TFunction): RefSection[] => [
                 subtitle: "Кто входит в Правление, КПА и Кредитный комитет — и кем",
                 icon: Landmark,
                 path: "/management/refs/body-members",
+            },
+            {
+                key: "route-templates",
+                code: "03",
+                title: "Маршруты согласования",
+                subtitle: "Кто согласует, в каком порядке и до кого доходит документ",
+                icon: Waypoints,
+                path: "/management/route-templates",
             },
             {
                 key: "position",

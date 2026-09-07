@@ -2,6 +2,7 @@ import {useCallback, useEffect, useState} from "react";
 import {Link, useLocation, useNavigate, useParams} from "react-router-dom";
 import {colors} from "@/design/tokens";
 import {BoardReviewCard} from "@/components/componentsGeneral/BoardReviewCard.tsx";
+import {DocumentHistory} from "@/components/componentsGeneral/DocumentHistory.tsx";
 import {
     PROCUREMENT_STATUS_LABEL,
     procurementService,
@@ -288,6 +289,9 @@ export const ProcurementCardPage = () => {
 
             {/* Обеспечения и претензии появляются, когда есть конкурс или договор */}
             <GuaranteeClaimPanel tenderId={card.tenderId} contractId={card.contractId} onChanged={load}/>
+
+            {/* История заявки: раньше журнал вёлся только по ВНД, теперь по всем контурам. */}
+            <DocumentHistory entityType="ProcurementRequest" entityId={card.id}/>
         </div>
     );
 };

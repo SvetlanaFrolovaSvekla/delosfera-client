@@ -200,6 +200,7 @@
     "archivedToastTitle": "ИНД архивделди",
     "archivedToastDescription": "«{{name}}» «Архивде» статусуна өткөрүлдү",
     "archiveError": "Документти архивдөө мүмкүн болгон жок",
+    "viewRedactionTooltip": "Редакцияны кеңири көрүү",
     "editionsTab": {
       "loadingRedactions": "Редакциялар жүктөлүүдө…",
       "loadErrorTitle": "Редакцияларды жүктөө мүмкүн болгон жок",

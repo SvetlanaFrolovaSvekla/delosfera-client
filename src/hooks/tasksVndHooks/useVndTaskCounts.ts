@@ -8,6 +8,7 @@ const EMPTY_COUNTS: VndTaskCountsResponse = {
     actualization: 0,
     consolidation: 0,
     myVndApproval: 0,
+    rejected: 0,
 };
 
 export function useVndTaskCounts() {

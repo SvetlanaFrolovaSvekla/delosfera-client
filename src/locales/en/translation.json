@@ -200,6 +200,7 @@
     "archivedToastTitle": "VND archived",
     "archivedToastDescription": "«{{name}}» was moved to «Archived» status",
     "archiveError": "Failed to archive document",
+    "viewRedactionTooltip": "Full-screen view of the revision",
     "editionsTab": {
       "loadingRedactions": "Loading revisions…",
       "loadErrorTitle": "Failed to load revisions",

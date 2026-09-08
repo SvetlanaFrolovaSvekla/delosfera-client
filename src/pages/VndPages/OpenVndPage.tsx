@@ -18,6 +18,9 @@ import {getVndTabs, type VndTabId} from "@/constants/vndTabs.ts";
 import {PermissionCode} from "@/constants/permissions/permissions.ts";
 
 import {VndEditionsTab} from "@/components/componentsVND/componentsOpenVndPage/VndEditionsTab.tsx";
+import {
+    RedactionViewModal
+} from "@/components/componentsCoordination/CoordinationRouteConstructor/viewComponents/RedactionViewModal.tsx";
 import {VndPassportTab} from "@/components/componentsVND/componentsOpenVndPage/VndPassportTab.tsx";
 import {VndLinksTab} from "@/components/componentsVND/componentsOpenVndPage/VndLinksTab.tsx";
 import {VndHistoryTab} from "@/components/componentsVND/componentsOpenVndPage/VndHistoryTab.tsx";
@@ -34,7 +37,10 @@ import {Loader} from "@/components/componentsGeneral/Loader.tsx";
 import {EmptyState} from "@/components/componentsGeneral/EmptyState.tsx";
 import {VndStatusBanner} from "@/components/componentsGeneral/knowledgeBaseComponents/VndStatusBanner.tsx";
 import {ConfirmActionModal} from "@/components/componentsGeneral/modal/ConfirmActionModal.tsx";
-import {Archive, Trash2} from "lucide-react";
+import {Tooltip} from "@/components/componentsGeneral/Tooltip.tsx";
+import {Archive, Eye, Trash2} from "lucide-react";
+import {useAsyncAction} from "@/hooks/useAsyncAction.ts";
+import {downloadWithToast} from "@/utils/downloadFile.ts";
 
 export function OpenVndPage() {
     const {t} = useTranslation();
@@ -61,6 +67,18 @@ export function OpenVndPage() {
     const [deleteOpen, setDeleteOpen] = useState(false);
     const [deleting, setDeleting] = useState(false);
     const [deleteError, setDeleteError] = useState<string | null>(null);
+
+    // Кнопка-глазик "Масштабный просмотр редакции" рядом с "Код ВНД"/"Удалить черновик" на
+    // табе «Редакции» — открывает ту же модалку RedactionViewModal, что и в "Ход согласования"
+    // (RedactionViewModal), но без approvalProcess: без него панель "Комментарии" не рендерится
+    // вовсе (см. approvalProcess && (...) в RedactionViewModal), поэтому кнопки комментариев
+    // здесь нарочно нет. Показываем последнюю по номеру редакцию - именно её показывает сама
+    // вкладка «Редакции», если явно не выбрать другую (см. useRedactionSelection: selected по
+    // умолчанию совпадает с lastByNumber).
+    const [viewRedactionOpen, setViewRedactionOpen] = useState(false);
+    const viewRedactionDownload = useAsyncAction<number>();
+    const handleViewRedactionDownload = (fileId: number, name: string) =>
+        viewRedactionDownload.run(fileId, () => downloadWithToast(fileId, name), t("openVndPage.editionsTab.downloadError"));
 
     const handleDelete = async () => {
         if (!vnd) return;
@@ -316,29 +334,44 @@ export function OpenVndPage() {
                         </div>
                     )}
 
-                    {/* Кнопка удаления (только черновик) */}
-                    {vnd.status === "draft" && hasPermission(PermissionCode.DeleteVnd) && (
-                        <button
-                            onClick={() => setDeleteOpen(true)}
-                            disabled={deleting}
-                            className="ml-auto shrink-0 flex items-center gap-1.5 rounded-[9px] border border-[#e0b4ae] bg-white px-3 py-1 text-[12px] font-semibold text-[#c0392b] cursor-pointer hover:bg-[#fbecea] transition-colors"
-                        >
-                            <Trash2 className="w-3.5 h-3.5" strokeWidth={2} />
-                            {deleting ? t("general.deleting") : t("openVndPage.deleteDraftButton")}
-                        </button>
-                    )}
+                    <div className="ml-auto flex items-center gap-2">
+                        {/* Масштабный просмотр редакции (глазик) — только на табе «Редакции»,
+                            открывает последнюю по номеру редакцию в модалке RedactionViewModal */}
+                        {activeTab === "editions" && latestRedaction && (
+                            <Tooltip content={t("openVndPage.viewRedactionTooltip")} side="bottom">
+                                <button
+                                    onClick={() => setViewRedactionOpen(true)}
+                                    className="shrink-0 grid h-7 w-7 place-items-center rounded-[9px] border border-[#d7dee8] bg-white text-[#3a4560] cursor-pointer hover:border-[#4e57d6]/40 hover:bg-[#ececfc] hover:text-[#4e57d6] transition-colors"
+                                >
+                                    <Eye className="w-3.5 h-3.5" strokeWidth={2}/>
+                                </button>
+                            </Tooltip>
+                        )}
 
-                    {/* Кнопка архивации (любой статус, кроме черновика и уже архивированного) */}
-                    {vnd.status !== "draft" && vnd.status !== "arch" && hasPermission(PermissionCode.CancelVnd) && (
-                        <button
-                            onClick={() => setCancelOpen(true)}
-                            disabled={canceling}
-                            className="ml-auto shrink-0 flex items-center gap-1.5 rounded-[9px] border border-[#e0b4ae] bg-white px-3 py-1 text-[12px] font-semibold text-[#c0392b] cursor-pointer hover:bg-[#fbecea] transition-colors"
-                        >
-                            <Archive className="w-3.5 h-3.5" strokeWidth={2} />
-                            {canceling ? t("general.archiving") : t("openVndPage.archiveButton")}
-                        </button>
-                    )}
+                        {/* Кнопка удаления (только черновик) */}
+                        {vnd.status === "draft" && hasPermission(PermissionCode.DeleteVnd) && (
+                            <button
+                                onClick={() => setDeleteOpen(true)}
+                                disabled={deleting}
+                                className="shrink-0 flex items-center gap-1.5 rounded-[9px] border border-[#e0b4ae] bg-white px-3 py-1 text-[12px] font-semibold text-[#c0392b] cursor-pointer hover:bg-[#fbecea] transition-colors"
+                            >
+                                <Trash2 className="w-3.5 h-3.5" strokeWidth={2} />
+                                {deleting ? t("general.deleting") : t("openVndPage.deleteDraftButton")}
+                            </button>
+                        )}
+
+                        {/* Кнопка архивации (любой статус, кроме черновика и уже архивированного) */}
+                        {vnd.status !== "draft" && vnd.status !== "arch" && hasPermission(PermissionCode.CancelVnd) && (
+                            <button
+                                onClick={() => setCancelOpen(true)}
+                                disabled={canceling}
+                                className="shrink-0 flex items-center gap-1.5 rounded-[9px] border border-[#e0b4ae] bg-white px-3 py-1 text-[12px] font-semibold text-[#c0392b] cursor-pointer hover:bg-[#fbecea] transition-colors"
+                            >
+                                <Archive className="w-3.5 h-3.5" strokeWidth={2} />
+                                {canceling ? t("general.archiving") : t("openVndPage.archiveButton")}
+                            </button>
+                        )}
+                    </div>
                 </div>
             </div>
 
@@ -430,6 +463,18 @@ export function OpenVndPage() {
                 error={deleteError}
                 variant="danger"
             />
+
+            {/* Масштабный просмотр редакции — без approvalProcess, поэтому без кнопки
+                "Комментарии" (см. комментарий у viewRedactionOpen выше) */}
+            {viewRedactionOpen && latestRedaction && (
+                <RedactionViewModal
+                    vnd={vnd}
+                    redaction={latestRedaction}
+                    downloadingId={viewRedactionDownload.activeId}
+                    onDownload={handleViewRedactionDownload}
+                    onClose={() => setViewRedactionOpen(false)}
+                />
+            )}
         </div>
     );
 }

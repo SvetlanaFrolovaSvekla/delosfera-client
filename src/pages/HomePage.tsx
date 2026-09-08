@@ -37,11 +37,13 @@ export function HomePage() {
     // Реальные задачи по всем скоупам (как на странице "Мои задачи"), объединённые в одну сводку.
     // "coordination" уже включает финальную выдержку (см. TasksService.GetCoordinationTasksAsync) —
     // отдельного скоупа для неё больше нет. Раньше здесь не хватало myVndApproval (свои ВНД
-    // на согласовании) — добавлен.
+    // на согласовании) — добавлен. "rejected" (отклонённые редакции, ждущие правок инициатора) —
+    // добавлен туда же.
     const coordination = useVndTasks("coordination");
     const myVndApproval = useVndTasks("myVndApproval");
     const actualization = useVndTasks("actualization");
     const consolidation = useVndTasks("consolidation");
+    const rejected = useVndTasks("rejected");
     const {summary: actualizationSummary, isLoading: actualizationLoading} = useActualizationSummary();
     const {summary: homeSummary} = useVndHomeSummary();
 
@@ -54,16 +56,17 @@ export function HomePage() {
             ...myVndApproval.tasks,
             ...actualization.tasks,
             ...consolidation.tasks,
+            ...rejected.tasks,
         ];
         return [...allTasks]
             .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
             .slice(0, HOME_TASKS_LIMIT);
-    }, [coordination.tasks, myVndApproval.tasks, actualization.tasks, consolidation.tasks]);
+    }, [coordination.tasks, myVndApproval.tasks, actualization.tasks, consolidation.tasks, rejected.tasks]);
 
     const tasksTotalCount = coordination.tasks.length + myVndApproval.tasks.length
-        + actualization.tasks.length + consolidation.tasks.length;
+        + actualization.tasks.length + consolidation.tasks.length + rejected.tasks.length;
     const tasksLoading = coordination.isLoading || myVndApproval.isLoading
-        || actualization.isLoading || consolidation.isLoading;
+        || actualization.isLoading || consolidation.isLoading || rejected.isLoading;
 
     // Текущая дата - локализуется под текущий язык
     const formattedDate = useFormattedDate();

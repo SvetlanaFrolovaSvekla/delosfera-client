@@ -18,8 +18,9 @@ import type {TaskStagePhase} from "@/service/tasksVndService/tasksServiceTypes.t
 type TopTab = "coordination" | "actualization" | "consolidation";
 
 // Вложенные вкладки внутри «Согласования»: кто согласующий (coordination),
-// кто инициатор своей редакции (myVndApproval).
-type CoordinationSubTab = "coordination" | "myVndApproval";
+// кто инициатор своей редакции (myVndApproval), чья редакция была отклонена и ждёт правок
+// (rejected).
+type CoordinationSubTab = "coordination" | "myVndApproval" | "rejected";
 
 const TOP_TABS: { id: TopTab; label: string }[] = [
     { id: "coordination", label: "Согласование" },
@@ -30,6 +31,7 @@ const TOP_TABS: { id: TopTab; label: string }[] = [
 const COORDINATION_SUB_TABS: { id: CoordinationSubTab; label: string }[] = [
     { id: "coordination", label: "Ждущие моего согласования" },
     { id: "myVndApproval", label: "Мои ВНД на согласовании" },
+    { id: "rejected", label: "Отклонено" },
 ];
 
 // Фильтр «Этап согласования» — доступен на обеих вложенных вкладках «Согласования».
@@ -49,14 +51,18 @@ export function VndTasksPanel() {
     const { tasks, isLoading } = useVndTasks(scope);
     const { counts } = useVndTaskCounts();
 
+    // Фильтр по этапу согласования не имеет смысла на "Отклонено" — там stagePhase всегда
+    // пуст (процесс уже завершён), а не отфильтрованный список выглядел бы как пустой без причины.
     const filteredTasks = useMemo(() => {
-        if (topTab !== "coordination" || !stagePhaseFilter) return tasks;
+        if (topTab !== "coordination" || coordinationSubTab === "rejected" || !stagePhaseFilter) return tasks;
         return tasks.filter((task) => task.stagePhase === stagePhaseFilter);
-    }, [tasks, topTab, stagePhaseFilter]);
+    }, [tasks, topTab, coordinationSubTab, stagePhaseFilter]);
 
     const topTabsWithCounts = TOP_TABS.map((tab) => ({
         ...tab,
-        n: tab.id === "coordination" ? counts.coordination + counts.myVndApproval : counts[tab.id],
+        n: tab.id === "coordination"
+            ? counts.coordination + counts.myVndApproval + counts.rejected
+            : counts[tab.id],
     }));
 
     const subTabsWithCounts = COORDINATION_SUB_TABS.map((tab) => ({
@@ -88,6 +94,7 @@ export function VndTasksPanel() {
                         onChange={handleSubTabChange}
                     />
 
+                    {coordinationSubTab !== "rejected" && (
                     <div className="mb-4">
                         <SelectDropdown
                             options={STAGE_PHASE_FILTER_OPTIONS}
@@ -98,6 +105,7 @@ export function VndTasksPanel() {
                             minWidth="260px"
                         />
                     </div>
+                    )}
                 </>
             )}
 

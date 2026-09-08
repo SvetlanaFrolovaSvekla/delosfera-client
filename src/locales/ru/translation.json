@@ -203,6 +203,7 @@
     "archivedToastTitle": "ВНД архивирован",
     "archivedToastDescription": "«{{name}}» переведён в статус «В архиве»",
     "archiveError": "Не удалось архивировать документ",
+    "viewRedactionTooltip": "Масштабный просмотр редакции",
     "editionsTab": {
       "loadingRedactions": "Загрузка редакций…",
       "loadErrorTitle": "Не удалось загрузить редакции",

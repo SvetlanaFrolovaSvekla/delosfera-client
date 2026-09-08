@@ -23,6 +23,9 @@ const DictionariesPages = lazy(() => import("@/pages/DictionariesPages/Dictionar
 const ApprovalBodyPage = lazy(() => import("@/pages/DictionariesPages/ApprovalBodyPage.tsx").then(m => ({default: m.ApprovalBodyPage})));
 const OrganizationUnitPage = lazy(() => import("@/pages/DictionariesPages/OrganizationUnitPage.tsx").then(m => ({default: m.OrganizationUnitPage})));
 const PositionPage = lazy(() => import("@/pages/DictionariesPages/PositionPage.tsx").then(m => ({default: m.PositionPage})));
+const BodyMembersPage = lazy(() => import("@/pages/DictionariesPages/BodyMembersPage.tsx").then(m => ({default: m.BodyMembersPage})));
+const RouteTemplatesPage = lazy(() => import("@/pages/RouteTemplatesPage.tsx").then(m => ({default: m.RouteTemplatesPage})));
+const AuthorityMatrixSettingsPage = lazy(() => import("@/pages/ProcurementPages/AuthorityMatrixSettingsPage.tsx").then(m => ({default: m.AuthorityMatrixSettingsPage})));
 const TypeVndPage = lazy(() => import("@/pages/DictionariesPages/TypeVndPage.tsx").then(m => ({default: m.TypeVndPage})));
 const SecurityLevelPage = lazy(() => import("@/pages/DictionariesPages/SecurityLevelPage.tsx").then(m => ({default: m.SecurityLevelPage})));
 const UserGroupPage = lazy(() => import("@/pages/DictionariesPages/UserGroupPage.tsx").then(m => ({default: m.UserGroupPage})));
@@ -187,6 +190,7 @@ function App() {
                                     <Route path="refs/approval-body" element={<ApprovalBodyPage/>}/>
                                     <Route path="refs/organization-unit" element={<OrganizationUnitPage/>}/>
                                     <Route path="refs/position" element={<PositionPage/>}/>
+                                    <Route path="refs/body-members" element={<BodyMembersPage/>}/>
                                     <Route path="refs/keyword" element={<KeywordPage/>}/>
                                     <Route path="refs/type-vnd" element={<TypeVndPage/>}/>
                                     <Route path="refs/security-level" element={<SecurityLevelPage/>}/>
@@ -207,6 +211,8 @@ function App() {
                                         <Route path="usage" element={<UsageAnalyticsPage/>}/>
                                     </Route>
                                     <Route element={<RequirePermission code={PermissionCode.ManageSystemSettings}/>}>
+                                        <Route path="route-templates" element={<RouteTemplatesPage/>}/>
+                                        <Route path="matrix-settings" element={<AuthorityMatrixSettingsPage/>}/>
                                         <Route path="feedback" element={<FeedbackInboxPage/>}/>
                                         <Route path="changes" element={<SettingsChangesPage/>}/>
                                         <Route path="integrations" element={<SystemSettingsPage/>}/>

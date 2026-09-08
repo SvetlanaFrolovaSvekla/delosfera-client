@@ -97,4 +97,77 @@ export const authorityMatrixService = {
         const {data} = await apiClient.post<MatrixResolveResult>(`${BASE}/matrix/resolve`, request);
         return data;
     },
+
+    // ── настройка ────────────────────────────────────────────────────────────
+
+    async rules(): Promise<MatrixRuleEdit[]> {
+        const {data} = await apiClient.get<MatrixRuleEdit[]>(`${BASE}/matrix/rules`);
+        return data;
+    },
+
+    async methods(): Promise<ProcurementMethodEdit[]> {
+        const {data} = await apiClient.get<ProcurementMethodEdit[]>(`${BASE}/methods`);
+        return data;
+    },
+
+    async createRule(request: MatrixRuleSave): Promise<MatrixRuleEdit> {
+        const {data} = await apiClient.post<MatrixRuleEdit>(`${BASE}/matrix/rules`, request);
+        return data;
+    },
+
+    async updateRule(id: number, request: MatrixRuleSave): Promise<MatrixRuleEdit> {
+        const {data} = await apiClient.put<MatrixRuleEdit>(`${BASE}/matrix/rules/${id}`, request);
+        return data;
+    },
+
+    async deleteRule(id: number): Promise<void> {
+        await apiClient.delete(`${BASE}/matrix/rules/${id}`);
+    },
+
+    async updateMethod(id: number, request: ProcurementMethodSave): Promise<ProcurementMethodEdit> {
+        const {data} = await apiClient.put<ProcurementMethodEdit>(`${BASE}/methods/${id}`, request);
+        return data;
+    },
 };
+
+/** Шкала порога: сомы, процент активов или процент собственного капитала. */
+export type ThresholdBase = "Absolute" | "PercentOfAssets" | "PercentOfEquity";
+
+export interface MatrixRuleEdit {
+    id: number;
+    methodId: number;
+    methodShortTitle: string;
+    isAffiliated: boolean;
+    minValue: number | null;
+    minBase: ThresholdBase;
+    maxValue: number | null;
+    maxBase: ThresholdBase;
+    approvalChainRu: string;
+    approvalAuthority: ApprovalAuthority;
+    commissionRequired: boolean;
+    commissionSize: number | null;
+    commissionMinBoardMembers: number | null;
+    commissionNoteRu: string;
+    sortOrder: number;
+    isActive: boolean;
+}
+
+export type MatrixRuleSave = Omit<MatrixRuleEdit, "id" | "methodShortTitle">;
+
+export interface ProcurementMethodEdit {
+    id: number;
+    code: string;
+    titleRu: string;
+    shortTitleRu: string;
+    minProposals: number;
+    requiresJustification: boolean;
+    requiresPublication: boolean;
+    isActive: boolean;
+}
+
+export interface ProcurementMethodSave {
+    titleRu: string;
+    shortTitleRu: string;
+    minProposals: number;
+    isActive: boolean;
+}

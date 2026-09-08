@@ -152,6 +152,88 @@ export const workflowService = {
         });
         return data;
     },
+
+    /** Маршрут с этапами и согласующими — для экрана настройки. */
+    async template(id: number): Promise<RouteTemplateDetails> {
+        const {data} = await apiClient.get<RouteTemplateDetails>(`${BASE}/templates/${id}`);
+        return data;
+    },
+
+    async createTemplate(request: RouteTemplateSaveRequest): Promise<number> {
+        const {data} = await apiClient.post<number>(`${BASE}/templates`, request);
+        return data;
+    },
+
+    /** Маршрут переписывается целиком: он и есть порядок этапов. */
+    async updateTemplate(id: number, request: RouteTemplateSaveRequest): Promise<void> {
+        await apiClient.put(`${BASE}/templates/${id}`, request);
+    },
+
+    async deleteTemplate(id: number): Promise<void> {
+        await apiClient.delete(`${BASE}/templates/${id}`);
+    },
+};
+
+/** Кто согласует на этапе: человек, подразделение или роль. */
+export interface TemplateParticipant {
+    id?: number;
+    userId: number | null;
+    userName?: string | null;
+    unitId: number | null;
+    unitTitle?: string | null;
+    /** Ролевая ссылка: роль разрешается в человека при запуске маршрута. */
+    roleRef: string | null;
+    /** Обязателен: без его решения этап не закрывается. */
+    required: boolean;
+}
+
+export interface TemplateStep {
+    id?: number;
+    order: number;
+    /** Sequential — по очереди, Parallel — всем сразу. */
+    mode: "Sequential" | "Parallel";
+    kind: "Approval" | "FinalControl" | "Signing" | "Board";
+    isFinalMethodology: boolean;
+    /** Норматив на этап в часах; пусто — без срока. */
+    timeNormHours: number | null;
+    requiredSignatureLevel: "Simple" | "Qualified" | null;
+    participants: TemplateParticipant[];
+}
+
+export interface RouteTemplateDetails {
+    id: number;
+    name: string;
+    documentType: string;
+    isGlobalRule: boolean;
+    steps: TemplateStep[];
+}
+
+export interface RouteTemplateSaveRequest {
+    name: string;
+    documentType: string;
+    isGlobalRule: boolean;
+    steps: TemplateStep[];
+}
+
+/**
+ * Роли, которыми задают согласующего вместо конкретного человека.
+ *
+ * Так маршрут переживает смену людей в должностях: «руководитель подразделения
+ * автора» остаётся верным и после того, как руководитель сменился.
+ */
+export const ROUTE_ROLES: {value: string; title: string}[] = [
+    {value: "author-head", title: "Руководитель подразделения автора"},
+    {value: "author-curator", title: "Куратор подразделения автора"},
+    {value: "target-unit-head", title: "Руководитель подразделения из документа"},
+    {value: "target-unit-curator", title: "Куратор подразделения из документа"},
+    {value: "board-chairman", title: "Председатель Правления"},
+];
+
+export const STEP_KIND_TITLE: Record<TemplateStep["kind"], string> = {
+    Approval: "Согласование",
+    FinalControl: "Финальный контроль",
+    Signing: "Подписание",
+    Board: "Вынесение на орган",
 };
 
 /** Шаблон маршрута в списке выбора. */

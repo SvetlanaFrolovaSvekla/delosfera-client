@@ -589,15 +589,6 @@ export function VndPassportTab({
                                 boldLabel={false}
                             />
                             <MultiSelectField
-                                label="Рубрикатор"
-                                modalTitle="Рубрикатор"
-                                options={rubricOptions}
-                                selectedKeys={draft.rubricIds}
-                                onChange={(ids) => update("rubricIds", ids)}
-                                hierarchical
-                                boldLabel={false}
-                            />
-                            <MultiSelectField
                                 label="Группы доступа"
                                 modalTitle="Группы доступа"
                                 options={userGroupOptions}
@@ -613,6 +604,15 @@ export function VndPassportTab({
                                 onChange={(key) => update("secrecyLevelId", key ?? "")}
                                 boldLabel={false}
                             />
+                            <MultiSelectField
+                                label="Рубрикатор"
+                                modalTitle="Рубрикатор"
+                                options={rubricOptions}
+                                selectedKeys={draft.rubricIds}
+                                onChange={(ids) => update("rubricIds", ids)}
+                                hierarchical
+                                boldLabel={false}
+                            />
                         </div>
                     ) : (
                         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
@@ -622,11 +622,6 @@ export function VndPassportTab({
                                 highlighted={diffArray((r) => r.keywordIds)}
                             />
                             <ReadOnlyChipsField
-                                label="Рубрикатор"
-                                items={activeRequisites.rubricIds.length ? rubricNames(activeRequisites.rubricIds).split(", ") : []}
-                                highlighted={diffArray((r) => r.rubricIds)}
-                            />
-                            <ReadOnlyChipsField
                                 label="Группы доступа"
                                 items={vnd.userGroupIds.length ? userGroupNames(vnd.userGroupIds).split(", ") : []}
                             />
@@ -634,6 +629,11 @@ export function VndPassportTab({
                                 label="Уровень секретности"
                                 items={[secrecyLevelName(activeRequisites.secrecyLevelId)]}
                                 highlighted={diffScalar((r) => r.secrecyLevelId)}
+                            />
+                            <ReadOnlyChipsField
+                                label="Рубрикатор"
+                                items={activeRequisites.rubricIds.length ? rubricNames(activeRequisites.rubricIds).split(", ") : []}
+                                highlighted={diffArray((r) => r.rubricIds)}
                             />
                         </div>
                     )}

@@ -14,4 +14,32 @@ export const activityLogService = {
         });
         return data;
     },
+
+    /**
+     * История действий по одному документу — из технического аудита.
+     *
+     * Работает для любого контура: аудит пишут все, а человекочитаемый журнал
+     * раньше был только у ВНД. entityType — тип документа как он лежит в аудите
+     * («Sz», «ProcurementRequest», «ProcurementContract», …).
+     */
+    async history(
+        entityType: string, entityId: number, assignmentIds?: number[],
+    ): Promise<DocumentHistoryEntry[]> {
+        const {data} = await apiClient.get<DocumentHistoryEntry[]>(
+            `/activity-log/history/${entityType}/${entityId}`,
+            {params: assignmentIds?.length ? {assignmentIds} : undefined},
+        );
+        return data;
+    },
 };
+
+/** Одна строка истории документа. */
+export interface DocumentHistoryEntry {
+    id: number;
+    action: string;
+    text: string;
+    icon: string;
+    actorUserId: number | null;
+    actorName: string;
+    at: string;
+}

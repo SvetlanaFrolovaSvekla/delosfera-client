@@ -264,7 +264,7 @@ export const TenderPanel = ({requestId, documentId, onChanged}: Props) => {
                     >
                         <option value="Member">Член комиссии</option>
                         <option value="Chairman">Председатель</option>
-                        <option value="Secretary">Секретарь</option>
+                        <option value="Secretary">Секретарь (без права голоса)</option>
                         <option value="Expert">Эксперт без права голоса</option>
                     </select>
                     <label style={checkLabel}>

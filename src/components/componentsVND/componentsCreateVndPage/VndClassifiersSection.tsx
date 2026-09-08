@@ -47,16 +47,6 @@ export function VndClassifiersSection({
                     hierarchical
                     boldLabel={false}
                 />
-                <MultiSelectField
-                    label="Рубрикатор"
-                    modalTitle="Рубрикатор"
-                    options={rubricOptions}
-                    selectedKeys={rubricIds}
-                    onChange={onRubricIdsChange}
-                    searchPlaceholder="Поиск рубрики…"
-                    hierarchical
-                    boldLabel={false}
-                />
                 <SingleSelectListField
                     label="Уровень секретности"
                     modalTitle="Уровень секретности"
@@ -73,6 +63,16 @@ export function VndClassifiersSection({
                     selectedKeys={userGroupIds}
                     onChange={onUserGroupIdsChange}
                     searchPlaceholder="Поиск группы…"
+                    boldLabel={false}
+                />
+                <MultiSelectField
+                    label="Рубрикатор"
+                    modalTitle="Рубрикатор"
+                    options={rubricOptions}
+                    selectedKeys={rubricIds}
+                    onChange={onRubricIdsChange}
+                    searchPlaceholder="Поиск рубрики…"
+                    hierarchical
                     boldLabel={false}
                 />
             </div>

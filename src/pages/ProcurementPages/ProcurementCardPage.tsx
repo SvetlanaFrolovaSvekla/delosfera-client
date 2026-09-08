@@ -1,6 +1,8 @@
 import {useCallback, useEffect, useState} from "react";
 import {Link, useLocation, useNavigate, useParams} from "react-router-dom";
 import {colors} from "@/design/tokens";
+import {BoardReviewCard} from "@/components/componentsGeneral/BoardReviewCard.tsx";
+import {DocumentHistory} from "@/components/componentsGeneral/DocumentHistory.tsx";
 import {
     PROCUREMENT_STATUS_LABEL,
     procurementService,
@@ -185,6 +187,10 @@ export const ProcurementCardPage = () => {
                 </section>
             )}
 
+            {/* Куда заявка ушла на коллегиальный орган: связь была в данных,
+                но по карточке было не видно, дошла ли заявка до Правления. */}
+            {card.boardReview && <BoardReviewCard review={card.boardReview}/>}
+
             <div style={{display: "grid", gridTemplateColumns: "1fr minmax(300px, 380px)", gap: 18, alignItems: "start"}}>
                 <section style={cardStyle}>
                     <div style={cardTitle}>Параметры закупки</div>
@@ -283,6 +289,9 @@ export const ProcurementCardPage = () => {
 
             {/* Обеспечения и претензии появляются, когда есть конкурс или договор */}
             <GuaranteeClaimPanel tenderId={card.tenderId} contractId={card.contractId} onChanged={load}/>
+
+            {/* История заявки: раньше журнал вёлся только по ВНД, теперь по всем контурам. */}
+            <DocumentHistory entityType="ProcurementRequest" entityId={card.id}/>
         </div>
     );
 };

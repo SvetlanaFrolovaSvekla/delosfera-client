@@ -273,7 +273,9 @@ export const ProcurementNewPage = () => {
                 <section style={card}>
                     {step === 0 && (
                         <>
-                            <label style={fieldLabel}>Предмет закупки</label>
+                            <label style={fieldLabel}>
+                                Предмет закупки <span style={{color: "#d14343"}}>*</span>
+                            </label>
                             <input
                                 value={form.subject}
                                 onChange={e => patch({subject: e.target.value})}
@@ -299,14 +301,28 @@ export const ProcurementNewPage = () => {
                                 ))}
                             </div>
 
-                            <label style={{...fieldLabel, marginTop: 14}}>Ориентировочная сумма, сом</label>
+                            <label style={{...fieldLabel, marginTop: 14}}>
+                                Ориентировочная сумма, сом <span style={{color: "#d14343"}}>*</span>
+                            </label>
                             <input
                                 type="number"
                                 min={0}
+                                required
                                 value={form.amount || ""}
                                 onChange={e => patch({amount: Number(e.target.value) || 0})}
-                                style={input}
+                                style={{
+                                    ...input,
+                                    // Пустое поле подсвечивается сразу: по сумме Матрица
+                                    // полномочий подбирает способ закупки и орган
+                                    // утверждения, и без неё заявке некуда идти.
+                                    borderColor: form.amount > 0 ? undefined : "#e6b8b8",
+                                }}
                             />
+                            {form.amount <= 0 && (
+                                <div style={{marginTop: 6, fontSize: 12.5, color: "#a94442"}}>
+                                    Укажите сумму — по ней определяются способ закупки и орган утверждения
+                                </div>
+                            )}
 
                             <label style={{...checkboxRow, marginTop: 14}}>
                                 <input

@@ -1,3 +1,4 @@
+import type {BoardReview} from "@/components/componentsGeneral/BoardReviewCard.tsx";
 import {apiClient} from "@/service/apiClient.ts";
 
 /** Статусы заявки на закупку. */
@@ -109,6 +110,9 @@ export interface ProcurementCard {
 
     sourceSzRegNumber: string | null;
     sourceSzId: number | null;
+
+    /** Рассмотрение на коллегиальном органе; пусто — на орган не выносилась. */
+    boardReview: BoardReview | null;
 
     /** Запущенный маршрут согласования (PRC-08); null — заявка ещё черновик. */
     routeInstanceId: number | null;

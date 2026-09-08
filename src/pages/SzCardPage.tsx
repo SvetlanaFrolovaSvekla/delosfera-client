@@ -1,5 +1,5 @@
 import {useCallback, useEffect, useMemo, useState} from "react";
-import {useNavigate, useParams} from "react-router-dom";
+import {Link, useNavigate, useParams} from "react-router-dom";
 import {ArrowLeft} from "lucide-react";
 import {colors} from "@/design/tokens";
 import {useDictionaries} from "@/context/DictionariesContext.tsx";
@@ -9,9 +9,12 @@ import {UserPicker, type PickableUser} from "@/components/componentsGeneral/User
 import {OrgUnitPicker} from "@/components/procurement/OrgUnitPicker.tsx";
 import {userService} from "@/service/userService/userService.ts";
 import {SzExecutionPanel} from "@/components/sz/SzExecutionPanel.tsx";
+import {SzSubmitToBodyPanel} from "@/components/sz/SzSubmitToBodyPanel.tsx";
 import {SzOriginalPanel} from "@/components/sz/SzOriginalPanel.tsx";
 import {SzArchivePanel} from "@/components/sz/SzArchivePanel.tsx";
 import {SzProcurementPanel} from "@/components/sz/SzProcurementPanel.tsx";
+import {BoardReviewCard} from "@/components/componentsGeneral/BoardReviewCard.tsx";
+import {PROCUREMENT_STATUS_LABEL} from "@/service/procurementService/procurementService.ts";
 import {SzApproversField} from "@/components/sz/SzApproversField.tsx";
 import {SzHrForm} from "@/components/sz/SzHrForm.tsx";
 import {RichTextEditor} from "@/components/editor/RichTextEditor.tsx";
@@ -888,9 +891,55 @@ export function SzCardPage() {
                 <SzExecutionPanel sz={sz} onChanged={reload}/>
             )}
 
+            {/* Вынесение на коллегиальный орган. Панель была написана, но нигде не
+                подключена — отметку негде было поставить, и записка до Правления
+                не доходила. Отметка ставится по зарегистрированной записке: до
+                регистрации выносить нечего. */}
+            {sz && (sz.statusCode === "Registered" || sz.statusCode === "OnBoardReview") && (
+                <SzSubmitToBodyPanel
+                    szId={sz.id}
+                    body={sz.submitToBody}
+                    question={sz.submitToBodyQuestion}
+                    inAgenda={sz.inAgenda}
+                    canEdit={hasPermission(PermissionCode.SubmitSzToBody)}
+                    onChanged={reload}
+                />
+            )}
+
             {/* Бумажный контур: оригинал существует только у зарегистрированной записки. */}
             {sz && sz.statusCode !== "Draft" && (
                 <SzOriginalPanel szId={sz.id} isPaperCarrier={sz.isPaperCarrier}/>
+            )}
+
+            {/* Куда записка ушла на коллегиальный орган. Автор просил вынести
+                вопрос и до сих пор не видел, дошёл ли тот до заседания. */}
+            {sz?.boardReview && (
+                <div className="mt-4">
+                    <BoardReviewCard review={sz.boardReview}/>
+                </div>
+            )}
+
+            {/* Заявка, выросшая из записки: до сих пор по карточке было не видно,
+                чем записка обернулась и на какой стадии закупка. */}
+            {sz?.procurementRequestId && (
+                <div className="mt-4 rounded-[12px] border border-[#e5e9f0] bg-white p-5">
+                    <div className="text-[11px] font-semibold uppercase tracking-[.04em] text-[#a3adbd] mb-2">
+                        Заявка на закупку
+                    </div>
+                    <Link
+                        to={`/prc/${sz.procurementRequestId}`}
+                        className="text-[14px] font-semibold text-[#2f68f5] no-underline hover:underline"
+                    >
+                        {sz.procurementRegNumber ?? "без номера"}
+                    </Link>
+                    {sz.procurementStatusCode && (
+                        <span className="ml-2 text-[13px] text-[#55617a]">
+                            {PROCUREMENT_STATUS_LABEL[
+                                sz.procurementStatusCode as keyof typeof PROCUREMENT_STATUS_LABEL
+                            ] ?? sz.procurementStatusCode}
+                        </span>
+                    )}
+                </div>
             )}
 
             {/* Закупка запускается по согласованной записке — панель ведёт передачу реквизитов. */}

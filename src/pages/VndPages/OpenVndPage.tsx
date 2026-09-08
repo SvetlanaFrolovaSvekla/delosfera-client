@@ -400,7 +400,7 @@ export function OpenVndPage() {
             {/* Связи */}
             {activeTab === "links" && <VndLinksTab vndId={vnd.id}/>}
             {/* История */}
-            {activeTab === "history" && <VndHistoryTab/>}
+            {activeTab === "history" && <VndHistoryTab vnd={vnd} redactions={redactions}/>}
             {/* Актуализация */}
             {activeTab === "actual" && (
                 <VndActualizationTab

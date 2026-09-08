@@ -31,6 +31,18 @@ export const activityLogService = {
         );
         return data;
     },
+
+    /**
+     * Весь журнал активности по одному документу (не "последние N" для дашборда — см.
+     * getRecent — а полностью). Для таба "История" на карточке документа: у ВНД там уже
+     * есть человекочитаемые записи на каждое значимое действие (module = "vnd").
+     */
+    async getByEntity(module: string, entityId: number): Promise<ActivityLogEntryResponse[]> {
+        const {data} = await apiClient.get<ActivityLogEntryResponse[]>(
+            `/activity-log/entity/${module}/${entityId}`,
+        );
+        return data;
+    },
 };
 
 /** Одна строка истории документа. */

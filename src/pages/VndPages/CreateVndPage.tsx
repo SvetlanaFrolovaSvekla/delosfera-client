@@ -156,6 +156,7 @@ export function CreateVndPage() {
                         computedDueDateDisplay={actualization.computedDueDateDisplay}
                         onManualDueDateChange={actualization.setManualDueDate}
                         periodicityLabel={actualization.periodicityLabel}
+                        nextCycleInterval={actualization.nextCycleInterval}
                     />
                 </div>
             </div>

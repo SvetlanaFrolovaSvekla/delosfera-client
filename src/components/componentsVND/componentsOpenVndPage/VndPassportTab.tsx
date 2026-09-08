@@ -90,6 +90,8 @@ export function VndPassportTab({
     const previousRedaction = selectedRedaction
         ? redactions.find((r) => r.number === selectedRedaction.number - 1) ?? null
         : null;
+    // Черновик без единой редакции ещё — тоже считаем "текущим" (fallback на vnd.* как и везде выше).
+    const isViewingCurrentRedaction = !selectedRedaction || selectedRedaction.isCurrent;
 
     const {
         isEditing, draft, saving, error, startEdit, cancelEdit, update, save,
@@ -516,14 +518,26 @@ export function VndPassportTab({
                             </div>
                         </>
                     ) : (
-                        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+                        // ⚠ 08.09.2026: "Дата посл. актуализации"/"Последняя актуализация с изменениями" —
+                        // это факт о ДОКУМЕНТЕ в целом (когда его в последний раз актуализировали), а не о
+                        // конкретной старой редакции. У самой первой редакции (Р1, как и у любой не-текущей)
+                        // актуализации ещё не было/не относится к ней — раньше эти два поля всё равно
+                        // показывались (значения vnd.* одинаковы на любой вкладке), из-за чего на Р1 виден
+                        // был "факт актуализации", которого для неё быть не может. "Срок актуализации" и
+                        // "Период" остаются документ-уровневыми и показываются всегда — вопрос "когда
+                        // следующая актуализация" не зависит от того, какую редакцию сейчас смотрят.
+                        <div className={`grid grid-cols-2 gap-4 ${isViewingCurrentRedaction ? "lg:grid-cols-4" : "lg:grid-cols-2"}`}>
                             <ReadOnlyField label="Срок актуализации" value={formatDate(vnd.dueActualizationDate)}/>
-                            <ReadOnlyField label="Дата посл. актуализации" value={formatDate(vnd.lastActualizationDate)}/>
+                            {isViewingCurrentRedaction && (
+                                <ReadOnlyField label="Дата посл. актуализации" value={formatDate(vnd.lastActualizationDate)}/>
+                            )}
                             <ReadOnlyField label="Период" value={periodLabel}/>
-                            <ReadOnlyField
-                                label="Последняя актуализация с изменениям"
-                                value={vnd.lastActualizationDate ? (vnd.lastActualizationHadChanges ? "Да" : "Нет") : "—"}
-                            />
+                            {isViewingCurrentRedaction && (
+                                <ReadOnlyField
+                                    label="Последняя актуализация с изменениям"
+                                    value={vnd.lastActualizationDate ? (vnd.lastActualizationHadChanges ? "Да" : "Нет") : "—"}
+                                />
+                            )}
                         </div>
                     )}
                     <Clue className="mt-3">

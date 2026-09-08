@@ -340,6 +340,11 @@ export interface VndActualizationSummaryResponse {
     overdue: number;
     /** normal + approaching + critical + overdue. Документы без даты актуализации сюда не входят. */
     total: number;
+    /** Всего ВНД на странице "Планирование актуализации" — вне зависимости от наличия срока
+     * актуализации, поэтому может быть больше total. */
+    totalActive: number;
+    /** Из totalActive — ни разу не актуализированные, т.е. с единственной (первой) редакцией. */
+    neverActualized: number;
 }
 
 // --- История циклов актуализации (GET /vnd/{vndId}/actualization/history)

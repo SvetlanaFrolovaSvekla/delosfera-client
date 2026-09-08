@@ -278,6 +278,10 @@ export function VndFilters(props: VndFiltersProps) {
                 </button>
 
                 <div className="relative">
+                    {/* "Колонки" — это настройка отображения, а не фильтр данных (скрытые колонки не
+                        меняют состав строк реестра), поэтому зелёная точка "есть активный фильтр",
+                        в отличие от остальных выпадающих списков на этой панели, здесь никогда не
+                        показывается — даже когда часть колонок скрыта. */}
                     <MultiSelectDropdown
                         icon={<Filter className="w-[15px] h-[15px]" strokeWidth={1.8}/>}
                         triggerLabel="Колонки"
@@ -291,9 +295,6 @@ export function VndFilters(props: VndFiltersProps) {
                         searchPlaceholder="Поиск колонки…"
                         plain
                     />
-                    {selectedColumnKeys.length < toggleableColumns.length && (
-                        <span className="absolute -top-1 -right-1 w-2.5 h-2.5 rounded-full bg-[#3fb36c] ring-2 ring-white pointer-events-none" />
-                    )}
                 </div>
 
                 {(scope === "all" || scope === "active" || scope === "notYetActive") && canViewExtended && (

@@ -9,6 +9,7 @@ import {MultiSelectField} from "@/components/componentsGeneral/selects/MultiSele
 import {MultiSelectDropdown} from "@/components/componentsGeneral/selects/MultiSelects/MultiSelectDropdown.tsx";
 import {SearchBar} from "@/components/componentsGeneral/SearchBar.tsx";
 import {ChevronDown, ChevronUp, Filter, SlidersHorizontal} from "lucide-react";
+import {HelpTooltip} from "@/components/componentsGeneral/knowledgeBaseComponents/HelpTooltip.tsx";
 
 interface ColDefLike {
     key: string;
@@ -50,6 +51,10 @@ interface ActualizationFiltersProps {
     onToggleColumn: (key: string) => void;
     onSelectAllColumns: () => void;
     onDeselectAllColumns: () => void;
+
+    /** Чекбокс "Только ни разу не актуализированные" — работает вместе с табами Все/В норме/... */
+    neverActualizedOnly: boolean;
+    onNeverActualizedOnlyChange: (v: boolean) => void;
 }
 
 export function ActualizationFilters(props: ActualizationFiltersProps) {
@@ -62,6 +67,7 @@ export function ActualizationFilters(props: ActualizationFiltersProps) {
         dueDateFilter, onDueDateFilterChange,
         resultCount, showResetButton, onResetFilters,
         toggleableColumns, visibleCols, onToggleColumn, onSelectAllColumns, onDeselectAllColumns,
+        neverActualizedOnly, onNeverActualizedOnlyChange,
     } = props;
 
     // Справочники берём из общего контекста — грузятся один раз на всё приложение
@@ -133,6 +139,17 @@ export function ActualizationFilters(props: ActualizationFiltersProps) {
                     searchThreshold={8}
                     searchPlaceholder="Поиск колонки…"
                 />
+
+                <label className="inline-flex items-center gap-1.5 h-9 px-3 rounded-[9px] border border-[#e5e9f0] bg-white text-[#3a4560] font-semibold text-[12.5px] cursor-pointer hover:bg-[#f6f8fb] select-none">
+                    <input
+                        type="checkbox"
+                        checked={neverActualizedOnly}
+                        onChange={(e) => onNeverActualizedOnlyChange(e.target.checked)}
+                        className="w-[15px] h-[15px] accent-[#4e57d6] cursor-pointer"
+                    />
+                    Только ни разу не актуализированные
+                    <HelpTooltip content="Показывает документы только с одной (первой) редакцией — т.е. те, которые ещё ни разу не проходили актуализацию."/>
+                </label>
 
                 <div className="flex-1"/>
 

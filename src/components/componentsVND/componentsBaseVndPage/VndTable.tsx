@@ -180,7 +180,12 @@ export function VndTable({
                                     case "act":
                                         return (
                                             <div key={c.key} className="min-w-0">
-                                                {r.dueActualizationDate ? (
+                                                {/* У архивированного ВНД срок актуализации в БД может остаться
+                                                    (при архивации его не сбрасывают - см. VndService.CancelAsync),
+                                                    но показывать его в реестре не нужно: документ отменён,
+                                                    актуализировать больше нечего - прочерк, как и у остальных
+                                                    неприменимых колонок. */}
+                                                {r.dueActualizationDate && r.status !== "arch" ? (
                                                     <>
                                                         <span className="flex items-center gap-[7px]">
                                                             <span

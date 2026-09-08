@@ -1,9 +1,10 @@
 import {useTranslation} from "react-i18next";
 import {Link} from "react-router-dom";
-import {useActualizationBucketMeta} from "@/hooks/actualizationHooks/useActualizationBucketMeta.ts";
+import {useActualizationBucketMeta, useActualizationBucketThresholdText} from "@/hooks/actualizationHooks/useActualizationBucketMeta.ts";
 import {daysUntil} from "@/utils/dateUtils.ts";
 import type {VndResponse} from "@/service/vndService/vndServiceType.ts";
 import type {ColDef} from "@/constants/columnsFilters/vndColumns.ts";
+import type {ActualizationBucketSettings} from "@/service/actualizationBucketSettingsService/actualizationBucketSettingsService.ts";
 import {STATUS_META} from "@/constants/vndStatus.ts";
 import {EmptyState} from "@/components/componentsGeneral/EmptyState.tsx";
 import {Tooltip} from "@/components/componentsGeneral/Tooltip.tsx";
@@ -18,15 +19,18 @@ interface ActualizationTableProps {
     userGroupNames: (ids: number[]) => string;
     rubricNames: (ids: number[]) => string;
     onResetFilters: () => void;
+    /** Пороги индикации сроков актуализации — для тултипа на таблетке "Статус срока" */
+    bucketSettings: ActualizationBucketSettings | null;
 }
 
 export function ActualizationTable({
                                        columns, rows, gridTemplate,
                                        responsibleExecutorNames, keywordNames, secrecyLevelName, userGroupNames, rubricNames,
-                                       onResetFilters,
+                                       onResetFilters, bucketSettings,
                                    }: ActualizationTableProps) {
     const {t} = useTranslation();
     const bucketMetaMap = useActualizationBucketMeta();
+    const thresholdText = useActualizationBucketThresholdText(bucketSettings);
 
     const lastActualizationStatusLabel = (hadChanges: boolean) =>
         hadChanges
@@ -52,7 +56,7 @@ export function ActualizationTable({
                     style={{gridTemplateColumns: gridTemplate}}
                 >
                     {columns.map((c) => (
-                        <div key={c.key} className="whitespace-nowrap">{c.label}</div>
+                        <div key={c.key} className="leading-tight">{c.label}</div>
                     ))}
                 </div>
 
@@ -254,13 +258,15 @@ export function ActualizationTable({
                                     case "actualizationBucket":
                                         return (
                                             <div key={c.key} className="min-w-0">
-                                                {bucketMeta ? (
-                                                    <span
-                                                        className="inline-flex items-center text-[11px] font-semibold py-0.5 px-[9px] rounded-full whitespace-nowrap"
-                                                        style={{color: bucketMeta.color, background: bucketMeta.bg}}
-                                                    >
-                                                        {bucketMeta.label}
-                                                    </span>
+                                                {bucketMeta && r.actualizationBucket ? (
+                                                    <Tooltip content={thresholdText[r.actualizationBucket]} side="top">
+                                                        <span
+                                                            className="inline-flex items-center text-[11px] font-semibold py-0.5 px-[9px] rounded-full whitespace-nowrap cursor-default"
+                                                            style={{color: bucketMeta.color, background: bucketMeta.bg}}
+                                                        >
+                                                            {bucketMeta.label}
+                                                        </span>
+                                                    </Tooltip>
                                                 ) : (
                                                     <span className="text-[12px] text-[#a3adbd]">—</span>
                                                 )}

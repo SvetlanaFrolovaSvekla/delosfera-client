@@ -485,6 +485,8 @@
     "title": "Actualization Deadline Indicator Thresholds",
     "subtitle": "Define when a VND actualization deadline becomes \"approaching\" and \"critical\" — on the VND registry and in the planning dashboard. \"Overdue\" is not configurable: it is always a deadline that has already passed.",
     "normalValue": "More than {{days}} days",
+    "approachingValue": "{{min}}–{{max}} days",
+    "criticalValue": "0–{{max}} days",
     "overdueValue": "Deadline already passed",
     "overdueHint": "\"Overdue\" is not governed by thresholds — the status is set automatically once the actualization deadline passes.",
     "errorInvalid": "Enter a whole number",

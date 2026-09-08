@@ -795,29 +795,6 @@ export function SzCardPage() {
                     </div>
                 )}
 
-                <div className="mt-4">
-                    <span className={labelClass}>Рубрикатор (записка может лежать в нескольких рубриках)</span>
-                    <div className="flex flex-wrap gap-2">
-                        {RUBRICS.map((r) => {
-                            const rid = Number(r.id);
-                            const on = (form.rubricIds ?? []).includes(rid);
-                            return (
-                                <button
-                                    key={r.id}
-                                    disabled={!editable}
-                                    onClick={() => set("rubricIds", on
-                                        ? (form.rubricIds ?? []).filter((x) => x !== rid)
-                                        : [...(form.rubricIds ?? []), rid])}
-                                    className={`h-8 px-3 rounded-full border text-[12.5px] font-semibold cursor-pointer disabled:cursor-not-allowed ${
-                                        on ? "border-[#cbddff] bg-[#e9f0ff] text-[#2f68f5]" : "border-[#e5e9f0] bg-white text-[#55617a]"}`}
-                                >
-                                    {r.name}
-                                </button>
-                            );
-                        })}
-                    </div>
-                </div>
-
                 <SzApproversField
                     value={form.approverUserIds ?? []}
                     onChange={(ids) => set("approverUserIds", ids)}
@@ -853,6 +830,29 @@ export function SzCardPage() {
                     editable={editable}
                     hint="необязательно"
                 />
+
+                <div className="mt-4">
+                    <span className={labelClass}>Рубрикатор (записка может лежать в нескольких рубриках)</span>
+                    <div className="flex flex-wrap gap-2">
+                        {RUBRICS.map((r) => {
+                            const rid = Number(r.id);
+                            const on = (form.rubricIds ?? []).includes(rid);
+                            return (
+                                <button
+                                    key={r.id}
+                                    disabled={!editable}
+                                    onClick={() => set("rubricIds", on
+                                        ? (form.rubricIds ?? []).filter((x) => x !== rid)
+                                        : [...(form.rubricIds ?? []), rid])}
+                                    className={`h-8 px-3 rounded-full border text-[12.5px] font-semibold cursor-pointer disabled:cursor-not-allowed ${
+                                        on ? "border-[#cbddff] bg-[#e9f0ff] text-[#2f68f5]" : "border-[#e5e9f0] bg-white text-[#55617a]"}`}
+                                >
+                                    {r.name}
+                                </button>
+                            );
+                        })}
+                    </div>
+                </div>
             </div>
 
             {sz && (

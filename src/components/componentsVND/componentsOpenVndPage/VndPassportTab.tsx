@@ -11,6 +11,9 @@ import {useVndRequisitesForm} from "@/hooks/useVndRequisitesForm.ts";
 import {SingleSelectListField} from "@/components/componentsGeneral/selects/SingleSelects/SingleSelectListField.tsx";
 import {MultiSelectField} from "@/components/componentsGeneral/selects/MultiSelects/MultiSelectField.tsx";
 import {
+    ParentMultiSelectField
+} from "@/components/componentsGeneral/selects/MultiSelects/ParentMultiSelectField.tsx";
+import {
     EditableCheckboxField,
     EditableDateField, EditableTextAreaField,
     EditableTextField
@@ -304,7 +307,7 @@ export function VndPassportTab({
                                     boldLabel={false}
                                     required
                                 />
-                                <MultiSelectField
+                                <ParentMultiSelectField
                                     label="Ответственные исполнители"
                                     modalTitle="Ответственные исполнители"
                                     options={executorOptions}

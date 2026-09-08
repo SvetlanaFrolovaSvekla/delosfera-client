@@ -12,6 +12,7 @@ interface ParentMultiSelectFieldProps {
     onChange: (keys: string[]) => void;
     searchPlaceholder?: string;
     selectedCountLabel?: string;
+    boldLabel?: boolean;
 }
 
 export function ParentMultiSelectField({
@@ -22,6 +23,7 @@ export function ParentMultiSelectField({
                                            onChange,
                                            searchPlaceholder,
                                            selectedCountLabel,
+                                           boldLabel = true,
                                        }: ParentMultiSelectFieldProps) {
     const {t} = useTranslation();
     const [modalOpen, setModalOpen] = useState(false);
@@ -34,7 +36,17 @@ export function ParentMultiSelectField({
 
     return (
         <div className="min-w-0">
-            {label && <span className="block text-[12px] font-semibold text-[#3a4560] mb-2">{label}</span>}
+            {label && (
+                <span
+                    className={
+                        boldLabel
+                            ? "block text-[12px] font-semibold text-[#3a4560] mb-2"
+                            : "block text-[11.5px] text-[#8b97ab] mb-[5px]"
+                    }
+                >
+                    {label}
+                </span>
+            )}
             <div
                 onClick={() => setModalOpen(true)}
                 className="w-full min-w-0 min-h-[38px] px-2.5 py-[6px] rounded-[9px] border border-[#e5e9f0] bg-white outline-none box-border cursor-pointer flex items-center gap-[6px] hover:bg-[#f6f8fb]"

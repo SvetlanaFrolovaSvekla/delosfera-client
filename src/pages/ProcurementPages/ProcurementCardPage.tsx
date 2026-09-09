@@ -1,6 +1,8 @@
-import {useCallback, useEffect, useState} from "react";
+import {useCallback, useEffect, useMemo, useRef, useState} from "react";
 import {Link, useLocation, useNavigate, useParams} from "react-router-dom";
+import {Check, ChevronDown, Plus, Search, X} from "lucide-react";
 import {colors} from "@/design/tokens";
+import {userService, type UserLookupItem} from "@/service/userService/userService.ts";
 import {BoardReviewCard} from "@/components/componentsGeneral/BoardReviewCard.tsx";
 import {DocumentHistory} from "@/components/componentsGeneral/DocumentHistory.tsx";
 import {
@@ -47,6 +49,14 @@ export const ProcurementCardPage = () => {
     const [error, setError] = useState<string | null>(null);
     const [busy, setBusy] = useState(false);
 
+    // Дополнительные согласующие: по желанию инициатора — сверх авточепочки Матрицы.
+    const [users, setUsers] = useState<UserLookupItem[]>([]);
+    const [extraApprovers, setExtraApprovers] = useState<number[]>([]);
+
+    useEffect(() => {
+        userService.lookup().then(setUsers).catch(() => undefined);
+    }, []);
+
     const load = useCallback(async () => {
         if (!id) return;
         try {
@@ -65,7 +75,7 @@ export const ProcurementCardPage = () => {
         try {
             setBusy(true);
             setError(null);
-            setCard(await procurementService.submit(card.id));
+            setCard(await procurementService.submit(card.id, extraApprovers));
         } catch (e) {
             const message = (e as { response?: { data?: { message?: string } } }).response?.data?.message;
             setError(message ?? "Не удалось отправить заявку на согласование");
@@ -174,6 +184,14 @@ export const ProcurementCardPage = () => {
                 <div style={{color: "#c77700", fontSize: 13}}>
                     {attachmentError}. Приложите их здесь.
                 </div>
+            )}
+
+            {canSubmit && (
+                <ExtraApproversPicker
+                    users={users}
+                    value={extraApprovers}
+                    onChange={setExtraApprovers}
+                />
             )}
 
             {card.blockers.length > 0 && (
@@ -293,6 +311,184 @@ export const ProcurementCardPage = () => {
             {/* История заявки: раньше журнал вёлся только по ВНД, теперь по всем контурам. */}
             <DocumentHistory entityType="ProcurementRequest" entityId={card.id}/>
         </div>
+    );
+};
+
+/** Старшинство в подборе: Правление → руководители подразделений → остальные. */
+function seniority(u: UserLookupItem): number {
+    if (u.isBoardMember) return 0;
+    if (u.isUnitHead) return 1;
+    return 2;
+}
+
+/**
+ * Дополнительные согласующие — необязательная добавка к автоматическому маршруту.
+ *
+ * Матрица полномочий сама собирает цепочку согласования; здесь инициатор при
+ * необходимости добавляет людей сверх неё — они встают шагами в конце маршрута.
+ * Поле спрятано за кнопкой и по умолчанию пусто: большинство заявок идёт только
+ * по авточепочке, и лишний список согласующих на карточке лишь мешал бы.
+ */
+const ExtraApproversPicker = ({
+    users, value, onChange,
+}: {
+    users: UserLookupItem[];
+    value: number[];
+    onChange: (ids: number[]) => void;
+}) => {
+    const [open, setOpen] = useState(false);
+    const [pickerOpen, setPickerOpen] = useState(false);
+    const [query, setQuery] = useState("");
+    const ref = useRef<HTMLDivElement>(null);
+
+    const byId = useMemo(
+        () => Object.fromEntries(users.map((u) => [u.id, u])) as Record<number, UserLookupItem>,
+        [users]);
+
+    const found = useMemo(() => {
+        const q = query.trim().toLowerCase();
+        const match = q
+            ? users.filter((u) =>
+                u.fullName.toLowerCase().includes(q)
+                || (u.position ?? "").toLowerCase().includes(q)
+                || (u.orgUnit ?? "").toLowerCase().includes(q))
+            : users;
+        return [...match].sort((a, b) =>
+            seniority(a) - seniority(b) || a.fullName.localeCompare(b.fullName, "ru"));
+    }, [users, query]);
+
+    const toggle = (id: number) =>
+        onChange(value.includes(id) ? value.filter((x) => x !== id) : [...value, id]);
+
+    const onBlur = (e: React.FocusEvent<HTMLDivElement>) => {
+        if (!ref.current?.contains(e.relatedTarget as Node)) setPickerOpen(false);
+    };
+
+    return (
+        <section style={cardStyle}>
+            <button
+                type="button"
+                onClick={() => setOpen(!open)}
+                style={{
+                    display: "flex", alignItems: "center", gap: 8, width: "100%", padding: 0,
+                    border: "none", background: "transparent", cursor: "pointer", font: "inherit",
+                    color: "#55617a", fontSize: 13, fontWeight: 600, textAlign: "left",
+                }}
+            >
+                <Plus size={15} style={{color: "#2f68f5", transform: open ? "rotate(45deg)" : "none", transition: "transform .15s"}}/>
+                <span style={{flex: 1}}>
+                    Дополнительные согласующие
+                    {value.length > 0 && (
+                        <span style={{marginLeft: 6, color: "#2f68f5"}}>· {value.length}</span>
+                    )}
+                </span>
+                <span style={{fontSize: 11.5, fontWeight: 500, color: "#a3adbd"}}>необязательно</span>
+            </button>
+
+            {open && (
+                <div style={{marginTop: 12}}>
+                    <div style={{fontSize: 12, color: "#8b97ab", lineHeight: 1.6, marginBottom: 10}}>
+                        Заявка идёт по автоматическому маршруту Матрицы полномочий. Выбранные здесь
+                        согласующие добавляются шагами в конце маршрута.
+                    </div>
+
+                    <div className="relative" ref={ref} onBlur={onBlur}>
+                        <button
+                            type="button"
+                            onClick={() => setPickerOpen(!pickerOpen)}
+                            className="flex h-10 w-full items-center justify-between rounded-[9px] border border-[#e5e9f0] bg-white px-3 text-[13px] text-[#55617a] outline-none focus:border-[#2f68f5]"
+                        >
+                            <span>Выбрать согласующих</span>
+                            <ChevronDown size={15} className={pickerOpen ? "rotate-180 transition" : "transition"}/>
+                        </button>
+
+                        {pickerOpen && (
+                            <div className="absolute z-20 mt-1 w-full rounded-[10px] border border-[#e5e9f0] bg-white shadow-lg">
+                                <label className="relative flex items-center border-b border-[#eef2f7] px-3">
+                                    <Search size={14} className="pointer-events-none absolute left-3 text-[#a3adbd]"/>
+                                    <input
+                                        autoFocus
+                                        value={query}
+                                        onChange={(e) => setQuery(e.target.value)}
+                                        placeholder="Поиск по ФИО, должности, подразделению"
+                                        className="h-10 w-full border-none bg-transparent pl-6 text-[13px] outline-none"
+                                    />
+                                </label>
+
+                                <div className="max-h-[280px] overflow-y-auto p-1">
+                                    {found.length === 0 ? (
+                                        <p className="m-0 px-3 py-5 text-center text-[12.5px] text-[#a6b0c2]">
+                                            Никого не нашлось
+                                        </p>
+                                    ) : found.map((u) => {
+                                        const picked = value.includes(u.id);
+                                        return (
+                                            <button
+                                                key={u.id}
+                                                type="button"
+                                                onClick={() => toggle(u.id)}
+                                                className={`flex w-full cursor-pointer items-center gap-2.5 rounded-[8px] border-none px-2.5 py-2 text-left ${
+                                                    picked ? "bg-[#eaf0ff]" : "bg-transparent hover:bg-[#f6f8fb]"}`}
+                                            >
+                                                <span className={`flex h-4 w-4 shrink-0 items-center justify-center rounded-[4px] border ${
+                                                    picked ? "border-[#2f68f5] bg-[#2f68f5]" : "border-[#c8d2e0] bg-white"}`}>
+                                                    {picked && <Check size={11} className="text-white" strokeWidth={3}/>}
+                                                </span>
+                                                <span className="min-w-0 flex-1">
+                                                    <span className={`block truncate text-[13px] ${
+                                                        picked ? "font-semibold text-[#2f68f5]" : "text-[#1c2740]"}`}>
+                                                        {u.fullName}
+                                                    </span>
+                                                    {(u.position || u.orgUnit) && (
+                                                        <span className="block truncate text-[11.5px] text-[#8b97ab]">
+                                                            {[u.position, u.orgUnit].filter(Boolean).join(" · ")}
+                                                        </span>
+                                                    )}
+                                                </span>
+                                            </button>
+                                        );
+                                    })}
+                                </div>
+
+                                <div className="flex items-center justify-between border-t border-[#eef2f7] px-3 py-2">
+                                    <span className="text-[11.5px] text-[#8b97ab]">Отмечено: {value.length}</span>
+                                    <button type="button" onClick={() => setPickerOpen(false)}
+                                            className="h-8 rounded-[8px] border-none bg-[#2f68f5] px-3.5 text-[12.5px] font-semibold text-white">
+                                        Готово
+                                    </button>
+                                </div>
+                            </div>
+                        )}
+                    </div>
+
+                    {value.length > 0 && (
+                        <div className="mt-2 flex flex-col gap-1.5">
+                            {value.map((id, i) => (
+                                <div key={id}
+                                     className="flex items-center gap-2 rounded-[9px] border border-[#e5e9f0] bg-white px-3 py-2 text-[13px]">
+                                    <span className="w-5 text-[11.5px] font-semibold text-[#8b97ab]">{i + 1}</span>
+                                    <span className="min-w-0 flex-1">
+                                        <span className="block truncate text-[#1c2740]">
+                                            {byId[id]?.fullName ?? `Пользователь № ${id}`}
+                                        </span>
+                                        {byId[id]?.position && (
+                                            <span className="block truncate text-[11.5px] text-[#8b97ab]">
+                                                {byId[id].position}
+                                            </span>
+                                        )}
+                                    </span>
+                                    <button type="button" onClick={() => onChange(value.filter((x) => x !== id))}
+                                            title="Убрать"
+                                            className="border-none bg-transparent p-1 text-[#55617a] cursor-pointer hover:text-[#c0392b]">
+                                        <X size={14}/>
+                                    </button>
+                                </div>
+                            ))}
+                        </div>
+                    )}
+                </div>
+            )}
+        </section>
     );
 };
 

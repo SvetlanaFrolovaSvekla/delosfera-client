@@ -1,5 +1,6 @@
-import {useEffect, useRef, useState} from "react";
-import {Calendar, ChevronLeft, ChevronRight} from "lucide-react";
+import {useEffect, useLayoutEffect, useRef, useState} from "react";
+import {createPortal} from "react-dom";
+import {Calendar, Check, ChevronLeft, ChevronRight} from "lucide-react";
 import {parseDDMMYYYY, formatDDMMYYYY, isSameDay} from "@/utils/dateUtils.ts";
 
 interface DatePickerInputProps {
@@ -8,8 +9,8 @@ interface DatePickerInputProps {
     placeholder?: string;
     className?: string;
     disabled?: boolean;
-    modal?: boolean;       // показывать календарь модалкой по центру экрана вместо попапа у поля
-    modalTitle?: string;   // заголовок модалки (используется только если modal === true)
+    modal?: boolean;
+    modalTitle?: string;
 }
 
 const WEEKDAYS = ["Пн", "Вт", "Ср", "Чт", "Пт", "Сб", "Вс"];
@@ -25,7 +26,7 @@ interface DayCell {
 
 function buildMonthGrid(year: number, month: number): DayCell[] {
     const firstDay = new Date(year, month, 1);
-    const startWeekday = (firstDay.getDay() + 6) % 7; // Пн = 0
+    const startWeekday = (firstDay.getDay() + 6) % 7;
     const gridStart = new Date(year, month, 1 - startWeekday);
     const cells: DayCell[] = [];
     for (let i = 0; i < 42; i++) {
@@ -36,7 +37,37 @@ function buildMonthGrid(year: number, month: number): DayCell[] {
     return cells;
 }
 
+// Приводит произвольный ввод к маске дд.мм.гггг, оставляя только цифры
+function maskDateInput(raw: string): string {
+    const digitsOnly = raw.replace(/\D/g, "").slice(0, 8);
+    let out = "";
+    for (let i = 0; i < digitsOnly.length; i++) {
+        out += digitsOnly[i];
+        if (i === 1 || i === 3) out += ".";
+    }
+    return out;
+}
+
+// Полноценная проверка даты — отсекает и некорректные диапазоны (месяц 93),
+// и несуществующие даты (30 февраля), которые формально прошли бы по диапазону
+function validateDateString(s: string): { valid: boolean; error?: string; date?: Date } {
+    const match = /^(\d{2})\.(\d{2})\.(\d{4})$/.exec(s);
+    if (!match) return {valid: false};
+    const day = Number(match[1]);
+    const month = Number(match[2]);
+    const year = Number(match[3]);
+    if (month < 1 || month > 12) return {valid: false, error: "Некорректный месяц"};
+    if (day < 1 || day > 31) return {valid: false, error: "Некорректный день"};
+    if (year < 1900 || year > 2100) return {valid: false, error: "Некорректный год"};
+    const d = new Date(year, month - 1, day);
+    if (d.getFullYear() !== year || d.getMonth() !== month - 1 || d.getDate() !== day) {
+        return {valid: false, error: "Такой даты не существует"};
+    }
+    return {valid: true, date: d};
+}
+
 const YEARS_PER_PAGE = 12;
+const POPUP_WIDTH = 264;
 
 export function DatePickerInput({
                                     value,
@@ -54,12 +85,23 @@ export function DatePickerInput({
     const [yearPageStart, setYearPageStart] = useState<number>(
         Math.floor((parseDDMMYYYY(value) ?? today).getFullYear() / YEARS_PER_PAGE) * YEARS_PER_PAGE
     );
+    const [coords, setCoords] = useState<{ top: number; left: number } | null>(null);
+
+    // ручной ввод внутри дропдауна
+    const [manualInput, setManualInput] = useState(value);
+    const [manualError, setManualError] = useState<string | null>(null);
+
     const containerRef = useRef<HTMLDivElement>(null);
+    const popupRef = useRef<HTMLDivElement>(null);
 
     useEffect(() => {
         if (!open) return;
         const handleClick = (e: MouseEvent) => {
-            if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
+            const target = e.target as Node;
+            if (
+                containerRef.current && !containerRef.current.contains(target) &&
+                (!popupRef.current || !popupRef.current.contains(target))
+            ) {
                 setOpen(false);
                 setView("days");
             }
@@ -67,6 +109,33 @@ export function DatePickerInput({
         document.addEventListener("mousedown", handleClick);
         return () => document.removeEventListener("mousedown", handleClick);
     }, [open]);
+
+    // при каждом открытии — подтягиваем черновик ручного ввода из текущего value
+    useEffect(() => {
+        if (open) {
+            setManualInput(value);
+            setManualError(null);
+        }
+    }, [open, value]);
+
+    const updateCoords = () => {
+        if (!containerRef.current) return;
+        const rect = containerRef.current.getBoundingClientRect();
+        const left = Math.min(rect.left, window.innerWidth - POPUP_WIDTH - 8);
+        setCoords({top: rect.bottom + 6, left: Math.max(8, left)});
+    };
+
+    useLayoutEffect(() => {
+        if (!open || modal) return;
+        updateCoords();
+        const handler = () => updateCoords();
+        window.addEventListener("scroll", handler, true);
+        window.addEventListener("resize", handler);
+        return () => {
+            window.removeEventListener("scroll", handler, true);
+            window.removeEventListener("resize", handler);
+        };
+    }, [open, modal]);
 
     const openCalendar = () => {
         if (disabled) return;
@@ -95,6 +164,29 @@ export function DatePickerInput({
         setView("days");
     };
 
+    const manualValidation = manualInput.length === 10 ? validateDateString(manualInput) : null;
+    const manualIsValid = !!manualValidation?.valid;
+
+    const handleManualChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const masked = maskDateInput(e.target.value);
+        setManualInput(masked);
+        if (masked.length < 10) {
+            setManualError(null);
+            return;
+        }
+        const result = validateDateString(masked);
+        setManualError(result.valid ? null : (result.error ?? "Некорректная дата"));
+    };
+
+    const applyManualInput = () => {
+        if (!manualValidation?.valid || !manualValidation.date) return;
+        selectDay(manualValidation.date);
+    };
+
+    const handleManualKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+        if (e.key === "Enter" && manualIsValid) applyManualInput();
+    };
+
     const cells = buildMonthGrid(cursor.getFullYear(), cursor.getMonth());
     const selected = parseDDMMYYYY(value);
 
@@ -102,8 +194,6 @@ export function DatePickerInput({
         <div className="relative w-full" ref={containerRef}>
             <div className="relative">
                 {modal ? (
-                    // В режиме модалки поле выглядит как кнопка: клик открывает календарь,
-                    // печатать вручную нельзя — только выбор даты через календарь.
                     <button
                         type="button"
                         onClick={openCalendar}
@@ -128,8 +218,6 @@ export function DatePickerInput({
                     />
                 )}
 
-                {/* Иконка календаря — в модальном режиме клики уже обрабатывает кнопка-обёртка выше,
-                    поэтому иконка чисто декоративная (pointer-events-none), чтобы не перехватывать клик дважды */}
                 <span
                     className={`absolute right-2 top-1/2 -translate-y-1/2 text-[#a3adbd] ${
                         modal ? "pointer-events-none" : ""
@@ -154,25 +242,16 @@ export function DatePickerInput({
                 const calendarBody = view === "days" ? (
                     <>
                         <div className="flex items-center justify-between mb-2.5">
-                            <button
-                                type="button"
-                                onClick={() => shiftMonth(-1)}
-                                className="cursor-pointer w-6 h-6 grid place-items-center rounded-md text-[#8b97ab] hover:bg-[#f6f8fb] hover:text-[#3a4560]"
-                            >
+                            <button type="button" onClick={() => shiftMonth(-1)}
+                                    className="cursor-pointer w-6 h-6 grid place-items-center rounded-md text-[#8b97ab] hover:bg-[#f6f8fb] hover:text-[#3a4560]">
                                 <ChevronLeft className="w-4 h-4"/>
                             </button>
-                            <button
-                                type="button"
-                                onClick={() => setView("years")}
-                                className="cursor-pointer text-[12.5px] font-semibold text-[#1c2740] hover:text-[#4e57d6] px-1.5 py-0.5 rounded-md hover:bg-[#f6f8fb]"
-                            >
+                            <button type="button" onClick={() => setView("years")}
+                                    className="cursor-pointer text-[12.5px] font-semibold text-[#1c2740] hover:text-[#4e57d6] px-1.5 py-0.5 rounded-md hover:bg-[#f6f8fb]">
                                 {MONTHS[cursor.getMonth()]} {cursor.getFullYear()}
                             </button>
-                            <button
-                                type="button"
-                                onClick={() => shiftMonth(1)}
-                                className="cursor-pointer w-6 h-6 grid place-items-center rounded-md text-[#8b97ab] hover:bg-[#f6f8fb] hover:text-[#3a4560]"
-                            >
+                            <button type="button" onClick={() => shiftMonth(1)}
+                                    className="cursor-pointer w-6 h-6 grid place-items-center rounded-md text-[#8b97ab] hover:bg-[#f6f8fb] hover:text-[#3a4560]">
                                 <ChevronRight className="w-4 h-4"/>
                             </button>
                         </div>
@@ -211,33 +290,62 @@ export function DatePickerInput({
                         </div>
 
                         <div className="mt-2.5 pt-2.5 border-t border-[#eef2f7] flex justify-center">
-                            <button
-                                type="button"
-                                onClick={goToday}
-                                className="cursor-pointer h-8 px-3 rounded-[8px] text-[12px] font-semibold text-[#4e57d6] hover:bg-[#f6f8fb]"
-                            >
+                            <button type="button" onClick={goToday}
+                                    className="cursor-pointer h-8 px-3 rounded-[8px] text-[12px] font-semibold text-[#4e57d6] hover:bg-[#f6f8fb]">
                                 Сегодня
                             </button>
+                        </div>
+
+                        {/* Ручной ввод даты */}
+                        <div className="mt-2.5 pt-2.5 border-t border-[#eef2f7]">
+                            <div className="text-[10.5px] font-bold tracking-[.04em] uppercase text-[#a3adbd] mb-1.5">
+                                Ввести вручную
+                            </div>
+                            <div className="flex items-center gap-1.5">
+                                <input
+                                    type="text"
+                                    inputMode="numeric"
+                                    autoComplete="off"
+                                    value={manualInput}
+                                    onChange={handleManualChange}
+                                    onKeyDown={handleManualKeyDown}
+                                    placeholder="дд.мм.гггг"
+                                    maxLength={10}
+                                    className={`h-9 px-2.5 rounded-[8px] border text-[12.5px] text-[#1c2740] outline-none flex-1 box-border focus:border-[#4e57d6] ${
+                                        manualError ? "border-[#e0525f] focus:border-[#e0525f]" : "border-[#e5e9f0]"
+                                    }`}
+                                />
+                                <button
+                                    type="button"
+                                    onClick={applyManualInput}
+                                    disabled={!manualIsValid}
+                                    aria-label="Подтвердить дату"
+                                    className={`w-9 h-9 flex-none grid place-items-center rounded-[8px] border-none transition-colors ${
+                                        manualIsValid
+                                            ? "bg-[#4e57d6] text-white cursor-pointer hover:brightness-105"
+                                            : "bg-[#f0f2f6] text-[#c7cedb] cursor-not-allowed"
+                                    }`}
+                                >
+                                    <Check className="w-4 h-4" strokeWidth={2.5}/>
+                                </button>
+                            </div>
+                            {manualError && (
+                                <div className="mt-1 text-[11px] text-[#e0525f]">{manualError}</div>
+                            )}
                         </div>
                     </>
                 ) : (
                     <>
                         <div className="flex items-center justify-between mb-2.5">
-                            <button
-                                type="button"
-                                onClick={() => shiftYearPage(-1)}
-                                className="cursor-pointer w-6 h-6 grid place-items-center rounded-md text-[#8b97ab] hover:bg-[#f6f8fb] hover:text-[#3a4560]"
-                            >
+                            <button type="button" onClick={() => shiftYearPage(-1)}
+                                    className="cursor-pointer w-6 h-6 grid place-items-center rounded-md text-[#8b97ab] hover:bg-[#f6f8fb] hover:text-[#3a4560]">
                                 <ChevronLeft className="w-4 h-4"/>
                             </button>
                             <span className="text-[12.5px] font-semibold text-[#1c2740]">
                                 {yearPageStart} – {yearPageStart + YEARS_PER_PAGE - 1}
                             </span>
-                            <button
-                                type="button"
-                                onClick={() => shiftYearPage(1)}
-                                className="cursor-pointer w-6 h-6 grid place-items-center rounded-md text-[#8b97ab] hover:bg-[#f6f8fb] hover:text-[#3a4560]"
-                            >
+                            <button type="button" onClick={() => shiftYearPage(1)}
+                                    className="cursor-pointer w-6 h-6 grid place-items-center rounded-md text-[#8b97ab] hover:bg-[#f6f8fb] hover:text-[#3a4560]">
                                 <ChevronRight className="w-4 h-4"/>
                             </button>
                         </div>
@@ -293,10 +401,16 @@ export function DatePickerInput({
                     );
                 }
 
-                return (
-                    <div className="absolute z-50 top-[calc(100%+6px)] left-0 w-[264px] bg-white border border-[#e5e9f0] rounded-[12px] shadow-[0_8px_24px_rgba(28,39,64,0.12)] p-3">
+                if (!coords) return null;
+                return createPortal(
+                    <div
+                        ref={popupRef}
+                        style={{top: coords.top, left: coords.left, width: POPUP_WIDTH}}
+                        className="fixed z-50 bg-white border border-[#e5e9f0] rounded-[12px] shadow-[0_8px_24px_rgba(28,39,64,0.12)] p-3"
+                    >
                         {calendarBody}
-                    </div>
+                    </div>,
+                    document.body
                 );
             })()}
         </div>

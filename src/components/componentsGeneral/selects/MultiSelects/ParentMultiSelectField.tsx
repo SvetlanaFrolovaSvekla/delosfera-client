@@ -72,7 +72,7 @@ export function ParentMultiSelectField({
                                 <span className="flex min-w-0 max-w-[180px] flex-col items-start gap-[1px]">
                                     {ancestors.map((a) => (
                                         <span key={a.key} className="truncate w-full text-[10px] font-normal text-[#8b97ab]">
-                                            {a.label}
+                                           {a.label}
                                         </span>
                                     ))}
                                     <span className="truncate w-full">{o.label}</span>

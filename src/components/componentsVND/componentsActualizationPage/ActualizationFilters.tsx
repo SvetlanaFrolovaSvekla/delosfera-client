@@ -138,6 +138,7 @@ export function ActualizationFilters(props: ActualizationFiltersProps) {
                     onDeselectAll={onDeselectAllColumns}
                     searchThreshold={8}
                     searchPlaceholder="Поиск колонки…"
+                    plain
                 />
 
                 <label className="inline-flex items-center gap-1.5 h-9 px-3 rounded-[9px] border border-[#e5e9f0] bg-white text-[#3a4560] font-semibold text-[12.5px] cursor-pointer hover:bg-[#f6f8fb] select-none">

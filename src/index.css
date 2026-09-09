@@ -35,17 +35,6 @@ a:hover { color: #1b4fd0; }
     width: 100%;
 }
 
-.docx-preview-content table td,
-.docx-preview-content table th {
-    border: 1px solid #d5dbe3;
-    padding: 6px 10px;
-    vertical-align: top;
-}
-
-.docx-preview-content table th {
-    background-color: #f5f7fa;
-    font-weight: 600;
-}
 
 .docx-preview-content img {
     max-width: 100%;

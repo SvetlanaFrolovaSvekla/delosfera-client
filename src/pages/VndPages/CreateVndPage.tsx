@@ -6,8 +6,9 @@ import {VndCodeCard} from "@/components/componentsVND/componentsCreateVndPage/Vn
 import {VndActualizationCard} from "@/components/componentsVND/componentsCreateVndPage/VndActualizationCard.tsx";
 import {VndCreateSuccessModal} from "@/components/componentsVND/componentsCreateVndPage/VndCreateSuccessModal.tsx";
 
-import {MultiSelectField} from "@/components/componentsGeneral/selects/MultiSelects/MultiSelectField.tsx";
-import {ReadOnlyField} from "@/components/componentsGeneral/readOnlySelects/ReadOnlyField.tsx";
+import {
+    ParentMultiSelectField
+} from "@/components/componentsGeneral/selects/MultiSelects/ParentMultiSelectField.tsx";
 import {Loader} from "@/components/componentsGeneral/Loader.tsx";
 import {EmptyState} from "@/components/componentsGeneral/EmptyState.tsx";
 import {SelectDropdown} from "@/components/componentsGeneral/selects/SingleSelects/SelectDropdown.tsx";
@@ -87,7 +88,16 @@ export function CreateVndPage() {
 
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4 items-start">
                         <div>
-                            <ReadOnlyField label="Разработчик (СП)" value={form.developerName || "—"}/>
+                            <SingleSelectListField
+                                label="Разработчик (СП)"
+                                required
+                                modalTitle="Разработчик (СП)"
+                                options={form.developerOptions}
+                                selectedKey={form.developerId || null}
+                                onChange={(key) => form.setDeveloperId(key ?? "")}
+                                searchPlaceholder="Поиск СП…"
+                                boldLabel={false}
+                            />
                             {form.developerHeadName && (
                                 <p className="mt-1 text-[11px] text-[#8b97ab]">
                                     Начальник СП: {form.developerHeadName}
@@ -99,13 +109,12 @@ export function CreateVndPage() {
                             <label className="block text-[12px] font-semibold text-[#3a4560] mb-1.5">
                                 Ответственные исполнители <span className="text-[#c0392b]">*</span>
                             </label>
-                            <MultiSelectField
+                            <ParentMultiSelectField
                                 modalTitle="Ответственные исполнители"
                                 options={form.executorOptions}
                                 selectedKeys={form.responsibleExecutorIds}
                                 onChange={form.setResponsibleExecutorIds}
                                 searchPlaceholder="Поиск СП…"
-                                boldLabel={false}
                             />
                             {form.responsibleExecutorHeadNames.length > 0 && (
                                 <p className="mt-1 text-[11px] text-[#8b97ab]">
@@ -156,6 +165,7 @@ export function CreateVndPage() {
                         computedDueDateDisplay={actualization.computedDueDateDisplay}
                         onManualDueDateChange={actualization.setManualDueDate}
                         periodicityLabel={actualization.periodicityLabel}
+                        nextCycleInterval={actualization.nextCycleInterval}
                     />
                 </div>
             </div>

@@ -1,4 +1,4 @@
-import {ChartLine, Download} from "lucide-react";
+import {ChartLine, Download, Settings} from "lucide-react";
 
 export function ActualizationPageHeader() {
     return (
@@ -12,6 +12,14 @@ export function ActualizationPageHeader() {
                 </p>
             </div>
             <div className="flex gap-2.5">
+                {/*TODO: кнопку настроить, чтоб её видел только админ, главный методолог*/}
+                <button
+                    className="inline-flex items-center gap-2 h-10 px-[15px] rounded-[10px] border-none bg-[#4e57d6] text-white font-semibold text-[13px] cursor-pointer hover:brightness-[1.06] shadow-[0_6px_16px_-6px_#4e57d6]"
+                >
+                    <Settings className="w-[18px] h-[18px]" strokeWidth={2}/>
+                    Настройки рассылок плана
+                </button>
+
                 <button
                     className="inline-flex items-center gap-2 h-10 px-[15px] rounded-[10px] border-none bg-[#4e57d6] text-white font-semibold text-[13px] cursor-pointer hover:brightness-[1.06] shadow-[0_6px_16px_-6px_#4e57d6]"
                 >
@@ -22,8 +30,8 @@ export function ActualizationPageHeader() {
                 <button
                     className="inline-flex items-center gap-2 h-10 px-[15px] rounded-[10px] border-none bg-[#4e57d6] text-white font-semibold text-[13px] cursor-pointer hover:brightness-[1.06] shadow-[0_6px_16px_-6px_#4e57d6]"
                 >
-                    Отчеты по актуализации
                     <ChartLine className="w-[18px] h-[18px]" strokeWidth={2}/>
+                    Отчеты по актуализации
                 </button>
             </div>
         </div>

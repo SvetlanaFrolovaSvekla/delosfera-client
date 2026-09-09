@@ -15,6 +15,7 @@ import {ActualizationFilters} from "@/components/componentsVND/componentsActuali
 import {useVndActualizationSummary} from "@/hooks/vndHooks/useVndActualizationSummary.tsx";
 import {useVndActualizationFilteredRows} from "@/hooks/vndHooks/useVndActualizationFilteredRows.tsx";
 import {useVndActualizationColumnVisibility} from "@/hooks/vndHooks/useVndActualizationColumnVisibility.tsx";
+import {useActualizationBucketSettings} from "@/hooks/actualizationHooks/useActualizationBucketSettings.ts";
 
 import {Loader} from "@/components/componentsGeneral/Loader";
 import {EmptyState} from "@/components/componentsGeneral/EmptyState.tsx";
@@ -36,6 +37,14 @@ function toDateRangeFilter(v: DateFilterValue): VndSearchRequest["dueActualizati
         ? {from: v.from || undefined, to: v.to || undefined}
         : undefined;
 }
+
+// "Планирование актуализации" — планируем сроки только для документов, которые в принципе уже
+// существуют как ВНД: действующих (active) и ещё не действующих, но уже прошедших согласование
+// хотя бы раз (onact/review/consol — в процессе актуализации, на согласовании или на консолидации,
+// т.е. "ещё не действующие" в терминах DocumentStatusKey). Черновики (draft — ещё ни разу не
+// отправленные на согласование) и архивные (arch) документы актуализировать нельзя/не нужно —
+// поэтому они сюда никогда не должны попадать, независимо от прочих фильтров на странице.
+const ACTUALIZATION_PLANNING_STATUSES: VndSearchRequest["statuses"] = ["active", "onact", "review", "consol"];
 
 export function ActualizationPage() {
     const {hasPermission} = useAuth();
@@ -80,8 +89,11 @@ export function ActualizationPage() {
     const [developerFilters, setDeveloperFilters] = useState<string[]>([]);
     const [organFilters, setOrganFilters] = useState<string[]>([]);
     const [dueDateFilter, setDueDateFilter] = useState<DateFilterValue>(EMPTY_DATE_FILTER);
+    // "Только ни разу не актуализированные" — работает поверх табов Все/В норме/... (пересечение, а не замена)
+    const [neverActualizedOnly, setNeverActualizedOnly] = useState(false);
 
     const {summary, loading: summaryLoading} = useVndActualizationSummary();
+    const bucketSettings = useActualizationBucketSettings();
     const {
         visibleCols, toggleColumn, selectAllColumns, deselectAllColumns,
         columns, gridTemplate, toggleableColumns,
@@ -95,6 +107,7 @@ export function ActualizationPage() {
 
     const searchRequest = useMemo<VndSearchRequest>(() => ({
         name: search || undefined,
+        statuses: ACTUALIZATION_PLANNING_STATUSES,
         actualizationBuckets: bucketFilter === "all" ? [] : [bucketFilter],
         typeIds: typeFilters.length ? typeFilters.map(Number) : undefined,
         developerIds: developerFilters.length ? developerFilters.map(Number) : undefined,
@@ -104,6 +117,14 @@ export function ActualizationPage() {
 
     const {rows, loading, error} = useVndActualizationFilteredRows(searchRequest);
 
+    // Пересечение с табами Все/В норме/... — чекбокс сужает уже отфильтрованный список,
+    // а не заменяет собой bucket-фильтр. Критерий "ни разу не актуализирован" — единственная
+    // (первая) редакция, тот же, что использует бэк для метрики neverActualized.
+    const displayRows = useMemo(
+        () => (neverActualizedOnly ? rows.filter((r) => r.redactionIds.length === 1) : rows),
+        [rows, neverActualizedOnly],
+    );
+
     const resetFilters = () => {
         setSearch("");
         setBucketFilter("all");
@@ -111,6 +132,7 @@ export function ActualizationPage() {
         setDeveloperFilters([]);
         setOrganFilters([]);
         setDueDateFilter(EMPTY_DATE_FILTER);
+        setNeverActualizedOnly(false);
     };
 
     return (
@@ -124,6 +146,16 @@ export function ActualizationPage() {
                 loading={summaryLoading}
                 activeBucket={bucketFilter}
                 onSelectBucket={(key) => setBucketFilter((prev) => (prev === key ? "all" : key))}
+                neverActualizedOnly={neverActualizedOnly}
+                onSelectAll={() => {
+                    setBucketFilter("all");
+                    setNeverActualizedOnly(false);
+                }}
+                onSelectNeverActualized={() => {
+                    setBucketFilter("all");
+                    setNeverActualizedOnly(true);
+                }}
+                bucketSettings={bucketSettings}
             />
 
             <ActualizationFilterPills value={bucketFilter} onChange={setBucketFilter} summary={summary}/>
@@ -142,14 +174,16 @@ export function ActualizationPage() {
                 onOrganFiltersChange={setOrganFilters}
                 dueDateFilter={dueDateFilter}
                 onDueDateFilterChange={setDueDateFilter}
-                resultCount={rows.length}
-                showResetButton={hasAdvancedFilters || Boolean(search) || bucketFilter !== "all"}
+                resultCount={displayRows.length}
+                showResetButton={hasAdvancedFilters || Boolean(search) || bucketFilter !== "all" || neverActualizedOnly}
                 onResetFilters={resetFilters}
                 toggleableColumns={toggleableColumns}
                 visibleCols={visibleCols}
                 onToggleColumn={toggleColumn}
                 onSelectAllColumns={selectAllColumns}
                 onDeselectAllColumns={deselectAllColumns}
+                neverActualizedOnly={neverActualizedOnly}
+                onNeverActualizedOnlyChange={setNeverActualizedOnly}
             />
 
             {(loading || dictLoading) ? (
@@ -159,7 +193,7 @@ export function ActualizationPage() {
             ) : (
                 <ActualizationTable
                     columns={columns}
-                    rows={rows}
+                    rows={displayRows}
                     gridTemplate={gridTemplate}
                     responsibleExecutorNames={responsibleExecutorNames}
                     keywordNames={keywordNames}
@@ -167,6 +201,7 @@ export function ActualizationPage() {
                     userGroupNames={userGroupNames}
                     rubricNames={rubricNames}
                     onResetFilters={resetFilters}
+                    bucketSettings={bucketSettings}
                 />
             )}
         </div>

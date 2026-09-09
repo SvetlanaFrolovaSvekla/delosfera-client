@@ -75,8 +75,12 @@ export function RedactionAttachmentsModal({
 
     return createPortal(
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 p-4">
-            <div className="w-full max-w-[460px] rounded-[16px] bg-white p-6 shadow-xl">
-                <div className="mb-4 flex items-start justify-between gap-3">
+            {/* max-h + flex-col с прокруткой только у списка вложений: раньше карточка не была
+                ничем ограничена по высоте, и у редакции с большим числом вложений (специальные +
+                обычные) модалка вылезала за пределы экрана вместо того, чтобы скроллиться. Шапка
+                и кнопка "Закрыть" остаются на месте, скроллится только середина. */}
+            <div className="flex max-h-[85vh] w-full max-w-[460px] flex-col rounded-[16px] bg-white shadow-xl">
+                <div className="flex flex-none items-start justify-between gap-3 p-6 pb-4">
                     <div className="flex items-center gap-3">
                         <span className="grid h-10 w-10 flex-none place-items-center rounded-[11px] bg-[#ececfc] text-[#4e57d6]">
                             <Paperclip size={19} strokeWidth={1.8}/>
@@ -92,6 +96,8 @@ export function RedactionAttachmentsModal({
                         <X size={20}/>
                     </button>
                 </div>
+
+                <div className="flex-1 overflow-y-auto px-6 pb-2">
 
                 {specialAttachments.length > 0 && (
                     <div className="mb-4">
@@ -169,7 +175,9 @@ export function RedactionAttachmentsModal({
                     </div>
                 )}
 
-                <div className="mt-6 flex justify-end">
+                </div>
+
+                <div className="flex flex-none justify-end p-6 pt-4">
                     <button
                         onClick={onClose}
                         className="cursor-pointer h-[38px] rounded-[10px] border border-[#e5e9f0] px-4 text-[13px] font-semibold text-[#3a4560] hover:bg-[#f6f8fb]"

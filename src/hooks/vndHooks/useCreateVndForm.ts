@@ -4,6 +4,10 @@ import {vndService} from "@/service/vndService/vndService.ts";
 import type {CreateVndRequest, VndResponse} from "@/service/vndService/vndServiceType.ts";
 import {userService} from "@/service/userService/userService.ts";
 import type {UserResponse} from "@/service/userService/userServiceType.ts";
+import {
+    organizationUnitService
+} from "@/service/dictionariesService/organizationUnitService/organizationUnitService.ts";
+import type {OrganizationUnitResponse} from "@/service/dictionariesService/organizationUnitService/organizationUnitServiceType.ts";
 import {useVndDictionaries} from "@/hooks/vndHooks/useVndDictionaries.ts";
 import {useVndActualization} from "@/hooks/vndHooks/useVndActualization.ts";
 import {VND_TITLE_MAX_LENGTH, VND_TITLE_MIN_LENGTH} from "@/constants/validation/vndValidation.ts";
@@ -31,16 +35,28 @@ export function useCreateVndForm() {
     const [secrecyLevelId, setSecrecyLevelId] = useState("");
     const [userGroupIds, setUserGroupIds] = useState<string[]>([]);
 
-    // --- Разработчик (СП) = подразделение текущего пользователя, не редактируется ---
+    // --- Разработчик (СП) - по умолчанию подставляется из подразделения текущего пользователя,
+    // но теперь редактируется вручную (раньше поле было жёстко зафиксировано, см. историю) ---
     const [currentUser, setCurrentUser] = useState<UserResponse | null>(null);
-    const [developerId, setDeveloperId] = useState("");
+    const [developerId, setDeveloperIdState] = useState("");
+    const developerTouched = useRef(false);
 
     // Ответственные исполнители - редактируются пользователем
     const [responsibleExecutorIds, setResponsibleExecutorIdsState] = useState<string[]>([]);
     const executorsTouched = useRef(false);
 
+    // Список СП с полными данными (включая headUserName) - нужен, чтобы показать начальника
+    // ЛЮБОГО выбранного разработчика/исполнителя, а не только СП текущего пользователя.
+    // dictionaries.orgUnitOptions (общий справочник) хранит только key/label без headUserName.
+    const [orgUnits, setOrgUnits] = useState<OrganizationUnitResponse[]>([]);
+
     // Созданная ВНД
     const [createdVnd, setCreatedVnd] = useState<VndResponse | null>(null);
+
+    const setDeveloperId = (value: string) => {
+        developerTouched.current = true;
+        setDeveloperIdState(value);
+    };
 
     const setResponsibleExecutorIds = (values: string[]) => {
         executorsTouched.current = true;
@@ -50,14 +66,20 @@ export function useCreateVndForm() {
     useEffect(() => {
         userService.getMe().then(setCurrentUser).catch(() => {
         });
+        organizationUnitService.getAll().then(setOrgUnits).catch(() => {
+        });
     }, []);
 
-    // Разработчик всегда подставляется автоматически из СП текущего пользователя
+    // Разработчик по умолчанию подставляется из СП текущего пользователя - но только пока
+    // пользователь не выбрал другое СП вручную (developerTouched), иначе прилёт currentUser
+    // затирал бы уже сделанный выбор.
     useEffect(() => {
         if (!currentUser?.orgUnit) return;
         const autoId = String(currentUser.orgUnit.id);
-        // eslint-disable-next-line react-hooks/set-state-in-effect
-        setDeveloperId(autoId);
+        if (!developerTouched.current) {
+            // eslint-disable-next-line react-hooks/set-state-in-effect
+            setDeveloperIdState(autoId);
+        }
         if (!executorsTouched.current) {
             setResponsibleExecutorIdsState([autoId]);
         }
@@ -68,12 +90,20 @@ export function useCreateVndForm() {
         [dictionaries.orgUnitOptions, developerId, currentUser]
     );
 
-    // headUserName в orgUnitOptions нет (там только key/label), поэтому берём его напрямую из currentUser для разработчика
-    const developerHeadName = currentUser?.orgUnit?.headUserName ?? null;
+    // Начальник СП резолвится по фактически выбранному разработчику (через orgUnits), а не
+    // жёстко по СП текущего пользователя, как было раньше - иначе после смены разработчика
+    // подсказка продолжала бы показывать начальника СП пользователя, а не выбранного СП.
+    const developerHeadName = useMemo(
+        () => orgUnits.find((u) => String(u.id) === developerId)?.headUserName ?? null,
+        [orgUnits, developerId]
+    );
 
-    const responsibleExecutorHeadNames: string[] = [];
-    // headUserName по исполнителям сейчас не резолвится через useVndDictionaries (там нет этого поля).
-    // Если нужно — подключим organizationUnitService.getAll() отдельно, как раньше.
+    const responsibleExecutorHeadNames = useMemo(
+        () => responsibleExecutorIds
+            .map((id) => orgUnits.find((u) => String(u.id) === id)?.headUserName)
+            .filter((name): name is string => !!name),
+        [orgUnits, responsibleExecutorIds]
+    );
 
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [submitError, setSubmitError] = useState<string | null>(null);
@@ -144,7 +174,8 @@ export function useCreateVndForm() {
         secrecyLevelId, setSecrecyLevelId,
         userGroupIds, setUserGroupIds,
 
-        developerName, developerHeadName,
+        developerId, setDeveloperId, developerName, developerHeadName,
+        developerOptions: dictionaries.orgUnitOptions,
         executorOptions: dictionaries.orgUnitOptions,
         responsibleExecutorIds, setResponsibleExecutorIds, responsibleExecutorHeadNames,
 

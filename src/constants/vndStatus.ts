@@ -178,7 +178,7 @@ export const COORDINATION_STAGE_META: Record<"primary" | "repeat" | "final", Tas
 
 // Цвета разделов задач - совпадают с названиями вложенных вкладок на странице "Мои задачи"
 // (см. TasksVndPage), чтобы бейдж на карточке однозначно указывал, в какой раздел вести.
-export const TASK_SCOPE_META: Record<"coordination" | "actualization" | "consolidation" | "myVndApproval", TaskStatusMeta> = {
+export const TASK_SCOPE_META: Record<"coordination" | "actualization" | "consolidation" | "myVndApproval" | "rejected", TaskStatusMeta> = {
     coordination: {
         label: "Ждущие моего согласования",
         color: "#2f68f5",
@@ -202,6 +202,12 @@ export const TASK_SCOPE_META: Record<"coordination" | "actualization" | "consoli
         color: "#2f68f5",
         bg: "#e9f0ff",
         icon: Clock,
+    },
+    rejected: {
+        label: "Отклонено",
+        color: "#c0392b",
+        bg: "#fdecea",
+        icon: AlertOctagon,
     },
 };
 

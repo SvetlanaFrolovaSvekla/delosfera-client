@@ -1,7 +1,7 @@
 import type {ApprovalStageKindResponse} from "@/service/coordinationService/coordinationServiceTypes.ts";
 import type {VndStatusKey} from "@/constants/vndTabs.ts";
 
-export type TaskScope = "coordination" | "actualization" | "consolidation" | "myVndApproval";
+export type TaskScope = "coordination" | "actualization" | "consolidation" | "myVndApproval" | "rejected";
 export type TaskStagePhase = "primary" | "repeat" | "final";
 
 export interface VndTaskCountsResponse {
@@ -10,6 +10,8 @@ export interface VndTaskCountsResponse {
     actualization: number;
     consolidation: number;
     myVndApproval: number;
+    /// Редакции, отклонённые при согласовании и ожидающие правок инициатора
+    rejected: number;
 }
 
 export interface VndTaskResponse {
@@ -49,6 +51,12 @@ export interface VndTaskResponse {
     /// Пройден ли шаг "Выполнить актуализацию" (только для actualization/consolidation) — пока
     /// false, карточка actualization должна вести на экран "Выполнить актуализацию"
     actualizationPerformed: boolean;
+
+    // --- Только для rejected ---
+    /// ФИО согласующего, который отклонил редакцию
+    rejectedByName?: string | null;
+    /// Комментарий (причина), с которым редакция была отклонена
+    rejectionComment?: string | null;
 
     createdAt: string;
 }

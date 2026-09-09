@@ -12,9 +12,14 @@ function authHeaders(): HeadersInit {
  * Скачивает файл с бэка через авторизованный fetch и отдаёт Blob + оригинальное имя,
  * ничего не сохраняя на диск. Используется для встраивания файла в UI (например, в DocxEditor).
  */
-export async function fetchFileBlob(fileId: number, fallbackName = "файл"): Promise<{ blob: Blob; fileName: string }> {
+export async function fetchFileBlob(
+    fileId: number,
+    fallbackName = "файл",
+    signal?: AbortSignal,
+): Promise<{ blob: Blob; fileName: string }> {
     const response = await fetch(`${API_BASE}/files/${fileId}`, {
         headers: authHeaders(),
+        signal,
     });
 
     if (!response.ok) {

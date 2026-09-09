@@ -8,6 +8,7 @@ const SCOPE_TO_PATH: Record<TaskScope, string> = {
     actualization: "actualization",
     consolidation: "consolidation",
     myVndApproval: "my-vnd-approval",
+    rejected: "rejected",
 };
 
 class TasksService {

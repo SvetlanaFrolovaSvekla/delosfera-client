@@ -45,6 +45,35 @@ function buildTree(options: TreeSelectOption[]): TreeNode[] {
     return roots;
 }
 
+// По умолчанию при открытии модалки сворачиваем все узлы с детьми, КРОМЕ цепочки родителей
+// уже выбранного узла - так сразу видно, где в структуре находится текущий выбор, а не только
+// его собственное название без контекста (важно, когда одноимённые СП повторяются в каждом
+// из филиалов - см. миграцию isrib->delosfera). Раньше здесь при каждом открытии просто
+// разворачивалось всё дерево целиком (пустой collapsed) - неюзабельно на ~200 подразделениях.
+function collectDefaultCollapsed(options: TreeSelectOption[], selectedKey: string | null): Set<string> {
+    const byKey = new Map(options.map((o) => [o.key, o]));
+
+    // Ключи всех узлов, у которых есть дети - потенциально сворачиваемые
+    const withChildren = new Set<string>();
+    options.forEach((o) => {
+        if (o.parentId) withChildren.add(o.parentId);
+    });
+
+    // Цепочка родителей выбранного узла - остаётся развёрнутой
+    const ancestors = new Set<string>();
+    let current = selectedKey ? byKey.get(selectedKey) : undefined;
+    while (current?.parentId) {
+        ancestors.add(current.parentId);
+        current = byKey.get(current.parentId);
+    }
+
+    const collapsed = new Set<string>();
+    withChildren.forEach((key) => {
+        if (!ancestors.has(key)) collapsed.add(key);
+    });
+    return collapsed;
+}
+
 // Возвращает узлы, которые сами совпадают с запросом или содержат совпадающих потомков
 function filterTree(nodes: TreeNode[], query: string): TreeNode[] {
     const q = query.toLowerCase();
@@ -76,19 +105,22 @@ export function TreeSingleSelectModal({
     const [prevOpen, setPrevOpen] = useState(open);
     const panelRef = useRef<HTMLDivElement>(null);
 
-    // Сброс поиска/раскрытых узлов при каждом открытии — обновление state во время рендера
+    // Сброс поиска/раскрытых узлов при каждом открытии — обновление state во время рендера.
+    // Разворачиваем только цепочку родителей текущего выбора (см. collectDefaultCollapsed),
+    // остальное сворачиваем.
     if (open !== prevOpen) {
         setPrevOpen(open);
         if (open) {
             setQuery("");
-            setCollapsed(new Set());
+            setCollapsed(collectDefaultCollapsed(options, selectedKey));
         }
     }
 
     if (!open) return null;
 
     const tree = buildTree(options);
-    const visibleTree = query.trim() ? filterTree(tree, query.trim()) : tree;
+    const isSearching = query.trim().length > 0;
+    const visibleTree = isSearching ? filterTree(tree, query.trim()) : tree;
 
     const toggleCollapse = (key: string) =>
         setCollapsed((prev) => {
@@ -125,7 +157,9 @@ export function TreeSingleSelectModal({
     const renderNode = (node: TreeNode, depth: number) => {
         const on = node.key === selectedKey;
         const hasChildren = node.children.length > 0;
-        const isCollapsed = collapsed.has(node.key);
+        // Во время поиска раскрываем всё принудительно - иначе совпадение под свёрнутым по
+        // умолчанию узлом (см. collectDefaultCollapsed) было бы не видно в результатах.
+        const isCollapsed = !isSearching && collapsed.has(node.key);
 
         return (
             <div key={node.key}>

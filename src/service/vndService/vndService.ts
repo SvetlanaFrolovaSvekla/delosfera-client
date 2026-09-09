@@ -28,6 +28,34 @@ async function handleResponse<T>(response: Response): Promise<T> {
     return response.json() as Promise<T>;
 }
 
+/** Общая сборка FormData для editLastRevisionDirectly/editRedactionDirectly (последняя редакция и
+ * произвольная редакция бьют в разные роуты, но с одинаковым набором полей — см.
+ * EditLastRevisionDirectlyRequest на бэке). */
+function buildEditRedactionDirectlyFormData(request: EditLastRevisionDirectlyRequest): FormData {
+    const formData = new FormData();
+    if (request.docRu) formData.append("DocRu", request.docRu);
+    if (request.docKg) formData.append("DocKg", request.docKg);
+    else if (request.removeDocKg) formData.append("RemoveDocKg", "true");
+    if (request.docEn) formData.append("DocEn", request.docEn);
+    else if (request.removeDocEn) formData.append("RemoveDocEn", "true");
+
+    if (request.tid) formData.append("Tid", request.tid);
+    else if (request.removeTid) formData.append("RemoveTid", "true");
+    if (request.approvalSheet) formData.append("ApprovalSheet", request.approvalSheet);
+    else if (request.removeApprovalSheet) formData.append("RemoveApprovalSheet", "true");
+    if (request.disagreementMatrix) formData.append("DisagreementMatrix", request.disagreementMatrix);
+    else if (request.removeDisagreementMatrix) formData.append("RemoveDisagreementMatrix", "true");
+
+    if (request.description !== undefined) formData.append("Description", request.description);
+    for (const file of request.newAttachments ?? []) {
+        formData.append("NewAttachments", file);
+    }
+    for (const fileId of request.removedAttachmentFileIds ?? []) {
+        formData.append("RemovedAttachmentFileIds", String(fileId));
+    }
+    return formData;
+}
+
 export const vndService = {
     async create(request: CreateVndRequest): Promise<VndResponse> {
         const response = await fetch(`${API_BASE}/vnd`, {
@@ -170,24 +198,24 @@ export const vndService = {
     },
 
     async editLastRevisionDirectly(vndId: number, request: EditLastRevisionDirectlyRequest): Promise<VndRedactionResponse> {
-        const formData = new FormData();
-        if (request.docRu) formData.append("DocRu", request.docRu);
-        if (request.docKg) formData.append("DocKg", request.docKg);
-        else if (request.removeDocKg) formData.append("RemoveDocKg", "true");
-        if (request.docEn) formData.append("DocEn", request.docEn);
-        else if (request.removeDocEn) formData.append("RemoveDocEn", "true");
-        if (request.description !== undefined) formData.append("Description", request.description);
-        for (const file of request.newAttachments ?? []) {
-            formData.append("NewAttachments", file);
-        }
-        for (const fileId of request.removedAttachmentFileIds ?? []) {
-            formData.append("RemovedAttachmentFileIds", String(fileId));
-        }
-
         const response = await fetch(`${API_BASE}/vnd/${vndId}/redactions/last`, {
             method: "PUT",
             headers: authHeaders(),
-            body: formData,
+            body: buildEditRedactionDirectlyFormData(request),
+        });
+        return handleResponse<VndRedactionResponse>(response);
+    },
+
+    /** То же самое, что editLastRevisionDirectly, но для ЛЮБОЙ редакции документа (не только
+     * последней) - см. VndService.EditRedactionDirectlyAsync на бэке и VndEditLastRevisionModal,
+     * который теперь открывается для выбранной в сайдбаре редакции, а не только последней. */
+    async editRedactionDirectly(
+        vndId: number, redactionId: number, request: EditLastRevisionDirectlyRequest,
+    ): Promise<VndRedactionResponse> {
+        const response = await fetch(`${API_BASE}/vnd/${vndId}/redactions/${redactionId}/edit-directly`, {
+            method: "PUT",
+            headers: authHeaders(),
+            body: buildEditRedactionDirectlyFormData(request),
         });
         return handleResponse<VndRedactionResponse>(response);
     },

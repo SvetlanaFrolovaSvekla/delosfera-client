@@ -19,7 +19,7 @@ import {SzApproversField} from "@/components/sz/SzApproversField.tsx";
 import {SzHrForm} from "@/components/sz/SzHrForm.tsx";
 import {RichTextEditor} from "@/components/editor/RichTextEditor.tsx";
 import {SzAddresseeDecisionPanel} from "@/components/sz/SzAddresseeDecisionPanel.tsx";
-import {AttachmentsPanel} from "@/components/attachments/AttachmentsPanel.tsx";
+import {AttachmentsPanel} from "@/components/componentsGeneral/attachments/AttachmentsPanel.tsx";
 import {
     PARTICIPANT_STATE_LABEL,
     RESOLUTION_LABEL,

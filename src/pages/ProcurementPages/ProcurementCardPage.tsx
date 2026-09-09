@@ -14,7 +14,7 @@ import {ProcurementRoutePanel} from "@/components/procurement/ProcurementRoutePa
 import {TenderPanel} from "@/components/procurement/TenderPanel.tsx";
 import {ContractPanel} from "@/components/procurement/ContractPanel.tsx";
 import {GuaranteeClaimPanel} from "@/components/procurement/GuaranteeClaimPanel.tsx";
-import {AttachmentsPanel} from "@/components/attachments/AttachmentsPanel.tsx";
+import {AttachmentsPanel} from "@/components/componentsGeneral/attachments/AttachmentsPanel.tsx";
 import {formatDate} from "@/utils/dateUtils.ts";
 
 /**

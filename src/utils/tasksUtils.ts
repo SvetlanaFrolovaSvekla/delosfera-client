@@ -73,3 +73,14 @@ export function getMetaText(task: VndTaskResponse): string {
 
     return "Требует внимания ответственного";
 }
+
+// Поиск по подстроке (без учёта регистра) на странице "Мои задачи" — по тем полям,
+// что человек реально пробегает глазами в списке карточек: название ВНД, номер ВНД,
+// номер редакции, инициатор, кто отклонил.
+export function matchesTaskSearch(task: VndTaskResponse, query: string): boolean {
+    const q = query.trim().toLowerCase();
+    if (!q) return true;
+
+    return [task.vndTitle, task.vndCode, task.redactionCode, task.initiatorName, task.rejectedByName]
+        .some((field) => field?.toLowerCase().includes(q));
+}

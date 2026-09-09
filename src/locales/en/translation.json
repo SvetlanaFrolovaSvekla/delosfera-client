@@ -549,5 +549,26 @@
       "saveErrorTitle": "Save error",
       "saveErrorDefault": "Failed to save requisites"
     }
+  },
+  "attachments": {
+    "title": "Attachments",
+    "saveHint": "Save draft to attach files",
+    "dropPrefix": "Drag and drop files, paste screenshots or",
+    "browseLink": "browse",
+    "allowedTypes": "PDF, Word, Excel, PowerPoint, PNG, JPG · up to 50 MB",
+    "noExtension": "no extension",
+    "errorFormat": "“{{name}}”: {{ext}} format is not accepted. Supported formats: PDF, Word, Excel, PowerPoint, PNG, JPG",
+    "errorSize": "“{{name}}”: file exceeds 50 MB limit",
+    "errorLoad": "Failed to load attachments",
+    "errorUpload": "Failed to attach file",
+    "errorRemove": "Failed to delete attachment",
+    "confirmRemoveSigned": "There are signatures ({{count}}) attached to “{{name}}”. Deleting it will revoke them. Continue?",
+    "screenshotName": "Screenshot {{datetime}}",
+    "remove": "Remove",
+    "delete": "Delete",
+    "download": "Download",
+    "signatureCount": "signatures: {{count}}",
+    "signaturesRevoked": "signatures revoked",
+    "signaturesRevokedTitle": "File was replaced — previous signatures revoked"
   }
 }

@@ -7,9 +7,11 @@ interface VndTaskListProps {
     tasks: VndTaskResponse[];
     isLoading: boolean;
     emptyText: string;
+    /** Текущий запрос поиска — прокидывается в карточки для подсветки совпадений. */
+    searchQuery?: string;
 }
 
-export function VndTaskList({ tasks, isLoading, emptyText }: VndTaskListProps) {
+export function VndTaskList({ tasks, isLoading, emptyText, searchQuery }: VndTaskListProps) {
     if (isLoading) {
         return (
             <div className="py-16 flex justify-center">
@@ -23,9 +25,13 @@ export function VndTaskList({ tasks, isLoading, emptyText }: VndTaskListProps) {
     }
 
     return (
-        <div className="grid grid-cols-1 gap-3 mt-5">
+        <div className="grid grid-cols-1 gap-3">
             {tasks.map((task) => (
-                <VndTaskCard key={`${task.scope}-${task.vndId}-${task.stageId ?? ""}`} task={task} />
+                <VndTaskCard
+                    key={`${task.scope}-${task.vndId}-${task.stageId ?? ""}`}
+                    task={task}
+                    searchQuery={searchQuery}
+                />
             ))}
         </div>
     );

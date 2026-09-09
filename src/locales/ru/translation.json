@@ -551,5 +551,26 @@
     "saveError": "Не удалось сохранить пороги. Попробуйте ещё раз.",
     "saved": "Сохранено",
     "retry": "Повторить"
+  },
+  "attachments": {
+    "title": "Вложения",
+    "saveHint": "Сохраните черновик, чтобы приложить файлы",
+    "dropPrefix": "Перетащите файлы, вставьте снимки экрана или",
+    "browseLink": "обзор",
+    "allowedTypes": "PDF, Word, Excel, PowerPoint, PNG, JPG · до 50 МБ",
+    "noExtension": "без расширения",
+    "errorFormat": "«{{name}}»: формат {{ext}} не принимается. Подойдут PDF, Word, Excel, PowerPoint, PNG, JPG",
+    "errorSize": "«{{name}}»: файл больше 50 МБ",
+    "errorLoad": "Не удалось загрузить вложения",
+    "errorUpload": "Не удалось приложить файл",
+    "errorRemove": "Не удалось удалить вложение",
+    "confirmRemoveSigned": "Под файлом «{{name}}» есть подписи ({{count}}). Удаление аннулирует их. Продолжить?",
+    "screenshotName": "Снимок экрана {{datetime}}",
+    "remove": "Убрать",
+    "delete": "Удалить",
+    "download": "Скачать",
+    "signatureCount": "подписей: {{count}}",
+    "signaturesRevoked": "подписи аннулированы",
+    "signaturesRevokedTitle": "Файл заменялся — прежние подписи аннулированы"
   }
 }

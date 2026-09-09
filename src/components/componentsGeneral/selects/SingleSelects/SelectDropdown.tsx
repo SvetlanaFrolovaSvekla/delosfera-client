@@ -14,7 +14,11 @@ interface SelectDropdownProps {
     options: SelectOption[];
     value: string;
     onChange: (value: string) => void;
-    label?: string;            // подпись слева (например "Статус")
+    label?: string;            // подпись (см. labelPosition)
+    /** "inline" (по умолчанию) — подпись слева от панели, в одну строку (напр. "Статус").
+     *  "top" — подпись отдельной строкой над панелью, как заголовок поля формы (напр. панель
+     *  фильтров, где подписей несколько и по одной строке они не помещаются). */
+    labelPosition?: "inline" | "top";
     placeholder?: string;
     searchable?: boolean;      // показывать ли поиск внутри списка
     searchPlaceholder?: string;
@@ -27,6 +31,7 @@ export function SelectDropdown({
                                    value,
                                    onChange,
                                    label,
+                                   labelPosition = "inline",
                                    placeholder,
                                    searchable = false,
                                    searchPlaceholder,
@@ -56,33 +61,40 @@ export function SelectDropdown({
     };
 
     return (
-        <div ref={rootRef} className={`relative flex items-center gap-2 ${className}`}>
+        <div
+            ref={rootRef}
+            className={`${labelPosition === "top" ? "flex flex-col gap-1 items-start" : "flex items-center gap-2"} ${className}`}
+        >
             {label && (
                 <span className="text-[11px] font-bold tracking-[.04em] uppercase text-[#a3adbd] whitespace-nowrap">
                     {label}
                 </span>
             )}
 
-            <button
-                type="button"
-                onClick={() => setOpen((v) => !v)}
-                style={{minWidth}}
-                className={`inline-flex items-center justify-between gap-2 h-9 px-3 rounded-[9px] border text-[12.5px] font-medium text-[#3a4560] outline-none cursor-pointer hover:bg-[#f6f8fb] ${
-                    open
-                        ? "border-[#4e57d6] ring-[3px] ring-[#ececfc] bg-[#f6f8fb]"
-                        : "border-[#e5e9f0] bg-white"
-                }`}
-            >
-               <span className={`truncate font-normal ${selected ? "" : "text-[#a3adbd] font-normal"}`}>
-                   {selected?.label ?? placeholder ?? "—"}
-               </span>
-                <ChevronDown
-                    className={`w-[15px] h-[15px] flex-none text-[#a3adbd] transition-transform ${open ? "rotate-180" : ""}`}
-                    strokeWidth={2}
-                />
-            </button>
+            {/* Своя relative-обёртка вокруг кнопки и панели — чтобы "top-[42px]" у панели ниже
+                всегда отсчитывался от низа именно кнопки, а не всего блока вместе с подписью
+                (та при labelPosition="top" занимает свою строку и сбила бы отступ). */}
+            <div className="relative">
+                <button
+                    type="button"
+                    onClick={() => setOpen((v) => !v)}
+                    style={{minWidth}}
+                    className={`inline-flex items-center justify-between gap-2 h-9 px-3 rounded-[9px] border text-[12.5px] font-medium text-[#3a4560] outline-none cursor-pointer hover:bg-[#f6f8fb] ${
+                        open
+                            ? "border-[#4e57d6] ring-[3px] ring-[#ececfc] bg-[#f6f8fb]"
+                            : "border-[#e5e9f0] bg-white"
+                    }`}
+                >
+                   <span className={`truncate font-normal ${selected ? "" : "text-[#a3adbd] font-normal"}`}>
+                       {selected?.label ?? placeholder ?? "—"}
+                   </span>
+                    <ChevronDown
+                        className={`w-[15px] h-[15px] flex-none text-[#a3adbd] transition-transform ${open ? "rotate-180" : ""}`}
+                        strokeWidth={2}
+                    />
+                </button>
 
-            {open && (
+                {open && (
                 <div
                     style={{minWidth}}
                     className="absolute top-[42px] left-0 z-30 bg-white border border-[#e5e9f0] rounded-xl shadow-[0_18px_46px_-14px_rgba(15,27,45,.28)] overflow-hidden animate-in fade-in zoom-in-95"
@@ -142,7 +154,8 @@ export function SelectDropdown({
                         })}
                     </div>
                 </div>
-            )}
+                )}
+            </div>
         </div>
     );
 }

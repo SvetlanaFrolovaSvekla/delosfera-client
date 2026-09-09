@@ -1,13 +1,13 @@
 import {useEffect, useRef, useState} from "react";
 import {createPortal} from "react-dom";
 import {useLocation} from "react-router-dom";
-import {AlertTriangle, CircleHelp, Lightbulb, MessageSquarePlus, X} from "lucide-react";
 import {
     feedbackService,
     KIND_ORDER,
     KIND_TITLE,
     type FeedbackKind,
 } from "@/service/feedbackService/feedbackService.ts";
+import {AlertTriangle, CircleHelp, Lightbulb, MessageSquarePlus, X} from "lucide-react";
 
 /**
  * Кнопка «Сообщить» на каждом экране системы.
@@ -47,6 +47,7 @@ export function FeedbackButton() {
 
     // Экран сменился — прежнее сообщение к нему не относится.
     useEffect(() => {
+        // eslint-disable-next-line react-hooks/set-state-in-effect
         setOpen(false);
     }, [location.pathname]);
 
@@ -106,7 +107,7 @@ export function FeedbackButton() {
                 className="fixed bottom-5 right-5 z-40 flex items-center gap-2 rounded-full
                            bg-[#2f68f5] px-4 py-3 text-sm font-medium text-white shadow-lg
                            transition hover:bg-[#2554cc] focus:outline-none focus-visible:ring-2
-                           focus-visible:ring-[#2f68f5] focus-visible:ring-offset-2"
+                           focus-visible:ring-[#2f68f5] focus-visible:ring-offset-2 cursor-pointer"
             >
                 <MessageSquarePlus size={18}/>
                 <span className="hidden sm:inline">Сообщить</span>

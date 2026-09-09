@@ -59,4 +59,19 @@ export interface VndTaskResponse {
     rejectionComment?: string | null;
 
     createdAt: string;
+
+    // --- Только для карточек из истории "Выполнено" (см. tasksService.getDoneByScope) ---
+    /// true для задач из вкладки "Выполнено" — на карточке вместо обратного отсчёта до
+    /// дедлайна показывается дата завершения (completedAt).
+    isCompleted?: boolean;
+    /// Когда задача перешла в разряд выполненных — заполнено только при isCompleted === true.
+    completedAt?: string | null;
+}
+
+export interface PagedResult<T> {
+    items: T[];
+    totalCount: number;
+    page: number;
+    pageSize: number;
+    hasMore: boolean;
 }

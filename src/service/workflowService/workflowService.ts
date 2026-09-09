@@ -197,6 +197,12 @@ export interface TemplateStep {
     /** Норматив на этап в часах; пусто — без срока. */
     timeNormHours: number | null;
     requiredSignatureLevel: "Simple" | "Qualified" | null;
+    /**
+     * Условие включения этапа. Пусто — этап всегда в маршруте; строка (например
+     * «household-goods» или «board-authority») — этап включается, только когда
+     * поток сообщает это условие.
+     */
+    condition?: string | null;
     participants: TemplateParticipant[];
 }
 
@@ -205,6 +211,13 @@ export interface RouteTemplateDetails {
     name: string;
     documentType: string;
     isGlobalRule: boolean;
+    /**
+     * Инициирующее подразделение шаблона: пусто — правило действует на весь вид
+     * документа; число — шаблон только для этого подразделения-инициатора.
+     */
+    orgUnitId: number | null;
+    /** Название привязанного подразделения — для показа при редактировании. */
+    orgUnitTitle: string | null;
     steps: TemplateStep[];
 }
 
@@ -212,6 +225,8 @@ export interface RouteTemplateSaveRequest {
     name: string;
     documentType: string;
     isGlobalRule: boolean;
+    /** Инициирующее подразделение: null — правило для всего вида документа. */
+    orgUnitId?: number | null;
     steps: TemplateStep[];
 }
 
@@ -244,4 +259,6 @@ export interface RouteTemplateBrief {
     documentType: string;
     /** Применяется ко всем документам вида, а не выбирается вручную. */
     isGlobalRule: boolean;
+    /** Инициирующее подразделение шаблона; пусто — правило для всего вида документа. */
+    orgUnitId: number | null;
 }

@@ -30,6 +30,16 @@ const DOC_TYPES: {value: string; title: string}[] = [
 
 const KINDS: TemplateStep["kind"][] = ["Approval", "FinalControl", "Signing", "Board"];
 
+/**
+ * Условие включения этапа — продвинутое поле. Пусто — этап всегда в маршруте;
+ * строка — этап включается только когда поток сообщает это условие.
+ */
+const STEP_CONDITIONS: {value: string; title: string}[] = [
+    {value: "", title: "Всегда"},
+    {value: "household-goods", title: "Хозтовары — только закупка"},
+    {value: "board-authority", title: "Вынесение на орган — по порогу"},
+];
+
 const input = "h-9 px-3 rounded-[9px] border border-[#e5e9f0] bg-white text-[13px] outline-none " +
     "focus:border-[#2f68f5]";
 
@@ -92,6 +102,8 @@ export function RouteTemplatesPage() {
         name: "",
         documentType: "Sz",
         isGlobalRule: false,
+        orgUnitId: null,
+        orgUnitTitle: null,
         steps: [пустойЭтап(1)],
     });
 
@@ -103,6 +115,7 @@ export function RouteTemplatesPage() {
                 name: selected.name.trim(),
                 documentType: selected.documentType,
                 isGlobalRule: selected.isGlobalRule,
+                orgUnitId: selected.orgUnitId,
                 steps: selected.steps,
             };
             if (selected.id === 0) {
@@ -234,6 +247,19 @@ export function RouteTemplatesPage() {
                                         {DOC_TYPES.map((d) => <option key={d.value} value={d.value}>{d.title}</option>)}
                                     </select>
                                 </label>
+                                <label className="w-[280px]">
+                                    <span className="block text-[11.5px] font-semibold uppercase tracking-[.04em] text-[#a3adbd] mb-1">
+                                        Подразделение-инициатор
+                                    </span>
+                                    <select className={`${input} w-full`} value={selected.orgUnitId ?? ""} disabled={!canEdit}
+                                            onChange={(e) => setSelected({
+                                                ...selected,
+                                                orgUnitId: e.target.value ? Number(e.target.value) : null,
+                                            })}>
+                                        <option value="">Все подразделения (правило типа)</option>
+                                        {units.map((u) => <option key={u.id} value={u.id}>{u.titleRu}</option>)}
+                                    </select>
+                                </label>
                             </div>
                         </div>
 
@@ -325,6 +351,12 @@ function StepCard({step, index, total, users, units, canEdit, onChange, onRemove
                         onChange={(e) => onChange({mode: e.target.value as TemplateStep["mode"]})}>
                     <option value="Sequential">По очереди</option>
                     <option value="Parallel">Всем сразу</option>
+                </select>
+
+                <select className={`${input} w-[210px]`} value={step.condition ?? ""} disabled={!canEdit}
+                        title="Условие включения этапа"
+                        onChange={(e) => onChange({condition: e.target.value ? e.target.value : null})}>
+                    {STEP_CONDITIONS.map((c) => <option key={c.value} value={c.value}>{c.title}</option>)}
                 </select>
 
                 <span className="flex-1"/>

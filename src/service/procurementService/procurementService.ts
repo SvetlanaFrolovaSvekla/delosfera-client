@@ -205,8 +205,18 @@ export const procurementService = {
         await apiClient.delete(`/procurement/requests/${id}`);
     },
 
-    async submit(id: number): Promise<ProcurementCard> {
-        const {data} = await apiClient.post<ProcurementCard>(`${BASE}/requests/${id}/submit`, {});
+    /**
+     * Отправить заявку на согласование.
+     *
+     * Маршрут собирается автоматически по Матрице полномочий. По желанию инициатор
+     * добавляет дополнительных согласующих — они становятся шагами в конце маршрута,
+     * после автоматической цепочки. Пусто или не передано — идёт только авточепочка.
+     */
+    async submit(id: number, extraApproverUserIds?: number[]): Promise<ProcurementCard> {
+        const body = extraApproverUserIds && extraApproverUserIds.length > 0
+            ? {extraApproverUserIds}
+            : {};
+        const {data} = await apiClient.post<ProcurementCard>(`${BASE}/requests/${id}/submit`, body);
         return data;
     },
 };

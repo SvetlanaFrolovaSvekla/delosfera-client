@@ -69,7 +69,14 @@ export function useVndDictionaries(): VndDictionaries {
                         parentId: x.parentId != null ? String(x.parentId) : undefined,
                     }))
                 );
-                setOrgUnitOptions(orgUnits.map((x) => ({key: String(x.id), label: x.name})));
+                // parentId нужен, чтобы разработчик/исполнители СП отображались деревом
+                // (структура филиалов), а не плоским списком - см. TreeSingleSelectModal/
+                // ParentTreeMultiSelectModal, которые строят иерархию именно по этому полю.
+                setOrgUnitOptions(orgUnits.map((x) => ({
+                    key: String(x.id),
+                    label: x.name,
+                    parentId: x.parentId != null ? String(x.parentId) : undefined,
+                })));
                 setCuratorOptions(users.map((x) => ({key: String(x.id), label: x.fullName})));
                 setKeywordOptions(
                     keywords.map((x) => ({

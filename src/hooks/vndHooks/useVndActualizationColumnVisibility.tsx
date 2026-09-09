@@ -1,8 +1,9 @@
 import {useState} from "react";
 import {ACTUALIZATION_COLUMNS, getToggleableActualizationColumns} from "@/constants/actualizationColumns.ts";
 
-// Доп. колонки, включённые по умолчанию (обязательные и так всегда видны)
-const DEFAULT_VISIBLE: string[] = ["type", "developer"];
+// Доп. колонки, включённые по умолчанию (обязательные и так всегда видны).
+// "Вид" и "Разработчик" по умолчанию выключены — их включают вручную при необходимости.
+const DEFAULT_VISIBLE: string[] = [];
 
 export function useVndActualizationColumnVisibility() {
     const toggleable = getToggleableActualizationColumns();

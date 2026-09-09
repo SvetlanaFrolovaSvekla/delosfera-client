@@ -106,10 +106,11 @@ export function VndTaskCard({task}: VndTaskCardProps) {
                     {getMetaText(task)}
                 </span>
 
-                {/* Комментарий инициатора по предыдущему кругу — контекст, зачем документ снова здесь */}
-                {task.initiatorComment && (
+                {/* Комментарий инициатора по предыдущему кругу — контекст, зачем документ снова здесь.
+                    Для "rejected" в этом же месте — причина отклонения от согласующего. */}
+                {(task.initiatorComment || task.rejectionComment) && (
                     <span className="mt-0.5 block truncate text-[11.5px] italic text-[#a3adbd]">
-                        «{task.initiatorComment}»
+                        «{task.initiatorComment ?? task.rejectionComment}»
                     </span>
                 )}
             </span>

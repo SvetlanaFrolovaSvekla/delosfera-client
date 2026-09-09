@@ -47,6 +47,23 @@ export function filterTree<T extends BaseTreeOption>(nodes: TreeNodeOf<T>[], que
         .filter((n): n is TreeNodeOf<T> => n !== null);
 }
 
+/** Цепочка узла от корня к самому узлу (включительно) по его ключу - например, для СП
+ * "Заместитель правления" внутри "Правление" вернёт [Правление, Заместитель правления].
+ * Используется, чтобы в закрытом поле/чипсе показывать путь целиком, а не только название
+ * самого узла - одноимённые СП могут повторяться в разных ветках оргструктуры (филиалах). */
+export function getAncestorPath<T extends BaseTreeOption>(options: T[], key: string): T[] {
+    const byKey = new Map(options.map((o) => [o.key, o]));
+    const path: T[] = [];
+    let current = byKey.get(key);
+    const seen = new Set<string>();
+    while (current && !seen.has(current.key)) {
+        path.unshift(current);
+        seen.add(current.key);
+        current = current.parentId ? byKey.get(current.parentId) : undefined;
+    }
+    return path;
+}
+
 export function buildNodeIndex<T extends BaseTreeOption>(nodes: TreeNodeOf<T>[]): Map<string, TreeNodeOf<T>> {
     const map = new Map<string, TreeNodeOf<T>>();
     const index = (list: TreeNodeOf<T>[]) => {

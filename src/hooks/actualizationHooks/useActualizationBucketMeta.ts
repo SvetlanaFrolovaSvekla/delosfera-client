@@ -1,6 +1,7 @@
 import {AlertOctagon, AlertTriangle, CheckCircle2, Clock} from "lucide-react";
 import {useTranslation} from "react-i18next";
 import type {ActualizationBucketKey} from "@/service/vndService/vndServiceType.ts";
+import type {ActualizationBucketSettings} from "@/service/actualizationBucketSettingsService/actualizationBucketSettingsService.ts";
 
 type ActualizationBucketMetaItem = {
     label: string;
@@ -36,6 +37,31 @@ export function useActualizationBucketMeta(): Record<ActualizationBucketKey, Act
         approaching: {...ACTUALIZATION_BUCKET_STYLE.approaching, label: t("vnd.actualizationBuckets.approaching")},
         critical: {...ACTUALIZATION_BUCKET_STYLE.critical, label: t("vnd.actualizationBuckets.critical")},
         overdue: {...ACTUALIZATION_BUCKET_STYLE.overdue, label: t("vnd.actualizationBuckets.overdue")},
+    };
+}
+
+/**
+ * Текст порога для тултипа на карточках-метриках и на таблетке "Статус срока" — берёт
+ * актуальные значения из справочника "Пороги индикации сроков актуализации" (ВНД).
+ * settings === null, пока справочник не загрузился — тогда возвращаем пустые строки
+ * (кроме "Просрочено", он от порогов не зависит).
+ */
+export function useActualizationBucketThresholdText(
+    settings: ActualizationBucketSettings | null
+): Record<ActualizationBucketKey, string> {
+    const {t} = useTranslation();
+
+    if (!settings) {
+        return {normal: "", approaching: "", critical: "", overdue: t("actualizationBucketSettingsPage.overdueValue")};
+    }
+
+    const {criticalDays, approachingDays} = settings;
+
+    return {
+        normal: t("actualizationBucketSettingsPage.normalValue", {days: approachingDays}),
+        approaching: t("actualizationBucketSettingsPage.approachingValue", {min: criticalDays + 1, max: approachingDays}),
+        critical: t("actualizationBucketSettingsPage.criticalValue", {max: criticalDays}),
+        overdue: t("actualizationBucketSettingsPage.overdueValue"),
     };
 }
 

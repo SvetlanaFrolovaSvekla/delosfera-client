@@ -22,7 +22,7 @@ const EXTRA_TOGGLEABLE_COLUMNS: ColDef[] = [
 export const ACTUALIZATION_COLUMNS: ColDef[] = [
     {key: "code", label: "Код", width: "65px", fixed: true},
     {key: "name", label: "Наименование", width: "minmax(200px,1fr)", fixed: true},
-    {key: "status", label: "Статус ВНД", width: "134px", fixed: true},
+    {key: "status", label: "Статус последней редакции", width: "190px", fixed: true},
     {key: "dueActualizationDate", label: "Срок актуализации", width: "170px", fixed: true},
     {key: "lastActualizationDate", label: "Последняя актуализация", width: "180px", fixed: true},
     {key: "lastActualizationStatus", label: "Статус посл. актуализации", width: "180px", fixed: true},

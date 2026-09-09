@@ -6,6 +6,7 @@ import {
     addMonths,
     type ActualizationMode,
     describeManualPeriod,
+    describeNextCycleInterval,
     PERIOD_MONTHS,
     PERIOD_TO_BACKEND,
 } from "@/utils/vndActualizationUtils.ts";
@@ -43,12 +44,16 @@ export function useVndActualization() {
 
     const isDateModeValid = actualizationMode !== "date" || manualDueDateISO !== "";
 
+    // Интервал до следующего цикла для подсказки под датой ("... далее через год/полгода ...").
+    const nextCycleInterval = describeNextCycleInterval(actualizationMode, manualDueDateISO, todayISO);
+
     return {
         actualizationMode, setActualizationMode,
         manualDueDate, setManualDueDate,
         computedDueDate,
         computedDueDateDisplay,
         periodicityLabel,
+        nextCycleInterval,
         isDateModeValid,
         backendPeriod: PERIOD_TO_BACKEND[actualizationMode],
         dueActualizationDateForBackend: actualizationMode === "date" ? computedDueDate : null,

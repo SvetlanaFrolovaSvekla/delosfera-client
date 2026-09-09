@@ -35,13 +35,20 @@ export function useDocxPreview(
         }
 
         let cancelled = false;
+        // ⚠ 08.09.2026 (документ 7031, ERR_FAILED в консоли): StrictMode в dev монтирует эффект
+        // дважды (mount → cleanup → remount) — без AbortController старый fetch оставался висеть
+        // в фоне (флаг cancelled его не останавливает, это всего лишь отметка "не применяй
+        // результат"), и браузер обрывал его как проигравший гонку за то же URL — то самое
+        // "net::ERR_FAILED 200 (OK)". В проде эффект не дублируется, но то же самое реально
+        // происходит при быстром переключении редакции/языка — обрываем явно.
+        const controller = new AbortController();
 
         const load = async () => {
             setLoading(true);
             setError(null);
 
             try {
-                const {blob} = await fetchFileBlob(fileId);
+                const {blob} = await fetchFileBlob(fileId, undefined, controller.signal);
 
                 if (cancelled || !containerRef.current) return;
 
@@ -61,7 +68,7 @@ export function useDocxPreview(
                     experimental: true,
                 });
             } catch (err) {
-                if (cancelled) return;
+                if (cancelled || (err instanceof DOMException && err.name === "AbortError")) return;
                 setError(err instanceof Error ? err.message : "Ошибка загрузки документа");
             } finally {
                 if (!cancelled) setLoading(false);
@@ -72,6 +79,7 @@ export function useDocxPreview(
 
         return () => {
             cancelled = true;
+            controller.abort();
         };
     }, [fileId, ignoreWidth]);
 

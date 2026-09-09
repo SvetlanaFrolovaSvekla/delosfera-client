@@ -1,154 +1,125 @@
-import {Shield, Key} from "lucide-react";
+import {useEffect, useState} from "react";
+import {Loader2, Shield} from "lucide-react";
+import {activityLogService} from "@/service/activityLogService/activityLogService.ts";
+import type {ActivityLogEntryResponse} from "@/service/activityLogService/activityLogServiceType.ts";
+import {coordinationService} from "@/service/coordinationService/coordinationService.ts";
+import type {
+    ApprovalProcessResponse,
+    ApprovalProcessStatus,
+    ApprovalStageDecisionResponse,
+    ApprovalStageResponse,
+} from "@/service/coordinationService/coordinationServiceTypes.ts";
+import type {VndRedactionResponse, VndResponse} from "@/service/vndService/vndServiceType.ts";
+import {getRedactionDisplayStatus, REDACTION_STATUS_META} from "@/utils/redactionStatus.ts";
 
-interface AuditEntry {
-    id: string;
-    text: string;
-    meta: string; // дата + время
+interface VndHistoryTabProps {
+    vnd: VndResponse;
+    redactions: VndRedactionResponse[];
 }
 
-interface VndVersion {
-    id: string;
-    version: string;
-    tag: string;
-    tagColor: string;
-    tagBg: string;
-    date: string;
-    by: string;
-    hash: string;
-    developer: string; // Разработчик
-    organ: string; // Орган утверждения
-    responsibleExecutor: string; // Ответственные исполнители
+const PROCESS_STATUS_LABEL: Record<ApprovalProcessStatus, string> = {
+    primary: "Первичное согласование",
+    revision_needed: "На доработке",
+    repeated: "Повторное согласование",
+    final_hold: "Финальная выдержка",
+    approved: "Согласовано",
+    cancelled: "Отозвано",
+    rejected: "Отклонено",
+};
+
+const DECISION_LABEL: Record<ApprovalStageDecisionResponse, string> = {
+    pending: "в ожидании",
+    approved: "Согласовано",
+    approved_with_comment: "Согласовано с замечаниями",
+    rejected: "Отклонено",
+    auto_approved_timeout: "Согласовано автоматически (истёк срок)",
+};
+
+const ICON_DOT_COLOR: Record<string, string> = {
+    check: "bg-emerald-500",
+    x: "bg-red-500",
+    doc: "bg-indigo-500",
+    clock: "bg-amber-500",
+    info: "bg-[#c3ccd8]",
+};
+
+function formatDateTime(iso: string): string {
+    return new Date(iso).toLocaleString("ru-RU", {dateStyle: "short", timeStyle: "short"});
 }
 
-const mockAudit: AuditEntry[] = [
-    {id: "1", text: "Документ зарегистрирован в системе, как черновик", meta: "28.07.2026, 14:02"},
-    {
-        id: "2",
-        text: "К документу добавлена новая редакция \"10084-Р3\", требующая согласования",
-        meta: "01.08.2026, 11:30"
-    },
-    {id: "3", text: "Новая редакция \"10084-Р3\" отправлена на согласование", meta: "02.08.2026, 16:45"},
-    {
-        id: "4",
-        text: "Гульнара Асанова (Юридическое управление) оставила резолюцию \"Согласовать\" в ходе процесса согласования новой редакции 10084-Р3 на этапе -Первичное согласование-",
-        meta: "04.08.2026, 09:10 "
-    },
-    {
-        id: "5",
-        text: "Айбек Нуруев (Риск-менеджмент) оставил резолюцию \"Согласовать с замечаниями\" в ходе процесса согласования новой редакции 10084-Р3 на этапе -Первичное согласование-",
-        meta: "04.08.2026, 09:12"
-    },
-    {
-        id: "6",
-        text: "Жаныл Эсенова (Комплаенс-контроль) оставила резолюцию \"Согласовать с замечаниями\" в ходе процесса согласования новой редакции 10084-Р3 на этапе -Первичное согласование-",
-        meta: "04.08.2026, 09:12"
-    },
-    {
-        id: "7",
-        text: "Нурбек Осконов (Методология) оставил резолюцию \"Согласовать\" в ходе процесса согласования новой редакции 10084-Р3 на этапе -Первичное согласование-",
-        meta: "04.08.2026, 09:10 "
-    },
-    {id: "8", text: "Новая редакция \"10084-Р3\" отправлена на доработку", meta: "02.08.2026, 16:45"},
-    {
-        id: "9",
-        text: "Новая редакция была доработана и отправлена на этап -Согласование после внесённых изменений-",
-        meta: "02.08.2026, 16:45"
-    },
-    {
-        id: "10",
-        text: "Гульнара Асанова (Юридическое управление) оставила резолюцию \"Согласовать\" в ходе процесса согласования новой редакции 10084-Р3 на этапе -Согласование после внесённых изменений-",
-        meta: "04.08.2026, 09:10 "
-    },
-    {
-        id: "11",
-        text: "Айбек Нуруев (Риск-менеджмент) оставил резолюцию резолюцию \"Согласовать\" в ходе процесса согласования новой редакции 10084-Р3 на этапе -Согласование после внесённых изменений-",
-        meta: "04.08.2026, 09:10 "
-    },
-    {
-        id: "12",
-        text: "Жаныл Эсенова (Комплаенс-контроль) оставила резолюцию \"Согласовать\" в ходе процесса согласования новой редакции 10084-Р3 на этапе -Согласование после внесённых изменений-",
-        meta: "04.08.2026, 09:10 "
-    },
-    {
-        id: "13",
-        text: "Нурбек Осконов (Методология) оставил резолюцию \"Согласовать\" в ходе процесса согласования новой редакции 10084-Р3 на этапе -Согласование после внесённых изменений-",
-        meta: "04.08.2026, 09:10 "
-    },
-    {
-        id: "14",
-        text: "Новая редакция \"10084-Р3\" отправлена на этап согласования -Финальная выдержка-",
-        meta: "04.08.2026, 09:10 "
-    },
-    {
-        id: "15",
-        text: "Этап согласования -Финальная выдержка- прошел без замечаний от согласующих. Редакция \"10084-Р3\" стала Действующей.",
-        meta: "04.08.2026, 09:10 "
-    },
-];
+/** Финальное решение согласующего по этапу — самая поздняя из пройденных фаз
+ * (финальная выдержка > повторное согласование > первичное), без "в ожидании". */
+function stageFinalDecision(s: ApprovalStageResponse): {
+    label: string;
+    decidedAt: string | null;
+    comment: string | null;
+} {
+    if (s.finalHoldDecision && s.finalHoldDecision !== "pending") {
+        return {label: DECISION_LABEL[s.finalHoldDecision], decidedAt: s.finalHoldDecidedAt, comment: s.finalHoldComment};
+    }
+    if (s.repeatDecision && s.repeatDecision !== "pending") {
+        return {label: DECISION_LABEL[s.repeatDecision], decidedAt: s.repeatDecidedAt, comment: s.repeatComment};
+    }
+    if (s.primaryDecision !== "pending") {
+        return {label: DECISION_LABEL[s.primaryDecision], decidedAt: s.primaryDecidedAt, comment: s.primaryComment};
+    }
+    return {label: DECISION_LABEL.pending, decidedAt: null, comment: null};
+}
 
-const mockVersions: VndVersion[] = [
-    {
-        id: "1",
-        version: "10084-Р4",
-        tag: "Действующая",
-        tagColor: "text-emerald-700",
-        tagBg: "bg-emerald-100",
-        date: "04.08.2026",
-        by: "Согласовано: Фролова С. В.",
-        hash: "a4f9c2e1",
-        developer: "Разработчик: Фролова С. В.",
-        organ: "Орган утверждения: Правление",
-        responsibleExecutor: "Ответственные исполнители: Начальник УД"
-    },
-    {
-        id: "2",
-        version: "10084-Р3",
-        tag: "Не действ.",
-        tagColor: "text-slate-500",
-        tagBg: "bg-slate-100",
-        date: "15.05.2026",
-        by: "Согласовано: Иванов А. К.",
-        hash: "7b3d8e90",
-        developer: "Разработчик: Фролова С. В.",
-        organ: "Орган утверждения: Правление",
-        responsibleExecutor: "Ответственные исполнители: Начальник УД"
-    },
-    {
-        id: "3",
-        version: "10084-Р2",
-        tag: "Не действ.",
-        tagColor: "text-slate-500",
-        tagBg: "bg-slate-100",
-        date: "02.02.2026",
-        by: "Согласовано: Иванов А. К.",
-        hash: "1e5f4a22",
-        developer: "Разработчик: Фролова С. В.",
-        organ: "Орган утверждения: Правление",
-        responsibleExecutor: "Ответственные исполнители: Начальник УД"
-    },
-    {
-        id: "4",
-        version: "10084-Р1",
-        tag: "Не действ.",
-        tagColor: "text-slate-500",
-        tagBg: "bg-slate-100",
-        date: "11.11.2025",
-        by: "Согласовано: Петрова О. Н.",
-        hash: "9c0b7d15",
-        developer: "Разработчик: Фролова С. В.",
-        organ: "Орган утверждения: Правление",
-        responsibleExecutor: "Ответственные исполнители: Начальник УД"
-    },
-];
+export function VndHistoryTab({vnd, redactions}: VndHistoryTabProps) {
+    const [auditEntries, setAuditEntries] = useState<ActivityLogEntryResponse[] | null>(null);
+    const [approvalHistory, setApprovalHistory] = useState<ApprovalProcessResponse[] | null>(null);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState<string | null>(null);
 
-// ===== Компонент =====
+    useEffect(() => {
+        let cancelled = false;
+        setLoading(true);
+        setError(null);
 
-export function VndHistoryTab() {
+        Promise.all([
+            activityLogService.getByEntity("vnd", vnd.id),
+            coordinationService.getHistory(vnd.id),
+        ])
+            .then(([audit, approvals]) => {
+                if (cancelled) return;
+                setAuditEntries(audit);
+                setApprovalHistory(approvals);
+            })
+            .catch(() => {
+                if (!cancelled) setError("Не удалось загрузить историю ВНД");
+            })
+            .finally(() => {
+                if (!cancelled) setLoading(false);
+            });
+
+        return () => {
+            cancelled = true;
+        };
+    }, [vnd.id]);
+
+    const maxNumber = redactions.reduce((max, r) => Math.max(max, r.number), 0);
+    const sortedRedactions = [...redactions].sort((a, b) => b.number - a.number);
+
+    if (loading) {
+        return (
+            <div className="px-4 sm:px-6 flex items-center gap-2 text-sm text-[#8b97ab] py-10 justify-center">
+                <Loader2 size={16} className="animate-spin"/>
+                Загрузка истории…
+            </div>
+        );
+    }
+
+    if (error) {
+        return (
+            <div className="px-4 sm:px-6 py-10 text-center text-sm text-red-600">{error}</div>
+        );
+    }
+
     return (
         <div className="px-4 sm:px-6 grid grid-cols-1 lg:grid-cols-2 gap-[18px] items-start">
-            {/* Левая колонка */}
+            {/* Левая колонка: журнал аудита */}
             <div className="flex flex-col gap-[18px]">
-                {/* Журнал аудита */}
                 <div className="bg-white border border-[#e9edf3] rounded-2xl overflow-hidden">
                     <div className="px-5 pt-4 pb-3 border-b border-[#eef2f7] flex items-center gap-[9px]">
                         <Shield size={17} strokeWidth={1.8} className="text-[#8b97ab]"/>
@@ -156,49 +127,107 @@ export function VndHistoryTab() {
                         <span className="ml-auto text-[11px] text-[#a3adbd]">История всех действий с данной ВНД</span>
                     </div>
                     <div className="px-5 pt-1.5 pb-3.5">
-                        {mockAudit.map((a) => (
-                            <div key={a.id}
-                                 className="flex gap-[11px] py-2.5 border-t border-[#f3f6f9] first:border-t-0">
-                                <span className="w-[7px] h-[7px] flex-none rounded-full mt-1.5 bg-[#c3ccd8]"/>
-                                <div className="min-w-0">
-                                    <div className="text-[12.5px] text-[#26324a] leading-[1.4]">{a.text}</div>
-                                    <div className="text-[11px] text-[#8b97ab] mt-0.5">{a.meta}</div>
+                        {(auditEntries?.length ?? 0) === 0 ? (
+                            <div className="py-4 text-[12.5px] text-[#a3adbd]">Записей пока нет</div>
+                        ) : (
+                            auditEntries!.map((a) => (
+                                <div key={a.id}
+                                     className="flex gap-[11px] py-2.5 border-t border-[#f3f6f9] first:border-t-0">
+                                    <span
+                                        className={`w-[7px] h-[7px] flex-none rounded-full mt-1.5 ${ICON_DOT_COLOR[a.icon] ?? "bg-[#c3ccd8]"}`}
+                                    />
+                                    <div className="min-w-0">
+                                        <div className="text-[12.5px] text-[#26324a] leading-[1.4]">{a.text}</div>
+                                        <div className="text-[11px] text-[#8b97ab] mt-0.5">{formatDateTime(a.createdAt)}</div>
+                                    </div>
                                 </div>
-                            </div>
-                        ))}
+                            ))
+                        )}
                     </div>
                 </div>
             </div>
 
-            {/* Правая колонка: Версии и юридическая значимость */}
+            {/* Правая колонка: редакции и юридическая значимость */}
             <div className="bg-white border border-[#e9edf3] rounded-2xl overflow-hidden">
                 <div className="px-5 pt-4 pb-3 border-b border-[#eef2f7]">
                     <h2 className="m-0 text-sm font-semibold">Редакции и юридическая значимость</h2>
                 </div>
                 <div className="px-5 pt-1.5 pb-3.5">
-                    {mockVersions.map((v) => (
-                        <div key={v.id} className="flex gap-[13px] py-3 border-b border-[#f3f6f9] last:border-b-0">
-                            <div className="flex-none text-center">
-                                <div className="font-mono text-[13px] font-bold text-[#1c2740]">{v.version}</div>
-                                <span
-                                    className={`inline-block mt-1 text-[9.5px] font-bold px-1.5 py-0.5 rounded whitespace-nowrap ${v.tagColor} ${v.tagBg}`}
-                                >
-                  {v.tag}
-                </span>
-                            </div>
-                            <div className="flex-1 min-w-0 border-l-2 border-[#eef2f7] pl-[13px]">
-                                <div className="text-[12.5px] text-[#26324a]">{v.date}</div>
-                                <div className="text-[11.5px] text-[#8b97ab] mt-0.5">{v.by}</div>
-                                <div className="text-[11.5px] text-[#8b97ab] mt-0.5">{v.developer}</div>
-                                <div className="text-[11.5px] text-[#8b97ab] mt-0.5">{v.organ}</div>
-                                <div className="text-[11.5px] text-[#8b97ab] mt-0.5">{v.responsibleExecutor}</div>
-                                <div className="flex items-center gap-1.5 mt-[5px]">
-                                    <Key size={12} strokeWidth={2} className="text-[#a3adbd]"/>
-                                    <span className="font-mono text-[10.5px] text-[#a3adbd]">hash {v.hash}</span>
+                    {sortedRedactions.length === 0 ? (
+                        <div className="py-4 text-[12.5px] text-[#a3adbd]">Редакций пока нет</div>
+                    ) : (
+                        sortedRedactions.map((r) => {
+                            const displayStatus = getRedactionDisplayStatus(
+                                r, vnd.status, r.number === maxNumber, vnd.effectiveDate,
+                            );
+                            const meta = REDACTION_STATUS_META[displayStatus];
+                            // approvalHistory отсортирован сервером по убыванию CreatedAt — первое
+                            // совпадение по redactionId и есть последний цикл согласования этой редакции.
+                            const process = approvalHistory?.find((p) => p.redactionId === r.id) ?? null;
+
+                            return (
+                                <div key={r.id} className="flex gap-[13px] py-3 border-b border-[#f3f6f9] last:border-b-0">
+                                    <div className="flex-none text-center">
+                                        <div className="font-mono text-[13px] font-bold text-[#1c2740]">{r.code}</div>
+                                        <span
+                                            className="inline-block mt-1 text-[9.5px] font-bold px-1.5 py-0.5 rounded whitespace-nowrap"
+                                            style={{color: meta.color, background: meta.bg}}
+                                        >
+                                            {meta.label}
+                                        </span>
+                                    </div>
+                                    <div className="flex-1 min-w-0 border-l-2 border-[#eef2f7] pl-[13px]">
+                                        <div className="text-[11.5px] text-[#8b97ab] mt-0.5">
+                                            Разработчик: {r.developerName}
+                                        </div>
+                                        <div className="text-[11.5px] text-[#8b97ab] mt-0.5">
+                                            Орган утверждения: {r.organName}
+                                        </div>
+
+                                        {process ? (
+                                            <>
+                                                <div className="text-[11.5px] text-[#8b97ab] mt-0.5">
+                                                    Инициатор согласования: {process.initiatorName}
+                                                    {process.initiatorPosition ? ` (${process.initiatorPosition})` : ""}
+                                                    {" "}— {formatDateTime(process.primaryStartedAt)}
+                                                </div>
+                                                <div className="text-[11.5px] text-[#8b97ab] mt-0.5">
+                                                    Статус согласования: {PROCESS_STATUS_LABEL[process.status]}
+                                                    {process.completedAt ? ` (завершено ${formatDateTime(process.completedAt)})` : ""}
+                                                </div>
+                                                {process.stages.length > 0 && (
+                                                    <div className="mt-1.5 flex flex-col gap-1">
+                                                        {process.stages.map((s) => {
+                                                            const decision = stageFinalDecision(s);
+                                                            return (
+                                                                <div key={s.id} className="text-[11.5px] text-[#26324a]">
+                                                                    <span className="text-[#8b97ab]">{s.approverName}</span>
+                                                                    {s.orgUnitName ? (
+                                                                        <span className="text-[#a3adbd]"> ({s.orgUnitName})</span>
+                                                                    ) : null}
+                                                                    {" — "}
+                                                                    <span>{decision.label}</span>
+                                                                    {decision.decidedAt ? (
+                                                                        <span className="text-[#a3adbd]">
+                                                                            {" · "}{formatDateTime(decision.decidedAt)}
+                                                                        </span>
+                                                                    ) : null}
+                                                                </div>
+                                                            );
+                                                        })}
+                                                    </div>
+                                                )}
+                                            </>
+                                        ) : (
+                                            <div className="text-[11.5px] text-[#a3adbd] mt-0.5">
+                                                Согласование не запускалось
+                                            </div>
+                                        )}
+                                    </div>
                                 </div>
-                            </div>
-                        </div>
-                    ))}
+                            );
+                        })
+                    )}
                 </div>
             </div>
         </div>

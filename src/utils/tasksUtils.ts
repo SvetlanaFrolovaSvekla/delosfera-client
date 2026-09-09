@@ -64,5 +64,12 @@ export function getMetaText(task: VndTaskResponse): string {
         return task.redactionCode ? `Редакция ${task.redactionCode}` : "Отслеживайте ход согласования";
     }
 
+    if (task.scope === "rejected") {
+        const parts: string[] = [];
+        if (task.redactionCode) parts.push(`Редакция ${task.redactionCode}`);
+        if (task.rejectedByName) parts.push(`Отклонил: ${task.rejectedByName}`);
+        return parts.length > 0 ? parts.join(" · ") : "Требует внимания инициатора";
+    }
+
     return "Требует внимания ответственного";
 }

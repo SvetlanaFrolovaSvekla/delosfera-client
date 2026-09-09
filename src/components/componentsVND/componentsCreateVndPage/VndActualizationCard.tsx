@@ -8,6 +8,7 @@ interface VndActualizationCardProps {
     computedDueDateDisplay: string;
     onManualDueDateChange: (v: string) => void;
     periodicityLabel: string;
+    nextCycleInterval: string;
 }
 
 export function VndActualizationCard({
@@ -16,6 +17,7 @@ export function VndActualizationCard({
                                          computedDueDateDisplay,
                                          onManualDueDateChange,
                                          periodicityLabel,
+                                         nextCycleInterval,
                                      }: VndActualizationCardProps) {
     const isDateFieldDisabled = actualizationMode !== "date";
     return (
@@ -26,6 +28,10 @@ export function VndActualizationCard({
             <p className="mt-2 mb-3 text-[11.5px] text-[#8b97ab] leading-[1.5]">
                 До какого числа нужно актуализировать ВНД. Выберите готовую периодичность (считается от даты
                 создания) — или задайте дату вручную, тогда периодичность посчитается сама.
+                <br/><br/>
+                Рекомендуется для документов вида «Кодекс» и «Политика» выставлять периодичность 1 раз в
+                год. Для всех остальных документов — 1 раз в два года. В будущем возможно проведение
+                внеплановой актуализации.
             </p>
 
             <div className="flex flex-col gap-1 mb-3">
@@ -74,6 +80,13 @@ export function VndActualizationCard({
             <div className="mt-3 pt-3 border-t border-[#eef2f7] text-[12px] text-[#55617a] leading-[1.55]">
                 Периодичность: <b className="text-[#1c2740]">{periodicityLabel}</b>
             </div>
+
+            {computedDueDateDisplay && (
+                <div className="mt-1.5 text-[11px] text-[#8b97ab] leading-[1.5]">
+                    Срок первой актуализации будет до {computedDueDateDisplay}, далее — через{" "}
+                    {nextCycleInterval} с даты фактической актуализации ВНД по первому сроку.
+                </div>
+            )}
         </div>
     );
 }

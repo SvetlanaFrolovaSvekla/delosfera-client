@@ -1,28 +1,22 @@
 import type {ActualizationPeriod} from "@/service/vndService/vndServiceType.ts";
 
-export type ActualizationMode = "halfYear" | "year" | "twoYears" | "threeYears" | "date";
+export type ActualizationMode = "year" | "biennial" | "date";
 
 export const PERIOD_MONTHS: Record<Exclude<ActualizationMode, "date">, number> = {
-    halfYear: 6,
     year: 12,
-    twoYears: 24,
-    threeYears: 36,
+    biennial: 24,
 };
 
 // Соответствие UI-режима периода бэковому enum ActualizationPeriod
 export const PERIOD_TO_BACKEND: Record<ActualizationMode, ActualizationPeriod> = {
-    halfYear: "HalfYear",
     year: "Annual",
-    twoYears: "Biennial",
-    threeYears: "Triennial",
+    biennial: "Biennial",
     date: "Custom",
 };
 
 export const ACTUALIZATION_MODE_OPTIONS: { key: ActualizationMode; label: string }[] = [
-    {key: "halfYear", label: "Раз в полгода"},
-    {key: "year", label: "Раз в год"},
-    {key: "twoYears", label: "Раз в два года"},
-    {key: "threeYears", label: "Раз в три года"},
+    {key: "year", label: "1 раз в год"},
+    {key: "biennial", label: "1 раз в два года"},
     {key: "date", label: "Ввод даты"},
 ];
 
@@ -45,13 +39,30 @@ export function describeManualPeriod(manualDateISO: string, todayISO: string): s
 
     const approxMonths = days / 30.44;
     const buckets = [
-        {months: 6, label: "раз в полгода"},
-        {months: 12, label: "раз в год"},
-        {months: 24, label: "раз в два года"},
-        {months: 36, label: "раз в три года"},
+        {months: 12, label: "1 раз в год"},
+        {months: 24, label: "1 раз в два года"},
     ];
     const closest = buckets.find((b) => Math.abs(approxMonths - b.months) <= b.months * 0.08);
     if (closest) return closest.label;
 
     return approxMonths < 1 ? `${days} дн.` : `≈ ${Math.round(approxMonths)} мес.`;
+}
+
+// Интервал до следующего цикла словом ("год"/"два года") — для подсказки под датой:
+// "Срок первой актуализации будет до ..., далее через <интервал> ...". Для пресетов известен
+// заранее, для "Ввод даты" определяется тем же способом, что и periodicityLabel: если введённая
+// дата не попадает точно в одну из двух периодичностей — возвращается как есть (точный текст:
+// "укажите дату", "≈ N мес." и т.п.), чтобы не соврать про год/два года там, где это не так.
+export function describeNextCycleInterval(
+    mode: ActualizationMode,
+    manualDateISO: string,
+    todayISO: string
+): string {
+    if (mode === "year") return "год";
+    if (mode === "biennial") return "два года";
+
+    const label = describeManualPeriod(manualDateISO, todayISO);
+    if (label === "1 раз в год") return "год";
+    if (label === "1 раз в два года") return "два года";
+    return label;
 }

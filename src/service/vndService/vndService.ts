@@ -4,6 +4,7 @@ import type {
     CreateVndRequest, EditLastRevisionDirectlyRequest,
     UpdateVndRequisitesRequest,
     VndActualizationSummaryResponse,
+    LegacyLinkResolveResponse,
     VndLinksResponse, VndQuickSearchResult,
     VndRedactionResponse,
     VndResponse,
@@ -195,6 +196,19 @@ export const vndService = {
             const errorBody = await response.json().catch(() => null);
             throw new Error(errorBody?.message ?? `Ошибка запроса: ${response.status}`);
         }
+    },
+
+    /** Разрешить легаси-ссылку (db://documents/{code} или db://attachments/{n}), унаследованную
+     * из старой системы (isrib), в реальный документ/вложение делосферы — см. useDocxLegacyLinks
+     * (клик по такой ссылке внутри отрендеренного docx). */
+    async resolveLegacyLink(
+        vndId: number, type: "documents" | "attachments", legacyId: string,
+    ): Promise<LegacyLinkResolveResponse> {
+        const response = await fetch(
+            `${API_BASE}/vnd/${vndId}/legacy-link?type=${type}&legacyId=${encodeURIComponent(legacyId)}`,
+            {headers: authHeaders()},
+        );
+        return handleResponse<LegacyLinkResolveResponse>(response);
     },
 
     async editLastRevisionDirectly(vndId: number, request: EditLastRevisionDirectlyRequest): Promise<VndRedactionResponse> {

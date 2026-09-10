@@ -7,6 +7,7 @@ import {FileText, Loader2, ChevronUp, ChevronDown, X} from "lucide-react";
 import {useDocxPreview} from "@/hooks/vndHooks/useDocxPreview.ts";
 import {useDocxTextSearch} from "@/hooks/vndHooks/useDocxTextSearch.ts";
 import {useDocxQuoteMarks} from "@/hooks/vndHooks/useDocxQuoteMarks.ts";
+import {useDocxLegacyLinks} from "@/hooks/vndHooks/useDocxLegacyLinks.ts";
 import type {QuoteMarkInfo} from "@/utils/redactionQuoteMarks.ts";
 
 interface RedactionTextViewProps {
@@ -83,6 +84,15 @@ export const RedactionTextView = forwardRef<RedactionTextViewHandle, RedactionTe
                 onHoverMark: onHoverQuoteMark ?? (() => {}),
                 onClickMark: onClickQuoteMark ?? (() => {}),
             },
+        );
+
+        // Легаси-ссылки db://documents/{code} и db://attachments/{n}, унаследованные из старой
+        // системы (isrib) - см. useDocxLegacyLinks.
+        useDocxLegacyLinks(
+            containerRef,
+            vnd.id,
+            !loading && fileId !== null,
+            `${fileId}-${activeLanguage}`,
         );
 
         useImperativeHandle(ref, () => ({

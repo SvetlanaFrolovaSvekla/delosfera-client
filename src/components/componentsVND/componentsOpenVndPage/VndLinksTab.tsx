@@ -1,8 +1,9 @@
 import {useState} from "react";
-import {ChevronRight, Link2, Loader2, Plus, X} from "lucide-react";
-import type {VndLinkItem, VndResponse} from "@/service/vndService/vndServiceType.ts";
+import {ChevronRight, FileText, Link2, Loader2, Plus, Sparkles, X} from "lucide-react";
+import type {VndAttachmentLinkItem, VndLinkItem, VndResponse} from "@/service/vndService/vndServiceType.ts";
 import {useVndLinks} from "@/hooks/vndHooks/useVndLinks.ts";
 import {VndLinkPicker} from "@/components/componentsVND/componentsOpenVndPage/componentsLinks/VndLinkPicker.tsx";
+import {downloadWithToast} from "@/utils/downloadFile.ts";
 
 interface VndLinksTabProps {
     vndId: number;
@@ -86,15 +87,26 @@ export function VndLinksTab({vndId}: VndLinksTabProps) {
                         {subTab === "outgoing" ? "Ссылок на другие документы пока нет" : "Никто ещё не ссылается на этот документ"}
                     </div>
                 ) : (
-                    list.map((item) => (
+                    list.map((item, idx) => (
                         <LinkRow
-                            key={item.id}
+                            key={item.isAutoDetected ? `auto-${item.vndId}` : item.id || `manual-${idx}`}
                             item={item}
-                            canDelete={subTab === "outgoing"}
+                            canDelete={subTab === "outgoing" && !item.isAutoDetected}
                             disabled={isMutating}
                             onDelete={() => deleteLink(item.id)}
                         />
                     ))
+                )}
+
+                {subTab === "outgoing" && !!data?.attachmentReferences.length && (
+                    <div className="mt-2 pt-2 border-t border-[#eef2f7]">
+                        <div className="px-3 pb-1 text-[11px] font-semibold text-[#8b97ab] uppercase tracking-wide">
+                            Ссылки на вложения (найдено в тексте)
+                        </div>
+                        {data!.attachmentReferences.map((ref) => (
+                            <AttachmentLinkRow key={ref.legacyIndex} item={ref}/>
+                        ))}
+                    </div>
                 )}
             </div>
 
@@ -133,6 +145,14 @@ function LinkRow({
               className={`text-[10px] font-semibold px-1.5 py-0.5 rounded ${STATUS_STYLES[item.status] ?? "text-slate-500 bg-slate-100"}`}>
             {STATUS_LABELS[item.status] ?? item.status}
           </span>
+                    {item.isAutoDetected && (
+                        <span
+                            title="Обнаружено автоматически по ссылке в тексте документа"
+                            className="flex items-center gap-1 text-[10px] font-medium px-1.5 py-0.5 rounded bg-violet-50 text-violet-600"
+                        >
+              <Sparkles size={10} strokeWidth={2}/> из текста
+            </span>
+                    )}
         </span>
                 <span className="block text-[12.5px] text-[#55617a] mt-0.5 truncate">{item.title}</span>
             </a>
@@ -147,6 +167,34 @@ function LinkRow({
                 </button>
             )}
             <ChevronRight size={16} strokeWidth={2} className="flex-none text-[#c3ccd8]"/>
+        </div>
+    );
+}
+
+function AttachmentLinkRow({item}: { item: VndAttachmentLinkItem }) {
+    const handleClick = () => {
+        if (!item.resolved) return;
+        void downloadWithToast(item.fileId, item.fileName);
+    };
+
+    return (
+        <div
+            onClick={handleClick}
+            className={`w-full flex items-center gap-3 px-3 py-3 rounded-xl transition-colors ${
+                item.resolved ? "cursor-pointer hover:bg-slate-50" : "opacity-60 cursor-not-allowed"
+            }`}
+            title={item.resolved ? "Открыть вложение" : "Вложение с таким номером не найдено"}
+        >
+      <span className="w-9 h-9 flex-none rounded-[9px] bg-[#f2f5f9] text-[#55617a] grid place-items-center">
+        <FileText size={16} strokeWidth={1.8}/>
+      </span>
+            <span className="flex-1 min-w-0">
+        <span className="block text-[12.5px] font-medium text-[#2c3446] truncate">{item.fileName}</span>
+        <span className="block text-[11px] text-[#8b97ab] mt-0.5">
+          Вложение №{item.legacyIndex} из текста документа{!item.resolved && " — не найдено"}
+        </span>
+      </span>
+            {item.resolved && <ChevronRight size={16} strokeWidth={2} className="flex-none text-[#c3ccd8]"/>}
         </div>
     );
 }

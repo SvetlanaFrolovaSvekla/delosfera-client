@@ -380,11 +380,37 @@ export interface VndLinkItem {
     code: string;
     title: string;
     status: string; // "active" | "onact" | "review" | "consol" | "arch" | "draft"
+    /** true — ссылка не добавлена вручную через "Добавить ссылку", а автоматически обнаружена
+     * в тексте документа (легаси-гиперссылка db://documents/{код} из старой системы isrib). */
+    isAutoDetected?: boolean;
+}
+
+/** Ссылка на СОБСТВЕННОЕ вложение документа, обнаруженная в тексте текущей редакции
+ * (легаси-гиперссылка db://attachments/{n} из isrib) — см. useDocxLegacyLinks. */
+export interface VndAttachmentLinkItem {
+    /** Легаси-номер из ссылки (db://attachments/{legacyIndex}), 1-based. */
+    legacyIndex: number;
+    fileId: number;
+    fileName: string;
+    /** false — вложения с таким номером у текущей редакции нет, ссылка нерабочая. */
+    resolved: boolean;
 }
 
 export interface VndLinksResponse {
     outgoing: VndLinkItem[];
     incoming: VndLinkItem[];
+    /** Ссылки на собственные вложения документа, обнаруженные в тексте (db://attachments/{n}). */
+    attachmentReferences: VndAttachmentLinkItem[];
+}
+
+/** Ответ на разрешение легаси-ссылки (db://documents/{code} | db://attachments/{n}) по клику
+ * внутри отрендеренного docx — см. vndService.resolveLegacyLink / useDocxLegacyLinks. */
+export interface LegacyLinkResolveResponse {
+    kind: "vnd" | "attachment";
+    vndId?: number;
+    code?: string;
+    fileId?: number;
+    fileName?: string;
 }
 
 export interface EditLastRevisionDirectlyRequest {

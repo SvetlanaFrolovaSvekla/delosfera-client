@@ -188,6 +188,7 @@ export function VndTasksPanel() {
         setDonePage(1);
     }, [scope]);
 
+    // @ts-ignore
     return (
         <>
             <Tabs<TopTab>
@@ -222,7 +223,7 @@ export function VndTasksPanel() {
                                     value={doneToggle}
                                     onChange={(value) => handleDoneToggleChange(value as DoneToggle)}
                                     label="По выполненности"
-                                    labelPosition="left"
+                                    labelPosition="inline"
                                     placeholder="Активные"
                                     minWidth="200px"
                                 />
@@ -234,7 +235,7 @@ export function VndTasksPanel() {
                                     value={stagePhaseFilter}
                                     onChange={(value) => setStagePhaseFilter(value as "" | TaskStagePhase)}
                                     label="Этап согласования"
-                                    labelPosition="left"
+                                    labelPosition="inline"
                                     placeholder="Все этапы"
                                     minWidth="260px"
                                 />

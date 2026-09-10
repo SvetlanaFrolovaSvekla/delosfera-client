@@ -24,7 +24,7 @@ export function ActualizationPageHeader() {
                     className="inline-flex items-center gap-2 h-10 px-[15px] rounded-[10px] border-none bg-[#4e57d6] text-white font-semibold text-[13px] cursor-pointer hover:brightness-[1.06] shadow-[0_6px_16px_-6px_#4e57d6]"
                 >
                     <Download className="w-[18px] h-[18px]" strokeWidth={2}/>
-                    Импорт плана в Excel
+                    Экспорт плана в Excel
                 </button>
 
                 <button

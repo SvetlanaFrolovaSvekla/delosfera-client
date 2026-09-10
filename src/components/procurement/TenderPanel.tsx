@@ -165,6 +165,7 @@ export const TenderPanel = ({requestId, documentId, onChanged}: Props) => {
                     <div key={m.id} style={{display: "flex", alignItems: "center", gap: 10, fontSize: 12.5}}>
                         <span style={{flex: 1, color: "#26324a"}}>
                             <b>{m.userName}</b> · {m.roleTitle}
+                            {!m.isVoting && <span style={{color: "#8b97ab"}}> · без права голоса</span>}
                             {m.isBoardMember && " · ЧП"}
                             {m.isAccountant && " · УБУиО"}
                             {m.conclusionFileName && (

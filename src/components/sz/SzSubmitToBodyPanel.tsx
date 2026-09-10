@@ -1,6 +1,7 @@
 import {useState} from "react";
 import {Landmark} from "lucide-react";
-import {submitSzToBody} from "@/service/meetingsService/agendaCandidateService.ts";
+import {szService} from "@/service/szService/szService.ts";
+import {szExecutionService} from "@/service/szService/szExecutionService.ts";
 import {bodyOptions, type MeetingBody} from "@/service/meetingsService/meetingsService.ts";
 
 /**
@@ -41,7 +42,8 @@ export function SzSubmitToBodyPanel({szId, body, question, inAgenda, canEdit, on
         setBusy(true);
         setError(null);
         try {
-            await submitSzToBody(szId, next, next ? text.trim() || undefined : undefined);
+            if (next) await szService.submitToBody(szId, next, text.trim() || undefined);
+            else await szService.withdrawFromBody(szId);
             setEditing(false);
             onChanged();
         } catch (e) {
@@ -52,7 +54,24 @@ export function SzSubmitToBodyPanel({szId, body, question, inAgenda, canEdit, on
         }
     };
 
-    // Вопрос заведён — отметку показываем как факт, без органов управления.
+    const closeAfterBoard = async () => {
+        const summary = window.prompt("Итог рассмотрения на коллегиальном органе (для закрытия записки):");
+        if (!summary?.trim()) return;
+        setBusy(true);
+        setError(null);
+        try {
+            await szExecutionService.complete(szId, summary.trim());
+            onChanged();
+        } catch (e) {
+            const message = (e as {response?: {data?: {message?: string}}})?.response?.data?.message;
+            setError(message ?? "Не удалось закрыть записку.");
+        } finally {
+            setBusy(false);
+        }
+    };
+
+    // Вопрос заведён — отметку показываем как факт. После рассмотрения органом
+    // записку закрывают здесь: иначе она навсегда остаётся «на рассмотрении».
     if (inAgenda) {
         return (
             <div className="rounded-[12px] border border-[#cfe6da] bg-[#e6f4ec] px-4 py-3">
@@ -65,6 +84,18 @@ export function SzSubmitToBodyPanel({szId, body, question, inAgenda, canEdit, on
                 <p className="mt-1 text-[12.5px] text-[#4d5a72]">
                     Снять вопрос теперь можно только с повестки заседания.
                 </p>
+                {error && <p className="mt-1.5 text-[12.5px] text-[#c0392b]">{error}</p>}
+                {canEdit && (
+                    <button
+                        type="button"
+                        disabled={busy}
+                        onClick={closeAfterBoard}
+                        className="mt-2 rounded-[9px] border border-[#cfe6da] bg-white px-3 py-1.5 text-[12.5px]
+                                   font-medium text-[#1c7a4d] transition hover:bg-[#f0faf4] disabled:opacity-50"
+                    >
+                        {busy ? "Закрываем…" : "Рассмотрено — закрыть записку"}
+                    </button>
+                )}
             </div>
         );
     }
@@ -93,10 +124,11 @@ export function SzSubmitToBodyPanel({szId, body, question, inAgenda, canEdit, on
                     {canEdit && (
                         <button
                             type="button"
-                            onClick={() => setEditing(true)}
-                            className="ml-auto text-[12.5px] text-[#2f68f5] hover:underline"
+                            disabled={busy}
+                            onClick={() => (body ? save(null) : setEditing(true))}
+                            className="ml-auto text-[12.5px] text-[#2f68f5] hover:underline disabled:opacity-50"
                         >
-                            {body ? "изменить" : "вынести на орган"}
+                            {body ? "снять с органа" : "вынести на орган"}
                         </button>
                     )}
                 </div>

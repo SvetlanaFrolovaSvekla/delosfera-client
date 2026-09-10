@@ -167,6 +167,18 @@ export function LetterCardModal({id, onClose, onChanged}: Props) {
                             <div className="border-t border-[#eef2f7] pt-4">
                                 {mode === "view" && (
                                     <div className="flex flex-wrap gap-2">
+                                        {letter.direction === "Outgoing"
+                                            && (letter.status === "Draft" || letter.status === "Registered") && (
+                                            <button
+                                                type="button"
+                                                disabled={busy}
+                                                onClick={() => act(() => correspondenceService.send(letter.id))}
+                                                className="rounded-[10px] bg-[#2f68f5] px-4 py-2 text-[14px] font-medium
+                                                           text-white transition hover:bg-[#2554cc] disabled:opacity-50"
+                                            >
+                                                {busy ? "Отправляем…" : "Отправить"}
+                                            </button>
+                                        )}
                                         <button
                                             type="button"
                                             onClick={() => setMode("resolve")}

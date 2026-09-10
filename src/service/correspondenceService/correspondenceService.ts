@@ -222,6 +222,12 @@ export const correspondenceService = {
         return data;
     },
 
+    /** Отправка исходящего письма: из проекта или зарегистрированного — в «Отправлено». */
+    async send(id: number) {
+        const {data} = await apiClient.post<Letter>(`${BASE}/${id}/send`);
+        return data;
+    },
+
     async correspondents(text?: string, kind?: CorrespondentKind) {
         const {data} = await apiClient.get<Correspondent[]>(`${BASE}/correspondents`, {
             params: {text, kind},

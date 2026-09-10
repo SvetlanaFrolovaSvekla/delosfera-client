@@ -41,7 +41,10 @@ export function CorrespondencePage() {
     const {hasPermission} = useAuth();
     const canRegister = hasPermission(PermissionCode.RegisterCorrespondence);
 
-    const [direction, setDirection] = useState<LetterDirection | "">("Incoming");
+    // Книга по умолчанию показывает и входящие, и исходящие: иначе только что
+    // зарегистрированное исходящее письмо (и проект) не видно в разделе, открытом
+    // на «Входящих», и выглядит как удалённое. Разделы переключаются чипами ниже.
+    const [direction, setDirection] = useState<LetterDirection | "">("");
     const [category, setCategory] = useState<LetterCategory | "">("");
     const [onlyOverdue, setOnlyOverdue] = useState(false);
     const [text, setText] = useState("");

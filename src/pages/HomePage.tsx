@@ -1,8 +1,9 @@
-import {useMemo, useState} from "react";
+import {useEffect, useMemo, useState} from "react";
 import {useTranslation} from "react-i18next";
 import {useAuth} from "@/context/AuthContext";
 import {useVndHomeSummary} from "@/hooks/analyticsHooks/useVndHomeSummary.ts";
 import {useVndTasks} from "@/hooks/tasksVndHooks/useVndTasks.ts";
+import {taskInboxService, type InboxTask} from "@/service/workflowService/taskInboxService.ts";
 import {useActualizationSummary} from "@/hooks/vndHooks/useActualizationSummary.ts";
 import {useTimeGreeting} from "@/hooks/generalHooks/useTimeGreeting.ts";
 import {useFormattedDate} from "@/hooks/generalHooks/useFormattedDate.ts";
@@ -47,6 +48,28 @@ export function HomePage() {
     const {summary: actualizationSummary, isLoading: actualizationLoading} = useActualizationSummary();
     const {summary: homeSummary} = useVndHomeSummary();
 
+    // Задачи по служебным запискам живут в сводном реестре (а не в контуре ВНД),
+    // поэтому тянутся отдельно — иначе на главной их не видно (#12).
+    const [szTasks, setSzTasks] = useState<InboxTask[]>([]);
+    const [szTasksLoading, setSzTasksLoading] = useState(true);
+    useEffect(() => {
+        let cancelled = false;
+        setSzTasksLoading(true);
+        taskInboxService.get("Sz")
+            .then((inbox) => {
+                if (!cancelled) setSzTasks(inbox.tasks);
+            })
+            .catch(() => {
+                if (!cancelled) setSzTasks([]);
+            })
+            .finally(() => {
+                if (!cancelled) setSzTasksLoading(false);
+            });
+        return () => {
+            cancelled = true;
+        };
+    }, []);
+
     // "Последние задачи" = отсортированные по дате появления (createdAt), самые новые сверху —
     // раньше список просто склеивался по скоупам и обрезался по лимиту, из-за чего порядок
     // не отражал реальную свежесть задач.
@@ -64,9 +87,11 @@ export function HomePage() {
     }, [coordination.tasks, myVndApproval.tasks, actualization.tasks, consolidation.tasks, rejected.tasks]);
 
     const tasksTotalCount = coordination.tasks.length + myVndApproval.tasks.length
-        + actualization.tasks.length + consolidation.tasks.length + rejected.tasks.length;
+        + actualization.tasks.length + consolidation.tasks.length + rejected.tasks.length
+        + szTasks.length;
     const tasksLoading = coordination.isLoading || myVndApproval.isLoading
-        || actualization.isLoading || consolidation.isLoading || rejected.isLoading;
+        || actualization.isLoading || consolidation.isLoading || rejected.isLoading
+        || szTasksLoading;
 
     // Текущая дата - локализуется под текущий язык
     const formattedDate = useFormattedDate();
@@ -100,7 +125,7 @@ export function HomePage() {
 
             <div className="grid grid-cols-1 xl:grid-cols-[1.65fr_1fr] gap-[18px]">
                 {/* Виджет последних задач */}
-                <MyTasksCard tasks={homeTasks} totalCount={tasksTotalCount} isLoading={tasksLoading}/>
+                <MyTasksCard tasks={homeTasks} szTasks={szTasks} totalCount={tasksTotalCount} isLoading={tasksLoading}/>
 
                 {/* Виджет плана актуализации и журнал действий */}
                 <div className="flex flex-col gap-[18px]">

@@ -1,4 +1,5 @@
 // Виджет "Последняя активность" в ЭДО
+import {useState} from "react";
 import {useTranslation} from "react-i18next";
 import {useNavigate} from "react-router-dom";
 import type {ActivityIcon} from "@/service/activityLogService/activityLogServiceType.ts";
@@ -20,16 +21,46 @@ interface RecentActivityCardProps {
     module?: string;
 }
 
+// Фильтр активности по разделам (#11): всё / ВНД / служебные записки / закупки.
+// undefined = все контуры сразу.
+const SECTIONS: { id: string; label: string; module?: string }[] = [
+    {id: "all", label: "Все"},
+    {id: "vnd", label: "ВНД", module: "vnd"},
+    {id: "sz", label: "СЗ", module: "sz"},
+    {id: "prc", label: "Закупки", module: "prc"},
+];
+
 export function RecentActivityCard({limit = 15, module}: RecentActivityCardProps) {
     const {t} = useTranslation();
-    const {items, isLoading, error} = useRecentActivity(limit, module);
+    // Раздел задаётся либо снаружи (module), либо переключателем внутри виджета.
+    const [section, setSection] = useState<string>(
+        SECTIONS.find((s) => s.module === module)?.id ?? "all",
+    );
+    const activeModule = SECTIONS.find((s) => s.id === section)?.module;
+    const {items, isLoading, error} = useRecentActivity(limit, activeModule);
     const navigate = useNavigate();
 
     return (
         <div className="overflow-hidden rounded-[14px] border border-[#e9edf3] bg-white">
-            <div className="border-b border-[#eef2f7] px-[18px] py-4 pb-[13px]">
+            <div className="flex flex-wrap items-center justify-between gap-2 border-b border-[#eef2f7] px-[18px] py-4 pb-[13px]">
                 {/* Последняя активность */}
                 <h2 className="text-[15px] font-semibold">{t("home.recentActivity.title")}</h2>
+                <div className="flex flex-wrap gap-1.5">
+                    {SECTIONS.map((s) => (
+                        <button
+                            key={s.id}
+                            onClick={() => setSection(s.id)}
+                            className="cursor-pointer rounded-full px-2.5 py-[3px] text-[11px] font-semibold transition-colors"
+                            style={{
+                                border: `1px solid ${section === s.id ? "#2f68f5" : "#e5e9f0"}`,
+                                background: section === s.id ? "#eef3ff" : "#fff",
+                                color: section === s.id ? "#2f68f5" : "#55617a",
+                            }}
+                        >
+                            {s.label}
+                        </button>
+                    ))}
+                </div>
             </div>
             <div className="px-[18px] pb-[14px] pt-1.5">
                 {isLoading ? (

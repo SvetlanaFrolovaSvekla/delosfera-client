@@ -20,6 +20,7 @@ import {SzHrForm} from "@/components/sz/SzHrForm.tsx";
 import {RichTextEditor} from "@/components/editor/RichTextEditor.tsx";
 import {SzAddresseeDecisionPanel} from "@/components/sz/SzAddresseeDecisionPanel.tsx";
 import {AttachmentsPanel} from "@/components/componentsGeneral/attachments/AttachmentsPanel.tsx";
+import {attachmentService} from "@/service/documentService/attachmentService.ts";
 import {
     PARTICIPANT_STATE_LABEL,
     RESOLUTION_LABEL,
@@ -109,6 +110,12 @@ export function SzCardPage() {
     /** Общие значения полей вида: те, что не заполняются по каждому сотруднику. */
     const [hrValues, setHrValues] = useState<Record<string, unknown>>({});
     const [sz, setSz] = useState<SzDetails | null>(null);
+    /**
+     * Отложенные вложения мастера создания: пока записки нет, файлы копятся здесь
+     * и уходят на сервер сразу после её создания. Иначе поле вложений на /sz/new
+     * молча неактивно — приложить файл к новой записке было нельзя.
+     */
+    const [pendingFiles, setPendingFiles] = useState<File[]>([]);
     const [loading, setLoading] = useState(!isNew);
     const [saving, setSaving] = useState(false);
     const [error, setError] = useState<string | null>(null);
@@ -277,8 +284,24 @@ export function SzCardPage() {
             const saved = isNew
                 ? await szService.create(form)
                 : await szService.update(Number(id), form);
+
+            // Записка создана — файлы, собранные в мастере, цепляются к её карточке.
+            // Сбой загрузки записку не отменяет: недостающий файл прикладывается на
+            // карточке, куда мы и уходим, назвав, что не прошло.
+            const failed: string[] = [];
+            if (isNew && pendingFiles.length) {
+                for (const file of pendingFiles) {
+                    try {
+                        await attachmentService.upload(saved.documentId, file);
+                    } catch {
+                        failed.push(file.name);
+                    }
+                }
+                setPendingFiles([]);
+            }
+
             applyDetails(saved);
-            setNotice("Сохранено");
+            setNotice(failed.length ? `Сохранено. Не приложились файлы: ${failed.join(", ")}` : "Сохранено");
             if (isNew) navigate(`/sz/${saved.id}`, {replace: true});
         } catch {
             setError("Не удалось сохранить служебную записку");
@@ -829,6 +852,8 @@ export function SzCardPage() {
                     documentId={sz?.documentId ?? null}
                     editable={editable}
                     hint="необязательно"
+                    pending={isNew ? pendingFiles : undefined}
+                    onPendingChange={isNew ? setPendingFiles : undefined}
                 />
 
                 <div className="mt-4">

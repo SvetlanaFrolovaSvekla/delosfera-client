@@ -324,18 +324,9 @@ export const ProcurementNewPage = () => {
                                 </div>
                             )}
 
-                            <label style={{...checkboxRow, marginTop: 14}}>
-                                <input
-                                    type="checkbox"
-                                    checked={form.isAffiliated}
-                                    onChange={e => patch({isAffiliated: e.target.checked})}
-                                    style={checkbox}
-                                />
-                                <span>
-                                    <span style={checkboxTitle}>Сделка с аффилированным лицом</span>
-                                    <span style={checkboxHint}>Пороги считаются от ЧСК, решение принимает СД или ОСА</span>
-                                </span>
-                            </label>
+                            {/* Признак аффилированности убран из заявки: он определяется
+                                при выборе поставщика (аффилированность — свойство поставщика,
+                                supplier.IsAffiliated), а не заявляется заранее инициатором. */}
                         </>
                     )}
 
@@ -583,7 +574,6 @@ export const ProcurementNewPage = () => {
                     <Row label="Предмет" value={form.subject || "—"}/>
                     <Row label="Тип предмета" value={SUBJECT_KIND_LABEL[form.subjectKind]}/>
                     <Row label="Сумма" value={form.amount ? `${form.amount.toLocaleString("ru-RU")} сом` : "—"}/>
-                    <Row label="Аффилированное лицо" value={form.isAffiliated ? "да" : "нет"}/>
                     <Row label="Бюджет" value={form.hasBudget ? "предусмотрено" : "вне бюджета"}/>
                     <Row
                         label="Инициирующее СП"

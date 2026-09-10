@@ -215,7 +215,6 @@ export const ProcurementCardPage = () => {
                     <Row label="Предмет закупки" value={card.subject}/>
                     <Row label="Тип предмета" value={card.subjectKindTitle}/>
                     <Row label="Сумма" value={`${card.amount.toLocaleString("ru-RU")} сом`}/>
-                    <Row label="Аффилированное лицо" value={card.isAffiliated ? "да" : "нет"}/>
                     <Row label="Бюджет" value={card.hasBudget ? "предусмотрено" : "вне бюджета"}/>
                     <Row label="Позиция Плана закупок" value={card.planItem ?? "—"}/>
                     <Row label="ТЗ (спецификация)" value={card.hasSpecification ? "приложено" : "не приложено"}/>

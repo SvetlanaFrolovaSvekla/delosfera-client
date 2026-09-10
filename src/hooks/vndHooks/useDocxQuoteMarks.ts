@@ -1,20 +1,20 @@
 // Персистентная подсветка "маркером" цитат из резолюций согласующих внутри отрендеренного
 // текста редакции (docx-preview) - см. QuoteMarkInfo/collectQuoteMarks. Устройство обхода DOM
-// то же самое, что и в useDocxTextSearch (TreeWalker по текстовым узлам, обёртка совпадения в
-// <mark>) - только здесь подсветка не временная (по запросу поиска), а построена сразу по
-// списку цитат, с наведением (кто оставил комментарий) и кликом (открыть резолюцию целиком).
+// то же самое, что и в useDocxTextSearch (склеенный текст всех текстовых узлов + Range - см.
+// highlightCrossNodeMatches) - только здесь подсветка не временная (по запросу поиска), а
+// построена сразу по списку цитат, с наведением (кто оставил комментарий) и кликом (открыть
+// резолюцию целиком).
 //
-// Известное ограничение (as-is, как и у useDocxTextSearch) - совпадение ищется только внутри
-// ОДНОГО текстового узла: цитата, "разорванная" на несколько узлов из-за форматирования
-// внутри абзаца (напр. частично полужирный фрагмент), подсвечена не будет.
+// Раньше совпадение искалось только внутри ОДНОГО текстового узла - цитата, "разорванная" на
+// несколько узлов из-за форматирования внутри абзаца (напр. частично полужирный фрагмент, или
+// просто соседняя строка в отдельном <w:r> при экспорте из Word), вообще не находилась. Это и
+// была причина бага "Совпадений нет"/пропавшей подсветки для части резолюций - см.
+// highlightCrossNodeMatches, который теперь ищет по склеенному тексту всех узлов сразу.
 import React, {useEffect, useRef} from "react";
 import type {QuoteMarkInfo} from "@/utils/redactionQuoteMarks.ts";
+import {buildWhitespaceTolerantRegex, highlightCrossNodeMatches} from "@/utils/domCrossNodeSearch.ts";
 
 const MARK_ATTR = "data-quote-mark-id";
-
-function escapeRegExp(str: string): string {
-    return str.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-}
 
 function clearMarks(root: HTMLElement) {
     root.querySelectorAll(`mark[${MARK_ATTR}]`).forEach((mark) => {
@@ -75,42 +75,28 @@ export function useDocxQuoteMarks(
             // подстрокой более длинной, "перехватит" совпадение раньше своей очереди.
             const sorted = [...marks].sort((a, b) => b.text.length - a.text.length);
 
-            const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT, {
-                acceptNode: (node) => {
-                    const tag = node.parentElement?.tagName;
-                    if (tag === "SCRIPT" || tag === "STYLE" || tag === "MARK") return NodeFilter.FILTER_REJECT;
-                    return node.nodeValue?.trim() ? NodeFilter.FILTER_ACCEPT : NodeFilter.FILTER_REJECT;
-                },
-            });
-
             for (const markInfo of sorted) {
                 const trimmed = markInfo.text.trim();
                 if (!trimmed) continue;
 
-                const regex = new RegExp(escapeRegExp(trimmed), "i");
+                const regex = buildWhitespaceTolerantRegex(trimmed);
+                if (!regex) continue;
 
-                // Дерево нужно обходить заново на каждую цитату - предыдущая подсветка меняет
-                // структуру DOM (текстовый узел заменяется на <mark> + соседние текстовые узлы).
-                walker.currentNode = root;
-                let node: Node | null;
-                let found = false;
-                while (!found && (node = walker.nextNode())) {
-                    const textNode = node as Text;
-                    const value = textNode.nodeValue ?? "";
-                    const m = regex.exec(value);
-                    if (!m) continue;
-
-                    const frag = document.createDocumentFragment();
-                    if (m.index > 0) frag.appendChild(document.createTextNode(value.slice(0, m.index)));
-                    const markEl = createMarkEl(m[0], markInfo.id);
-                    frag.appendChild(markEl);
-                    const rest = value.slice(m.index + m[0].length);
-                    if (rest) frag.appendChild(document.createTextNode(rest));
-
-                    textNode.parentNode?.replaceChild(frag, textNode);
-                    marksByIdRef.current.set(markInfo.id, markInfo);
-                    found = true;
-                }
+                // highlightCrossNodeMatches ищет по СКЛЕЕННОМУ тексту всех текстовых узлов -
+                // находит и цитаты, "разорванные" на несколько узлов форматированием внутри
+                // абзаца (то, что раньше вообще не подсвечивалось, см. комментарий в шапке файла).
+                // limit=1 - подсвечиваем только первое вхождение этой цитаты в документе (как и
+                // раньше); rejectTags=["MARK"] - не даём новой цитате "перехватить" текст,
+                // уже занятый под предыдущий маркер (дерево перестраивается на каждой итерации,
+                // поэтому предыдущие <mark> уже видны текущему обходу).
+                const [found] = highlightCrossNodeMatches(
+                    root,
+                    regex,
+                    (text) => createMarkEl(text, markInfo.id),
+                    1,
+                    ["MARK"],
+                );
+                if (found) marksByIdRef.current.set(markInfo.id, markInfo);
             }
         }, 150);
 

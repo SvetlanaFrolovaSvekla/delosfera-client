@@ -18,7 +18,7 @@ import {Tooltip} from "@/components/componentsGeneral/Tooltip.tsx";
 import {
     CommentViewModal
 } from "@/components/componentsCoordination/CoordinationRouteConstructor/viewComponents/CommentViewModal.tsx";
-import {FormattedResolutionComment} from "./FormattedResolutionComment.tsx";
+import {FormattedResolutionComment, type FormattedCommentQuoteRef} from "./FormattedResolutionComment.tsx";
 import {
     AttachmentRow
 } from "@/components/componentsCoordination/CoordinationRouteConstructor/functionalComponents/AttachmentRow.tsx";
@@ -41,6 +41,9 @@ interface PhaseCommentEntry {
     comment: string;
     decidedAt: string | null;
     attachments: ApprovalStageAttachmentResponse[];
+    /** Цитаты, вставленные в этот комментарий на этой фазе (см. "+ Сослаться на текст
+     * редакции") - для кнопок-луп "Показать в тексте" рядом с каждой цитатой. */
+    quotes: FormattedCommentQuoteRef[];
 }
 
 /** Резолюции этого согласующего по ВСЕМ пройденным фазам (первичная/повторная/финальная
@@ -58,6 +61,7 @@ function collectPhaseComments(stage: ApprovalStageResponse): PhaseCommentEntry[]
             comment: stage.primaryComment,
             decidedAt: stage.primaryDecidedAt,
             attachments: stage.primaryAttachments,
+            quotes: stage.primaryQuotes,
         });
     }
     if (stage.repeatComment && stage.repeatDecision && !AUTO_GENERATED_COMMENT_TEXTS.has(stage.repeatComment)) {
@@ -67,6 +71,7 @@ function collectPhaseComments(stage: ApprovalStageResponse): PhaseCommentEntry[]
             comment: stage.repeatComment,
             decidedAt: stage.repeatDecidedAt,
             attachments: stage.repeatAttachments,
+            quotes: stage.repeatQuotes,
         });
     }
     if (stage.finalHoldComment && stage.finalHoldDecision && !AUTO_GENERATED_COMMENT_TEXTS.has(stage.finalHoldComment)) {
@@ -76,6 +81,7 @@ function collectPhaseComments(stage: ApprovalStageResponse): PhaseCommentEntry[]
             comment: stage.finalHoldComment,
             decidedAt: stage.finalHoldDecidedAt,
             attachments: stage.finalHoldAttachments,
+            quotes: stage.finalHoldQuotes,
         });
     }
 
@@ -91,9 +97,15 @@ interface StageCardViewProps {
      * этапы, которые так и остались "pending", больше не значат "ждём решения", т.к. решения по
      * ним уже не будет: сам процесс прекращён. */
     isProcessEnded?: boolean;
+    /** Клик по кнопке-лупе "Показать в тексте" рядом с цитатой (см. FormattedResolutionComment) -
+     * должен открыть просмотр соответствующей редакции на нужной вкладке с подсветкой этого
+     * места. Сама карточка этапа не знает ни про редакцию, ни про просмотрщик документа - это
+     * решает вызывающая сторона (см. VndCoordinationTab.handleShowQuoteInText/
+     * RejectedApprovalDetailsModal). Без этого пропа кнопки-лупы не рисуются. */
+    onShowQuoteInText?: (quote: FormattedCommentQuoteRef) => void;
 }
 
-export function StageCardView({stage, cardRef, isCurrentUserStage, isProcessEnded}: StageCardViewProps) {
+export function StageCardView({stage, cardRef, isCurrentUserStage, isProcessEnded, onShowQuoteInText}: StageCardViewProps) {
     const {user} = useAuth();
 
     const isCustom = isCustomStageKind(stage.kind);
@@ -243,8 +255,12 @@ export function StageCardView({stage, cardRef, isCurrentUserStage, isProcessEnde
                                         </span>
                                     </div>
                                 )}
-                                <div className="text-[11.5px] leading-snug text-[#6b7488] whitespace-pre-wrap">
-                                    <FormattedResolutionComment text={displayedComment}/>
+                                <div className="text-[11.5px] leading-snug text-[#6b7488] whitespace-pre-wrap break-words">
+                                    <FormattedResolutionComment
+                                        text={displayedComment}
+                                        quotes={entry.quotes}
+                                        onShowInText={onShowQuoteInText}
+                                    />
                                 </div>
                                 {entry.attachments.length > 0 && (
                                     <div className="rounded-[10px] border border-[#e9edf3] bg-[#fbfcfe] p-2.5">
@@ -288,6 +304,8 @@ export function StageCardView({stage, cardRef, isCurrentUserStage, isProcessEnde
                     decisionLabel={STAGE_DECISION_META[openCommentEntry.decision].label}
                     decisionBadgeClass={STAGE_DECISION_META[openCommentEntry.decision].badgeClass}
                     onClose={() => setOpenCommentEntry(null)}
+                    quotes={openCommentEntry.quotes}
+                    onShowInText={onShowQuoteInText}
                 />
             )}
         </div>

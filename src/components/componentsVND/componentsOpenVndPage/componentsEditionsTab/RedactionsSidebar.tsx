@@ -63,6 +63,10 @@ interface RedactionsSidebarProps {
     /** id редакции, чей последний процесс согласования был отклонён - под ней покажем
      * подсказку "отредактируйте, чтобы отправить вновь" (см. VndEditionsTab) */
     rejectedRedactionId?: number;
+    /** Открыть модалку "Подробнее" по отклонённому процессу согласования (см.
+     * RejectedApprovalDetailsModal в VndEditionsTab) - ссылка рисуется только рядом с подсказкой
+     * об отклонении (см. rejectedRedactionId выше), если передан этот колбэк. */
+    onShowRejectedDetails?: () => void;
     onSelect: (id: number) => void;
     primaryActionVariant: RedactionsPrimaryActionVariant;
     primaryActionDisabled: boolean;
@@ -106,6 +110,7 @@ export function RedactionsSidebar({
                                       effectiveDate,
                                       selectedId,
                                       rejectedRedactionId,
+                                      onShowRejectedDetails,
                                       onSelect,
                                       primaryActionVariant,
                                       primaryActionDisabled,
@@ -159,9 +164,24 @@ export function RedactionsSidebar({
                                 // Ограничение на "на согласовании" (Pending) остаётся - пока редакция ожидает
                                 // решения согласующих, подменять её файлы напрямую нельзя (см. ту же проверку
                                 // на бэке в EditRedactionDirectlyAsync).
-                                showEditButton={canEditLastRevision && e.approvalStatus !== "Pending"}
+                                //
+                                // canEditLastRevision (право EditLastRevisionDirectly) даёт кнопку на ЛЮБОЙ
+                                // непринятой на согласование редакции. Без этого права кнопка всё равно
+                                // показывается на черновике (approvalStatus === "Draft") - иначе у обычного
+                                // инициатора после отклонения редакции согласующим (см. wasRejected/
+                                // rejectedRedactionId - она возвращается именно в статус "Draft") нет вообще
+                                // никакого способа поправить содержимое перед повторной отправкой, кроме как
+                                // отправить на согласование тот же файл заново (см. VndApprovalService.
+                                // RejectApprovalAsync/AddRedactionAsync - зациклится на том же замечании).
+                                // Итоговое право проверяет бэк (EditRedactionDirectlyCoreAsync) - там же
+                                // отдельно ограничено только своим/связанным ВНД, тут кнопку просто не прячем.
+                                showEditButton={
+                                    (canEditLastRevision || e.approvalStatus === "Draft") &&
+                                    e.approvalStatus !== "Pending"
+                                }
                                 showTidButton={e.id !== firstRedactionId}
                                 wasRejected={e.id === rejectedRedactionId}
+                                onShowRejectedDetails={onShowRejectedDetails}
                                 onEdit={() => onEditRedaction(e.id)}
                                 onOpenAttachments={() => onOpenAttachments(e)}
                                 onOpenTid={() => onOpenTid(e)}
@@ -268,6 +288,7 @@ function RedactionListItem({
                                showEditButton,
                                showTidButton,
                                wasRejected,
+                               onShowRejectedDetails,
                                onEdit,
                                onOpenAttachments,
                                onOpenTid,
@@ -282,6 +303,7 @@ function RedactionListItem({
     showTidButton: boolean;
     /** последний процесс согласования этой редакции был отклонён - показать подсказку */
     wasRejected?: boolean;
+    onShowRejectedDetails?: () => void;
     onEdit: () => void;
     onOpenAttachments: () => void;
     onOpenTid: () => void;
@@ -380,6 +402,21 @@ function RedactionListItem({
                     {wasRejected && (
                         <span className="mt-[5px] block text-[11px] leading-[1.4] text-[#c0392b]">
                             Эта редакция была отклонена при согласовании. Отредактируйте её, чтобы отправить на согласование вновь.
+                            {onShowRejectedDetails && (
+                                <>
+                                    {" "}
+                                    <button
+                                        type="button"
+                                        onClick={(event) => {
+                                            event.stopPropagation();
+                                            onShowRejectedDetails();
+                                        }}
+                                        className="cursor-pointer font-semibold underline decoration-dotted hover:text-[#a53023]"
+                                    >
+                                        Подробнее
+                                    </button>
+                                </>
+                            )}
                         </span>
                     )}
                 </span>

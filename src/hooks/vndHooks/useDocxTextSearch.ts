@@ -1,4 +1,5 @@
 import React, {useCallback, useEffect, useRef, useState} from "react";
+import {buildWhitespaceTolerantRegex, highlightCrossNodeMatches} from "@/utils/domCrossNodeSearch.ts";
 
 interface UseDocxTextSearchResult {
     matchCount: number;
@@ -9,10 +10,6 @@ interface UseDocxTextSearchResult {
 
 const MATCH_ATTR = "data-search-hl";
 
-function escapeRegExp(str: string): string {
-    return str.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-}
-
 function clearHighlights(root: HTMLElement) {
     root.querySelectorAll(`mark[${MATCH_ATTR}]`).forEach((mark) => {
         const parent = mark.parentNode;
@@ -21,7 +18,6 @@ function clearHighlights(root: HTMLElement) {
         parent.normalize();
     });
 }
-
 
 function createMark(text: string): HTMLElement {
     const mark = document.createElement("mark");
@@ -39,58 +35,17 @@ function createMark(text: string): HTMLElement {
     return mark;
 }
 
+// Поиск идёт по СКЛЕЕННОМУ тексту всех текстовых узлов документа (см. highlightCrossNodeMatches) -
+// раньше совпадение искалось отдельно в каждом текстовом узле, из-за чего запрос, "разорванный"
+// на границе двух узлов форматированием (например, часть искомой фразы выделена полужирным),
+// вообще не находился ни разу. Заодно регулярка сделана нечувствительной к пробелам/переносам
+// строк внутри запроса (buildWhitespaceTolerantRegex) - то же самое расхождение возникает, когда
+// цитата приходит из window.getSelection() (см. "+ Сослаться на текст редакции"), а не набрана
+// пользователем вручную в строке поиска.
 function highlightAll(root: HTMLElement, query: string): HTMLElement[] {
-    const regex = new RegExp(`(${escapeRegExp(query)})`, "gi");
-
-    // Сначала собираем текстовые узлы — DOM трогаем только после обхода
-    const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT, {
-        acceptNode: (node) => {
-            const tag = node.parentElement?.tagName;
-            if (tag === "SCRIPT" || tag === "STYLE") return NodeFilter.FILTER_REJECT;
-            return node.nodeValue?.trim() ? NodeFilter.FILTER_ACCEPT : NodeFilter.FILTER_REJECT;
-        },
-    });
-
-    const textNodes: Text[] = [];
-    let n: Node | null;
-    while ((n = walker.nextNode())) textNodes.push(n as Text);
-
-    const matches: HTMLElement[] = [];
-
-    for (const node of textNodes) {
-        const value = node.nodeValue ?? "";
-        regex.lastIndex = 0;
-        if (!regex.test(value)) continue;
-        regex.lastIndex = 0;
-
-        const frag = document.createDocumentFragment();
-        let lastIndex = 0;
-        let m: RegExpExecArray | null;
-        while ((m = regex.exec(value))) {
-            if (m.index > lastIndex) {
-                frag.appendChild(document.createTextNode(value.slice(lastIndex, m.index)));
-            }
-            const mark = createMark(m[0]);
-            frag.appendChild(mark);
-            matches.push(mark);
-            mark.setAttribute(MATCH_ATTR, "");
-            mark.style.background = "#fde3c4";
-            mark.style.color = "#8a4b00";
-            mark.style.borderRadius = "3px";
-            mark.textContent = m[0];
-            frag.appendChild(mark);
-            matches.push(mark);
-            lastIndex = m.index + m[0].length;
-            if (m.index === regex.lastIndex) regex.lastIndex++; // защита от зацикливания
-        }
-        if (lastIndex < value.length) {
-            frag.appendChild(document.createTextNode(value.slice(lastIndex)));
-        }
-
-        node.parentNode?.replaceChild(frag, node);
-    }
-
-    return matches;
+    const regex = buildWhitespaceTolerantRegex(query);
+    if (!regex) return [];
+    return highlightCrossNodeMatches(root, regex, createMark).map((m) => m.el);
 }
 
 export function useDocxTextSearch(

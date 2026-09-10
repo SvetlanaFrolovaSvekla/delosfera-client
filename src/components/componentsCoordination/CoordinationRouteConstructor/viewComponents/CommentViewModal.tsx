@@ -11,7 +11,7 @@ import {
 } from "@/components/componentsCoordination/CoordinationRouteConstructor/functionalComponents/AttachmentRow.tsx";
 import {createPortal} from "react-dom";
 import {getInitials} from "@/utils/getInitials.ts";
-import {FormattedResolutionComment} from "./FormattedResolutionComment.tsx";
+import {FormattedResolutionComment, type FormattedCommentQuoteRef} from "./FormattedResolutionComment.tsx";
 
 export function CommentViewModal({
                                      title,
@@ -23,6 +23,8 @@ export function CommentViewModal({
                                      decisionLabel,
                                      decisionBadgeClass,
                                      onClose,
+                                     quotes,
+                                     onShowInText,
                                  }: {
     title: string;
     approverName: string;
@@ -35,6 +37,15 @@ export function CommentViewModal({
     decisionLabel?: string;
     decisionBadgeClass?: string;
     onClose: () => void;
+    /** Цитаты этой резолюции (см. ApprovalStageResponse.primaryQuotes/repeatQuotes/
+     * finalHoldQuotes) - в порядке вставки, для кнопок-луп "Показать в тексте" рядом с каждой
+     * строкой "Цитата: «...»" внутри текста (см. FormattedResolutionComment). Без quotes/
+     * onShowInText кнопки не рисуются - только жирное выделение цитат. */
+    quotes?: FormattedCommentQuoteRef[];
+    /** Переключает вкладку/язык документа на нужную, ищет и подсвечивает цветом текст указанной
+     * цитаты - см. quotes выше. Раньше была одна общая кнопка на всю модалку (переходила только
+     * к первой цитате резолюции) - теперь отдельная кнопка на каждую цитату (см. FormattedResolutionComment). */
+    onShowInText?: (quote: FormattedCommentQuoteRef) => void;
 }) {
     const {user} = useAuth();
     const isMeApprover = approverUserId !== undefined && approverUserId === user?.id;
@@ -136,8 +147,10 @@ export function CommentViewModal({
                         </div>
                     )}
 
-                    <div className="whitespace-pre-wrap text-[13px] leading-relaxed text-[#3c4356]">
-                        <FormattedResolutionComment text={comment}/>
+                    {/* break-words - без него одно длинное "слово" без пробелов (например, склеенный
+                        логин/ссылка) не переносится и вылезает за границы модалки по ширине. */}
+                    <div className="whitespace-pre-wrap break-words text-[13px] leading-relaxed text-[#3c4356]">
+                        <FormattedResolutionComment text={comment} quotes={quotes} onShowInText={onShowInText}/>
                     </div>
                 </div>
             </div>

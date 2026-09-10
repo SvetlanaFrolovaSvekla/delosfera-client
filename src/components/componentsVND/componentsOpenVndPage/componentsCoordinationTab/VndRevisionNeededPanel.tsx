@@ -578,11 +578,22 @@ export function VndRevisionNeededPanel({
     const tidMissing = requiresTid && !tid;
 
     // Причина, по которой отправка сейчас заблокирована - показываем тултипом на кнопке
+    //
+    // ВАЖНО: требование "измените хотя бы один документ" раньше применялось и к PartiallyAgree
+    // ("Частично согласен"), из-за чего кнопка "Отправить на финальную выдержку" оставалась
+    // неактивной, даже если инициатор полностью заполнил матрицу разногласий - единственным
+    // выходом было отозвать согласование целиком и запускать процесс заново (см. описание бага).
+    // На бэке (VndApprovalService.ResubmitAfterRevisionAsync) замена файлов документа
+    // НЕОБЯЗАТЕЛЬНА ни при каком RemarksAgreement - требуется только матрица разногласий
+    // (DisagreementMatrix) при PartiallyAgree/FullyDisagree и ТИД, если он обязателен. Для
+    // FullyAgree требование "что-то поменяли в документе" оставляем - иначе бессмысленно
+    // отправлять на повторное согласование "исправленную" редакцию, в которой по факту ничего
+    // не изменилось.
     let disabledReason: string | null = null;
     if (remarksAgreement === null) {
         disabledReason = "Сначала укажите, согласны ли вы со всеми замечаниями";
     } else if (
-        (remarksAgreement === RemarksAgreement.FullyAgree || remarksAgreement === RemarksAgreement.PartiallyAgree)
+        remarksAgreement === RemarksAgreement.FullyAgree
         && !hasAnyDocChange && !hasAnyAttachmentChange
     ) {
         disabledReason = "Отметьте хотя бы один документ как «требует замены» (или добавьте/удалите вложение) и загрузите обновлённый файл";

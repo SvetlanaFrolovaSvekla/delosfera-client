@@ -16,7 +16,9 @@ import {buildRedactionFileName} from "@/utils/fileNaming.ts";
 import {Tooltip} from "@/components/componentsGeneral/Tooltip.tsx";
 import {SearchBar} from "@/components/componentsGeneral/SearchBar.tsx";
 import {Download, FileText, ListTree, Loader2, MessageSquareText, Quote, X} from "lucide-react";
-import {collectQuoteMarks, quoteMarkModalProps, type QuoteMarkInfo} from "@/utils/redactionQuoteMarks.ts";
+import {
+    collectAllStageComments, collectQuoteMarks, quoteMarkModalProps, type QuoteMarkInfo
+} from "@/utils/redactionQuoteMarks.ts";
 import {CommentViewModal} from "./CommentViewModal.tsx";
 import {getInitials} from "@/utils/getInitials.ts";
 
@@ -98,9 +100,23 @@ export function RedactionViewModal({
     // затирает initialSearchQuery (переход "к месту в тексте по цитате"), с которым модалка
     // могла быть открыта изначально на этой же вкладке.
     const didMountRef = useRef(false);
+    // Запрос, который нужно подставить в поиск СРАЗУ ПОСЛЕ программного переключения вкладки
+    // (см. jumpToQuoteInText ниже) - без этого эффект ниже (реагирующий на смену activeLanguage)
+    // затирал бы только что вставленный searchQuery пустой строкой в тот же момент, когда
+    // переключалась вкладка: setActiveLanguage(...) и setSearchQuery(item.text) вызывались
+    // синхронно одним обработчиком, React батчит оба обновления в один рендер, но эффект
+    // "сбросить поиск при смене вкладки" всё равно срабатывает следом и обнулял бы только что
+    // подставленную цитату - именно поэтому раньше "цитата вставляется в поисковую строку и
+    // почему-то так не ищется" (баг проявлялся именно при переходе с одной вкладки на другую).
+    const pendingJumpQueryRef = useRef<string | null>(null);
     useEffect(() => {
         if (!didMountRef.current) {
             didMountRef.current = true;
+            return;
+        }
+        if (pendingJumpQueryRef.current !== null) {
+            setSearchQuery(pendingJumpQueryRef.current);
+            pendingJumpQueryRef.current = null;
             return;
         }
         setSearchQuery("");
@@ -164,6 +180,15 @@ export function RedactionViewModal({
         [approvalProcess, activeLanguage],
     );
 
+    // ВСЕ комментарии согласования (по всем этапам/фазам, по всем вкладкам) - для панели
+    // "Комментарии" (список). В отличие от quoteMarks выше, не ограничено только резолюциями
+    // с явной цитатой - иначе панель пропускала бы согласующего, оставившего решение с обычным
+    // комментарием без "+ Сослаться на текст редакции" (см. collectAllStageComments).
+    const allComments = useMemo(
+        () => (approvalProcess ? collectAllStageComments(approvalProcess) : []),
+        [approvalProcess],
+    );
+
     const [hoverMark, setHoverMark] = useState<{mark: QuoteMarkInfo; rect: DOMRect} | null>(null);
     const [openMark, setOpenMark] = useState<QuoteMarkInfo | null>(null);
     const [marksPanelOpen, setMarksPanelOpen] = useState(false);
@@ -173,9 +198,32 @@ export function RedactionViewModal({
         setOpenMark(null);
     }, [activeLanguage]);
 
-    const handleJumpToMark = (mark: QuoteMarkInfo) => {
-        setSearchQuery(mark.text);
+    // Клик по элементу панели "Комментарии" ВСЕГДА открывает резолюцию целиком в CommentViewModal
+    // (как и обычный комментарий без цитаты) - раньше комментарий С цитатой вместо этого сразу
+    // подставлял её в поиск и закрывал панель, из-за чего нельзя было посмотреть полный текст
+    // резолюции, а сам поиск к тому же не срабатывал (см. pendingJumpQueryRef выше). Переход "к
+    // месту в тексте" теперь отдельное действие - кнопка "Показать в тексте" внутри модалки
+    // (см. jumpToQuoteInText и рендер CommentViewModal ниже).
+    const handleCommentClick = (item: QuoteMarkInfo) => {
+        setOpenMark(item);
         setMarksPanelOpen(false);
+    };
+
+    // Переключает вкладку документа (если нужно) и подставляет текст цитаты в поиск - вызывается
+    // кнопкой-лупой "Показать в тексте" рядом с КАЖДОЙ цитатой внутри CommentViewModal (см.
+    // FormattedResolutionComment.onShowInText) - резолюция может ссылаться на несколько мест в
+    // тексте, поэтому принимает конкретную цитату, а не резолюцию целиком. Закрывает саму
+    // модалку резолюции - иначе она перекрывает подсвеченный в документе текст.
+    const jumpToQuoteInText = (quote: {documentTarget: string; text: string}) => {
+        if (!quote.text) return;
+        setOpenMark(null);
+        const target = quote.documentTarget as RedactionViewTarget;
+        if (target !== activeLanguage) {
+            pendingJumpQueryRef.current = quote.text;
+            setActiveLanguage(target);
+        } else {
+            setSearchQuery(quote.text);
+        }
     };
 
     const activeFileId = activeLanguage === "tid"
@@ -276,14 +324,14 @@ export function RedactionViewModal({
                         </Tooltip>
 
                         {approvalProcess && (
-                            <Tooltip content="Комментарии — цитаты из резолюций согласующих" side="bottom">
+                            <Tooltip content="Комментарии — все резолюции согласующих" side="bottom">
                                 <button
                                     type="button"
                                     onClick={() => {
                                         setMarksPanelOpen((v) => !v);
                                         setContentsOpen(false);
                                     }}
-                                    disabled={quoteMarks.length === 0}
+                                    disabled={allComments.length === 0}
                                     className="relative cursor-pointer flex-none grid h-9 w-9 place-items-center rounded-[9px] border transition-colors disabled:cursor-not-allowed disabled:opacity-40"
                                     style={
                                         marksPanelOpen
@@ -292,11 +340,11 @@ export function RedactionViewModal({
                                     }
                                 >
                                     <MessageSquareText size={16}/>
-                                    {quoteMarks.length > 0 && (
+                                    {allComments.length > 0 && (
                                         <span
                                             className="absolute -top-[5px] -right-[5px] flex h-[16px] min-w-[16px] items-center justify-center rounded-full bg-[#4e57d6] px-[3px] text-[9.5px] font-bold text-white"
                                         >
-                                            {quoteMarks.length}
+                                            {allComments.length}
                                         </span>
                                     )}
                                 </button>
@@ -360,7 +408,7 @@ export function RedactionViewModal({
                         <div className="flex h-full w-[300px] flex-none flex-col overflow-hidden rounded-[12px] border border-[#e5e9f0] bg-white">
                             <div className="flex flex-none items-center justify-between border-b border-[#eef2f7] px-3.5 py-3">
                                 <span className="text-[12.5px] font-bold text-[#1c2740]">
-                                    Комментарии к тексту ({quoteMarks.length})
+                                    Комментарии ({allComments.length})
                                 </span>
                                 <button
                                     type="button"
@@ -371,29 +419,32 @@ export function RedactionViewModal({
                                 </button>
                             </div>
                             <div className="min-h-0 flex-1 overflow-y-auto p-2.5">
-                                {quoteMarks.length === 0 ? (
+                                {allComments.length === 0 ? (
                                     <div className="px-2 py-3 text-center text-[12px] text-[#a3adbd]">
-                                        На этой вкладке пока нет цитат из резолюций
+                                        По этому согласованию пока нет комментариев
                                     </div>
                                 ) : (
                                     <div className="flex flex-col gap-1.5">
-                                        {quoteMarks.map((mark) => (
+                                        {allComments.map((item) => (
                                             <button
-                                                key={mark.id}
+                                                key={item.id}
                                                 type="button"
-                                                onClick={() => handleJumpToMark(mark)}
+                                                onClick={() => handleCommentClick(item)}
                                                 className="cursor-pointer flex flex-col gap-1 rounded-[9px] border border-[#e9edf3] bg-[#fbfcfe] px-2.5 py-2 text-left hover:border-[#4e57d6]/40 hover:bg-white"
                                             >
                                                 <span className="flex items-center gap-1.5">
                                                     <span className="flex h-5 w-5 flex-none items-center justify-center rounded-md bg-[#ececfc] text-[8.5px] font-bold text-[#4e57d6]">
-                                                        {getInitials(mark.approverName)}
+                                                        {getInitials(item.approverName)}
                                                     </span>
                                                     <span className="truncate text-[11.5px] font-semibold text-[#26324a]">
-                                                        {mark.approverName}
+                                                        {item.approverName}
+                                                    </span>
+                                                    <span className="flex-none text-[9.5px] text-[#a3adbd]">
+                                                        · {item.phaseLabel}
                                                     </span>
                                                 </span>
-                                                <span className="line-clamp-2 text-[11px] leading-snug text-[#6b7488]">
-                                                    «{mark.text}»
+                                                <span className="line-clamp-2 break-words text-[11px] leading-snug text-[#6b7488]">
+                                                    {item.text ? `«${item.text}»` : item.comment}
                                                 </span>
                                             </button>
                                         ))}
@@ -420,6 +471,10 @@ export function RedactionViewModal({
                 <CommentViewModal
                     {...quoteMarkModalProps(openMark)}
                     onClose={() => setOpenMark(null)}
+                    // Кнопка-лупа "Показать в тексте" рисуется в CommentViewModal рядом с КАЖДОЙ
+                    // цитатой резолюции (см. quotes из quoteMarkModalProps выше) - только если у
+                    // этой резолюции вообще есть хоть одна цитата, иначе показывать в тексте нечего.
+                    onShowInText={openMark.allQuotes.length > 0 ? jumpToQuoteInText : undefined}
                 />
             )}
 

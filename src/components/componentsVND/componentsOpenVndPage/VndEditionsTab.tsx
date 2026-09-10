@@ -78,6 +78,9 @@ import {
 import {
     RedactionContentsPanel
 } from "@/components/componentsVND/componentsOpenVndPage/componentsEditionsTab/RedactionContentsPanel.tsx";
+import {
+    RejectedApprovalDetailsModal
+} from "@/components/componentsVND/componentsOpenVndPage/componentsEditionsTab/RejectedApprovalDetailsModal.tsx";
 
 import {EmptyState} from "@/components/componentsGeneral/EmptyState.tsx";
 import {Loader} from "@/components/componentsGeneral/Loader";
@@ -208,6 +211,11 @@ export function VndEditionsTab({vnd, onVndChanged, onGoToApproval}: VndEditionsT
             cancelled = true;
         };
     }, [vnd.id]);
+
+    // Модалка "Подробнее" по ссылке из подсказки об отклонённой редакции (см.
+    // RedactionsSidebar/RedactionListItem.wasRejected) - показывает approvalProcess как есть,
+    // он уже и является тем самым отклонённым процессом (см. rejectedRedactionId выше).
+    const [rejectedDetailsOpen, setRejectedDetailsOpen] = useState(false);
 
     const {
         canDirectly, canByRequest,
@@ -566,6 +574,11 @@ export function VndEditionsTab({vnd, onVndChanged, onGoToApproval}: VndEditionsT
                     vndStatus={vnd.status}
                     effectiveDate={vnd.effectiveDate}
                     rejectedRedactionId={rejectedRedactionId}
+                    onShowRejectedDetails={
+                        rejectedRedactionId !== undefined && approvalProcess
+                            ? () => setRejectedDetailsOpen(true)
+                            : undefined
+                    }
                     onSelect={setSelectedId}
                     primaryActionVariant={primaryVariant}
                     primaryActionDisabled={primaryDisabled}
@@ -891,6 +904,20 @@ export function VndEditionsTab({vnd, onVndChanged, onGoToApproval}: VndEditionsT
                     onClose={() => setCompareMode(false)}
                 />
             )}
+
+            {rejectedDetailsOpen && approvalProcess && (() => {
+                // Редакция, к которой относится отклонённый процесс - именно её нужно открывать
+                // при клике "Показать в тексте" внутри модалки (см. RejectedApprovalDetailsModal).
+                const rejectedRedaction = redactions?.find((r) => r.id === approvalProcess.redactionId);
+                return rejectedRedaction ? (
+                    <RejectedApprovalDetailsModal
+                        vnd={vnd}
+                        redaction={rejectedRedaction}
+                        process={approvalProcess}
+                        onClose={() => setRejectedDetailsOpen(false)}
+                    />
+                ) : null;
+            })()}
         </div>
     );
 }

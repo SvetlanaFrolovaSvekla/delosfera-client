@@ -282,6 +282,21 @@ export function VndCoordinationTab({vnd, onVndChanged}: VndCoordinationTabProps)
         });
     };
 
+    // Кнопка-лупа "Показать в тексте" рядом с цитатой в уже ОТПРАВЛЕННОЙ резолюции любого
+    // согласующего на маршруте (см. StageCardView/VndApprovalRouteView.onShowQuoteInText) - тот
+    // же приём, что и handleJumpToQuote выше (там - для ещё не отправленной резолюции текущего
+    // пользователя), просто с другим источником цитаты (quote: {documentTarget, text} вместо
+    // ApprovalQuoteItem, форма та же).
+    const handleShowQuoteInText = (quote: {documentTarget: string; text: string}) => {
+        if (!redaction) return;
+        setModal({
+            kind: "view",
+            redaction,
+            language: quote.documentTarget as RedactionViewTarget,
+            initialSearchQuery: quote.text,
+        });
+    };
+
     const handleCancel = async () => {
         setCancelling(true);
         try {
@@ -439,7 +454,8 @@ export function VndCoordinationTab({vnd, onVndChanged}: VndCoordinationTabProps)
                         </div>
                     )}
                     <VndApprovalRouteView process={process} highlightStageId={myStage?.id}
-                                          frameless={!!routeHeaderConfig}/>
+                                          frameless={!!routeHeaderConfig}
+                                          onShowQuoteInText={handleShowQuoteInText}/>
                 </div>
 
                 {isPendingForMe && (
@@ -587,7 +603,8 @@ export function VndCoordinationTab({vnd, onVndChanged}: VndCoordinationTabProps)
                         </div>
                     </div>
                 )}
-                <VndApprovalRouteView process={process} frameless={!!routeHeaderConfig}/>
+                <VndApprovalRouteView process={process} frameless={!!routeHeaderConfig}
+                                      onShowQuoteInText={handleShowQuoteInText}/>
             </div>
 
             {/* Панель с замечаниями (если они есть) на этапе исправления замечаний для инициатора */}

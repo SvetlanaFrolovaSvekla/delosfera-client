@@ -3,6 +3,7 @@ import {useMemo, useState} from "react";
 import type {ApprovalProcessResponse} from "@/service/coordinationService/coordinationServiceTypes.ts";
 import {useApprovalRouteLines} from "@/hooks/coordinationHooks/useApprovalRouteLines.ts";
 import {StageCardView} from "./StageCardView";
+import type {FormattedCommentQuoteRef} from "./FormattedResolutionComment.tsx";
 import {NormBlockView, type NormPhaseStatus} from "./NormBlockView";
 import {ArrowDown, ArrowLeft, MessageSquareText} from "lucide-react";
 import {getElapsedLabel} from "@/utils/dateUtils.ts";
@@ -19,6 +20,9 @@ interface VndApprovalRouteViewProps {
     /** true — не рисовать собственную внешнюю рамку/скругление/фон (используется, когда
      * компонент вложен как тело под цветной шапкой-баннером, и рамку рисует родитель) */
     frameless?: boolean;
+    /** Клик по кнопке-лупе "Показать в тексте" рядом с цитатой в резолюции любого этапа - см.
+     * StageCardView.onShowQuoteInText. Без этого пропа кнопки-лупы нигде на маршруте не рисуются. */
+    onShowQuoteInText?: (quote: FormattedCommentQuoteRef) => void;
 }
 
 // Статус фазы «Первичное согласование»
@@ -80,7 +84,7 @@ function CurrentPhaseHint({startedAt, deadlineAt}: CurrentPhaseHintProps) {
     );
 }
 
-export function VndApprovalRouteView({process, highlightStageId, frameless}: VndApprovalRouteViewProps) {
+export function VndApprovalRouteView({process, highlightStageId, frameless, onShowQuoteInText}: VndApprovalRouteViewProps) {
     const [initiatorCommentOpen, setInitiatorCommentOpen] = useState(false);
 
     const stagesWithLocalId = useMemo(
@@ -127,7 +131,7 @@ export function VndApprovalRouteView({process, highlightStageId, frameless}: Vnd
                             комментарий к исправлениям
                         </span>
                     </div>
-                    <div className="whitespace-pre-wrap text-[12px] leading-snug text-[#3c424a]">
+                    <div className="whitespace-pre-wrap break-words text-[12px] leading-snug text-[#3c424a]">
                         {process.repeatInitiatorComment.length > COMMENT_TRUNCATE_LENGTH
                             ? process.repeatInitiatorComment.slice(0, COMMENT_TRUNCATE_LENGTH).trimEnd() + "…"
                             : process.repeatInitiatorComment}
@@ -177,6 +181,7 @@ export function VndApprovalRouteView({process, highlightStageId, frameless}: Vnd
                         cardRef={registerStageRef(stage.localId)}
                         isCurrentUserStage={stage.id === highlightStageId}
                         isProcessEnded={isProcessEnded}
+                        onShowQuoteInText={onShowQuoteInText}
                     />
                 ))}
             </div>

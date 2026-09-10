@@ -214,7 +214,7 @@ export function VndTasksPanel() {
                     onChange={setSearchQuery}
                 />
 
-                {(isDoneAvailable || (topTab === "coordination" && coordinationSubTab !== "rejected") || !isLoading) && (
+                {(isDoneAvailable || !isLoading) && (
                     <div className="mb-2 mt-2 flex flex-wrap items-center justify-between gap-4">
                         <div className="flex flex-wrap items-start gap-4">
                             {isDoneAvailable && (

@@ -63,6 +63,9 @@ export interface Tender {
     isLimited: boolean;
 
     publishedOn: string | null;
+    /** Где размещено объявление (или кому разосланы приглашения). null — размещение не отмечено. */
+    publishedAt: string | null;
+    publicationConfirmedAt: string | null;
     submissionDeadline: string | null;
     openedOn: string | null;
 
@@ -137,6 +140,16 @@ export const tenderService = {
 
     async publish(tenderId: number, submissionDeadline: string): Promise<Tender> {
         const {data} = await apiClient.post<Tender>(`${BASE}/tenders/${tenderId}/publish`, {submissionDeadline});
+        return data;
+    },
+
+    /**
+     * Отметить размещение объявления (или рассылку приглашений для конкурса с
+     * ограниченным участием). Без этой отметки конкурсный период не начинается и
+     * заявки нельзя вскрыть — сервер требует, где именно объявление размещено.
+     */
+    async confirmPublication(tenderId: number, publishedAt: string): Promise<Tender> {
+        const {data} = await apiClient.post<Tender>(`${BASE}/tenders/${tenderId}/publication`, {publishedAt});
         return data;
     },
 

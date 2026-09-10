@@ -1,4 +1,4 @@
-import type {TaskScope, VndTaskCountsResponse, VndTaskResponse} from "./tasksServiceTypes";
+import type {PagedResult, TaskScope, VndTaskCountsResponse, VndTaskResponse} from "./tasksServiceTypes";
 import { axiosInstance } from "@/service/axiosInstance.ts";
 
 // Бэкенд отдаёт "my-vnd-approval" (kebab-case) для этого раздела, остальные scope
@@ -14,6 +14,16 @@ const SCOPE_TO_PATH: Record<TaskScope, string> = {
 class TasksService {
     async getByScope(scope: TaskScope): Promise<VndTaskResponse[]> {
         const { data } = await axiosInstance.get<VndTaskResponse[]>(`/tasks/${SCOPE_TO_PATH[scope]}`);
+        return data;
+    }
+
+    // История "Выполнено" для раздела — с пагинацией (см. TasksController/TasksService на
+    // бэкенде: критерий "выполнено" свой для каждого раздела).
+    async getDoneByScope(scope: TaskScope, page: number, pageSize: number): Promise<PagedResult<VndTaskResponse>> {
+        const { data } = await axiosInstance.get<PagedResult<VndTaskResponse>>(
+            `/tasks/${SCOPE_TO_PATH[scope]}/done`,
+            { params: { page, pageSize } }
+        );
         return data;
     }
 

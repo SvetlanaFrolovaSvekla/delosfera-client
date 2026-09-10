@@ -575,5 +575,26 @@
     "errorDomain": "Каталог кызматы домендик логин менен паролду ырастаган жок",
     "footerVersion": "Делосфера ЭДА · v8.2",
     "support": "Колдоо"
+  },
+  "attachments": {
+    "title": "Тиркемелер",
+    "saveHint": "Файлдарды тиркөө үчүн долбоорду сактаңыз",
+    "dropPrefix": "Файлдарды сүйрөп өткөрүңүз, экран сүрөттөрүн чаптаңыз же",
+    "browseLink": "карап чыгуу",
+    "allowedTypes": "PDF, Word, Excel, PowerPoint, PNG, JPG · 50 МБ чейин",
+    "noExtension": "кеңейтүүсүз",
+    "errorFormat": "«{{name}}»: {{ext}} форматы кабыл алынбайт. PDF, Word, Excel, PowerPoint, PNG, JPG туура келет",
+    "errorSize": "«{{name}}»: файл 50 МБдан чоң",
+    "errorLoad": "Тиркемелерди жүктөө мүмкүн болгон жок",
+    "errorUpload": "Файлды тиркөө мүмкүн болгон жок",
+    "errorRemove": "Тиркемени өчүрүү мүмкүн болгон жок",
+    "confirmRemoveSigned": "«{{name}}» файлынын астында кол тамгалар бар ({{count}}). Өчүрүү аларды жокко чыгарат. Улантасызбы?",
+    "screenshotName": "Экран сүрөтү {{datetime}}",
+    "remove": "Алып салуу",
+    "delete": "Өчүрүү",
+    "download": "Көчүрүп алуу",
+    "signatureCount": "кол тамгалар: {{count}}",
+    "signaturesRevoked": "кол тамгалар жокко чыгарылды",
+    "signaturesRevokedTitle": "Файл алмаштырылды — мурунку кол тамгалар жокко чыгарылды"
   }
 }

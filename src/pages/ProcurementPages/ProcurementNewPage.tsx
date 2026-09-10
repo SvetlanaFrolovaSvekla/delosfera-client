@@ -11,7 +11,7 @@ import {
     type MatrixResolveResult,
 } from "@/service/procurementService/authorityMatrixService.ts";
 import {organizationUnitService} from "@/service/dictionariesService/organizationUnitService/organizationUnitService.ts";
-import {AttachmentsPanel} from "@/components/attachments/AttachmentsPanel.tsx";
+import {AttachmentsPanel} from "@/components/componentsGeneral/attachments/AttachmentsPanel.tsx";
 import {attachmentService} from "@/service/documentService/attachmentService.ts";
 import type {OrganizationUnitResponse} from "@/service/dictionariesService/organizationUnitService/organizationUnitServiceType.ts";
 import {formatDate} from "@/utils/dateUtils.ts";

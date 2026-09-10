@@ -1,5 +1,6 @@
 import {useCallback, useEffect, useState} from "react";
 import {Link} from "react-router-dom";
+import {ChartColumn} from "lucide-react";
 import {VndTasksPanel} from "@/components/componentsTasks/VndTasksPanel.tsx";
 import {
     taskInboxService,
@@ -52,17 +53,30 @@ export const TaskInboxPage = () => {
 
     return (
         <div style={{padding: "22px 26px", display: "flex", flexDirection: "column", gap: 16}}>
-            <div>
-                <h1 style={{margin: 0, fontSize: 19, fontWeight: 700, color: "#0f1b2d"}}>Мои задачи</h1>
-                <div style={{marginTop: 4, fontSize: 12.5, color: "#8b97ab"}}>
-                    {вндВкладка
-                        ? "Согласование, актуализация и консолидация ВНД"
-                        : inbox
-                        ? `Всего ${inbox.total}` +
-                          (inbox.overdue > 0 ? ` · просрочено ${inbox.overdue}` : "") +
-                          (inbox.delegated > 0 ? ` · по замещению ${inbox.delegated}` : "")
-                        : "Согласования по всем контурам"}
+            <div style={{display: "flex", alignItems: "flex-end", justifyContent: "space-between", gap: 20, flexWrap: "wrap"}}>
+                <div>
+                    <h1 style={{margin: 0, fontSize: 19, fontWeight: 700, color: "#0f1b2d"}}>Мои задачи</h1>
+                    <div style={{marginTop: 4, fontSize: 12.5, color: "#8b97ab"}}>
+                        {вндВкладка
+                            ? "Согласование, актуализация и консолидация ВНД"
+                            : inbox
+                            ? `Всего ${inbox.total}` +
+                              (inbox.overdue > 0 ? ` · просрочено ${inbox.overdue}` : "") +
+                              (inbox.delegated > 0 ? ` · по замещению ${inbox.delegated}` : "")
+                            : "Согласования по всем контурам"}
+                    </div>
                 </div>
+
+                {/* TODO: страницы статистики по задачам ещё нет — кнопка пока заглушка */}
+                {вндВкладка && (
+                    <button
+                        type="button"
+                        className="inline-flex items-center gap-2 h-10 px-[15px] rounded-[10px] border-none bg-[#4e57d6] text-white font-semibold text-[13px] cursor-pointer hover:brightness-[1.06] shadow-[0_6px_16px_-6px_#4e57d6]"
+                    >
+                        <ChartColumn className="w-[18px] h-[18px]" strokeWidth={2}/>
+                        Статистика по моим задачам
+                    </button>
+                )}
             </div>
 
             <div style={{display: "flex", gap: 6, flexWrap: "wrap"}}>

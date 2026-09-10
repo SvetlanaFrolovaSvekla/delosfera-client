@@ -1,13 +1,19 @@
 import type {MouseEvent} from "react";
 import {Link} from "react-router-dom";
+import {CheckCircle2} from "lucide-react";
 import type {VndTaskResponse} from "@/service/tasksVndService/tasksServiceTypes.ts";
 import {COORDINATION_STAGE_META, TASK_SCOPE_META} from "@/constants/vndStatus.ts";
 import {getActionTitle, getDeadlineTone, getMetaText} from "@/utils/tasksUtils.ts";
+import {timeAgo} from "@/utils/dateUtils.ts";
 import {Icon} from "@/components/icons/Icon.tsx";
+import {HighlightText} from "@/utils/HighlightText.tsx";
 
 
 interface VndTaskCardProps {
     task: VndTaskResponse;
+    /** Запрос поиска на странице "Мои задачи" — подсвечивает совпадения тем же
+     *  компонентом, что и поиск в шапке (см. HeaderSearchResults). */
+    searchQuery?: string;
 }
 
 const handleClick = (e: MouseEvent<HTMLAnchorElement>) => {
@@ -21,7 +27,7 @@ const handleClick = (e: MouseEvent<HTMLAnchorElement>) => {
 // в остальных случаях (актуализация/консолидация) правильный таб определяет сама страница ВНД.
 const APPROVAL_TAB_SCOPES: VndTaskResponse["scope"][] = ["coordination", "myVndApproval"];
 
-export function VndTaskCard({task}: VndTaskCardProps) {
+export function VndTaskCard({task, searchQuery = ""}: VndTaskCardProps) {
     // Основной бейдж = раздел/вкладка "Мои задачи", в которую ведёт карточка
     // ("Ждущие моего согласования" / "Мои ВНД на согласовании" / "Актуализация" / "Консолидация")
     const scopeMeta = TASK_SCOPE_META[task.scope];
@@ -61,7 +67,7 @@ export function VndTaskCard({task}: VndTaskCardProps) {
                         className="text-[11.5px] font-semibold text-[var(--app-accent,_#2f68f5)]"
                         style={{fontFamily: "'IBM Plex Mono', monospace"}}
                     >
-                        ВНД-{task.vndCode}
+                        ВНД-<HighlightText text={task.vndCode} query={searchQuery}/>
                     </span>
                     <span
                         className="rounded-full px-[9px] py-[2px] text-[11px] font-semibold"
@@ -94,7 +100,7 @@ export function VndTaskCard({task}: VndTaskCardProps) {
 
                 {/* Название ВНД — отдельной строкой, чтобы быть видимым независимо от скоупа */}
                 <span className="mt-[3px] block truncate text-[13.5px] font-semibold text-[#1c2740]">
-                    «{task.vndTitle}»
+                    «<HighlightText text={task.vndTitle} query={searchQuery}/>»
                 </span>
 
                 {/* Суть задачи */}
@@ -102,8 +108,10 @@ export function VndTaskCard({task}: VndTaskCardProps) {
                     {getActionTitle(task)}
                 </span>
 
+                {/* Здесь же встречается редакция/инициатор/отклонивший — тоже участвуют
+                    в поиске (см. matchesTaskSearch), поэтому подсвечиваем строку целиком. */}
                 <span className="mt-0.5 block truncate text-[11.5px] text-[#8b97ab]">
-                    {getMetaText(task)}
+                    <HighlightText text={getMetaText(task)} query={searchQuery}/>
                 </span>
 
                 {/* Комментарий инициатора по предыдущему кругу — контекст, зачем документ снова здесь.
@@ -115,11 +123,20 @@ export function VndTaskCard({task}: VndTaskCardProps) {
                 )}
             </span>
 
-            <span className="flex flex-none items-center gap-1.5 text-[11.5px] font-semibold"
-                  style={{color: due.color}}>
-                <Icon name="clock" width={14} height={14}/>
-                {due.label}
-            </span>
+            {/* Выполненные карточки (вкладка "Выполненные") показывают, когда задача была
+                закрыта, а не обратный отсчёт до дедлайна — его для них уже нет смысла считать. */}
+            {task.isCompleted ? (
+                <span className="flex flex-none items-center gap-1.5 text-[11.5px] font-semibold text-[#1c7a4d]">
+                    <CheckCircle2 size={14}/>
+                    {task.completedAt ? timeAgo(task.completedAt) : "Выполнено"}
+                </span>
+            ) : (
+                <span className="flex flex-none items-center gap-1.5 text-[11.5px] font-semibold"
+                      style={{color: due.color}}>
+                    <Icon name="clock" width={14} height={14}/>
+                    {due.label}
+                </span>
+            )}
 
             <Icon name="chevr" width={17} height={17} className="flex-none text-[#c3ccd8]"/>
         </Link>

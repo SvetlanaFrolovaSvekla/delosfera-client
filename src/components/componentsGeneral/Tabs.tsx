@@ -15,11 +15,15 @@ interface TabsProps<T extends string> {
     tabs: TabItem<T>[];
     value: T;
     onChange: (value: T) => void;
+    /** Отступ снизу под обёртку — по умолчанию как раньше ("mb-4"). Приняли отдельным
+     *  классом, а не хардкодом, чтобы можно было сузить расстояние между уровнями вкладок
+     *  точечно (напр. верхний ряд ближе к вложенному), не трогая остальные места. */
+    className?: string;
 }
 
-export function Tabs<T extends string>({tabs, value, onChange}: TabsProps<T>) {
+export function Tabs<T extends string>({tabs, value, onChange, className = "mb-4"}: TabsProps<T>) {
     return (
-        <div className="flex items-center gap-[22px] border-b border-[#e9edf3] mb-4">
+        <div className={`flex items-center gap-[22px] border-b border-[#e9edf3] ${className}`}>
             {tabs.map((tab) => {
                 const active = tab.id === value;
                 return (

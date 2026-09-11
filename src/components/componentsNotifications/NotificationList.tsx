@@ -14,7 +14,7 @@ interface NotificationListProps {
     showCategoryLabel: boolean; // true, когда выбраны "Все категории"
     onRead: (id: number) => void;
     onToggleFavorite: (id: number) => void;
-    onDelete: (id: number) => void;
+    onDelete: (id: number) => Promise<void>;
     onResetFilters: () => void;
 }
 

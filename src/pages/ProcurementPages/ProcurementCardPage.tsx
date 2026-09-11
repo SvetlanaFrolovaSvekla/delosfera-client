@@ -493,8 +493,17 @@ const ExtraApproversPicker = ({
 
 const Row = ({label, value}: { label: string; value: string }) => (
     <div style={{display: "flex", gap: 12, padding: "8px 0", borderBottom: "1px solid #f3f6f9", fontSize: 12.5}}>
-        <span style={{flex: 1, color: "#8b97ab"}}>{label}</span>
-        <span style={{flex: 1.2, color: "#26324a", fontWeight: 600, textAlign: "right"}}>{value}</span>
+        <span style={{flex: 1, color: "#8b97ab", minWidth: 0}}>{label}</span>
+        {/* minWidth:0 + break-word — длинное значение (имя файла ТЗ) не вылезает за карточку. */}
+        <span
+            title={value}
+            style={{
+                flex: 1.2, minWidth: 0, color: "#26324a", fontWeight: 600,
+                textAlign: "right", overflowWrap: "anywhere",
+            }}
+        >
+            {value}
+        </span>
     </div>
 );
 

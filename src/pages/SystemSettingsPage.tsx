@@ -135,7 +135,7 @@ export function SystemSettingsPage() {
                     })}
                 </aside>
 
-                <section>
+                <section className="min-w-0">
                     {current.render
                         ? current.render(report(current.id))
                         : (

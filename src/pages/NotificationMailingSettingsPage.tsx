@@ -60,7 +60,7 @@ export function NotificationMailingSettingsPage() {
                     })}
                 </aside>
 
-                <section>
+                <section className="min-w-0">
                     {selected === "responsibles" && <ActualizationResponsiblesSection/>}
                     {selected === "monthly" && <ActualizationMonthlyDigestSection/>}
                 </section>

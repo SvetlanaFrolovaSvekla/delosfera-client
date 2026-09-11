@@ -69,6 +69,24 @@ export interface VndActualizationTrendPoint {
     averageDurationDays: number;
 }
 
+/** Сводные показатели по актуализации ВНД для вкладки "Актуализация" */
+export interface VndActualizationOverviewResponse {
+    trackedTotal: number;
+    normal: number;
+    approaching: number;
+    critical: number;
+    overdue: number;
+    openCycles: number;
+    averageCycleDurationDays: number;
+    medianCycleDurationDays: number;
+    cyclesWithChangesRatePercent: number;
+    cyclesRequiringApprovalRatePercent: number;
+    pendingRequests: number;
+    approvedRequests: number;
+    rejectedRequests: number;
+    topOverdueDevelopers: ChartCategoryPoint[];
+}
+
 /** Эффективность процесса согласования */
 export interface VndApprovalPerformanceResponse {
     totalProcesses: number;

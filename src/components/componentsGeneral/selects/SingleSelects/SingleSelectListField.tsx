@@ -13,6 +13,8 @@ interface SingleSelectListFieldProps {
     onChange: (key: string | null) => void;
     searchPlaceholder?: string;
     placeholder?: string; // текст в поле, когда ничего не выбрано
+    clearLabel?: string; // подпись кнопки очистки выбора в модалке — по умолчанию "Очистить выбор"
+    clearedLabel?: string; // подпись той же кнопки, когда выбор уже снят (см. TreeSingleSelectModal)
     boldLabel?: boolean;
     required?: boolean;
     showChevron?: boolean; // показывать ли стрелочку-шеврон справа в поле
@@ -26,6 +28,8 @@ export function SingleSelectListField({
                                           onChange,
                                           searchPlaceholder,
                                           placeholder,
+                                          clearLabel,
+                                          clearedLabel,
                                           boldLabel = true,
                                           required = false,
                                           showChevron = true,
@@ -87,6 +91,8 @@ export function SingleSelectListField({
                 selectedKey={selectedKey}
                 onSelect={onChange}
                 searchPlaceholder={searchPlaceholder}
+                clearLabel={clearLabel}
+                clearedLabel={clearedLabel}
             />
         </>
     );

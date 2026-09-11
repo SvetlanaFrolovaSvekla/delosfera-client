@@ -1,6 +1,6 @@
 import {NavLink, Outlet, useLocation} from "react-router-dom";
 import {
-    Building2, Eye, FileCog, FileStack, History, KeyRound,
+    Building2, Eye, FileCog, FileStack, History, KeyRound, Mail,
     MessageSquareWarning, ScrollText, Settings2, ShieldCheck, UserCog, Users,
 } from "lucide-react";
 import {useAuth} from "@/context/AuthContext.ts";
@@ -23,7 +23,7 @@ interface Item {
     permission?: number;
 }
 
-const GROUPS: {title: string; items: Item[]}[] = [
+const GROUPS: { title: string; items: Item[] }[] = [
     {
         title: "Люди и доступ",
         items: [
@@ -114,6 +114,18 @@ const GROUPS: {title: string; items: Item[]}[] = [
         ],
     },
     {
+        title: "Уведомления",
+        items: [
+            {
+                path: "/management/mailing-settings",
+                title: "Настройки рассылок по актуализации ВНД",
+                hint: "Ответственные сотрудники и ежемесячная сводка по СП",
+                icon: Mail,
+                permission: PermissionCode.ManageVndDictionaries,
+            },
+        ],
+    },
+    {
         title: "Система",
         items: [
             {
@@ -165,14 +177,14 @@ export function ManagementPage() {
                                     key={item.path}
                                     to={item.path}
                                     className={({isActive}) =>
-                                        `flex items-center gap-2.5 rounded-[9px] px-2.5 py-2
-                                         text-[13.5px] transition
-                                         ${isActive
+                                        `flex items-start gap-2.5 rounded-[9px] px-2.5 py-2
+                                        text-[13.5px] leading-[1.35] transition
+                                        ${isActive
                                             ? "bg-[#eaf0ff] font-semibold text-[#2f68f5]"
                                             : "text-[#4d5a72] hover:bg-[#f2f5f9]"}`}
                                 >
-                                    <item.icon size={16} className="flex-none"/>
-                                    <span className="truncate">{item.title}</span>
+                                    <item.icon size={16} className="mt-0.5 flex-none"/>
+                                    <span>{item.title}</span>
                                 </NavLink>
                             ))}
                         </div>

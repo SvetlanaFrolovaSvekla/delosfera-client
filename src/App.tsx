@@ -82,6 +82,7 @@ const ObligationsPage = lazy(() => import("@/pages/ObligationsPage.tsx").then(m 
 const AgendaCandidatesPage = lazy(() => import("@/pages/MeetingsPages/AgendaCandidatesPage.tsx").then(m => ({default: m.AgendaCandidatesPage})));
 const ActualizationBucketSettingsPage = lazy(() => import("@/pages/DictionariesPages/ActualizationBucketSettingsPage.tsx").then(m => ({default: m.ActualizationBucketSettingsPage})));
 const ManagementPage = lazy(() => import("@/pages/ManagementPage.tsx").then(m => ({default: m.ManagementPage})));
+const NotificationMailingSettingsPage = lazy(() => import("@/pages/NotificationMailingSettingsPage.tsx").then(m => ({default: m.NotificationMailingSettingsPage})));
 const DocumentTypesPage = lazy(() => import("@/pages/DocumentTypesPage.tsx").then(m => ({default: m.DocumentTypesPage})));
 const SettingsChangesPage = lazy(() => import("@/pages/SettingsChangesPage.tsx").then(m => ({default: m.SettingsChangesPage})));
 const HrOrdersPage = lazy(() => import("@/pages/HrOrdersPage.tsx").then(m => ({default: m.HrOrdersPage})));
@@ -198,6 +199,7 @@ function App() {
                                     <Route path="refs/rubric" element={<RubricPage/>}/>
                                     <Route path="refs/coordination-users" element={<CoordinationApproversPage/>}/>
                                     <Route path="refs/actualization-thresholds" element={<ActualizationBucketSettingsPage/>}/>
+                                    <Route path="mailing-settings" element={<NotificationMailingSettingsPage/>}/>
 
 
                                     <Route element={<RequirePermission code={PermissionCode.ManageRoles}/>}>

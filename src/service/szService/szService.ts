@@ -31,6 +31,12 @@ export interface SzKind {
     executionDays: number;
 }
 
+export interface SzApproverPreview {
+    userId: number;
+    fullName: string;
+    position: string | null;
+}
+
 export interface SzHrKind {
     id: number;
     titleRu: string;
@@ -295,6 +301,14 @@ export const szService = {
 
     async kinds(): Promise<SzKind[]> {
         const {data} = await apiClient.get<SzKind[]>(`${BASE}/kinds`);
+        return data;
+    },
+
+    // Согласующие из шаблона выбранного вида — для автоподстановки в форму.
+    async previewApprovers(kindId: number, correspondentUnitId?: number): Promise<SzApproverPreview[]> {
+        const {data} = await apiClient.get<SzApproverPreview[]>(
+            `${BASE}/kinds/${kindId}/preview-approvers`,
+            {params: correspondentUnitId ? {correspondentUnitId} : undefined});
         return data;
     },
 

@@ -238,6 +238,26 @@ export function SzCardPage() {
     const set = <K extends keyof SzSaveRequest>(key: K, value: SzSaveRequest[K]) =>
         setForm((f) => ({...f, [key]: value}));
 
+    // При выборе вида подставляем согласующих из его шаблона (админ настраивает
+    // маршрут на вид). Состав можно поправить руками — это подсказка, а не жёсткий
+    // список. Работает для черновика/новой записки, где согласующих ещё задают.
+    const [approversFromTemplate, setApproversFromTemplate] = useState(false);
+    const applyKind = async (newKindId: number) => {
+        set("kindId", newKindId);
+        setApproversFromTemplate(false);
+        if (!editable || !newKindId) return;
+        try {
+            const preview = await szService.previewApprovers(
+                newKindId, form.correspondentUnitId ?? undefined);
+            if (preview.length > 0) {
+                setForm((f) => ({...f, kindId: newKindId, approverUserIds: preview.map((p) => p.userId)}));
+                setApproversFromTemplate(true);
+            }
+        } catch {
+            // Шаблон не настроен или сеть — молча оставляем ручной выбор.
+        }
+    };
+
     const save = async () => {
         if (!form.title.trim() || !form.kindId) {
             setError("Заполните тему и вид записки");
@@ -616,7 +636,7 @@ export function SzCardPage() {
                     </Field>
                     <Field label="Вид записки">
                         <select className={inputClass} value={form.kindId} disabled={!editable}
-                                onChange={(e) => set("kindId", Number(e.target.value))}>
+                                onChange={(e) => void applyKind(Number(e.target.value))}>
                             {kinds.map((k) => <option key={k.id} value={k.id}>{k.titleRu}</option>)}
                         </select>
                     </Field>
@@ -726,6 +746,11 @@ export function SzCardPage() {
                     </div>
                 )}
 
+                {approversFromTemplate && (
+                    <div className="mb-1.5 text-[11.5px] text-[#1c7a4d]">
+                        Согласующие подставлены из шаблона вида — можно изменить.
+                    </div>
+                )}
                 <SzApproversField
                     value={form.approverUserIds ?? []}
                     onChange={(ids) => set("approverUserIds", ids)}

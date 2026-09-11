@@ -16,6 +16,7 @@ import {SzProcurementPanel} from "@/components/sz/SzProcurementPanel.tsx";
 import {BoardReviewCard} from "@/components/componentsGeneral/BoardReviewCard.tsx";
 import {PROCUREMENT_STATUS_LABEL} from "@/service/procurementService/procurementService.ts";
 import {SzApproversField} from "@/components/sz/SzApproversField.tsx";
+import {MultiSelectDropdown} from "@/components/componentsGeneral/selects/MultiSelects/MultiSelectDropdown.tsx";
 import {SzHrForm} from "@/components/sz/SzHrForm.tsx";
 import {RichTextEditor} from "@/components/editor/RichTextEditor.tsx";
 import {SzAddresseeDecisionPanel} from "@/components/sz/SzAddresseeDecisionPanel.tsx";
@@ -760,25 +761,36 @@ export function SzCardPage() {
 
                 <div className="mt-4">
                     <span className={labelClass}>Рубрикатор (записка может лежать в нескольких рубриках)</span>
-                    <div className="flex flex-wrap gap-2">
-                        {RUBRICS.map((r) => {
-                            const rid = Number(r.id);
-                            const on = (form.rubricIds ?? []).includes(rid);
-                            return (
-                                <button
-                                    key={r.id}
-                                    disabled={!editable}
-                                    onClick={() => set("rubricIds", on
-                                        ? (form.rubricIds ?? []).filter((x) => x !== rid)
-                                        : [...(form.rubricIds ?? []), rid])}
-                                    className={`h-8 px-3 rounded-full border text-[12.5px] font-semibold cursor-pointer disabled:cursor-not-allowed ${
-                                        on ? "border-[#cbddff] bg-[#e9f0ff] text-[#2f68f5]" : "border-[#e5e9f0] bg-white text-[#55617a]"}`}
-                                >
+                    {editable ? (
+                        <MultiSelectDropdown
+                            options={RUBRICS.map((r) => ({key: String(r.id), label: r.name}))}
+                            selectedKeys={(form.rubricIds ?? []).map(String)}
+                            onToggle={(key) => {
+                                const rid = Number(key);
+                                const cur = form.rubricIds ?? [];
+                                set("rubricIds", cur.includes(rid)
+                                    ? cur.filter((x) => x !== rid)
+                                    : [...cur, rid]);
+                            }}
+                            onSelectAll={() => set("rubricIds", RUBRICS.map((r) => Number(r.id)))}
+                            onDeselectAll={() => set("rubricIds", [])}
+                            triggerLabel="Выбрать рубрики"
+                            searchable
+                            searchPlaceholder="Поиск рубрики…"
+                            menuWidth="320px"
+                        />
+                    ) : (
+                        <div className="flex flex-wrap gap-2">
+                            {(form.rubricIds ?? []).length === 0 ? (
+                                <span className="text-[13px] text-[#8b97ab]">—</span>
+                            ) : RUBRICS.filter((r) => (form.rubricIds ?? []).includes(Number(r.id))).map((r) => (
+                                <span key={r.id}
+                                      className="h-8 inline-flex items-center px-3 rounded-full border border-[#cbddff] bg-[#e9f0ff] text-[12.5px] font-semibold text-[#2f68f5]">
                                     {r.name}
-                                </button>
-                            );
-                        })}
-                    </div>
+                                </span>
+                            ))}
+                        </div>
+                    )}
                 </div>
             </div>
 

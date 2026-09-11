@@ -202,6 +202,19 @@ export const szService = {
         return data;
     },
 
+    // Тот же реестр целиком книгой Excel — весь отфильтрованный набор, без страниц.
+    async exportRegistry(request: SzSearchRequest): Promise<void> {
+        const response = await apiClient.post(`${BASE}/export`, request, {responseType: "blob"});
+        const url = URL.createObjectURL(response.data as Blob);
+        const link = document.createElement("a");
+        link.href = url;
+        link.download = `Реестр СЗ ${new Date().toLocaleDateString("ru-RU")}.xlsx`;
+        document.body.appendChild(link);
+        link.click();
+        link.remove();
+        URL.revokeObjectURL(url);
+    },
+
     async counters(): Promise<SzCounters> {
         const {data} = await apiClient.get<SzCounters>(`${BASE}/counters`);
         return data;

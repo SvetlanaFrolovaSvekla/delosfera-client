@@ -6,6 +6,7 @@ import {
     type SzPrintForm,
 } from "@/service/szService/szPaperService.ts";
 import {formatDateTime} from "@/utils/dateUtils.ts";
+import keremetLogo from "@/assets/keremet-logo.png?url";
 
 function formatDate(iso: string | null): string {
     if (!iso) return "";
@@ -82,6 +83,14 @@ export function SzPrintPage() {
             </div>
 
             <div className="sz-print-sheet mx-auto w-[210mm] bg-white px-[16mm] py-[14mm] shadow-[0_2px_12px_rgba(15,27,45,.08)] text-[#0f1b2d]">
+                {/* Фирменный бланк: логотип Банка сверху, под ним — линейка. */}
+                <div className="mb-5 flex items-center justify-between border-b border-[#0f1b2d] pb-3">
+                    <img src={keremetLogo} alt="Керемет Банк" className="h-[26px] w-auto" />
+                    <span className="text-[10px] uppercase tracking-[.06em] text-[#55617a]">
+                        ОАО «Керемет Банк»
+                    </span>
+                </div>
+
                 <div className="text-center">
                     <div className="text-[15px] font-bold uppercase tracking-[.06em]">Служебная записка</div>
                     <div className="mt-1 text-[12px] text-[#55617a]">

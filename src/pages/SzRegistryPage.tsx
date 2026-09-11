@@ -1,6 +1,7 @@
 import {useCallback, useEffect, useState} from "react";
 import {Link, useNavigate} from "react-router-dom";
-import {Plus} from "lucide-react";
+import {Download, Plus} from "lucide-react";
+import {toast} from "@/service/toastService.ts";
 import {colors} from "@/design/tokens";
 import {
     SZ_STATUS_LABEL,
@@ -69,6 +70,7 @@ export function SzRegistryPage() {
     const [counters, setCounters] = useState<SzCounters | null>(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
+    const [exporting, setExporting] = useState(false);
 
     useEffect(() => {
         szService.kinds().then(setKinds).catch(() => {});
@@ -126,6 +128,26 @@ export function SzRegistryPage() {
     useEffect(() => {
         void load();
     }, [load]);
+
+    // Выгрузка реестра в Excel — по текущему фильтру, весь набор. Особые вкладки
+    // (поручения, оригиналы, «согласую я») — не реестр, у них кнопки нет.
+    const handleExport = useCallback(async () => {
+        const s = SCOPES.find((x) => x.id === scope)!;
+        setExporting(true);
+        try {
+            await szService.exportRegistry({
+                query: query.trim() || undefined,
+                statuses: s.statuses,
+                mineOnly: s.mineOnly,
+                kindIds: kindId ? [Number(kindId)] : undefined,
+                overdueOnly: overdueOnly || undefined,
+            });
+        } catch {
+            toast.error("Не удалось выгрузить реестр", "Попробуйте позже");
+        } finally {
+            setExporting(false);
+        }
+    }, [scope, query, kindId, overdueOnly]);
 
     const scopeCount = (id: ScopeId): number | undefined => {
         if (!counters) return undefined;
@@ -201,6 +223,13 @@ export function SzRegistryPage() {
                 <div className="text-[12.5px] text-[#8b97ab]">
                     Найдено: <b className="font-mono text-[#3a4560]">{total}</b>
                 </div>
+                <button
+                    onClick={handleExport}
+                    disabled={exporting || total === 0}
+                    className="inline-flex items-center gap-2 h-10 px-3 rounded-[10px] border border-[#e5e9f0] bg-white text-[12.5px] font-semibold text-[#3a4560] cursor-pointer hover:bg-[#f6f8fb] disabled:cursor-not-allowed disabled:opacity-50"
+                >
+                    <Download className="w-4 h-4"/> {exporting ? "Готовим…" : "Выгрузить в Excel"}
+                </button>
             </div>
 
             {error && (

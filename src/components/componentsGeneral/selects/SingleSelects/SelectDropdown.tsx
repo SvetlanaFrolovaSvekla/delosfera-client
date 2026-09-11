@@ -74,7 +74,7 @@ export function SelectDropdown({
             {/* Своя relative-обёртка вокруг кнопки и панели — чтобы "top-[42px]" у панели ниже
                 всегда отсчитывался от низа именно кнопки, а не всего блока вместе с подписью
                 (та при labelPosition="top" занимает свою строку и сбила бы отступ). */}
-            <div className="relative">
+            <div className="relative flex-1 min-w-0">
                 <button
                     type="button"
                     onClick={() => setOpen((v) => !v)}

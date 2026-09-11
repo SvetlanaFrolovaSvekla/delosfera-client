@@ -59,8 +59,9 @@ export function useNotificationActions({ rows, setRows, categoryTab, onMutated }
         try {
             await notificationsService.delete(id);
             onMutated();
-        } catch {
+        } catch (e) {
             setRows(prevRows);
+            throw e;
         }
     };
 

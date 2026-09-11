@@ -2,6 +2,7 @@ import {axiosInstance} from "@/service/axiosInstance.ts";
 import type {
     AnalyticsPeriodRequest,
     ChartCategoryPoint,
+    VndActualizationOverviewResponse,
     VndActualizationTrendPoint,
     VndApprovalPerformanceResponse,
     VndApproverWorkloadItem,
@@ -55,6 +56,12 @@ export const vndAnalyticsService = {
 
     async getActualizationTrend(request: AnalyticsPeriodRequest): Promise<VndActualizationTrendPoint[]> {
         const res = await axiosInstance.post<VndActualizationTrendPoint[]>(`${BASE}/actualization-trend`, request);
+        return res.data;
+    },
+
+    /** Сводка для вкладки "Актуализация": бакеты сроков, открытые циклы, заявки на доступ */
+    async getActualizationOverview(): Promise<VndActualizationOverviewResponse> {
+        const res = await axiosInstance.get<VndActualizationOverviewResponse>(`${BASE}/actualization-overview`);
         return res.data;
     },
 

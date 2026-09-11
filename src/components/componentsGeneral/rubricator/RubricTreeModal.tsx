@@ -68,7 +68,7 @@ export function RubricTreeModal({
             <div
                 ref={panelRef}
                 onClick={(e) => e.stopPropagation()}
-                className="w-full max-w-[440px] h-[600px] max-h-[85vh] bg-white rounded-2xl shadow-[0_24px_60px_-20px_rgba(15,27,45,.5)] overflow-hidden flex flex-col"
+                className="w-full max-w-[640px] h-[600px] max-h-[85vh] bg-white rounded-2xl shadow-[0_24px_60px_-20px_rgba(15,27,45,.5)] overflow-hidden flex flex-col"
             >
                 <ModalHeader
                     title={title}

@@ -124,6 +124,19 @@ export interface VndSearchRequest {
     draftOwnerScope?: "mine" | "others";
 }
 
+// --- Экспорт таблицы "Планирование актуализации" в Excel (кнопка "Экспорт плана в Excel") ---
+export interface VndActualizationExportRequest {
+    /** Те же фильтры, что и в обычном поиске — по умолчанию совпадают с тем, что применено
+     * на странице, но донастраиваются прямо в модалке экспорта. */
+    filter: VndSearchRequest;
+    /** Ключи колонок, отмеченных в модалке — как в ACTUALIZATION_COLUMNS. Обязательные (fixed)
+     * колонки бэк включает всегда, даже если их здесь нет. */
+    columns: string[];
+    /** Чекбокс "Только ни разу не актуализированные" — фильтр в памяти по числу редакций,
+     * не ось VndSearchRequest, поэтому передаётся отдельным полем (см. displayRows на странице). */
+    neverActualizedOnly?: boolean;
+}
+
 // --- Запрос на создание ---
 export interface CreateVndRequest {
     typeId: number;

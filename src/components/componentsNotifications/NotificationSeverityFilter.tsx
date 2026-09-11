@@ -68,7 +68,7 @@ export function NotificationSeverityFilter({
                         >
                             <Icon
                                 className="h-3.5 w-3.5 flex-none transition-transform group-hover:scale-110"
-                                style={{color: active ? meta.dot : "#a3adbd"}}
+                                style={{color: meta.dot}}
                                 strokeWidth={2.3}
                             />
                             {meta.label}

@@ -1,5 +1,5 @@
 import React, {useCallback, useEffect, useRef, useState} from "react";
-import {buildWhitespaceTolerantRegex, highlightCrossNodeMatches} from "@/utils/domCrossNodeSearch.ts";
+import {buildWhitespaceTolerantRegex, debugNoMatch, highlightCrossNodeMatches} from "@/utils/domCrossNodeSearch.ts";
 
 interface UseDocxTextSearchResult {
     matchCount: number;
@@ -95,6 +95,10 @@ export function useDocxTextSearch(
             const next = matches.length > 0 ? 0 : -1;
             setCurrentIndex(next);
             applyCurrent(next);
+            // Временная диагностика "Совпадений нет" - пишет в консоль браузера (F12), почему
+            // запрос не нашёлся (пробелы/переносы vs реально другой текст) - см. domCrossNodeSearch.
+            // Ничего не меняет в поведении поиска, можно убрать после того, как разберёмся с багом.
+            if (matches.length === 0) debugNoMatch(root, trimmed);
         }, 200);
 
         return () => clearTimeout(timeout);

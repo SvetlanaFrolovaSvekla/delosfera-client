@@ -20,12 +20,18 @@ interface TreeSingleSelectModalProps {
     onClose: () => void;
 
     title: string;
+    description?: string;
+
     options: TreeSelectOption[];
     selectedKey: string | null;
     onSelect: (key: string | null) => void;
 
     searchPlaceholder?: string;
-    clearLabel?: string; // подпись для кнопки очистки выбора, по умолчанию "Очистить"
+    clearLabel?: string;
+    // Текст кнопки очистки, когда выбор уже снят (selectedKey === null, кнопка неактивна) —
+    // по умолчанию используется тот же clearLabel, но, например, в фильтре СП внутри
+    // AssignResponsiblesModal здесь показывается развёрнутое пояснение вместо ярлыка действия.
+    clearedLabel?: string;
 }
 
 function buildTree(options: TreeSelectOption[]): TreeNode[] {
@@ -93,11 +99,13 @@ export function TreeSingleSelectModal({
                                           open,
                                           onClose,
                                           title,
+                                          description,
                                           options,
                                           selectedKey,
                                           onSelect,
                                           searchPlaceholder,
                                           clearLabel,
+                                          clearedLabel,
                                       }: TreeSingleSelectModalProps) {
     const {t} = useTranslation();
     const [query, setQuery] = useState("");
@@ -136,8 +144,10 @@ export function TreeSingleSelectModal({
         onClose();
     };
 
+    // Тот же результат, что и выбор узла (handlePick) — выбор снят/задан, модалка закрывается.
     const handleClear = () => {
         onSelect(null);
+        onClose();
     };
 
     const handleBackdropClick = () => {
@@ -221,7 +231,18 @@ export function TreeSingleSelectModal({
             >
                 {/* Заголовок */}
                 <div className="flex items-center justify-between px-5 py-4 border-b border-[#eef2f7] flex-none">
-                    <h3 className="m-0 text-[15px] font-semibold text-[#1c2740]">{title}</h3>
+                    <div className="pr-4">
+                        <h3 className="m-0 text-[15px] font-semibold text-[#1c2740]">
+                            {title}
+                        </h3>
+
+                        {description && (
+                            <p className="mt-1.5 mb-0 text-[12px] font-normal leading-[17px] text-[#8b97ab]">
+                                {description}
+                            </p>
+                        )}
+                    </div>
+
                     <button
                         onClick={onClose}
                         className="w-7 h-7 grid place-items-center rounded-full text-[#a3adbd] hover:bg-[#f2f5f9] hover:text-[#55617a] cursor-pointer"
@@ -246,13 +267,15 @@ export function TreeSingleSelectModal({
                         type="button"
                         onClick={handleClear}
                         disabled={selectedKey === null}
-                        className={`text-[11px] font-semibold cursor-pointer ${
+                        className={`text-[13px] font-semibold cursor-pointer ${
                             selectedKey === null
                                 ? "text-[#c3ccd8] cursor-default"
                                 : "text-[#4e57d6] hover:underline"
                         }`}
                     >
-                        {clearLabel ?? "Очистить выбор"}
+                        {selectedKey === null
+                            ? (clearedLabel ?? clearLabel ?? "Очистить выбор")
+                            : (clearLabel ?? "Очистить выбор")}
                     </button>
                 </div>
 

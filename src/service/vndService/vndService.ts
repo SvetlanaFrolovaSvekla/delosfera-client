@@ -3,6 +3,7 @@ import type {
     CreateVndRedactionRequest,
     CreateVndRequest, EditLastRevisionDirectlyRequest,
     UpdateVndRequisitesRequest,
+    VndActualizationExportRequest,
     VndActualizationSummaryResponse,
     LegacyLinkResolveResponse,
     VndLinksResponse, VndQuickSearchResult,
@@ -255,5 +256,42 @@ export const vndService = {
             signal,
         });
         return handleResponse<VndQuickSearchResult[]>(response);
+    },
+
+    /** Экспорт таблицы "Планирование актуализации" в Excel (кнопка "Экспорт плана в Excel" —
+     * см. ActualizationExportModal). Скачивает файл через авторизованный fetch и триггерит
+     * сохранение в браузере — как download() на странице годового плана актуализации: обычная
+     * ссылка ушла бы без заголовка авторизации, а тут ещё и тело запроса (фильтр+колонки), так
+     * что только POST. */
+    async exportActualizationPlan(request: VndActualizationExportRequest): Promise<void> {
+        const response = await fetch(`${API_BASE}/vnd/actualization/export`, {
+            method: "POST",
+            headers: {"Content-Type": "application/json", ...authHeaders()},
+            body: JSON.stringify(request),
+        });
+
+        if (!response.ok) {
+            const errorBody = await response.json().catch(() => null);
+            throw new Error(errorBody?.message ?? `Ошибка запроса: ${response.status}`);
+        }
+
+        // Тот же разбор Content-Disposition, что и в fetchFileBlob (downloadFile.ts): filename*
+        // (RFC 5987, корректная кириллица) предпочитается обычному filename= (ASCII-фолбэк).
+        const disposition = response.headers.get("Content-Disposition");
+        const starMatch = disposition?.match(/filename\*=UTF-8''([^;]+)/i);
+        const plainMatch = disposition?.match(/filename="?([^";]+)"?/i);
+        const fileName = starMatch
+            ? decodeURIComponent(starMatch[1])
+            : (plainMatch ? plainMatch[1] : "Планирование актуализации.xlsx");
+
+        const blob = await response.blob();
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement("a");
+        link.href = url;
+        link.download = fileName;
+        document.body.appendChild(link);
+        link.click();
+        link.remove();
+        URL.revokeObjectURL(url);
     },
 };

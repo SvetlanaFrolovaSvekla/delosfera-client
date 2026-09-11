@@ -25,26 +25,16 @@ import {
 import {
     ActualizationRequestsPanel
 } from "@/components/componentsVND/componentsActualizationPage/ActualizationRequestsPanel.tsx";
+import {
+    ActualizationExportModal
+} from "@/components/componentsVND/componentsActualizationPage/ActualizationExportModal.tsx";
 import {useAuth} from "@/context/AuthContext.ts";
 import {PermissionCode} from "@/constants/permissions/permissions.ts";
 import {useDictionaries} from "@/context/DictionariesContext.tsx";
-
-function toDateRangeFilter(v: DateFilterValue): VndSearchRequest["dueActualizationDate"] {
-    if (v.mode === "exact") {
-        return v.exact ? {exact: v.exact} : undefined;
-    }
-    return v.from || v.to
-        ? {from: v.from || undefined, to: v.to || undefined}
-        : undefined;
-}
-
-// "Планирование актуализации" — планируем сроки только для документов, которые в принципе уже
-// существуют как ВНД: действующих (active) и ещё не действующих, но уже прошедших согласование
-// хотя бы раз (onact/review/consol — в процессе актуализации, на согласовании или на консолидации,
-// т.е. "ещё не действующие" в терминах DocumentStatusKey). Черновики (draft — ещё ни разу не
-// отправленные на согласование) и архивные (arch) документы актуализировать нельзя/не нужно —
-// поэтому они сюда никогда не должны попадать, независимо от прочих фильтров на странице.
-const ACTUALIZATION_PLANNING_STATUSES: VndSearchRequest["statuses"] = ["active", "onact", "review", "consol"];
+import {
+    ACTUALIZATION_PLANNING_STATUSES,
+    toDateRangeFilter,
+} from "@/utils/actualizationSearchRequest.ts";
 
 export function ActualizationPage() {
     const {hasPermission} = useAuth();
@@ -92,6 +82,10 @@ export function ActualizationPage() {
     // "Только ни разу не актуализированные" — работает поверх табов Все/В норме/... (пересечение, а не замена)
     const [neverActualizedOnly, setNeverActualizedOnly] = useState(false);
 
+    // Модалка "Экспорт плана в Excel" (ActualizationPageHeader) — открывается с фильтрами и
+    // видимостью колонок страницы, но донастраивается и экспортирует независимо от неё.
+    const [exportOpen, setExportOpen] = useState(false);
+
     const {summary, loading: summaryLoading} = useVndActualizationSummary();
     const bucketSettings = useActualizationBucketSettings();
     const {
@@ -137,7 +131,7 @@ export function ActualizationPage() {
 
     return (
         <div className="w-full max-w-[1700px] mx-auto px-4 sm:px-6 lg:px-8 xl:px-10 pt-5 sm:pt-[26px] pb-10 sm:pb-[60px]">
-            <ActualizationPageHeader/>
+            <ActualizationPageHeader onExportClick={() => setExportOpen(true)}/>
 
             {isChiefEditor && <ActualizationRequestsPanel/>}
 
@@ -202,6 +196,21 @@ export function ActualizationPage() {
                     rubricNames={rubricNames}
                     onResetFilters={resetFilters}
                     bucketSettings={bucketSettings}
+                />
+            )}
+
+            {exportOpen && (
+                <ActualizationExportModal
+                    onClose={() => setExportOpen(false)}
+                    initialSearch={search}
+                    initialBucketFilter={bucketFilter}
+                    initialTypeFilters={typeFilters}
+                    initialDeveloperFilters={developerFilters}
+                    initialOrganFilters={organFilters}
+                    initialDueDateFilter={dueDateFilter}
+                    initialNeverActualizedOnly={neverActualizedOnly}
+                    initialVisibleCols={visibleCols}
+                    summary={summary}
                 />
             )}
         </div>

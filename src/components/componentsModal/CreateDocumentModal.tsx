@@ -14,9 +14,15 @@ interface DocumentTypeOption {
 
 const DOCUMENT_TYPES: DocumentTypeOption[] = [
     {value: "vnd", label: "Внутренний нормативный документ (ВНД)"},
-    {value: "memo", label: "Служебная записка (СЗ)", disabled: true},
-    {value: "procurement", label: "Документ на закупку", disabled: true},
+    {value: "memo", label: "Служебная записка (СЗ)"},
+    {value: "procurement", label: "Документ на закупку"},
 ];
+
+const ROUTE_BY_TYPE: Record<DocumentType, string> = {
+    vnd: "/base-vnd/new",
+    memo: "/sz/new",
+    procurement: "/prc/new",
+};
 
 interface CreateDocumentModalProps {
     onClose: () => void;
@@ -29,9 +35,7 @@ export function CreateDocumentModal({onClose}: CreateDocumentModalProps) {
     const canConfirm = selected !== null;
 
     const handleConfirm = () => {
-        if (selected === "vnd") {
-            navigate("/base-vnd/new");
-        }
+        if (selected) navigate(ROUTE_BY_TYPE[selected]);
     };
 
     return createPortal(

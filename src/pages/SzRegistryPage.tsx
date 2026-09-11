@@ -316,6 +316,7 @@ export function SzRegistryPage() {
                     <thead>
                     <tr className="bg-[#fafbfd] text-[11px] font-bold uppercase tracking-[.04em] text-[#a3adbd]">
                         <th className="px-4 py-2.5 text-left w-[140px]">Номер</th>
+                        <th className="px-4 py-2.5 text-left w-[130px]">Дата регистрации</th>
                         <th className="px-4 py-2.5 text-left">Тема</th>
                         <th className="px-4 py-2.5 text-left w-[130px]">Вид</th>
                         <th className="px-4 py-2.5 text-left w-[170px]">Автор</th>
@@ -325,9 +326,9 @@ export function SzRegistryPage() {
                     </thead>
                     <tbody>
                     {loading ? (
-                        <tr><td colSpan={6} className="px-4 py-10 text-center text-[13px] text-[#8b97ab]">Загрузка…</td></tr>
+                        <tr><td colSpan={7} className="px-4 py-10 text-center text-[13px] text-[#8b97ab]">Загрузка…</td></tr>
                     ) : items.length === 0 ? (
-                        <tr><td colSpan={6} className="px-4 py-10 text-center text-[13px] text-[#8b97ab]">Записок нет</td></tr>
+                        <tr><td colSpan={7} className="px-4 py-10 text-center text-[13px] text-[#8b97ab]">Записок нет</td></tr>
                     ) : items.map((i) => {
                         const tone = STATUS_TONE[i.statusCode] ?? colors.status.draft;
                         return (
@@ -337,6 +338,7 @@ export function SzRegistryPage() {
                                         {i.regNumber ?? "— без номера"}
                                     </Link>
                                 </td>
+                                <td className="px-4 py-2.5 text-[#55617a]">{i.registeredOn ? formatDate(i.registeredOn) : "—"}</td>
                                 <td className="px-4 py-2.5">
                                     <Link to={`/sz/${i.id}`} className="text-[#1c2740] no-underline hover:underline">{i.title}</Link>
                                     {i.isPaperCarrier && (

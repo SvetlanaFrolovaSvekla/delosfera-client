@@ -7,10 +7,11 @@ interface DictOption {
     label: string;
 }
 
-interface RawUserResponse {
+interface LookupUser {
     id: number;
     fullName: string;
-    email: string;
+    position?: string | null;
+    orgUnit?: string | null;
 }
 
 export function useUserOptions() {
@@ -21,13 +22,19 @@ export function useUserOptions() {
     useEffect(() => {
         let cancelled = false;
 
+        // Раньше дёргали GET /users — а он отдаёт СТРАНИЦУ (items, total, 20 по умолчанию),
+        // а не массив: data.map падал/усекал список участников до двадцати. Берём
+        // /users/lookup — плоский список всех активных, тот же, что и в подборе людей.
         axiosInstance
-            .get<RawUserResponse[]>("users")
+            .get<LookupUser[]>("users/lookup")
             .then(({data}) => {
                 if (cancelled) return;
                 setOptions(
                     data
-                        .map((u) => ({key: String(u.id), label: `${u.fullName} (${u.email})`}))
+                        .map((u) => {
+                            const где = [u.position, u.orgUnit].filter(Boolean).join(" · ");
+                            return {key: String(u.id), label: где ? `${u.fullName} (${где})` : u.fullName};
+                        })
                         .sort((a, b) => a.label.localeCompare(b.label, "ru")),
                 );
             })

@@ -75,6 +75,13 @@ export function UserPicker({
             seniority(a) - seniority(b) || a.fullName.localeCompare(b.fullName, "ru"));
     }, [users, запрос, bySeniority]);
 
+    // В подборе полтысячи человек: без ввода запроса рисовать их все — сотни DOM-узлов
+    // и подвисание при открытии. Нужного находят поиском, а не листанием, поэтому
+    // рендерим первые сто, а об усечении подсказываем.
+    const ЛИМИТ = 100;
+    const показаны = найденные.slice(0, ЛИМИТ);
+    const усечено = найденные.length > ЛИМИТ;
+
     const подпись = (u: PickableUser) =>
         [u.position, u.orgUnit].filter(Boolean).join(" · ");
 
@@ -137,13 +144,13 @@ export function UserPicker({
                             <div className="px-3.5 py-3 text-[12.5px] text-[#8b97ab]">Никого не нашли</div>
                         )}
 
-                        {найденные.map((u, i) => {
+                        {показаны.map((u, i) => {
                             const выбран = u.id === value;
 
                             // Заголовок группы — только когда список по старшинству
                             // и группа началась: иначе порядок читается как случайный.
                             const заголовок = bySeniority
-                                && (i === 0 || seniority(найденные[i - 1]) !== seniority(u))
+                                && (i === 0 || seniority(показаны[i - 1]) !== seniority(u))
                                 ? ["Правление", "Руководители подразделений", "Остальные"][seniority(u)]
                                 : null;
 
@@ -176,6 +183,12 @@ export function UserPicker({
                                 </div>
                             );
                         })}
+
+                        {усечено && (
+                            <div className="border-t border-[#f2f5f9] px-3.5 py-2 text-[11.5px] text-[#a3adbd]">
+                                Показаны первые {ЛИМИТ}. Уточните поиск.
+                            </div>
+                        )}
                     </div>
                 </div>
             )}

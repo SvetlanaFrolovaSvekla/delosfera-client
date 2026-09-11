@@ -87,10 +87,34 @@ export const ProcurementProtocolPage = () => {
                     Протокол ещё не сформирован. Он собирается из сравнительной таблицы после
                     определения победителя и требуется при сумме свыше установленного порога (PRC-10).
                 </p>
+
+                {/* Победитель определяется НЕ здесь, а в карточке закупки (кнопка «Победитель»
+                    в панели предложений/конкурса). Пока его нет, «Сформировать» заведомо падает —
+                    поэтому прямо ведём пользователя по шагам и в карточку, а не оставляем в тупике. */}
+                <ol style={{fontSize: 13, color: "#55617a", maxWidth: 640, lineHeight: 1.8, paddingLeft: 20, margin: "6px 0 16px"}}>
+                    <li>В карточке закупки соберите предложения / заявки и заполните сравнительную таблицу.</li>
+                    <li>Там же определите победителя — кнопка «Победитель» в панели предложений (или конкурса).</li>
+                    <li>Вернитесь сюда и нажмите «Сформировать протокол».</li>
+                </ol>
+
                 {error && <div style={{color: "#e0483d", fontSize: 13, marginBottom: 10}}>{error}</div>}
-                <button onClick={() => run(() => protocolService.generate(requestId))} disabled={busy} style={primaryButton}>
-                    {busy ? "Формирование…" : "Сформировать протокол"}
-                </button>
+
+                <div style={{display: "flex", gap: 10, flexWrap: "wrap"}}>
+                    <Link to={`/prc/${requestId}`} style={{...primaryButton, textDecoration: "none", display: "inline-flex", alignItems: "center"}}>
+                        ← Перейти в карточку и определить победителя
+                    </Link>
+                    <button
+                        onClick={() => run(() => protocolService.generate(requestId))}
+                        disabled={busy}
+                        style={{
+                            height: 38, padding: "0 16px", borderRadius: 10, border: "1px solid #e5e9f0",
+                            background: "#fff", color: "#3a4560", fontWeight: 600, fontSize: 13,
+                            cursor: busy ? "not-allowed" : "pointer",
+                        }}
+                    >
+                        {busy ? "Формирование…" : "Сформировать протокол"}
+                    </button>
+                </div>
             </div>
         );
     }

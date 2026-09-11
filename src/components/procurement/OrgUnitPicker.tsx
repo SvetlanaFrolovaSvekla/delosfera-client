@@ -39,6 +39,11 @@ export function OrgUnitPicker({units, value, onChange, ownUnitId, placeholder}: 
             Number(b.id === ownUnitId) - Number(a.id === ownUnitId));
     }, [units, запрос, ownUnitId]);
 
+    // Подразделений под две сотни — без ввода запроса рендерим первые сто.
+    const ЛИМИТ = 100;
+    const показаны = найденные.slice(0, ЛИМИТ);
+    const усечено = найденные.length > ЛИМИТ;
+
     return (
         <div ref={ref} style={{position: "relative"}}>
             <button
@@ -88,7 +93,7 @@ export function OrgUnitPicker({units, value, onChange, ownUnitId, placeholder}: 
                             </div>
                         )}
 
-                        {найденные.map((unit) => {
+                        {показаны.map((unit) => {
                             const выбран = unit.id === value;
                             return (
                                 <button
@@ -113,6 +118,12 @@ export function OrgUnitPicker({units, value, onChange, ownUnitId, placeholder}: 
                                 </button>
                             );
                         })}
+
+                        {усечено && (
+                            <div style={{padding: "8px 14px", fontSize: 11.5, color: "#a3adbd", borderTop: "1px solid #f2f5f9"}}>
+                                Показаны первые {ЛИМИТ}. Уточните поиск.
+                            </div>
+                        )}
                     </div>
                 </div>
             )}

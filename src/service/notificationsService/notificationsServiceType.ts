@@ -30,6 +30,13 @@ export interface Notification {
     entityId: number | null;
     url: string | null;
 
+    // Файл, приложенный к уведомлению (например, Excel-план единоразовой рассылки
+    // актуализации) — виден и скачивается прямо из карточки уведомления, без почты
+    // (см. GET /api/files/{id}, доступ проверяет VndFileAccessAuthorizer на бэке).
+    // Null, если к уведомлению ничего не приложено.
+    attachmentFileId: number | null;
+    attachmentFileName: string | null;
+
     createdByUserId: number | null;
     createdByName: string | null;
 

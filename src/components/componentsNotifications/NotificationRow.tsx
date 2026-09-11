@@ -4,7 +4,7 @@ import type { Notification } from "@/service/notificationsService/notificationsS
 import { HighlightText } from "@/utils/HighlightText.tsx";
 import { NOTIFICATION_CATEGORY_META, DEFAULT_CATEGORY_META } from "@/constants/notificationCategory.ts";
 import { SeverityDot } from "./SeverityDot.tsx";
-import { Bell, ChevronRight, Star, Trash2 } from "lucide-react";
+import { Bell, ChevronRight, Paperclip, Star, Trash2 } from "lucide-react";
 import { Tooltip } from "../componentsGeneral/Tooltip.tsx";
 import { ConfirmDeleteModal } from "@/components/componentsGeneral/modal/ConfirmDeleteModal.tsx";
 import { toast } from "@/service/toastService.ts";
@@ -99,6 +99,11 @@ export function NotificationRow({
                             >
                                 {categoryLabel}
                             </span>
+                        )}
+                        {n.attachmentFileId && (
+                            <Tooltip content={n.attachmentFileName ?? "Есть вложение"} side="top">
+                                <Paperclip className="h-3.5 w-3.5 flex-none text-slate-400" />
+                            </Tooltip>
                         )}
                     </div>
 

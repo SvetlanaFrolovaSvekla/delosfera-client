@@ -1,12 +1,13 @@
 import {useEffect, useState} from "react";
 import {useNavigate, useParams} from "react-router-dom";
-import {Bell, ChevronRight, ArrowLeft, Star, Trash2} from "lucide-react";
+import {Bell, ChevronRight, ArrowLeft, Star, Trash2, Paperclip, Download} from "lucide-react";
 
 import {useNotificationById} from "@/hooks/notificationsHooks/useNotificationById.ts";
 import {notificationsService} from "@/service/notificationsService/notificationsService.ts";
 import type {NotificationCategoryOption} from "@/service/notificationsService/notificationsServiceType.ts";
 import {NOTIFICATION_CATEGORY_META, DEFAULT_CATEGORY_META} from "@/constants/notificationCategory.ts";
 import {SeverityDot} from "@/components/componentsNotifications/SeverityDot.tsx";
+import {downloadWithToast} from "@/utils/downloadFile.ts";
 
 import {Loader} from "@/components/componentsGeneral/Loader";
 import {EmptyState} from "@/components/componentsGeneral/EmptyState.tsx";
@@ -27,6 +28,7 @@ export function OpenNotificationPage() {
     const notificationId = id ? Number(id) : undefined;
 
     const [categories, setCategories] = useState<NotificationCategoryOption[]>([]);
+    const [downloading, setDownloading] = useState(false);
 
     useEffect(() => {
         notificationsService.getCategories().then(setCategories).catch(() => setCategories([]));
@@ -81,6 +83,18 @@ export function OpenNotificationPage() {
         if (!window.confirm("Удалить это уведомление?")) return;
         await remove();
         navigate("/notifications");
+    };
+
+    const handleDownloadAttachment = async () => {
+        if (!notification.attachmentFileId) return;
+        setDownloading(true);
+        try {
+            await downloadWithToast(notification.attachmentFileId, notification.attachmentFileName ?? "файл.xlsx");
+        } catch {
+            // downloadWithToast уже показал тост с ошибкой
+        } finally {
+            setDownloading(false);
+        }
     };
 
     return (
@@ -158,6 +172,22 @@ export function OpenNotificationPage() {
                         {notification.body}
                     </p>
                 </div>
+
+                {/* Файл, приложенный к уведомлению (например, Excel-план единоразовой рассылки
+                    актуализации) — доступен прямо здесь, без почты. */}
+                {notification.attachmentFileId && (
+                    <div className="border-t border-slate-100 px-6 py-4">
+                        <button
+                            onClick={handleDownloadAttachment}
+                            disabled={downloading}
+                            className="cursor-pointer inline-flex items-center gap-2 rounded-lg border border-[#e5e9f0] bg-[#f6f8fb] px-4 py-2 text-sm font-semibold text-[#3a4560] transition hover:bg-[#eef1f7] disabled:cursor-not-allowed disabled:opacity-60"
+                        >
+                            <Paperclip className="h-4 w-4 text-[#8b97ab]"/>
+                            {notification.attachmentFileName ?? "Вложение"}
+                            <Download className="h-4 w-4"/>
+                        </button>
+                    </div>
+                )}
 
                 {notification.url && (
                     <div className="border-t border-slate-100 px-6 py-4">

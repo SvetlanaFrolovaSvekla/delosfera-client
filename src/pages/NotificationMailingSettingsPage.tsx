@@ -6,6 +6,8 @@ import {useState} from "react";
 
 import {ActualizationResponsiblesSection} from "@/components/componentsVND/componentsNotificationSettings/ActualizationResponsiblesSection.tsx";
 import {ActualizationMonthlyDigestSection} from "@/components/componentsVND/componentsNotificationSettings/ActualizationMonthlyDigestSection.tsx";
+import {ActualizationCriticalRemindersSection} from "@/components/componentsVND/componentsNotificationSettings/ActualizationCriticalRemindersSection.tsx";
+import {ActualizationOneTimeMailingSection} from "@/components/componentsVND/componentsNotificationSettings/ActualizationOneTimeMailingSection.tsx";
 
 interface Section {
     id: string;
@@ -23,6 +25,16 @@ const SECTIONS: Section[] = [
         id: "monthly",
         title: "Ежемесячные уведомления",
         subtitle: "Сводка 1-го числа с планом актуализации в Excel",
+    },
+    {
+        id: "criticalReminders",
+        title: "Критические напоминания",
+        subtitle: "Уведомления за N дней до наступления просрочки актуализации",
+    },
+    {
+        id: "oneTimeMailing",
+        title: "Создать единоразовую рассылку",
+        subtitle: "Разовое письмо с планом актуализации выбранным получателям",
     },
 ];
 
@@ -63,6 +75,8 @@ export function NotificationMailingSettingsPage() {
                 <section className="min-w-0">
                     {selected === "responsibles" && <ActualizationResponsiblesSection/>}
                     {selected === "monthly" && <ActualizationMonthlyDigestSection/>}
+                    {selected === "criticalReminders" && <ActualizationCriticalRemindersSection/>}
+                    {selected === "oneTimeMailing" && <ActualizationOneTimeMailingSection/>}
                 </section>
             </div>
         </div>

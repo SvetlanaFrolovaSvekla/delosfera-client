@@ -43,6 +43,8 @@ export const TenderPanel = ({requestId, documentId, onChanged}: Props) => {
     const [bidForm, setBidForm] = useState({title: "", inn: "", price: 0, submittedOn: ""});
     /** Пакет публикации (INT-05): текст объявления собирается из карточки конкурса. */
     const [publication, setPublication] = useState<PublicationPackage | null>(null);
+    /** Куда фактически размещено объявление — отметка о размещении (PRC-13). */
+    const [placedAt, setPlacedAt] = useState("");
 
     /** Эксперт, чьё заключение сейчас редактируется, и его черновик. */
     const [conclusionFor, setConclusionFor] = useState<number | null>(null);
@@ -163,6 +165,7 @@ export const TenderPanel = ({requestId, documentId, onChanged}: Props) => {
                     <div key={m.id} style={{display: "flex", alignItems: "center", gap: 10, fontSize: 12.5}}>
                         <span style={{flex: 1, color: "#26324a"}}>
                             <b>{m.userName}</b> · {m.roleTitle}
+                            {!m.isVoting && <span style={{color: "#8b97ab"}}> · без права голоса</span>}
                             {m.isBoardMember && " · ЧП"}
                             {m.isAccountant && " · УБУиО"}
                             {m.conclusionFileName && (
@@ -396,9 +399,35 @@ export const TenderPanel = ({requestId, documentId, onChanged}: Props) => {
                                 </button>
                             </div>
 
+                            {/* Отметка о размещении объявления: без неё конкурсный период
+                                не начат и заявки нельзя вскрыть (сервер вернёт ошибку). */}
+                            {tender.publishedAt ? (
+                                <div style={{marginTop: 12, fontSize: 12.5, color: "#1f8a4c"}}>
+                                    {tender.isLimited ? "Приглашения разосланы: " : "Объявление размещено: "}
+                                    <b>{tender.publishedAt}</b>
+                                </div>
+                            ) : (
+                                <div style={{display: "flex", gap: 8, marginTop: 12, alignItems: "center", flexWrap: "wrap"}}>
+                                    <input
+                                        value={placedAt}
+                                        onChange={e => setPlacedAt(e.target.value)}
+                                        placeholder={tender.isLimited ? "Кому разосланы приглашения" : "Где размещено: сайт Банка, tenders.kg"}
+                                        style={{...input, width: 320}}
+                                    />
+                                    <button
+                                        onClick={() => run(() => tenderService.confirmPublication(tender.id, placedAt))}
+                                        disabled={busy || !placedAt.trim()}
+                                        style={secondaryButton}
+                                    >
+                                        Отметить размещение
+                                    </button>
+                                </div>
+                            )}
+
                             <button
                                 onClick={() => run(() => tenderService.open(tender.id))}
-                                disabled={busy}
+                                disabled={busy || !tender.publishedAt}
+                                title={tender.publishedAt ? undefined : "Сначала отметьте размещение объявления"}
                                 style={{...primaryButton, marginTop: 12}}
                             >
                                 Вскрыть заявки

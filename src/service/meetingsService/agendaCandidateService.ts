@@ -50,11 +50,3 @@ export const agendaCandidateService = {
         await apiClient.post(`/meetings/candidates/${szId}/decline`, null, {params: {body}});
     },
 };
-
-/** Поставить или снять отметку «вынести на коллегиальный орган» на записке. */
-export async function submitSzToBody(szId: number, body: MeetingBody | null, question?: string) {
-    const {data} = await apiClient.post<{
-        body: string | null; question: string | null; requestedAt: string | null;
-    }>(`/sz/${szId}/submit-to-body`, {body, question});
-    return data;
-}

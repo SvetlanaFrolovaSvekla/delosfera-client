@@ -31,6 +31,8 @@ export const SupplierRegistryPage = () => {
     const [onlyBlacklisted, setOnlyBlacklisted] = useState(false);
     const [busy, setBusy] = useState(false);
     const [error, setError] = useState<string | null>(null);
+    /** Новый поставщик — чтобы завести его и внести в чёрный список, не дожидаясь заявки. */
+    const [draft, setDraft] = useState({title: "", inn: ""});
 
     const load = useCallback(async () => {
         const {data} = await apiClient.get<Supplier[]>(BASE, {
@@ -55,6 +57,14 @@ export const SupplierRegistryPage = () => {
         } finally {
             setBusy(false);
         }
+    };
+
+    const addSupplier = () => {
+        if (!draft.title.trim()) return;
+        return run(async () => {
+            await apiClient.post(BASE, {title: draft.title.trim(), inn: draft.inn.trim() || undefined});
+            setDraft({title: "", inn: ""});
+        });
     };
 
     const blacklist = (s: Supplier) => {
@@ -87,6 +97,29 @@ export const SupplierRegistryPage = () => {
                            style={{accentColor: "#2f68f5"}}/>
                     только чёрный список
                 </label>
+            </div>
+
+            {/* Завести поставщика вручную: без этого в реестр попадали только те, кто
+                подал КП, и внести в чёрный список нового поставщика было нельзя. */}
+            <div style={{display: "flex", gap: 8, flexWrap: "wrap", alignItems: "center"}}>
+                <input
+                    value={draft.title}
+                    onChange={e => setDraft({...draft, title: e.target.value})}
+                    placeholder="Наименование нового поставщика"
+                    style={{minWidth: 260, height: 36, padding: "0 12px", border: "1px solid #e5e9f0",
+                        borderRadius: 9, background: "#fff", font: "inherit", fontSize: 12.5, outline: "none"}}
+                />
+                <input
+                    value={draft.inn}
+                    onChange={e => setDraft({...draft, inn: e.target.value})}
+                    placeholder="ИНН"
+                    style={{width: 160, height: 36, padding: "0 12px", border: "1px solid #e5e9f0",
+                        borderRadius: 9, background: "#fff", font: "inherit", fontSize: 12.5, outline: "none"}}
+                />
+                <button onClick={addSupplier} disabled={busy || !draft.title.trim()}
+                        style={{...button, background: "#2f68f5", color: "#fff", borderColor: "#2f68f5"}}>
+                    Добавить поставщика
+                </button>
             </div>
 
             {error && <div style={{color: "#e0483d", fontSize: 13}}>{error}</div>}
@@ -165,7 +198,7 @@ export const SupplierRegistryPage = () => {
 
                 {items.length === 0 && (
                     <div style={{padding: 28, textAlign: "center", color: "#8b97ab", fontSize: 13}}>
-                        Поставщиков нет — они заводятся при регистрации коммерческих предложений
+                        Поставщиков нет — заведите вручную выше или они появятся при регистрации коммерческих предложений
                     </div>
                 )}
             </section>

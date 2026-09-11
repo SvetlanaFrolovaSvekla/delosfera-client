@@ -137,13 +137,17 @@ function MethodRow({method, canEdit, busy, onSave}: {
     busy: boolean;
     onSave: (req: {titleRu: string; shortTitleRu: string; minProposals: number; isActive: boolean}) => void;
 }) {
+    const [title, setTitle] = useState(method.titleRu);
     const [short, setShort] = useState(method.shortTitleRu);
     const [min, setMin] = useState(method.minProposals);
-    const менялось = short !== method.shortTitleRu || min !== method.minProposals;
+    const менялось = title !== method.titleRu || short !== method.shortTitleRu || min !== method.minProposals;
 
     return (
         <div className="flex items-center gap-3 px-4 py-2.5 border-b border-[#eef2f7] last:border-b-0">
-            <span className="flex-1 min-w-0 text-[13px] text-[#1c2740] truncate">{method.titleRu}</span>
+            {/* Полное название способа редактируется: банк меняет наименования по
+                Положению (например «Простая» → «Запрос ценовых предложений»). */}
+            <input className={`${input} flex-1 min-w-0`} value={title} disabled={!canEdit}
+                   onChange={(e) => setTitle(e.target.value)}/>
 
             <label className="flex items-center gap-1.5 text-[12px] text-[#8b97ab]">
                 короткое
@@ -159,8 +163,8 @@ function MethodRow({method, canEdit, busy, onSave}: {
 
             {canEdit && (
                 <button
-                    onClick={() => onSave({titleRu: method.titleRu, shortTitleRu: short, minProposals: min, isActive: method.isActive})}
-                    disabled={busy || !менялось}
+                    onClick={() => onSave({titleRu: title.trim(), shortTitleRu: short.trim(), minProposals: min, isActive: method.isActive})}
+                    disabled={busy || !менялось || !title.trim() || !short.trim()}
                     className="grid h-8 w-8 place-items-center rounded-[8px] text-[#2f68f5]
                                hover:bg-[#f0f5ff] disabled:opacity-30" title="Сохранить">
                     <Save size={15}/>

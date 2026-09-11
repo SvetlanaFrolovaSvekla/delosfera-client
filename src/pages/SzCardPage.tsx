@@ -628,12 +628,15 @@ export function SzCardPage() {
                             bySeniority
                             placeholder="Найти по фамилии, должности или подразделению"
                             onChange={(u) => {
-                                // Подразделение адресата подставляется само: записка почти
-                                // всегда идёт человеку в его подразделении, и заполнять это
-                                // второй раз руками незачем. Переопределить можно ниже.
+                                // Адресат и подписант — одно лицо: записку подписывает тот,
+                                // кому она адресована. Проставляя «Кому», сразу проставляем
+                                // и подписанта (ниже поле можно переопределить). Подразделение
+                                // адресата подставляется само — записка почти всегда идёт
+                                // человеку в его подразделении.
                                 setForm((f) => ({
                                     ...f,
                                     addresseeUserId: u?.id ?? null,
+                                    signerUserId: u?.id ?? null,
                                     correspondentUnitId: u?.orgUnitId ?? f.correspondentUnitId ?? null,
                                 }));
                             }}
@@ -780,6 +783,7 @@ export function SzCardPage() {
                             searchable
                             searchPlaceholder="Поиск рубрики…"
                             menuWidth="320px"
+                            className="inline-block mt-1"
                         />
                     ) : (
                         <div className="flex flex-wrap gap-2">

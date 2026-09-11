@@ -91,40 +91,49 @@ export function SzPrintPage() {
                     </span>
                 </div>
 
-                <div className="text-center">
-                    <div className="text-[15px] font-bold uppercase tracking-[.06em]">Служебная записка</div>
-                    <div className="mt-1 text-[12px] text-[#55617a]">
-                        {form.regNumber ? `№ ${form.regNumber}` : "без номера"}
-                        {form.registeredOn && ` от ${formatDate(form.registeredOn)}`}
-                    </div>
+                {/* Реквизиты бланка: № и дата — справа сверху, как на письме. */}
+                <div className="mb-4 text-right text-[11.5px] text-[#55617a]">
+                    {form.regNumber ? `№ ${form.regNumber}` : "без номера"}
+                    {form.registeredOn && ` от ${formatDate(form.registeredOn)}`}
                 </div>
 
-                <div className="mt-6 grid grid-cols-[38mm_1fr] gap-y-1.5 text-[12px]">
-                    <div className="text-[#55617a]">Вид записки</div>
-                    <div>{form.kind ?? "—"}{form.hrKind && ` · ${form.hrKind}`}</div>
+                {/* Шапка как в бланке записки Банка: Кому / От / Дата / Тема. */}
+                <div className="grid grid-cols-[24mm_1fr] gap-y-[3px] text-[12.5px] leading-[1.5]">
+                    <div className="font-semibold">Кому:</div>
+                    <div>
+                        {form.addresseeName ?? form.correspondentUnit ?? "—"}
+                        {form.addresseeName && form.correspondentUnit && `, ${form.correspondentUnit}`}
+                    </div>
 
-                    <div className="text-[#55617a]">Автор</div>
+                    <div className="font-semibold">От:</div>
                     <div>{form.authorName ?? "—"}{form.authorUnit && `, ${form.authorUnit}`}</div>
 
-                    <div className="text-[#55617a]">Адресат</div>
-                    <div>{form.correspondentUnit ?? "—"}</div>
+                    <div className="font-semibold">Дата:</div>
+                    <div>{form.registeredOn ? formatDate(form.registeredOn) : "—"}</div>
+
+                    <div className="font-semibold">Тема:</div>
+                    <div className="font-semibold">{form.title}</div>
+                </div>
+
+                {/* Внутренние реквизиты СЭД (вид, срок, доп. поля формы) — мелким под шапкой. */}
+                <div className="mt-3 grid grid-cols-[38mm_1fr] gap-y-1 text-[11px] text-[#55617a]">
+                    <div>Вид записки</div>
+                    <div>{form.kind ?? "—"}{form.hrKind && ` · ${form.hrKind}`}</div>
 
                     {form.dueDate && (
                         <>
-                            <div className="text-[#55617a]">Срок исполнения</div>
+                            <div>Срок исполнения</div>
                             <div>{formatDate(form.dueDate)}</div>
                         </>
                     )}
 
                     {form.fields.map((f) => (
                         <div key={f.label} className="contents">
-                            <div className="text-[#55617a]">{f.label}</div>
+                            <div>{f.label}</div>
                             <div>{f.value}</div>
                         </div>
                     ))}
                 </div>
-
-                <div className="mt-6 text-[13px] font-semibold">{form.title}</div>
                 {form.body && (
                     /* Разметку выводим как разметку: в тексте бывают таблицы расчётов
                        и выделенные условия, и на бумаге они должны остаться собой.

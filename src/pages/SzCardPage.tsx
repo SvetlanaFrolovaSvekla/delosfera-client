@@ -410,8 +410,10 @@ export function SzCardPage() {
             applyDetails(updated);
             await reload();
             setNotice(action === "submit"
-                ? "Записка отправлена на согласование"
-                : `Зарегистрирована: ${updated.regNumber} · срок исполнения ${formatDate(updated.dueDate)}`);
+                ? (updated.statusCode === "PendingRegistration"
+                    ? "Записка отправлена в Сектор делопроизводства на регистрацию"
+                    : "Записка отправлена на согласование")
+                : `Зарегистрирована: ${updated.regNumber} · отправлена на согласование · срок исполнения ${formatDate(updated.dueDate)}`);
         } catch (e) {
             // Сервер объясняет отказ по существу: не выбран согласующий, не задан
             // маршрут, записка не в том статусе. Подменяя это общей фразой, мы
@@ -471,7 +473,7 @@ export function SzCardPage() {
                             disabled={saving}
                             className="h-10 px-4 rounded-[10px] border border-[#e5e9f0] bg-white text-[#2f68f5] font-semibold text-[13px] cursor-pointer hover:bg-[#f6f8fb] disabled:opacity-50"
                         >
-                            Отправить на согласование
+                            {sz.regNumber ? "Отправить на согласование" : "Отправить на регистрацию"}
                         </button>
                     )}
                     {sz?.statusCode === "PendingRegistration" && (

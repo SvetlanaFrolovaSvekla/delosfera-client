@@ -1,6 +1,7 @@
 import {getDeadlineUrgency, getRemainingLabel} from "@/utils/dateUtils.ts";
 import {DEADLINE_URGENCY_META} from "@/constants/vndStatus.ts";
 import type {VndTaskResponse} from "@/service/tasksVndService/tasksServiceTypes.ts";
+import type {InboxTask} from "@/service/workflowService/taskInboxService.ts";
 
 export function getDeadlineTone(deadlineAt: string | null, totalHours: number | null): { label: string; color: string } {
     if (!deadlineAt) return { label: "—", color: "#8b97ab" };
@@ -82,5 +83,15 @@ export function matchesTaskSearch(task: VndTaskResponse, query: string): boolean
     if (!q) return true;
 
     return [task.vndTitle, task.vndCode, task.redactionCode, task.initiatorName, task.rejectedByName]
+        .some((field) => field?.toLowerCase().includes(q));
+}
+
+// Тот же поиск по подстроке, но для сводного реестра задач (TaskInboxPage) — по названию
+// документа, рег. номеру, типу контура/задачи и тому, за кого задача выполняется по замещению.
+export function matchesInboxTaskSearch(task: InboxTask, query: string): boolean {
+    const q = query.trim().toLowerCase();
+    if (!q) return true;
+
+    return [task.documentTitle, task.regNumber, task.documentTypeTitle, task.taskType, task.onBehalfOf]
         .some((field) => field?.toLowerCase().includes(q));
 }

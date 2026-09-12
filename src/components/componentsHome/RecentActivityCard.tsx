@@ -2,11 +2,13 @@
 import {useState} from "react";
 import {useTranslation} from "react-i18next";
 import {useNavigate} from "react-router-dom";
+import {History} from "lucide-react";
 import type {ActivityIcon} from "@/service/activityLogService/activityLogServiceType.ts";
 import {useRecentActivity} from "@/hooks/activityLogHooks/useRecentActivity.ts";
 import {timeAgo} from "@/utils/dateUtils.ts";
 import {Icon} from "@/components/icons/Icon";
 import {Loader} from "@/components/componentsGeneral/Loader.tsx";
+import {EmptyState} from "@/components/componentsGeneral/EmptyState.tsx";
 
 const ICON_STYLE: Record<ActivityIcon, { iconName: string; col: string; bg: string }> = {
     check: {iconName: "check", col: "#1c7a4d", bg: "#e2f4ea"},
@@ -82,10 +84,12 @@ export function RecentActivityCard({limit = 15, module}: RecentActivityCardProps
                 ) : error ? (
                     <div className="py-6 text-center text-[13px] text-[#c0392b]">{error}</div>
                 ) : items.length === 0 ? (
-                    <div className="py-6 text-center text-[13px] text-[#8b97ab]">
-                        {/* Пока нет событий */}
-                        {t("home.recentActivity.empty")}
-                    </div>
+                    <EmptyState
+                        embedded
+                        icon={History}
+                        title={t("home.recentActivity.empty")}
+                        description={t("home.recentActivity.emptyDescription")}
+                    />
                 ) : (
                     items.map((item) => {
                         const style = ICON_STYLE[item.icon] ?? ICON_STYLE.info;

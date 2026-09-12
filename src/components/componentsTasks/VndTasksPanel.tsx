@@ -1,5 +1,6 @@
 import {useEffect, useMemo, useState} from "react";
 import {useSearchParams} from "react-router-dom";
+import {CheckCircle2} from "lucide-react";
 import {useVndTasks} from "@/hooks/tasksVndHooks/useVndTasks.ts";
 import {useVndTasksDone} from "@/hooks/tasksVndHooks/useVndTasksDone.ts";
 import {useVndTaskCounts} from "@/hooks/tasksVndHooks/useVndTaskCounts.ts";
@@ -7,7 +8,7 @@ import {Tabs} from "@/components/componentsGeneral/Tabs.tsx";
 import {SelectDropdown} from "@/components/componentsGeneral/selects/SingleSelects/SelectDropdown.tsx";
 import {SearchBar} from "@/components/componentsGeneral/SearchBar.tsx";
 import {VndTaskList} from "@/components/componentsTasks/VndTaskList.tsx";
-import {emptyTextByScope, type TasksScope} from "@/constants/tasksConst.ts";
+import {emptyTextByScope, emptyDescriptionByScope, emptyIconByScope, type TasksScope} from "@/constants/tasksConst.ts";
 import {matchesTaskSearch} from "@/utils/tasksUtils.ts";
 import type {TaskScope, TaskStagePhase} from "@/service/tasksVndService/tasksServiceTypes.ts";
 
@@ -166,12 +167,29 @@ export function VndTasksPanel() {
     }, [phaseFilteredTasks, filteredTasks, searchQuery, topTab, sectionLabel, isDoneView]);
 
     // Если поиск сузил непустой список до нуля карточек — это "ничего не нашлось", а не
-    // "в разделе пусто" (у этих двух причин разные тексты-заглушки).
-    const emptyText = searchQuery.trim() && rawTasks.length > 0
+    // "в разделе пусто" (у этих двух причин разные тексты-заглушки и значки — см. ниже).
+    const isSearchEmpty = searchQuery.trim().length > 0 && rawTasks.length > 0;
+
+    const emptyText = isSearchEmpty
         ? "Ничего не найдено"
         : isDoneView
             ? "Пока нет выполненных задач"
             : emptyTextByScope[scope];
+
+    // Пояснение и значок под заголовком — свои для "ничего не нашлось" (лупа с крестиком,
+    // значение по умолчанию у EmptyState) и "выполненные пусты", а для обычного пустого
+    // раздела — по разделу (согласование/актуализация/консолидация и т.п.).
+    const emptyDescription = isSearchEmpty
+        ? "Попробуйте изменить запрос поиска."
+        : isDoneView
+            ? "Здесь появится история решений по этому разделу, как только вы примете первое."
+            : emptyDescriptionByScope[scope];
+
+    const emptyIcon = isSearchEmpty
+        ? undefined
+        : isDoneView
+            ? CheckCircle2
+            : emptyIconByScope[scope];
 
     // Смена раздела возвращает на "Активные" и сбрасывает фильтр этапа — унесённые на другой
     // раздел, они выглядели бы как пустой список без причины. Поиск намеренно не сбрасывается
@@ -269,6 +287,8 @@ export function VndTasksPanel() {
                 tasks={filteredTasks}
                 isLoading={isLoading}
                 emptyText={emptyText}
+                emptyDescription={emptyDescription}
+                emptyIcon={emptyIcon}
                 searchQuery={searchQuery}
             />
 

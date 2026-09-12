@@ -87,12 +87,14 @@
       "title": "Recent Activity",
       "loading": "Loading activity…",
       "empty": "No events yet",
+      "emptyDescription": "Actions on documents and tasks will appear here as soon as something happens.",
       "viewAll": "All activity"
     },
     "recentNotifications": {
       "title": "Recent Notifications",
       "loading": "Loading notifications…",
       "empty": "No notifications yet",
+      "emptyDescription": "Notifications about tasks, approvals and other events that concern you will appear here.",
       "viewAll": "All notifications"
     },
     "kpi": {
@@ -532,7 +534,8 @@
       "title": "My Tasks",
       "allTasks": "All tasks",
       "loading": "Loading tasks…",
-      "empty": "No active tasks"
+      "empty": "No active tasks",
+      "emptyDescription": "Tasks that need your input — approval, revision, actualization — will appear here."
     }
   },
   "successModal": {

@@ -2,9 +2,11 @@
 import {useState} from "react";
 import {useTranslation} from "react-i18next";
 import {useNavigate} from "react-router-dom";
+import {ListChecks} from "lucide-react";
 import type {VndTaskResponse} from "@/service/tasksVndService/tasksServiceTypes.ts";
 import type {InboxTask} from "@/service/workflowService/taskInboxService.ts";
 import {Loader} from "@/components/componentsGeneral/Loader.tsx";
+import {EmptyState} from "@/components/componentsGeneral/EmptyState.tsx";
 import {VndTaskCard} from "@/components/componentsTasks/VndTaskCard.tsx";
 import {SzTaskCard} from "@/components/componentsTasks/SzTaskCard.tsx";
 
@@ -96,10 +98,12 @@ export function MyTasksCard({tasks, szTasks = [], prcTasks = [], totalCount, isL
                     // Загрузка задач…
                     <Loader label={t("tasks.myTasks.loading")} fullHeight={false}/>
                 ) : isEmpty ? (
-                    <div className="px-[18px] py-6 text-center text-[13px] text-[#8b97ab]">
-                        {/* Нет активных задач */}
-                        {t("tasks.myTasks.empty")}
-                    </div>
+                    <EmptyState
+                        embedded
+                        icon={ListChecks}
+                        title={t("tasks.myTasks.empty")}
+                        description={t("tasks.myTasks.emptyDescription")}
+                    />
                 ) : (
                     <>
                         {visibleTasks.map((task) => (

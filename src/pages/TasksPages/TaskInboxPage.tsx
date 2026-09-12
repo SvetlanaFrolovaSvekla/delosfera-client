@@ -1,7 +1,10 @@
-import {useCallback, useEffect, useState} from "react";
+import {useCallback, useEffect, useMemo, useState} from "react";
 import {Link} from "react-router-dom";
 import {ChartColumn, FileText, Layers, ShoppingCart, StickyNote, type LucideIcon} from "lucide-react";
 import {VndTasksPanel} from "@/components/componentsTasks/VndTasksPanel.tsx";
+import {EmptyState} from "@/components/componentsGeneral/EmptyState.tsx";
+import {SearchBar} from "@/components/componentsGeneral/SearchBar.tsx";
+import {matchesInboxTaskSearch} from "@/utils/tasksUtils.ts";
 import {
     taskInboxService,
     taskLink,
@@ -31,6 +34,26 @@ const CONTOUR_META: Record<string, { icon: LucideIcon; color: string; bg: string
     prc: {icon: ShoppingCart, color: "#7a5ce0", bg: "#efeafe", ring: "#ddd0fa"},
 };
 
+// Заглушка пустого списка — своя на каждой вкладке (кроме "ВНД": там свой набор
+// заглушек внутри VndTasksPanel/VndTaskList).
+const INBOX_EMPTY_META: Record<string, { icon: LucideIcon; title: string; description: string }> = {
+    all: {
+        icon: Layers,
+        title: "Задач нет — всё согласовано",
+        description: "Здесь появятся задачи, которые нужно согласовать или обработать — по всем контурам системы.",
+    },
+    sz: {
+        icon: StickyNote,
+        title: "Нет задач по служебным запискам",
+        description: "Здесь появятся записки, которые ждут вашего решения — согласование, подпись, ознакомление.",
+    },
+    prc: {
+        icon: ShoppingCart,
+        title: "Нет задач по закупкам",
+        description: "Здесь появятся закупочные документы, которые нужно согласовать или обработать.",
+    },
+};
+
 function formatDue(iso: string | null): string {
     if (!iso) return "без срока";
     return new Date(iso).toLocaleString("ru-RU", {day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit"});
@@ -40,6 +63,10 @@ export const TaskInboxPage = () => {
     const [filter, setFilter] = useState("all");
     const [inbox, setInbox] = useState<TaskInbox | null>(null);
     const [loading, setLoading] = useState(true);
+    // Поиск намеренно не сбрасывается при смене вкладки — так же, как на ВНД-вкладке
+    // (VndTasksPanel): если в одном разделе ничего не нашлось, разумно проверить тот же
+    // запрос в соседнем, не перепечатывая его заново.
+    const [searchQuery, setSearchQuery] = useState("");
 
     const вндВкладка = filter === "vnd";
 
@@ -58,6 +85,21 @@ export const TaskInboxPage = () => {
     useEffect(() => {
         void load();
     }, [load]);
+
+    const filteredTasks = useMemo(() => {
+        const tasks = inbox?.tasks ?? [];
+        if (!searchQuery.trim()) return tasks;
+        return tasks.filter((task) => matchesInboxTaskSearch(task, searchQuery));
+    }, [inbox, searchQuery]);
+
+    // Поиск сузил непустой список до нуля — это "ничего не нашлось", а не "в разделе
+    // пусто" (у этих двух причин разные заглушки, см. INBOX_EMPTY_META и ниже).
+    const isSearchEmpty = searchQuery.trim().length > 0 && (inbox?.tasks.length ?? 0) > 0 && filteredTasks.length === 0;
+
+    const currentFilterLabel = FILTERS.find((f) => f.id === filter)?.label ?? "";
+    const searchPlaceholder = filter === "all"
+        ? "Поиск по всем контурам..."
+        : `Поиск в разделе «${currentFilterLabel}»...`;
 
     return (
         <div style={{padding: "22px 26px", display: "flex", flexDirection: "column", gap: 16}}>
@@ -152,8 +194,15 @@ export const TaskInboxPage = () => {
             {вндВкладка && <VndTasksPanel/>}
 
             {!вндВкладка && (
+            <>
+            <SearchBar
+                placeholder={searchPlaceholder}
+                value={searchQuery}
+                onChange={setSearchQuery}
+            />
+
             <section style={{background: "#fff", border: "1px solid #e5e9f0", borderRadius: 13, overflow: "hidden"}}>
-                {inbox?.tasks.map((task: InboxTask) => (
+                {filteredTasks.map((task: InboxTask) => (
                     <Link
                         key={task.taskId}
                         to={taskLink(task)}
@@ -192,15 +241,27 @@ export const TaskInboxPage = () => {
                     </Link>
                 ))}
 
-                {!loading && inbox?.tasks.length === 0 && (
-                    <div style={{padding: 28, textAlign: "center", color: "#8b97ab", fontSize: 13}}>
-                        Задач нет — всё согласовано
-                    </div>
+                {!loading && filteredTasks.length === 0 && (
+                    isSearchEmpty ? (
+                        <EmptyState
+                            embedded
+                            title="Ничего не найдено"
+                            description="Попробуйте изменить запрос поиска."
+                        />
+                    ) : (
+                        <EmptyState
+                            embedded
+                            icon={(INBOX_EMPTY_META[filter] ?? INBOX_EMPTY_META.all).icon}
+                            title={(INBOX_EMPTY_META[filter] ?? INBOX_EMPTY_META.all).title}
+                            description={(INBOX_EMPTY_META[filter] ?? INBOX_EMPTY_META.all).description}
+                        />
+                    )
                 )}
                 {loading && (
                     <div style={{padding: 28, textAlign: "center", color: "#8b97ab", fontSize: 13}}>Загрузка…</div>
                 )}
             </section>
+            </>
             )}
         </div>
     );

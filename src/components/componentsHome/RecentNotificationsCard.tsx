@@ -1,12 +1,13 @@
 // Виджет "Последние уведомления" на главной
 import {useTranslation} from "react-i18next";
 import {useNavigate} from "react-router-dom";
-import {Bell, ChevronRight} from "lucide-react";
+import {Bell, BellOff, ChevronRight} from "lucide-react";
 import {useRecentNotifications} from "@/hooks/notificationsHooks/useRecentNotifications.ts";
 import {notificationsService} from "@/service/notificationsService/notificationsService.ts";
 import {NOTIFICATION_CATEGORY_META, DEFAULT_CATEGORY_META} from "@/constants/notificationCategory.ts";
 import {timeAgo} from "@/utils/dateUtils.ts";
 import {Loader} from "@/components/componentsGeneral/Loader.tsx";
+import {EmptyState} from "@/components/componentsGeneral/EmptyState.tsx";
 
 interface RecentNotificationsCardProps {
     limit?: number;
@@ -54,10 +55,12 @@ export function RecentNotificationsCard({limit = 8}: RecentNotificationsCardProp
                 ) : error ? (
                     <div className="py-6 text-center text-[13px] text-[#c0392b]">{error}</div>
                 ) : items.length === 0 ? (
-                    <div className="py-6 text-center text-[13px] text-[#8b97ab]">
-                        {/* Пока нет уведомлений */}
-                        {t("home.recentNotifications.empty")}
-                    </div>
+                    <EmptyState
+                        embedded
+                        icon={BellOff}
+                        title={t("home.recentNotifications.empty")}
+                        description={t("home.recentNotifications.emptyDescription")}
+                    />
                 ) : (
                     items.map((n) => {
                         const meta = NOTIFICATION_CATEGORY_META[n.category] ?? DEFAULT_CATEGORY_META;

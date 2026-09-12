@@ -13,6 +13,9 @@ interface EmptyStateProps {
     actionIcon?: LucideIcon;
     actionVariant?: EmptyStateActionVariant;
     onAction?: () => void;
+    /** Для встраивания внутрь уже оформленной панели — без собственных фона/рамки
+     * и с меньшими отступами (например, виджеты на главной странице). */
+    embedded?: boolean;
 }
 
 const VARIANT_STYLES = {
@@ -48,12 +51,19 @@ export function EmptyState({
                                actionIcon: ActionIcon,
                                actionVariant = "default",
                                onAction,
+                               embedded = false,
                            }: EmptyStateProps) {
     const styles = VARIANT_STYLES[variant];
     const Icon = icon ?? styles.defaultIcon;
 
     return (
-        <div className="bg-white border border-[#e9edf3] rounded-2xl py-20 px-6 flex flex-col items-center text-center">
+        <div
+            className={
+                embedded
+                    ? "py-8 px-4 flex flex-col items-center text-center"
+                    : "bg-white border border-[#e9edf3] rounded-2xl py-20 px-6 flex flex-col items-center text-center"
+            }
+        >
             <div className={`w-14 h-14 rounded-2xl ${styles.iconBg} grid place-items-center mb-4`}>
                 <Icon className={`w-6 h-6 ${styles.iconColor}`} strokeWidth={1.6}/>
             </div>

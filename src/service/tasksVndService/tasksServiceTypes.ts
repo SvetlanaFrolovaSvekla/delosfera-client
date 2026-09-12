@@ -75,3 +75,22 @@ export interface PagedResult<T> {
     pageSize: number;
     hasMore: boolean;
 }
+
+/// Одна просрочка согласования, зачтённая текущему пользователю по тайм-ауту — конкретный
+/// ВНД и фаза (см. TasksController.GetMyTimeoutApprovals)
+export interface VndTimeoutApprovalItem {
+    vndId: number;
+    vndCode: string;
+    vndTitle: string;
+    phase: TaskStagePhase;
+    decidedAt: string;
+}
+
+/// Сводка по просрочкам согласования текущего пользователя для блока "Мои показатели" в
+/// Аналитике (ВНД → Актуализация)
+export interface VndMyTimeoutApprovalsResponse {
+    thisMonthCount: number;
+    thisYearCount: number;
+    totalCount: number;
+    items: VndTimeoutApprovalItem[];
+}

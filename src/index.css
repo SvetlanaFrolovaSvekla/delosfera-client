@@ -122,11 +122,17 @@ a:hover { color: #1b4fd0; }
     z-index: 50;
     display: block;
     pointer-events: none;
-    background-image: linear-gradient(
+  /*  background-image: linear-gradient(
             to top right,
             rgba(255, 255, 255, 0) 32%,
             rgba(255, 255, 255, .55) 50%,
             rgba(255, 255, 255, 0) 68%
+    );*/
+    background-image: linear-gradient(
+            to top right,
+            rgba(255, 255, 255, 0) 25%,
+            rgba(255, 255, 255, .85) 50%,
+            rgba(255, 255, 255, 0) 75%
     );
     background-size: 260% 260%;
     background-repeat: no-repeat;

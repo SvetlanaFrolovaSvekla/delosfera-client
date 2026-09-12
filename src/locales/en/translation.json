@@ -36,7 +36,7 @@
     },
     "items": {
       "home": "Dashboard",
-      "vndRubric": "Rubricator",
+      "rubric": "Rubricator",
       "vnd": "VND Registry",
       "pln": "Actualization Planning",
       "tid": "Approval",
@@ -386,8 +386,8 @@
         "subtitle": "Access groups for viewing and approving documents"
       },
       "rubric": {
-        "title": "Rubricator",
-        "subtitle": "Topical classification of documents by area"
+        "title": "VND Rubricator",
+        "subtitle": "Topical classification of VND documents by area"
       },
       "coordinationUsers": {
         "title": "Mandatory Approval Process Participants",
@@ -411,9 +411,9 @@
     },
     "memos": {
       "title": "Memos",
-      "memoCategory": {
-        "title": "Memo Categories",
-        "subtitle": "Thematic categories of memos"
+      "szRubric": {
+        "title": "Memo Rubricator",
+        "subtitle": "Topical classification of memos by area"
       }
     }
   },
@@ -461,7 +461,16 @@
     "deleteConfirmTitle": "Delete security level?"
   },
   "rubricPage": {
-    "title": "Rubricator",
+    "title": "VND Rubricator",
+    "searchPlaceholder": "Search rubrics…",
+    "emptyAction": "Add first rubric",
+    "formTitleCreate": "New Rubric",
+    "formTitleEdit": "Edit Rubric",
+    "fieldParent": "Parent rubric",
+    "deleteConfirmTitle": "Delete rubric?"
+  },
+  "szRubricPage": {
+    "title": "Memo Rubricator",
     "searchPlaceholder": "Search rubrics…",
     "emptyAction": "Add first rubric",
     "formTitleCreate": "New Rubric",
@@ -473,7 +482,9 @@
     "helpTooltip": "Select one or more rubrics to filter the registry",
     "goToRubric": "Go to the registry filtered by this rubric",
     "selectedCount": "Selected:",
-    "apply": "Go"
+    "apply": "Go",
+    "variantVnd": "VND Rubricator",
+    "variantSz": "Memo Rubricator"
   },
   "keywordPage": {
     "title": "Keywords",

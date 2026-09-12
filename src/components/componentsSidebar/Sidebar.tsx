@@ -12,7 +12,9 @@ import {Icon} from "@/components/icons/Icon";
 import {RubricTreeModal} from "@/components/componentsGeneral/rubricator/RubricTreeModal.tsx";
 import {ChevronRight, PanelLeftClose, PanelLeftOpen} from "lucide-react";
 
-const MODAL_ITEM_IDS = ["vnd-rubric"];
+const MODAL_ITEM_IDS = ["rubric"];
+
+type RubricVariant = "vnd" | "sz";
 
 /**
  * Состояние панели переживает перезагрузку: тот, кто её спрятал ради места на
@@ -38,9 +40,17 @@ export function Sidebar() {
     const [collapsed, setCollapsed] = useState(() => readFlag(COLLAPSED_KEY));
     const [hidden, setHidden] = useState(() => readFlag(HIDDEN_KEY));
     const [rubricModalOpen, setRubricModalOpen] = useState(false);
-    const [rubricSelection, setRubricSelection] = useState<string[]>([]);
+    // Какой рубрикатор сейчас показан в модалке — по умолчанию ВНД (GEN-15/попросили
+    // оставить его первым). У каждого — своя выборка отмеченных рубрик: переключение
+    // варианта не должно терять то, что уже выбрано в другом.
+    const [rubricVariant, setRubricVariant] = useState<RubricVariant>("vnd");
+    const [vndRubricSelection, setVndRubricSelection] = useState<string[]>([]);
+    const [szRubricSelection, setSzRubricSelection] = useState<string[]>([]);
 
-    const {rubricOptions} = useDictionaries();
+    const {rubricOptions, szRubricOptions} = useDictionaries();
+    const activeRubricOptions = rubricVariant === "vnd" ? rubricOptions : szRubricOptions;
+    const activeRubricSelection = rubricVariant === "vnd" ? vndRubricSelection : szRubricSelection;
+    const setActiveRubricSelection = rubricVariant === "vnd" ? setVndRubricSelection : setSzRubricSelection;
 
     // Планирование актуализации: Просрочено + Критический срок
     const {summary: actualizationSummary} = useVndActualizationSummary();
@@ -84,10 +94,13 @@ export function Sidebar() {
         setHidden(value);
     };
 
-    const goToVndWithRubrics = (keys: string[]) => {
+    // Рубрикатор ВНД ведёт в реестр ВНД, Рубрикатор СЗ — в реестр служебных записок;
+    // сама фильтрация по ?rubrics= на стороне /sz — отдельная задача (там сейчас
+    // читает этот параметр только страница ВНД, см. useRubricsFromUrl.ts).
+    const goToRubricRegistry = (variant: RubricVariant, keys: string[]) => {
         if (keys.length === 0) return;
         const params = new URLSearchParams({rubrics: keys.join(",")});
-        navigate(`/base-vnd?${params.toString()}`);
+        navigate(variant === "vnd" ? `/base-vnd?${params.toString()}` : `/sz?${params.toString()}`);
         setRubricModalOpen(false);
     };
 
@@ -224,7 +237,7 @@ export function Sidebar() {
                                     className={sharedClassName}
                                     style={sharedStyle}
                                     onClick={() => {
-                                        if (it.id === "vnd-rubric") {
+                                        if (it.id === "rubric") {
                                             setRubricModalOpen(true);
                                         }
                                     }}
@@ -267,19 +280,25 @@ export function Sidebar() {
                 </button>
             </div>
 
-            {/* Модалка «Рубрикатор ВНД» */}
+            {/* Модалка «Рубрикатор» — переключатель внутри модалки выбирает ВНД или СЗ */}
             <RubricTreeModal
                 open={rubricModalOpen}
                 onClose={() => setRubricModalOpen(false)}
-                title={t("sidebar.items.vndRubric")}
-                options={rubricOptions}
-                selectedKeys={rubricSelection}
+                title={t("sidebar.items.rubric")}
+                options={activeRubricOptions}
+                selectedKeys={activeRubricSelection}
                 onApply={(keys) => {
-                    setRubricSelection(keys);
-                    goToVndWithRubrics(keys);
+                    setActiveRubricSelection(keys);
+                    goToRubricRegistry(rubricVariant, keys);
                 }}
                 searchPlaceholder="Поиск рубрики…"
-                onGoToRubric={(key) => goToVndWithRubrics([key])}
+                onGoToRubric={(key) => goToRubricRegistry(rubricVariant, [key])}
+                variantOptions={[
+                    {value: "vnd", label: t("rubricTreeModal.variantVnd")},
+                    {value: "sz", label: t("rubricTreeModal.variantSz")},
+                ]}
+                variantValue={rubricVariant}
+                onVariantChange={(v) => setRubricVariant(v as RubricVariant)}
             />
         </aside>
     );

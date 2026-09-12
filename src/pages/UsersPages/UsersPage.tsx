@@ -224,6 +224,7 @@ export function UsersPage() {
                         users={users}
                         columns={columns}
                         gridTemplate={gridTemplate}
+                        onOpenProfile={(u) => navigate(`/users/${u.id}`)}
                         onEdit={(u) => navigate(`/management/users/${u.id}`)}
                         onBlock={openBlockConfirm}
                         onUnblock={openUnblockConfirm}

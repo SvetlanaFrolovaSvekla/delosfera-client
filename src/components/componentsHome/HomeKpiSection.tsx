@@ -13,6 +13,7 @@ import {useNavigate} from "react-router-dom";
 import {useTranslation} from "react-i18next";
 import {Icon} from "@/components/icons/Icon";
 import {Tooltip} from "@/components/componentsGeneral/Tooltip.tsx";
+import {useAnyModalOpen} from "@/hooks/generalHooks/useAnyModalOpen.ts";
 import type {VndHomeSummary} from "@/hooks/analyticsHooks/useVndHomeSummary.ts";
 import {dashboardService, type DashboardKpi, type DashboardSummary} from "@/service/dashboardService/dashboardService.ts";
 
@@ -119,6 +120,11 @@ export function HomeKpiSection({summary}: HomeKpiSectionProps) {
     const {t} = useTranslation();
     const navigate = useNavigate();
 
+    // Пока где-то открыта модалка (например "Рубрикатор" из сайдбара или "Создать
+    // документ" отсюда же), блик под её затемняющим фоном выглядел некрасиво —
+    // гасим его на время и возобновляем с того же места после закрытия.
+    const anyModalOpen = useAnyModalOpen();
+
     // Общий запрос сводки дашборда для обоих рядов — раньше его дублировали
     // HomeKpiGrid и HomeContoursCard, каждый своим отдельным вызовом.
     const [dashboard, setDashboard] = useState<DashboardSummary | null>(null);
@@ -168,10 +174,23 @@ export function HomeKpiSection({summary}: HomeKpiSectionProps) {
                     <Tooltip key={k.labelKey ?? k.label} content={t(k.tooltipKey)} side="bottom" className="w-full">
                         <button
                             onClick={() => navigate(k.to)}
-                            className="w-full cursor-pointer relative overflow-hidden rounded-[14px] border p-4 pb-[12px] text-left transition-transform hover:-translate-y-0.5"
+                            className="w-full cursor-pointer relative overflow-hidden rounded-[14px] border p-4 pb-[4px] text-left transition-transform hover:-translate-y-0.5"
                             style={{background: k.tint, borderColor: k.bd}}
                         >
-                            <span className="kpi-shine-sweep" style={{animationDelay: `${(TOP_SHINE_SLOTS[i] ?? i) * -SHINE_SLOT_SECONDS}s`}} aria-hidden="true"/>
+                            {/* Пока открыта модалка, блик не просто ставим на паузу — CSS-анимация
+                                всё равно продолжает диктовать opacity поверх любого инлайн-стиля
+                                (правило каскада: анимации перекрывают обычные author-стили), поэтому
+                                "погашенный" блик оставался бы виден замороженным кадром. Убираем сам
+                                узел из DOM — анимация полностью останавливается, а при повторном
+                                появлении стартует заново с того же animation-delay, так что
+                                очерёдность между карточками не сбивается. */}
+                            {!anyModalOpen && (
+                                <span
+                                    className="kpi-shine-sweep"
+                                    style={{animationDelay: `${(TOP_SHINE_SLOTS[i] ?? i) * -SHINE_SLOT_SECONDS}s`}}
+                                    aria-hidden="true"
+                                />
+                            )}
                             <span className="absolute inset-y-0 left-0 w-1" style={{background: k.col}}/>
                             <div className="flex items-center justify-between">
                                 <span className="min-h-5 text-[12px] font-medium leading-[1.35] text-[#5b6675]">
@@ -192,8 +211,7 @@ export function HomeKpiSection({summary}: HomeKpiSectionProps) {
                 ))}
             </div>
 
-            {/* Замещения и нижний ряд — ждут dashboard целиком (как раньше в
-                HomeContoursCard), чтобы не показывать пустую сетку до загрузки. */}
+            {/* Замещения и нижний ряд */}
             {dashboard && (
                 <>
                     {dashboard.actingFor.length > 0 && (
@@ -242,10 +260,16 @@ export function HomeKpiSection({summary}: HomeKpiSectionProps) {
                                     <Tooltip key={k.code} content={tooltip ?? ""} side="bottom" disabled={!tooltip} className="w-full">
                                         <button
                                             onClick={() => navigate(target)}
-                                            className="w-full cursor-pointer relative overflow-hidden rounded-[14px] border p-4 pb-[12px] text-left transition-transform hover:-translate-y-0.5"
+                                            className="w-full cursor-pointer relative overflow-hidden rounded-[14px] border p-4 pb-[4px] text-left transition-transform hover:-translate-y-0.5"
                                             style={{background: tone.tint, borderColor: tone.bd}}
                                         >
-                                            <span className="kpi-shine-sweep" style={{animationDelay: `${(BOTTOM_SHINE_SLOTS[i] ?? i) * -SHINE_SLOT_SECONDS}s`}} aria-hidden="true"/>
+                                            {!anyModalOpen && (
+                                                <span
+                                                    className="kpi-shine-sweep"
+                                                    style={{animationDelay: `${(BOTTOM_SHINE_SLOTS[i] ?? i) * -SHINE_SLOT_SECONDS}s`}}
+                                                    aria-hidden="true"
+                                                />
+                                            )}
                                             <span className="absolute inset-y-0 left-0 w-1" style={{background: tone.col}}/>
                                             <div className="flex items-center justify-between">
                                                 <span className="min-h-8 text-[12px] font-medium leading-[1.35] text-[#5b6675]">

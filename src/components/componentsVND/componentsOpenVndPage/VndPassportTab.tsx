@@ -275,11 +275,16 @@ export function VndPassportTab({
                         Ответственного за актуализацию не показываем для черновиков — там его
                         просто не может быть (документ ещё ни разу не проходил цикл актуализации). */}
                     <div className={`grid grid-cols-1 gap-4 mb-4 ${isDraft ? "" : "sm:grid-cols-2"}`}>
-                        <ReadOnlyField label="Инициатор" value={vnd.createdByUserName || "—"}/>
+                        <ReadOnlyField
+                            label="Инициатор"
+                            value={vnd.createdByUserName || "—"}
+                            linkTo={vnd.createdByUserId ? `/users/${vnd.createdByUserId}` : undefined}
+                        />
                         {!isDraft && (
                             <ReadOnlyField
                                 label="Ответственный за последнюю актуализацию"
                                 value={vnd.actualizationResponsibleUserName || "—"}
+                                linkTo={vnd.actualizationResponsibleUserId ? `/users/${vnd.actualizationResponsibleUserId}` : undefined}
                             />
                         )}
                     </div>
@@ -366,6 +371,7 @@ export function VndPassportTab({
                                     label="Куратор разработчика"
                                     value={activeRequisites.curatorDeveloperName || "—"}
                                     highlighted={diffScalar((r) => r.curatorDeveloperId ?? 0)}
+                                    linkTo={activeRequisites.curatorDeveloperId ? `/users/${activeRequisites.curatorDeveloperId}` : undefined}
                                 />
                             </div>
                         </>

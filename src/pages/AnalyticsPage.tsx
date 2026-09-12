@@ -4,6 +4,7 @@ import {PageHeader} from "@/components/componentsGeneral/PageHeader.tsx";
 import {Tabs} from "@/components/componentsGeneral/Tabs.tsx";
 import {ReportVndPage} from "@/pages/ReportPages/ReportVndPages/ReportVndPage.tsx";
 import {ReportVndActualizationPage} from "@/pages/ReportPages/ReportVndPages/ReportVndActualizationPage.tsx";
+import {ReportVndApprovalsPage} from "@/pages/ReportPages/ReportVndPages/ReportVndApprovalsPage.tsx";
 import {SzStatisticsPage} from "@/pages/SzStatisticsPage.tsx";
 
 /**
@@ -29,12 +30,13 @@ const TABS = [
 
 type TabId = (typeof TABS)[number]["id"];
 
-// Подвкладки внутри "ВНД" — сейчас только сводный отчёт и статистика по актуализации,
+// Подвкладки внутри "ВНД" — сводный отчёт, статистика по актуализации и по согласованиям,
 // но список специально сделан открытым: со временем сюда добавятся ещё отчёты (по этому же
 // принципу, что и верхнеуровневые TABS выше).
 const VND_SUB_TABS = [
     {id: "all", label: "Все"},
     {id: "actualization", label: "Актуализация"},
+    {id: "approvals", label: "Согласования"},
 ] as const;
 
 type VndSubTabId = (typeof VND_SUB_TABS)[number]["id"];
@@ -85,6 +87,7 @@ export function AnalyticsPage() {
                     />
                     {vndSubTab === "all" && <ReportVndPage embedded/>}
                     {vndSubTab === "actualization" && <ReportVndActualizationPage/>}
+                    {vndSubTab === "approvals" && <ReportVndApprovalsPage/>}
                 </>
             )}
             {tab === "sz" && <SzStatisticsPage embedded/>}

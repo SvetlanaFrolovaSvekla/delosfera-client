@@ -30,6 +30,7 @@ const TypeVndPage = lazy(() => import("@/pages/DictionariesPages/TypeVndPage.tsx
 const SecurityLevelPage = lazy(() => import("@/pages/DictionariesPages/SecurityLevelPage.tsx").then(m => ({default: m.SecurityLevelPage})));
 const UserGroupPage = lazy(() => import("@/pages/DictionariesPages/UserGroupPage.tsx").then(m => ({default: m.UserGroupPage})));
 const RubricPage = lazy(() => import("@/pages/DictionariesPages/RubricPage.tsx").then(m => ({default: m.RubricPage})));
+const SzRubricPage = lazy(() => import("@/pages/DictionariesPages/SzRubricPage.tsx").then(m => ({default: m.SzRubricPage})));
 const KeywordPage = lazy(() => import("@/pages/DictionariesPages/KeywordPage.tsx").then(m => ({default: m.KeywordPage})));
 const CoordinationApproversPage = lazy(() => import("@/pages/DictionariesPages/CoordinationApproversPage.tsx").then(m => ({default: m.CoordinationApproversPage})));
 const RolesPermissionPage = lazy(() => import("@/pages/RolesPermissionPage.tsx").then(m => ({default: m.RolesPermissionPage})));
@@ -37,6 +38,7 @@ const BaseVndPage = lazy(() => import("@/pages/VndPages/BaseVndPage.tsx").then(m
 const CreateVndPage = lazy(() => import("@/pages/VndPages/CreateVndPage.tsx").then(m => ({default: m.CreateVndPage})));
 const OpenVndPage = lazy(() => import("@/pages/VndPages/OpenVndPage.tsx").then(m => ({default: m.OpenVndPage})));
 const ProfilePage = lazy(() => import("@/pages/ProfilePage.tsx").then(m => ({default: m.ProfilePage})));
+const UserProfileViewPage = lazy(() => import("@/pages/UsersPages/UserProfileViewPage.tsx").then(m => ({default: m.UserProfileViewPage})));
 const NotificationsPage = lazy(() => import("@/pages/NotificationsPage/NotificationsPage.tsx").then(m => ({default: m.NotificationsPage})));
 const OpenNotificationPage = lazy(() => import("@/pages/NotificationsPage/OpenNotificationPage.tsx").then(m => ({default: m.OpenNotificationPage})));
 const ActualizationPlanPage = lazy(() => import("@/pages/ActualizationPage/ActualizationPlanPage.tsx").then(m => ({default: m.ActualizationPlanPage})));
@@ -138,6 +140,9 @@ function App() {
                                 <Route path="/" element={<HomePage/>}/>
 
                                 <Route path="/profile" element={<ProfilePage/>}/>
+                                {/* Просмотр профиля любого сотрудника (только чтение) — доступен всем,
+                                    в отличие от /management/users/:id (правка, только для админов). */}
+                                <Route path="/users/:id" element={<UserProfileViewPage/>}/>
 
                                 <Route path="/base-vnd" element={<BaseVndPage/>}/>
                                 <Route path="/base-vnd/new" element={<CreateVndPage/>}/>
@@ -202,6 +207,7 @@ function App() {
                                     <Route path="refs/security-level" element={<SecurityLevelPage/>}/>
                                     <Route path="refs/user-group" element={<UserGroupPage/>}/>
                                     <Route path="refs/rubric" element={<RubricPage/>}/>
+                                    <Route path="refs/sz-rubric" element={<SzRubricPage/>}/>
                                     <Route path="refs/coordination-users" element={<CoordinationApproversPage/>}/>
                                     <Route path="refs/actualization-thresholds" element={<ActualizationBucketSettingsPage/>}/>
                                     <Route path="mailing-settings" element={<NotificationMailingSettingsPage/>}/>

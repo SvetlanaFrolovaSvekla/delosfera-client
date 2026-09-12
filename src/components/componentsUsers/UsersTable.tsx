@@ -37,12 +37,13 @@ interface UsersTableProps {
     users: UserResponse[];
     columns: UserColDef[];
     gridTemplate: string;
+    onOpenProfile: (user: UserResponse) => void;
     onEdit: (user: UserResponse) => void;
     onBlock: (user: UserResponse) => void;
     onUnblock: (user: UserResponse) => void;
 }
 
-export function UsersTable({users, columns, gridTemplate, onEdit, onBlock, onUnblock}: UsersTableProps) {
+export function UsersTable({users, columns, gridTemplate, onOpenProfile, onEdit, onBlock, onUnblock}: UsersTableProps) {
     return (
         <div className="bg-white border border-[#e9edf3] rounded-[14px] overflow-x-auto">
             <div className="w-full">
@@ -69,14 +70,20 @@ export function UsersTable({users, columns, gridTemplate, onEdit, onBlock, onUnb
                             switch (c.key) {
                                 case "user":
                                     return (
-                                        <div key={c.key} className="flex items-center gap-2.5 min-w-0">
+                                        <button
+                                            key={c.key}
+                                            type="button"
+                                            onClick={() => onOpenProfile(u)}
+                                            title="Открыть профиль"
+                                            className="flex items-center gap-2.5 min-w-0 border-none bg-transparent p-0 text-left cursor-pointer"
+                                        >
                                             <span
                                                 className="w-8 h-8 flex-none rounded-lg bg-[#eef0fb] text-[#4e57d6] grid place-items-center text-[11px] font-bold">
                                                 {getInitials(u.fullName)}
                                             </span>
                                             <div className="min-w-0">
                                                 <div
-                                                    className="text-[13px] font-semibold text-[#1c2740] whitespace-nowrap overflow-hidden text-ellipsis">
+                                                    className="text-[13px] font-semibold text-[#1c2740] whitespace-nowrap overflow-hidden text-ellipsis hover:text-[#2f68f5] hover:underline underline-offset-2">
                                                     {u.fullName}
                                                 </div>
                                                 <div
@@ -84,7 +91,7 @@ export function UsersTable({users, columns, gridTemplate, onEdit, onBlock, onUnb
                                                     {u.position?.titleRu ?? "—"}
                                                 </div>
                                             </div>
-                                        </div>
+                                        </button>
                                     );
 
                                 case "email":

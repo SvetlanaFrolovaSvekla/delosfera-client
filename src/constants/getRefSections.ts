@@ -4,7 +4,6 @@ import {
     Ban,
     Briefcase,
     Building2,
-    ClipboardList,
     FileText,
     Folder,
     Gauge,
@@ -196,17 +195,16 @@ export const getRefSections = (t: TFunction): RefSection[] => [
         key: "memos",
         // Служебные записки
         title: t("refSections.memos.title"),
-        disabled: true,
         items: [
             {
-                key: "memo-category",
+                key: "sz-rubric",
                 code: "01",
-                // Категории СЗ
-                title: t("refSections.memos.memoCategory.title"),
-                // Тематические категории служебных записок
-                subtitle: t("refSections.memos.memoCategory.subtitle"),
-                icon: ClipboardList,
-                path: "/management/refs/memo-category",
+                // Рубрикатор СЗ
+                title: t("refSections.memos.szRubric.title"),
+                // Тематическая классификация служебных записок по направлениям
+                subtitle: t("refSections.memos.szRubric.subtitle"),
+                icon: Folder,
+                path: "/management/refs/sz-rubric",
             },
         ],
     },

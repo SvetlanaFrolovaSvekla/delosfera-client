@@ -6,6 +6,7 @@ import {
 } from "@/service/dictionariesService/organizationUnitService/organizationUnitService.ts";
 import {keywordService} from "@/service/dictionariesService/keywordService/keywordService.ts";
 import {rubricService} from "@/service/dictionariesService/rubricService/rubricService.ts";
+import {szRubricService} from "@/service/dictionariesService/szRubricService/szRubricService.ts";
 import {securityLevelService} from "@/service/dictionariesService/securityLevelService/securityLevelService.ts";
 import {userGroupService} from "@/service/dictionariesService/userGroupService/userGroupService.ts";
 import {positionService} from "@/service/dictionariesService/positionService/positionService.ts";
@@ -16,6 +17,7 @@ import type {
 } from "@/service/dictionariesService/organizationUnitService/organizationUnitServiceType.ts";
 import type {KeywordResponse} from "@/service/dictionariesService/keywordService/keywordServiceType.ts";
 import type {RubricResponse} from "@/service/dictionariesService/rubricService/rubricServiceType.ts";
+import type {SzRubricResponse} from "@/service/dictionariesService/szRubricService/szRubricServiceType.ts";
 import type {
     SecurityLevelResponse
 } from "@/service/dictionariesService/securityLevelService/securityLevelServiceType.ts";
@@ -34,6 +36,7 @@ interface DictionariesContextValue {
     orgUnits: OrganizationUnitResponse[];
     keywords: KeywordResponse[];
     rubrics: RubricResponse[];
+    szRubrics: SzRubricResponse[];
     secrecyLevels: SecurityLevelResponse[];
     userGroups: UserGroupResponse[];
     positions: PositionResponse[];
@@ -43,6 +46,7 @@ interface DictionariesContextValue {
     orgUnitOptions: DictOption[];
     keywordOptions: DictOption[];
     rubricOptions: DictOption[];
+    szRubricOptions: DictOption[];
     secrecyOptions: DictOption[];
     userGroupOptions: DictOption[];
     positionOptions: DictOption[];
@@ -69,6 +73,7 @@ export function DictionariesProvider({children}: { children: ReactNode }) {
     const [orgUnits, setOrgUnits] = useState<OrganizationUnitResponse[]>([]);
     const [keywords, setKeywords] = useState<KeywordResponse[]>([]);
     const [rubrics, setRubrics] = useState<RubricResponse[]>([]);
+    const [szRubrics, setSzRubrics] = useState<SzRubricResponse[]>([]);
     const [secrecyLevels, setSecrecyLevels] = useState<SecurityLevelResponse[]>([]);
     const [userGroups, setUserGroups] = useState<UserGroupResponse[]>([]);
     const [positions, setPositions] = useState<PositionResponse[]>([]);
@@ -90,17 +95,19 @@ export function DictionariesProvider({children}: { children: ReactNode }) {
             organizationUnitService.getAll(),
             keywordService.getAll(),
             rubricService.getAll(),
+            szRubricService.getAll(),
             securityLevelService.getAll(),
             userGroupService.getAll(),
             positionService.getAll(),
         ])
-            .then(([typesRes, organsRes, orgUnitsRes, keywordsRes, rubricsRes, secrecyRes, userGroupsRes, positionsRes]) => {
+            .then(([typesRes, organsRes, orgUnitsRes, keywordsRes, rubricsRes, szRubricsRes, secrecyRes, userGroupsRes, positionsRes]) => {
                 if (cancelled) return;
                 setTypes(typesRes);
                 setOrgans(organsRes);
                 setOrgUnits(orgUnitsRes);
                 setKeywords(keywordsRes);
                 setRubrics(rubricsRes);
+                setSzRubrics(szRubricsRes);
                 setSecrecyLevels(secrecyRes);
                 setUserGroups(userGroupsRes);
                 setPositions(positionsRes);
@@ -118,17 +125,18 @@ export function DictionariesProvider({children}: { children: ReactNode }) {
     }, [reloadKey]);
 
     const value = useMemo<DictionariesContextValue>(() => ({
-        types, organs, orgUnits, keywords, rubrics, secrecyLevels, userGroups, positions,
+        types, organs, orgUnits, keywords, rubrics, szRubrics, secrecyLevels, userGroups, positions,
         typeOptions: toOptions(types),
         organOptions: toOptions(organs),
         orgUnitOptions: toOptions(orgUnits),
         keywordOptions: toOptions(keywords),
         rubricOptions: toOptions(rubrics),
+        szRubricOptions: toOptions(szRubrics),
         secrecyOptions: toOptions(secrecyLevels),
         userGroupOptions: toOptions(userGroups),
         positionOptions: positions.map((x) => ({key: String(x.id), label: x.titleRu})),
         loading, error, refetch,
-    }), [types, organs, orgUnits, keywords, rubrics, secrecyLevels, userGroups, positions, loading, error]);
+    }), [types, organs, orgUnits, keywords, rubrics, szRubrics, secrecyLevels, userGroups, positions, loading, error]);
 
     return (
         <DictionariesContext.Provider value={value}>

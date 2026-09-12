@@ -9,9 +9,15 @@ import {ModalHeader} from "@/components/componentsGeneral/rubricator/ModalHeader
 import {SelectAllBar} from "@/components/componentsGeneral/rubricator/SelectAllBar.tsx";
 import {RubricTreeNode} from "@/components/componentsGeneral/rubricator/RubricTreeNode.tsx";
 import {ModalFooter} from "@/components/componentsGeneral/rubricator/ModalFooter.tsx";
+import {
+    SelectDropdown,
+    type SelectOption
+} from "@/components/componentsGeneral/selects/SingleSelects/SelectDropdown.tsx";
 
 
 export type RubricTreeOption = BaseTreeOption;
+
+export type RubricatorVariantOption = SelectOption;
 
 interface RubricTreeModalProps {
     open: boolean;
@@ -26,6 +32,13 @@ interface RubricTreeModalProps {
 
     // Переход к реестру с фильтром по конкретной рубрике
     onGoToRubric?: (key: string) => void;
+
+    // Переключатель "какой рубрикатор показываем" (ВНД / СЗ и т.п.) — необязательный:
+    // без него модалка ведёт себя как раньше, с одним-единственным деревом. Опции и
+    // текущее значение выбирает вызывающий код — здесь только рендер селекта.
+    variantOptions?: RubricatorVariantOption[];
+    variantValue?: string;
+    onVariantChange?: (value: string) => void;
 }
 
 export function RubricTreeModal({
@@ -37,6 +50,9 @@ export function RubricTreeModal({
                                     onApply,
                                     searchPlaceholder,
                                     onGoToRubric,
+                                    variantOptions,
+                                    variantValue,
+                                    onVariantChange,
                                 }: RubricTreeModalProps) {
     const {t} = useTranslation();
     const {panelRef, handleBackdropClick} = useModalShake();
@@ -75,6 +91,18 @@ export function RubricTreeModal({
                     onClose={onClose}
                     helpContent={t("rubricTreeModal.helpTooltip")}
                 />
+
+                {variantOptions && variantOptions.length > 0 && (
+                    <div className="px-5 pt-4 flex-none">
+                        <SelectDropdown
+                            value={variantValue ?? ""}
+                            onChange={(value) => onVariantChange?.(value)}
+                            options={variantOptions}
+                            minWidth="100%"
+                            className="w-full"
+                        />
+                    </div>
+                )}
 
                 <div className="px-5 pt-4 pb-2 flex-none">
                     <SearchBar

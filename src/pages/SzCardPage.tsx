@@ -17,6 +17,7 @@ import {BoardReviewCard} from "@/components/componentsGeneral/BoardReviewCard.ts
 import {PROCUREMENT_STATUS_LABEL} from "@/service/procurementService/procurementService.ts";
 import {SzApproversField} from "@/components/sz/SzApproversField.tsx";
 import {MultiSelectDropdown} from "@/components/componentsGeneral/selects/MultiSelects/MultiSelectDropdown.tsx";
+import {RouteFlowView} from "@/components/workflow/RouteFlowView.tsx";
 import {SzHrForm} from "@/components/sz/SzHrForm.tsx";
 import {RichTextEditor} from "@/components/editor/RichTextEditor.tsx";
 import {SzAddresseeDecisionPanel} from "@/components/sz/SzAddresseeDecisionPanel.tsx";
@@ -928,6 +929,11 @@ export function SzCardPage() {
                             {ROUTE_STATUS_LABEL[route.status]}
                             {sz && sz.approvalRounds > 1 && ` · круг ${sz.approvalRounds}`}
                         </span>
+                    </div>
+
+                    {/* Обзорная цепочка этапов — как в ВНД; ниже подробный список с резолюциями. */}
+                    <div className="mb-3">
+                        <RouteFlowView route={route}/>
                     </div>
 
                     <div className="flex flex-col gap-2.5">

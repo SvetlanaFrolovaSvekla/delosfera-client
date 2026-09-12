@@ -200,6 +200,13 @@ export const procurementService = {
         return data;
     },
 
+    /** Приложить/заменить (attachmentId) или снять (null) ТЗ заявки. */
+    async setSpecification(id: number, attachmentId: number | null) {
+        const {data} = await apiClient.post<ProcurementCard>(
+            `/procurement/requests/${id}/specification`, {attachmentId});
+        return data;
+    },
+
     /** Удалить черновик — только свой и только до отправки. */
     async remove(id: number) {
         await apiClient.delete(`/procurement/requests/${id}`);

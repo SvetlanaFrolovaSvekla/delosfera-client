@@ -17,6 +17,7 @@ import {TenderPanel} from "@/components/procurement/TenderPanel.tsx";
 import {ContractPanel} from "@/components/procurement/ContractPanel.tsx";
 import {GuaranteeClaimPanel} from "@/components/procurement/GuaranteeClaimPanel.tsx";
 import {AttachmentsPanel} from "@/components/componentsGeneral/attachments/AttachmentsPanel.tsx";
+import {attachmentService} from "@/service/documentService/attachmentService.ts";
 import {formatDate} from "@/utils/dateUtils.ts";
 
 /**
@@ -217,7 +218,7 @@ export const ProcurementCardPage = () => {
                     <Row label="Сумма" value={`${card.amount.toLocaleString("ru-RU")} сом`}/>
                     <Row label="Бюджет" value={card.hasBudget ? "предусмотрено" : "вне бюджета"}/>
                     <Row label="Позиция Плана закупок" value={card.planItem ?? "—"}/>
-                    <Row label="ТЗ (спецификация)" value={card.hasSpecification ? "приложено" : "не приложено"}/>
+                    <SpecificationRow card={card} editable={canSubmit} onChanged={setCard}/>
                     <Row
                         label="Сроки объявления"
                         value={card.announcementFrom && card.announcementTo
@@ -490,6 +491,75 @@ const ExtraApproversPicker = ({
         </section>
     );
 };
+
+/**
+ * ТЗ (спецификация) — одиночный файл заявки. Прикладывается тем же способом, что и
+ * «Вложения к обоснованию» (загрузка через attachments-эндпоинт), но привязывается
+ * к заявке как спецификация. Загрузка/замена доступна автору на черновике/доработке.
+ */
+function SpecificationRow({card, editable, onChanged}: {
+    card: ProcurementCard;
+    editable: boolean;
+    onChanged: (c: ProcurementCard) => void;
+}) {
+    const inputRef = useRef<HTMLInputElement>(null);
+    const [busy, setBusy] = useState(false);
+    const [err, setErr] = useState<string | null>(null);
+
+    const pick = async (file: File) => {
+        setBusy(true);
+        setErr(null);
+        try {
+            const uploaded = await attachmentService.upload(card.documentId, file);
+            onChanged(await procurementService.setSpecification(card.id, uploaded.id));
+        } catch {
+            setErr("Не удалось приложить ТЗ");
+        } finally {
+            setBusy(false);
+            if (inputRef.current) inputRef.current.value = "";
+        }
+    };
+
+    return (
+        <div style={{display: "flex", gap: 12, padding: "8px 0", borderBottom: "1px solid #f3f6f9", fontSize: 12.5, alignItems: "center"}}>
+            <span style={{flex: 1, color: "#8b97ab", minWidth: 0}}>ТЗ (спецификация)</span>
+            <span style={{flex: 1.4, minWidth: 0, display: "flex", gap: 8, alignItems: "center", justifyContent: "flex-end"}}>
+                <span
+                    title={card.specificationFileName ?? undefined}
+                    style={{
+                        minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
+                        color: card.hasSpecification ? "#26324a" : "#a3adbd", fontWeight: 600,
+                    }}
+                >
+                    {err ?? card.specificationFileName ?? (card.hasSpecification ? "приложено" : "не приложено")}
+                </span>
+                {editable && (
+                    <>
+                        <input
+                            ref={inputRef}
+                            type="file"
+                            style={{display: "none"}}
+                            accept=".doc,.docx,.pdf,.xls,.xlsx,.ppt,.pptx,.png,.jpg,.jpeg"
+                            onChange={(e) => { const f = e.target.files?.[0]; if (f) void pick(f); }}
+                        />
+                        <button
+                            type="button"
+                            disabled={busy}
+                            onClick={() => inputRef.current?.click()}
+                            style={{
+                                flexShrink: 0, border: "1px solid #e5e9f0", background: "#fff",
+                                borderRadius: 8, padding: "3px 9px", fontSize: 11.5, fontWeight: 600,
+                                color: "#2f68f5", cursor: busy ? "not-allowed" : "pointer",
+                            }}
+                        >
+                            {busy ? "…" : card.hasSpecification ? "Заменить" : "Приложить"}
+                        </button>
+                    </>
+                )}
+            </span>
+        </div>
+    );
+}
 
 const Row = ({label, value}: { label: string; value: string }) => (
     <div style={{display: "flex", gap: 12, padding: "8px 0", borderBottom: "1px solid #f3f6f9", fontSize: 12.5}}>

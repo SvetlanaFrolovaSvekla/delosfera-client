@@ -61,6 +61,10 @@ const ProcurementProtocolPage = lazy(() => import("@/pages/ProcurementPages/Proc
 // Сводный реестр задач по всем контурам (GEN-11)
 const TaskInboxPage = lazy(() => import("@/pages/TasksPages/TaskInboxPage.tsx").then(m => ({default: m.TaskInboxPage})));
 
+// Полная лента событий по всем контурам — развёрнутая версия виджета
+// "Последняя активность" с главной (кнопка "Смотреть всю активность").
+const ActivityFeedPage = lazy(() => import("@/pages/ActivityFeedPage.tsx").then(m => ({default: m.ActivityFeedPage})));
+
 // Поиск по документам: реквизиты и текстовые поля карточек (GEN-02/04)
 const BaseKnowPage = lazy(() => import("@/pages/BaseKnowPages/BaseKnowPage.tsx").then(m => ({default: m.BaseKnowPage})));
 const UserCardPage = lazy(() => import("@/pages/UsersPages/UserCardPage.tsx").then(m => ({default: m.UserCardPage})));
@@ -153,6 +157,7 @@ function App() {
                                 <Route path="/notifications/:id" element={<OpenNotificationPage/>}/>
 
                                 <Route path="/inbox" element={<TaskInboxPage/>}/>
+                                <Route path="/activity" element={<ActivityFeedPage/>}/>
 
                                 <Route path="/prc" element={<ProcurementRegistryPage/>}/>
                                 <Route path="/prc/new" element={<ProcurementNewPage/>}/>

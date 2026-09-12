@@ -86,13 +86,26 @@
     "recentActivity": {
       "title": "Recent Activity",
       "loading": "Loading activity…",
-      "empty": "No events yet"
+      "empty": "No events yet",
+      "viewAll": "All activity"
+    },
+    "recentNotifications": {
+      "title": "Recent Notifications",
+      "loading": "Loading notifications…",
+      "empty": "No notifications yet",
+      "viewAll": "All notifications"
     },
     "kpi": {
       "myResponsibleActualizations": "Actualizations under my responsibility",
       "myTimeoutApprovalsThisMonth": "My overdue approvals this month",
       "myVndAwaitingApproval": "My VND awaiting approval",
-      "pendingMyApproval": "VND requiring my approval"
+      "pendingMyApproval": "VND pending my approval",
+      "tooltip": {
+        "tasks": "Total count of active tasks across all areas — VND, memos and procurements.",
+        "myTimeoutApprovalsThisMonth": "Approvals you missed the deadline for this month.",
+        "myVndAwaitingApproval": "Your VND documents sent for approval and awaiting a decision.",
+        "pendingMyApproval": "VND documents that currently require your decision as an approver."
+      }
     },
     "planActualizationTitle": "VND Actualization Plan",
     "seeActualization": "View plan",
@@ -115,6 +128,12 @@
       "under30": "< 30 days",
       "late": "overdue"
     }
+  },
+  "activityFeed": {
+    "title": "Portal activity",
+    "subtitle": "Event feed across all modules: VND, memos and procurement",
+    "loading": "Loading activity…",
+    "empty": "No events yet"
   },
   "notifications": {
     "n1": "Document No. SZ-1245 approved by E. Sydykov",

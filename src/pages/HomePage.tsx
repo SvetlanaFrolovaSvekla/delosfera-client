@@ -13,11 +13,11 @@ import {HOME_TASKS_LIMIT} from "@/constants/validation/HomeTasksLimit.ts";
 import {Loader} from "@/components/componentsGeneral/Loader.tsx";
 import {CreateDocumentModal} from "@/components/componentsModal/CreateDocumentModal.tsx";
 import {HomePageHeader} from "@/components/componentsHome/HomePageHeader.tsx";
-import {HomeContoursCard} from "@/components/componentsHome/HomeContoursCard.tsx";
-import {HomeKpiGrid} from "@/components/componentsHome/HomeKpiGrid.tsx";
+import {HomeKpiSection} from "@/components/componentsHome/HomeKpiSection.tsx";
 import {MyTasksCard} from "@/components/componentsHome/MyTasksCard.tsx";
 import {ActualizationPlanCard} from "@/components/componentsHome/ActualizationPlanCard.tsx";
 import {RecentActivityCard} from "@/components/componentsHome/RecentActivityCard.tsx";
+import {RecentNotificationsCard} from "@/components/componentsHome/RecentNotificationsCard.tsx";
 
 export function HomePage() {
     const {t, i18n} = useTranslation();
@@ -70,6 +70,28 @@ export function HomePage() {
         };
     }, []);
 
+    // Задачи по закупкам — тоже из сводного реестра, вне контура ВНД (нужны для таба
+    // "Закупки" в виджете "Мои задачи").
+    const [prcTasks, setPrcTasks] = useState<InboxTask[]>([]);
+    const [prcTasksLoading, setPrcTasksLoading] = useState(true);
+    useEffect(() => {
+        let cancelled = false;
+        setPrcTasksLoading(true);
+        taskInboxService.get("Procurement")
+            .then((inbox) => {
+                if (!cancelled) setPrcTasks(inbox.tasks);
+            })
+            .catch(() => {
+                if (!cancelled) setPrcTasks([]);
+            })
+            .finally(() => {
+                if (!cancelled) setPrcTasksLoading(false);
+            });
+        return () => {
+            cancelled = true;
+        };
+    }, []);
+
     // "Последние задачи" = отсортированные по дате появления (createdAt), самые новые сверху —
     // раньше список просто склеивался по скоупам и обрезался по лимиту, из-за чего порядок
     // не отражал реальную свежесть задач.
@@ -88,10 +110,10 @@ export function HomePage() {
 
     const tasksTotalCount = coordination.tasks.length + myVndApproval.tasks.length
         + actualization.tasks.length + consolidation.tasks.length + rejected.tasks.length
-        + szTasks.length;
+        + szTasks.length + prcTasks.length;
     const tasksLoading = coordination.isLoading || myVndApproval.isLoading
         || actualization.isLoading || consolidation.isLoading || rejected.isLoading
-        || szTasksLoading;
+        || szTasksLoading || prcTasksLoading;
 
     // Текущая дата - локализуется под текущий язык
     const formattedDate = useFormattedDate();
@@ -120,18 +142,22 @@ export function HomePage() {
             />
 
             {/* Сетка с карточками с информацией об активности деятельности */}
-            <HomeKpiGrid summary={homeSummary}/>
-            <HomeContoursCard/>
+            <HomeKpiSection summary={homeSummary}/>
 
+            {/* Верхняя пара — "Мои задачи" и "План актуализации", высоты независимые. */}
             <div className="grid grid-cols-1 xl:grid-cols-[1.65fr_1fr] gap-[18px]">
-                {/* Виджет последних задач */}
-                <MyTasksCard tasks={homeTasks} szTasks={szTasks} totalCount={tasksTotalCount} isLoading={tasksLoading}/>
+                <MyTasksCard tasks={homeTasks} szTasks={szTasks} prcTasks={prcTasks} totalCount={tasksTotalCount} isLoading={tasksLoading}/>
+                <ActualizationPlanCard summary={actualizationSummary} isLoading={actualizationLoading}/>
+            </div>
 
-                {/* Виджет плана актуализации и журнал действий */}
-                <div className="flex flex-col gap-[18px]">
-                    <ActualizationPlanCard summary={actualizationSummary} isLoading={actualizationLoading}/>
-                    <RecentActivityCard limit={8}/>
-                </div>
+            {/* Нижняя пара — "Последние уведомления" и "Последняя активность". Обе карточки
+                лежат в одной строке грида и по умолчанию растягиваются на всю её высоту
+                (align-items: stretch), поэтому всегда заканчиваются на одном уровне — той,
+                что выше из них двух; внутри каждая скроллится сама (см. RecentNotificationsCard.tsx
+                и RecentActivityCard.tsx). */}
+            <div className="mt-[18px] grid grid-cols-1 xl:grid-cols-[1.65fr_1fr] gap-[18px]">
+                <RecentNotificationsCard limit={8}/>
+                <RecentActivityCard limit={8}/>
             </div>
             {/* Создание документа */}
             {isCreateModalOpen && (

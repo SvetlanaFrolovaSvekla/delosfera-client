@@ -1,4 +1,5 @@
 import {useEffect, useMemo, useState} from "react";
+import {useSearchParams} from "react-router-dom";
 import {useVndTasks} from "@/hooks/tasksVndHooks/useVndTasks.ts";
 import {useVndTasksDone} from "@/hooks/tasksVndHooks/useVndTasksDone.ts";
 import {useVndTaskCounts} from "@/hooks/tasksVndHooks/useVndTaskCounts.ts";
@@ -64,8 +65,21 @@ const STAGE_PHASE_FILTER_OPTIONS: { value: "" | TaskStagePhase; label: string }[
 ];
 
 export function VndTasksPanel() {
-    const [topTab, setTopTab] = useState<TopTab>("coordination");
-    const [coordinationSubTab, setCoordinationSubTab] = useState<CoordinationSubTab>("coordination");
+    // Сюда попадают и по прямой ссылке с заранее выбранной вкладкой/подвкладкой —
+    // например, карточки с рабочего стола ведут сюда с ?tab=coordination&sub=coordination
+    // (см. HomeKpiGrid.tsx / HomeContoursCard.tsx). Читаем один раз при монтировании,
+    // по тому же принципу, что и AnalyticsPage.tsx: обратная синхронизация в URL при
+    // переключении вкладок мышью не нужна.
+    const [searchParams] = useSearchParams();
+
+    const [topTab, setTopTab] = useState<TopTab>(() => {
+        const fromUrl = searchParams.get("tab");
+        return TOP_TABS.some((t) => t.id === fromUrl) ? (fromUrl as TopTab) : "coordination";
+    });
+    const [coordinationSubTab, setCoordinationSubTab] = useState<CoordinationSubTab>(() => {
+        const fromUrl = searchParams.get("sub");
+        return COORDINATION_SUB_TABS.some((s) => s.id === fromUrl) ? (fromUrl as CoordinationSubTab) : "coordination";
+    });
     const [doneToggle, setDoneToggle] = useState<DoneToggle>("active");
     const [donePage, setDonePage] = useState(1);
     const [stagePhaseFilter, setStagePhaseFilter] = useState<"" | TaskStagePhase>("");

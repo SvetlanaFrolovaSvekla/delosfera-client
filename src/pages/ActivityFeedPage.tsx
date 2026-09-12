@@ -1,4 +1,6 @@
-// Виджет "Последняя активность" в ЭДО
+// Страница "Активность на портале" — развёрнутая версия виджета "Последняя
+// активность" с главной: та же лента событий и те же разделы, но не
+// обрезается до 8-15 записей, а открывается по кнопке "Смотреть всю активность".
 import {useState} from "react";
 import {useTranslation} from "react-i18next";
 import {useNavigate} from "react-router-dom";
@@ -19,13 +21,7 @@ const ICON_STYLE: Record<ActivityIcon, { iconName: string; col: string; bg: stri
     info: {iconName: "info", col: "#6b7280", bg: "#f1f2f4"},
 };
 
-interface RecentActivityCardProps {
-    limit?: number;
-    module?: string;
-}
-
-// Фильтр активности по разделам (#11): всё / ВНД / служебные записки / закупки.
-// undefined = все контуры сразу.
+// Те же разделы, что и в виджете "Последняя активность" на главной.
 const SECTIONS: { id: string; label: string; module?: string }[] = [
     {id: "all", label: "Все"},
     {id: "vnd", label: "ВНД", module: "vnd"},
@@ -33,58 +29,56 @@ const SECTIONS: { id: string; label: string; module?: string }[] = [
     {id: "prc", label: "Закупки", module: "prc"},
 ];
 
-export function RecentActivityCard({limit = 15, module}: RecentActivityCardProps) {
+// Сервер отдаёт не больше 50 записей за раз (см. ActivityLogController.GetRecent) —
+// постраничной подгрузки для этой ленты пока нет, берём максимум одним запросом.
+const FEED_LIMIT = 50;
+
+export function ActivityFeedPage() {
     const {t} = useTranslation();
-    // Раздел задаётся либо снаружи (module), либо переключателем внутри виджета.
-    const [section, setSection] = useState<string>(
-        SECTIONS.find((s) => s.module === module)?.id ?? "all",
-    );
-    const activeModule = SECTIONS.find((s) => s.id === section)?.module;
-    const {items, isLoading, error} = useRecentActivity(limit, activeModule);
     const navigate = useNavigate();
+    const [section, setSection] = useState<string>("all");
+    const activeModule = SECTIONS.find((s) => s.id === section)?.module;
+    const {items, isLoading, error} = useRecentActivity(FEED_LIMIT, activeModule);
 
     return (
-        // flex h-full flex-col — растягивается на всю высоту своей ячейки грида, вровень
-        // с "Последние уведомления" рядом (см. HomePage.tsx: обе карточки — в одной строке
-        // грида, растягиваются по умолчанию до высоты более длинной из них).
-        <div className="flex h-full flex-col overflow-hidden rounded-[14px] border border-[#e9edf3] bg-white">
-            <div className="flex flex-none flex-wrap items-center justify-between gap-2 border-b border-[#eef2f7] px-[18px] py-4 pb-[13px]">
-                {/* Последняя активность */}
-                <h2 className="text-[15px] font-semibold">{t("home.recentActivity.title")}</h2>
-                <div className="flex flex-wrap gap-1.5">
-                    {SECTIONS.map((s) => (
-                        <button
-                            key={s.id}
-                            onClick={() => setSection(s.id)}
-                            className="cursor-pointer rounded-full px-2.5 py-[3px] text-[11px] font-semibold transition-colors"
-                            style={{
-                                border: `1px solid ${section === s.id ? "#2f68f5" : "#e5e9f0"}`,
-                                background: section === s.id ? "#eef3ff" : "#fff",
-                                color: section === s.id ? "#2f68f5" : "#55617a",
-                            }}
-                        >
-                            {s.label}
-                        </button>
-                    ))}
-                    <button
-                        className="cursor-pointer text-[12.5px] font-semibold text-[var(--app-accent,_#2f68f5)] hover:underline"
-                        onClick={() => navigate("/activity")}
-                    >
-                        {/* Смотреть всю активность */}
-                        {t("home.recentActivity.viewAll")}
-                    </button>
+        <div style={{padding: "22px 26px", display: "flex", flexDirection: "column", gap: 16}}>
+            <div>
+                <h1 style={{margin: 0, fontSize: 19, fontWeight: 700, color: "#0f1b2d"}}>
+                    {/* Активность на портале */}
+                    {t("activityFeed.title")}
+                </h1>
+                <div style={{marginTop: 4, fontSize: 12.5, color: "#8b97ab"}}>
+                    {t("activityFeed.subtitle")}
                 </div>
             </div>
-            <div className="min-h-0 flex-1 overflow-y-auto px-[18px] pb-[14px] pt-1.5">
+
+            <div className="flex flex-wrap gap-1.5">
+                {SECTIONS.map((s) => (
+                    <button
+                        key={s.id}
+                        onClick={() => setSection(s.id)}
+                        className="cursor-pointer rounded-full px-3 py-[5px] text-[12px] font-semibold transition-colors"
+                        style={{
+                            border: `1px solid ${section === s.id ? "#2f68f5" : "#e5e9f0"}`,
+                            background: section === s.id ? "#eef3ff" : "#fff",
+                            color: section === s.id ? "#2f68f5" : "#55617a",
+                        }}
+                    >
+                        {s.label}
+                    </button>
+                ))}
+            </div>
+
+            <section className="overflow-hidden rounded-[14px] border border-[#e9edf3] bg-white px-[18px] pb-[14px] pt-1.5">
                 {isLoading ? (
                     // Загрузка активности…
-                    <Loader label={t("home.recentActivity.loading")} fullHeight={false}/>
+                    <Loader label={t("activityFeed.loading")} fullHeight={false}/>
                 ) : error ? (
                     <div className="py-6 text-center text-[13px] text-[#c0392b]">{error}</div>
                 ) : items.length === 0 ? (
                     <div className="py-6 text-center text-[13px] text-[#8b97ab]">
                         {/* Пока нет событий */}
-                        {t("home.recentActivity.empty")}
+                        {t("activityFeed.empty")}
                     </div>
                 ) : (
                     items.map((item) => {
@@ -109,7 +103,7 @@ export function RecentActivityCard({limit = 15, module}: RecentActivityCardProps
                         );
                     })
                 )}
-            </div>
+            </section>
         </div>
     );
 }

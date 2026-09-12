@@ -1,0 +1,281 @@
+<title>Плитки рабочего стола</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@600;700&display=swap">
+<style>
+  :root{
+    --page-bg:#edecf5;
+    --surface:#ffffff;
+    --surface-2:#f6f8fb;
+    --ink:#0f1b2d;
+    --ink-soft:#5b6675;
+    --ink-faint:#8b93a6;
+    --line:#e5e9f0;
+    --line-soft:#eef1f5;
+    --shadow: 0 14px 28px -16px rgba(15,27,45,.22);
+    --shadow-lg: 0 22px 40px -18px rgba(15,27,45,.32);
+
+    --violet:#7a5ce0; --violet-tint:#efeafe; --violet-bd:#ddd0fa;
+    --red:#c0392b;    --red-tint:#fbe7e4;    --red-bd:#f1c9c2;
+    --amber:#b3730a;  --amber-tint:#fdf3e0;  --amber-bd:#f0dcae;
+    --indigo:#4e57d6; --indigo-tint:#ececfc; --indigo-bd:#d4d6f8;
+    --neutral:#55617a;--neutral-tint:#f6f8fb;--neutral-bd:#e5e9f0;
+  }
+  @media (prefers-color-scheme: dark){
+    :root:not([data-theme="light"]){
+      --page-bg:#14161f;
+      --surface:#1b1e29;
+      --surface-2:#20232f;
+      --ink:#e9ecf5;
+      --ink-soft:#a7aebd;
+      --ink-faint:#767e90;
+      --line:#2b2f3d;
+      --line-soft:#262a37;
+      --shadow: 0 14px 28px -16px rgba(0,0,0,.55);
+      --shadow-lg: 0 22px 44px -18px rgba(0,0,0,.65);
+
+      --violet:#a691f0; --violet-tint:#241f3d; --violet-bd:#3c3364;
+      --red:#ec6a5c;    --red-tint:#3a1f1d;    --red-bd:#5a2c27;
+      --amber:#e0a83f;  --amber-tint:#3a2c12;  --amber-bd:#5c4419;
+      --indigo:#8890f2; --indigo-tint:#232449; --indigo-bd:#383a6e;
+      --neutral:#aab2c4;--neutral-tint:#20232f;--neutral-bd:#2b2f3d;
+    }
+  }
+  :root[data-theme="dark"]{
+    --page-bg:#14161f;
+    --surface:#1b1e29;
+    --surface-2:#20232f;
+    --ink:#e9ecf5;
+    --ink-soft:#a7aebd;
+    --ink-faint:#767e90;
+    --line:#2b2f3d;
+    --line-soft:#262a37;
+    --shadow: 0 14px 28px -16px rgba(0,0,0,.55);
+    --shadow-lg: 0 22px 44px -18px rgba(0,0,0,.65);
+
+    --violet:#a691f0; --violet-tint:#241f3d; --violet-bd:#3c3364;
+    --red:#ec6a5c;    --red-tint:#3a1f1d;    --red-bd:#5a2c27;
+    --amber:#e0a83f;  --amber-tint:#3a2c12;  --amber-bd:#5c4419;
+    --indigo:#8890f2; --indigo-tint:#232449; --indigo-bd:#383a6e;
+    --neutral:#aab2c4;--neutral-tint:#20232f;--neutral-bd:#2b2f3d;
+  }
+
+  *{box-sizing:border-box;}
+  body{
+    margin:0; background:var(--page-bg); color:var(--ink);
+    font-family:'IBM Plex Sans', system-ui, sans-serif;
+    -webkit-font-smoothing:antialiased;
+    padding:28px 20px 60px;
+  }
+  .mono{ font-family:'IBM Plex Mono', ui-monospace, monospace; font-variant-numeric:tabular-nums; }
+
+  .wrap{ max-width:1040px; margin:0 auto; display:flex; flex-direction:column; gap:44px; }
+
+  .intro h1{ margin:0 0 6px; font-size:20px; font-weight:700; letter-spacing:-.01em; text-wrap:balance; }
+  .intro p{ margin:0; font-size:13.5px; line-height:1.55; color:var(--ink-soft); max-width:64ch; }
+
+  .block{ display:flex; flex-direction:column; gap:12px; }
+  .block-head{ display:flex; align-items:baseline; justify-content:space-between; gap:12px; flex-wrap:wrap; }
+  .block-head h2{ margin:0; font-size:14.5px; font-weight:700; }
+  .block-head .tag{
+    font-size:10.5px; font-weight:700; letter-spacing:.05em; text-transform:uppercase;
+    padding:3px 9px; border-radius:99px; border:1px solid var(--indigo-bd); color:var(--indigo); background:var(--indigo-tint);
+  }
+  .block-head .note{ font-size:12px; color:var(--ink-faint); }
+
+  /* ---------- Текущий вариант (для сравнения, уменьшенный) ---------- */
+  .current-grid{ display:grid; grid-template-columns:repeat(4,1fr); gap:10px; }
+  .current-grid.second{ grid-template-columns:repeat(5,1fr); margin-top:10px; }
+  .cur-card{
+    position:relative; overflow:hidden; border-radius:12px; border:1px solid var(--bd,var(--line));
+    background:var(--tint,var(--surface-2)); padding:10px 12px 12px;
+  }
+  .cur-card::before{ content:""; position:absolute; inset:0 auto 0 0; width:3px; background:var(--col,var(--ink-faint)); }
+  .cur-card .lbl{ font-size:10.5px; color:var(--ink-soft); line-height:1.3; display:block; min-height:26px; }
+  .cur-card .val{ font-size:20px; font-weight:700; color:var(--col,var(--ink)); margin-top:4px; display:block; }
+
+  /* ================= ВАРИАНТ A — веер карточек внахлёст ================= */
+  .fan{
+    display:flex; flex-wrap:wrap; row-gap:14px;
+    padding:6px 2px 14px;
+  }
+  .fan-card{
+    position:relative;
+    width:172px; height:88px; flex:0 0 auto;
+    margin-left:-30px;
+    border-radius:14px;
+    border:1px solid var(--bd,var(--line));
+    background:var(--tint,var(--surface));
+    box-shadow:var(--shadow);
+    padding:11px 14px 12px;
+    display:flex; flex-direction:column; justify-content:space-between;
+    transition:transform .18s ease, box-shadow .18s ease, z-index 0s;
+    cursor:pointer;
+  }
+  .fan-card:first-child{ margin-left:0; }
+  .fan-card::after{
+    content:""; position:absolute; inset:0; border-radius:14px;
+    box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--col,var(--ink-faint)) 16%, transparent);
+    pointer-events:none;
+  }
+  .fan-card .dot{
+    position:absolute; top:11px; right:12px; width:7px; height:7px; border-radius:50%;
+    background:var(--col,var(--ink-faint));
+  }
+  .fan-card .lbl{ font-size:11px; line-height:1.28; color:var(--ink-soft); max-width:120px; }
+  .fan-card .val{ font-size:24px; font-weight:700; color:var(--col,var(--ink)); letter-spacing:-.01em; }
+  .fan-card:hover, .fan-card:focus-visible{
+    transform:translateY(-9px) scale(1.045);
+    box-shadow:var(--shadow-lg);
+    z-index:30 !important;
+    outline:none;
+  }
+  .fan-card:nth-child(1){ z-index:9; --col:var(--violet); --tint:var(--violet-tint); --bd:var(--violet-bd); }
+  .fan-card:nth-child(2){ z-index:8; --col:var(--red); --tint:var(--red-tint); --bd:var(--red-bd); }
+  .fan-card:nth-child(3){ z-index:7; --col:var(--amber); --tint:var(--amber-tint); --bd:var(--amber-bd); }
+  .fan-card:nth-child(4){ z-index:6; --col:var(--indigo); --tint:var(--indigo-tint); --bd:var(--indigo-bd); }
+  .fan-card:nth-child(5){ z-index:5; --col:var(--indigo); --tint:var(--surface); --bd:var(--line); }
+  .fan-card:nth-child(6){ z-index:4; --col:var(--amber); --tint:var(--surface); --bd:var(--line); }
+  .fan-card:nth-child(7){ z-index:3; --col:var(--red); --tint:var(--surface); --bd:var(--line); }
+  .fan-card:nth-child(8){ z-index:2; --col:var(--neutral); --tint:var(--surface); --bd:var(--line); }
+  .fan-card:nth-child(9){ z-index:1; --col:var(--neutral); --tint:var(--surface); --bd:var(--line); }
+
+  @media (max-width:700px){
+    .fan{ flex-direction:column; }
+    .fan-card{ width:100%; margin-left:0 !important; height:64px; flex-direction:row; align-items:center; justify-content:space-between; }
+    .fan-card .lbl{ max-width:70%; }
+    .fan-card:hover{ transform:translateY(0) scale(1); }
+  }
+
+  /* ================= ВАРИАНТ B — слоями, вторая лента подвёрнута ================= */
+  .stackwrap{ position:relative; }
+  .hero-row{
+    position:relative; z-index:2;
+    display:grid; grid-template-columns:repeat(4,1fr); gap:10px;
+  }
+  .hero-card{
+    position:relative; overflow:hidden; border-radius:14px;
+    border:1px solid var(--bd); background:var(--tint);
+    box-shadow:var(--shadow);
+    padding:12px 14px 13px;
+    cursor:pointer; transition:transform .16s ease;
+  }
+  .hero-card:hover{ transform:translateY(-2px); }
+  .hero-card::before{ content:""; position:absolute; inset:0 auto 0 0; width:3px; background:var(--col); }
+  .hero-card .lbl{ font-size:11.5px; color:var(--ink-soft); line-height:1.32; display:block; min-height:29px; }
+  .hero-card .val{ font-family:'IBM Plex Mono',monospace; font-variant-numeric:tabular-nums; font-size:26px; font-weight:700; color:var(--col); margin-top:5px; display:block; letter-spacing:-.02em; }
+  .hero-card:nth-child(1){ --col:var(--violet); --tint:var(--violet-tint); --bd:var(--violet-bd); }
+  .hero-card:nth-child(2){ --col:var(--red);    --tint:var(--red-tint);    --bd:var(--red-bd); }
+  .hero-card:nth-child(3){ --col:var(--amber);  --tint:var(--amber-tint);  --bd:var(--amber-bd); }
+  .hero-card:nth-child(4){ --col:var(--indigo); --tint:var(--indigo-tint); --bd:var(--indigo-bd); }
+
+  .tuck{
+    position:relative; z-index:1;
+    margin-top:-14px;
+    background:var(--surface);
+    border:1px solid var(--line);
+    border-radius:14px;
+    padding:22px 10px 10px;
+    box-shadow:var(--shadow);
+    display:grid; grid-template-columns:repeat(5,1fr);
+  }
+  .tuck-item{
+    display:flex; flex-direction:column; gap:2px;
+    padding:6px 12px; border-left:1px solid var(--line-soft);
+  }
+  .tuck-item:first-child{ border-left:none; }
+  .tuck-item .lbl{ font-size:10.5px; color:var(--ink-faint); line-height:1.25; }
+  .tuck-item .val{ font-family:'IBM Plex Mono',monospace; font-size:16.5px; font-weight:700; color:var(--col,var(--ink)); }
+  .tuck-item.tone-danger{ --col:var(--red); }
+  .tuck-item.tone-warning{ --col:var(--amber); }
+  .tuck-item.tone-normal{ --col:var(--indigo); }
+
+  @media (max-width:760px){
+    .hero-row{ grid-template-columns:repeat(2,1fr); }
+    .tuck{ grid-template-columns:repeat(2,1fr); padding-top:14px; margin-top:8px; }
+    .tuck-item{ border-left:none; border-top:1px solid var(--line-soft); padding-top:8px; }
+    .tuck-item:nth-child(-n+2){ border-top:none; }
+  }
+
+  .foot{ font-size:12px; color:var(--ink-faint); text-align:center; margin-top:6px; }
+</style>
+
+<div class="wrap">
+
+  <div class="intro">
+    <h1>Плитки рабочего стола — компоновка</h1>
+    <p>Числа ниже — иллюстративные, для наглядности макета (сейчас на боевой странице у вас везде 0). Первые четыре цвета — те же, что уже есть: фиолетовый, красный, охра и индиго; они не меняются, меняется только то, как плитки уложены.</p>
+  </div>
+
+  <div class="block">
+    <div class="block-head">
+      <h2>Сейчас — два полных ряда</h2>
+      <span class="note">для сравнения, тот же макет, что на скриншоте</span>
+    </div>
+    <div class="current-grid">
+      <div class="cur-card" style="--col:var(--violet);--tint:var(--violet-tint);--bd:var(--violet-bd)">
+        <span class="lbl">На актуализации под моей ответственностью</span><span class="val mono">3</span>
+      </div>
+      <div class="cur-card" style="--col:var(--red);--tint:var(--red-tint);--bd:var(--red-bd)">
+        <span class="lbl">Просроченные мной согласования в этом месяце</span><span class="val mono">1</span>
+      </div>
+      <div class="cur-card" style="--col:var(--amber);--tint:var(--amber-tint);--bd:var(--amber-bd)">
+        <span class="lbl">Мои ВНД, ожидающие согласования</span><span class="val mono">5</span>
+      </div>
+      <div class="cur-card" style="--col:var(--indigo);--tint:var(--indigo-tint);--bd:var(--indigo-bd)">
+        <span class="lbl">ВНД, которые мне необходимо согласовать</span><span class="val mono">8</span>
+      </div>
+    </div>
+    <div class="current-grid second">
+      <div class="cur-card"><span class="lbl">Мои задачи</span><span class="val mono">12</span></div>
+      <div class="cur-card"><span class="lbl">Записки на согласовании у меня</span><span class="val mono">4</span></div>
+      <div class="cur-card" style="--col:var(--red)"><span class="lbl">Записки с нарушением срока</span><span class="val mono">2</span></div>
+      <div class="cur-card"><span class="lbl">Заявки на закупку в согласовании</span><span class="val mono">6</span></div>
+      <div class="cur-card"><span class="lbl">Закупки в процедуре</span><span class="val mono">9</span></div>
+    </div>
+  </div>
+
+  <div class="block">
+    <div class="block-head">
+      <h2>Вариант А — веер внахлёст</h2>
+      <span class="tag">заходят друг на друга</span>
+      <span class="note">одна строка, карточки перекрывают друг друга краем; при наведении карточка выходит вперёд</span>
+    </div>
+    <div class="fan">
+      <div class="fan-card" tabindex="0"><span class="dot"></span><span class="lbl">На актуализации под моей ответственностью</span><span class="val mono">3</span></div>
+      <div class="fan-card" tabindex="0"><span class="dot"></span><span class="lbl">Просроченные согласования в этом месяце</span><span class="val mono">1</span></div>
+      <div class="fan-card" tabindex="0"><span class="dot"></span><span class="lbl">Мои ВНД, ожидающие согласования</span><span class="val mono">5</span></div>
+      <div class="fan-card" tabindex="0"><span class="dot"></span><span class="lbl">ВНД мне на согласование</span><span class="val mono">8</span></div>
+      <div class="fan-card" tabindex="0"><span class="dot"></span><span class="lbl">Мои задачи</span><span class="val mono">12</span></div>
+      <div class="fan-card" tabindex="0"><span class="dot"></span><span class="lbl">Записки на согласовании у меня</span><span class="val mono">4</span></div>
+      <div class="fan-card" tabindex="0"><span class="dot"></span><span class="lbl">Записки с нарушением срока</span><span class="val mono">2</span></div>
+      <div class="fan-card" tabindex="0"><span class="dot"></span><span class="lbl">Заявки на закупку в согласовании</span><span class="val mono">6</span></div>
+      <div class="fan-card" tabindex="0"><span class="dot"></span><span class="lbl">Закупки в процедуре</span><span class="val mono">9</span></div>
+    </div>
+    <div class="foot">Плюсы: занимает одну строку, эффектно. Минусы: 9 карточек в ряд тесно на ноутбучном экране, требует наведения, чтобы прочитать перекрытые.</div>
+  </div>
+
+  <div class="block">
+    <div class="block-head">
+      <h2>Вариант Б — карточки и подложенная лента</h2>
+      <span class="tag">Рекомендую</span>
+      <span class="note">четыре крупные — как сейчас, но компактнее; пять остальных — тонкой лентой, подвёрнутой под них</span>
+    </div>
+    <div class="stackwrap">
+      <div class="hero-row">
+        <div class="hero-card"><span class="lbl">На актуализации под моей ответственностью</span><span class="val">3</span></div>
+        <div class="hero-card"><span class="lbl">Просроченные мной согласования в этом месяце</span><span class="val">1</span></div>
+        <div class="hero-card"><span class="lbl">Мои ВНД, ожидающие согласования</span><span class="val">5</span></div>
+        <div class="hero-card"><span class="lbl">ВНД, которые мне необходимо согласовать</span><span class="val">8</span></div>
+      </div>
+      <div class="tuck">
+        <div class="tuck-item tone-normal"><span class="lbl">Мои задачи</span><span class="val">12</span></div>
+        <div class="tuck-item tone-warning"><span class="lbl">Записки на согласовании у меня</span><span class="val">4</span></div>
+        <div class="tuck-item tone-danger"><span class="lbl">Записки с нарушением срока</span><span class="val">2</span></div>
+        <div class="tuck-item tone-normal"><span class="lbl">Заявки на закупку в согласовании</span><span class="val">6</span></div>
+        <div class="tuck-item tone-normal"><span class="lbl">Закупки в процедуре</span><span class="val">9</span></div>
+      </div>
+    </div>
+    <div class="foot">Плюсы: ничего не перекрыто и не требует наведения, при этом заметно ниже по высоте, чем два полных ряда; лента читается как единая сводка «второго плана». Цвет второй ленты — по срочности (норма/предупреждение/просрочка), не по контуру.</div>
+  </div>
+
+</div>

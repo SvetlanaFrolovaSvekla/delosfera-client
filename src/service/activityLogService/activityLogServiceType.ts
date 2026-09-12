@@ -1,4 +1,4 @@
-export type ActivityIcon = "check" | "x" | "doc" | "clock" | "info";
+export type ActivityIcon = "check" | "x" | "doc" | "clock" | "edit" | "info";
 
 export interface ActivityLogEntryResponse {
     id: number;

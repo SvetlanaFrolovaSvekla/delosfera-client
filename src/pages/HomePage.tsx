@@ -142,11 +142,15 @@ export function HomePage() {
             />
 
             {/* Сетка с карточками с информацией об активности деятельности */}
-            <HomeKpiSection summary={homeSummary}/>
+            <HomeKpiSection summary={homeSummary} totalTasksCount={tasksTotalCount}/>
 
-            {/* Верхняя пара — "Мои задачи" и "План актуализации", высоты независимые. */}
-            <div className="grid grid-cols-1 xl:grid-cols-[1.65fr_1fr] gap-[18px]">
-                <MyTasksCard tasks={homeTasks} szTasks={szTasks} prcTasks={prcTasks} totalCount={tasksTotalCount} isLoading={tasksLoading}/>
+            {/* Верхняя пара — "Мои задачи" и "План актуализации", высоты независимые.
+                items-start - без него грид растягивает обе ячейки по умолчанию (align-items:
+                stretch) до высоты более высокой из них: "План актуализации" (компактная сетка
+                из 4 показателей) раздувался вровень с "Мои задачи" и снизу оставалось пустое
+                белое место. Теперь у каждой панели своя собственная высота по содержимому. */}
+            <div className="grid grid-cols-1 items-start gap-[18px] xl:grid-cols-[1.65fr_1fr]">
+                <MyTasksCard tasks={homeTasks} szTasks={szTasks} prcTasks={prcTasks} isLoading={tasksLoading}/>
                 <ActualizationPlanCard summary={actualizationSummary} isLoading={actualizationLoading}/>
             </div>
 

@@ -29,7 +29,22 @@ interface StartActualizationModalProps {
 export function StartActualizationModal({
                                             canWithoutApproval, canWithApproval, submitting, error, currentUserId, onClose, onConfirm,
                                         }: StartActualizationModalProps) {
-    const [requiresApproval, setRequiresApproval] = useState<boolean>(canWithoutApproval);
+    // По умолчанию — "с согласованием", КРОМЕ случая, когда у пользователя есть только право
+    // "без согласования" (canWithoutApproval && !canWithApproval): тогда единственный
+    // допустимый для него вариант — false, и его обязательно нужно проставить по умолчанию,
+    // поскольку переключатель (RadioRow ниже) показывается только при canChoose (есть оба
+    // права) — если выбора нет, поправить дефолт вручную негде.
+    //
+    // Раньше здесь стояло `= canWithoutApproval`, что давало ПРОТИВОПОЛОЖНЫЙ (и недопустимый)
+    // дефолт как раз в зеркальном случае: пользователю только с правом "с согласованием"
+    // (canWithApproval && !canWithoutApproval) подставлялось requiresApproval = false — а
+    // переключатель, чтобы это исправить, был скрыт тем же условием canChoose. Отправка формы
+    // с таким дефолтом на бэке падала с UnauthorizedAccessException (см. VndActualizationService.
+    // StartAsync: "!request.RequiresApproval && !canWithoutApproval"), и пользователь не мог
+    // понять, почему кнопка не работает.
+    const [requiresApproval, setRequiresApproval] = useState<boolean>(
+        !(canWithoutApproval && !canWithApproval)
+    );
     const [responsibleUserId, setResponsibleUserId] = useState<number>(currentUserId);
     const [responsibleUserName, setResponsibleUserName] = useState<string | null>(null);
     const [pickerOpen, setPickerOpen] = useState(false);

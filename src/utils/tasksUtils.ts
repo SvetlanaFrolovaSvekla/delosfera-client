@@ -1,12 +1,12 @@
-import {getDeadlineUrgency, getRemainingLabel} from "@/utils/dateUtils.ts";
+import {formatDurationMinutes, getDeadlineUrgency, getRemainingLabel} from "@/utils/dateUtils.ts";
 import {DEADLINE_URGENCY_META} from "@/constants/vndStatus.ts";
 import type {VndTaskResponse} from "@/service/tasksVndService/tasksServiceTypes.ts";
 import type {InboxTask} from "@/service/workflowService/taskInboxService.ts";
 
-export function getDeadlineTone(deadlineAt: string | null, totalHours: number | null): { label: string; color: string } {
+export function getDeadlineTone(deadlineAt: string | null, totalMinutes: number | null): { label: string; color: string } {
     if (!deadlineAt) return { label: "—", color: "#8b97ab" };
 
-    const urgency = getDeadlineUrgency(deadlineAt, totalHours);
+    const urgency = getDeadlineUrgency(deadlineAt, totalMinutes);
     const label = getRemainingLabel(deadlineAt);
 
     return { label, color: DEADLINE_URGENCY_META[urgency].color };
@@ -56,7 +56,7 @@ export function getMetaText(task: VndTaskResponse): string {
         const stageLabel = getStageKindLabel(task.stageTitle);
         if (stageLabel) parts.push(stageLabel);
         if (task.initiatorName) parts.push(`Инициатор: ${task.initiatorName}`);
-        if (task.deadlineMinutes) parts.push(`Норматив: ${task.deadlineMinutes} ч`);
+        if (task.deadlineMinutes) parts.push(`Норматив: ${formatDurationMinutes(task.deadlineMinutes)}`);
 
         return parts.length > 0 ? parts.join(" · ") : "Ожидает вашего решения";
     }

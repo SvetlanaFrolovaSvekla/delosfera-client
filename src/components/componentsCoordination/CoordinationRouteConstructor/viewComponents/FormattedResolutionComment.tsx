@@ -6,6 +6,7 @@
 // StageCardView и т.п.).
 import {Fragment} from "react";
 import {Search} from "lucide-react";
+import {Tooltip} from "@/components/componentsGeneral/Tooltip.tsx";
 
 // Строка целиком - "Цитата: «...»" (formatQuote всегда кладёт цитату на отдельную строку).
 const QUOTE_LINE_RE = /^Цитата: «.*»$/;
@@ -54,14 +55,15 @@ export function FormattedResolutionComment({text, quotes, onShowInText}: {
                             <>
                                 <span className="font-bold text-[#4e57d6]">{line}</span>
                                 {quote && onShowInText && (
-                                    <button
-                                        type="button"
-                                        onClick={() => onShowInText(quote)}
-                                        title="Показать в тексте"
-                                        className="mx-1 inline-grid h-[18px] w-[18px] cursor-pointer place-items-center rounded-[5px] bg-[#ececfc] align-middle text-[#4e57d6] hover:bg-[#dcdefa]"
-                                    >
-                                        <Search size={11}/>
-                                    </button>
+                                    <Tooltip content="Показать в тексте" side="top">
+                                        <button
+                                            type="button"
+                                            onClick={() => onShowInText(quote)}
+                                            className="mx-1 inline-grid h-[18px] w-[18px] cursor-pointer place-items-center rounded-[5px] bg-[#ececfc] align-middle text-[#4e57d6] hover:bg-[#dcdefa]"
+                                        >
+                                            <Search size={11}/>
+                                        </button>
+                                    </Tooltip>
                                 )}
                             </>
                         ) : line}

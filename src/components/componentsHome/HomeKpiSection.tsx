@@ -114,9 +114,18 @@ const BOTTOM_TOOLTIPS: Record<string, string> = {
 
 interface HomeKpiSectionProps {
     summary: VndHomeSummary | null | undefined;
+    /** Общее число задач по ВСЕМ контурам (ВНД + служебные записки + закупки, все разделы
+     * "Мои задачи" сразу) - то же число, что и totalCount на странице "Мои задачи"/в её
+     * виджете на главной (см. HomePage.tsx: tasksTotalCount). Подменяет собой узкое серверное
+     * значение плитки "tasks" (dashboard/summary) - оно считает только открытые WorkflowTask
+     * (СЗ/закупки) плюс ВНД-задачи, ждущие решения СЕЙЧАС (см. DashboardService.GetSummaryAsync),
+     * без "Мои ВНД на согласовании", "Актуализация", "Консолидация" и "Отклонено" - т.е. заметно
+     * меньше, чем реально висит в разделе "Мои задачи". Пока это не посчитано так же на бэке,
+     * подменяем значение здесь, если оно передано. */
+    totalTasksCount?: number;
 }
 
-export function HomeKpiSection({summary}: HomeKpiSectionProps) {
+export function HomeKpiSection({summary, totalTasksCount}: HomeKpiSectionProps) {
     const {t} = useTranslation();
     const navigate = useNavigate();
 
@@ -143,7 +152,8 @@ export function HomeKpiSection({summary}: HomeKpiSectionProps) {
     }, []);
 
     const tasksKpi = dashboard?.kpis.find((k) => k.code === "tasks");
-    const topKpis = buildTopKpis(summary, tasksKpi?.label ?? "Мои задачи", tasksKpi?.value ?? 0);
+    const tasksValue = totalTasksCount ?? tasksKpi?.value ?? 0;
+    const topKpis = buildTopKpis(summary, tasksKpi?.label ?? "Мои задачи", tasksValue);
 
     // "На актуализации под моей ответственностью" берётся из той же сводки ВНД
     // (summary), что уже используется верхним рядом — раньше нижний ряд запрашивал

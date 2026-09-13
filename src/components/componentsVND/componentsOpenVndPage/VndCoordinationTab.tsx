@@ -181,6 +181,9 @@ export function VndCoordinationTab({vnd, onVndChanged}: VndCoordinationTabProps)
                 {modal?.kind === "startApproval" && (
                     <VndStartApprovalModal
                         vndId={vnd.id}
+                        draftOwnerUserId={vnd.createdByUserId}
+                        draftOwnerUserName={vnd.createdByUserName}
+                        currentUserId={currentUserId}
                         onClose={() => setModal(null)}
                         onStarted={() => {
                             setModal(null);

@@ -112,7 +112,9 @@ export function StageCardView({stage, cardRef, isCurrentUserStage, isProcessEnde
     const Icon = isCustom ? CUSTOM_STAGE_ICON : FIXED_STAGE_ICON;
 
     const isMeApprover = stage.approverUserId === user?.id;
-    const profileUrl = isMeApprover ? "/profile" : `/profile/${stage.approverUserId}`;
+    // Чужой профиль живёт на /users/:id (см. App.tsx и тот же баг/фикс в VndApprovalSummary
+    // рядом) - "/profile" без id это только собственный профиль текущего пользователя.
+    const profileUrl = isMeApprover ? "/profile" : `/users/${stage.approverUserId}`;
 
     // Тултип с полным ФИО нужен, только если текст реально обрезан по ширине (truncate) —
     // проверяем через scrollWidth/clientWidth и пересчитываем при ресайзе карточки.

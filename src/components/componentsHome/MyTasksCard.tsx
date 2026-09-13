@@ -9,6 +9,7 @@ import {Loader} from "@/components/componentsGeneral/Loader.tsx";
 import {EmptyState} from "@/components/componentsGeneral/EmptyState.tsx";
 import {VndTaskCard} from "@/components/componentsTasks/VndTaskCard.tsx";
 import {SzTaskCard} from "@/components/componentsTasks/SzTaskCard.tsx";
+import {HOME_TOP_ROW_HEIGHT} from "@/constants/home.ts";
 
 interface MyTasksCardProps {
     tasks: VndTaskResponse[];
@@ -17,7 +18,6 @@ interface MyTasksCardProps {
     szTasks?: InboxTask[];
     // Задачи по закупкам — тоже из сводного реестра, вне контура ВНД.
     prcTasks?: InboxTask[];
-    totalCount: number;
     isLoading: boolean;
 }
 
@@ -31,7 +31,7 @@ const SECTIONS: { id: string; label: string }[] = [
     {id: "prc", label: "Закупки"},
 ];
 
-export function MyTasksCard({tasks, szTasks = [], prcTasks = [], totalCount, isLoading}: MyTasksCardProps) {
+export function MyTasksCard({tasks, szTasks = [], prcTasks = [], isLoading}: MyTasksCardProps) {
     const {t} = useTranslation();
     const navigate = useNavigate();
     const [section, setSection] = useState<string>("all");
@@ -52,17 +52,21 @@ export function MyTasksCard({tasks, szTasks = [], prcTasks = [], totalCount, isL
     const isEmpty = vndTasks.length === 0 && visibleSzSource.length === 0 && visiblePrcSource.length === 0;
 
     return (
-        <div className="overflow-hidden rounded-[14px] border border-[#e9edf3] bg-white">
-            <div className="flex flex-wrap items-center justify-between gap-2 border-b border-[#eef2f7] px-[18px] py-4 pb-[13px]">
+        // Высота карточки зафиксирована (HOME_TOP_ROW_HEIGHT) и совпадает с "План актуализации
+        // ВНД" рядом (см. ActualizationPlanCard.tsx) - обе теперь одной и той же высоты, а не
+        // "примерно одинаковой" (см. items-start в HomePage.tsx). Header - flex-none, список
+        // ниже сам занимает оставшееся место и скроллится (см. flex-1 min-h-0 overflow-y-auto
+        // ниже вместо прежнего фиксированного style={{maxHeight}}).
+        <div
+            className="flex flex-col overflow-hidden rounded-[14px] border border-[#e9edf3] bg-white"
+            style={{height: HOME_TOP_ROW_HEIGHT}}
+        >
+            <div className="flex flex-none flex-wrap items-center justify-between gap-2 border-b border-[#eef2f7] px-[18px] py-4 pb-[13px]">
                 <div className="flex items-center gap-2.5">
-                    {/* Мои задачи */}
+                    {/* Мои задачи - кружок с общим числом задач убран: то же число теперь
+                        показывает плитка "Мои задачи" в верхней сводке (см. HomeKpiSection.tsx,
+                        totalTasksCount) - дублировать его ещё и здесь смысла не было. */}
                     <h2 className="text-[15px] font-semibold">{t("tasks.myTasks.title")}</h2>
-                    <span
-                        className="rounded-full bg-[var(--app-soft,_#e9f0ff)] px-2 py-[2px] text-[11.5px] font-bold text-[var(--app-accent,_#2f68f5)]"
-                        style={{fontFamily: "'IBM Plex Mono', monospace"}}
-                    >
-                        {totalCount}
-                    </span>
                 </div>
                 <div className="flex flex-wrap items-center gap-2.5">
                     <div className="flex flex-wrap gap-1.5">
@@ -90,10 +94,10 @@ export function MyTasksCard({tasks, szTasks = [], prcTasks = [], totalCount, isL
                     </button>
                 </div>
             </div>
-            {/* Ограничиваем высоту и скроллим списком — ниже добавлена ещё одна панель
-                ("Последние уведомления", см. RecentNotificationsCard.tsx), и виджету
-                задач больше не следует растягиваться на весь список из VISIBLE_TASKS_LIMIT. */}
-            <div className="overflow-y-auto" style={{maxHeight: "420px"}}>
+            {/* Список сам занимает оставшееся место в карточке фиксированной высоты
+                (HOME_TOP_ROW_HEIGHT) и скроллится, если не помещается — см. комментарий у
+                style={{height}} карточки выше. */}
+            <div className="min-h-0 flex-1 overflow-y-auto">
                 {isLoading ? (
                     // Загрузка задач…
                     <Loader label={t("tasks.myTasks.loading")} fullHeight={false}/>
@@ -106,8 +110,10 @@ export function MyTasksCard({tasks, szTasks = [], prcTasks = [], totalCount, isL
                     />
                 ) : (
                     <>
+                        {/* square - без скруглённых углов: строки идут впритык друг к другу без
+                            отступа, скруглённые углы каждой смотрелись неаккуратно на стыках. */}
                         {visibleTasks.map((task) => (
-                            <VndTaskCard key={`vnd-${task.vndId}`} task={task}/>
+                            <VndTaskCard key={`vnd-${task.vndId}`} task={task} square/>
                         ))}
                         {visibleSzTasks.map((task) => (
                             <SzTaskCard key={`sz-${task.taskId}`} task={task}/>

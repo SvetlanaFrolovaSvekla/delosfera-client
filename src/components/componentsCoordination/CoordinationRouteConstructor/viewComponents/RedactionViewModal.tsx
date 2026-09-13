@@ -189,6 +189,14 @@ export function RedactionViewModal({
         [approvalProcess],
     );
 
+    // Комментарий инициатора о внесённых исправлениях (см. ResubmitAfterRevisionAsync на бэке) -
+    // раньше был виден только на вкладке "Маршрут согласования" (VndApprovalSummary), а при
+    // просмотре самой редакции (эта модалка) в панели "Комментарии" не показывался вовсе, хотя
+    // логически он такой же комментарий к этой редакции, как и резолюции согласующих.
+    const hasInitiatorComment = !!approvalProcess?.repeatInitiatorComment;
+    const commentsCount = allComments.length + (hasInitiatorComment ? 1 : 0);
+    const [initiatorCommentOpen, setInitiatorCommentOpen] = useState(false);
+
     const [hoverMark, setHoverMark] = useState<{mark: QuoteMarkInfo; rect: DOMRect} | null>(null);
     const [openMark, setOpenMark] = useState<QuoteMarkInfo | null>(null);
     const [marksPanelOpen, setMarksPanelOpen] = useState(false);
@@ -331,7 +339,7 @@ export function RedactionViewModal({
                                         setMarksPanelOpen((v) => !v);
                                         setContentsOpen(false);
                                     }}
-                                    disabled={allComments.length === 0}
+                                    disabled={commentsCount === 0}
                                     className="relative cursor-pointer flex-none grid h-9 w-9 place-items-center rounded-[9px] border transition-colors disabled:cursor-not-allowed disabled:opacity-40"
                                     style={
                                         marksPanelOpen
@@ -340,11 +348,11 @@ export function RedactionViewModal({
                                     }
                                 >
                                     <MessageSquareText size={16}/>
-                                    {allComments.length > 0 && (
+                                    {commentsCount > 0 && (
                                         <span
                                             className="absolute -top-[5px] -right-[5px] flex h-[16px] min-w-[16px] items-center justify-center rounded-full bg-[#4e57d6] px-[3px] text-[9.5px] font-bold text-white"
                                         >
-                                            {allComments.length}
+                                            {commentsCount}
                                         </span>
                                     )}
                                 </button>
@@ -408,7 +416,7 @@ export function RedactionViewModal({
                         <div className="flex h-full w-[300px] flex-none flex-col overflow-hidden rounded-[12px] border border-[#e5e9f0] bg-white">
                             <div className="flex flex-none items-center justify-between border-b border-[#eef2f7] px-3.5 py-3">
                                 <span className="text-[12.5px] font-bold text-[#1c2740]">
-                                    Комментарии ({allComments.length})
+                                    Комментарии ({commentsCount})
                                 </span>
                                 <button
                                     type="button"
@@ -419,12 +427,41 @@ export function RedactionViewModal({
                                 </button>
                             </div>
                             <div className="min-h-0 flex-1 overflow-y-auto p-2.5">
-                                {allComments.length === 0 ? (
+                                {commentsCount === 0 ? (
                                     <div className="px-2 py-3 text-center text-[12px] text-[#a3adbd]">
                                         По этому согласованию пока нет комментариев
                                     </div>
                                 ) : (
                                     <div className="flex flex-col gap-1.5">
+                                        {/* Комментарий инициатора о внесённых исправлениях - см. hasInitiatorComment
+                                            выше. Показываем первым (это всегда самое свежее событие - комментарий
+                                            появляется только при повторной отправке на согласование, т.е. позже
+                                            любой резолюции текущего круга). */}
+                                        {hasInitiatorComment && approvalProcess && (
+                                            <button
+                                                type="button"
+                                                onClick={() => {
+                                                    setInitiatorCommentOpen(true);
+                                                    setMarksPanelOpen(false);
+                                                }}
+                                                className="cursor-pointer flex flex-col gap-1 rounded-[9px] border border-[#e9edf3] bg-[#fbfcfe] px-2.5 py-2 text-left hover:border-[#4e57d6]/40 hover:bg-white"
+                                            >
+                                                <span className="flex items-center gap-1.5">
+                                                    <span className="flex h-5 w-5 flex-none items-center justify-center rounded-md bg-[#ececfc] text-[8.5px] font-bold text-[#4e57d6]">
+                                                        {getInitials(approvalProcess.initiatorName)}
+                                                    </span>
+                                                    <span className="truncate text-[11.5px] font-semibold text-[#26324a]">
+                                                        {approvalProcess.initiatorName}
+                                                    </span>
+                                                    <span className="flex-none text-[9.5px] text-[#a3adbd]">
+                                                        · инициатор
+                                                    </span>
+                                                </span>
+                                                <span className="line-clamp-2 break-words text-[11px] leading-snug text-[#6b7488]">
+                                                    {approvalProcess.repeatInitiatorComment}
+                                                </span>
+                                            </button>
+                                        )}
                                         {allComments.map((item) => (
                                             <button
                                                 key={item.id}
@@ -475,6 +512,17 @@ export function RedactionViewModal({
                     // цитатой резолюции (см. quotes из quoteMarkModalProps выше) - только если у
                     // этой резолюции вообще есть хоть одна цитата, иначе показывать в тексте нечего.
                     onShowInText={openMark.allQuotes.length > 0 ? jumpToQuoteInText : undefined}
+                />
+            )}
+
+            {initiatorCommentOpen && approvalProcess && (
+                <CommentViewModal
+                    title="См. комментарий полностью"
+                    approverName={approvalProcess.initiatorName}
+                    approverUserId={approvalProcess.initiatorUserId}
+                    comment={approvalProcess.repeatInitiatorComment ?? ""}
+                    attachments={approvalProcess.repeatInitiatorCommentAttachments}
+                    onClose={() => setInitiatorCommentOpen(false)}
                 />
             )}
 

@@ -41,10 +41,32 @@ export function useVndTasks(scope: TasksScope, enabled: boolean = true) {
         setIsLoading(true);
         setError(null);
         try {
-            const data = scope === "all"
-                ? sortMerged((await Promise.all(ALL_TASK_SCOPES.map((s) => tasksService.getByScope(s)))).flat())
-                : await tasksService.getByScope(scope);
-            setTasks(data);
+            if (scope === "all") {
+                // Promise.all здесь раньше ронял ВЕСЬ список "Все" при отказе одного из пяти
+                // источников — пользователь видел пустую вкладку вместо остальных четырёх
+                // разделов, которые на самом деле загрузились. Promise.allSettled показывает то,
+                // что удалось получить, и отдельно сообщает об ошибке — см. использование error
+                // в VndTasksPanel.
+                const results = await Promise.allSettled(ALL_TASK_SCOPES.map((s) => tasksService.getByScope(s)));
+
+                const loaded = results
+                    .filter((r): r is PromiseFulfilledResult<VndTaskResponse[]> => r.status === "fulfilled")
+                    .flatMap((r) => r.value);
+                setTasks(sortMerged(loaded));
+
+                const failedScopes = results
+                    .map((r, i) => ({r, scope: ALL_TASK_SCOPES[i]}))
+                    .filter(({r}) => r.status === "rejected");
+
+                if (failedScopes.length > 0) {
+                    setError(new Error(
+                        `Не удалось загрузить часть задач (${failedScopes.map((f) => f.scope).join(", ")})`
+                    ));
+                }
+            } else {
+                const data = await tasksService.getByScope(scope);
+                setTasks(data);
+            }
         } catch (e) {
             setError(e);
         } finally {

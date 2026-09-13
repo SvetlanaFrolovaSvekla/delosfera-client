@@ -55,6 +55,11 @@ export interface StartApprovalRequest {
     primaryDeadlineMinutes: number; // Норматив первичного согласования, в минутах
     repeatDeadlineMinutes: number; // Норматив согласования после исправленных замечаний, в минутах
     finalHoldDeadlineMinutes: number; // Норматив финальной выдержки, в минутах
+    /** Кто будет указан инициатором согласования - имеет смысл только когда запускает
+     * НЕ автор черновика (главный редактор запускает согласование чужого черновика): выбор
+     * между собой (currentUserId) и автором черновика. Не указывается (или совпадает с
+     * currentUserId), если действие выполняет сам автор черновика - выбирать не из чего. */
+    initiatorUserId?: number;
 }
 
 export interface ApprovalDecisionRequest {

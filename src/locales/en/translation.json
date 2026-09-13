@@ -256,6 +256,7 @@
       "noChangesConfirmHint": "Declared as \"no changes\", no approval required — confirm and the document will move to consolidation.",
       "noPermissionHint": "You don't have permission to actualize this document.",
       "consolidationHint": "Consolidate the approved revision first! After that it can be actualized, or edited by the chief editor.",
+      "archivedHint": "This document is archived — archiving is irreversible, no revision actions are available anymore.",
       "editActualizationSettingsLink": "Change actualization settings",
       "editActualizationSettingsTitle": "Change actualization settings",
       "editActualizationSettingsTooltip": "Lets you re-decide whether the actualization will go through without document changes, and whether to shift the next scheduled actualization date.",

@@ -44,6 +44,9 @@ export interface VndTaskResponse {
     deadlineMinutes: number | null;
     /// Комментарий инициатора к повторному кругу/финальной выдержке
     initiatorComment?: string | null;
+    /// true, если процесс сейчас на доработке у инициатора (замечания устраняются) — только
+    /// для myVndApproval. См. VndTaskCard — отдельный бейдж "ВНД на доработке".
+    isRevisionNeeded?: boolean;
 
     dueActualizationDate: string | null;
     /// Заявлено ли для текущего цикла актуализации "без изменений"

@@ -14,12 +14,14 @@ function formatDue(iso: string | null): string {
 // Карточка задачи по служебной записке в виджете "Мои задачи" на главной.
 // Записки живут вне контура ВНД, поэтому у них своя карточка: ссылка ведёт на
 // /sz/{entityId}, а не на карточку ВНД.
+// Без скруглённых углов - единственное место использования этой карточки: плотный список
+// виджета "Мои задачи" на главной (см. VndTaskCard.square рядом, тот же приём).
 export function SzTaskCard({task}: SzTaskCardProps) {
     return (
         <Link
             to={taskLink(task)}
             draggable={false}
-            className="cursor-pointer flex w-full items-center gap-[13px] rounded-[14px] border border-[#e9edf3]
+            className="cursor-pointer flex w-full items-center gap-[13px] border border-[#e9edf3]
                        bg-white px-[18px] py-[13px] text-left transition-colors hover:bg-[#f8fafc]"
         >
             <span

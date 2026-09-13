@@ -1,4 +1,5 @@
 // Модалка запуска согласования: конструктор маршрута + нормативы сроков
+import {useState} from "react";
 import {createPortal} from "react-dom";
 import type {ApprovalProcessResponse} from "@/service/coordinationService/coordinationServiceTypes.ts";
 import {MAX_STAGES} from "@/constants/coordinationParams.ts";
@@ -25,6 +26,13 @@ interface VndStartApprovalModalProps {
     vndId: number;
     onClose: () => void;
     onStarted: (process: ApprovalProcessResponse) => void;
+    /** id и ФИО автора черновика - для выбора инициатора согласования (см. ниже), когда
+     * согласование запускает не сам автор (например, главный редактор - за него). Если не
+     * передано, или совпадает с currentUserId, выбор не показывается - инициатором будет
+     * запускающий, как и раньше. */
+    draftOwnerUserId?: number | null;
+    draftOwnerUserName?: string | null;
+    currentUserId?: number;
 }
 
 const ROUTE_HINTS: RouteHint[] = [
@@ -50,7 +58,16 @@ const ROUTE_HINTS: RouteHint[] = [
     },
 ];
 
-export function VndStartApprovalModal({vndId, onClose, onStarted}: VndStartApprovalModalProps) {
+export function VndStartApprovalModal({
+    vndId, onClose, onStarted, draftOwnerUserId, draftOwnerUserName, currentUserId,
+}: VndStartApprovalModalProps) {
+    // Запускающий - не автор черновика (например, главный редактор действует за него) - тогда
+    // даём выбор, кто станет инициатором согласования: сам запускающий или автор черновика.
+    // См. VndApprovalService.StartAsync/actingOnSomeoneElsesDraft на бэке.
+    const actingOnSomeoneElsesDraft =
+        draftOwnerUserId != null && currentUserId != null && draftOwnerUserId !== currentUserId;
+    const [initiator, setInitiator] = useState<"self" | "owner">("self");
+
     const {
         stages,
         catalogLoading,
@@ -82,6 +99,9 @@ export function VndStartApprovalModal({vndId, onClose, onStarted}: VndStartAppro
         repeatMinutes,
         finalHoldMinutes,
         onStarted,
+        initiatorUserId: actingOnSomeoneElsesDraft
+            ? (initiator === "owner" ? draftOwnerUserId! : currentUserId)
+            : undefined,
     });
 
     const {funnelWrapperRef, targetRef, cardsScrollRef, paths, recomputePaths, registerStageRef} =
@@ -115,7 +135,35 @@ export function VndStartApprovalModal({vndId, onClose, onStarted}: VndStartAppro
                     </button>
                 </div>
 
-
+                {/* Выбор инициатора согласования - только когда запускает не автор черновика */}
+                {actingOnSomeoneElsesDraft && (
+                    <div className="flex flex-none flex-col gap-2 border-b border-[#eef0f5] px-7 py-4">
+                        <span className="text-[12.5px] font-semibold text-[#1c2740]">
+                            Кто будет указан инициатором согласования?
+                        </span>
+                        <div className="flex flex-wrap gap-4">
+                            <label className="flex cursor-pointer items-center gap-2 text-[12.5px] text-[#3a4560]">
+                                <input
+                                    type="radio"
+                                    name="approval-initiator"
+                                    checked={initiator === "self"}
+                                    onChange={() => setInitiator("self")}
+                                />
+                                Стать инициатором согласования
+                            </label>
+                            <label className="flex cursor-pointer items-center gap-2 text-[12.5px] text-[#3a4560]">
+                                <input
+                                    type="radio"
+                                    name="approval-initiator"
+                                    checked={initiator === "owner"}
+                                    onChange={() => setInitiator("owner")}
+                                />
+                                Оставить инициатором согласования{" "}
+                                {draftOwnerUserName ?? "автора черновика"}
+                            </label>
+                        </div>
+                    </div>
+                )}
 
                 {/* Контент */}
                 <div className="flex-1 overflow-y-auto px-12 py-4">

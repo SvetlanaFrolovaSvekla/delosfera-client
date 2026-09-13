@@ -211,6 +211,18 @@ export const TASK_SCOPE_META: Record<"coordination" | "actualization" | "consoli
     },
 };
 
+// Бейдж "ВНД на доработке" (myVndApproval, процесс в статусе RevisionNeeded) - отдельный от
+// COORDINATION_STAGE_META, т.к. у доработки нет фазы согласования (см. MapProcessPhase на
+// бэке - для RevisionNeeded возвращает null). Цвет/иконка сознательно другие, чем у обычных
+// фаз согласования (синие) - это состояние принципиально другое: мяч на стороне инициатора,
+// а не согласующих, и раньше карточка выглядела так же, как обычное "в процессе согласования".
+export const REVISION_NEEDED_META: TaskStatusMeta = {
+    label: "ВНД на доработке",
+    color: "#b3730a",
+    bg: "#fbeecf",
+    icon: FileEdit,
+};
+
 
 // Цвета/иконки срочности дедлайна согласования
 export const DEADLINE_URGENCY_META = {

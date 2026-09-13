@@ -93,7 +93,7 @@ export function VndTasksPanel() {
     const isDoneAvailable = topTab !== "all";
     const isDoneView = isDoneAvailable && doneToggle === "done";
 
-    const { tasks: activeTasks, isLoading: isActiveLoading } = useVndTasks(scope, !isDoneView);
+    const { tasks: activeTasks, isLoading: isActiveLoading, error: activeError } = useVndTasks(scope, !isDoneView);
     const { data: donePageData, isLoading: isDoneLoading } = useVndTasksDone(
         isDoneView ? (scope as TaskScope) : null,
         donePage,
@@ -165,6 +165,13 @@ export function VndTasksPanel() {
         const suffix = isDoneView ? " (выполненные)" : "";
         return `Найдено задач: ${filteredTasks.length} из ${total} ${label}${suffix}`;
     }, [phaseFilteredTasks, filteredTasks, searchQuery, topTab, sectionLabel, isDoneView]);
+
+    // Раньше ошибка загрузки (activeError) нигде не читалась — список молча выглядел просто
+    // пустым ("задач нет"), неотличимо от честного "пусто", хотя на деле запрос упал. Показываем
+    // отдельным баннером над списком, не подменяя пустое состояние.
+    const activeErrorMessage = !isDoneView && activeError
+        ? activeError instanceof Error ? activeError.message : "Не удалось загрузить задачи"
+        : null;
 
     // Если поиск сузил непустой список до нуля карточек — это "ничего не нашлось", а не
     // "в разделе пусто" (у этих двух причин разные тексты-заглушки и значки — см. ниже).
@@ -282,6 +289,12 @@ export function VndTasksPanel() {
                     </div>
                 )}
             </div>
+
+            {activeErrorMessage && (
+                <div className="mb-3 rounded-[10px] border border-[#f2c2c2] bg-[#fdf1f1] px-3 py-[10px] text-[12.5px] text-[#c0392b]">
+                    {activeErrorMessage}
+                </div>
+            )}
 
             <VndTaskList
                 tasks={filteredTasks}

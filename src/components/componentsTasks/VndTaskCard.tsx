@@ -2,7 +2,7 @@ import type {MouseEvent} from "react";
 import {Link} from "react-router-dom";
 import {CheckCircle2} from "lucide-react";
 import type {VndTaskResponse} from "@/service/tasksVndService/tasksServiceTypes.ts";
-import {COORDINATION_STAGE_META, TASK_SCOPE_META} from "@/constants/vndStatus.ts";
+import {COORDINATION_STAGE_META, REVISION_NEEDED_META, TASK_SCOPE_META} from "@/constants/vndStatus.ts";
 import {getActionTitle, getDeadlineTone, getMetaText} from "@/utils/tasksUtils.ts";
 import {timeAgo} from "@/utils/dateUtils.ts";
 import {Icon} from "@/components/icons/Icon.tsx";
@@ -14,6 +14,12 @@ interface VndTaskCardProps {
     /** Запрос поиска на странице "Мои задачи" — подсвечивает совпадения тем же
      *  компонентом, что и поиск в шапке (см. HeaderSearchResults). */
     searchQuery?: string;
+    /** Без скруглённых углов - для плотного списка виджета "Мои задачи" на главной
+     * (см. MyTasksCard), где строки идут впритык друг к другу без отступа: скруглённые
+     * углы каждой строки там смотрелись неаккуратно (то круглый, то прямой стык между
+     * соседними строками). На отдельной странице "Мои задачи" (VndTaskList, карточки с
+     * отступом между собой) обычные скруглённые углы остаются как есть. */
+    square?: boolean;
 }
 
 const handleClick = (e: MouseEvent<HTMLAnchorElement>) => {
@@ -27,17 +33,20 @@ const handleClick = (e: MouseEvent<HTMLAnchorElement>) => {
 // в остальных случаях (актуализация/консолидация) правильный таб определяет сама страница ВНД.
 const APPROVAL_TAB_SCOPES: VndTaskResponse["scope"][] = ["coordination", "myVndApproval"];
 
-export function VndTaskCard({task, searchQuery = ""}: VndTaskCardProps) {
+export function VndTaskCard({task, searchQuery = "", square = false}: VndTaskCardProps) {
     // Основной бейдж = раздел/вкладка "Мои задачи", в которую ведёт карточка
     // ("Ждущие моего согласования" / "Мои ВНД на согласовании" / "Актуализация" / "Консолидация")
     const scopeMeta = TASK_SCOPE_META[task.scope];
     const ScopeIcon = scopeMeta.icon;
 
     // Отдельный бейдж = текущий этап согласования (первичное/повторное/финальная выдержка) —
-    // заполняется и для coordination, и для myVndApproval
-    const stageMeta = task.stagePhase
-        ? COORDINATION_STAGE_META[task.stagePhase as keyof typeof COORDINATION_STAGE_META]
-        : null;
+    // заполняется и для coordination, и для myVndApproval. На доработке (isRevisionNeeded)
+    // этапа нет (см. MapProcessPhase на бэке) - вместо него отдельный бейдж "ВНД на доработке".
+    const stageMeta = task.isRevisionNeeded
+        ? REVISION_NEEDED_META
+        : task.stagePhase
+            ? COORDINATION_STAGE_META[task.stagePhase as keyof typeof COORDINATION_STAGE_META]
+            : null;
 
     const hasStagePhase = task.scope === "coordination" || task.scope === "myVndApproval";
     const due = hasStagePhase
@@ -50,9 +59,11 @@ export function VndTaskCard({task, searchQuery = ""}: VndTaskCardProps) {
             state={APPROVAL_TAB_SCOPES.includes(task.scope) ? {tab: "approval"} : undefined}
             draggable={false}
             onClick={handleClick}
-            className="cursor-pointer flex w-full items-center gap-[13px] rounded-[14px] border border-[#e9edf3]
-                       bg-white px-[18px] py-[13px] text-left transition-colors hover:bg-[#f8fafc]
-                       select-text [-webkit-user-drag:none]"
+            className={
+                `cursor-pointer flex w-full items-center gap-[13px] border border-[#e9edf3] ${square ? "" : "rounded-[14px]"}
+                 bg-white px-[18px] py-[13px] text-left transition-colors hover:bg-[#f8fafc]
+                 select-text [-webkit-user-drag:none]`
+            }
         >
             <span
                 className="grid h-9 w-9 flex-none place-items-center rounded-[10px]"
@@ -75,12 +86,16 @@ export function VndTaskCard({task, searchQuery = ""}: VndTaskCardProps) {
                     >
                         {scopeMeta.label}
                     </span>
-                    {/* Текущий этап согласования — отдельно от раздела выше */}
+                    {/* Текущий этап согласования — отдельно от раздела выше. На доработке
+                        (isRevisionNeeded) - отдельная иконка (FileEdit), чтобы бейдж не
+                        сливался по виду с обычными фазами согласования (там иконки в бейдже
+                        нет намеренно - это самостоятельное состояние, а не очередная фаза). */}
                     {stageMeta && (
                         <span
-                            className="rounded-full px-[9px] py-[2px] text-[11px] font-semibold"
+                            className="flex items-center gap-1 rounded-full px-[9px] py-[2px] text-[11px] font-semibold"
                             style={{background: stageMeta.bg, color: stageMeta.color}}
                         >
+                            {task.isRevisionNeeded && <stageMeta.icon size={11}/>}
                             {stageMeta.label}
                         </span>
                     )}

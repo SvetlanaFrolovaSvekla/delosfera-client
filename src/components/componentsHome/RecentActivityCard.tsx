@@ -19,6 +19,8 @@ const ICON_STYLE: Record<ActivityIcon, { iconName: string; col: string; bg: stri
     // у карандаша в "Истории" на карточке документа (DocumentHistory.tsx).
     edit: {iconName: "edit", col: "#55617a", bg: "#eef1f5"},
     info: {iconName: "info", col: "#6b7280", bg: "#f1f2f4"},
+    // Удаление черновика — красная мусорка, тот же красный, что и у "x".
+    trash: {iconName: "trash", col: "#c0392b", bg: "#fbe7e4"},
 };
 
 interface RecentActivityCardProps {
@@ -106,7 +108,9 @@ export function RecentActivityCard({limit = 15, module}: RecentActivityCardProps
                                     <Icon name={style.iconName} width={14} height={14}/>
                                 </span>
                                 <div className="min-w-0">
-                                    <div className="text-[12.5px] leading-[1.4] text-[#26324a]">{item.text}</div>
+                                    {/* whitespace-pre-line — сервер разносит длинный список изменённых
+                                        реквизитов по строкам через \n (см. VndService.BuildChangedFieldsList) */}
+                                    <div className="whitespace-pre-line text-[12.5px] leading-[1.4] text-[#26324a]">{item.text}</div>
                                     <div className="mt-0.5 text-[11px] text-[#8b97ab]">{timeAgo(item.createdAt)}</div>
                                 </div>
                             </div>

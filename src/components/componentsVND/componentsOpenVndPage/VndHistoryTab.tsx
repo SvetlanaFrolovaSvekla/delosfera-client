@@ -1,5 +1,6 @@
 import {useEffect, useState} from "react";
-import {Loader2, Shield} from "lucide-react";
+import {FileStack, Loader2, Shield} from "lucide-react";
+import {EmptyState} from "@/components/componentsGeneral/EmptyState.tsx";
 import {activityLogService} from "@/service/activityLogService/activityLogService.ts";
 import type {ActivityLogEntryResponse} from "@/service/activityLogService/activityLogServiceType.ts";
 import {coordinationService} from "@/service/coordinationService/coordinationService.ts";
@@ -40,6 +41,7 @@ const ICON_DOT_COLOR: Record<string, string> = {
     x: "bg-red-500",
     doc: "bg-indigo-500",
     clock: "bg-amber-500",
+    trash: "bg-red-500",
     info: "bg-[#c3ccd8]",
 };
 
@@ -124,7 +126,7 @@ export function VndHistoryTab({vnd, redactions}: VndHistoryTabProps) {
                     <div className="px-5 pt-4 pb-3 border-b border-[#eef2f7] flex items-center gap-[9px]">
                         <Shield size={17} strokeWidth={1.8} className="text-[#8b97ab]"/>
                         <h2 className="m-0 text-sm font-semibold">Журнал аудита</h2>
-                        <span className="ml-auto text-[11px] text-[#a3adbd]">История всех действий с данной ВНД</span>
+                        <span className="ml-auto text-[11px] text-[#a3adbd]">История всех действий с данным ВНД</span>
                     </div>
                     <div className="px-5 pt-1.5 pb-3.5">
                         {(auditEntries?.length ?? 0) === 0 ? (
@@ -137,7 +139,9 @@ export function VndHistoryTab({vnd, redactions}: VndHistoryTabProps) {
                                         className={`w-[7px] h-[7px] flex-none rounded-full mt-1.5 ${ICON_DOT_COLOR[a.icon] ?? "bg-[#c3ccd8]"}`}
                                     />
                                     <div className="min-w-0">
-                                        <div className="text-[12.5px] text-[#26324a] leading-[1.4]">{a.text}</div>
+                                        {/* whitespace-pre-line — сервер разносит длинный список изменённых
+                                            реквизитов по строкам через \n (см. VndService.BuildChangedFieldsList) */}
+                                        <div className="whitespace-pre-line text-[12.5px] text-[#26324a] leading-[1.4]">{a.text}</div>
                                         <div className="text-[11px] text-[#8b97ab] mt-0.5">{formatDateTime(a.createdAt)}</div>
                                     </div>
                                 </div>
@@ -154,7 +158,12 @@ export function VndHistoryTab({vnd, redactions}: VndHistoryTabProps) {
                 </div>
                 <div className="px-5 pt-1.5 pb-3.5">
                     {sortedRedactions.length === 0 ? (
-                        <div className="py-4 text-[12.5px] text-[#a3adbd]">Редакций пока нет</div>
+                        <EmptyState
+                            embedded
+                            icon={FileStack}
+                            title="Редакций пока нет"
+                            description="Здесь появятся редакции документа, когда будет загружена первая версия ВНД."
+                        />
                     ) : (
                         sortedRedactions.map((r) => {
                             const displayStatus = getRedactionDisplayStatus(

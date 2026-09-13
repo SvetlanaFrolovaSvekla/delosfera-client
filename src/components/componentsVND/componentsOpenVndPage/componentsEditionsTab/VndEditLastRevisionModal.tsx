@@ -8,7 +8,7 @@ import {vndService} from "@/service/vndService/vndService.ts";
 import type {VndRedactionResponse, VndResponse} from "@/service/vndService/vndServiceType.ts";
 import {CharCounter} from "@/components/componentsGeneral/CharCounter.tsx";
 import {VND_REDACTION_DESCRIPTION_MAX_LENGTH, VND_REDACTION_MAX_ATTACHMENTS} from "@/constants/validation/vndValidation.ts";
-import {resolveVndDocTitle, buildRedactionFileName} from "@/utils/fileNaming.ts";
+import {resolveVndDocTitle, buildRedactionFileName, isDocxFile} from "@/utils/fileNaming.ts";
 import {formatFileSize} from "@/service/documentService/attachmentService.ts";
 import {downloadWithToast} from "@/utils/downloadFile.ts";
 import {useAsyncAction} from "@/hooks/useAsyncAction.ts";
@@ -16,9 +16,13 @@ import type {RedactionLanguage, RedactionViewTarget} from "@/utils/redactionLang
 import {
     RedactionViewModal
 } from "@/components/componentsCoordination/CoordinationRouteConstructor/viewComponents/RedactionViewModal.tsx";
+import {
+    AttachmentDocxPreviewModal
+} from "@/components/componentsVND/componentsOpenVndPage/componentsEditionsTab/AttachmentDocxPreviewModal.tsx";
 import {MAX_FILE_SIZE} from "@/constants/validation/totalValidatuon.ts";
 import {HelpTooltip} from "@/components/componentsGeneral/knowledgeBaseComponents/HelpTooltip.tsx";
 import { Tooltip } from "@/components/componentsGeneral/Tooltip";
+import {TruncatedTooltip} from "@/components/componentsGeneral/TruncatedTooltip.tsx";
 import {Clue} from "@/components/componentsGeneral/knowledgeBaseComponents/Clue.tsx";
 
 interface VndEditLastRevisionModalProps {
@@ -342,6 +346,10 @@ export function VndEditLastRevisionModal({vndId, vnd, redaction, roleNames, onCl
     // См. комментарий у inputKey в DocReplaceSlot / fileInputKey в VndApproverResolutionPanel -
     // пересоздаём input через key после каждого выбора, активация через <label>.
     const [attachmentsInputKey, setAttachmentsInputKey] = useState(0);
+    // Просмотр .docx-вложения (AttachmentDocxPreviewModal, тот же, что и в
+    // RedactionAttachmentsModal) - доступен только для уже загруженных вложений (нужен fileId),
+    // у ещё не сохранённых newAttachments его нет, поэтому там кнопки просмотра нет.
+    const [previewAttachment, setPreviewAttachment] = useState<{ fileId: number; fileName: string } | null>(null);
 
     const [submitting, setSubmitting] = useState(false);
     const [error, setError] = useState<string | null>(null);
@@ -565,15 +573,24 @@ export function VndEditLastRevisionModal({vndId, vnd, redaction, roleNames, onCl
                                                 }`}
                                             >
                                                 <Paperclip size={14} className="flex-none text-[#8b97ab]"/>
-                                                <Tooltip content={attachment.fileName} side="top" className="min-w-0 flex-1">
-                                                    <span
-                                                        className={`block truncate text-[12.5px] ${
-                                                            willBeRemoved ? "text-[#c0392b] line-through" : "text-[#26324a]"
-                                                        }`}
-                                                    >
-                                                        {attachment.fileName}
-                                                    </span>
-                                                </Tooltip>
+                                                <TruncatedTooltip
+                                                    text={attachment.fileName}
+                                                    className="flex-1"
+                                                    textClassName={`text-[12.5px] ${
+                                                        willBeRemoved ? "text-[#c0392b] line-through" : "text-[#26324a]"
+                                                    }`}
+                                                />
+                                                {!willBeRemoved && isDocxFile(attachment.fileName) && (
+                                                    <Tooltip content="Просмотреть документ (DOCX)" side="top">
+                                                        <button
+                                                            type="button"
+                                                            onClick={() => setPreviewAttachment({fileId: attachment.fileId, fileName: attachment.fileName})}
+                                                            className="cursor-pointer flex-none rounded-[7px] border border-[#e5e9f0] bg-white p-[6px] text-[#8b97ab] hover:border-[#4e57d6]/40 hover:text-[#4e57d6]"
+                                                        >
+                                                            <Eye size={14}/>
+                                                        </button>
+                                                    </Tooltip>
+                                                )}
                                                 {!willBeRemoved && (
                                                     <Tooltip content="Скачать" side="top">
                                                         <button
@@ -606,9 +623,7 @@ export function VndEditLastRevisionModal({vndId, vnd, redaction, roleNames, onCl
                                             className="flex items-center gap-2 rounded-[9px] border border-[#e5e9f0] bg-[#fbfcfe] px-3 py-[8px]"
                                         >
                                             <Paperclip size={14} className="flex-none text-[#8b97ab]"/>
-                                            <Tooltip content={file.name} side="top" className="min-w-0 flex-1">
-                                                <span className="block truncate text-[12.5px] text-[#26324a]">{file.name}</span>
-                                            </Tooltip>
+                                            <TruncatedTooltip text={file.name} className="flex-1" textClassName="text-[12.5px] text-[#26324a]"/>
                                             <span className="flex-none text-[11px] text-[#a3adbd]">
                                                 {formatFileSize(file.size)}
                                             </span>
@@ -728,6 +743,16 @@ export function VndEditLastRevisionModal({vndId, vnd, redaction, roleNames, onCl
                     downloadingId={viewDownload.activeId}
                     onDownload={handleViewDownload}
                     onClose={() => setViewLang(null)}
+                />
+            )}
+
+            {previewAttachment && (
+                <AttachmentDocxPreviewModal
+                    fileId={previewAttachment.fileId}
+                    fileName={previewAttachment.fileName}
+                    downloadingId={null}
+                    onDownload={downloadWithToast}
+                    onClose={() => setPreviewAttachment(null)}
                 />
             )}
         </>

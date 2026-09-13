@@ -1,10 +1,17 @@
 // Компонента с карточкой панели для скачивания ВНД (Документы редакции) в RedactionColumn, RedactionSummaryCard
-import React from "react";
+import React, {useState} from "react";
 import type {VndRedactionResponse, VndResponse} from "@/service/vndService/vndServiceType.ts";
 import {buildRedactionFileName, resolveVndDocTitle} from "@/utils/fileNaming.ts";
 import type {RedactionLanguage, RedactionViewTarget} from "@/utils/redactionLanguagePanelUtils.ts";
 import {formatDate} from "@/utils/dateUtils.ts";
 import {Download, FileText, Loader2} from "lucide-react";
+import {
+    AttachmentDocxPreviewModal
+} from "@/components/componentsVND/componentsOpenVndPage/componentsEditionsTab/AttachmentDocxPreviewModal.tsx";
+
+function isDocxFile(fileName: string): boolean {
+    return fileName.toLowerCase().endsWith(".docx");
+}
 
 interface RedactionDocumentsPanelProps {
     vnd: VndResponse;
@@ -34,6 +41,11 @@ export function RedactionDocumentsPanel({
                                             onDownload,
                                             onView,
                                         }: RedactionDocumentsPanelProps) {
+    // Просмотр вложения .docx прямо в браузере (см. AttachmentDocxPreviewModal) — по клику на
+    // отдельную кнопку "Просмотреть документ (DOCX)" рядом со скачиванием, только для вложений
+    // этого формата (остальные форматы просмотра не поддерживают).
+    const [previewAttachment, setPreviewAttachment] = useState<{ fileId: number; fileName: string } | null>(null);
+
     // Метка "Обновлено, дата" актуальна только пока редакция ещё в процессе согласования
     // (т.е. пока не исключено, что мы смотрим именно на этап "Согласование после внесённых
     // изменений") — как только процесс завершился (согласовано/отклонено) или редакция
@@ -72,6 +84,7 @@ export function RedactionDocumentsPanel({
     const disagreementMatrixFileName = `${selected.code}_Матрица_разногласий.docx`;
 
     return (
+        <>
         <div className="p-[20px]">
             <SectionLabel>Документы редакции</SectionLabel>
             <div className="flex flex-col gap-2">
@@ -175,6 +188,10 @@ export function RedactionDocumentsPanel({
                                 icon={<FileText size={16} className="text-[#8b97ab]"/>}
                                 isDownloading={downloadingId === attachment.fileId}
                                 onClick={() => onDownload(attachment.fileId, attachment.fileName)}
+                                onView={isDocxFile(attachment.fileName)
+                                    ? () => setPreviewAttachment({fileId: attachment.fileId, fileName: attachment.fileName})
+                                    : undefined}
+                                viewLabel="Просмотреть документ (DOCX)"
                             >
                                 <span className="flex-1 truncate">{attachment.fileName}</span>
                             </DownloadRow>
@@ -183,6 +200,17 @@ export function RedactionDocumentsPanel({
                 </>
             )}
         </div>
+
+        {previewAttachment && (
+            <AttachmentDocxPreviewModal
+                fileId={previewAttachment.fileId}
+                fileName={previewAttachment.fileName}
+                downloadingId={downloadingId}
+                onDownload={onDownload}
+                onClose={() => setPreviewAttachment(null)}
+            />
+        )}
+        </>
     );
 }
 
@@ -200,12 +228,14 @@ function DownloadRow({
                          isDownloading,
                          onClick,
                          onView,
+                         viewLabel = "Просмотр",
                      }: {
     icon: React.ReactNode;
     children: React.ReactNode;
     isDownloading: boolean;
     onClick: () => void;
     onView?: () => void;
+    viewLabel?: string;
 }) {
     return (
         <div className="flex items-center gap-2 rounded-[9px] border border-[#e5e9f0] pr-2 hover:border-[#4e57d6]/40 hover:bg-[#f6f8fb]">
@@ -228,9 +258,9 @@ function DownloadRow({
                 <button
                     type="button"
                     onClick={onView}
-                    className="cursor-pointer flex-none rounded-[7px] border border-[#d7dee8] bg-white px-2.5 py-[6px] text-[11.5px] font-semibold text-[#4e57d6] hover:bg-[#ececfc]"
+                    className="cursor-pointer flex-none whitespace-nowrap rounded-[7px] border border-[#d7dee8] bg-white px-2.5 py-[6px] text-[11.5px] font-semibold text-[#4e57d6] hover:bg-[#ececfc]"
                 >
-                    Просмотр
+                    {viewLabel}
                 </button>
             )}
         </div>

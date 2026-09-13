@@ -1,11 +1,19 @@
 // Модалка со списком вложений выбранной редакции
+import {useState} from "react";
 import {createPortal} from "react-dom";
-import {Download, FileText, Loader2, Paperclip, X} from "lucide-react";
+import {Download, Eye, FileText, Loader2, Paperclip, X} from "lucide-react";
 import type {VndRedactionResponse} from "@/service/vndService/vndServiceType.ts";
+import {isDocxFile} from "@/utils/fileNaming.ts";
+import {Tooltip} from "@/components/componentsGeneral/Tooltip.tsx";
+import {TruncatedTooltip} from "@/components/componentsGeneral/TruncatedTooltip.tsx";
+import {
+    AttachmentDocxPreviewModal
+} from "@/components/componentsVND/componentsOpenVndPage/componentsEditionsTab/AttachmentDocxPreviewModal.tsx";
 
 /** Специальные вложения открываются просмотрщиком (RedactionTidModal/RedactionApprovalSheetModal
- * из VndEditionsTab), а не просто скачиваются - в отличие от обычных вложений произвольного
- * формата (см. ниже), для которых предпросмотра нет и не планируется. */
+ * из VndEditionsTab), а не просто скачиваются. Обычные вложения произвольного формата (см. ниже,
+ * redaction.attachments) в общем случае тоже не имеют предпросмотра — кроме файлов .docx, для
+ * которых он доступен через AttachmentDocxPreviewModal (см. isDocxFile в utils/fileNaming.ts). */
 export type SpecialAttachmentTarget = "tid" | "approvalSheet" | "disagreementMatrix";
 
 interface RedactionAttachmentsModalProps {
@@ -35,6 +43,8 @@ export function RedactionAttachmentsModal({
                                               onView,
                                               onClose,
                                           }: RedactionAttachmentsModalProps) {
+    const [previewAttachment, setPreviewAttachment] = useState<{ fileId: number; fileName: string } | null>(null);
+
     // "Специальные вложения" - служебные документы редакции, которые формируются автоматически
     // (или отдельно загружаются) в рамках процесса согласования/актуализации, а не добавляются
     // пользователем вручную, как обычные вложения ниже. Остаются частью редакции и после того,
@@ -72,6 +82,18 @@ export function RedactionAttachmentsModal({
     ];
 
     const hasAnyAttachments = specialAttachments.length > 0 || redaction.attachments.length > 0;
+
+    if (previewAttachment) {
+        return (
+            <AttachmentDocxPreviewModal
+                fileId={previewAttachment.fileId}
+                fileName={previewAttachment.fileName}
+                downloadingId={downloadingId}
+                onDownload={onDownload}
+                onClose={() => setPreviewAttachment(null)}
+            />
+        );
+    }
 
     return createPortal(
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 p-4">
@@ -117,7 +139,7 @@ export function RedactionAttachmentsModal({
                                         className="cursor-pointer flex min-w-0 flex-1 items-center gap-2 px-3 py-[10px] text-left text-[13px] text-[#3a4560] disabled:opacity-60"
                                     >
                                         <FileText size={16} className="flex-none text-[#4e57d6]"/>
-                                        <span className="flex-1 truncate">{item.label}</span>
+                                        <TruncatedTooltip text={item.label} className="flex-1"/>
                                         {downloadingId === item.fileId ? (
                                             <Loader2 size={14} className="flex-none animate-spin text-[#8b97ab]"/>
                                         ) : (
@@ -149,21 +171,37 @@ export function RedactionAttachmentsModal({
                         )}
                         <div className="flex flex-col gap-2">
                             {redaction.attachments.map((attachment) => (
-                                <button
+                                <div
                                     key={attachment.fileId}
-                                    type="button"
-                                    disabled={downloadingId === attachment.fileId}
-                                    onClick={() => onDownload(attachment.fileId, attachment.fileName)}
-                                    className="cursor-pointer flex items-center gap-2 rounded-[10px] border border-[#e5e9f0] px-3 py-[10px] text-left text-[13px] text-[#3a4560] hover:border-[#4e57d6]/40 hover:bg-[#f6f8fb] disabled:opacity-60"
+                                    className="flex items-center gap-2 rounded-[10px] border border-[#e5e9f0] pr-2 hover:border-[#4e57d6]/40 hover:bg-[#f6f8fb]"
                                 >
-                                    <Paperclip size={16} className="flex-none text-[#8b97ab]"/>
-                                    <span className="flex-1 truncate">{attachment.fileName}</span>
-                                    {downloadingId === attachment.fileId ? (
-                                        <Loader2 size={14} className="flex-none animate-spin text-[#8b97ab]"/>
-                                    ) : (
-                                        <Download size={14} className="flex-none text-[#8b97ab]"/>
+                                    <button
+                                        type="button"
+                                        disabled={downloadingId === attachment.fileId}
+                                        onClick={() => onDownload(attachment.fileId, attachment.fileName)}
+                                        className="cursor-pointer flex min-w-0 flex-1 items-center gap-2 px-3 py-[10px] text-left text-[13px] text-[#3a4560] disabled:opacity-60"
+                                    >
+                                        <Paperclip size={16} className="flex-none text-[#8b97ab]"/>
+                                        <TruncatedTooltip text={attachment.fileName} className="flex-1"/>
+                                        {downloadingId === attachment.fileId ? (
+                                            <Loader2 size={14} className="flex-none animate-spin text-[#8b97ab]"/>
+                                        ) : (
+                                            <Download size={14} className="flex-none text-[#8b97ab]"/>
+                                        )}
+                                    </button>
+
+                                    {isDocxFile(attachment.fileName) && (
+                                        <Tooltip content="Просмотреть документ (DOCX)" side="top">
+                                            <button
+                                                type="button"
+                                                onClick={() => setPreviewAttachment({fileId: attachment.fileId, fileName: attachment.fileName})}
+                                                className="cursor-pointer flex-none rounded-[7px] border border-[#d7dee8] bg-white p-[6px] text-[#4e57d6] hover:bg-[#ececfc]"
+                                            >
+                                                <Eye size={14}/>
+                                            </button>
+                                        </Tooltip>
                                     )}
-                                </button>
+                                </div>
                             ))}
                         </div>
                     </div>

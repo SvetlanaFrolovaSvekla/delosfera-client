@@ -1,5 +1,6 @@
 import {useEffect, useMemo, useState} from "react";
 import {Archive, CalendarCheck, FileText, History, Pencil, RotateCw, Tags, Type, X, Loader2} from "lucide-react";
+import {useAuth} from "@/context/AuthContext";
 import type {VndRedactionResponse, VndResponse} from "@/service/vndService/vndServiceType.ts";
 import {vndService} from "@/service/vndService/vndService.ts";
 import {Section} from "@/components/componentsGeneral/Section.tsx";
@@ -56,6 +57,9 @@ export function VndPassportTab({
                                    secrecyOptions,
                                    userGroupOptions,
                                }: VndPassportTabProps) {
+    const {user: authUser} = useAuth();
+    const isInitiatorMe = Boolean(authUser && vnd.createdByUserId && authUser.id === vnd.createdByUserId);
+
     const isCancelledOrArchived = Boolean(vnd.cancelDate || vnd.archivedDate);
     const isDraft = vnd.status === "draft";
     const periodFrom = vnd.lastActualizationDate || vnd.effectiveDate || vnd.adoptionDate;
@@ -277,8 +281,8 @@ export function VndPassportTab({
                     <div className={`grid grid-cols-1 gap-4 mb-4 ${isDraft ? "" : "sm:grid-cols-2"}`}>
                         <ReadOnlyField
                             label="Инициатор"
-                            value={vnd.createdByUserName || "—"}
-                            linkTo={vnd.createdByUserId ? `/users/${vnd.createdByUserId}` : undefined}
+                            value={vnd.createdByUserName ? `${vnd.createdByUserName}${isInitiatorMe ? " (я)" : ""}` : "—"}
+                            linkTo={vnd.createdByUserId ? (isInitiatorMe ? "/profile" : `/users/${vnd.createdByUserId}`) : undefined}
                         />
                         {!isDraft && (
                             <ReadOnlyField

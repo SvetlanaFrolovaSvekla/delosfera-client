@@ -202,6 +202,25 @@ export interface SzHistoryEntry {
     payload: string | null;
 }
 
+/** Записка на доске (РС-4). */
+export interface SzTrackerItem {
+    id: number;
+    regNumber: string | null;
+    title: string;
+    kind: string;
+    authorName: string | null;
+    addresseeName: string | null;
+    ageDays: number;
+    isStale: boolean;
+}
+
+export interface SzTrackerColumn {
+    code: string;
+    title: string;
+    count: number;
+    items: SzTrackerItem[];
+}
+
 /** Возможный дубликат записки (СК-5). */
 export interface SzDuplicate {
     id: number;
@@ -262,6 +281,12 @@ export const szService = {
     /** Путь записки по статусам с длительностью этапов (СЗ-8). */
     async trace(id: number): Promise<SzTraceStep[]> {
         const {data} = await apiClient.get<SzTraceStep[]>(`${BASE}/${id}/trace`);
+        return data;
+    },
+
+    /** Доска записок по стадиям (РС-4). */
+    async tracker(): Promise<SzTrackerColumn[]> {
+        const {data} = await apiClient.get<SzTrackerColumn[]>(`${BASE}/tracker`);
         return data;
     },
 

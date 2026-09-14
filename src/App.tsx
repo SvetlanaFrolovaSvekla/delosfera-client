@@ -50,6 +50,7 @@ const UsersPage = lazy(() => import("@/pages/UsersPages/UsersPage.tsx").then(m =
 
 // Контур служебных записок (контур 4 ТЗ)
 const SzRegistryPage = lazy(() => import("@/pages/SzRegistryPage.tsx").then(m => ({default: m.SzRegistryPage})));
+const SzTrackerPage = lazy(() => import("@/pages/SzTrackerPage.tsx").then(m => ({default: m.SzTrackerPage})));
 const SzCardPage = lazy(() => import("@/pages/SzCardPage.tsx").then(m => ({default: m.SzCardPage})));
 const SzPrintPage = lazy(() => import("@/pages/SzPrintPage.tsx").then(m => ({default: m.SzPrintPage})));
 
@@ -187,6 +188,7 @@ function App() {
 
                                 <Route path="/sz" element={<SzRegistryPage/>}/>
                                 <Route path="/sz/new" element={<SzCardPage/>}/>
+                                <Route path="/sz/tracker" element={<SzTrackerPage/>}/>
                                 <Route path="/sz/:id" element={<SzCardPage/>}/>
                                 <Route path="/sz-analytics" element={<SzStatisticsPage/>}/>
 

@@ -51,6 +51,8 @@ export const navGroups: NavGroup[] = [
         items: [
             // Реестр служебных записок: карточка, согласование, исполнение, архив, закупка
             { id: "sz", icon: "sz", labelKey: "sidebar.items.sz", path: "/sz" },
+            // Доска записок по стадиям (РС-4)
+            { id: "sz-tracker", icon: "sz", labelKey: "Доска записок", path: "/sz/tracker" },
         ],
     },
     {

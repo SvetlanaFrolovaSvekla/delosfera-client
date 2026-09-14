@@ -2,6 +2,7 @@ import {useCallback, useEffect, useState} from "react";
 import {Link, useNavigate} from "react-router-dom";
 import {Plus} from "lucide-react";
 import {colors} from "@/design/tokens";
+import {SavedFiltersBar} from "@/components/componentsGeneral/SavedFiltersBar.tsx";
 import {
     PROCUREMENT_STATUS_LABEL,
     procurementService,
@@ -134,6 +135,19 @@ export const ProcurementRegistryPage = () => {
                         flex: 1, minWidth: 220, height: 36, padding: "0 12px",
                         border: "1px solid #e5e9f0", borderRadius: 9, background: "#f6f8fb",
                         font: "inherit", fontSize: 12.5, outline: "none",
+                    }}
+                />
+            </div>
+
+            {/* Сохранённые фильтры (БП-16) для реестра закупок. */}
+            <div style={{marginTop: 10}}>
+                <SavedFiltersBar
+                    scope="procurement"
+                    current={{scope, query}}
+                    onApply={(p) => {
+                        const f = p as {scope?: ScopeId; query?: string};
+                        if (f.scope) setScope(f.scope);
+                        setQuery(f.query ?? "");
                     }}
                 />
             </div>

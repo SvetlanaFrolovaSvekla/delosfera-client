@@ -56,6 +56,7 @@ const SzPrintPage = lazy(() => import("@/pages/SzPrintPage.tsx").then(m => ({def
 // Контур закупок (контур 6 ТЗ)
 const AuthorityMatrixPage = lazy(() => import("@/pages/ProcurementPages/AuthorityMatrixPage.tsx").then(m => ({default: m.AuthorityMatrixPage})));
 const ProcurementRegistryPage = lazy(() => import("@/pages/ProcurementPages/ProcurementRegistryPage.tsx").then(m => ({default: m.ProcurementRegistryPage})));
+const ProcurementTrackerPage = lazy(() => import("@/pages/ProcurementPages/ProcurementTrackerPage.tsx").then(m => ({default: m.ProcurementTrackerPage})));
 const ProcurementNewPage = lazy(() => import("@/pages/ProcurementPages/ProcurementNewPage.tsx").then(m => ({default: m.ProcurementNewPage})));
 const ProcurementCardPage = lazy(() => import("@/pages/ProcurementPages/ProcurementCardPage.tsx").then(m => ({default: m.ProcurementCardPage})));
 const ProcurementProtocolPage = lazy(() => import("@/pages/ProcurementPages/ProcurementProtocolPage.tsx").then(m => ({default: m.ProcurementProtocolPage})));
@@ -170,6 +171,7 @@ function App() {
                                 <Route path="/prc/matrix" element={<AuthorityMatrixPage/>}/>
                                 <Route path="/prc/suppliers" element={<SupplierRegistryPage/>}/>
                                 <Route path="/prc/plan" element={<ProcurementPlanPage/>}/>
+                                <Route path="/prc/tracker" element={<ProcurementTrackerPage/>}/>
                                 <Route path="/prc/:id" element={<ProcurementCardPage/>}/>
                                 <Route path="/prc/:id/protocol" element={<ProcurementProtocolPage/>}/>
 

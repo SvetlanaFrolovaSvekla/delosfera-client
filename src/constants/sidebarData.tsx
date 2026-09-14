@@ -64,6 +64,8 @@ export const navGroups: NavGroup[] = [
         titleKey: "sidebar.groups.purchases",
         items: [
             { id: "prc", icon: "prc", labelKey: "sidebar.items.prc", path: "/prc" },
+            // Доска закупок по стадиям (ЗК-11): где какая заявка и что зависло
+            { id: "prc-tracker", icon: "prc", labelKey: "Доска закупок", path: "/prc/tracker" },
             // Годовой План закупок с отчётом об исполнении (PRC-22)
             { id: "prc-plan", icon: "pln", labelKey: "План закупок", path: "/prc/plan" },
             // Матрица определяет способ закупки, состав согласования и орган утверждения

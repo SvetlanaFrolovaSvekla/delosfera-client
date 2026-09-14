@@ -171,9 +171,36 @@ export interface Paged<T> {
     pageSize: number;
 }
 
+/** Заявка на доске закупок (ЗК-11). */
+export interface TrackerItem {
+    id: number;
+    regNumber: string | null;
+    subject: string;
+    amount: number;
+    initiatorUnit: string | null;
+    curatorName: string | null;
+    ageDays: number;
+    isStale: boolean;
+}
+
+/** Колонка доски: стадия и заявки на ней. */
+export interface TrackerColumn {
+    code: string;
+    title: string;
+    count: number;
+    totalAmount: number;
+    items: TrackerItem[];
+}
+
 const BASE = "/procurement";
 
 export const procurementService = {
+    /** Доска закупок по стадиям (ЗК-11). */
+    async tracker(): Promise<TrackerColumn[]> {
+        const {data} = await apiClient.get<TrackerColumn[]>(`${BASE}/tracker`);
+        return data;
+    },
+
     async search(request: ProcurementSearchRequest): Promise<Paged<ProcurementListItem>> {
         const {data} = await apiClient.post<Paged<ProcurementListItem>>(`${BASE}/requests/search`, request);
         return data;

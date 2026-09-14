@@ -347,6 +347,7 @@ export const TaskInboxPage = () => {
             </section>
             )}
             </>
+            )}
 
             {delegateTask && (
                 <DelegateTaskModal

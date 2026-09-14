@@ -16,6 +16,8 @@ export interface PlanItem {
     /** Факт: сколько заявок сослалось на позицию и на какую сумму. */
     requestCount: number;
     actualAmount: number;
+    /** Реально законтрактовано договорами по позиции (ЗК-10). */
+    contractedAmount: number;
     deviationPercent: number | null;
     isOverrun: boolean;
 }
@@ -31,6 +33,8 @@ export interface Plan {
     items: PlanItem[];
     plannedTotal: number;
     actualTotal: number;
+    /** Всего законтрактовано договорами по позициям плана (ЗК-10). */
+    contractedTotal: number;
 
     /** Закупки года без позиции плана — внеплановые (PRC-03). */
     unplannedRequestCount: number;

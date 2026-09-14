@@ -108,6 +108,13 @@ export const ProcurementPlanPage = () => {
                         <Tile label="Плановая сумма" value={`${money(plan.plannedTotal)} сом`}/>
                         <Tile label="Фактически по заявкам" value={`${money(plan.actualTotal)} сом`}/>
                         <Tile
+                            label="Законтрактовано"
+                            value={`${money(plan.contractedTotal)} сом`}
+                            note={plan.plannedTotal > 0
+                                ? `${Math.round((plan.contractedTotal / plan.plannedTotal) * 100)}% плана`
+                                : undefined}
+                        />
+                        <Tile
                             label="Внеплановые закупки"
                             value={`${plan.unplannedRequestCount} шт.`}
                             note={plan.unplannedAmount > 0 ? `на ${money(plan.unplannedAmount)} сом` : undefined}
@@ -126,6 +133,7 @@ export const ProcurementPlanPage = () => {
                                         <th style={th}>Кв.</th>
                                         <th style={{...th, textAlign: "right"}}>План</th>
                                         <th style={{...th, textAlign: "right"}}>Факт</th>
+                                        <th style={{...th, textAlign: "right"}}>Законтрактовано</th>
                                         <th style={{...th, textAlign: "right"}}>Отклонение</th>
                                         <th style={th}/>
                                     </tr>
@@ -147,6 +155,9 @@ export const ProcurementPlanPage = () => {
                                             <td style={{...td, textAlign: "right", whiteSpace: "nowrap"}}>
                                                 {money(i.actualAmount)}
                                                 <div style={{fontSize: 11, color: "#8b97ab"}}>{i.requestCount} заявок</div>
+                                            </td>
+                                            <td style={{...td, textAlign: "right", whiteSpace: "nowrap", fontWeight: 600}}>
+                                                {money(i.contractedAmount)}
                                             </td>
                                             <td style={{
                                                 ...td, textAlign: "right", whiteSpace: "nowrap",

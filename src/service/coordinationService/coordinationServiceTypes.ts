@@ -244,9 +244,7 @@ export interface ApprovalProcessResponse {
     completedAt: string | null;
     disagreementMatrixRows: DisagreementMatrixRowResponse[];
     stages: ApprovalStageResponse[];
-    /** История завершённых кругов Repeat/FinalHold — см. ApprovalPhaseRoundResponse. Текущий/
-     * последний круг сюда не входит, он виден напрямую через repeat*/finalHold*-поля stages
-     * выше. */
+   
     phaseRounds: ApprovalPhaseRoundResponse[];
     createdAt: string;
     updatedAt: string;

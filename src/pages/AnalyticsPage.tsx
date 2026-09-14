@@ -8,6 +8,8 @@ import {ReportVndApprovalsPage} from "@/pages/ReportPages/ReportVndPages/ReportV
 import {SzStatisticsPage} from "@/pages/SzStatisticsPage.tsx";
 import {ProcurementStatisticsPage} from "@/pages/ProcurementPages/ProcurementStatisticsPage.tsx";
 import {SlaDashboardPage} from "@/pages/SlaDashboardPage.tsx";
+import {ContourReportView} from "@/components/componentsReport/ContourReportView.tsx";
+import {contourReportsService} from "@/service/analyticsService/contourReportsService.ts";
 
 /**
  * Аналитика по всем контурам.
@@ -46,9 +48,6 @@ type VndSubTabId = (typeof VND_SUB_TABS)[number]["id"];
 
 /** Что показывать на вкладке, для которой отчёта ещё нет. */
 const СКОРО: Partial<Record<TabId, string>> = {
-    meetings: "Отчёты по заседаниям: исполнение решений, просроченные поручения, нагрузка на органы.",
-    hr: "Отчёты по кадровому документообороту: приказы, ознакомление сотрудников.",
-    office: "Отчёты канцелярии: корреспонденция, доверенности, сроки регистрации.",
 };
 
 export function AnalyticsPage() {
@@ -95,6 +94,9 @@ export function AnalyticsPage() {
             )}
             {tab === "sz" && <SzStatisticsPage embedded/>}
             {tab === "prc" && <ProcurementStatisticsPage embedded/>}
+            {tab === "meetings" && <ContourReportView load={contourReportsService.meetings}/>}
+            {tab === "hr" && <ContourReportView load={contourReportsService.hr}/>}
+            {tab === "office" && <ContourReportView load={contourReportsService.office}/>}
 
             {СКОРО[tab] && (
                 <div className="mt-2 rounded-[13px] border border-[#e5e9f0] bg-white px-6 py-10 text-center">

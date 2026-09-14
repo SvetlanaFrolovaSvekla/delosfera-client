@@ -165,6 +165,8 @@ export interface SzSaveRequest {
 export interface SzSearchRequest {
     query?: string;
     statuses?: SzStatusCode[];
+    /** Ручной выбор строк (СЗ-7): сужает выгрузку до отмеченных записок. */
+    ids?: number[];
     kindIds?: number[];
     authorId?: number;
     correspondentUnitId?: number;

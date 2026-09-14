@@ -81,4 +81,27 @@ export const szArchiveService = {
         const {data} = await apiClient.get<StorageTerm[]>("/dictionaries/storage-term");
         return data;
     },
+
+    /** Сдать пачку отобранных записок в одно дело (СЗ-7). */
+    async bulkArchive(ids: number[], nomenclatureCaseId: number, storageTermId?: number | null): Promise<SzBulkResult> {
+        const {data} = await apiClient.post<SzBulkResult>(`${BASE}/archive/bulk`, {
+            ids,
+            nomenclatureCaseId,
+            storageTermId: storageTermId ?? null,
+        });
+        return data;
+    },
 };
+
+/** Итог массовой операции над записками (СЗ-7). */
+export interface SzBulkFailure {
+    szId: number;
+    regNumber: string | null;
+    message: string;
+}
+
+export interface SzBulkResult {
+    requested: number;
+    succeeded: number;
+    failed: SzBulkFailure[];
+}

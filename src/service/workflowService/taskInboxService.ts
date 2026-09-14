@@ -31,6 +31,9 @@ export interface InboxTask {
     /** Задача получена по замещению — за кого выполняется. */
     onBehalfOf: string | null;
 
+    /** Задача делегирована текущему исполнителю — от кого (СК-3). */
+    delegatedBy: string | null;
+
     createdAt: string;
 }
 
@@ -47,6 +50,11 @@ export const taskInboxService = {
             params: documentType ? {documentType} : undefined,
         });
         return data;
+    },
+
+    /** Делегировать задачу коллеге (СК-3). */
+    async delegate(taskId: number, toUserId: number, comment?: string): Promise<void> {
+        await apiClient.post(`/workflow/tasks/${taskId}/delegate`, {toUserId, comment});
     },
 };
 

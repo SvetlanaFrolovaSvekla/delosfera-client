@@ -10,6 +10,7 @@ import {useVndTasks} from "@/hooks/tasksVndHooks/useVndTasks.ts";
 import {
     taskInboxService,
     taskLink,
+    taskKey,
     type InboxTask,
     type TaskInbox,
 } from "@/service/workflowService/taskInboxService.ts";
@@ -26,6 +27,7 @@ const FILTERS: { id: string; label: string; type?: string }[] = [
     {id: "vnd", label: "ВНД"},
     {id: "sz", label: "Служебные записки", type: "Sz"},
     {id: "prc", label: "Закупки", type: "Procurement"},
+    {id: "ack", label: "Ознакомление", type: "Acknowledgement"},
 ];
 
 // Вид карточек-вкладок совпадает с NotificationCategoryPanel на странице "Мои уведомления" —
@@ -254,7 +256,7 @@ export const TaskInboxPage = () => {
             <section style={{background: "#fff", border: "1px solid #e5e9f0", borderRadius: 13, overflow: "hidden"}}>
                 {filteredTasks.map((task: InboxTask) => (
                     <Link
-                        key={task.taskId}
+                        key={taskKey(task)}
                         to={taskLink(task)}
                         style={{
                             display: "flex", alignItems: "center", gap: 14, padding: "13px 16px",

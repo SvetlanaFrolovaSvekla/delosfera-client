@@ -1,7 +1,12 @@
 import type {ApprovalStageKindResponse} from "@/service/coordinationService/coordinationServiceTypes.ts";
 import type {VndStatusKey} from "@/constants/vndTabs.ts";
 
-export type TaskScope = "coordination" | "actualization" | "consolidation" | "myVndApproval" | "rejected";
+export type TaskScope =
+    | "coordination" | "actualization" | "consolidation" | "myVndApproval" | "rejected"
+    // "actualizationRequest" — заявка на доступ к актуализации ждёт решения главного редактора;
+    // "actualizationApproved" — заявка одобрена, заявитель ещё не подтвердил/начал сам цикл
+    // (см. TasksService.GetActualizationRequestTasksAsync/GetActualizationApprovedTasksAsync).
+    | "actualizationRequest" | "actualizationApproved";
 export type TaskStagePhase = "primary" | "repeat" | "final";
 
 export interface VndTaskCountsResponse {
@@ -12,6 +17,10 @@ export interface VndTaskCountsResponse {
     myVndApproval: number;
     /// Редакции, отклонённые при согласовании и ожидающие правок инициатора
     rejected: number;
+    /// Заявки на доступ к актуализации, ожидающие решения главного редактора
+    actualizationRequests: number;
+    /// Заявки на доступ к актуализации, уже одобренные, но ещё не "потраченные" заявителем
+    actualizationApproved: number;
 }
 
 export interface VndTaskResponse {
@@ -44,6 +53,9 @@ export interface VndTaskResponse {
     deadlineMinutes: number | null;
     /// Комментарий инициатора к повторному кругу/финальной выдержке
     initiatorComment?: string | null;
+    /// true, если процесс сейчас на доработке у инициатора (замечания устраняются) — только
+    /// для myVndApproval. См. VndTaskCard — отдельный бейдж "ВНД на доработке".
+    isRevisionNeeded?: boolean;
 
     dueActualizationDate: string | null;
     /// Заявлено ли для текущего цикла актуализации "без изменений"
@@ -74,4 +86,23 @@ export interface PagedResult<T> {
     page: number;
     pageSize: number;
     hasMore: boolean;
+}
+
+/// Одна просрочка согласования, зачтённая текущему пользователю по тайм-ауту — конкретный
+/// ВНД и фаза (см. TasksController.GetMyTimeoutApprovals)
+export interface VndTimeoutApprovalItem {
+    vndId: number;
+    vndCode: string;
+    vndTitle: string;
+    phase: TaskStagePhase;
+    decidedAt: string;
+}
+
+/// Сводка по просрочкам согласования текущего пользователя для блока "Мои показатели" в
+/// Аналитике (ВНД → Актуализация)
+export interface VndMyTimeoutApprovalsResponse {
+    thisMonthCount: number;
+    thisYearCount: number;
+    totalCount: number;
+    items: VndTimeoutApprovalItem[];
 }

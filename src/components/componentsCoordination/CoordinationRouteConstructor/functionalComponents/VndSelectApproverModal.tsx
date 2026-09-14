@@ -69,6 +69,16 @@ interface VndSelectApproverModalProps {
     lockedOrgUnitLabel?: string;
     /** id пользователей, уже занятых на других этапах — показываем как недоступные */
     excludedUserIds: Set<number>;
+    /** Станет ли текущий (авторизованный) пользователь инициатором ЭТОГО запуска согласования -
+     * см. VndStartApprovalModal.actingOnSomeoneElsesDraft/initiator. По умолчанию true (как и
+     * было раньше, когда выбора инициатора не существовало вовсе - запускающий и инициатор
+     * всегда совпадали). Влияет только на подпись "авто-согласование" ниже: выбор себя самого
+     * на фиксированном этапе остаётся возможным независимо от этого флага, но фактически
+     * автосогласуется (см. VndApprovalService.StartAsync) только когда согласующий совпадает
+     * с ИНИЦИАТОРОМ, а не просто с тем, кто нажал кнопку "Запустить согласование" - когда
+     * главный редактор запускает согласование чужого черновика, оставляя инициатором автора,
+     * его собственное участие в фиксированном этапе больше не автосогласуется. */
+    currentUserIsInitiator?: boolean;
     onClose: () => void;
     onSelect: (user: ApproverOption) => void;
 }
@@ -77,6 +87,7 @@ export function VndSelectApproverModal({
                                            lockedOrgUnitId,
                                            lockedOrgUnitLabel,
                                            excludedUserIds,
+                                           currentUserIsInitiator = true,
                                            onClose,
                                            onSelect,
                                        }: VndSelectApproverModalProps) {
@@ -217,6 +228,10 @@ export function VndSelectApproverModal({
                             {filteredUsers.map((u) => {
                                 const isSelf = currentUser?.id === u.id;
                                 const selfAllowed = Boolean(lockedOrgUnitId) && isSelf;
+                                // Автосогласование засчитывается только когда сам себе выбранный
+                                // согласующий (selfAllowed) ещё и окажется инициатором этого
+                                // запуска - см. comment у currentUserIsInitiator выше.
+                                const selfAutoApproved = selfAllowed && currentUserIsInitiator;
                                 const isExcluded = excludedUserIds.has(u.id) || (isSelf && !selfAllowed);
 
                                 return (
@@ -254,7 +269,7 @@ export function VndSelectApproverModal({
                                                                 : "bg-[#fdf3ea] text-[#b3701e]"
                                                         }`}
                                                     >
-                            {selfAllowed ? "это вы · авто-согласование" : "это вы"}
+                            {selfAutoApproved ? "это вы · авто-согласование" : "это вы"}
                         </span>
                                                 ) : excludedUserIds.has(u.id) && (
                                                     <span

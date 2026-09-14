@@ -1,11 +1,12 @@
-import {getDeadlineUrgency, getRemainingLabel} from "@/utils/dateUtils.ts";
+import {formatDurationMinutes, getDeadlineUrgency, getRemainingLabel} from "@/utils/dateUtils.ts";
 import {DEADLINE_URGENCY_META} from "@/constants/vndStatus.ts";
 import type {VndTaskResponse} from "@/service/tasksVndService/tasksServiceTypes.ts";
+import type {InboxTask} from "@/service/workflowService/taskInboxService.ts";
 
-export function getDeadlineTone(deadlineAt: string | null, totalHours: number | null): { label: string; color: string } {
+export function getDeadlineTone(deadlineAt: string | null, totalMinutes: number | null): { label: string; color: string } {
     if (!deadlineAt) return { label: "—", color: "#8b97ab" };
 
-    const urgency = getDeadlineUrgency(deadlineAt, totalHours);
+    const urgency = getDeadlineUrgency(deadlineAt, totalMinutes);
     const label = getRemainingLabel(deadlineAt);
 
     return { label, color: DEADLINE_URGENCY_META[urgency].color };
@@ -44,6 +45,14 @@ export function getActionTitle(task: VndTaskResponse): string {
         return "Актуализировать ВНД";
     }
 
+    if (task.scope === "actualizationRequest") {
+        return "Рассмотреть заявку на доступ к актуализации";
+    }
+
+    if (task.scope === "actualizationApproved") {
+        return "Начать актуализацию по одобренной заявке";
+    }
+
     return "Провести консолидацию ВНД";
 }
 
@@ -55,7 +64,7 @@ export function getMetaText(task: VndTaskResponse): string {
         const stageLabel = getStageKindLabel(task.stageTitle);
         if (stageLabel) parts.push(stageLabel);
         if (task.initiatorName) parts.push(`Инициатор: ${task.initiatorName}`);
-        if (task.deadlineMinutes) parts.push(`Норматив: ${task.deadlineMinutes} ч`);
+        if (task.deadlineMinutes) parts.push(`Норматив: ${formatDurationMinutes(task.deadlineMinutes)}`);
 
         return parts.length > 0 ? parts.join(" · ") : "Ожидает вашего решения";
     }
@@ -71,6 +80,14 @@ export function getMetaText(task: VndTaskResponse): string {
         return parts.length > 0 ? parts.join(" · ") : "Требует внимания инициатора";
     }
 
+    if (task.scope === "actualizationRequest") {
+        return task.initiatorName ? `Заявитель: ${task.initiatorName}` : "Ожидает вашего решения";
+    }
+
+    if (task.scope === "actualizationApproved") {
+        return "Подтвердите начало цикла актуализации";
+    }
+
     return "Требует внимания ответственного";
 }
 
@@ -82,5 +99,15 @@ export function matchesTaskSearch(task: VndTaskResponse, query: string): boolean
     if (!q) return true;
 
     return [task.vndTitle, task.vndCode, task.redactionCode, task.initiatorName, task.rejectedByName]
+        .some((field) => field?.toLowerCase().includes(q));
+}
+
+// Тот же поиск по подстроке, но для сводного реестра задач (TaskInboxPage) — по названию
+// документа, рег. номеру, типу контура/задачи и тому, за кого задача выполняется по замещению.
+export function matchesInboxTaskSearch(task: InboxTask, query: string): boolean {
+    const q = query.trim().toLowerCase();
+    if (!q) return true;
+
+    return [task.documentTitle, task.regNumber, task.documentTypeTitle, task.taskType, task.onBehalfOf]
         .some((field) => field?.toLowerCase().includes(q));
 }

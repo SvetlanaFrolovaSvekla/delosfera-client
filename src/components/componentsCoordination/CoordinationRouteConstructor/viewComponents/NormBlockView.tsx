@@ -1,6 +1,6 @@
 // Read-only блок норматива (уже установленное значение по запущенному согласованию)
 import React from "react";
-import {formatDateTime} from "@/utils/dateUtils.ts";
+import {formatDateTime, formatDurationMinutes} from "@/utils/dateUtils.ts";
 
 export type NormPhaseStatus = "passed" | "current" | "upcoming";
 
@@ -39,19 +39,6 @@ NormPhaseStatus,
         },
     };
 
-function formatDuration(totalMinutes: number): string {
-    const days = Math.floor(totalMinutes / (24 * 60));
-    const hours = Math.floor((totalMinutes % (24 * 60)) / 60);
-    const minutes = totalMinutes % 60;
-
-    const parts: string[] = [];
-    if (days > 0) parts.push(`${days} дн.`);
-    if (hours > 0) parts.push(`${hours} ч.`);
-    if (minutes > 0) parts.push(`${minutes} м.`);
-
-    return parts.length > 0 ? parts.join(" ") : "0 м.";
-}
-
 export function NormBlockView({label, value, phaseStatus, blockRef, startedAt}: NormBlockViewProps) {
     const style = PHASE_STYLES[phaseStatus];
 
@@ -73,7 +60,7 @@ export function NormBlockView({label, value, phaseStatus, blockRef, startedAt}: 
             <span
                 className={`flex-none whitespace-nowrap rounded-[8px] border bg-white px-2.5 py-1 text-[12.5px] font-semibold ${style.badgeBorder} ${style.badgeText}`}
             >
-                {formatDuration(value)}
+                {formatDurationMinutes(value)}
             </span>
         </div>
     );

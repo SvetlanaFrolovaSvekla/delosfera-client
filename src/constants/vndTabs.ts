@@ -54,7 +54,12 @@ const EDITIONS_LABEL_BY_STATUS: Partial<Record<VndStatusKey, string>> = {
 // актуализации/консолидации (баг: кнопка "не работает").
 const TABS_BY_STATUS: Partial<Record<VndStatusKey, VndTabId[]>> = {
     draft: ["passport", "editions", "history"],
-    review: ["passport", "editions", "approval", "links"],
+    // "history" здесь отсутствовал - из-за этого таб «История» пропадал ровно в момент,
+    // когда документ уходит на согласование (первая редакция и любая последующая,
+    // отправленная на согласование), хотя посмотреть, кто инициировал согласование и что
+    // происходит с процессом (тот же журнал аудита), нужнее всего именно сейчас. onact/consol
+    // ниже уже включают "history" по той же причине - review остался не в ряд по недосмотру.
+    review: ["passport", "editions", "approval", "links", "history"],
     onact: ["passport", "editions", "approval", "links", "history", "actual"],
     consol: ["passport", "editions", "approval", "links", "history", "actual"],
 };

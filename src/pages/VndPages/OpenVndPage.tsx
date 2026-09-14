@@ -49,7 +49,18 @@ export function OpenVndPage() {
     const [searchParams] = useSearchParams();
     const {data: vnd, loading, error, refetch} = useVndById(id ? Number(id) : undefined);
     const dictionaries = useVndDictionaries();
-    const {data: redactions} = useVndRedactions(id ? Number(id) : undefined);
+    const {data: redactions, refetch: refetchRedactions} = useVndRedactions(id ? Number(id) : undefined);
+
+    // Список редакций на уровне страницы (используется в шапке — консолидация/ТИД, «Масштабный
+    // просмотр», таб «История») раньше не обновлялся после действий в соседних вкладках:
+    // VndEditionsTab держит и обновляет свою ОТДЕЛЬНУЮ копию редакций внутри себя, а сюда
+    // наверх это не всплывало. onVndChanged дергается всеми вкладками при любом действии,
+    // которое могло затронуть редакции (загрузка новой, ТИД, согласование, актуализация,
+    // консолидация) — используем этот же момент, чтобы обновить и список здесь.
+    const handleVndOrRedactionsChanged = () => {
+        refetch();
+        refetchRedactions();
+    };
     const navigate = useNavigate();
     const {user, hasPermission} = useAuth();
 
@@ -114,7 +125,7 @@ export function OpenVndPage() {
             });
             setCancelOpen(false);
             toast.success(t("openVndPage.archivedToastTitle"), t("openVndPage.archivedToastDescription", {name: vnd.name}));
-            refetch();
+            handleVndOrRedactionsChanged();
         } catch (err) {
             setCancelError(err instanceof Error ? err.message : t("openVndPage.archiveError"));
         } finally {
@@ -183,7 +194,7 @@ export function OpenVndPage() {
             await actualizationService.publish(vnd.id, {hadChanges, ...requisites});
             setConsolidateOpen(false);
             toast.success(t("openVndPage.consolidatedToastTitle"), t("openVndPage.consolidatedToastDescription"));
-            refetch();
+            handleVndOrRedactionsChanged();
         } catch (err) {
             setConsolidateError(
                 err instanceof Error ? err.message : t("openVndPage.consolidateError"),
@@ -377,13 +388,13 @@ export function OpenVndPage() {
 
             {/* Редакции */}
             {activeTab === "editions" && (
-                <VndEditionsTab vnd={vnd} onVndChanged={refetch} onGoToApproval={() => setTab("approval")}/>
+                <VndEditionsTab vnd={vnd} onVndChanged={handleVndOrRedactionsChanged} onGoToApproval={() => setTab("approval")}/>
             )}
             {/* Реквизиты */}
             {activeTab === "passport" && (
                 <VndPassportTab
                     vnd={vnd}
-                    onVndChanged={refetch}
+                    onVndChanged={handleVndOrRedactionsChanged}
                     typeOptions={dictionaries.typeOptions}
                     organOptions={dictionaries.organOptions}
                     developerOptions={dictionaries.orgUnitOptions}
@@ -396,7 +407,7 @@ export function OpenVndPage() {
                 />
             )}
             {/* Согласование */}
-            {activeTab === "approval" && <VndCoordinationTab vnd={vnd} onVndChanged={refetch}/>}
+            {activeTab === "approval" && <VndCoordinationTab vnd={vnd} onVndChanged={handleVndOrRedactionsChanged}/>}
             {/* Связи */}
             {activeTab === "links" && <VndLinksTab vndId={vnd.id}/>}
             {/* История */}
@@ -405,7 +416,7 @@ export function OpenVndPage() {
             {activeTab === "actual" && (
                 <VndActualizationTab
                     vnd={vnd}
-                    onVndChanged={refetch}
+                    onVndChanged={handleVndOrRedactionsChanged}
                     onGoToEditions={() => setTab("editions")}
                     onGoToApproval={() => setTab("approval")}
                 />)}

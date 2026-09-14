@@ -55,6 +55,11 @@ export interface StartApprovalRequest {
     primaryDeadlineMinutes: number; // Норматив первичного согласования, в минутах
     repeatDeadlineMinutes: number; // Норматив согласования после исправленных замечаний, в минутах
     finalHoldDeadlineMinutes: number; // Норматив финальной выдержки, в минутах
+    /** Кто будет указан инициатором согласования - имеет смысл только когда запускает
+     * НЕ автор черновика (главный редактор запускает согласование чужого черновика): выбор
+     * между собой (currentUserId) и автором черновика. Не указывается (или совпадает с
+     * currentUserId), если действие выполняет сам автор черновика - выбирать не из чего. */
+    initiatorUserId?: number;
 }
 
 export interface ApprovalDecisionRequest {
@@ -180,6 +185,39 @@ export interface ApprovalStageResponse {
     finalHoldQuotes: ApprovalStageQuoteResponse[];
 }
 
+/** "repeat"/"finalHold" — фаза, к которой относится сохранённый круг (см.
+ * ApprovalPhaseRoundResponse). Primary сюда не попадает — у него всегда ровно один круг,
+ * своих снимков истории не бывает. */
+export type ApprovalPhase = "repeat" | "finalHold";
+
+/** Решение одного согласующего в рамках одного ЗАВЕРШЁННОГО (уже перезаписанного следующим)
+ * круга фазы Repeat/FinalHold. */
+export interface ApprovalPhaseRoundStageDecisionResponse {
+    /** Id этапа (ApprovalStageResponse.id), к которому относится это решение. */
+    stageId: number;
+    decision: ApprovalStageDecisionResponse;
+    comment: string | null;
+    decidedAt: string | null;
+}
+
+/** Один завершённый круг фазы "Повторное согласование" или "Финальная выдержка" — см.
+ * VndApprovalPhaseRound на бэке. Нужен, чтобы показать полную историю маршрута согласования,
+ * когда замечания устраняли (или на финальной выдержке снова оставляли замечание) несколько
+ * раз подряд в рамках ОДНОГО и того же процесса согласования: без этого в стандартных полях
+ * ApprovalStageResponse (repeatDecision/repeatComment и т.п.) видно только решение ПОСЛЕДНЕГО
+ * круга — предыдущие круги в них уже перезаписаны. */
+export interface ApprovalPhaseRoundResponse {
+    id: number;
+    phase: ApprovalPhase;
+    /** Номер круга внутри этой фазы этого процесса, начиная с 1. */
+    roundNumber: number;
+    startedAt: string | null;
+    completedAt: string;
+    /** Комментарий инициатора об исправлениях на этом круге — заполнен только для phase === "repeat". */
+    initiatorComment: string | null;
+    stageDecisions: ApprovalPhaseRoundStageDecisionResponse[];
+}
+
 export interface ApprovalProcessResponse {
     id: number;
     vndId: number;
@@ -206,6 +244,10 @@ export interface ApprovalProcessResponse {
     completedAt: string | null;
     disagreementMatrixRows: DisagreementMatrixRowResponse[];
     stages: ApprovalStageResponse[];
+    /** История завершённых кругов Repeat/FinalHold — см. ApprovalPhaseRoundResponse. Текущий/
+     * последний круг сюда не входит, он виден напрямую через repeat*/finalHold*-поля stages
+     * выше. */
+    phaseRounds: ApprovalPhaseRoundResponse[];
     createdAt: string;
     updatedAt: string;
 }

@@ -70,20 +70,20 @@ type CoordinationModal =
     | { kind: "startApproval" }
     | { kind: "compare" }
     | {
-        kind: "view";
-        redaction: VndRedactionResponse;
-        /* Не указывается для режима "сослаться на текст" (см. handleCiteRequest) - там нет
-         конкретной вкладки, с которой имело бы смысл начинать, открываем как есть (первый
-         доступный язык), и пользователь сам переключается, если нужно). Для "перейти к цитате"
-         (см. handleJumpToQuote) - вкладка, к которой относится сама цитата. */
-        language?: RedactionViewTarget;
-        /* Передаётся только когда модалка открыта через "+ Сослаться на текст редакции" -
-         превращает обычный просмотр в режим цитирования (см. RedactionViewModal.onInsertQuote). */
-        onInsertQuote?: (selectedText: string, documentTarget: RedactionViewTarget) => void;
-        /* Передаётся только когда модалка открыта, чтобы сразу проскроллить к месту одной из
-         уже вставленных цитат (см. handleJumpToQuote/RedactionViewModal.initialSearchQuery). */
-        initialSearchQuery?: string;
-    };
+    kind: "view";
+    redaction: VndRedactionResponse;
+    /* Не указывается для режима "сослаться на текст" (см. handleCiteRequest) - там нет
+     конкретной вкладки, с которой имело бы смысл начинать, открываем как есть (первый
+     доступный язык), и пользователь сам переключается, если нужно). Для "перейти к цитате"
+     (см. handleJumpToQuote) - вкладка, к которой относится сама цитата. */
+    language?: RedactionViewTarget;
+    /* Передаётся только когда модалка открыта через "+ Сослаться на текст редакции" -
+     превращает обычный просмотр в режим цитирования (см. RedactionViewModal.onInsertQuote). */
+    onInsertQuote?: (selectedText: string, documentTarget: RedactionViewTarget) => void;
+    /* Передаётся только когда модалка открыта, чтобы сразу проскроллить к месту одной из
+     уже вставленных цитат (см. handleJumpToQuote/RedactionViewModal.initialSearchQuery). */
+    initialSearchQuery?: string;
+};
 
 export function VndCoordinationTab({vnd, onVndChanged}: VndCoordinationTabProps) {
     const {user, hasPermission} = useAuth();
@@ -160,8 +160,15 @@ export function VndCoordinationTab({vnd, onVndChanged}: VndCoordinationTabProps)
             (isChiefEditor || vnd.actualizationResponsibleUserId === currentUserId);
 
         return (
-            <div className="py-6">
-                <div className="text-[13px] text-[#8b97ab]">Согласование ещё не запущено</div>
+            <div className="px-6 py-4">
+                <div className="rounded-[16px] border border-[#e5e9f0] bg-white overflow-hidden">
+                    <EmptyState
+                        embedded
+                        icon={Clock3}
+                        title="Согласование ещё не запущено!"
+                        description="Здесь появится маршрут согласования, этапы и резолюции согласующих — после того как согласование этой редакции будет запущено."
+                    />
+                </div>
                 {canStartNoChangesReview && (
                     <div className="mt-4 flex flex-col items-start gap-2">
                         <p className="text-[12.5px] leading-[1.6] text-[#55617a]">
@@ -181,6 +188,9 @@ export function VndCoordinationTab({vnd, onVndChanged}: VndCoordinationTabProps)
                 {modal?.kind === "startApproval" && (
                     <VndStartApprovalModal
                         vndId={vnd.id}
+                        draftOwnerUserId={vnd.createdByUserId}
+                        draftOwnerUserName={vnd.createdByUserName}
+                        currentUserId={currentUserId}
                         onClose={() => setModal(null)}
                         onStarted={() => {
                             setModal(null);
@@ -287,7 +297,7 @@ export function VndCoordinationTab({vnd, onVndChanged}: VndCoordinationTabProps)
     // же приём, что и handleJumpToQuote выше (там - для ещё не отправленной резолюции текущего
     // пользователя), просто с другим источником цитаты (quote: {documentTarget, text} вместо
     // ApprovalQuoteItem, форма та же).
-    const handleShowQuoteInText = (quote: {documentTarget: string; text: string}) => {
+    const handleShowQuoteInText = (quote: { documentTarget: string; text: string }) => {
         if (!redaction) return;
         setModal({
             kind: "view",
@@ -359,7 +369,8 @@ export function VndCoordinationTab({vnd, onVndChanged}: VndCoordinationTabProps)
                     т.е. кто оставлял замечания/не согласовал чисто на первичном этапе - см.
                     myStage выше), именно им нужно перепроверить обновлённые файлы. */}
                 {isRepeatedPhase && (
-                    <div className="mb-3 flex items-start gap-2.5 rounded-[12px] border border-[#bcd6f5] bg-[#eef5fd] px-3.5 py-3 max-w-full">
+                    <div
+                        className="mb-3 flex items-start gap-2.5 rounded-[12px] border border-[#bcd6f5] bg-[#eef5fd] px-3.5 py-3 max-w-full">
                         <Info size={16} strokeWidth={2} className="mt-[1px] flex-none text-[#2f68c4]"/>
                         <p className="text-[12.5px] leading-[1.55] text-[#1c4a80]">
                             <span className="font-semibold">Файлы редакции были обновлены по вашим замечаниям.</span>
@@ -478,6 +489,53 @@ export function VndCoordinationTab({vnd, onVndChanged}: VndCoordinationTabProps)
                         />
                     </div>
                 )}
+
+                {/* Отзыв чужого согласования главным редактором — тот же блок "Опасная зона",
+                    что и в виде инициатора ниже (см. isInitiator-ветку/CANCELLABLE_PHASE), но
+                    здесь мы уже в ветке isApprover (isInitiator заведомо false), так что условие
+                    упрощается до одной только проверки права CancelAnyVndApproval. Раньше в этой
+                    ветке кнопки не было вовсе — главный редактор, будучи согласующим на маршруте,
+                    не мог отозвать согласование, хотя право у него есть (бэкенд это уже
+                    поддерживает — см. VndApprovalService.CancelAsync/CancelInternalAsync:
+                    авторизация, уведомление инициатору и запись в историю там общие для обоих
+                    случаев отзыва). */}
+                {canCancelAnyApproval && CANCELLABLE_PHASE.includes(process.status) && (
+                    <div className="mt-8 rounded-[14px] border border-[#f0dede] overflow-hidden">
+                        <div className="bg-[#fdf6f5] px-4 py-2.5 border-b border-[#f0dede]">
+                            <span className="text-[11px] font-bold uppercase tracking-wide text-[#c0392b]">
+                                Опасная зона
+                            </span>
+                        </div>
+                        <div className="flex items-center justify-between gap-3 px-4 py-3.5 bg-white">
+                            <div>
+                                <div className="text-[13px] font-semibold text-[#1c2740]">
+                                    Отозвать согласование
+                                </div>
+                                <span className="text-[12.5px] text-[#8b97ab]">
+                                    Документ вернётся в черновик, задачи у согласующих будут сняты.
+                                </span>
+                            </div>
+                            <button
+                                onClick={() => setCancelModalOpen(true)}
+                                className="shrink-0 rounded-[9px] border border-[#e0b4ae] bg-white px-[14px] py-[8px] text-[12.5px] font-semibold text-[#c0392b] cursor-pointer hover:bg-[#fbecea] transition-colors"
+                            >
+                                Отозвать
+                            </button>
+                        </div>
+                    </div>
+                )}
+                <ConfirmActionModal
+                    open={cancelModalOpen}
+                    onClose={() => setCancelModalOpen(false)}
+                    onConfirm={handleCancel}
+                    title="Отозвать согласование?"
+                    message="Редакция и документ вернутся в черновик, задача у согласующих будет снята."
+                    confirmLabel="Отозвать"
+                    loadingLabel="Отзываю…"
+                    loading={cancelling}
+                    variant="danger"
+                    icon={AlertTriangle}
+                />
             </div>
         );
     }
@@ -502,7 +560,8 @@ export function VndCoordinationTab({vnd, onVndChanged}: VndCoordinationTabProps)
                 Только для него - согласующим адресована не эта плашка (у них другой статус
                 этапа, и это сообщение адресовано именно тому, кто должен исправлять). */}
             {isRevisionNeeded && isInitiator && (
-                <div className="mx-auto mb-5 flex w-fit max-w-full items-start gap-2.5 rounded-[12px] border border-[#f0dcae] bg-[#fdf6e8] px-4 py-3">
+                <div
+                    className="mx-auto mb-5 flex w-fit max-w-full items-start gap-2.5 rounded-[12px] border border-[#f0dcae] bg-[#fdf6e8] px-4 py-3">
                     <AlertTriangle size={16} strokeWidth={2} className="mt-[1px] flex-none text-[#9a6408]"/>
                     <p className="text-[12.5px] leading-[1.55] text-[#7a5006]">
                         <span className="font-semibold">Редакцию ВНД отправили на доработку — есть замечания.</span>

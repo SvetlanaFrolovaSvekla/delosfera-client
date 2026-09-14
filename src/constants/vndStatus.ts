@@ -178,7 +178,11 @@ export const COORDINATION_STAGE_META: Record<"primary" | "repeat" | "final", Tas
 
 // Цвета разделов задач - совпадают с названиями вложенных вкладок на странице "Мои задачи"
 // (см. TasksVndPage), чтобы бейдж на карточке однозначно указывал, в какой раздел вести.
-export const TASK_SCOPE_META: Record<"coordination" | "actualization" | "consolidation" | "myVndApproval" | "rejected", TaskStatusMeta> = {
+export const TASK_SCOPE_META: Record<
+    "coordination" | "actualization" | "consolidation" | "myVndApproval" | "rejected"
+    | "actualizationRequest" | "actualizationApproved",
+    TaskStatusMeta
+> = {
     coordination: {
         label: "Ждущие моего согласования",
         color: "#2f68f5",
@@ -209,6 +213,30 @@ export const TASK_SCOPE_META: Record<"coordination" | "actualization" | "consoli
         bg: "#fdecea",
         icon: AlertOctagon,
     },
+    actualizationRequest: {
+        label: "Заявка на актуализацию",
+        color: "#4e57d6",
+        bg: "#ececfc",
+        icon: FileCheck,
+    },
+    actualizationApproved: {
+        label: "Заявка одобрена",
+        color: "#1c7a4d",
+        bg: "#e2f4ea",
+        icon: CheckCircle2,
+    },
+};
+
+// Бейдж "ВНД на доработке" (myVndApproval, процесс в статусе RevisionNeeded) - отдельный от
+// COORDINATION_STAGE_META, т.к. у доработки нет фазы согласования (см. MapProcessPhase на
+// бэке - для RevisionNeeded возвращает null). Цвет/иконка сознательно другие, чем у обычных
+// фаз согласования (синие) - это состояние принципиально другое: мяч на стороне инициатора,
+// а не согласующих, и раньше карточка выглядела так же, как обычное "в процессе согласования".
+export const REVISION_NEEDED_META: TaskStatusMeta = {
+    label: "ВНД на доработке",
+    color: "#b3730a",
+    bg: "#fbeecf",
+    icon: FileEdit,
 };
 
 

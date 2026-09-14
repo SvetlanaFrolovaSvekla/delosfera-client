@@ -24,15 +24,18 @@ export const navGroups: NavGroup[] = [
             // записок лежали каждая в своём разделе, и человек, которому нужны обе,
             // ходил за ними в разные концы меню.
             { id: "analytics", icon: "rpt", labelKey: "Аналитика", path: "/analytics", permission: PermissionCode.ViewFullStatistics },
+            // Раньше жила внутри "Нормотворчество" под именем "vnd-rubric" и открывала
+            // только Рубрикатор ВНД. Теперь общая для всех контуров: сама модалка даёт
+            // выбор "Рубрикатор ВНД" / "Рубрикатор СЗ" — см. Sidebar.tsx.
+            {
+                id: "rubric",
+                labelKey: "sidebar.items.rubric",
+                icon: "folder",
+            },
         ] },
     {
         titleKey: "sidebar.groups.normotvorchestvo",
         items: [
-            {
-                id: "vnd-rubric",
-                labelKey: "sidebar.items.vndRubric",
-                icon: "folder",
-            },
             { id: "vnd", icon: "vnd", labelKey: "sidebar.items.vnd", path: "/base-vnd" },
             { id: "pln", icon: "pln", labelKey: "sidebar.items.pln", badge: 3, path: "/actualization", permission: PermissionCode.ViewVndActualizationPage },
           /*  // Годовой план актуализации: светофор сроков, импорт из Excel, отчёт (PLN-01..07)

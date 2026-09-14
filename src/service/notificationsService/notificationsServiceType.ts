@@ -30,6 +30,11 @@ export interface Notification {
     entityId: number | null;
     url: string | null;
 
+    // Код и название ВНД, если уведомление о ней (entityType === "Vnd") - чтобы показать их
+    // прямо в списке уведомлений, не открывая карточку
+    vndCode: string | null;
+    vndTitle: string | null;
+
     // Файл, приложенный к уведомлению (например, Excel-план единоразовой рассылки
     // актуализации) — виден и скачивается прямо из карточки уведомления, без почты
     // (см. GET /api/files/{id}, доступ проверяет VndFileAccessAuthorizer на бэке).

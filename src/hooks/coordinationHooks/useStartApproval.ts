@@ -13,6 +13,9 @@ interface UseStartApprovalParams {
     repeatMinutes: number | "";
     finalHoldMinutes: number | "";
     onStarted: (process: ApprovalProcessResponse) => void;
+    /** Кого указать инициатором согласования - см. StartApprovalRequest.initiatorUserId.
+     * Не передаётся вовсе, если запускает сам автор черновика (выбирать не из чего). */
+    initiatorUserId?: number;
 }
 
 export function useStartApproval({
@@ -24,6 +27,7 @@ export function useStartApproval({
                                      repeatMinutes,
                                      finalHoldMinutes,
                                      onStarted,
+                                     initiatorUserId,
                                  }: UseStartApprovalParams) {
     const [submitting, setSubmitting] = useState(false);
     const [error, setError] = useState<string | null>(null);
@@ -43,6 +47,7 @@ export function useStartApproval({
                 primaryDeadlineMinutes: Number(primaryMinutes),
                 repeatDeadlineMinutes: Number(repeatMinutes),
                 finalHoldDeadlineMinutes: Number(finalHoldMinutes),
+                ...(initiatorUserId !== undefined ? {initiatorUserId} : {}),
             };
             const result = await coordinationService.start(vndId, request);
 

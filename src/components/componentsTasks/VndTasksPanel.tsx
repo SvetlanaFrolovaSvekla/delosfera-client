@@ -1,4 +1,6 @@
 import {useEffect, useMemo, useState} from "react";
+import {useSearchParams} from "react-router-dom";
+import {CheckCircle2} from "lucide-react";
 import {useVndTasks} from "@/hooks/tasksVndHooks/useVndTasks.ts";
 import {useVndTasksDone} from "@/hooks/tasksVndHooks/useVndTasksDone.ts";
 import {useVndTaskCounts} from "@/hooks/tasksVndHooks/useVndTaskCounts.ts";
@@ -6,7 +8,7 @@ import {Tabs} from "@/components/componentsGeneral/Tabs.tsx";
 import {SelectDropdown} from "@/components/componentsGeneral/selects/SingleSelects/SelectDropdown.tsx";
 import {SearchBar} from "@/components/componentsGeneral/SearchBar.tsx";
 import {VndTaskList} from "@/components/componentsTasks/VndTaskList.tsx";
-import {emptyTextByScope, type TasksScope} from "@/constants/tasksConst.ts";
+import {emptyTextByScope, emptyDescriptionByScope, emptyIconByScope, type TasksScope} from "@/constants/tasksConst.ts";
 import {matchesTaskSearch} from "@/utils/tasksUtils.ts";
 import type {TaskScope, TaskStagePhase} from "@/service/tasksVndService/tasksServiceTypes.ts";
 
@@ -29,6 +31,14 @@ type TopTab = "all" | "coordination" | "actualization" | "consolidation";
 // (rejected).
 type CoordinationSubTab = "coordination" | "myVndApproval" | "rejected";
 
+// Вложенные вкладки внутри «Актуализации»: документы, ожидающие актуализации от ответственного
+// (actualization), заявки на доступ к актуализации, ждущие решения главного редактора
+// (actualizationRequest), и уже одобренные заявки, по которым заявитель ещё не начал цикл
+// (actualizationApproved) — раньше по обеим последним уходило только уведомление, самой задачи
+// в "Мои задачи" не было (см. TasksService.GetActualizationRequestTasksAsync/
+// GetActualizationApprovedTasksAsync).
+type ActualizationSubTab = "actualization" | "actualizationRequest" | "actualizationApproved";
+
 // Активные (обычный список — то, что ждёт действия) / Выполненные (история, с пагинацией).
 type DoneToggle = "active" | "done";
 
@@ -45,6 +55,12 @@ const COORDINATION_SUB_TABS: { id: CoordinationSubTab; label: string }[] = [
     { id: "coordination", label: "Ждущие моего согласования" },
     { id: "myVndApproval", label: "Мои ВНД на согласовании" },
     { id: "rejected", label: "Отклонено" },
+];
+
+const ACTUALIZATION_SUB_TABS: { id: ActualizationSubTab; label: string }[] = [
+    { id: "actualization", label: "На актуализации" },
+    { id: "actualizationRequest", label: "Заявки на доступ" },
+    { id: "actualizationApproved", label: "Одобрено — начать" },
 ];
 
 // Выпадающий список "По выполненности" рядом со строкой поиска — не таб, чтобы не плодить
@@ -64,21 +80,44 @@ const STAGE_PHASE_FILTER_OPTIONS: { value: "" | TaskStagePhase; label: string }[
 ];
 
 export function VndTasksPanel() {
-    const [topTab, setTopTab] = useState<TopTab>("coordination");
-    const [coordinationSubTab, setCoordinationSubTab] = useState<CoordinationSubTab>("coordination");
+    // Сюда попадают и по прямой ссылке с заранее выбранной вкладкой/подвкладкой —
+    // например, карточки с рабочего стола ведут сюда с ?tab=coordination&sub=coordination
+    // (см. HomeKpiGrid.tsx / HomeContoursCard.tsx). Читаем один раз при монтировании,
+    // по тому же принципу, что и AnalyticsPage.tsx: обратная синхронизация в URL при
+    // переключении вкладок мышью не нужна.
+    const [searchParams] = useSearchParams();
+
+    const [topTab, setTopTab] = useState<TopTab>(() => {
+        const fromUrl = searchParams.get("tab");
+        return TOP_TABS.some((t) => t.id === fromUrl) ? (fromUrl as TopTab) : "coordination";
+    });
+    const [coordinationSubTab, setCoordinationSubTab] = useState<CoordinationSubTab>(() => {
+        const fromUrl = searchParams.get("sub");
+        return COORDINATION_SUB_TABS.some((s) => s.id === fromUrl) ? (fromUrl as CoordinationSubTab) : "coordination";
+    });
+    const [actualizationSubTab, setActualizationSubTab] = useState<ActualizationSubTab>(() => {
+        const fromUrl = searchParams.get("sub");
+        return ACTUALIZATION_SUB_TABS.some((s) => s.id === fromUrl) ? (fromUrl as ActualizationSubTab) : "actualization";
+    });
     const [doneToggle, setDoneToggle] = useState<DoneToggle>("active");
     const [donePage, setDonePage] = useState(1);
     const [stagePhaseFilter, setStagePhaseFilter] = useState<"" | TaskStagePhase>("");
     const [searchQuery, setSearchQuery] = useState("");
 
-    const scope: TasksScope = topTab === "all" ? "all" : topTab === "coordination" ? coordinationSubTab : topTab;
+    const scope: TasksScope = topTab === "all"
+        ? "all"
+        : topTab === "coordination"
+            ? coordinationSubTab
+            : topTab === "actualization"
+                ? actualizationSubTab
+                : topTab;
 
     // "Выполненные" не существует для вкладки "Все" — там переключатель вообще не показывается
     // (см. handleTopTabChange), так что isDoneView здесь всегда подразумевает scope !== "all".
     const isDoneAvailable = topTab !== "all";
     const isDoneView = isDoneAvailable && doneToggle === "done";
 
-    const { tasks: activeTasks, isLoading: isActiveLoading } = useVndTasks(scope, !isDoneView);
+    const { tasks: activeTasks, isLoading: isActiveLoading, error: activeError } = useVndTasks(scope, !isDoneView);
     const { data: donePageData, isLoading: isDoneLoading } = useVndTasksDone(
         isDoneView ? (scope as TaskScope) : null,
         donePage,
@@ -109,9 +148,12 @@ export function VndTasksPanel() {
         ...tab,
         n: tab.id === "all"
             ? counts.coordination + counts.myVndApproval + counts.rejected + counts.actualization + counts.consolidation
+                + counts.actualizationRequests + counts.actualizationApproved
             : tab.id === "coordination"
                 ? counts.coordination + counts.myVndApproval + counts.rejected
-                : counts[tab.id],
+                : tab.id === "actualization"
+                    ? counts.actualization + counts.actualizationRequests + counts.actualizationApproved
+                    : counts[tab.id],
     }));
 
     const subTabsWithCounts = COORDINATION_SUB_TABS.map((tab) => ({
@@ -119,14 +161,27 @@ export function VndTasksPanel() {
         n: counts[tab.id],
     }));
 
+    const actualizationSubTabsWithCounts = ACTUALIZATION_SUB_TABS.map((tab) => ({
+        ...tab,
+        n: tab.id === "actualizationRequest"
+            ? counts.actualizationRequests
+            : tab.id === "actualizationApproved"
+                ? counts.actualizationApproved
+                : counts.actualization,
+    }));
+
     // Название текущего раздела — общее и для плейсхолдера поиска, и для строки счётчика
     // ниже. На "Все" у самого TOP_TABS есть своя запись ("Все"), но там она не годится
     // ни там, ни там — у обоих мест свой особый случай для этой вкладки, см. ниже.
     const sectionLabel = useMemo(() => {
-        return topTab === "coordination"
-            ? COORDINATION_SUB_TABS.find((tab) => tab.id === coordinationSubTab)?.label ?? ""
-            : TOP_TABS.find((tab) => tab.id === topTab)?.label ?? "";
-    }, [topTab, coordinationSubTab]);
+        if (topTab === "coordination") {
+            return COORDINATION_SUB_TABS.find((tab) => tab.id === coordinationSubTab)?.label ?? "";
+        }
+        if (topTab === "actualization") {
+            return ACTUALIZATION_SUB_TABS.find((tab) => tab.id === actualizationSubTab)?.label ?? "";
+        }
+        return TOP_TABS.find((tab) => tab.id === topTab)?.label ?? "";
+    }, [topTab, coordinationSubTab, actualizationSubTab]);
 
     // Плейсхолдер строки поиска отражает раздел (и активные/выполненные), в котором сейчас
     // ищем — чтобы не выглядело, будто поиск идёт по всей странице задач или по всей истории
@@ -151,13 +206,37 @@ export function VndTasksPanel() {
         return `Найдено задач: ${filteredTasks.length} из ${total} ${label}${suffix}`;
     }, [phaseFilteredTasks, filteredTasks, searchQuery, topTab, sectionLabel, isDoneView]);
 
+    // Раньше ошибка загрузки (activeError) нигде не читалась — список молча выглядел просто
+    // пустым ("задач нет"), неотличимо от честного "пусто", хотя на деле запрос упал. Показываем
+    // отдельным баннером над списком, не подменяя пустое состояние.
+    const activeErrorMessage = !isDoneView && activeError
+        ? activeError instanceof Error ? activeError.message : "Не удалось загрузить задачи"
+        : null;
+
     // Если поиск сузил непустой список до нуля карточек — это "ничего не нашлось", а не
-    // "в разделе пусто" (у этих двух причин разные тексты-заглушки).
-    const emptyText = searchQuery.trim() && rawTasks.length > 0
+    // "в разделе пусто" (у этих двух причин разные тексты-заглушки и значки — см. ниже).
+    const isSearchEmpty = searchQuery.trim().length > 0 && rawTasks.length > 0;
+
+    const emptyText = isSearchEmpty
         ? "Ничего не найдено"
         : isDoneView
             ? "Пока нет выполненных задач"
             : emptyTextByScope[scope];
+
+    // Пояснение и значок под заголовком — свои для "ничего не нашлось" (лупа с крестиком,
+    // значение по умолчанию у EmptyState) и "выполненные пусты", а для обычного пустого
+    // раздела — по разделу (согласование/актуализация/консолидация и т.п.).
+    const emptyDescription = isSearchEmpty
+        ? "Попробуйте изменить запрос поиска."
+        : isDoneView
+            ? "Здесь появится история решений по этому разделу, как только вы примете первое."
+            : emptyDescriptionByScope[scope];
+
+    const emptyIcon = isSearchEmpty
+        ? undefined
+        : isDoneView
+            ? CheckCircle2
+            : emptyIconByScope[scope];
 
     // Смена раздела возвращает на "Активные" и сбрасывает фильтр этапа — унесённые на другой
     // раздел, они выглядели бы как пустой список без причины. Поиск намеренно не сбрасывается
@@ -172,6 +251,12 @@ export function VndTasksPanel() {
     const handleSubTabChange = (nextSubTab: CoordinationSubTab) => {
         setCoordinationSubTab(nextSubTab);
         setStagePhaseFilter("");
+        setDoneToggle("active");
+        setDonePage(1);
+    };
+
+    const handleActualizationSubTabChange = (nextSubTab: ActualizationSubTab) => {
+        setActualizationSubTab(nextSubTab);
         setDoneToggle("active");
         setDonePage(1);
     };
@@ -203,6 +288,15 @@ export function VndTasksPanel() {
                     tabs={subTabsWithCounts}
                     value={coordinationSubTab}
                     onChange={handleSubTabChange}
+                    className="mb-0"
+                />
+            )}
+
+            {topTab === "actualization" && (
+                <Tabs<ActualizationSubTab>
+                    tabs={actualizationSubTabsWithCounts}
+                    value={actualizationSubTab}
+                    onChange={handleActualizationSubTabChange}
                     className="mb-0"
                 />
             )}
@@ -251,10 +345,18 @@ export function VndTasksPanel() {
                 )}
             </div>
 
+            {activeErrorMessage && (
+                <div className="mb-3 rounded-[10px] border border-[#f2c2c2] bg-[#fdf1f1] px-3 py-[10px] text-[12.5px] text-[#c0392b]">
+                    {activeErrorMessage}
+                </div>
+            )}
+
             <VndTaskList
                 tasks={filteredTasks}
                 isLoading={isLoading}
                 emptyText={emptyText}
+                emptyDescription={emptyDescription}
+                emptyIcon={emptyIcon}
                 searchQuery={searchQuery}
             />
 

@@ -1,5 +1,6 @@
 import {useEffect, useState} from "react";
-import {Loader2, Shield} from "lucide-react";
+import {Eye, FileStack, Loader2, Shield} from "lucide-react";
+import {EmptyState} from "@/components/componentsGeneral/EmptyState.tsx";
 import {activityLogService} from "@/service/activityLogService/activityLogService.ts";
 import type {ActivityLogEntryResponse} from "@/service/activityLogService/activityLogServiceType.ts";
 import {coordinationService} from "@/service/coordinationService/coordinationService.ts";
@@ -11,6 +12,9 @@ import type {
 } from "@/service/coordinationService/coordinationServiceTypes.ts";
 import type {VndRedactionResponse, VndResponse} from "@/service/vndService/vndServiceType.ts";
 import {getRedactionDisplayStatus, REDACTION_STATUS_META} from "@/utils/redactionStatus.ts";
+import {
+    VndRedactionHistoryDetail
+} from "@/components/componentsVND/componentsOpenVndPage/componentsHistoryTab/VndRedactionHistoryDetail.tsx";
 
 interface VndHistoryTabProps {
     vnd: VndResponse;
@@ -40,6 +44,7 @@ const ICON_DOT_COLOR: Record<string, string> = {
     x: "bg-red-500",
     doc: "bg-indigo-500",
     clock: "bg-amber-500",
+    trash: "bg-red-500",
     info: "bg-[#c3ccd8]",
 };
 
@@ -71,6 +76,10 @@ export function VndHistoryTab({vnd, redactions}: VndHistoryTabProps) {
     const [approvalHistory, setApprovalHistory] = useState<ApprovalProcessResponse[] | null>(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
+    // Id редакции, для которой открыт подробный лог (кнопка "Смотреть подробно" на панели
+    // "Редакции и юридическая значимость") — вместо самой редакции храним id, чтобы после
+    // перезагрузки/изменения списка редакций деталка всегда показывала актуальные данные.
+    const [detailRedactionId, setDetailRedactionId] = useState<number | null>(null);
 
     useEffect(() => {
         let cancelled = false;
@@ -98,8 +107,17 @@ export function VndHistoryTab({vnd, redactions}: VndHistoryTabProps) {
         };
     }, [vnd.id]);
 
+    // Открытая по кнопке "Смотреть подробно" редакция относится к конкретному ВНД — при
+    // переключении на другой документ (без размонтирования таба) детальный лог нужно закрыть.
+    useEffect(() => {
+        setDetailRedactionId(null);
+    }, [vnd.id]);
+
     const maxNumber = redactions.reduce((max, r) => Math.max(max, r.number), 0);
     const sortedRedactions = [...redactions].sort((a, b) => b.number - a.number);
+    const detailRedaction = detailRedactionId != null
+        ? redactions.find((r) => r.id === detailRedactionId) ?? null
+        : null;
 
     if (loading) {
         return (
@@ -116,6 +134,29 @@ export function VndHistoryTab({vnd, redactions}: VndHistoryTabProps) {
         );
     }
 
+    // Подробный лог выбранной редакции — занимает место обеих панелей (аудит + редакции),
+    // пока не нажата стрелочка "Назад к истории" (см. VndRedactionHistoryDetail.onBack).
+    if (detailRedaction) {
+        const displayStatus = getRedactionDisplayStatus(
+            detailRedaction, vnd.status, detailRedaction.number === maxNumber, vnd.effectiveDate,
+        );
+        const processesForRedaction = (approvalHistory ?? []).filter(
+            (p) => p.redactionId === detailRedaction.id,
+        );
+
+        return (
+            <div className="px-4 sm:px-6">
+                <VndRedactionHistoryDetail
+                    vnd={vnd}
+                    redaction={detailRedaction}
+                    displayStatus={displayStatus}
+                    processes={processesForRedaction}
+                    onBack={() => setDetailRedactionId(null)}
+                />
+            </div>
+        );
+    }
+
     return (
         <div className="px-4 sm:px-6 grid grid-cols-1 lg:grid-cols-2 gap-[18px] items-start">
             {/* Левая колонка: журнал аудита */}
@@ -124,7 +165,7 @@ export function VndHistoryTab({vnd, redactions}: VndHistoryTabProps) {
                     <div className="px-5 pt-4 pb-3 border-b border-[#eef2f7] flex items-center gap-[9px]">
                         <Shield size={17} strokeWidth={1.8} className="text-[#8b97ab]"/>
                         <h2 className="m-0 text-sm font-semibold">Журнал аудита</h2>
-                        <span className="ml-auto text-[11px] text-[#a3adbd]">История всех действий с данной ВНД</span>
+                        <span className="ml-auto text-[11px] text-[#a3adbd]">История всех действий с данным ВНД</span>
                     </div>
                     <div className="px-5 pt-1.5 pb-3.5">
                         {(auditEntries?.length ?? 0) === 0 ? (
@@ -137,7 +178,9 @@ export function VndHistoryTab({vnd, redactions}: VndHistoryTabProps) {
                                         className={`w-[7px] h-[7px] flex-none rounded-full mt-1.5 ${ICON_DOT_COLOR[a.icon] ?? "bg-[#c3ccd8]"}`}
                                     />
                                     <div className="min-w-0">
-                                        <div className="text-[12.5px] text-[#26324a] leading-[1.4]">{a.text}</div>
+                                        {/* whitespace-pre-line — сервер разносит длинный список изменённых
+                                            реквизитов по строкам через \n (см. VndService.BuildChangedFieldsList) */}
+                                        <div className="whitespace-pre-line text-[12.5px] text-[#26324a] leading-[1.4]">{a.text}</div>
                                         <div className="text-[11px] text-[#8b97ab] mt-0.5">{formatDateTime(a.createdAt)}</div>
                                     </div>
                                 </div>
@@ -154,7 +197,12 @@ export function VndHistoryTab({vnd, redactions}: VndHistoryTabProps) {
                 </div>
                 <div className="px-5 pt-1.5 pb-3.5">
                     {sortedRedactions.length === 0 ? (
-                        <div className="py-4 text-[12.5px] text-[#a3adbd]">Редакций пока нет</div>
+                        <EmptyState
+                            embedded
+                            icon={FileStack}
+                            title="Редакций пока нет"
+                            description="Здесь появятся редакции документа, когда будет загружена первая версия ВНД."
+                        />
                     ) : (
                         sortedRedactions.map((r) => {
                             const displayStatus = getRedactionDisplayStatus(
@@ -166,7 +214,7 @@ export function VndHistoryTab({vnd, redactions}: VndHistoryTabProps) {
                             const process = approvalHistory?.find((p) => p.redactionId === r.id) ?? null;
 
                             return (
-                                <div key={r.id} className="flex gap-[13px] py-3 border-b border-[#f3f6f9] last:border-b-0">
+                                <div key={r.id} className="flex items-start gap-[13px] py-3 border-b border-[#f3f6f9] last:border-b-0">
                                     <div className="flex-none text-center">
                                         <div className="font-mono text-[13px] font-bold text-[#1c2740]">{r.code}</div>
                                         <span
@@ -224,6 +272,14 @@ export function VndHistoryTab({vnd, redactions}: VndHistoryTabProps) {
                                             </div>
                                         )}
                                     </div>
+                                    <button
+                                        type="button"
+                                        onClick={() => setDetailRedactionId(r.id)}
+                                        className="flex-none self-start inline-flex items-center gap-1 rounded-[8px] border border-[#e5e9f0] bg-white px-2.5 py-1.5 text-[11px] font-semibold text-[#4e57d6] hover:bg-[#ececfc] whitespace-nowrap cursor-pointer"
+                                    >
+                                        <Eye size={13}/>
+                                        Смотреть подробно
+                                    </button>
                                 </div>
                             );
                         })

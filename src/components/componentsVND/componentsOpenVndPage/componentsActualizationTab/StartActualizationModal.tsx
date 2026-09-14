@@ -2,11 +2,13 @@
 // в актуализацию напрямую (ActualizeAnyVndWithApproval / ActualizeAnyVndWithoutApproval).
 import {useMemo, useState} from "react";
 import {createPortal} from "react-dom";
-import {Loader2, RefreshCw, X} from "lucide-react";
-import {useInitiatorOptions} from "@/hooks/useInitiatorOptions.ts";
+import {ChevronDown, Loader2, RefreshCw, X} from "lucide-react";
 import {Clue} from "@/components/componentsGeneral/knowledgeBaseComponents/Clue.tsx";
 import {useAuth} from "@/context/AuthContext.ts";
 import {PermissionCode} from "@/constants/permissions/permissions.ts";
+import {
+    SelectActualizationResponsibleModal
+} from "@/components/componentsVND/componentsOpenVndPage/componentsActualizationTab/SelectActualizationResponsibleModal.tsx";
 
 interface StartActualizationModalProps {
     canWithoutApproval: boolean;
@@ -27,13 +29,36 @@ interface StartActualizationModalProps {
 export function StartActualizationModal({
                                             canWithoutApproval, canWithApproval, submitting, error, currentUserId, onClose, onConfirm,
                                         }: StartActualizationModalProps) {
-    const [requiresApproval, setRequiresApproval] = useState<boolean>(canWithoutApproval);
+    // По умолчанию — "с согласованием", КРОМЕ случая, когда у пользователя есть только право
+    // "без согласования" (canWithoutApproval && !canWithApproval): тогда единственный
+    // допустимый для него вариант — false, и его обязательно нужно проставить по умолчанию,
+    // поскольку переключатель (RadioRow ниже) показывается только при canChoose (есть оба
+    // права) — если выбора нет, поправить дефолт вручную негде.
+    //
+    // Раньше здесь стояло `= canWithoutApproval`, что давало ПРОТИВОПОЛОЖНЫЙ (и недопустимый)
+    // дефолт как раз в зеркальном случае: пользователю только с правом "с согласованием"
+    // (canWithApproval && !canWithoutApproval) подставлялось requiresApproval = false — а
+    // переключатель, чтобы это исправить, был скрыт тем же условием canChoose. Отправка формы
+    // с таким дефолтом на бэке падала с UnauthorizedAccessException (см. VndActualizationService.
+    // StartAsync: "!request.RequiresApproval && !canWithoutApproval"), и пользователь не мог
+    // понять, почему кнопка не работает.
+    const [requiresApproval, setRequiresApproval] = useState<boolean>(
+        !(canWithoutApproval && !canWithApproval)
+    );
     const [responsibleUserId, setResponsibleUserId] = useState<number>(currentUserId);
-
-    const {options: userOptions, loading: usersLoading} = useInitiatorOptions();
-    const canChoose = canWithoutApproval && canWithApproval;
+    const [responsibleUserName, setResponsibleUserName] = useState<string | null>(null);
+    const [pickerOpen, setPickerOpen] = useState(false);
 
     const {user} = useAuth();
+
+    // Подпись выбранного ответственного: по умолчанию ответственный — это сам открывший модалку
+    // (responsibleUserId === currentUserId), для него имя берём из текущей сессии (user.fullName).
+    // Как только человек выбран через модалку выбора (см. SelectActualizationResponsibleModal
+    // ниже) — используем точное имя оттуда, вне зависимости от того, кто выбран.
+    const responsibleLabel =
+        responsibleUserName
+        ?? (responsibleUserId === currentUserId ? user?.fullName ?? null : null);
+    const canChoose = canWithoutApproval && canWithApproval;
 
     // Роли пользователя, которые дают право актуализировать без согласования — для подсказки.
     // Актуально только когда доступен выбор порядка (canChoose), иначе показывать нечего.
@@ -71,19 +96,33 @@ export function StartActualizationModal({
                     <div className="mb-2 text-[12.5px] font-semibold text-[#26324a]">
                         Ответственный за актуализацию
                     </div>
-                    <select
-                        value={responsibleUserId}
-                        onChange={(e) => setResponsibleUserId(Number(e.target.value))}
-                        disabled={usersLoading}
-                        className="w-full h-9 rounded-[10px] border border-[#e5e9f0] px-3 text-[13px] text-[#3a4560] disabled:opacity-50"
+                    <button
+                        type="button"
+                        onClick={() => setPickerOpen(true)}
+                        className="flex h-9 w-full items-center gap-2 rounded-[10px] border border-[#e5e9f0]
+                                   bg-white px-3 text-left text-[13px] text-[#3a4560] cursor-pointer
+                                   hover:bg-[#f6f8fb]"
                     >
-                        {userOptions.map((u) => (
-                            <option key={u.key} value={u.key}>
-                                {Number(u.key) === currentUserId ? `${u.label} (я)` : u.label}
-                            </option>
-                        ))}
-                    </select>
+                        <span className="min-w-0 flex-1 truncate">
+                            {responsibleLabel
+                                ? `${responsibleLabel}${responsibleUserId === currentUserId ? " (я)" : ""}`
+                                : "Выберите ответственного…"}
+                        </span>
+                        <ChevronDown size={15} className="flex-none text-[#8b97ab]"/>
+                    </button>
                 </div>
+
+                {pickerOpen && (
+                    <SelectActualizationResponsibleModal
+                        currentUserId={currentUserId}
+                        selectedUserId={responsibleUserId}
+                        onClose={() => setPickerOpen(false)}
+                        onSelect={(u) => {
+                            setResponsibleUserId(u.id);
+                            setResponsibleUserName(u.fullName);
+                        }}
+                    />
+                )}
 
                 {canChoose && (
                     <div className="mb-4">

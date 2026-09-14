@@ -128,11 +128,24 @@ const INVISIBLE_GAP = "[\\u00AD\\u200B\\u200C\\u200D\\uFEFF]*";
  * Дополнительно каждое "слово" (последовательность непробельных символов) экранируется
  * ПОСИМВОЛЬНО, с необязательным разрывом на невидимые служебные символы (см. INVISIBLE_GAP) между
  * каждой парой символов — см. комментарий у INVISIBLE_CHARS_RE выше. */
+// "ё"/"е" в русских текстах на практике взаимозаменяемы (Word и большинство редакторов не
+// настаивают на букве "ё", а копипаст/OCR/шрифтовая замена нередко превращают одну в другую) -
+// цитата, скопированная пользователем через выделение, может отличаться от текста документа
+// ТОЛЬКО этой буквой и не находиться вовсе. То же самое с дефисом/тире - Word автозаменой часто
+// превращает обычный дефис "-" в короткое "–" или длинное "—" тире там, где пользователь (или
+// цитата, набранная руками) видит обычный дефис. Оба смешения не меняют смысл текста и не должны
+// приводить к "Совпадений нет" только из-за формы символа.
+function charClass(ch: string): string {
+    if (ch === "е" || ch === "Е" || ch === "ё" || ch === "Ё") return "[еЕёЁ]";
+    if (ch === "-" || ch === "–" || ch === "—") return "[-–—]";
+    return escapeRegExp(ch);
+}
+
 export function buildWhitespaceTolerantRegex(query: string, flags = "gi"): RegExp | null {
     const parts = query.split(/\s+/).map((p) => p.trim()).filter(Boolean);
     if (parts.length === 0) return null;
     const built = parts.map((word) =>
-        Array.from(word.replace(INVISIBLE_CHARS_RE, "")).map(escapeRegExp).join(INVISIBLE_GAP)
+        Array.from(word.replace(INVISIBLE_CHARS_RE, "")).map(charClass).join(INVISIBLE_GAP)
     );
     return new RegExp(built.join("\\s*"), flags);
 }

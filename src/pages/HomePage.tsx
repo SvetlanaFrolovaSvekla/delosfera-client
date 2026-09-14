@@ -13,11 +13,11 @@ import {HOME_TASKS_LIMIT} from "@/constants/validation/HomeTasksLimit.ts";
 import {Loader} from "@/components/componentsGeneral/Loader.tsx";
 import {CreateDocumentModal} from "@/components/componentsModal/CreateDocumentModal.tsx";
 import {HomePageHeader} from "@/components/componentsHome/HomePageHeader.tsx";
-import {HomeContoursCard} from "@/components/componentsHome/HomeContoursCard.tsx";
-import {HomeKpiGrid} from "@/components/componentsHome/HomeKpiGrid.tsx";
+import {HomeKpiSection} from "@/components/componentsHome/HomeKpiSection.tsx";
 import {MyTasksCard} from "@/components/componentsHome/MyTasksCard.tsx";
 import {ActualizationPlanCard} from "@/components/componentsHome/ActualizationPlanCard.tsx";
 import {RecentActivityCard} from "@/components/componentsHome/RecentActivityCard.tsx";
+import {RecentNotificationsCard} from "@/components/componentsHome/RecentNotificationsCard.tsx";
 
 export function HomePage() {
     const {t, i18n} = useTranslation();
@@ -45,6 +45,12 @@ export function HomePage() {
     const actualization = useVndTasks("actualization");
     const consolidation = useVndTasks("consolidation");
     const rejected = useVndTasks("rejected");
+    // Заявки на доступ к актуализации, ждущие решения главного редактора, и уже одобренные
+    // заявки, по которым заявитель ещё не начал цикл — раньше по обеим уходило только
+    // уведомление, на главной странице задача не появлялась вовсе (см.
+    // TasksService.GetActualizationRequestTasksAsync/GetActualizationApprovedTasksAsync).
+    const actualizationRequest = useVndTasks("actualizationRequest");
+    const actualizationApproved = useVndTasks("actualizationApproved");
     const {summary: actualizationSummary, isLoading: actualizationLoading} = useActualizationSummary();
     const {summary: homeSummary} = useVndHomeSummary();
 
@@ -70,6 +76,28 @@ export function HomePage() {
         };
     }, []);
 
+    // Задачи по закупкам — тоже из сводного реестра, вне контура ВНД (нужны для таба
+    // "Закупки" в виджете "Мои задачи").
+    const [prcTasks, setPrcTasks] = useState<InboxTask[]>([]);
+    const [prcTasksLoading, setPrcTasksLoading] = useState(true);
+    useEffect(() => {
+        let cancelled = false;
+        setPrcTasksLoading(true);
+        taskInboxService.get("Procurement")
+            .then((inbox) => {
+                if (!cancelled) setPrcTasks(inbox.tasks);
+            })
+            .catch(() => {
+                if (!cancelled) setPrcTasks([]);
+            })
+            .finally(() => {
+                if (!cancelled) setPrcTasksLoading(false);
+            });
+        return () => {
+            cancelled = true;
+        };
+    }, []);
+
     // "Последние задачи" = отсортированные по дате появления (createdAt), самые новые сверху —
     // раньше список просто склеивался по скоупам и обрезался по лимиту, из-за чего порядок
     // не отражал реальную свежесть задач.
@@ -80,18 +108,29 @@ export function HomePage() {
             ...actualization.tasks,
             ...consolidation.tasks,
             ...rejected.tasks,
+            ...actualizationRequest.tasks,
+            ...actualizationApproved.tasks,
         ];
         return [...allTasks]
             .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
             .slice(0, HOME_TASKS_LIMIT);
-    }, [coordination.tasks, myVndApproval.tasks, actualization.tasks, consolidation.tasks, rejected.tasks]);
+    }, [
+        coordination.tasks, myVndApproval.tasks, actualization.tasks, consolidation.tasks, rejected.tasks,
+        actualizationRequest.tasks, actualizationApproved.tasks,
+    ]);
 
-    const tasksTotalCount = coordination.tasks.length + myVndApproval.tasks.length
+    // Настоящее (неусечённое) число задач по контуру ВНД — в отличие от homeTasks выше,
+    // которое обрезано общим лимитом HOME_TASKS_LIMIT по всем скоупам сразу. Нужно отдельной
+    // переменной для бейджа с числом задач на вкладке "ВНД" в "Мои задачи" (см. counts ниже) —
+    // tasks.length там после обрезки уже не отражает реальное количество.
+    const vndTasksCount = coordination.tasks.length + myVndApproval.tasks.length
         + actualization.tasks.length + consolidation.tasks.length + rejected.tasks.length
-        + szTasks.length;
+        + actualizationRequest.tasks.length + actualizationApproved.tasks.length;
+    const tasksTotalCount = vndTasksCount + szTasks.length + prcTasks.length;
     const tasksLoading = coordination.isLoading || myVndApproval.isLoading
         || actualization.isLoading || consolidation.isLoading || rejected.isLoading
-        || szTasksLoading;
+        || actualizationRequest.isLoading || actualizationApproved.isLoading
+        || szTasksLoading || prcTasksLoading;
 
     // Текущая дата - локализуется под текущий язык
     const formattedDate = useFormattedDate();
@@ -110,7 +149,7 @@ export function HomePage() {
     }
 
     return (
-        <div className="w-full max-w-[17000px] mx-auto px-4 sm:px-6 lg:px-8 xl:px-10 pt-2 sm:pt-[22px]">
+        <div className="w-full max-w-[17000px] mx-auto px-4 sm:px-6 lg:px-8 xl:px-10 py-2 sm:py-[22px]">
             <HomePageHeader
                 formattedDate={formattedDate}
                 greeting={greeting}
@@ -120,18 +159,32 @@ export function HomePage() {
             />
 
             {/* Сетка с карточками с информацией об активности деятельности */}
-            <HomeKpiGrid summary={homeSummary}/>
-            <HomeContoursCard/>
+            <HomeKpiSection summary={homeSummary} totalTasksCount={tasksTotalCount}/>
 
-            <div className="grid grid-cols-1 xl:grid-cols-[1.65fr_1fr] gap-[18px]">
-                {/* Виджет последних задач */}
-                <MyTasksCard tasks={homeTasks} szTasks={szTasks} totalCount={tasksTotalCount} isLoading={tasksLoading}/>
+            {/* Верхняя пара — "Мои задачи" и "План актуализации", высоты независимые.
+                items-start - без него грид растягивает обе ячейки по умолчанию (align-items:
+                stretch) до высоты более высокой из них: "План актуализации" (компактная сетка
+                из 4 показателей) раздувался вровень с "Мои задачи" и снизу оставалось пустое
+                белое место. Теперь у каждой панели своя собственная высота по содержимому. */}
+            <div className="grid grid-cols-1 items-start gap-[18px] xl:grid-cols-[1.65fr_1fr]">
+                <MyTasksCard
+                    tasks={homeTasks}
+                    szTasks={szTasks}
+                    prcTasks={prcTasks}
+                    isLoading={tasksLoading}
+                    counts={{vnd: vndTasksCount, sz: szTasks.length, prc: prcTasks.length}}
+                />
+                <ActualizationPlanCard summary={actualizationSummary} isLoading={actualizationLoading}/>
+            </div>
 
-                {/* Виджет плана актуализации и журнал действий */}
-                <div className="flex flex-col gap-[18px]">
-                    <ActualizationPlanCard summary={actualizationSummary} isLoading={actualizationLoading}/>
-                    <RecentActivityCard limit={8}/>
-                </div>
+            {/* Нижняя пара — "Последние уведомления" и "Последняя активность". Обе карточки —
+                одной и той же фиксированной высоты (HOME_BOTTOM_ROW_HEIGHT, см. constants/home.ts),
+                а не растянуты по содержимому: при лимите в 15 строк это было бы слишком высоко.
+                Список внутри каждой скроллится сам, если 15 строк не помещаются (см.
+                RecentNotificationsCard.tsx и RecentActivityCard.tsx). */}
+            <div className="mt-[18px] grid grid-cols-1 items-start xl:grid-cols-[1.65fr_1fr] gap-[18px]">
+                <RecentNotificationsCard limit={15}/>
+                <RecentActivityCard limit={15}/>
             </div>
             {/* Создание документа */}
             {isCreateModalOpen && (

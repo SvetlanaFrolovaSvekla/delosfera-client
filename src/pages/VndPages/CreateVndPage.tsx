@@ -11,6 +11,7 @@ import {
 } from "@/components/componentsGeneral/selects/MultiSelects/ParentMultiSelectField.tsx";
 import {Loader} from "@/components/componentsGeneral/Loader.tsx";
 import {EmptyState} from "@/components/componentsGeneral/EmptyState.tsx";
+import {Tooltip} from "@/components/componentsGeneral/Tooltip.tsx";
 import {SelectDropdown} from "@/components/componentsGeneral/selects/SingleSelects/SelectDropdown.tsx";
 import {SingleSelectListField} from "@/components/componentsGeneral/selects/SingleSelects/SingleSelectListField.tsx";
 
@@ -180,18 +181,20 @@ export function CreateVndPage() {
                 >
                     Отмена
                 </button>
-                <button
-                    onClick={form.handleSubmit}
-                    disabled={!form.isValid || form.isSubmitting}
-                    className={`inline-flex items-center gap-2 h-11 px-[22px] rounded-[11px] border-none font-semibold text-[14px] ${
-                        form.isValid && !form.isSubmitting
-                            ? "bg-[#4e57d6] text-white cursor-pointer hover:brightness-[1.06] shadow-[0_8px_20px_-8px_#4e57d6]"
-                            : "bg-[#e5e9f0] text-[#a3adbd] cursor-not-allowed"
-                    }`}
-                >
-                    <Check className="w-[18px] h-[18px]" strokeWidth={2}/>
-                    {form.isSubmitting ? "Создание…" : "Создать черновик-карточку"}
-                </button>
+                <Tooltip content={form.missingFieldsTooltip} disabled={form.isValid} side="top">
+                    <button
+                        onClick={form.handleSubmit}
+                        disabled={!form.isValid || form.isSubmitting}
+                        className={`inline-flex items-center gap-2 h-11 px-[22px] rounded-[11px] border-none font-semibold text-[14px] ${
+                            form.isValid && !form.isSubmitting
+                                ? "bg-[#4e57d6] text-white cursor-pointer hover:brightness-[1.06] shadow-[0_8px_20px_-8px_#4e57d6]"
+                                : "bg-[#e5e9f0] text-[#a3adbd] cursor-not-allowed"
+                        }`}
+                    >
+                        <Check className="w-[18px] h-[18px]" strokeWidth={2}/>
+                        {form.isSubmitting ? "Создание…" : "Создать черновик-карточку"}
+                    </button>
+                </Tooltip>
             </div>
 
 

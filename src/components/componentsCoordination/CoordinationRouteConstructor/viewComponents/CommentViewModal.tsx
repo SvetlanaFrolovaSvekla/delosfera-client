@@ -49,7 +49,9 @@ export function CommentViewModal({
 }) {
     const {user} = useAuth();
     const isMeApprover = approverUserId !== undefined && approverUserId === user?.id;
-    const profileUrl = isMeApprover ? "/profile" : `/profile/${approverUserId}`;
+    // Чужой профиль живёт на /users/:id (см. App.tsx и тот же баг/фикс в StageCardView/
+    // VndApprovalSummary рядом) - "/profile" без id это только собственный профиль.
+    const profileUrl = isMeApprover ? "/profile" : `/users/${approverUserId}`;
 
     // Заголовок сюда приходит в виде "См. комментарий полностью" / "См. замечания полностью" —
     // по нему же определяем подпись автора и даты, не заводя отдельные пропсы.

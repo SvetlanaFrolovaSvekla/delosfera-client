@@ -414,7 +414,19 @@ export function VndEditionsTab({vnd, onVndChanged, onGoToApproval}: VndEditionsT
     let primarySecondaryTooltip: string | undefined;
     let primaryHintTooltip: string | undefined;
 
-    if (vnd.status === "consol") {
+    if (vnd.status === "arch") {
+        // Архивация необратима (см. VndService.CancelAsync и проверки в StartAsync/
+        // PublishRedactionWithoutApprovalAsync на бэке) - никаких действий с редакциями
+        // архивированного ВНД быть не может, в т.ч. "Новая редакция" для того случая, когда
+        // документ был архивирован ещё ДО того, как у него появилась хоть одна действующая
+        // редакция (CurrentRedactionId == null => hasCurrentRedaction тоже false - без этой
+        // проверки, идущей РАНЬШЕ !hasCurrentRedaction, попали бы в ветку "new" ниже).
+        primaryVariant = "actualize";
+        primaryDisabled = true;
+        primaryHint = t("openVndPage.redactionsSidebar.archivedHint");
+        primaryAction = () => {
+        };
+    } else if (vnd.status === "consol") {
         // Согласованная редакция ещё не консолидирована - загружать новую редакцию рано, сначала
         // документ должен пройти консолидацию. ВАЖНО: эта проверка обязана идти РАНЬШЕ
         // !hasCurrentRedaction - CurrentRedactionId не проставляется при входе в консолидацию
@@ -535,8 +547,8 @@ export function VndEditionsTab({vnd, onVndChanged, onGoToApproval}: VndEditionsT
             };
         }
     } else {
-        // Согласование/архив/черновик - актуализацию сейчас не начать (статус "Консолидация"
-        // обработан отдельной веткой в самом начале цепочки - см. выше)
+        // Согласование/черновик - актуализацию сейчас не начать (статусы "Архив" и "Консолидация"
+        // обработаны отдельными ветками в самом начале цепочки - см. выше)
         primaryVariant = "actualize";
         primaryDisabled = true;
         primaryHint = undefined;
@@ -623,10 +635,12 @@ export function VndEditionsTab({vnd, onVndChanged, onGoToApproval}: VndEditionsT
                     currentNumber={current?.number}
                     effectiveDate={vnd.effectiveDate}
                     isSubmitting={false}
-                    onSubmit={() => setApprovalModalOpen(true)}
+                    onSubmit={vnd.status === "arch" ? undefined : () => setApprovalModalOpen(true)}
                     onGoToApproval={canGoToApprovalFromBanner ? onGoToApproval : undefined}
                     onPublishWithoutApproval={
-                        canPublishWithoutApproval ? () => setPublishWithoutApprovalConfirmOpen(true) : undefined
+                        vnd.status !== "arch" && canPublishWithoutApproval
+                            ? () => setPublishWithoutApprovalConfirmOpen(true)
+                            : undefined
                     }
                     isPublishingWithoutApproval={publishingWithoutApproval}
                     tidMissing={selectedTidMissing}
@@ -775,6 +789,9 @@ export function VndEditionsTab({vnd, onVndChanged, onGoToApproval}: VndEditionsT
             {approvalModalOpen && (
                 <VndStartApprovalModal
                     vndId={vnd.id}
+                    draftOwnerUserId={vnd.createdByUserId}
+                    draftOwnerUserName={vnd.createdByUserName}
+                    currentUserId={user?.id}
                     onClose={() => setApprovalModalOpen(false)}
                     onStarted={() => {
                         setApprovalModalOpen(false);

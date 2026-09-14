@@ -1,8 +1,9 @@
-// Модалка «Создать документ» - выбор вида документа перед переходом к созданию
+// Модалка "Создать документ" - выбор вида документа перед переходом к созданию
 import {useState} from "react";
 import {createPortal} from "react-dom";
 import {useNavigate} from "react-router-dom";
 import {FilePlus2, X} from "lucide-react";
+import {useModalShake} from "@/hooks//useModalShake.ts";
 
 type DocumentType = "vnd" | "memo" | "procurement";
 
@@ -18,7 +19,9 @@ const DOCUMENT_TYPES: DocumentTypeOption[] = [
     {value: "procurement", label: "Документ на закупку"},
 ];
 
-const ROUTE_BY_TYPE: Record<DocumentType, string> = {
+// Маршруты для перехода после выбора типа документа
+const DOCUMENT_ROUTES: Record<DocumentType, string> = {
+
     vnd: "/base-vnd/new",
     memo: "/sz/new",
     procurement: "/prc/new",
@@ -30,17 +33,27 @@ interface CreateDocumentModalProps {
 
 export function CreateDocumentModal({onClose}: CreateDocumentModalProps) {
     const navigate = useNavigate();
+    const {panelRef, handleBackdropClick} = useModalShake();
     const [selected, setSelected] = useState<DocumentType | null>(null);
 
     const canConfirm = selected !== null;
 
     const handleConfirm = () => {
-        if (selected) navigate(ROUTE_BY_TYPE[selected]);
+        if (!selected) return;
+        navigate(DOCUMENT_ROUTES[selected]);
+
     };
 
     return createPortal(
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 p-4">
-            <div className="w-full max-w-[460px] rounded-[16px] bg-white p-6 shadow-xl">
+        <div
+            onClick={handleBackdropClick}
+            className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 p-4"
+        >
+            <div
+                ref={panelRef}
+                onClick={(e) => e.stopPropagation()}
+                className="w-full max-w-[460px] rounded-[16px] bg-white p-6 shadow-xl"
+            >
                 <div className="mb-4 flex items-start justify-between gap-3">
                     <div className="flex items-center gap-3">
                         <span className="grid h-10 w-10 flex-none place-items-center rounded-[11px] bg-[var(--app-soft,_#e9f0ff)] text-[var(--app-accent,_#2f68f5)]">

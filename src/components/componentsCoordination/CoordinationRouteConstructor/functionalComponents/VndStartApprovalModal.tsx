@@ -1,4 +1,5 @@
 // Модалка запуска согласования: конструктор маршрута + нормативы сроков
+import {useState} from "react";
 import {createPortal} from "react-dom";
 import type {ApprovalProcessResponse} from "@/service/coordinationService/coordinationServiceTypes.ts";
 import {MAX_STAGES} from "@/constants/coordinationParams.ts";
@@ -25,6 +26,13 @@ interface VndStartApprovalModalProps {
     vndId: number;
     onClose: () => void;
     onStarted: (process: ApprovalProcessResponse) => void;
+    /** id и ФИО автора черновика - для выбора инициатора согласования (см. ниже), когда
+     * согласование запускает не сам автор (например, главный редактор - за него). Если не
+     * передано, или совпадает с currentUserId, выбор не показывается - инициатором будет
+     * запускающий, как и раньше. */
+    draftOwnerUserId?: number | null;
+    draftOwnerUserName?: string | null;
+    currentUserId?: number;
 }
 
 const ROUTE_HINTS: RouteHint[] = [
@@ -50,7 +58,21 @@ const ROUTE_HINTS: RouteHint[] = [
     },
 ];
 
-export function VndStartApprovalModal({vndId, onClose, onStarted}: VndStartApprovalModalProps) {
+export function VndStartApprovalModal({
+    vndId, onClose, onStarted, draftOwnerUserId, draftOwnerUserName, currentUserId,
+}: VndStartApprovalModalProps) {
+    // Запускающий - не автор черновика (например, главный редактор действует за него) - тогда
+    // даём выбор, кто станет инициатором согласования: сам запускающий или автор черновика.
+    // См. VndApprovalService.StartAsync/actingOnSomeoneElsesDraft на бэке.
+    const actingOnSomeoneElsesDraft =
+        draftOwnerUserId != null && currentUserId != null && draftOwnerUserId !== currentUserId;
+    const [initiator, setInitiator] = useState<"self" | "owner">("self");
+    // Станет ли текущий пользователь инициатором ЭТОГО запуска согласования - передаётся в
+    // VndSelectApproverModal, чтобы подпись "авто-согласование" не показывалась, когда сам себя
+    // на фиксированном этапе выбирает не инициатор (см. комментарий у
+    // VndSelectApproverModalProps.currentUserIsInitiator и VndApprovalService.StartAsync).
+    const currentUserIsInitiator = !actingOnSomeoneElsesDraft || initiator === "self";
+
     const {
         stages,
         catalogLoading,
@@ -82,6 +104,9 @@ export function VndStartApprovalModal({vndId, onClose, onStarted}: VndStartAppro
         repeatMinutes,
         finalHoldMinutes,
         onStarted,
+        initiatorUserId: actingOnSomeoneElsesDraft
+            ? (initiator === "owner" ? draftOwnerUserId! : currentUserId)
+            : undefined,
     });
 
     const {funnelWrapperRef, targetRef, cardsScrollRef, paths, recomputePaths, registerStageRef} =
@@ -115,7 +140,29 @@ export function VndStartApprovalModal({vndId, onClose, onStarted}: VndStartAppro
                     </button>
                 </div>
 
-
+                {/* Выбор инициатора согласования - только когда запускает не автор черновика.
+                    Те же красивые радио-кнопки, что и в модалке "Создать документ" на главной
+                    (см. DocTypeRadioRow в CreateDocumentModal.tsx) - вместо нативных
+                    <input type="radio">, которые здесь смотрелись слишком просто. */}
+                {actingOnSomeoneElsesDraft && (
+                    <div className="flex flex-none flex-col gap-2 border-b border-[#eef0f5] px-7 py-4">
+                        <span className="text-[12.5px] font-semibold text-[#1c2740]">
+                            Кто будет указан инициатором согласования?
+                        </span>
+                        <div className="flex flex-wrap gap-2.5">
+                            <InitiatorRadioRow
+                                label="Стать инициатором согласования"
+                                checked={initiator === "self"}
+                                onSelect={() => setInitiator("self")}
+                            />
+                            <InitiatorRadioRow
+                                label={`Оставить инициатором согласования ${draftOwnerUserName ?? "автора черновика"}`}
+                                checked={initiator === "owner"}
+                                onSelect={() => setInitiator("owner")}
+                            />
+                        </div>
+                    </div>
+                )}
 
                 {/* Контент */}
                 <div className="flex-1 overflow-y-auto px-12 py-4">
@@ -244,11 +291,45 @@ export function VndStartApprovalModal({vndId, onClose, onStarted}: VndStartAppro
                         activePickerStage.orgUnitId ? activePickerStage.title : undefined
                     }
                     excludedUserIds={selectedUserIds}
+                    currentUserIsInitiator={currentUserIsInitiator}
                     onClose={() => setPickerStageId(null)}
                     onSelect={(user) => setStageApprover(activePickerStage.localId, user)}
                 />
             )}
         </div>,
         document.body,
+    );
+}
+
+// Та же радио-кнопка-строка, что и в CreateDocumentModal.tsx (DocTypeRadioRow) - здесь без
+// disabled/"Скоро": оба варианта инициатора всегда доступны для выбора.
+function InitiatorRadioRow({
+                                label,
+                                checked,
+                                onSelect,
+                            }: {
+    label: string;
+    checked: boolean;
+    onSelect: () => void;
+}) {
+    return (
+        <button
+            type="button"
+            onClick={onSelect}
+            className={`flex cursor-pointer items-center gap-[10px] rounded-[10px] border px-3 py-[10px] text-left text-[12.5px] transition-colors ${
+                checked
+                    ? "border-[var(--app-accent,_#2f68f5)] bg-[var(--app-soft,_#e9f0ff)] text-[#1c2740]"
+                    : "border-[#e5e9f0] text-[#3a4560] hover:bg-[#f6f8fb]"
+            }`}
+        >
+            <span
+                className={`grid h-[16px] w-[16px] flex-none place-items-center rounded-full border-2 ${
+                    checked ? "border-[var(--app-accent,_#2f68f5)]" : "border-[#c7cedb]"
+                }`}
+            >
+                {checked && <span className="h-[8px] w-[8px] rounded-full bg-[var(--app-accent,_#2f68f5)]"/>}
+            </span>
+            <span>{label}</span>
+        </button>
     );
 }

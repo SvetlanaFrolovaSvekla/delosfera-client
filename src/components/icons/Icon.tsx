@@ -153,6 +153,27 @@ const paths: Record<string, JSX.Element> = {
     chev: <path d="m6 9 6 6 6-6" />,
     chevr: <path d="m9 6 6 6-6 6" />,
     x: <path d="M6 6l12 12M18 6 6 18" />,
+    edit: (
+        <>
+            <path d="M12 20h9" />
+            <path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z" />
+        </>
+    ),
+    info: (
+        <>
+            <circle cx="12" cy="12" r="9" />
+            <path d="M12 11v5" />
+            <path d="M12 7.5h.01" />
+        </>
+    ),
+    trash: (
+        <>
+            <path d="M3 6h18" />
+            <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6" />
+            <path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
+            <path d="M10 11v6M14 11v6" />
+        </>
+    ),
 };
 
 export type IconName = keyof typeof paths;

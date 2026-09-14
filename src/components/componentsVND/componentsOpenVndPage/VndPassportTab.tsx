@@ -1,5 +1,6 @@
 import {useEffect, useMemo, useState} from "react";
 import {Archive, CalendarCheck, FileText, History, Pencil, RotateCw, Tags, Type, X, Loader2} from "lucide-react";
+import {useAuth} from "@/context/AuthContext";
 import type {VndRedactionResponse, VndResponse} from "@/service/vndService/vndServiceType.ts";
 import {vndService} from "@/service/vndService/vndService.ts";
 import {Section} from "@/components/componentsGeneral/Section.tsx";
@@ -56,6 +57,9 @@ export function VndPassportTab({
                                    secrecyOptions,
                                    userGroupOptions,
                                }: VndPassportTabProps) {
+    const {user: authUser} = useAuth();
+    const isInitiatorMe = Boolean(authUser && vnd.createdByUserId && authUser.id === vnd.createdByUserId);
+
     const isCancelledOrArchived = Boolean(vnd.cancelDate || vnd.archivedDate);
     const isDraft = vnd.status === "draft";
     const periodFrom = vnd.lastActualizationDate || vnd.effectiveDate || vnd.adoptionDate;
@@ -275,11 +279,16 @@ export function VndPassportTab({
                         Ответственного за актуализацию не показываем для черновиков — там его
                         просто не может быть (документ ещё ни разу не проходил цикл актуализации). */}
                     <div className={`grid grid-cols-1 gap-4 mb-4 ${isDraft ? "" : "sm:grid-cols-2"}`}>
-                        <ReadOnlyField label="Инициатор" value={vnd.createdByUserName || "—"}/>
+                        <ReadOnlyField
+                            label="Инициатор"
+                            value={vnd.createdByUserName ? `${vnd.createdByUserName}${isInitiatorMe ? " (я)" : ""}` : "—"}
+                            linkTo={vnd.createdByUserId ? (isInitiatorMe ? "/profile" : `/users/${vnd.createdByUserId}`) : undefined}
+                        />
                         {!isDraft && (
                             <ReadOnlyField
                                 label="Ответственный за последнюю актуализацию"
                                 value={vnd.actualizationResponsibleUserName || "—"}
+                                linkTo={vnd.actualizationResponsibleUserId ? `/users/${vnd.actualizationResponsibleUserId}` : undefined}
                             />
                         )}
                     </div>
@@ -366,6 +375,7 @@ export function VndPassportTab({
                                     label="Куратор разработчика"
                                     value={activeRequisites.curatorDeveloperName || "—"}
                                     highlighted={diffScalar((r) => r.curatorDeveloperId ?? 0)}
+                                    linkTo={activeRequisites.curatorDeveloperId ? `/users/${activeRequisites.curatorDeveloperId}` : undefined}
                                 />
                             </div>
                         </>

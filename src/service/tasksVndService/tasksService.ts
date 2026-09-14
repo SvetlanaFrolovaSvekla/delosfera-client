@@ -1,4 +1,10 @@
-import type {PagedResult, TaskScope, VndTaskCountsResponse, VndTaskResponse} from "./tasksServiceTypes";
+import type {
+    PagedResult,
+    TaskScope,
+    VndMyTimeoutApprovalsResponse,
+    VndTaskCountsResponse,
+    VndTaskResponse
+} from "./tasksServiceTypes";
 import { axiosInstance } from "@/service/axiosInstance.ts";
 
 // Бэкенд отдаёт "my-vnd-approval" (kebab-case) для этого раздела, остальные scope
@@ -9,6 +15,8 @@ const SCOPE_TO_PATH: Record<TaskScope, string> = {
     consolidation: "consolidation",
     myVndApproval: "my-vnd-approval",
     rejected: "rejected",
+    actualizationRequest: "actualization-requests",
+    actualizationApproved: "actualization-approved",
 };
 
 class TasksService {
@@ -29,6 +37,13 @@ class TasksService {
 
     async getCounts(): Promise<VndTaskCountsResponse> {
         const { data } = await axiosInstance.get<VndTaskCountsResponse>("/tasks/counts");
+        return data;
+    }
+
+    // Сводка по просрочкам согласования текущего пользователя (месяц/год/всего + список
+    // конкретных ВНД) — для блока "Мои показатели" в Аналитике (ВНД → Актуализация).
+    async getMyTimeoutApprovals(): Promise<VndMyTimeoutApprovalsResponse> {
+        const { data } = await axiosInstance.get<VndMyTimeoutApprovalsResponse>("/tasks/my-timeout-approvals");
         return data;
     }
 }

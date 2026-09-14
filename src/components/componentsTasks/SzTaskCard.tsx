@@ -4,6 +4,9 @@ import {Icon} from "@/components/icons/Icon.tsx";
 
 interface SzTaskCardProps {
     task: InboxTask;
+    /** Явно убрать верхний бордер (первая строка в списке) — см. тот же проп у VndTaskCard,
+     * задаётся родителем по индексу строки, а не через CSS :first-child. */
+    noTopBorder?: boolean;
 }
 
 function formatDue(iso: string | null): string {
@@ -14,13 +17,20 @@ function formatDue(iso: string | null): string {
 // Карточка задачи по служебной записке в виджете "Мои задачи" на главной.
 // Записки живут вне контура ВНД, поэтому у них своя карточка: ссылка ведёт на
 // /sz/{entityId}, а не на карточку ВНД.
-export function SzTaskCard({task}: SzTaskCardProps) {
+// Без скруглённых углов - единственное место использования этой карточки: плотный список
+// виджета "Мои задачи" на главной (см. VndTaskCard.square рядом, тот же приём). Тонкий
+// разделитель сверху вместо рамки по всем 4 сторонам — иначе на стыке двух строк выходит
+// удвоенной толщины линия (нижняя рамка одной строки плюс верхняя рамка следующей).
+export function SzTaskCard({task, noTopBorder = false}: SzTaskCardProps) {
     return (
         <Link
             to={taskLink(task)}
             draggable={false}
-            className="cursor-pointer flex w-full items-center gap-[13px] rounded-[14px] border border-[#e9edf3]
-                       bg-white px-[18px] py-[13px] text-left transition-colors hover:bg-[#f8fafc]"
+            className={
+                `cursor-pointer flex w-full items-center gap-[13px] border-t border-[#f3f6f9] ${
+                    noTopBorder ? "border-t-0" : ""
+                } bg-white px-[18px] py-[13px] text-left transition-colors hover:bg-[#f8fafc]`
+            }
         >
             <span
                 className="grid h-9 w-9 flex-none place-items-center rounded-[10px]"

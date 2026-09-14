@@ -3,12 +3,29 @@
 
 /*#f0f0f0 - цвет бордера табличек*/
 
+
 :root {
     --app-accent: #4e57d6;
     --app-soft: #ececfc;
     --app-bd: #d4d6f8;
     --brand: #24a36b;
     --brand-soft: #e4f5ec;
+
+    --kpi-purple: #7a5ce0;
+    --kpi-purple-soft: #efeafe;
+    --kpi-purple-bd: #ddd0fa;
+
+    --kpi-orange: #b3730a;
+    --kpi-orange-soft: #fdf3e0;
+    --kpi-orange-bd: #f0dcae;
+
+    --kpi-red: #c0392b;
+    --kpi-red-soft: #fbe7e4;
+    --kpi-red-bd: #f1c9c2;
+
+    --kpi-default: #2f68f5;
+    --kpi-default-soft: #f6f8fb;
+    --kpi-default-bd: #e5e9f0;
 }
 
 * { box-sizing: border-box; }
@@ -98,3 +115,36 @@ a:hover { color: #1b4fd0; }
 @keyframes dsSpin { to { transform: rotate(360deg); } }
 @keyframes dsIn { from { opacity: 0; transform: translateY(7px); } to { opacity: 1; transform: none; } }
 @keyframes dsPop { from { opacity: 0; transform: translateY(6px) scale(.98); } to { opacity: 1; transform: none; } }
+
+.kpi-shine-sweep {
+    position: absolute;
+    inset: 0;
+    z-index: 50;
+    display: block;
+    pointer-events: none;
+  /*  background-image: linear-gradient(
+            to top right,
+            rgba(255, 255, 255, 0) 32%,
+            rgba(255, 255, 255, .55) 50%,
+            rgba(255, 255, 255, 0) 68%
+    );*/
+    background-image: linear-gradient(
+            to top right,
+            rgba(255, 255, 255, 0) 25%,
+            rgba(255, 255, 255, .85) 50%,
+            rgba(255, 255, 255, 0) 75%
+    );
+    background-size: 260% 260%;
+    background-repeat: no-repeat;
+    background-position: -10% 125%;
+    opacity: 0;
+    animation: kpiShine 18s linear infinite;
+    animation-delay: 0s;
+}
+@keyframes kpiShine {
+    0%      { background-position: 125% -25%; opacity: 0; }
+    1.1%    { opacity: .55; }
+    6.1%    { opacity: .55; }
+    8.3%    { background-position: -10% 125%; opacity: 0; }
+    100%    { background-position: -10% 125%; opacity: 0; }
+}

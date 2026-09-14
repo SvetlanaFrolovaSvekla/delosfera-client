@@ -47,13 +47,18 @@ export function formatRelativeTime(iso: string): string {
 
 // Определяет срочность дедлайна по проценту оставшегося времени от норматива.
 // totalHours — норматив, выданный на согласование (напр. PrimaryDeadlineMinutes)
-export function getDeadlineUrgency(deadlineAt: string | null, totalHours: number | null): DeadlineUrgencyKey {
-    if (!deadlineAt || !totalHours || totalHours <= 0) return "normal";
+export function getDeadlineUrgency(deadlineAt: string | null, totalMinutes: number | null): DeadlineUrgencyKey {
+    if (!deadlineAt || !totalMinutes || totalMinutes <= 0) return "normal";
 
     const remainingMs = new Date(deadlineAt).getTime() - Date.now();
     if (remainingMs <= 0) return "overdue";
 
-    const totalMs = totalHours * 60 * 60 * 1000;
+    // ВАЖНО: норматив (VndApprovalStage.PrimaryDeadlineMinutes и т.п.) хранится и приходит с
+    // бэка В МИНУТАХ (см. VndTaskResponse.deadlineMinutes) - раньше здесь ошибочно умножалось
+    // как на часы (totalHours * 60 * 60 * 1000), из-за чего totalMs получался в 60 раз больше
+    // нужного, а процент оставшегося времени - завышенным (почти всегда "normal"/зелёный,
+    // даже когда дедлайн уже почти наступил).
+    const totalMs = totalMinutes * 60 * 1000;
     const percentRemaining = (remainingMs / totalMs) * 100;
 
     if (percentRemaining >= 50) return "normal";
@@ -102,6 +107,32 @@ export function pluralize(count: number, one: string, few: string, many: string)
     if (mod10 === 1 && mod100 !== 11) return one;
     if (mod10 >= 2 && mod10 <= 4 && (mod100 < 12 || mod100 > 14)) return few;
     return many;
+}
+
+// Норматив срока (в минутах, как хранится и приходит с бэка - см. VndApprovalStage.
+// PrimaryDeadlineMinutes и т.п.) в виде "3 дня", "2 дня 5 часов", "45 минут" - без "осталось"/
+// "просрочено" (это для самого норматива, а не для оставшегося времени до дедлайна - см.
+// getRemainingLabel выше для этого случая). Раньше норматив в минутах показывался как есть с
+// суффиксом "ч" (например, "4320 ч" вместо "3 дня") - см. VndTaskCard/getMetaText.
+export function formatDurationMinutes(totalMinutes: number): string {
+    const days = Math.floor(totalMinutes / (60 * 24));
+    const hours = Math.floor((totalMinutes % (60 * 24)) / 60);
+    const minutes = totalMinutes % 60;
+
+    if (days > 0) {
+        const daysLabel = `${days} ${pluralize(days, "день", "дня", "дней")}`;
+        return hours > 0
+            ? `${daysLabel} ${hours} ${pluralize(hours, "час", "часа", "часов")}`
+            : daysLabel;
+    }
+    if (hours > 0) {
+        const hoursLabel = `${hours} ${pluralize(hours, "час", "часа", "часов")}`;
+        return minutes > 0
+            ? `${hoursLabel} ${minutes} ${pluralize(minutes, "минута", "минуты", "минут")}`
+            : hoursLabel;
+    }
+    if (minutes > 0) return `${minutes} ${pluralize(minutes, "минута", "минуты", "минут")}`;
+    return "0 минут";
 }
 
 // Сколько времени прошло с указанной даты, в формате "2 дня 5 часов + назад"

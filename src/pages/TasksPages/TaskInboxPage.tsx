@@ -1,7 +1,12 @@
-import {useCallback, useEffect, useState} from "react";
+import {useCallback, useEffect, useMemo, useState} from "react";
 import {Link} from "react-router-dom";
 import {ChartColumn, FileText, Layers, ShoppingCart, StickyNote, type LucideIcon} from "lucide-react";
 import {VndTasksPanel} from "@/components/componentsTasks/VndTasksPanel.tsx";
+import {VndTaskCard} from "@/components/componentsTasks/VndTaskCard.tsx";
+import {EmptyState} from "@/components/componentsGeneral/EmptyState.tsx";
+import {SearchBar} from "@/components/componentsGeneral/SearchBar.tsx";
+import {matchesInboxTaskSearch, matchesTaskSearch} from "@/utils/tasksUtils.ts";
+import {useVndTasks} from "@/hooks/tasksVndHooks/useVndTasks.ts";
 import {
     taskInboxService,
     taskLink,
@@ -31,6 +36,26 @@ const CONTOUR_META: Record<string, { icon: LucideIcon; color: string; bg: string
     prc: {icon: ShoppingCart, color: "#7a5ce0", bg: "#efeafe", ring: "#ddd0fa"},
 };
 
+// Заглушка пустого списка — своя на каждой вкладке (кроме "ВНД": там свой набор
+// заглушек внутри VndTasksPanel/VndTaskList).
+const INBOX_EMPTY_META: Record<string, { icon: LucideIcon; title: string; description: string }> = {
+    all: {
+        icon: Layers,
+        title: "Задач нет — всё согласовано",
+        description: "Здесь появятся задачи, которые нужно согласовать или обработать — по всем контурам системы.",
+    },
+    sz: {
+        icon: StickyNote,
+        title: "Нет задач по служебным запискам",
+        description: "Здесь появятся записки, которые ждут вашего решения — согласование, подпись, ознакомление.",
+    },
+    prc: {
+        icon: ShoppingCart,
+        title: "Нет задач по закупкам",
+        description: "Здесь появятся закупочные документы, которые нужно согласовать или обработать.",
+    },
+};
+
 function formatDue(iso: string | null): string {
     if (!iso) return "без срока";
     return new Date(iso).toLocaleString("ru-RU", {day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit"});
@@ -40,8 +65,13 @@ export const TaskInboxPage = () => {
     const [filter, setFilter] = useState("all");
     const [inbox, setInbox] = useState<TaskInbox | null>(null);
     const [loading, setLoading] = useState(true);
+    // Поиск намеренно не сбрасывается при смене вкладки — так же, как на ВНД-вкладке
+    // (VndTasksPanel): если в одном разделе ничего не нашлось, разумно проверить тот же
+    // запрос в соседнем, не перепечатывая его заново.
+    const [searchQuery, setSearchQuery] = useState("");
 
     const вндВкладка = filter === "vnd";
+    const allВкладка = filter === "all";
 
     const load = useCallback(async () => {
         if (filter === "vnd") return;
@@ -59,6 +89,40 @@ export const TaskInboxPage = () => {
         void load();
     }, [load]);
 
+    // На "Все контуры" задачи ВНД раньше не показывались вовсе: taskInboxService (сводный
+    // реестр GEN-11) знает только про движок маршрутов (WorkflowTask) — согласование записок
+    // и закупок идёт через него, а согласование/актуализация/консолидация ВНД устроены
+    // отдельным механизмом (см. TasksService на бэке) и через этот реестр не проходят вообще.
+    // Тянем их тем же способом, что и вкладка "ВНД" внутри VndTasksPanel (scope "all" - пять
+    // разделов одним списком), но только когда реально нужно (enabled).
+    const {tasks: vndAllTasks, isLoading: vndAllLoading} = useVndTasks("all", allВкладка);
+
+    const filteredTasks = useMemo(() => {
+        const tasks = inbox?.tasks ?? [];
+        if (!searchQuery.trim()) return tasks;
+        return tasks.filter((task) => matchesInboxTaskSearch(task, searchQuery));
+    }, [inbox, searchQuery]);
+
+    const filteredVndTasks = useMemo(() => {
+        if (!allВкладка) return [];
+        if (!searchQuery.trim()) return vndAllTasks;
+        return vndAllTasks.filter((task) => matchesTaskSearch(task, searchQuery));
+    }, [allВкладка, vndAllTasks, searchQuery]);
+
+    // Поиск сузил непустой список до нуля — это "ничего не нашлось", а не "в разделе
+    // пусто" (у этих двух причин разные заглушки, см. INBOX_EMPTY_META и ниже). На "Все
+    // контуры" считаем оба источника сразу — иначе поиск, не нашедший ничего среди записок/
+    // закупок, но нашедший что-то среди ВНД (или наоборот), ошибочно показал бы "ничего не
+    // найдено" прямо над найденными строками.
+    const rawTotalCount = (inbox?.tasks.length ?? 0) + (allВкладка ? vndAllTasks.length : 0);
+    const isSearchEmpty = searchQuery.trim().length > 0 && rawTotalCount > 0
+        && filteredTasks.length === 0 && filteredVndTasks.length === 0;
+
+    const currentFilterLabel = FILTERS.find((f) => f.id === filter)?.label ?? "";
+    const searchPlaceholder = filter === "all"
+        ? "Поиск по всем контурам..."
+        : `Поиск в разделе «${currentFilterLabel}»...`;
+
     return (
         <div style={{padding: "22px 26px", display: "flex", flexDirection: "column", gap: 16}}>
             <div style={{display: "flex", alignItems: "flex-end", justifyContent: "space-between", gap: 20, flexWrap: "wrap"}}>
@@ -68,8 +132,14 @@ export const TaskInboxPage = () => {
                         {вндВкладка ? (
                             "Согласование, актуализация и консолидация ВНД"
                         ) : inbox ? (
+                            // "Всего" раньше считал только записки/закупки (inbox.total из
+                            // taskInboxService) — на "Все контуры", где сверху ещё показываются
+                            // задачи ВНД (см. vndAllTasks выше), из-за этого писало "Всего: 0"
+                            // даже когда задачи явно были видны на экране. Добавляем их количество.
                             <>
-                                Всего: <b style={{color: "#4e57d6"}}>{inbox.total}</b>
+                                Всего: <b style={{color: "#4e57d6"}}>
+                                    {inbox.total + (allВкладка ? vndAllTasks.length : 0)}
+                                </b>
                                 {inbox.overdue > 0 && ` · просрочено ${inbox.overdue}`}
                                 {inbox.delegated > 0 && ` · по замещению ${inbox.delegated}`}
                             </>
@@ -152,8 +222,37 @@ export const TaskInboxPage = () => {
             {вндВкладка && <VndTasksPanel/>}
 
             {!вндВкладка && (
+            <>
+            <SearchBar
+                placeholder={searchPlaceholder}
+                value={searchQuery}
+                onChange={setSearchQuery}
+            />
+
+            {/* Задачи ВНД — только на "Все контуры" (см. filteredVndTasks выше), простыми
+                строчками карточек, как и везде на "Мои задачи": тип виден по бейджу раздела
+                на самой карточке (VndTaskCard — "Согласование"/"Актуализация"/"Консолидация"
+                и т.п.), не отдельным подзаголовком, как и у записок/закупок ниже (там тип —
+                тоже просто бейдж на строке, а не заголовок группы). */}
+            {allВкладка && filteredVndTasks.length > 0 && (
+                <section className="flex flex-col gap-2.5">
+                    {filteredVndTasks.map((task) => (
+                        <VndTaskCard
+                            key={`vnd-${task.vndId}-${task.scope}-${task.stageId ?? task.redactionId ?? "x"}`}
+                            task={task}
+                            searchQuery={searchQuery}
+                        />
+                    ))}
+                </section>
+            )}
+
+            {/* Записки и закупки - тот же сводный реестр (taskInboxService), что и раньше.
+                На "Все контуры" эта секция скрывается, если в ней самой пусто, но выше уже
+                что-то нашлось среди ВНД - иначе под настоящими карточками висела бы ещё и
+                пустая заглушка "задач нет". */}
+            {(filteredTasks.length > 0 || loading || !(allВкладка && filteredVndTasks.length > 0)) && (
             <section style={{background: "#fff", border: "1px solid #e5e9f0", borderRadius: 13, overflow: "hidden"}}>
-                {inbox?.tasks.map((task: InboxTask) => (
+                {filteredTasks.map((task: InboxTask) => (
                     <Link
                         key={task.taskId}
                         to={taskLink(task)}
@@ -192,15 +291,32 @@ export const TaskInboxPage = () => {
                     </Link>
                 ))}
 
-                {!loading && inbox?.tasks.length === 0 && (
-                    <div style={{padding: 28, textAlign: "center", color: "#8b97ab", fontSize: 13}}>
-                        Задач нет — всё согласовано
-                    </div>
+                {/* Пустая заглушка - только когда ОБА источника (записки/закупки и, на "Все
+                    контуры", ВНД) пусты; не только записки/закупки сами по себе (см. секцию
+                    ВНД выше). */}
+                {!loading && !(allВкладка && vndAllLoading) && filteredTasks.length === 0
+                    && !(allВкладка && filteredVndTasks.length > 0) && (
+                    isSearchEmpty ? (
+                        <EmptyState
+                            embedded
+                            title="Ничего не найдено"
+                            description="Попробуйте изменить запрос поиска."
+                        />
+                    ) : (
+                        <EmptyState
+                            embedded
+                            icon={(INBOX_EMPTY_META[filter] ?? INBOX_EMPTY_META.all).icon}
+                            title={(INBOX_EMPTY_META[filter] ?? INBOX_EMPTY_META.all).title}
+                            description={(INBOX_EMPTY_META[filter] ?? INBOX_EMPTY_META.all).description}
+                        />
+                    )
                 )}
-                {loading && (
+                {(loading || (allВкладка && vndAllLoading && filteredTasks.length === 0 && filteredVndTasks.length === 0)) && (
                     <div style={{padding: 28, textAlign: "center", color: "#8b97ab", fontSize: 13}}>Загрузка…</div>
                 )}
             </section>
+            )}
+            </>
             )}
         </div>
     );

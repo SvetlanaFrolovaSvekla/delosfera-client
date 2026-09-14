@@ -85,7 +85,11 @@ export function VndApprovalSummary({process}: VndApprovalSummaryProps) {
         if (isMeInitiator) {
             navigate("/profile");
         } else {
-            navigate(`/profile/${process.initiatorUserId}`);
+            // Просмотр ЧУЖОГO профиля живёт на /users/:id (см. App.tsx) - /profile без id
+            // это только "свой" профиль текущего пользователя (см. ветку isMeInitiator выше).
+            // Раньше здесь ошибочно использовался тот же префикс "/profile" с чужим id, что
+            // вело в никуда (роут /profile/:id не существует).
+            navigate(`/users/${process.initiatorUserId}`);
         }
     };
 

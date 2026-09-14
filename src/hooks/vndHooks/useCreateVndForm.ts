@@ -11,6 +11,7 @@ import type {OrganizationUnitResponse} from "@/service/dictionariesService/organ
 import {useVndDictionaries} from "@/hooks/vndHooks/useVndDictionaries.ts";
 import {useVndActualization} from "@/hooks/vndHooks/useVndActualization.ts";
 import {VND_TITLE_MAX_LENGTH, VND_TITLE_MIN_LENGTH} from "@/constants/validation/vndValidation.ts";
+import {toast} from "@/service/toastService.ts";
 
 export function useCreateVndForm() {
     const navigate = useNavigate();
@@ -108,13 +109,24 @@ export function useCreateVndForm() {
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [submitError, setSubmitError] = useState<string | null>(null);
 
-    const isValid =
-        typeId !== "" &&
-        organId !== null &&
-        titleRu.trim().length >= VND_TITLE_MIN_LENGTH &&
-        developerId !== "" &&
-        responsibleExecutorIds.length > 0 &&
-        actualization.isDateModeValid;
+    // Список подписей незаполненных обязательных полей — источник и для isValid,
+    // и для текста тултипа на неактивной кнопке "Создать черновик-карточку".
+    const missingFieldLabels = useMemo(() => {
+        const labels: string[] = [];
+        if (typeId === "") labels.push("Вид документа");
+        if (organId === null) labels.push("Орган утверждения");
+        if (titleRu.trim().length < VND_TITLE_MIN_LENGTH) labels.push("Заголовок (рус.)");
+        if (developerId === "") labels.push("Разработчик (СП)");
+        if (responsibleExecutorIds.length === 0) labels.push("Ответственные исполнители");
+        if (!actualization.isDateModeValid) labels.push("Дата актуализации");
+        return labels;
+    }, [typeId, organId, titleRu, developerId, responsibleExecutorIds, actualization.isDateModeValid]);
+
+    const missingFieldsTooltip = missingFieldLabels.length > 0
+        ? `Заполните ${missingFieldLabels.length === 1 ? "поле" : "поля"}: «${missingFieldLabels.join("», «")}»`
+        : "";
+
+    const isValid = missingFieldLabels.length === 0;
 
     const handleSubmit = async () => {
         if (!isValid || isSubmitting) return;
@@ -142,7 +154,9 @@ export function useCreateVndForm() {
             const created = await vndService.create(payload);
             setCreatedVnd(created);
         } catch (err) {
-            setSubmitError(err instanceof Error ? err.message : "Не удалось создать ВНД");
+            const message = err instanceof Error ? err.message : "Не удалось создать ВНД";
+            setSubmitError(message);
+            toast.error("Не удалось создать черновик", message);
         } finally {
             setIsSubmitting(false);
         }
@@ -180,7 +194,7 @@ export function useCreateVndForm() {
         responsibleExecutorIds, setResponsibleExecutorIds, responsibleExecutorHeadNames,
 
         actualization,
-        isValid, isSubmitting, submitError,
+        isValid, missingFieldLabels, missingFieldsTooltip, isSubmitting, submitError,
         handleSubmit,
         createdVnd, handleSuccessModalDone,
         goBack: () => navigate("/base-vnd"),

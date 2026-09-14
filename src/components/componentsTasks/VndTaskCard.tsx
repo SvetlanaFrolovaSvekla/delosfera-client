@@ -2,7 +2,7 @@ import type {MouseEvent} from "react";
 import {Link} from "react-router-dom";
 import {CheckCircle2} from "lucide-react";
 import type {VndTaskResponse} from "@/service/tasksVndService/tasksServiceTypes.ts";
-import {COORDINATION_STAGE_META, TASK_SCOPE_META} from "@/constants/vndStatus.ts";
+import {COORDINATION_STAGE_META, REVISION_NEEDED_META, TASK_SCOPE_META} from "@/constants/vndStatus.ts";
 import {getActionTitle, getDeadlineTone, getMetaText} from "@/utils/tasksUtils.ts";
 import {timeAgo} from "@/utils/dateUtils.ts";
 import {Icon} from "@/components/icons/Icon.tsx";
@@ -14,6 +14,18 @@ interface VndTaskCardProps {
     /** Запрос поиска на странице "Мои задачи" — подсвечивает совпадения тем же
      *  компонентом, что и поиск в шапке (см. HeaderSearchResults). */
     searchQuery?: string;
+    /** Без скруглённых углов - для плотного списка виджета "Мои задачи" на главной
+     * (см. MyTasksCard), где строки идут впритык друг к другу без отступа: скруглённые
+     * углы каждой строки там смотрелись неаккуратно (то круглый, то прямой стык между
+     * соседними строками). На отдельной странице "Мои задачи" (VndTaskList, карточки с
+     * отступом между собой) обычные скруглённые углы остаются как есть. */
+    square?: boolean;
+    /** Явно убрать верхний бордер (первая строка в списке — под ней уже есть нижний бордер
+     * заголовка панели, поэтому свой верхний тут лишний и даёт двойную линию). Задаётся
+     * родителем по индексу строки, а не через CSS :first-child — так строка остаётся без
+     * верхнего бордера, даже если она не первый DOM-child (например, первая среди
+     * нескольких разных типов карточек в одном списке, см. MyTasksCard). */
+    noTopBorder?: boolean;
 }
 
 const handleClick = (e: MouseEvent<HTMLAnchorElement>) => {
@@ -27,17 +39,26 @@ const handleClick = (e: MouseEvent<HTMLAnchorElement>) => {
 // в остальных случаях (актуализация/консолидация) правильный таб определяет сама страница ВНД.
 const APPROVAL_TAB_SCOPES: VndTaskResponse["scope"][] = ["coordination", "myVndApproval"];
 
-export function VndTaskCard({task, searchQuery = ""}: VndTaskCardProps) {
+// "Заявки на доступ к актуализации" и "Заявка одобрена" ведут прямо на вкладку "Актуализация" —
+// без явного tab документ мог бы открыться на вкладке по умолчанию ("Редакции"), где ни решить
+// заявку, ни подтвердить начало цикла нельзя (те же действия, что и в уведомлении, см.
+// VndActualizationService.NotifyAsync urlOverride: `/base-vnd/{vndId}?tab=actual`).
+const ACTUAL_TAB_SCOPES: VndTaskResponse["scope"][] = ["actualizationRequest", "actualizationApproved"];
+
+export function VndTaskCard({task, searchQuery = "", square = false, noTopBorder = false}: VndTaskCardProps) {
     // Основной бейдж = раздел/вкладка "Мои задачи", в которую ведёт карточка
     // ("Ждущие моего согласования" / "Мои ВНД на согласовании" / "Актуализация" / "Консолидация")
     const scopeMeta = TASK_SCOPE_META[task.scope];
     const ScopeIcon = scopeMeta.icon;
 
     // Отдельный бейдж = текущий этап согласования (первичное/повторное/финальная выдержка) —
-    // заполняется и для coordination, и для myVndApproval
-    const stageMeta = task.stagePhase
-        ? COORDINATION_STAGE_META[task.stagePhase as keyof typeof COORDINATION_STAGE_META]
-        : null;
+    // заполняется и для coordination, и для myVndApproval. На доработке (isRevisionNeeded)
+    // этапа нет (см. MapProcessPhase на бэке) - вместо него отдельный бейдж "ВНД на доработке".
+    const stageMeta = task.isRevisionNeeded
+        ? REVISION_NEEDED_META
+        : task.stagePhase
+            ? COORDINATION_STAGE_META[task.stagePhase as keyof typeof COORDINATION_STAGE_META]
+            : null;
 
     const hasStagePhase = task.scope === "coordination" || task.scope === "myVndApproval";
     const due = hasStagePhase
@@ -47,12 +68,27 @@ export function VndTaskCard({task, searchQuery = ""}: VndTaskCardProps) {
     return (
         <Link
             to={`/base-vnd/${task.vndId}`}
-            state={APPROVAL_TAB_SCOPES.includes(task.scope) ? {tab: "approval"} : undefined}
+            state={
+                APPROVAL_TAB_SCOPES.includes(task.scope)
+                    ? {tab: "approval"}
+                    : ACTUAL_TAB_SCOPES.includes(task.scope)
+                        ? {tab: "actual"}
+                        : undefined
+            }
             draggable={false}
             onClick={handleClick}
-            className="cursor-pointer flex w-full items-center gap-[13px] rounded-[14px] border border-[#e9edf3]
-                       bg-white px-[18px] py-[13px] text-left transition-colors hover:bg-[#f8fafc]
-                       select-text [-webkit-user-drag:none]"
+            className={
+                // square - тонкий разделитель сверху (как в "Последняя активность"/"Последние
+                // уведомления"), а не полная рамка по всем 4 сторонам: раньше между соседними
+                // строками выходила двойная (удвоенной толщины) линия на стыке - нижняя рамка
+                // одной строки плюс верхняя рамка следующей.
+                `cursor-pointer flex w-full items-center gap-[13px] bg-white px-[18px] py-[13px] text-left
+                 transition-colors hover:bg-[#f8fafc] select-text [-webkit-user-drag:none] ${
+                    square
+                        ? `border-t border-[#f3f6f9] ${noTopBorder ? "border-t-0" : ""}`
+                        : "rounded-[14px] border border-[#e9edf3]"
+                }`
+            }
         >
             <span
                 className="grid h-9 w-9 flex-none place-items-center rounded-[10px]"
@@ -75,12 +111,16 @@ export function VndTaskCard({task, searchQuery = ""}: VndTaskCardProps) {
                     >
                         {scopeMeta.label}
                     </span>
-                    {/* Текущий этап согласования — отдельно от раздела выше */}
+                    {/* Текущий этап согласования — отдельно от раздела выше. На доработке
+                        (isRevisionNeeded) - отдельная иконка (FileEdit), чтобы бейдж не
+                        сливался по виду с обычными фазами согласования (там иконки в бейдже
+                        нет намеренно - это самостоятельное состояние, а не очередная фаза). */}
                     {stageMeta && (
                         <span
-                            className="rounded-full px-[9px] py-[2px] text-[11px] font-semibold"
+                            className="flex items-center gap-1 rounded-full px-[9px] py-[2px] text-[11px] font-semibold"
                             style={{background: stageMeta.bg, color: stageMeta.color}}
                         >
+                            {task.isRevisionNeeded && <stageMeta.icon size={11}/>}
                             {stageMeta.label}
                         </span>
                     )}
@@ -124,19 +164,22 @@ export function VndTaskCard({task, searchQuery = ""}: VndTaskCardProps) {
             </span>
 
             {/* Выполненные карточки (вкладка "Выполненные") показывают, когда задача была
-                закрыта, а не обратный отсчёт до дедлайна — его для них уже нет смысла считать. */}
+                закрыта, а не обратный отсчёт до дедлайна — его для них уже нет смысла считать.
+                Если дедлайна вообще нет (due.label === "—" из getDeadlineTone), значок часов
+                с тире не показываем совсем - пустое место лучше, чем "часы + прочерк" без
+                какой-либо полезной информации. */}
             {task.isCompleted ? (
                 <span className="flex flex-none items-center gap-1.5 text-[11.5px] font-semibold text-[#1c7a4d]">
                     <CheckCircle2 size={14}/>
                     {task.completedAt ? timeAgo(task.completedAt) : "Выполнено"}
                 </span>
-            ) : (
+            ) : due.label !== "—" ? (
                 <span className="flex flex-none items-center gap-1.5 text-[11.5px] font-semibold"
                       style={{color: due.color}}>
                     <Icon name="clock" width={14} height={14}/>
                     {due.label}
                 </span>
-            )}
+            ) : null}
 
             <Icon name="chevr" width={17} height={17} className="flex-none text-[#c3ccd8]"/>
         </Link>

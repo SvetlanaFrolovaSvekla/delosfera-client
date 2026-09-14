@@ -36,7 +36,7 @@
     },
     "items": {
       "home": "Dashboard",
-      "vndRubric": "Rubricator",
+      "rubric": "Rubricator",
       "vnd": "VND Registry",
       "pln": "Actualization Planning",
       "tid": "Approval",
@@ -86,13 +86,28 @@
     "recentActivity": {
       "title": "Recent Activity",
       "loading": "Loading activity…",
-      "empty": "No events yet"
+      "empty": "No events yet",
+      "emptyDescription": "Actions on documents and tasks will appear here as soon as something happens.",
+      "viewAll": "All activity"
+    },
+    "recentNotifications": {
+      "title": "Recent Notifications",
+      "loading": "Loading notifications…",
+      "empty": "No notifications yet",
+      "emptyDescription": "Notifications about tasks, approvals and other events that concern you will appear here.",
+      "viewAll": "All notifications"
     },
     "kpi": {
       "myResponsibleActualizations": "Actualizations under my responsibility",
       "myTimeoutApprovalsThisMonth": "My overdue approvals this month",
       "myVndAwaitingApproval": "My VND awaiting approval",
-      "pendingMyApproval": "VND requiring my approval"
+      "pendingMyApproval": "VND pending my approval",
+      "tooltip": {
+        "tasks": "Total count of active tasks across all areas — VND, memos and procurements.",
+        "myTimeoutApprovalsThisMonth": "Approvals you missed the deadline for this month.",
+        "myVndAwaitingApproval": "Your VND documents sent for approval and awaiting a decision.",
+        "pendingMyApproval": "VND documents that currently require your decision as an approver."
+      }
     },
     "planActualizationTitle": "VND Actualization Plan",
     "seeActualization": "View plan",
@@ -115,6 +130,12 @@
       "under30": "< 30 days",
       "late": "overdue"
     }
+  },
+  "activityFeed": {
+    "title": "Portal activity",
+    "subtitle": "Event feed across all modules: VND, memos and procurement",
+    "loading": "Loading activity…",
+    "empty": "No events yet"
   },
   "notifications": {
     "n1": "Document No. SZ-1245 approved by E. Sydykov",
@@ -235,6 +256,7 @@
       "noChangesConfirmHint": "Declared as \"no changes\", no approval required — confirm and the document will move to consolidation.",
       "noPermissionHint": "You don't have permission to actualize this document.",
       "consolidationHint": "Consolidate the approved revision first! After that it can be actualized, or edited by the chief editor.",
+      "archivedHint": "This document is archived — archiving is irreversible, no revision actions are available anymore.",
       "editActualizationSettingsLink": "Change actualization settings",
       "editActualizationSettingsTitle": "Change actualization settings",
       "editActualizationSettingsTooltip": "Lets you re-decide whether the actualization will go through without document changes, and whether to shift the next scheduled actualization date.",
@@ -367,8 +389,8 @@
         "subtitle": "Access groups for viewing and approving documents"
       },
       "rubric": {
-        "title": "Rubricator",
-        "subtitle": "Topical classification of documents by area"
+        "title": "VND Rubricator",
+        "subtitle": "Topical classification of VND documents by area"
       },
       "coordinationUsers": {
         "title": "Mandatory Approval Process Participants",
@@ -392,9 +414,9 @@
     },
     "memos": {
       "title": "Memos",
-      "memoCategory": {
-        "title": "Memo Categories",
-        "subtitle": "Thematic categories of memos"
+      "szRubric": {
+        "title": "Memo Rubricator",
+        "subtitle": "Topical classification of memos by area"
       }
     }
   },
@@ -442,7 +464,16 @@
     "deleteConfirmTitle": "Delete security level?"
   },
   "rubricPage": {
-    "title": "Rubricator",
+    "title": "VND Rubricator",
+    "searchPlaceholder": "Search rubrics…",
+    "emptyAction": "Add first rubric",
+    "formTitleCreate": "New Rubric",
+    "formTitleEdit": "Edit Rubric",
+    "fieldParent": "Parent rubric",
+    "deleteConfirmTitle": "Delete rubric?"
+  },
+  "szRubricPage": {
+    "title": "Memo Rubricator",
     "searchPlaceholder": "Search rubrics…",
     "emptyAction": "Add first rubric",
     "formTitleCreate": "New Rubric",
@@ -454,7 +485,9 @@
     "helpTooltip": "Select one or more rubrics to filter the registry",
     "goToRubric": "Go to the registry filtered by this rubric",
     "selectedCount": "Selected:",
-    "apply": "Go"
+    "apply": "Go",
+    "variantVnd": "VND Rubricator",
+    "variantSz": "Memo Rubricator"
   },
   "keywordPage": {
     "title": "Keywords",
@@ -502,7 +535,8 @@
       "title": "My Tasks",
       "allTasks": "All tasks",
       "loading": "Loading tasks…",
-      "empty": "No active tasks"
+      "empty": "No active tasks",
+      "emptyDescription": "Tasks that need your input — approval, revision, actualization — will appear here."
     }
   },
   "successModal": {

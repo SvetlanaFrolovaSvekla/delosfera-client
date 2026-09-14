@@ -1,5 +1,6 @@
 import {useCallback, useEffect, useState} from "react";
 import {apiClient} from "@/service/apiClient.ts";
+import {SupplierRatingsModal} from "@/components/procurement/SupplierRatingsModal.tsx";
 
 /**
  * Реестр поставщиков и чёрный список недобросовестных (PRC-07/17).
@@ -21,6 +22,8 @@ interface Supplier {
     blacklistReason: string | null;
     blacklistedUntil: string | null;
     blacklistExpired: boolean;
+    averageRating: number | null;
+    ratingCount: number;
 }
 
 const BASE = "/procurement/suppliers";
@@ -33,6 +36,8 @@ export const SupplierRegistryPage = () => {
     const [error, setError] = useState<string | null>(null);
     /** Новый поставщик — чтобы завести его и внести в чёрный список, не дожидаясь заявки. */
     const [draft, setDraft] = useState({title: "", inn: ""});
+    /** Открыта карточка оценок этого поставщика (ЗК-9). */
+    const [ratingSupplier, setRatingSupplier] = useState<Supplier | null>(null);
 
     const load = useCallback(async () => {
         const {data} = await apiClient.get<Supplier[]>(BASE, {
@@ -131,6 +136,7 @@ export const SupplierRegistryPage = () => {
                             <th style={th}>Поставщик</th>
                             <th style={th}>Благонадёжность</th>
                             <th style={th}>Чёрный список</th>
+                            <th style={th}>Рейтинг</th>
                             <th style={th}/>
                         </tr>
                     </thead>
@@ -173,7 +179,21 @@ export const SupplierRegistryPage = () => {
                                             </>
                                         )}
                                 </td>
+                                <td style={td}>
+                                    {s.averageRating != null ? (
+                                        <span style={{whiteSpace: "nowrap"}}>
+                                            <span style={{color: "#f5a623"}}>★</span>{" "}
+                                            <span style={{fontWeight: 700, color: "#0f1b2d"}}>{s.averageRating.toFixed(1)}</span>{" "}
+                                            <span style={{color: "#8b97ab", fontSize: 11}}>· {s.ratingCount}</span>
+                                        </span>
+                                    ) : (
+                                        <span style={{color: "#8b97ab"}}>—</span>
+                                    )}
+                                </td>
                                 <td style={{...td, whiteSpace: "nowrap"}}>
+                                    <button onClick={() => setRatingSupplier(s)} disabled={busy} style={{...button, marginRight: 6}}>
+                                        Оценки
+                                    </button>
                                     {s.isBlacklisted ? (
                                         <button onClick={() => run(() => apiClient.delete(`${BASE}/${s.id}/blacklist`))}
                                                 disabled={busy} style={button}>Снять ограничение</button>
@@ -202,6 +222,15 @@ export const SupplierRegistryPage = () => {
                     </div>
                 )}
             </section>
+
+            {ratingSupplier && (
+                <SupplierRatingsModal
+                    supplierId={ratingSupplier.id}
+                    supplierTitle={ratingSupplier.title}
+                    onClose={() => setRatingSupplier(null)}
+                    onChanged={() => void load()}
+                />
+            )}
         </div>
     );
 };

@@ -69,6 +69,8 @@ export function taskLink(task: InboxTask): string {
             return `/sz/${task.entityId}`;
         case "Procurement":
             return `/prc/${task.entityId}`;
+        case "Vnd":
+            return `/base-vnd/${task.entityId}`;
         default:
             return "/tasks";
     }

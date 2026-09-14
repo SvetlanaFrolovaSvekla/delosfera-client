@@ -6,6 +6,7 @@ import {useDictionaries} from "@/context/DictionariesContext.tsx";
 import {useAuth} from "@/context/AuthContext.ts";
 import {PermissionCode} from "@/constants/permissions/permissions.ts";
 import {UserPicker, type PickableUser} from "@/components/componentsGeneral/UserPicker.tsx";
+import {SzTemplateBar} from "@/components/componentsSz/SzTemplateBar.tsx";
 import {OrgUnitPicker} from "@/components/procurement/OrgUnitPicker.tsx";
 import {userService} from "@/service/userService/userService.ts";
 import {SzExecutionPanel} from "@/components/sz/SzExecutionPanel.tsx";
@@ -627,6 +628,14 @@ export function SzCardPage() {
                 <div className="mt-4 rounded-[10px] border border-[#f0dcae] bg-[#fdf3e0] px-4 py-2.5 text-[13px] text-[#b3730a]">
                     Записка была отозвана: {sz.withdrawReason}
                 </div>
+            )}
+
+            {isNew && (
+                <SzTemplateBar
+                    form={form}
+                    disabled={!editable}
+                    onApply={(patch) => setForm((f) => ({...f, ...patch}))}
+                />
             )}
 
             <div className="mt-5 rounded-[12px] border border-[#e5e9f0] bg-white p-5">

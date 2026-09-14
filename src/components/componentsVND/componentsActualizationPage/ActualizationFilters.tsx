@@ -10,6 +10,7 @@ import {MultiSelectDropdown} from "@/components/componentsGeneral/selects/MultiS
 import {SearchBar} from "@/components/componentsGeneral/SearchBar.tsx";
 import {ChevronDown, ChevronUp, Filter, SlidersHorizontal} from "lucide-react";
 import {HelpTooltip} from "@/components/componentsGeneral/knowledgeBaseComponents/HelpTooltip.tsx";
+import {CheckBoxOne} from "@/components/componentsGeneral/componentsCheckBox/CheckBoxOne.tsx";
 
 interface ColDefLike {
     key: string;
@@ -141,16 +142,13 @@ export function ActualizationFilters(props: ActualizationFiltersProps) {
                     plain
                 />
 
-                <label className="inline-flex items-center gap-1.5 h-9 px-3 rounded-[9px] border border-[#e5e9f0] bg-white text-[#3a4560] font-semibold text-[12.5px] cursor-pointer hover:bg-[#f6f8fb] select-none">
-                    <input
-                        type="checkbox"
-                        checked={neverActualizedOnly}
-                        onChange={(e) => onNeverActualizedOnlyChange(e.target.checked)}
-                        className="w-[15px] h-[15px] accent-[#4e57d6] cursor-pointer"
-                    />
+                <CheckBoxOne
+                    checked={neverActualizedOnly}
+                    onChange={onNeverActualizedOnlyChange}
+                >
                     Только ни разу не актуализированные
                     <HelpTooltip content="Показывает документы только с одной (первой) редакцией — т.е. те, которые ещё ни разу не проходили актуализацию."/>
-                </label>
+                </CheckBoxOne>
 
                 <div className="flex-1"/>
 

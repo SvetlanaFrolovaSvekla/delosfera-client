@@ -1,5 +1,5 @@
 import {useEffect, useState} from "react";
-import {FileStack, Loader2, Shield} from "lucide-react";
+import {Eye, FileStack, Loader2, Shield} from "lucide-react";
 import {EmptyState} from "@/components/componentsGeneral/EmptyState.tsx";
 import {activityLogService} from "@/service/activityLogService/activityLogService.ts";
 import type {ActivityLogEntryResponse} from "@/service/activityLogService/activityLogServiceType.ts";
@@ -12,6 +12,9 @@ import type {
 } from "@/service/coordinationService/coordinationServiceTypes.ts";
 import type {VndRedactionResponse, VndResponse} from "@/service/vndService/vndServiceType.ts";
 import {getRedactionDisplayStatus, REDACTION_STATUS_META} from "@/utils/redactionStatus.ts";
+import {
+    VndRedactionHistoryDetail
+} from "@/components/componentsVND/componentsOpenVndPage/componentsHistoryTab/VndRedactionHistoryDetail.tsx";
 
 interface VndHistoryTabProps {
     vnd: VndResponse;
@@ -73,6 +76,10 @@ export function VndHistoryTab({vnd, redactions}: VndHistoryTabProps) {
     const [approvalHistory, setApprovalHistory] = useState<ApprovalProcessResponse[] | null>(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
+    // Id редакции, для которой открыт подробный лог (кнопка "Смотреть подробно" на панели
+    // "Редакции и юридическая значимость") — вместо самой редакции храним id, чтобы после
+    // перезагрузки/изменения списка редакций деталка всегда показывала актуальные данные.
+    const [detailRedactionId, setDetailRedactionId] = useState<number | null>(null);
 
     useEffect(() => {
         let cancelled = false;
@@ -100,8 +107,17 @@ export function VndHistoryTab({vnd, redactions}: VndHistoryTabProps) {
         };
     }, [vnd.id]);
 
+    // Открытая по кнопке "Смотреть подробно" редакция относится к конкретному ВНД — при
+    // переключении на другой документ (без размонтирования таба) детальный лог нужно закрыть.
+    useEffect(() => {
+        setDetailRedactionId(null);
+    }, [vnd.id]);
+
     const maxNumber = redactions.reduce((max, r) => Math.max(max, r.number), 0);
     const sortedRedactions = [...redactions].sort((a, b) => b.number - a.number);
+    const detailRedaction = detailRedactionId != null
+        ? redactions.find((r) => r.id === detailRedactionId) ?? null
+        : null;
 
     if (loading) {
         return (
@@ -115,6 +131,29 @@ export function VndHistoryTab({vnd, redactions}: VndHistoryTabProps) {
     if (error) {
         return (
             <div className="px-4 sm:px-6 py-10 text-center text-sm text-red-600">{error}</div>
+        );
+    }
+
+    // Подробный лог выбранной редакции — занимает место обеих панелей (аудит + редакции),
+    // пока не нажата стрелочка "Назад к истории" (см. VndRedactionHistoryDetail.onBack).
+    if (detailRedaction) {
+        const displayStatus = getRedactionDisplayStatus(
+            detailRedaction, vnd.status, detailRedaction.number === maxNumber, vnd.effectiveDate,
+        );
+        const processesForRedaction = (approvalHistory ?? []).filter(
+            (p) => p.redactionId === detailRedaction.id,
+        );
+
+        return (
+            <div className="px-4 sm:px-6">
+                <VndRedactionHistoryDetail
+                    vnd={vnd}
+                    redaction={detailRedaction}
+                    displayStatus={displayStatus}
+                    processes={processesForRedaction}
+                    onBack={() => setDetailRedactionId(null)}
+                />
+            </div>
         );
     }
 
@@ -175,7 +214,7 @@ export function VndHistoryTab({vnd, redactions}: VndHistoryTabProps) {
                             const process = approvalHistory?.find((p) => p.redactionId === r.id) ?? null;
 
                             return (
-                                <div key={r.id} className="flex gap-[13px] py-3 border-b border-[#f3f6f9] last:border-b-0">
+                                <div key={r.id} className="flex items-start gap-[13px] py-3 border-b border-[#f3f6f9] last:border-b-0">
                                     <div className="flex-none text-center">
                                         <div className="font-mono text-[13px] font-bold text-[#1c2740]">{r.code}</div>
                                         <span
@@ -233,6 +272,14 @@ export function VndHistoryTab({vnd, redactions}: VndHistoryTabProps) {
                                             </div>
                                         )}
                                     </div>
+                                    <button
+                                        type="button"
+                                        onClick={() => setDetailRedactionId(r.id)}
+                                        className="flex-none self-start inline-flex items-center gap-1 rounded-[8px] border border-[#e5e9f0] bg-white px-2.5 py-1.5 text-[11px] font-semibold text-[#4e57d6] hover:bg-[#ececfc] whitespace-nowrap cursor-pointer"
+                                    >
+                                        <Eye size={13}/>
+                                        Смотреть подробно
+                                    </button>
                                 </div>
                             );
                         })

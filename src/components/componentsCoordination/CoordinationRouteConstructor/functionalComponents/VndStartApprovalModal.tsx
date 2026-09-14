@@ -67,6 +67,11 @@ export function VndStartApprovalModal({
     const actingOnSomeoneElsesDraft =
         draftOwnerUserId != null && currentUserId != null && draftOwnerUserId !== currentUserId;
     const [initiator, setInitiator] = useState<"self" | "owner">("self");
+    // Станет ли текущий пользователь инициатором ЭТОГО запуска согласования - передаётся в
+    // VndSelectApproverModal, чтобы подпись "авто-согласование" не показывалась, когда сам себя
+    // на фиксированном этапе выбирает не инициатор (см. комментарий у
+    // VndSelectApproverModalProps.currentUserIsInitiator и VndApprovalService.StartAsync).
+    const currentUserIsInitiator = !actingOnSomeoneElsesDraft || initiator === "self";
 
     const {
         stages,
@@ -135,32 +140,26 @@ export function VndStartApprovalModal({
                     </button>
                 </div>
 
-                {/* Выбор инициатора согласования - только когда запускает не автор черновика */}
+                {/* Выбор инициатора согласования - только когда запускает не автор черновика.
+                    Те же красивые радио-кнопки, что и в модалке "Создать документ" на главной
+                    (см. DocTypeRadioRow в CreateDocumentModal.tsx) - вместо нативных
+                    <input type="radio">, которые здесь смотрелись слишком просто. */}
                 {actingOnSomeoneElsesDraft && (
                     <div className="flex flex-none flex-col gap-2 border-b border-[#eef0f5] px-7 py-4">
                         <span className="text-[12.5px] font-semibold text-[#1c2740]">
                             Кто будет указан инициатором согласования?
                         </span>
-                        <div className="flex flex-wrap gap-4">
-                            <label className="flex cursor-pointer items-center gap-2 text-[12.5px] text-[#3a4560]">
-                                <input
-                                    type="radio"
-                                    name="approval-initiator"
-                                    checked={initiator === "self"}
-                                    onChange={() => setInitiator("self")}
-                                />
-                                Стать инициатором согласования
-                            </label>
-                            <label className="flex cursor-pointer items-center gap-2 text-[12.5px] text-[#3a4560]">
-                                <input
-                                    type="radio"
-                                    name="approval-initiator"
-                                    checked={initiator === "owner"}
-                                    onChange={() => setInitiator("owner")}
-                                />
-                                Оставить инициатором согласования{" "}
-                                {draftOwnerUserName ?? "автора черновика"}
-                            </label>
+                        <div className="flex flex-wrap gap-2.5">
+                            <InitiatorRadioRow
+                                label="Стать инициатором согласования"
+                                checked={initiator === "self"}
+                                onSelect={() => setInitiator("self")}
+                            />
+                            <InitiatorRadioRow
+                                label={`Оставить инициатором согласования ${draftOwnerUserName ?? "автора черновика"}`}
+                                checked={initiator === "owner"}
+                                onSelect={() => setInitiator("owner")}
+                            />
                         </div>
                     </div>
                 )}
@@ -292,11 +291,45 @@ export function VndStartApprovalModal({
                         activePickerStage.orgUnitId ? activePickerStage.title : undefined
                     }
                     excludedUserIds={selectedUserIds}
+                    currentUserIsInitiator={currentUserIsInitiator}
                     onClose={() => setPickerStageId(null)}
                     onSelect={(user) => setStageApprover(activePickerStage.localId, user)}
                 />
             )}
         </div>,
         document.body,
+    );
+}
+
+// Та же радио-кнопка-строка, что и в CreateDocumentModal.tsx (DocTypeRadioRow) - здесь без
+// disabled/"Скоро": оба варианта инициатора всегда доступны для выбора.
+function InitiatorRadioRow({
+                                label,
+                                checked,
+                                onSelect,
+                            }: {
+    label: string;
+    checked: boolean;
+    onSelect: () => void;
+}) {
+    return (
+        <button
+            type="button"
+            onClick={onSelect}
+            className={`flex cursor-pointer items-center gap-[10px] rounded-[10px] border px-3 py-[10px] text-left text-[12.5px] transition-colors ${
+                checked
+                    ? "border-[var(--app-accent,_#2f68f5)] bg-[var(--app-soft,_#e9f0ff)] text-[#1c2740]"
+                    : "border-[#e5e9f0] text-[#3a4560] hover:bg-[#f6f8fb]"
+            }`}
+        >
+            <span
+                className={`grid h-[16px] w-[16px] flex-none place-items-center rounded-full border-2 ${
+                    checked ? "border-[var(--app-accent,_#2f68f5)]" : "border-[#c7cedb]"
+                }`}
+            >
+                {checked && <span className="h-[8px] w-[8px] rounded-full bg-[var(--app-accent,_#2f68f5)]"/>}
+            </span>
+            <span>{label}</span>
+        </button>
     );
 }

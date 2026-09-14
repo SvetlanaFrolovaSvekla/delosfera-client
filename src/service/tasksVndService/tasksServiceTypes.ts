@@ -1,7 +1,12 @@
 import type {ApprovalStageKindResponse} from "@/service/coordinationService/coordinationServiceTypes.ts";
 import type {VndStatusKey} from "@/constants/vndTabs.ts";
 
-export type TaskScope = "coordination" | "actualization" | "consolidation" | "myVndApproval" | "rejected";
+export type TaskScope =
+    | "coordination" | "actualization" | "consolidation" | "myVndApproval" | "rejected"
+    // "actualizationRequest" — заявка на доступ к актуализации ждёт решения главного редактора;
+    // "actualizationApproved" — заявка одобрена, заявитель ещё не подтвердил/начал сам цикл
+    // (см. TasksService.GetActualizationRequestTasksAsync/GetActualizationApprovedTasksAsync).
+    | "actualizationRequest" | "actualizationApproved";
 export type TaskStagePhase = "primary" | "repeat" | "final";
 
 export interface VndTaskCountsResponse {
@@ -12,6 +17,10 @@ export interface VndTaskCountsResponse {
     myVndApproval: number;
     /// Редакции, отклонённые при согласовании и ожидающие правок инициатора
     rejected: number;
+    /// Заявки на доступ к актуализации, ожидающие решения главного редактора
+    actualizationRequests: number;
+    /// Заявки на доступ к актуализации, уже одобренные, но ещё не "потраченные" заявителем
+    actualizationApproved: number;
 }
 
 export interface VndTaskResponse {

@@ -13,6 +13,8 @@ export const emptyTextByScope: Record<TasksScope, string> = {
     consolidation: "Нет документов на консолидации",
     myVndApproval: "Нет ВНД, ожидающих согласования",
     rejected: "Нет отклонённых редакций",
+    actualizationRequest: "Нет заявок на доступ к актуализации",
+    actualizationApproved: "Нет одобренных заявок, ожидающих начала актуализации",
 };
 
 // Пояснение под заголовком заглушки — что за задачи попадают в раздел и когда он перестанет
@@ -24,6 +26,8 @@ export const emptyDescriptionByScope: Record<TasksScope, string> = {
     consolidation: "Здесь появляются документы, для которых редакции на разных языках нужно свести в одну.",
     myVndApproval: "Здесь отображаются ваши документы, отправленные на согласование и ещё не получившие решения.",
     rejected: "Здесь появляются редакции, которые вернули на доработку — с момента отклонения до повторной отправки.",
+    actualizationRequest: "Здесь появляются заявки на доступ к актуализации, ожидающие вашего решения как главного редактора.",
+    actualizationApproved: "Здесь появляются ваши одобренные заявки на доступ к актуализации, по которым ещё не начат цикл.",
 };
 
 export const emptyIconByScope: Record<TasksScope, LucideIcon> = {
@@ -33,4 +37,6 @@ export const emptyIconByScope: Record<TasksScope, LucideIcon> = {
     consolidation: Layers,
     myVndApproval: Send,
     rejected: FileX,
+    actualizationRequest: UserCheck,
+    actualizationApproved: RefreshCw,
 };

@@ -8,12 +8,13 @@ import {NOTIFICATION_CATEGORY_META, DEFAULT_CATEGORY_META} from "@/constants/not
 import {timeAgo} from "@/utils/dateUtils.ts";
 import {Loader} from "@/components/componentsGeneral/Loader.tsx";
 import {EmptyState} from "@/components/componentsGeneral/EmptyState.tsx";
+import {HOME_BOTTOM_ROW_HEIGHT} from "@/constants/home.ts";
 
 interface RecentNotificationsCardProps {
     limit?: number;
 }
 
-export function RecentNotificationsCard({limit = 8}: RecentNotificationsCardProps) {
+export function RecentNotificationsCard({limit = 15}: RecentNotificationsCardProps) {
     const {t} = useTranslation();
     const navigate = useNavigate();
     const {items, isLoading, error} = useRecentNotifications(limit);
@@ -32,11 +33,13 @@ export function RecentNotificationsCard({limit = 8}: RecentNotificationsCardProp
     };
 
     return (
-        // flex h-full flex-col — растягивается на всю высоту своей ячейки грида, вровень
-        // с "Последняя активность" рядом (см. HomePage.tsx: обе карточки — в одной строке
-        // грида и по умолчанию растягиваются до высоты более длинной из них — без ручного
-        // измерения через JS).
-        <div className="flex h-full flex-col overflow-hidden rounded-[14px] border border-[#e9edf3] bg-white">
+        // Высота зафиксирована (HOME_BOTTOM_ROW_HEIGHT) и совпадает с "Последняя активность"
+        // рядом (см. RecentActivityCard.tsx) - список ниже сам скроллится, если 15 строк
+        // не помещаются (см. flex-1 min-h-0 overflow-y-auto на списке).
+        <div
+            className="flex flex-col overflow-hidden rounded-[14px] border border-[#e9edf3] bg-white"
+            style={{height: HOME_BOTTOM_ROW_HEIGHT}}
+        >
             <div className="flex flex-none flex-wrap items-center justify-between gap-2 border-b border-[#eef2f7] px-[18px] py-4 pb-[13px]">
                 {/* Последние уведомления */}
                 <h2 className="text-[15px] font-semibold">{t("home.recentNotifications.title")}</h2>
@@ -95,6 +98,22 @@ export function RecentNotificationsCard({limit = 8}: RecentNotificationsCardProp
                                     >
                                         {n.title}
                                     </div>
+                                    {/* Часть текста уведомления - чтобы был понятен смысл, не открывая
+                                        само уведомление. В одну строку с обрезкой (полный текст - по
+                                        клику), так же как в общем списке уведомлений (см. NotificationRow). */}
+                                    {n.body && (
+                                        <div className="mt-0.5 line-clamp-1 text-[11.5px] leading-[1.4] text-[#8b97ab]">
+                                            {n.body}
+                                        </div>
+                                    )}
+                                    {/* Код и название ВНД - только для уведомлений о ВНД (entityType === "Vnd"),
+                                        чтобы сразу было видно, о каком документе речь, не открывая уведомление */}
+                                    {n.entityType === "Vnd" && n.vndCode && (
+                                        <div className="mt-0.5 truncate text-[11px] text-[#5b6b84]">
+                                            <span className="font-medium">{n.vndCode}</span>
+                                            {n.vndTitle && <span className="text-[#8b97ab]"> · {n.vndTitle}</span>}
+                                        </div>
+                                    )}
                                     <div className="mt-0.5 flex items-center justify-between gap-2">
                                         <span className="text-[11px] text-[#8b97ab]">{timeAgo(n.createdAt)}</span>
                                         {n.url && (

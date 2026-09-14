@@ -9,6 +9,7 @@ import {useRecentActivity} from "@/hooks/activityLogHooks/useRecentActivity.ts";
 import {timeAgo} from "@/utils/dateUtils.ts";
 import {Icon} from "@/components/icons/Icon";
 import {Loader} from "@/components/componentsGeneral/Loader.tsx";
+import {Lock} from "lucide-react";
 
 const ICON_STYLE: Record<ActivityIcon, { iconName: string; col: string; bg: string }> = {
     check: {iconName: "check", col: "#1c7a4d", bg: "#e2f4ea"},
@@ -85,23 +86,34 @@ export function ActivityFeedPage() {
                 ) : (
                     items.map((item) => {
                         const style = ICON_STYLE[item.icon] ?? ICON_STYLE.info;
+                        // canOpen=false — запись о чужом черновике ВНД, который у пользователя нет
+                        // прав открыть (см. тот же приём в RecentActivityCard.tsx на главной, и
+                        // ActivityLogService.CanOpenVndEntry на бэке).
+                        const locked = !item.canOpen;
                         return (
                             <div
                                 key={item.id}
-                                onClick={() => navigate(item.url)}
-                                className="flex cursor-pointer gap-[11px] border-t border-[#f3f6f9] py-[9px] first:border-t-0 hover:bg-[#fafbfc]"
+                                onClick={locked ? undefined : () => navigate(item.url)}
+                                title={locked ? "Черновик недоступен — нет прав на просмотр чужих черновиков" : undefined}
+                                className={
+                                    "flex gap-[11px] border-t border-[#f3f6f9] py-[9px] first:border-t-0 " +
+                                    (locked ? "cursor-not-allowed opacity-60" : "cursor-pointer hover:bg-[#fafbfc]")
+                                }
                             >
                                 <span
                                     className="grid h-[26px] w-[26px] flex-none place-items-center rounded-[7px]"
-                                    style={{background: style.bg, color: style.col}}
+                                    style={locked ? {background: "#eef1f5", color: "#8b97ab"} : {background: style.bg, color: style.col}}
                                 >
-                                    <Icon name={style.iconName} width={14} height={14}/>
+                                    {locked ? <Lock className="h-3.5 w-3.5"/> : <Icon name={style.iconName} width={14} height={14}/>}
                                 </span>
                                 <div className="min-w-0">
                                     {/* whitespace-pre-line — сервер разносит длинный список изменённых
                                         реквизитов по строкам через \n (см. VndService.BuildChangedFieldsList) */}
                                     <div className="whitespace-pre-line text-[12.5px] leading-[1.4] text-[#26324a]">{item.text}</div>
-                                    <div className="mt-0.5 text-[11px] text-[#8b97ab]">{timeAgo(item.createdAt)}</div>
+                                    <div className="mt-0.5 text-[11px] text-[#8b97ab]">
+                                        {timeAgo(item.createdAt)}
+                                        {locked && " · нет доступа"}
+                                    </div>
                                 </div>
                             </div>
                         );

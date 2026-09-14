@@ -19,6 +19,11 @@ interface MyTasksCardProps {
     // Задачи по закупкам — тоже из сводного реестра, вне контура ВНД.
     prcTasks?: InboxTask[];
     isLoading: boolean;
+    // Настоящее (неусечённое) число задач по контурам — переданный tasks уже обрезан общим
+    // лимитом "последних задач" на главной (см. HOME_TASKS_LIMIT в HomePage.tsx), поэтому
+    // tasks.length не годится для бейджа с количеством: считает HomePage.tsx по всем скоупам
+    // ВНД сразу, без обрезки.
+    counts?: {vnd: number; sz: number; prc: number};
 }
 
 const VISIBLE_TASKS_LIMIT = 15;
@@ -31,10 +36,24 @@ const SECTIONS: { id: string; label: string }[] = [
     {id: "prc", label: "Закупки"},
 ];
 
-export function MyTasksCard({tasks, szTasks = [], prcTasks = [], isLoading}: MyTasksCardProps) {
+export function MyTasksCard({tasks, szTasks = [], prcTasks = [], isLoading, counts}: MyTasksCardProps) {
     const {t} = useTranslation();
     const navigate = useNavigate();
     const [section, setSection] = useState<string>("all");
+
+    // Число в кружке рядом с заголовком — меняется вместе с активным табом: "Все" показывает
+    // сумму по всем контурам, остальные табы — только свой контур. Контуры ВНД считаются
+    // отдельно от counts (полный, неусечённый список), а не по vndTasks/tasks ниже — тем
+    // приходится резать по VISIBLE_TASKS_LIMIT для самого списка карточек.
+    const sectionCount = counts
+        ? section === "all"
+            ? counts.vnd + counts.sz + counts.prc
+            : section === "vnd"
+                ? counts.vnd
+                : section === "sz"
+                    ? counts.sz
+                    : counts.prc
+        : null;
 
     const vndTasks = section === "all" || section === "vnd" ? tasks : [];
     const visibleSzSource = section === "all" || section === "sz" ? szTasks : [];
@@ -63,10 +82,14 @@ export function MyTasksCard({tasks, szTasks = [], prcTasks = [], isLoading}: MyT
         >
             <div className="flex flex-none flex-wrap items-center justify-between gap-2 border-b border-[#eef2f7] px-[18px] py-4 pb-[13px]">
                 <div className="flex items-center gap-2.5">
-                    {/* Мои задачи - кружок с общим числом задач убран: то же число теперь
-                        показывает плитка "Мои задачи" в верхней сводке (см. HomeKpiSection.tsx,
-                        totalTasksCount) - дублировать его ещё и здесь смысла не было. */}
                     <h2 className="text-[15px] font-semibold">{t("tasks.myTasks.title")}</h2>
+                    {/* Кружок с числом задач - значение меняется вместе с активным табом ниже
+                        (см. sectionCount): "Все" - сумма по всем контурам, иначе - только свой. */}
+                    {sectionCount !== null && (
+                        <span className="grid h-[20px] min-w-[20px] place-items-center rounded-full bg-[#eef3ff] px-1.5 text-[11px] font-semibold text-[#2f68f5]">
+                            {sectionCount}
+                        </span>
+                    )}
                 </div>
                 <div className="flex flex-wrap items-center gap-2.5">
                     <div className="flex flex-wrap gap-1.5">
@@ -111,15 +134,28 @@ export function MyTasksCard({tasks, szTasks = [], prcTasks = [], isLoading}: MyT
                 ) : (
                     <>
                         {/* square - без скруглённых углов: строки идут впритык друг к другу без
-                            отступа, скруглённые углы каждой смотрелись неаккуратно на стыках. */}
-                        {visibleTasks.map((task) => (
-                            <VndTaskCard key={`vnd-${task.vndId}`} task={task} square/>
+                            отступа, скруглённые углы каждой смотрелись неаккуратно на стыках.
+                            noTopBorder - явно только у самой первой строки списка (по индексу,
+                            а не через CSS :first-child - тут первой может оказаться карточка
+                            любого из трёх типов ниже, в зависимости от того, что вообще есть):
+                            иначе её собственный верхний бордер шёл сразу под нижним бордером
+                            заголовка панели и линия казалась двойной. */}
+                        {visibleTasks.map((task, i) => (
+                            <VndTaskCard key={`vnd-${task.vndId}`} task={task} square noTopBorder={i === 0}/>
                         ))}
-                        {visibleSzTasks.map((task) => (
-                            <SzTaskCard key={`sz-${task.taskId}`} task={task}/>
+                        {visibleSzTasks.map((task, i) => (
+                            <SzTaskCard
+                                key={`sz-${task.taskId}`}
+                                task={task}
+                                noTopBorder={visibleTasks.length === 0 && i === 0}
+                            />
                         ))}
-                        {visiblePrcTasks.map((task) => (
-                            <SzTaskCard key={`prc-${task.taskId}`} task={task}/>
+                        {visiblePrcTasks.map((task, i) => (
+                            <SzTaskCard
+                                key={`prc-${task.taskId}`}
+                                task={task}
+                                noTopBorder={visibleTasks.length === 0 && visibleSzTasks.length === 0 && i === 0}
+                            />
                         ))}
                         {hasMoreTasks && (
                             <div className="border-t border-[#eef2f7] px-[18px] py-3 text-center">

@@ -20,6 +20,12 @@ interface VndTaskCardProps {
      * соседними строками). На отдельной странице "Мои задачи" (VndTaskList, карточки с
      * отступом между собой) обычные скруглённые углы остаются как есть. */
     square?: boolean;
+    /** Явно убрать верхний бордер (первая строка в списке — под ней уже есть нижний бордер
+     * заголовка панели, поэтому свой верхний тут лишний и даёт двойную линию). Задаётся
+     * родителем по индексу строки, а не через CSS :first-child — так строка остаётся без
+     * верхнего бордера, даже если она не первый DOM-child (например, первая среди
+     * нескольких разных типов карточек в одном списке, см. MyTasksCard). */
+    noTopBorder?: boolean;
 }
 
 const handleClick = (e: MouseEvent<HTMLAnchorElement>) => {
@@ -33,7 +39,13 @@ const handleClick = (e: MouseEvent<HTMLAnchorElement>) => {
 // в остальных случаях (актуализация/консолидация) правильный таб определяет сама страница ВНД.
 const APPROVAL_TAB_SCOPES: VndTaskResponse["scope"][] = ["coordination", "myVndApproval"];
 
-export function VndTaskCard({task, searchQuery = "", square = false}: VndTaskCardProps) {
+// "Заявки на доступ к актуализации" и "Заявка одобрена" ведут прямо на вкладку "Актуализация" —
+// без явного tab документ мог бы открыться на вкладке по умолчанию ("Редакции"), где ни решить
+// заявку, ни подтвердить начало цикла нельзя (те же действия, что и в уведомлении, см.
+// VndActualizationService.NotifyAsync urlOverride: `/base-vnd/{vndId}?tab=actual`).
+const ACTUAL_TAB_SCOPES: VndTaskResponse["scope"][] = ["actualizationRequest", "actualizationApproved"];
+
+export function VndTaskCard({task, searchQuery = "", square = false, noTopBorder = false}: VndTaskCardProps) {
     // Основной бейдж = раздел/вкладка "Мои задачи", в которую ведёт карточка
     // ("Ждущие моего согласования" / "Мои ВНД на согласовании" / "Актуализация" / "Консолидация")
     const scopeMeta = TASK_SCOPE_META[task.scope];
@@ -56,13 +68,26 @@ export function VndTaskCard({task, searchQuery = "", square = false}: VndTaskCar
     return (
         <Link
             to={`/base-vnd/${task.vndId}`}
-            state={APPROVAL_TAB_SCOPES.includes(task.scope) ? {tab: "approval"} : undefined}
+            state={
+                APPROVAL_TAB_SCOPES.includes(task.scope)
+                    ? {tab: "approval"}
+                    : ACTUAL_TAB_SCOPES.includes(task.scope)
+                        ? {tab: "actual"}
+                        : undefined
+            }
             draggable={false}
             onClick={handleClick}
             className={
-                `cursor-pointer flex w-full items-center gap-[13px] border border-[#e9edf3] ${square ? "" : "rounded-[14px]"}
-                 bg-white px-[18px] py-[13px] text-left transition-colors hover:bg-[#f8fafc]
-                 select-text [-webkit-user-drag:none]`
+                // square - тонкий разделитель сверху (как в "Последняя активность"/"Последние
+                // уведомления"), а не полная рамка по всем 4 сторонам: раньше между соседними
+                // строками выходила двойная (удвоенной толщины) линия на стыке - нижняя рамка
+                // одной строки плюс верхняя рамка следующей.
+                `cursor-pointer flex w-full items-center gap-[13px] bg-white px-[18px] py-[13px] text-left
+                 transition-colors hover:bg-[#f8fafc] select-text [-webkit-user-drag:none] ${
+                    square
+                        ? `border-t border-[#f3f6f9] ${noTopBorder ? "border-t-0" : ""}`
+                        : "rounded-[14px] border border-[#e9edf3]"
+                }`
             }
         >
             <span
@@ -139,19 +164,22 @@ export function VndTaskCard({task, searchQuery = "", square = false}: VndTaskCar
             </span>
 
             {/* Выполненные карточки (вкладка "Выполненные") показывают, когда задача была
-                закрыта, а не обратный отсчёт до дедлайна — его для них уже нет смысла считать. */}
+                закрыта, а не обратный отсчёт до дедлайна — его для них уже нет смысла считать.
+                Если дедлайна вообще нет (due.label === "—" из getDeadlineTone), значок часов
+                с тире не показываем совсем - пустое место лучше, чем "часы + прочерк" без
+                какой-либо полезной информации. */}
             {task.isCompleted ? (
                 <span className="flex flex-none items-center gap-1.5 text-[11.5px] font-semibold text-[#1c7a4d]">
                     <CheckCircle2 size={14}/>
                     {task.completedAt ? timeAgo(task.completedAt) : "Выполнено"}
                 </span>
-            ) : (
+            ) : due.label !== "—" ? (
                 <span className="flex flex-none items-center gap-1.5 text-[11.5px] font-semibold"
                       style={{color: due.color}}>
                     <Icon name="clock" width={14} height={14}/>
                     {due.label}
                 </span>
-            )}
+            ) : null}
 
             <Icon name="chevr" width={17} height={17} className="flex-none text-[#c3ccd8]"/>
         </Link>

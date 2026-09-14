@@ -4,10 +4,15 @@ import {tasksService} from "@/service/tasksVndService/tasksService.ts";
 import type {TasksScope} from "@/constants/tasksConst.ts";
 
 // Порядок слияния для вкладки "Все": сначала то, что реально ждёт решения
-// (согласование, мои ВНД на согласовании, отклонено), затем актуализация и консолидация.
-// Отдельного бэкенд-эндпоинта под "Все" нет — пять уже существующих списков (у пользователя
+// (согласование, мои ВНД на согласовании, отклонено, заявки на актуализацию — свои и
+// требующие решения главного редактора), затем актуализация и консолидация.
+// Отдельного бэкенд-эндпоинта под "Все" нет — семь уже существующих списков (у пользователя
 // это обычно десятки задач, не тысячи) просто запрашиваются параллельно и сливаются здесь.
-const ALL_TASK_SCOPES: TaskScope[] = ["coordination", "myVndApproval", "rejected", "actualization", "consolidation"];
+const ALL_TASK_SCOPES: TaskScope[] = [
+    "coordination", "myVndApproval", "rejected",
+    "actualizationRequest", "actualizationApproved",
+    "actualization", "consolidation",
+];
 
 // Общий "срок" для сортировки смешанного списка: у coordination/myVndApproval это
 // deadlineAt, у actualization/consolidation — dueActualizationDate, у rejected срока нет

@@ -31,6 +31,14 @@ type TopTab = "all" | "coordination" | "actualization" | "consolidation";
 // (rejected).
 type CoordinationSubTab = "coordination" | "myVndApproval" | "rejected";
 
+// Вложенные вкладки внутри «Актуализации»: документы, ожидающие актуализации от ответственного
+// (actualization), заявки на доступ к актуализации, ждущие решения главного редактора
+// (actualizationRequest), и уже одобренные заявки, по которым заявитель ещё не начал цикл
+// (actualizationApproved) — раньше по обеим последним уходило только уведомление, самой задачи
+// в "Мои задачи" не было (см. TasksService.GetActualizationRequestTasksAsync/
+// GetActualizationApprovedTasksAsync).
+type ActualizationSubTab = "actualization" | "actualizationRequest" | "actualizationApproved";
+
 // Активные (обычный список — то, что ждёт действия) / Выполненные (история, с пагинацией).
 type DoneToggle = "active" | "done";
 
@@ -47,6 +55,12 @@ const COORDINATION_SUB_TABS: { id: CoordinationSubTab; label: string }[] = [
     { id: "coordination", label: "Ждущие моего согласования" },
     { id: "myVndApproval", label: "Мои ВНД на согласовании" },
     { id: "rejected", label: "Отклонено" },
+];
+
+const ACTUALIZATION_SUB_TABS: { id: ActualizationSubTab; label: string }[] = [
+    { id: "actualization", label: "На актуализации" },
+    { id: "actualizationRequest", label: "Заявки на доступ" },
+    { id: "actualizationApproved", label: "Одобрено — начать" },
 ];
 
 // Выпадающий список "По выполненности" рядом со строкой поиска — не таб, чтобы не плодить
@@ -81,12 +95,22 @@ export function VndTasksPanel() {
         const fromUrl = searchParams.get("sub");
         return COORDINATION_SUB_TABS.some((s) => s.id === fromUrl) ? (fromUrl as CoordinationSubTab) : "coordination";
     });
+    const [actualizationSubTab, setActualizationSubTab] = useState<ActualizationSubTab>(() => {
+        const fromUrl = searchParams.get("sub");
+        return ACTUALIZATION_SUB_TABS.some((s) => s.id === fromUrl) ? (fromUrl as ActualizationSubTab) : "actualization";
+    });
     const [doneToggle, setDoneToggle] = useState<DoneToggle>("active");
     const [donePage, setDonePage] = useState(1);
     const [stagePhaseFilter, setStagePhaseFilter] = useState<"" | TaskStagePhase>("");
     const [searchQuery, setSearchQuery] = useState("");
 
-    const scope: TasksScope = topTab === "all" ? "all" : topTab === "coordination" ? coordinationSubTab : topTab;
+    const scope: TasksScope = topTab === "all"
+        ? "all"
+        : topTab === "coordination"
+            ? coordinationSubTab
+            : topTab === "actualization"
+                ? actualizationSubTab
+                : topTab;
 
     // "Выполненные" не существует для вкладки "Все" — там переключатель вообще не показывается
     // (см. handleTopTabChange), так что isDoneView здесь всегда подразумевает scope !== "all".
@@ -124,9 +148,12 @@ export function VndTasksPanel() {
         ...tab,
         n: tab.id === "all"
             ? counts.coordination + counts.myVndApproval + counts.rejected + counts.actualization + counts.consolidation
+                + counts.actualizationRequests + counts.actualizationApproved
             : tab.id === "coordination"
                 ? counts.coordination + counts.myVndApproval + counts.rejected
-                : counts[tab.id],
+                : tab.id === "actualization"
+                    ? counts.actualization + counts.actualizationRequests + counts.actualizationApproved
+                    : counts[tab.id],
     }));
 
     const subTabsWithCounts = COORDINATION_SUB_TABS.map((tab) => ({
@@ -134,14 +161,27 @@ export function VndTasksPanel() {
         n: counts[tab.id],
     }));
 
+    const actualizationSubTabsWithCounts = ACTUALIZATION_SUB_TABS.map((tab) => ({
+        ...tab,
+        n: tab.id === "actualizationRequest"
+            ? counts.actualizationRequests
+            : tab.id === "actualizationApproved"
+                ? counts.actualizationApproved
+                : counts.actualization,
+    }));
+
     // Название текущего раздела — общее и для плейсхолдера поиска, и для строки счётчика
     // ниже. На "Все" у самого TOP_TABS есть своя запись ("Все"), но там она не годится
     // ни там, ни там — у обоих мест свой особый случай для этой вкладки, см. ниже.
     const sectionLabel = useMemo(() => {
-        return topTab === "coordination"
-            ? COORDINATION_SUB_TABS.find((tab) => tab.id === coordinationSubTab)?.label ?? ""
-            : TOP_TABS.find((tab) => tab.id === topTab)?.label ?? "";
-    }, [topTab, coordinationSubTab]);
+        if (topTab === "coordination") {
+            return COORDINATION_SUB_TABS.find((tab) => tab.id === coordinationSubTab)?.label ?? "";
+        }
+        if (topTab === "actualization") {
+            return ACTUALIZATION_SUB_TABS.find((tab) => tab.id === actualizationSubTab)?.label ?? "";
+        }
+        return TOP_TABS.find((tab) => tab.id === topTab)?.label ?? "";
+    }, [topTab, coordinationSubTab, actualizationSubTab]);
 
     // Плейсхолдер строки поиска отражает раздел (и активные/выполненные), в котором сейчас
     // ищем — чтобы не выглядело, будто поиск идёт по всей странице задач или по всей истории
@@ -215,6 +255,12 @@ export function VndTasksPanel() {
         setDonePage(1);
     };
 
+    const handleActualizationSubTabChange = (nextSubTab: ActualizationSubTab) => {
+        setActualizationSubTab(nextSubTab);
+        setDoneToggle("active");
+        setDonePage(1);
+    };
+
     const handleDoneToggleChange = (next: DoneToggle) => {
         setDoneToggle(next);
         setDonePage(1);
@@ -242,6 +288,15 @@ export function VndTasksPanel() {
                     tabs={subTabsWithCounts}
                     value={coordinationSubTab}
                     onChange={handleSubTabChange}
+                    className="mb-0"
+                />
+            )}
+
+            {topTab === "actualization" && (
+                <Tabs<ActualizationSubTab>
+                    tabs={actualizationSubTabsWithCounts}
+                    value={actualizationSubTab}
+                    onChange={handleActualizationSubTabChange}
                     className="mb-0"
                 />
             )}

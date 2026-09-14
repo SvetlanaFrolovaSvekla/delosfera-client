@@ -45,6 +45,14 @@ export function getActionTitle(task: VndTaskResponse): string {
         return "Актуализировать ВНД";
     }
 
+    if (task.scope === "actualizationRequest") {
+        return "Рассмотреть заявку на доступ к актуализации";
+    }
+
+    if (task.scope === "actualizationApproved") {
+        return "Начать актуализацию по одобренной заявке";
+    }
+
     return "Провести консолидацию ВНД";
 }
 
@@ -70,6 +78,14 @@ export function getMetaText(task: VndTaskResponse): string {
         if (task.redactionCode) parts.push(`Редакция ${task.redactionCode}`);
         if (task.rejectedByName) parts.push(`Отклонил: ${task.rejectedByName}`);
         return parts.length > 0 ? parts.join(" · ") : "Требует внимания инициатора";
+    }
+
+    if (task.scope === "actualizationRequest") {
+        return task.initiatorName ? `Заявитель: ${task.initiatorName}` : "Ожидает вашего решения";
+    }
+
+    if (task.scope === "actualizationApproved") {
+        return "Подтвердите начало цикла актуализации";
     }
 
     return "Требует внимания ответственного";

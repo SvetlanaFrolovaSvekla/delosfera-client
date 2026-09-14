@@ -2,13 +2,15 @@
 import {useState} from "react";
 import {useTranslation} from "react-i18next";
 import {useNavigate} from "react-router-dom";
-import {History} from "lucide-react";
+import {History, Lock} from "lucide-react";
 import type {ActivityIcon} from "@/service/activityLogService/activityLogServiceType.ts";
 import {useRecentActivity} from "@/hooks/activityLogHooks/useRecentActivity.ts";
 import {timeAgo} from "@/utils/dateUtils.ts";
 import {Icon} from "@/components/icons/Icon";
 import {Loader} from "@/components/componentsGeneral/Loader.tsx";
 import {EmptyState} from "@/components/componentsGeneral/EmptyState.tsx";
+import {HOME_BOTTOM_ROW_HEIGHT} from "@/constants/home.ts";
+import {Tooltip} from "@/components/componentsGeneral/Tooltip.tsx";
 
 const ICON_STYLE: Record<ActivityIcon, { iconName: string; col: string; bg: string }> = {
     check: {iconName: "check", col: "#1c7a4d", bg: "#e2f4ea"},
@@ -48,11 +50,15 @@ export function RecentActivityCard({limit = 15, module}: RecentActivityCardProps
     const navigate = useNavigate();
 
     return (
-        // flex h-full flex-col — растягивается на всю высоту своей ячейки грида, вровень
-        // с "Последние уведомления" рядом (см. HomePage.tsx: обе карточки — в одной строке
-        // грида, растягиваются по умолчанию до высоты более длинной из них).
-        <div className="flex h-full flex-col overflow-hidden rounded-[14px] border border-[#e9edf3] bg-white">
-            <div className="flex flex-none flex-wrap items-center justify-between gap-2 border-b border-[#eef2f7] px-[18px] py-4 pb-[13px]">
+        // Высота зафиксирована (HOME_BOTTOM_ROW_HEIGHT) и совпадает с "Последние уведомления"
+        // рядом (см. RecentNotificationsCard.tsx) - список ниже сам скроллится, если 15 строк
+        // не помещаются (см. flex-1 min-h-0 overflow-y-auto на списке).
+        <div
+            className="flex flex-col overflow-hidden rounded-[14px] border border-[#e9edf3] bg-white"
+            style={{height: HOME_BOTTOM_ROW_HEIGHT}}
+        >
+            <div
+                className="flex flex-none flex-wrap items-center justify-between gap-2 border-b border-[#eef2f7] px-[18px] py-4 pb-[13px]">
                 {/* Последняя активность */}
                 <h2 className="text-[15px] font-semibold">{t("home.recentActivity.title")}</h2>
                 <div className="flex flex-wrap gap-1.5">
@@ -95,25 +101,50 @@ export function RecentActivityCard({limit = 15, module}: RecentActivityCardProps
                 ) : (
                     items.map((item) => {
                         const style = ICON_STYLE[item.icon] ?? ICON_STYLE.info;
+                        // canOpen=false — запись о чужом черновике ВНД, который у пользователя нет
+                        // прав открыть (см. ActivityLogService.CanOpenVndEntry на бэке — тот же
+                        // критерий, что и на самой странице ВНД). Раньше строка выглядела как
+                        // обычная кликабельная, а переход по её ссылке падал с ошибкой доступа —
+                        // теперь такая строка не кликается и выглядит явно приглушённой, с замком
+                        // вместо обычной иконки.
+                        const locked = !item.canOpen;
                         return (
-                            <div
-                                key={item.id}
-                                onClick={() => navigate(item.url)}
-                                className="flex cursor-pointer gap-[11px] border-t border-[#f3f6f9] py-[9px] first:border-t-0 hover:bg-[#fafbfc]"
+                            <Tooltip
+                                content="Черновик недоступен — нет прав на просмотр чужих черновиков"
+                                side="top"
+                                disabled={!locked}
+                                className="w-full"
                             >
+                                <div
+                                    key={item.id}
+                                    onClick={locked ? undefined : () => navigate(item.url)}
+                                    className={
+                                        "flex gap-[11px] border-t border-[#f3f6f9] py-[9px] first:border-t-0 " +
+                                        (locked ? "cursor-not-allowed" : "cursor-pointer hover:bg-[#fafbfc]")
+                                    }
+                                >
                                 <span
                                     className="grid h-[26px] w-[26px] flex-none place-items-center rounded-[7px]"
-                                    style={{background: style.bg, color: style.col}}
+                                    style={locked ? {background: "#eef1f5", color: "#8b97ab"} : {
+                                        background: style.bg,
+                                        color: style.col
+                                    }}
                                 >
-                                    <Icon name={style.iconName} width={14} height={14}/>
+                                    {locked ? <Lock className="h-3.5 w-3.5"/> :
+                                        <Icon name={style.iconName} width={14} height={14}/>}
                                 </span>
-                                <div className="min-w-0">
-                                    {/* whitespace-pre-line — сервер разносит длинный список изменённых
+                                    <div className="min-w-0">
+                                        {/* whitespace-pre-line — сервер разносит длинный список изменённых
                                         реквизитов по строкам через \n (см. VndService.BuildChangedFieldsList) */}
-                                    <div className="whitespace-pre-line text-[12.5px] leading-[1.4] text-[#26324a]">{item.text}</div>
-                                    <div className="mt-0.5 text-[11px] text-[#8b97ab]">{timeAgo(item.createdAt)}</div>
+                                        <div
+                                            className="whitespace-pre-line text-[12.5px] leading-[1.4] text-[#26324a]">{item.text}</div>
+                                        <div className="mt-0.5 text-[11px] text-[#8b97ab]">
+                                            {timeAgo(item.createdAt)}
+                                            {locked && " · нет доступа"}
+                                        </div>
+                                    </div>
                                 </div>
-                            </div>
+                            </Tooltip>
                         );
                     })
                 )}

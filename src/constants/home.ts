@@ -10,4 +10,13 @@
 // совпадают по размеру, а не "плюс-минус похожи" (см. MyTasksCard.tsx/ActualizationPlanCard.tsx -
 // header в обеих flex-none, оставшееся место каждая карточка занимает по-своему: у "Плана" -
 // центрированием сетки показателей, у "Мои задачи" - скроллом списка).
-export const HOME_TOP_ROW_HEIGHT = "280px";
+export const HOME_TOP_ROW_HEIGHT = "278px";
+
+// Высота нижней пары карточек - "Последние уведомления" (RecentNotificationsCard) и
+// "Последняя активность" (RecentActivityCard). Раньше обе росли по содержимому (h-full +
+// растяжение грида до высоты более длинной из них) - с увеличением лимита до 15 строк это
+// стало слишком высоко. Теперь у обеих одна и та же фиксированная (и заметно меньшая) высота
+// отсюда, а список внутри каждой скроллится сам, если 15 строк не помещаются (см.
+// RecentNotificationsCard.tsx/RecentActivityCard.tsx - тот же приём flex-col + flex-1
+// min-h-0 overflow-y-auto, что и в MyTasksCard.tsx/ActualizationPlanCard.tsx выше).
+export const HOME_BOTTOM_ROW_HEIGHT = "611px";

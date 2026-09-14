@@ -7,6 +7,7 @@ import {ReportVndActualizationPage} from "@/pages/ReportPages/ReportVndPages/Rep
 import {ReportVndApprovalsPage} from "@/pages/ReportPages/ReportVndPages/ReportVndApprovalsPage.tsx";
 import {SzStatisticsPage} from "@/pages/SzStatisticsPage.tsx";
 import {ProcurementStatisticsPage} from "@/pages/ProcurementPages/ProcurementStatisticsPage.tsx";
+import {SlaDashboardPage} from "@/pages/SlaDashboardPage.tsx";
 
 /**
  * Аналитика по всем контурам.
@@ -21,6 +22,7 @@ import {ProcurementStatisticsPage} from "@/pages/ProcurementPages/ProcurementSta
  */
 
 const TABS = [
+    {id: "sla", label: "Сроки и SLA"},
     {id: "vnd", label: "ВНД"},
     {id: "sz", label: "Служебные записки"},
     {id: "prc", label: "Заявки и закупки"},
@@ -77,6 +79,7 @@ export function AnalyticsPage() {
             <Tabs<TabId> tabs={[...TABS]} value={tab} onChange={setTab}/>
 
             {/* Готовые отчёты показываем как есть — со своими фильтрами и выгрузками. */}
+            {tab === "sla" && <SlaDashboardPage/>}
             {tab === "vnd" && (
                 <>
                     <Tabs<VndSubTabId>

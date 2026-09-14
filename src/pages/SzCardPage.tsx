@@ -8,6 +8,7 @@ import {PermissionCode} from "@/constants/permissions/permissions.ts";
 import {UserPicker, type PickableUser} from "@/components/componentsGeneral/UserPicker.tsx";
 import {SzTemplateBar} from "@/components/componentsSz/SzTemplateBar.tsx";
 import {SzTracePanel} from "@/components/componentsSz/SzTracePanel.tsx";
+import {SzDuplicateWarning} from "@/components/componentsSz/SzDuplicateWarning.tsx";
 import {OrgUnitPicker} from "@/components/procurement/OrgUnitPicker.tsx";
 import {userService} from "@/service/userService/userService.ts";
 import {SzExecutionPanel} from "@/components/sz/SzExecutionPanel.tsx";
@@ -638,6 +639,8 @@ export function SzCardPage() {
                     onApply={(patch) => setForm((f) => ({...f, ...patch}))}
                 />
             )}
+
+            {isNew && <SzDuplicateWarning kindId={form.kindId} title={form.title}/>}
 
             <div className="mt-5 rounded-[12px] border border-[#e5e9f0] bg-white p-5">
                 <div className="grid grid-cols-2 gap-4">

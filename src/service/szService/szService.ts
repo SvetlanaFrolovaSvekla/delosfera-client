@@ -202,6 +202,16 @@ export interface SzHistoryEntry {
     payload: string | null;
 }
 
+/** Возможный дубликат записки (СК-5). */
+export interface SzDuplicate {
+    id: number;
+    regNumber: string | null;
+    title: string;
+    statusTitle: string;
+    createdAt: string;
+    similarityPercent: number;
+}
+
 /** Веха пути записки (СЗ-8). */
 export interface SzTraceStep {
     status: string;
@@ -252,6 +262,14 @@ export const szService = {
     /** Путь записки по статусам с длительностью этапов (СЗ-8). */
     async trace(id: number): Promise<SzTraceStep[]> {
         const {data} = await apiClient.get<SzTraceStep[]>(`${BASE}/${id}/trace`);
+        return data;
+    },
+
+    /** Возможные дубликаты создаваемой записки (СК-5). */
+    async duplicates(kindId: number, title: string, excludeId?: number): Promise<SzDuplicate[]> {
+        const {data} = await apiClient.get<SzDuplicate[]>(`${BASE}/duplicates`, {
+            params: {kindId, title, excludeId},
+        });
         return data;
     },
 

@@ -3,6 +3,7 @@ import {Link, useNavigate} from "react-router-dom";
 import {Archive, Download, Plus} from "lucide-react";
 import {toast} from "@/service/toastService.ts";
 import {SzBulkArchiveModal} from "@/components/componentsSz/SzBulkArchiveModal.tsx";
+import {SavedFiltersBar} from "@/components/componentsGeneral/SavedFiltersBar.tsx";
 import {colors} from "@/design/tokens";
 import {
     SZ_STATUS_LABEL,
@@ -276,6 +277,23 @@ export function SzRegistryPage() {
                     <Download className="w-4 h-4"/> {exporting ? "Готовим…" : "Выгрузить в Excel"}
                 </button>
             </div>
+
+            {/* Сохранённые фильтры (БП-16): применить/сохранить именованную выборку. */}
+            {!(scope === "inbox" || scope === "assignments" || scope === "originals") && (
+                <div className="mt-2.5">
+                    <SavedFiltersBar
+                        scope="sz"
+                        current={{scope, query, kindId: kindId === "" ? null : kindId, overdueOnly}}
+                        onApply={(p) => {
+                            const f = p as {scope?: ScopeId; query?: string; kindId?: number | null; overdueOnly?: boolean};
+                            if (f.scope) setScope(f.scope);
+                            setQuery(f.query ?? "");
+                            setKindId(f.kindId == null ? "" : f.kindId);
+                            setOverdueOnly(!!f.overdueOnly);
+                        }}
+                    />
+                </div>
+            )}
 
             {error && (
                 <div className="mt-4 rounded-[10px] border border-[#f1c9c2] bg-[#fbeae7] px-4 py-2.5 text-[13px] text-[#c0392b]">

@@ -6,7 +6,7 @@ import {useEffect, useState} from "react";
 import {Eye, Mail} from "lucide-react";
 
 import {toast} from "@/service/toastService.ts";
-import {actualizationNotificationsService} from "@/service/actualizationNotificationsService/actualizationNotificationsService.ts";
+import {actualizationNotificationsService, type ActualizationNotificationSettings} from "@/service/actualizationNotificationsService/actualizationNotificationsService.ts";
 import {ACTUALIZATION_COLUMNS} from "@/constants/actualizationColumns.ts";
 import {Loader} from "@/components/componentsGeneral/Loader";
 import {ActualizationLetterPreviewModal} from "@/components/componentsVND/componentsNotificationSettings/ActualizationLetterPreviewModal.tsx";
@@ -19,6 +19,7 @@ export function ActualizationMonthlyDigestSection() {
     const [loadError, setLoadError] = useState<string | null>(null);
 
     const [enabled, setEnabled] = useState(false);
+    const [restSettings, setRestSettings] = useState<Pick<ActualizationNotificationSettings, "criticalRemindersEnabled" | "criticalReminderDays">>({criticalRemindersEnabled: false, criticalReminderDays: []});
     const [columns, setColumns] = useState<Record<string, boolean>>({});
     const [saving, setSaving] = useState(false);
     const [previewOpen, setPreviewOpen] = useState(false);
@@ -28,6 +29,7 @@ export function ActualizationMonthlyDigestSection() {
             .then((s) => {
                 setEnabled(s.monthlyDigestEnabled);
                 setColumns(Object.fromEntries(s.monthlyDigestColumns.map((k) => [k, true])));
+                setRestSettings({criticalRemindersEnabled: s.criticalRemindersEnabled, criticalReminderDays: s.criticalReminderDays});
             })
             .catch(() => setLoadError("Не удалось загрузить настройки рассылки"))
             .finally(() => setLoading(false));
@@ -47,6 +49,7 @@ export function ActualizationMonthlyDigestSection() {
             await actualizationNotificationsService.updateSettings({
                 monthlyDigestEnabled: enabled,
                 monthlyDigestColumns,
+                ...restSettings,
             });
             toast.success("Настройки рассылки сохранены");
         } catch (e) {

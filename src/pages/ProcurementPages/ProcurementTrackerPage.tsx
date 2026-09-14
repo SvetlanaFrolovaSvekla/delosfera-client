@@ -73,8 +73,11 @@ export function ProcurementTrackerPage() {
                                     <Link
                                         key={it.id}
                                         to={`/prc/${it.id}`}
-                                        className="block rounded-[10px] bg-white border border-[#e9edf3] p-3 no-underline hover:border-[#c9d6f5]"
-                                        style={it.isStale ? {borderLeft: "3px solid #e0a23c"} : undefined}
+                                        className={`block rounded-[10px] border p-3 no-underline ${
+                                            it.isStale
+                                                ? "bg-[#fefaf2] border-[#f0dcae]"
+                                                : "bg-white border-[#e9edf3] hover:border-[#c9d6f5]"
+                                        }`}
                                     >
                                         <div className="flex items-baseline justify-between gap-2">
                                             <span className="font-mono text-[11.5px] text-[#2f68f5]">{it.regNumber ?? "черновик"}</span>

@@ -132,6 +132,8 @@ export interface ProcurementCard {
 export interface ProcurementSearchRequest {
     query?: string;
     statuses?: ProcurementStatusCode[];
+    /** Ручной выбор строк (РС-2): сужает выгрузку до отмеченных заявок. */
+    ids?: number[];
     methodId?: number;
     mineOnly?: boolean;
     amountFrom?: number;
@@ -195,6 +197,19 @@ export interface TrackerColumn {
 const BASE = "/procurement";
 
 export const procurementService = {
+    /** Выгрузка реестра закупок в Excel; ids — отобранные заявки (РС-2). */
+    async exportRegistry(request: ProcurementSearchRequest): Promise<void> {
+        const response = await apiClient.post(`${BASE}/requests/export`, request, {responseType: "blob"});
+        const url = URL.createObjectURL(response.data as Blob);
+        const link = document.createElement("a");
+        link.href = url;
+        link.download = `Реестр закупок ${new Date().toLocaleDateString("ru-RU")}.xlsx`;
+        document.body.appendChild(link);
+        link.click();
+        link.remove();
+        URL.revokeObjectURL(url);
+    },
+
     /** Доска закупок по стадиям (ЗК-11). */
     async tracker(): Promise<TrackerColumn[]> {
         const {data} = await apiClient.get<TrackerColumn[]>(`${BASE}/tracker`);

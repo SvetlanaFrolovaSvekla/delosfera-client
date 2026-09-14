@@ -24,6 +24,8 @@ export const navGroups: NavGroup[] = [
             { id: "digest", icon: "check", labelKey: "Дайджест", path: "/digest" },
             { id: "calendar", icon: "check", labelKey: "Календарь сроков", path: "/calendar" },
             { id: "notif", icon: "bell", labelKey: "sidebar.items.notif", path: "/notifications" },
+            // Настройки уведомлений: пока тумблер email-дайджеста (УВ-16)
+            { id: "notif-settings", icon: "bell", labelKey: "Настройки уведомлений", path: "/settings/notifications" },
             // Отчёты всех контуров в одном месте: раньше отчётность ВНД и аналитика
             // записок лежали каждая в своём разделе, и человек, которому нужны обе,
             // ходил за ними в разные концы меню.

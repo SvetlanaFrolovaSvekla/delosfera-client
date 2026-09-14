@@ -22,6 +22,7 @@ function eventLink(e: CalendarEvent): string {
         case "Sz": return `/sz/${e.entityId}`;
         case "Procurement": return `/prc/${e.entityId}`;
         case "Vnd": return `/base-vnd/${e.entityId}`;
+        case "Meeting": return `/meetings/${e.entityId}`;
         default: return "/tasks";
     }
 }

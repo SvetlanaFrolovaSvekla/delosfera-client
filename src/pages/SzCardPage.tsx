@@ -7,6 +7,7 @@ import {useAuth} from "@/context/AuthContext.ts";
 import {PermissionCode} from "@/constants/permissions/permissions.ts";
 import {UserPicker, type PickableUser} from "@/components/componentsGeneral/UserPicker.tsx";
 import {SzTemplateBar} from "@/components/componentsSz/SzTemplateBar.tsx";
+import {SzTracePanel} from "@/components/componentsSz/SzTracePanel.tsx";
 import {OrgUnitPicker} from "@/components/procurement/OrgUnitPicker.tsx";
 import {userService} from "@/service/userService/userService.ts";
 import {SzExecutionPanel} from "@/components/sz/SzExecutionPanel.tsx";
@@ -929,6 +930,8 @@ export function SzCardPage() {
             )}
 
             {sz && <SzArchivePanel szId={sz.id} statusCode={sz.statusCode} onChanged={reload}/>}
+
+            {!isNew && id && <SzTracePanel szId={Number(id)}/>}
 
             {route && (
                 <div className="mt-4 rounded-[12px] border border-[#e5e9f0] bg-white p-5">

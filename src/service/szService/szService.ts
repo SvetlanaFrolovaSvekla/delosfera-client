@@ -202,6 +202,17 @@ export interface SzHistoryEntry {
     payload: string | null;
 }
 
+/** Веха пути записки (СЗ-8). */
+export interface SzTraceStep {
+    status: string;
+    statusTitle: string;
+    at: string;
+    actorUserId: number | null;
+    actorName: string | null;
+    durationHours: number | null;
+    isCurrent: boolean;
+}
+
 const BASE = "/sz";
 
 export const szService = {
@@ -235,6 +246,12 @@ export const szService = {
 
     async history(id: number): Promise<SzHistoryEntry[]> {
         const {data} = await apiClient.get<SzHistoryEntry[]>(`${BASE}/${id}/history`);
+        return data;
+    },
+
+    /** Путь записки по статусам с длительностью этапов (СЗ-8). */
+    async trace(id: number): Promise<SzTraceStep[]> {
+        const {data} = await apiClient.get<SzTraceStep[]>(`${BASE}/${id}/trace`);
         return data;
     },
 

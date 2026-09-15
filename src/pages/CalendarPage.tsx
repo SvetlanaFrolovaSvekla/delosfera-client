@@ -23,6 +23,10 @@ function eventLink(e: CalendarEvent): string {
         case "Procurement": return `/prc/${e.entityId}`;
         case "Vnd": return `/base-vnd/${e.entityId}`;
         case "Meeting": return `/meetings/${e.entityId}`;
+        // Письмо и обязательство открываются на своих реестрах: отдельной карточки-роута
+        // у них нет, книга и реестр открываются на записи по клику внутри страницы.
+        case "Letter": return "/correspondence";
+        case "Obligation": return "/obligations";
         default: return "/tasks";
     }
 }

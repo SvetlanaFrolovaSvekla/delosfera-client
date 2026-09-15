@@ -104,6 +104,11 @@ export function taskLink(task: InboxTask): string {
             return `/prc/${task.entityId}`;
         case "Vnd":
             return `/base-vnd/${task.entityId}`;
+        // Письмо и обязательство (КЛ-1) открываются на своих реестрах: карточки-роута нет.
+        case "Letter":
+            return "/correspondence";
+        case "Obligation":
+            return "/obligations";
         default:
             return "/tasks";
     }

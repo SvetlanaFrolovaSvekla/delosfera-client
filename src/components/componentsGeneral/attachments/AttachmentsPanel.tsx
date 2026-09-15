@@ -37,7 +37,7 @@ interface Props {
  * безопасно — окончательное слово всё равно за сервером.
  */
 const ALLOWED_EXTENSIONS = [".doc", ".docx", ".pdf", ".xls", ".xlsx", ".ppt", ".pptx", ".png", ".jpg", ".jpeg"];
-const MAX_FILE_SIZE = 50 * 1024 * 1024;
+const MAX_FILE_SIZE = 100 * 1024 * 1024;
 
 function extensionOf(name: string): string {
     const i = name.lastIndexOf(".");

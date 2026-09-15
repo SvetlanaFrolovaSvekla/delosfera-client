@@ -19,7 +19,13 @@ export const navGroups: NavGroup[] = [
     { items: [{ id: "home", icon: "dash", labelKey: "sidebar.items.home", path: "/" },
             // Согласования по всем контурам в одном месте, включая задачи по замещению
             { id: "inbox", icon: "check", labelKey: "Мои задачи", path: "/inbox" },
+            { id: "inbox", icon: "check", labelKey: "Мои задачи (все контуры)", path: "/inbox" },
+            // Персональный дайджест (УВ-14) и календарь сроков (ЗС-13)
+            { id: "digest", icon: "check", labelKey: "Дайджест", path: "/digest" },
+            { id: "calendar", icon: "check", labelKey: "Календарь сроков", path: "/calendar" },
             { id: "notif", icon: "bell", labelKey: "sidebar.items.notif", path: "/notifications" },
+            // Настройки уведомлений: пока тумблер email-дайджеста (УВ-16)
+            { id: "notif-settings", icon: "bell", labelKey: "Настройки уведомлений", path: "/settings/notifications" },
             // Отчёты всех контуров в одном месте: раньше отчётность ВНД и аналитика
             // записок лежали каждая в своём разделе, и человек, которому нужны обе,
             // ходил за ними в разные концы меню.
@@ -47,6 +53,8 @@ export const navGroups: NavGroup[] = [
         items: [
             // Реестр служебных записок: карточка, согласование, исполнение, архив, закупка
             { id: "sz", icon: "sz", labelKey: "sidebar.items.sz", path: "/sz" },
+            // Доска записок по стадиям (РС-4)
+            { id: "sz-tracker", icon: "sz", labelKey: "Доска записок", path: "/sz/tracker" },
         ],
     },
     {
@@ -64,6 +72,8 @@ export const navGroups: NavGroup[] = [
         titleKey: "sidebar.groups.purchases",
         items: [
             { id: "prc", icon: "prc", labelKey: "sidebar.items.prc", path: "/prc" },
+            // Доска закупок по стадиям (ЗК-11): где какая заявка и что зависло
+            { id: "prc-tracker", icon: "prc", labelKey: "Доска закупок", path: "/prc/tracker" },
             // Годовой План закупок с отчётом об исполнении (PRC-22)
             { id: "prc-plan", icon: "pln", labelKey: "План закупок", path: "/prc/plan" },
             // Матрица определяет способ закупки, состав согласования и орган утверждения

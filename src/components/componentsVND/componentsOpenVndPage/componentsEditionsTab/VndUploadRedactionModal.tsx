@@ -121,7 +121,7 @@ function formatBytes(bytes: number): string {
     return `${(bytes / (1024 * 1024)).toFixed(1)} МБ`;
 }
 
-const MAX_FILE_SIZE = 50 * 1024 * 1024; // 50 МБ
+const MAX_FILE_SIZE = 100 * 1024 * 1024; // 100 МБ
 
 export function VndUploadRedactionModal({
                                             vndId, mode = "default", lockedRequiresApproval, previousAttachments,
@@ -180,7 +180,7 @@ export function VndUploadRedactionModal({
 
         const oversized = incoming.find((f) => f.size > MAX_FILE_SIZE);
         if (oversized) {
-            setError(`Файл «${oversized.name}» превышает допустимый размер (50 МБ)`);
+            setError(`Файл «${oversized.name}» превышает допустимый размер (100 МБ)`);
             return;
         }
 
@@ -270,7 +270,7 @@ export function VndUploadRedactionModal({
                                 <span className="flex items-center gap-0.5 text-[11.5px] text-[#8b97ab]">
                                     Добавлено {totalAttachmentCount} из {VND_REDACTION_MAX_ATTACHMENTS} файлов максимум
                                     <HelpTooltip
-                                        content={`Количество вложений к редакции ограничено — не более ${VND_REDACTION_MAX_ATTACHMENTS}, каждый файл не больше 50 МБ.`}
+                                        content={`Количество вложений к редакции ограничено — не более ${VND_REDACTION_MAX_ATTACHMENTS}, каждый файл не больше 100 МБ.`}
                                         side="top"
                                         className="h-5 w-5"
                                     />

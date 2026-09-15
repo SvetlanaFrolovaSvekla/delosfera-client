@@ -132,6 +132,8 @@ export interface ProcurementCard {
 export interface ProcurementSearchRequest {
     query?: string;
     statuses?: ProcurementStatusCode[];
+    /** Ручной выбор строк (РС-2): сужает выгрузку до отмеченных заявок. */
+    ids?: number[];
     methodId?: number;
     mineOnly?: boolean;
     amountFrom?: number;
@@ -171,9 +173,49 @@ export interface Paged<T> {
     pageSize: number;
 }
 
+/** Заявка на доске закупок (ЗК-11). */
+export interface TrackerItem {
+    id: number;
+    regNumber: string | null;
+    subject: string;
+    amount: number;
+    initiatorUnit: string | null;
+    curatorName: string | null;
+    ageDays: number;
+    isStale: boolean;
+}
+
+/** Колонка доски: стадия и заявки на ней. */
+export interface TrackerColumn {
+    code: string;
+    title: string;
+    count: number;
+    totalAmount: number;
+    items: TrackerItem[];
+}
+
 const BASE = "/procurement";
 
 export const procurementService = {
+    /** Выгрузка реестра закупок в Excel; ids — отобранные заявки (РС-2). */
+    async exportRegistry(request: ProcurementSearchRequest): Promise<void> {
+        const response = await apiClient.post(`${BASE}/requests/export`, request, {responseType: "blob"});
+        const url = URL.createObjectURL(response.data as Blob);
+        const link = document.createElement("a");
+        link.href = url;
+        link.download = `Реестр закупок ${new Date().toLocaleDateString("ru-RU")}.xlsx`;
+        document.body.appendChild(link);
+        link.click();
+        link.remove();
+        URL.revokeObjectURL(url);
+    },
+
+    /** Доска закупок по стадиям (ЗК-11). */
+    async tracker(): Promise<TrackerColumn[]> {
+        const {data} = await apiClient.get<TrackerColumn[]>(`${BASE}/tracker`);
+        return data;
+    },
+
     async search(request: ProcurementSearchRequest): Promise<Paged<ProcurementListItem>> {
         const {data} = await apiClient.post<Paged<ProcurementListItem>>(`${BASE}/requests/search`, request);
         return data;
@@ -197,6 +239,13 @@ export const procurementService = {
     /** Править заявку, пока она черновик или вернулась на доработку. */
     async update(id: number, request: ProcurementCreateRequest) {
         const {data} = await apiClient.put<ProcurementCard>(`/procurement/requests/${id}`, request);
+        return data;
+    },
+
+    /** Приложить/заменить (attachmentId) или снять (null) ТЗ заявки. */
+    async setSpecification(id: number, attachmentId: number | null) {
+        const {data} = await apiClient.post<ProcurementCard>(
+            `/procurement/requests/${id}/specification`, {attachmentId});
         return data;
     },
 

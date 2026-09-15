@@ -359,13 +359,23 @@ export const ProcurementNewPage = () => {
                             }}>
                                 {specFile ? (
                                     <div style={{display: "flex", alignItems: "center", gap: 10}}>
-                                        <span style={{flex: 1, fontSize: 13, color: "#26324a"}}>{specFile.name}</span>
+                                        {/* minWidth:0 + ellipsis — длинное имя файла без пробелов
+                                            иначе распирает флекс и наезжает на кнопку «Убрать». */}
+                                        <span
+                                            title={specFile.name}
+                                            style={{
+                                                flex: 1, minWidth: 0, fontSize: 13, color: "#26324a",
+                                                overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
+                                            }}
+                                        >
+                                            {specFile.name}
+                                        </span>
                                         <button
                                             type="button"
                                             onClick={() => setSpecFile(null)}
                                             style={{
                                                 border: "none", background: "none", cursor: "pointer",
-                                                color: "#8b97ab", font: "inherit", fontSize: 12.5,
+                                                color: "#8b97ab", font: "inherit", fontSize: 12.5, flexShrink: 0,
                                             }}
                                         >
                                             Убрать
@@ -596,8 +606,18 @@ export const ProcurementNewPage = () => {
 
 const Row = ({label, value}: { label: string; value: string }) => (
     <div style={{display: "flex", gap: 10, padding: "7px 0", borderBottom: "1px solid #f3f6f9", fontSize: 12.5}}>
-        <span style={{flex: 1, color: "#8b97ab"}}>{label}</span>
-        <span style={{flex: 1, color: "#26324a", fontWeight: 600, textAlign: "right"}}>{value}</span>
+        <span style={{flex: 1, color: "#8b97ab", minWidth: 0}}>{label}</span>
+        {/* minWidth:0 + break-word — длинные значения (напр. имя файла ТЗ) не должны
+            вылезать за границу карточки. */}
+        <span
+            title={value}
+            style={{
+                flex: 1, minWidth: 0, color: "#26324a", fontWeight: 600,
+                textAlign: "right", overflowWrap: "anywhere",
+            }}
+        >
+            {value}
+        </span>
     </div>
 );
 

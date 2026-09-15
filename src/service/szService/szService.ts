@@ -31,6 +31,12 @@ export interface SzKind {
     executionDays: number;
 }
 
+export interface SzApproverPreview {
+    userId: number;
+    fullName: string;
+    position: string | null;
+}
+
 export interface SzHrKind {
     id: number;
     titleRu: string;
@@ -159,6 +165,8 @@ export interface SzSaveRequest {
 export interface SzSearchRequest {
     query?: string;
     statuses?: SzStatusCode[];
+    /** Ручной выбор строк (СЗ-7): сужает выгрузку до отмеченных записок. */
+    ids?: number[];
     kindIds?: number[];
     authorId?: number;
     correspondentUnitId?: number;
@@ -194,12 +202,65 @@ export interface SzHistoryEntry {
     payload: string | null;
 }
 
+/** Записка на доске (РС-4). */
+export interface SzTrackerItem {
+    id: number;
+    regNumber: string | null;
+    title: string;
+    kind: string;
+    authorName: string | null;
+    addresseeName: string | null;
+    ageDays: number;
+    isStale: boolean;
+}
+
+export interface SzTrackerColumn {
+    code: string;
+    title: string;
+    count: number;
+    items: SzTrackerItem[];
+}
+
+/** Возможный дубликат записки (СК-5). */
+export interface SzDuplicate {
+    id: number;
+    regNumber: string | null;
+    title: string;
+    statusTitle: string;
+    createdAt: string;
+    similarityPercent: number;
+}
+
+/** Веха пути записки (СЗ-8). */
+export interface SzTraceStep {
+    status: string;
+    statusTitle: string;
+    at: string;
+    actorUserId: number | null;
+    actorName: string | null;
+    durationHours: number | null;
+    isCurrent: boolean;
+}
+
 const BASE = "/sz";
 
 export const szService = {
     async search(request: SzSearchRequest): Promise<SzPage> {
         const {data} = await apiClient.post<SzPage>(`${BASE}/search`, request);
         return data;
+    },
+
+    // Тот же реестр целиком книгой Excel — весь отфильтрованный набор, без страниц.
+    async exportRegistry(request: SzSearchRequest): Promise<void> {
+        const response = await apiClient.post(`${BASE}/export`, request, {responseType: "blob"});
+        const url = URL.createObjectURL(response.data as Blob);
+        const link = document.createElement("a");
+        link.href = url;
+        link.download = `Реестр СЗ ${new Date().toLocaleDateString("ru-RU")}.xlsx`;
+        document.body.appendChild(link);
+        link.click();
+        link.remove();
+        URL.revokeObjectURL(url);
     },
 
     async counters(): Promise<SzCounters> {
@@ -214,6 +275,26 @@ export const szService = {
 
     async history(id: number): Promise<SzHistoryEntry[]> {
         const {data} = await apiClient.get<SzHistoryEntry[]>(`${BASE}/${id}/history`);
+        return data;
+    },
+
+    /** Путь записки по статусам с длительностью этапов (СЗ-8). */
+    async trace(id: number): Promise<SzTraceStep[]> {
+        const {data} = await apiClient.get<SzTraceStep[]>(`${BASE}/${id}/trace`);
+        return data;
+    },
+
+    /** Доска записок по стадиям (РС-4). */
+    async tracker(): Promise<SzTrackerColumn[]> {
+        const {data} = await apiClient.get<SzTrackerColumn[]>(`${BASE}/tracker`);
+        return data;
+    },
+
+    /** Возможные дубликаты создаваемой записки (СК-5). */
+    async duplicates(kindId: number, title: string, excludeId?: number): Promise<SzDuplicate[]> {
+        const {data} = await apiClient.get<SzDuplicate[]>(`${BASE}/duplicates`, {
+            params: {kindId, title, excludeId},
+        });
         return data;
     },
 
@@ -282,6 +363,14 @@ export const szService = {
 
     async kinds(): Promise<SzKind[]> {
         const {data} = await apiClient.get<SzKind[]>(`${BASE}/kinds`);
+        return data;
+    },
+
+    // Согласующие из шаблона выбранного вида — для автоподстановки в форму.
+    async previewApprovers(kindId: number, correspondentUnitId?: number): Promise<SzApproverPreview[]> {
+        const {data} = await apiClient.get<SzApproverPreview[]>(
+            `${BASE}/kinds/${kindId}/preview-approvers`,
+            {params: correspondentUnitId ? {correspondentUnitId} : undefined});
         return data;
     },
 

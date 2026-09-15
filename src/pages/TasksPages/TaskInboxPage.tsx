@@ -1,15 +1,17 @@
 import {useCallback, useEffect, useMemo, useState} from "react";
 import {Link} from "react-router-dom";
-import {ChartColumn, FileText, Layers, ShoppingCart, StickyNote, type LucideIcon} from "lucide-react";
+import {ChartColumn, FileText, Layers, ShoppingCart, StickyNote, Share2, type LucideIcon} from "lucide-react";
 import {VndTasksPanel} from "@/components/componentsTasks/VndTasksPanel.tsx";
 import {VndTaskCard} from "@/components/componentsTasks/VndTaskCard.tsx";
 import {EmptyState} from "@/components/componentsGeneral/EmptyState.tsx";
 import {SearchBar} from "@/components/componentsGeneral/SearchBar.tsx";
 import {matchesInboxTaskSearch, matchesTaskSearch} from "@/utils/tasksUtils.ts";
 import {useVndTasks} from "@/hooks/tasksVndHooks/useVndTasks.ts";
+import {DelegateTaskModal} from "@/components/componentsTasks/DelegateTaskModal.tsx";
 import {
     taskInboxService,
     taskLink,
+    taskKey,
     type InboxTask,
     type TaskInbox,
 } from "@/service/workflowService/taskInboxService.ts";
@@ -26,6 +28,7 @@ const FILTERS: { id: string; label: string; type?: string }[] = [
     {id: "vnd", label: "ВНД"},
     {id: "sz", label: "Служебные записки", type: "Sz"},
     {id: "prc", label: "Закупки", type: "Procurement"},
+    {id: "ack", label: "Ознакомление", type: "Acknowledgement"},
 ];
 
 // Вид карточек-вкладок совпадает с NotificationCategoryPanel на странице "Мои уведомления" —
@@ -69,6 +72,7 @@ export const TaskInboxPage = () => {
     // (VndTasksPanel): если в одном разделе ничего не нашлось, разумно проверить тот же
     // запрос в соседнем, не перепечатывая его заново.
     const [searchQuery, setSearchQuery] = useState("");
+    const [delegateTask, setDelegateTask] = useState<InboxTask | null>(null);
 
     const вндВкладка = filter === "vnd";
     const allВкладка = filter === "all";
@@ -253,13 +257,20 @@ export const TaskInboxPage = () => {
             {(filteredTasks.length > 0 || loading || !(allВкладка && filteredVndTasks.length > 0)) && (
             <section style={{background: "#fff", border: "1px solid #e5e9f0", borderRadius: 13, overflow: "hidden"}}>
                 {filteredTasks.map((task: InboxTask) => (
+                    <div
+                        key={taskKey(task)}
+                        style={{
+                            display: "flex", alignItems: "stretch",
+                            borderTop: "1px solid #eef2f7",
+                            background: task.isOverdue ? "#fdf6f5" : undefined,
+                        }}
+                    >
                     <Link
-                        key={task.taskId}
                         to={taskLink(task)}
                         style={{
+                            flex: 1, minWidth: 0,
                             display: "flex", alignItems: "center", gap: 14, padding: "13px 16px",
-                            borderTop: "1px solid #eef2f7", textDecoration: "none", color: "inherit",
-                            background: task.isOverdue ? "#fdf6f5" : undefined,
+                            textDecoration: "none", color: "inherit",
                         }}
                     >
                         <span style={{
@@ -279,6 +290,7 @@ export const TaskInboxPage = () => {
                                     поручение приходят вне согласования. */}
                                 {task.stepOrder !== null && ` · этап ${task.stepOrder}`}
                                 {task.onBehalfOf && ` · по замещению за ${task.onBehalfOf}`}
+                                {task.delegatedBy && ` · делегировано от ${task.delegatedBy}`}
                             </span>
                         </span>
 
@@ -289,6 +301,24 @@ export const TaskInboxPage = () => {
                             {task.isOverdue ? "просрочено · " : "до "}{formatDue(task.dueAt)}
                         </span>
                     </Link>
+
+                        {/* Делегировать можно только задачу согласования: у неё есть
+                            участник маршрута, которого движок и проверяет. */}
+                        {task.participantId !== null && (
+                            <button
+                                type="button"
+                                title="Делегировать коллеге"
+                                onClick={() => setDelegateTask(task)}
+                                style={{
+                                    flexShrink: 0, width: 44, display: "grid", placeItems: "center",
+                                    border: "none", borderLeft: "1px solid #eef2f7", background: "none",
+                                    color: "#8b97ab", cursor: "pointer",
+                                }}
+                            >
+                                <Share2 style={{width: 16, height: 16}}/>
+                            </button>
+                        )}
+                    </div>
                 ))}
 
                 {/* Пустая заглушка - только когда ОБА источника (записки/закупки и, на "Все
@@ -317,6 +347,17 @@ export const TaskInboxPage = () => {
             </section>
             )}
             </>
+            )}
+
+            {delegateTask && (
+                <DelegateTaskModal
+                    task={delegateTask}
+                    onClose={() => setDelegateTask(null)}
+                    onDone={() => {
+                        setDelegateTask(null);
+                        void load();
+                    }}
+                />
             )}
         </div>
     );

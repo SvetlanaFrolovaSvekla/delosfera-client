@@ -17,7 +17,7 @@ export const MAX_RESOLUTION_ATTACHMENTS = 5;
 // Должен совпадать с MaxResolutionAttachmentSizeBytes на бэкенде (VndApprovalService.DecideAsync) —
 // там это уже реальная защита от прямых запросов к API, здесь — блокировка выбора слишком
 // большого файла и подсказка пользователю.
-export const MAX_RESOLUTION_ATTACHMENT_SIZE_BYTES = 50 * 1024 * 1024;
+export const MAX_RESOLUTION_ATTACHMENT_SIZE_BYTES = 100 * 1024 * 1024;
 
 // Максимальная длина текста комментария/причины отклонения в резолюции согласующего
 // (см. VndApproverResolutionPanel).

@@ -2,6 +2,7 @@ import {useCallback, useEffect, useState} from "react";
 import {Link, useNavigate} from "react-router-dom";
 import {Plus} from "lucide-react";
 import {colors} from "@/design/tokens";
+import {SavedFiltersBar} from "@/components/componentsGeneral/SavedFiltersBar.tsx";
 import {
     PROCUREMENT_STATUS_LABEL,
     procurementService,
@@ -56,6 +57,42 @@ export const ProcurementRegistryPage = () => {
     const [counters, setCounters] = useState<ProcurementCounters | null>(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
+    const [selected, setSelected] = useState<Set<number>>(new Set());
+    const [exporting, setExporting] = useState(false);
+
+    useEffect(() => {
+        setSelected(new Set());
+    }, [scope, query]);
+
+    const toggleRow = (id: number) => setSelected((prev) => {
+        const next = new Set(prev);
+        if (next.has(id)) next.delete(id); else next.add(id);
+        return next;
+    });
+    const allOnPageSelected = items.length > 0 && items.every((i) => selected.has(i.id));
+    const toggleAll = () => setSelected((prev) => {
+        const next = new Set(prev);
+        if (items.every((i) => next.has(i.id))) items.forEach((i) => next.delete(i.id));
+        else items.forEach((i) => next.add(i.id));
+        return next;
+    });
+
+    const doExport = useCallback(async (ids?: number[]) => {
+        const current = SCOPES.find((s) => s.id === scope)!;
+        setExporting(true);
+        try {
+            await procurementService.exportRegistry({
+                query: query.trim() || undefined,
+                statuses: current.statuses,
+                mineOnly: current.mineOnly,
+                ids,
+            });
+        } catch {
+            setError("Не удалось выгрузить реестр");
+        } finally {
+            setExporting(false);
+        }
+    }, [scope, query]);
 
     const load = useCallback(async () => {
         const current = SCOPES.find(s => s.id === scope)!;
@@ -99,6 +136,19 @@ export const ProcurementRegistryPage = () => {
                 </div>
 
                 <button
+                    onClick={() => void doExport()}
+                    disabled={exporting || total === 0}
+                    style={{
+                        display: "flex", alignItems: "center", gap: 7, height: 38, padding: "0 13px",
+                        border: "1px solid #e5e9f0", borderRadius: 10, background: "#fff", color: "#3a4560",
+                        font: "inherit", fontSize: 12.5, fontWeight: 600, cursor: "pointer",
+                        opacity: exporting || total === 0 ? 0.5 : 1,
+                    }}
+                >
+                    {exporting ? "Готовим…" : "Выгрузить в Excel"}
+                </button>
+
+                <button
                     onClick={() => navigate("/prc/new")}
                     style={{
                         display: "flex", alignItems: "center", gap: 7, height: 38, padding: "0 15px",
@@ -109,6 +159,27 @@ export const ProcurementRegistryPage = () => {
                     <Plus size={16}/> Новая заявка
                 </button>
             </div>
+
+            {selected.size > 0 && (
+                <div style={{
+                    display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap",
+                    borderRadius: 12, border: "1px solid #dbe4fb", background: "#eef3ff", padding: "8px 14px",
+                }}>
+                    <span style={{fontSize: 12.5, fontWeight: 600, color: "#2f68f5"}}>Выбрано: {selected.size}</span>
+                    <button
+                        onClick={() => void doExport([...selected])} disabled={exporting}
+                        style={{height: 32, padding: "0 12px", borderRadius: 8, border: "1px solid #c9d6f5", background: "#fff", color: "#2f68f5", font: "inherit", fontSize: 12.5, fontWeight: 600, cursor: "pointer"}}
+                    >
+                        Экспорт выбранных
+                    </button>
+                    <button
+                        onClick={() => setSelected(new Set())}
+                        style={{fontSize: 12, color: "#8b97ab", background: "none", border: "none", cursor: "pointer"}}
+                    >
+                        Снять выбор
+                    </button>
+                </div>
+            )}
 
             <div style={{display: "flex", flexWrap: "wrap", gap: 6}}>
                 {SCOPES.map(s => (
@@ -136,6 +207,19 @@ export const ProcurementRegistryPage = () => {
                 />
             </div>
 
+            {/* Сохранённые фильтры (БП-16) для реестра закупок. */}
+            <div style={{marginTop: 10}}>
+                <SavedFiltersBar
+                    scope="procurement"
+                    current={{scope, query}}
+                    onApply={(p) => {
+                        const f = p as {scope?: ScopeId; query?: string};
+                        if (f.scope) setScope(f.scope);
+                        setQuery(f.query ?? "");
+                    }}
+                />
+            </div>
+
             {error && <div style={{color: "#e0483d", fontSize: 13}}>{error}</div>}
 
             <section style={{background: "#fff", border: "1px solid #e5e9f0", borderRadius: 13, overflow: "hidden"}}>
@@ -143,6 +227,9 @@ export const ProcurementRegistryPage = () => {
                     <table style={{width: "100%", borderCollapse: "collapse", fontSize: 12.5}}>
                         <thead>
                             <tr style={{background: "#f6f8fb", color: "#55617a", textAlign: "left"}}>
+                                <th style={{...th, width: 34}}>
+                                    <input type="checkbox" checked={allOnPageSelected} onChange={toggleAll} aria-label="Выбрать все"/>
+                                </th>
                                 <th style={th}>Номер</th>
                                 <th style={th}>Предмет закупки</th>
                                 <th style={th}>Способ</th>
@@ -157,6 +244,9 @@ export const ProcurementRegistryPage = () => {
                                 const tone = STATUS_TONE[item.statusCode] ?? colors.status.draft;
                                 return (
                                     <tr key={item.id} style={{borderTop: "1px solid #eef2f7"}}>
+                                        <td style={{...td, width: 34}}>
+                                            <input type="checkbox" checked={selected.has(item.id)} onChange={() => toggleRow(item.id)} aria-label="Выбрать"/>
+                                        </td>
                                         <td style={td}>
                                             <Link to={`/prc/${item.id}`} style={{color: "#2f68f5", fontWeight: 600, textDecoration: "none"}}>
                                                 {item.regNumber ?? "б/н"}

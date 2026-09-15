@@ -50,18 +50,23 @@ const UsersPage = lazy(() => import("@/pages/UsersPages/UsersPage.tsx").then(m =
 
 // Контур служебных записок (контур 4 ТЗ)
 const SzRegistryPage = lazy(() => import("@/pages/SzRegistryPage.tsx").then(m => ({default: m.SzRegistryPage})));
+const SzTrackerPage = lazy(() => import("@/pages/SzTrackerPage.tsx").then(m => ({default: m.SzTrackerPage})));
 const SzCardPage = lazy(() => import("@/pages/SzCardPage.tsx").then(m => ({default: m.SzCardPage})));
 const SzPrintPage = lazy(() => import("@/pages/SzPrintPage.tsx").then(m => ({default: m.SzPrintPage})));
 
 // Контур закупок (контур 6 ТЗ)
 const AuthorityMatrixPage = lazy(() => import("@/pages/ProcurementPages/AuthorityMatrixPage.tsx").then(m => ({default: m.AuthorityMatrixPage})));
 const ProcurementRegistryPage = lazy(() => import("@/pages/ProcurementPages/ProcurementRegistryPage.tsx").then(m => ({default: m.ProcurementRegistryPage})));
+const ProcurementTrackerPage = lazy(() => import("@/pages/ProcurementPages/ProcurementTrackerPage.tsx").then(m => ({default: m.ProcurementTrackerPage})));
 const ProcurementNewPage = lazy(() => import("@/pages/ProcurementPages/ProcurementNewPage.tsx").then(m => ({default: m.ProcurementNewPage})));
 const ProcurementCardPage = lazy(() => import("@/pages/ProcurementPages/ProcurementCardPage.tsx").then(m => ({default: m.ProcurementCardPage})));
 const ProcurementProtocolPage = lazy(() => import("@/pages/ProcurementPages/ProcurementProtocolPage.tsx").then(m => ({default: m.ProcurementProtocolPage})));
 
 // Сводный реестр задач по всем контурам (GEN-11)
 const TaskInboxPage = lazy(() => import("@/pages/TasksPages/TaskInboxPage.tsx").then(m => ({default: m.TaskInboxPage})));
+const DigestPage = lazy(() => import("@/pages/DigestPage.tsx").then(m => ({default: m.DigestPage})));
+const CalendarPage = lazy(() => import("@/pages/CalendarPage.tsx").then(m => ({default: m.CalendarPage})));
+const NotificationSettingsPage = lazy(() => import("@/pages/NotificationSettingsPage.tsx").then(m => ({default: m.NotificationSettingsPage})));
 
 // Полная лента событий по всем контурам — развёрнутая версия виджета
 // "Последняя активность" с главной (кнопка "Смотреть всю активность").
@@ -163,6 +168,9 @@ function App() {
 
                                 <Route path="/inbox" element={<TaskInboxPage/>}/>
                                 <Route path="/activity" element={<ActivityFeedPage/>}/>
+                                <Route path="/digest" element={<DigestPage/>}/>
+                                <Route path="/calendar" element={<CalendarPage/>}/>
+                                <Route path="/settings/notifications" element={<NotificationSettingsPage/>}/>
 
                                 <Route path="/prc" element={<ProcurementRegistryPage/>}/>
                                 <Route path="/prc/new" element={<ProcurementNewPage/>}/>
@@ -170,6 +178,7 @@ function App() {
                                 <Route path="/prc/matrix" element={<AuthorityMatrixPage/>}/>
                                 <Route path="/prc/suppliers" element={<SupplierRegistryPage/>}/>
                                 <Route path="/prc/plan" element={<ProcurementPlanPage/>}/>
+                                <Route path="/prc/tracker" element={<ProcurementTrackerPage/>}/>
                                 <Route path="/prc/:id" element={<ProcurementCardPage/>}/>
                                 <Route path="/prc/:id/protocol" element={<ProcurementProtocolPage/>}/>
 
@@ -181,6 +190,7 @@ function App() {
 
                                 <Route path="/sz" element={<SzRegistryPage/>}/>
                                 <Route path="/sz/new" element={<SzCardPage/>}/>
+                                <Route path="/sz/tracker" element={<SzTrackerPage/>}/>
                                 <Route path="/sz/:id" element={<SzCardPage/>}/>
                                 <Route path="/sz-analytics" element={<SzStatisticsPage/>}/>
 

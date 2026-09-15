@@ -6,6 +6,9 @@ import {useDictionaries} from "@/context/DictionariesContext.tsx";
 import {useAuth} from "@/context/AuthContext.ts";
 import {PermissionCode} from "@/constants/permissions/permissions.ts";
 import {UserPicker, type PickableUser} from "@/components/componentsGeneral/UserPicker.tsx";
+import {SzTemplateBar} from "@/components/componentsSz/SzTemplateBar.tsx";
+import {SzTracePanel} from "@/components/componentsSz/SzTracePanel.tsx";
+import {SzDuplicateWarning} from "@/components/componentsSz/SzDuplicateWarning.tsx";
 import {OrgUnitPicker} from "@/components/procurement/OrgUnitPicker.tsx";
 import {userService} from "@/service/userService/userService.ts";
 import {SzExecutionPanel} from "@/components/sz/SzExecutionPanel.tsx";
@@ -16,6 +19,8 @@ import {SzProcurementPanel} from "@/components/sz/SzProcurementPanel.tsx";
 import {BoardReviewCard} from "@/components/componentsGeneral/BoardReviewCard.tsx";
 import {PROCUREMENT_STATUS_LABEL} from "@/service/procurementService/procurementService.ts";
 import {SzApproversField} from "@/components/sz/SzApproversField.tsx";
+import {MultiSelectDropdown} from "@/components/componentsGeneral/selects/MultiSelects/MultiSelectDropdown.tsx";
+import {RouteFlowView} from "@/components/workflow/RouteFlowView.tsx";
 import {SzHrForm} from "@/components/sz/SzHrForm.tsx";
 import {RichTextEditor} from "@/components/editor/RichTextEditor.tsx";
 import {SzAddresseeDecisionPanel} from "@/components/sz/SzAddresseeDecisionPanel.tsx";
@@ -237,6 +242,26 @@ export function SzCardPage() {
     const set = <K extends keyof SzSaveRequest>(key: K, value: SzSaveRequest[K]) =>
         setForm((f) => ({...f, [key]: value}));
 
+    // При выборе вида подставляем согласующих из его шаблона (админ настраивает
+    // маршрут на вид). Состав можно поправить руками — это подсказка, а не жёсткий
+    // список. Работает для черновика/новой записки, где согласующих ещё задают.
+    const [approversFromTemplate, setApproversFromTemplate] = useState(false);
+    const applyKind = async (newKindId: number) => {
+        set("kindId", newKindId);
+        setApproversFromTemplate(false);
+        if (!editable || !newKindId) return;
+        try {
+            const preview = await szService.previewApprovers(
+                newKindId, form.correspondentUnitId ?? undefined);
+            if (preview.length > 0) {
+                setForm((f) => ({...f, kindId: newKindId, approverUserIds: preview.map((p) => p.userId)}));
+                setApproversFromTemplate(true);
+            }
+        } catch {
+            // Шаблон не настроен или сеть — молча оставляем ручной выбор.
+        }
+    };
+
     const save = async () => {
         if (!form.title.trim() || !form.kindId) {
             setError("Заполните тему и вид записки");
@@ -409,8 +434,10 @@ export function SzCardPage() {
             applyDetails(updated);
             await reload();
             setNotice(action === "submit"
-                ? "Записка отправлена на согласование"
-                : `Зарегистрирована: ${updated.regNumber} · срок исполнения ${formatDate(updated.dueDate)}`);
+                ? (updated.statusCode === "PendingRegistration"
+                    ? "Записка отправлена в Сектор делопроизводства на регистрацию"
+                    : "Записка отправлена на согласование")
+                : `Зарегистрирована: ${updated.regNumber} · отправлена на согласование · срок исполнения ${formatDate(updated.dueDate)}`);
         } catch (e) {
             // Сервер объясняет отказ по существу: не выбран согласующий, не задан
             // маршрут, записка не в том статусе. Подменяя это общей фразой, мы
@@ -470,7 +497,7 @@ export function SzCardPage() {
                             disabled={saving}
                             className="h-10 px-4 rounded-[10px] border border-[#e5e9f0] bg-white text-[#2f68f5] font-semibold text-[13px] cursor-pointer hover:bg-[#f6f8fb] disabled:opacity-50"
                         >
-                            Отправить на согласование
+                            {sz.regNumber ? "Отправить на согласование" : "Отправить на регистрацию"}
                         </button>
                     )}
                     {sz?.statusCode === "PendingRegistration" && (
@@ -605,6 +632,16 @@ export function SzCardPage() {
                 </div>
             )}
 
+            {isNew && (
+                <SzTemplateBar
+                    form={form}
+                    disabled={!editable}
+                    onApply={(patch) => setForm((f) => ({...f, ...patch}))}
+                />
+            )}
+
+            {isNew && <SzDuplicateWarning kindId={form.kindId} title={form.title}/>}
+
             <div className="mt-5 rounded-[12px] border border-[#e5e9f0] bg-white p-5">
                 <div className="grid grid-cols-2 gap-4">
                     <Field label="Тема">
@@ -613,7 +650,7 @@ export function SzCardPage() {
                     </Field>
                     <Field label="Вид записки">
                         <select className={inputClass} value={form.kindId} disabled={!editable}
-                                onChange={(e) => set("kindId", Number(e.target.value))}>
+                                onChange={(e) => void applyKind(Number(e.target.value))}>
                             {kinds.map((k) => <option key={k.id} value={k.id}>{k.titleRu}</option>)}
                         </select>
                     </Field>
@@ -625,12 +662,15 @@ export function SzCardPage() {
                             bySeniority
                             placeholder="Найти по фамилии, должности или подразделению"
                             onChange={(u) => {
-                                // Подразделение адресата подставляется само: записка почти
-                                // всегда идёт человеку в его подразделении, и заполнять это
-                                // второй раз руками незачем. Переопределить можно ниже.
+                                // Адресат и подписант — одно лицо: записку подписывает тот,
+                                // кому она адресована. Проставляя «Кому», сразу проставляем
+                                // и подписанта (ниже поле можно переопределить). Подразделение
+                                // адресата подставляется само — записка почти всегда идёт
+                                // человеку в его подразделении.
                                 setForm((f) => ({
                                     ...f,
                                     addresseeUserId: u?.id ?? null,
+                                    signerUserId: u?.id ?? null,
                                     correspondentUnitId: u?.orgUnitId ?? f.correspondentUnitId ?? null,
                                 }));
                             }}
@@ -720,6 +760,11 @@ export function SzCardPage() {
                     </div>
                 )}
 
+                {approversFromTemplate && (
+                    <div className="mb-1.5 text-[11.5px] text-[#1c7a4d]">
+                        Согласующие подставлены из шаблона вида — можно изменить.
+                    </div>
+                )}
                 <SzApproversField
                     value={form.approverUserIds ?? []}
                     onChange={(ids) => set("approverUserIds", ids)}
@@ -760,25 +805,37 @@ export function SzCardPage() {
 
                 <div className="mt-4">
                     <span className={labelClass}>Рубрикатор (записка может лежать в нескольких рубриках)</span>
-                    <div className="flex flex-wrap gap-2">
-                        {RUBRICS.map((r) => {
-                            const rid = Number(r.id);
-                            const on = (form.rubricIds ?? []).includes(rid);
-                            return (
-                                <button
-                                    key={r.id}
-                                    disabled={!editable}
-                                    onClick={() => set("rubricIds", on
-                                        ? (form.rubricIds ?? []).filter((x) => x !== rid)
-                                        : [...(form.rubricIds ?? []), rid])}
-                                    className={`h-8 px-3 rounded-full border text-[12.5px] font-semibold cursor-pointer disabled:cursor-not-allowed ${
-                                        on ? "border-[#cbddff] bg-[#e9f0ff] text-[#2f68f5]" : "border-[#e5e9f0] bg-white text-[#55617a]"}`}
-                                >
+                    {editable ? (
+                        <MultiSelectDropdown
+                            options={RUBRICS.map((r) => ({key: String(r.id), label: r.name}))}
+                            selectedKeys={(form.rubricIds ?? []).map(String)}
+                            onToggle={(key) => {
+                                const rid = Number(key);
+                                const cur = form.rubricIds ?? [];
+                                set("rubricIds", cur.includes(rid)
+                                    ? cur.filter((x) => x !== rid)
+                                    : [...cur, rid]);
+                            }}
+                            onSelectAll={() => set("rubricIds", RUBRICS.map((r) => Number(r.id)))}
+                            onDeselectAll={() => set("rubricIds", [])}
+                            triggerLabel="Выбрать рубрики"
+                            searchable
+                            searchPlaceholder="Поиск рубрики…"
+                            menuWidth="320px"
+                            className="inline-block mt-1"
+                        />
+                    ) : (
+                        <div className="flex flex-wrap gap-2">
+                            {(form.rubricIds ?? []).length === 0 ? (
+                                <span className="text-[13px] text-[#8b97ab]">—</span>
+                            ) : RUBRICS.filter((r) => (form.rubricIds ?? []).includes(Number(r.id))).map((r) => (
+                                <span key={r.id}
+                                      className="h-8 inline-flex items-center px-3 rounded-full border border-[#cbddff] bg-[#e9f0ff] text-[12.5px] font-semibold text-[#2f68f5]">
                                     {r.name}
-                                </button>
-                            );
-                        })}
-                    </div>
+                                </span>
+                            ))}
+                        </div>
+                    )}
                 </div>
             </div>
 
@@ -877,6 +934,8 @@ export function SzCardPage() {
 
             {sz && <SzArchivePanel szId={sz.id} statusCode={sz.statusCode} onChanged={reload}/>}
 
+            {!isNew && id && <SzTracePanel szId={Number(id)}/>}
+
             {route && (
                 <div className="mt-4 rounded-[12px] border border-[#e5e9f0] bg-white p-5">
                     <div className="flex items-center justify-between mb-3">
@@ -885,6 +944,11 @@ export function SzCardPage() {
                             {ROUTE_STATUS_LABEL[route.status]}
                             {sz && sz.approvalRounds > 1 && ` · круг ${sz.approvalRounds}`}
                         </span>
+                    </div>
+
+                    {/* Обзорная цепочка этапов — как в ВНД; ниже подробный список с резолюциями. */}
+                    <div className="mb-3">
+                        <RouteFlowView route={route}/>
                     </div>
 
                     <div className="flex flex-col gap-2.5">

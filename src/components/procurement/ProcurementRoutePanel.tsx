@@ -8,6 +8,7 @@ import {
 } from "@/service/workflowService/workflowService.ts";
 import {useAuth} from "@/context/AuthContext";
 import {dashboardService} from "@/service/dashboardService/dashboardService.ts";
+import {RouteFlowView} from "@/components/workflow/RouteFlowView.tsx";
 
 /**
  * Маршрут согласования заявки на закупку (PRC-08) на карточке.
@@ -82,6 +83,11 @@ export const ProcurementRoutePanel = ({routeInstanceId, onResolved}: Props) => {
             </div>
 
             {error && <div style={{marginBottom: 10, color: "#e0483d", fontSize: 12.5}}>{error}</div>}
+
+            {/* Обзорная цепочка этапов — как в ВНД. Под ней подробный список с действиями. */}
+            <div style={{marginBottom: 12}}>
+                <RouteFlowView route={route}/>
+            </div>
 
             <div style={{display: "flex", flexDirection: "column", gap: 8}}>
                 {route.steps.map(step => {

@@ -21,6 +21,7 @@ const DOCUMENT_TYPES: DocumentTypeOption[] = [
 
 // Маршруты для перехода после выбора типа документа
 const DOCUMENT_ROUTES: Record<DocumentType, string> = {
+
     vnd: "/base-vnd/new",
     memo: "/sz/new",
     procurement: "/prc/new",
@@ -40,6 +41,7 @@ export function CreateDocumentModal({onClose}: CreateDocumentModalProps) {
     const handleConfirm = () => {
         if (!selected) return;
         navigate(DOCUMENT_ROUTES[selected]);
+
     };
 
     return createPortal(

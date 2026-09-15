@@ -1,5 +1,9 @@
 import {useCallback, useEffect, useState} from "react";
 import {Link, useNavigate} from "react-router-dom";
+import {Archive, Download} from "lucide-react";
+import {toast} from "@/service/toastService.ts";
+import {SzBulkArchiveModal} from "@/components/componentsSz/SzBulkArchiveModal.tsx";
+import {SavedFiltersBar} from "@/components/componentsGeneral/SavedFiltersBar.tsx";
 import {colors} from "@/design/tokens";
 import {
     SZ_STATUS_LABEL,
@@ -72,6 +76,10 @@ export function SzRegistryPage() {
     const [counters, setCounters] = useState<SzCounters | null>(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
+    const [exporting, setExporting] = useState(false);
+    /** Отмеченные строки реестра для массовых операций (СЗ-7). */
+    const [selected, setSelected] = useState<Set<number>>(new Set());
+    const [bulkArchiveOpen, setBulkArchiveOpen] = useState(false);
 
     useEffect(() => {
         szService.kinds().then(setKinds).catch(() => {});
@@ -130,6 +138,68 @@ export function SzRegistryPage() {
         // eslint-disable-next-line react-hooks/set-state-in-effect
         void load();
     }, [load]);
+
+    // Смена вкладки или фильтра меняет набор строк — прежний выбор к ним не относится.
+    useEffect(() => {
+        // eslint-disable-next-line react-hooks/set-state-in-effect
+        setSelected(new Set());
+    }, [scope, query, kindId, overdueOnly]);
+
+    const toggleRow = (id: number) => setSelected((prev) => {
+        const next = new Set(prev);
+        if (next.has(id)) next.delete(id); else next.add(id);
+        return next;
+    });
+
+    const allOnPageSelected = items.length > 0 && items.every((i) => selected.has(i.id));
+
+    const toggleAll = () => setSelected((prev) => {
+        const next = new Set(prev);
+        if (items.every((i) => next.has(i.id))) items.forEach((i) => next.delete(i.id));
+        else items.forEach((i) => next.add(i.id));
+        return next;
+    });
+
+    // Экспорт отмеченных: тот же фильтр вкладки плюс список id, чтобы архивные строки
+    // из вкладки «Архив» не отсеялись фильтром по статусу.
+    const handleBulkExport = useCallback(async () => {
+        const s = SCOPES.find((x) => x.id === scope)!;
+        setExporting(true);
+        try {
+            await szService.exportRegistry({
+                query: query.trim() || undefined,
+                statuses: s.statuses,
+                mineOnly: s.mineOnly,
+                kindIds: kindId ? [Number(kindId)] : undefined,
+                overdueOnly: overdueOnly || undefined,
+                ids: [...selected],
+            });
+        } catch {
+            toast.error("Не удалось выгрузить выбранные записки");
+        } finally {
+            setExporting(false);
+        }
+    }, [scope, query, kindId, overdueOnly, selected]);
+
+    // Выгрузка реестра в Excel — по текущему фильтру, весь набор. Особые вкладки
+    // (поручения, оригиналы, «согласую я») — не реестр, у них кнопки нет.
+    const handleExport = useCallback(async () => {
+        const s = SCOPES.find((x) => x.id === scope)!;
+        setExporting(true);
+        try {
+            await szService.exportRegistry({
+                query: query.trim() || undefined,
+                statuses: s.statuses,
+                mineOnly: s.mineOnly,
+                kindIds: kindId ? [Number(kindId)] : undefined,
+                overdueOnly: overdueOnly || undefined,
+            });
+        } catch {
+            toast.error("Не удалось выгрузить реестр", "Попробуйте позже");
+        } finally {
+            setExporting(false);
+        }
+    }, [scope, query, kindId, overdueOnly]);
 
     const scopeCount = (id: ScopeId): number | undefined => {
         if (!counters) return undefined;
@@ -211,7 +281,31 @@ export function SzRegistryPage() {
                 <div className="text-[12.5px] text-[#8b97ab]">
                     Найдено: <b className="font-mono text-[#3a4560]">{total}</b>
                 </div>
+                <button
+                    onClick={handleExport}
+                    disabled={exporting || total === 0}
+                    className="inline-flex items-center gap-2 h-10 px-3 rounded-[10px] border border-[#e5e9f0] bg-white text-[12.5px] font-semibold text-[#3a4560] cursor-pointer hover:bg-[#f6f8fb] disabled:cursor-not-allowed disabled:opacity-50"
+                >
+                    <Download className="w-4 h-4"/> {exporting ? "Готовим…" : "Выгрузить в Excel"}
+                </button>
             </div>
+
+            {/* Сохранённые фильтры (БП-16): применить/сохранить именованную выборку. */}
+            {!(scope === "inbox" || scope === "assignments" || scope === "originals") && (
+                <div className="mt-2.5">
+                    <SavedFiltersBar
+                        scope="sz"
+                        current={{scope, query, kindId: kindId === "" ? null : kindId, overdueOnly}}
+                        onApply={(p) => {
+                            const f = p as {scope?: ScopeId; query?: string; kindId?: number | null; overdueOnly?: boolean};
+                            if (f.scope) setScope(f.scope);
+                            setQuery(f.query ?? "");
+                            setKindId(f.kindId == null ? "" : f.kindId);
+                            setOverdueOnly(!!f.overdueOnly);
+                        }}
+                    />
+                </div>
+            )}
 
             {error && (
                 <div className="mt-4 rounded-[10px] border border-[#f1c9c2] bg-[#fbeae7] px-4 py-2.5 text-[13px] text-[#c0392b]">
@@ -321,11 +415,39 @@ export function SzRegistryPage() {
                     </table>
                 </div>
             ) : (
+            <>
+            {selected.size > 0 && (
+                <div className="mt-3 flex flex-wrap items-center gap-3 rounded-[12px] border border-[#dbe4fb] bg-[#eef3ff] px-4 py-2.5">
+                    <span className="text-[12.5px] font-semibold text-[#2f68f5]">Выбрано: {selected.size}</span>
+                    <button
+                        type="button" onClick={handleBulkExport} disabled={exporting}
+                        className="inline-flex items-center gap-1.5 h-8 px-3 rounded-[8px] border border-[#c9d6f5] bg-white text-[12.5px] font-semibold text-[#2f68f5] cursor-pointer disabled:opacity-60"
+                    >
+                        <Download className="w-3.5 h-3.5"/> Экспорт выбранных
+                    </button>
+                    <button
+                        type="button" onClick={() => setBulkArchiveOpen(true)}
+                        className="inline-flex items-center gap-1.5 h-8 px-3 rounded-[8px] border border-[#c9d6f5] bg-white text-[12.5px] font-semibold text-[#2f68f5] cursor-pointer"
+                    >
+                        <Archive className="w-3.5 h-3.5"/> Сдать в архив
+                    </button>
+                    <button
+                        type="button" onClick={() => setSelected(new Set())}
+                        className="text-[12px] text-[#8b97ab] cursor-pointer bg-transparent border-none"
+                    >
+                        Снять выбор
+                    </button>
+                </div>
+            )}
             <div className="mt-3 overflow-hidden rounded-[12px] border border-[#e5e9f0] bg-white">
                 <table className="w-full border-collapse text-[13px]">
                     <thead>
                     <tr className="bg-[#fafbfd] text-[11px] font-bold uppercase tracking-[.04em] text-[#a3adbd]">
+                        <th className="px-3 py-2.5 text-left w-[40px]">
+                            <input type="checkbox" checked={allOnPageSelected} onChange={toggleAll} aria-label="Выбрать все"/>
+                        </th>
                         <th className="px-4 py-2.5 text-left w-[140px]">Номер</th>
+                        <th className="px-4 py-2.5 text-left w-[130px]">Дата регистрации</th>
                         <th className="px-4 py-2.5 text-left">Тема</th>
                         <th className="px-4 py-2.5 text-left w-[130px]">Вид</th>
                         <th className="px-4 py-2.5 text-left w-[170px]">Автор</th>
@@ -335,18 +457,27 @@ export function SzRegistryPage() {
                     </thead>
                     <tbody>
                     {loading ? (
-                        <tr><td colSpan={6} className="px-4 py-10 text-center text-[13px] text-[#8b97ab]">Загрузка…</td></tr>
+                        <tr><td colSpan={8} className="px-4 py-10 text-center text-[13px] text-[#8b97ab]">Загрузка…</td></tr>
                     ) : items.length === 0 ? (
-                        <tr><td colSpan={6} className="px-4 py-10 text-center text-[13px] text-[#8b97ab]">Записок нет</td></tr>
+                        <tr><td colSpan={8} className="px-4 py-10 text-center text-[13px] text-[#8b97ab]">Записок нет</td></tr>
                     ) : items.map((i) => {
                         const tone = STATUS_TONE[i.statusCode] ?? colors.status.draft;
                         return (
                             <tr key={i.id} className="border-t border-[#eef2f7] hover:bg-[#fafbfd]">
+                                <td className="px-3 py-2.5">
+                                    <input
+                                        type="checkbox"
+                                        checked={selected.has(i.id)}
+                                        onChange={() => toggleRow(i.id)}
+                                        aria-label={`Выбрать ${i.regNumber ?? i.title}`}
+                                    />
+                                </td>
                                 <td className="px-4 py-2.5">
                                     <Link to={`/sz/${i.id}`} className="font-mono text-[12.5px] text-[#2f68f5] no-underline hover:underline">
                                         {i.regNumber ?? "— без номера"}
                                     </Link>
                                 </td>
+                                <td className="px-4 py-2.5 text-[#55617a]">{i.registeredOn ? formatDate(i.registeredOn) : "—"}</td>
                                 <td className="px-4 py-2.5">
                                     <Link to={`/sz/${i.id}`} className="text-[#1c2740] no-underline hover:underline">{i.title}</Link>
                                     {i.isPaperCarrier && (
@@ -378,6 +509,21 @@ export function SzRegistryPage() {
                     </tbody>
                 </table>
             </div>
+            </>
+            )}
+
+            {bulkArchiveOpen && (
+                <SzBulkArchiveModal
+                    ids={[...selected]}
+                    onClose={() => setBulkArchiveOpen(false)}
+                    onDone={(res) => {
+                        if (res.succeeded > 0) {
+                            toast.success(`Подшито в дело: ${res.succeeded}`);
+                            setSelected(new Set());
+                            void load();
+                        }
+                    }}
+                />
             )}
         </div>
     );

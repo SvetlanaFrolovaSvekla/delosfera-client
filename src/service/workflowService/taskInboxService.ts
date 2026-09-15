@@ -31,6 +31,9 @@ export interface InboxTask {
     /** Задача получена по замещению — за кого выполняется. */
     onBehalfOf: string | null;
 
+    /** Задача делегирована текущему исполнителю — от кого (СК-3). */
+    delegatedBy: string | null;
+
     createdAt: string;
 }
 
@@ -48,6 +51,11 @@ export const taskInboxService = {
         });
         return data;
     },
+
+    /** Делегировать задачу коллеге (СК-3). */
+    async delegate(taskId: number, toUserId: number, comment?: string): Promise<void> {
+        await apiClient.post(`/workflow/tasks/${taskId}/delegate`, {toUserId, comment});
+    },
 };
 
 /**
@@ -58,6 +66,10 @@ export const taskInboxService = {
  * прислал, задача ведёт в общий список — лучше, чем на посторонний документ.
  */
 export function taskLink(task: InboxTask): string {
+    // Ознакомление открывается на общей странице листов, не по карточке документа:
+    // отдельного экрана листа нет, поэтому entityId у него пустой — проверяем первым.
+    if (task.documentType === "Acknowledgement") return "/hr-ack";
+
     if (task.entityId === null) return "/tasks";
 
     switch (task.documentType) {
@@ -65,7 +77,17 @@ export function taskLink(task: InboxTask): string {
             return `/sz/${task.entityId}`;
         case "Procurement":
             return `/prc/${task.entityId}`;
+        case "Vnd":
+            return `/base-vnd/${task.entityId}`;
         default:
             return "/tasks";
     }
+}
+
+/**
+ * Уникальный ключ строки: id задачи движка и id строки листа ознакомления живут в
+ * разных таблицах и могут совпасть числом. Без контура в ключе React путает строки.
+ */
+export function taskKey(task: InboxTask): string {
+    return `${task.documentType}-${task.taskId}`;
 }

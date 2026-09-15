@@ -1,6 +1,6 @@
 import {useCallback, useEffect, useMemo, useState} from "react";
 import {Link} from "react-router-dom";
-import {ChartColumn, FileText, Layers, ShoppingCart, StickyNote, Share2, type LucideIcon} from "lucide-react";
+import {FileText, Layers, ShoppingCart, StickyNote, Share2, type LucideIcon} from "lucide-react";
 import {VndTasksPanel} from "@/components/componentsTasks/VndTasksPanel.tsx";
 import {VndTaskCard} from "@/components/componentsTasks/VndTaskCard.tsx";
 import {EmptyState} from "@/components/componentsGeneral/EmptyState.tsx";

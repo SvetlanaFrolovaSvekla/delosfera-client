@@ -116,7 +116,7 @@ export function DigestPage() {
                             : digest.upcoming.map(t => <TaskRow key={taskKey(t)} task={t}/>)}
                     </section>
 
-                    <Link to="/inbox" className="text-[13px] font-semibold text-[#2f68f5] no-underline hover:underline self-start">
+                    <Link to="/tasks" className="text-[13px] font-semibold text-[#2f68f5] no-underline hover:underline self-start">
                         Открыть все задачи →
                     </Link>
                 </div>

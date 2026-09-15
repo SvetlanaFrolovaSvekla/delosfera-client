@@ -166,7 +166,7 @@ function App() {
                                 <Route path="/notifications" element={<NotificationsPage/>}/>
                                 <Route path="/notifications/:id" element={<OpenNotificationPage/>}/>
 
-                                <Route path="/inbox" element={<TaskInboxPage/>}/>
+                                <Route path="/tasks" element={<TaskInboxPage/>}/>
                                 <Route path="/activity" element={<ActivityFeedPage/>}/>
                                 <Route path="/digest" element={<DigestPage/>}/>
                                 <Route path="/calendar" element={<CalendarPage/>}/>

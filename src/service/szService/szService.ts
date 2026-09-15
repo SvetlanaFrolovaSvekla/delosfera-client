@@ -114,6 +114,10 @@ export interface SzDetails extends SzListItem {
     amount: number | null;
     travelExpenses: boolean | null;
 
+    /** Позиция плана закупок по СЗ на обучение (КСЗ-08); заполняет УЧР. */
+    planItemId: number | null;
+    planItemLabel: string | null;
+
     /** Сотрудники, которых касается кадровая записка. */
     employees: SzEmployee[];
 
@@ -157,6 +161,7 @@ export interface SzSaveRequest {
     hasBudget?: boolean | null;
     amount?: number | null;
     travelExpenses?: boolean | null;
+    planItemId?: number | null;
     employees?: SzEmployee[];
 
     extraFields?: Record<string, unknown> | null;
@@ -270,6 +275,12 @@ export const szService = {
 
     async get(id: number): Promise<SzDetails> {
         const {data} = await apiClient.get<SzDetails>(`${BASE}/${id}`);
+        return data;
+    },
+
+    /** Кадровик УЧР проставляет «в бюджете/вне» и позицию плана по СЗ на обучение (КСЗ-08). */
+    async setTrainingBudget(id: number, hasBudget: boolean | null, planItemId: number | null): Promise<SzDetails> {
+        const {data} = await apiClient.post<SzDetails>(`${BASE}/${id}/training-budget`, {hasBudget, planItemId});
         return data;
     },
 

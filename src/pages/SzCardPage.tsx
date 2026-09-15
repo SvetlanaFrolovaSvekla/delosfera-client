@@ -16,6 +16,7 @@ import {SzSubmitToBodyPanel} from "@/components/sz/SzSubmitToBodyPanel.tsx";
 import {SzOriginalPanel} from "@/components/sz/SzOriginalPanel.tsx";
 import {SzArchivePanel} from "@/components/sz/SzArchivePanel.tsx";
 import {SzProcurementPanel} from "@/components/sz/SzProcurementPanel.tsx";
+import {SzTrainingBudgetPanel} from "@/components/sz/SzTrainingBudgetPanel.tsx";
 import {BoardReviewCard} from "@/components/componentsGeneral/BoardReviewCard.tsx";
 import {PROCUREMENT_STATUS_LABEL} from "@/service/procurementService/procurementService.ts";
 import {SzApproversField} from "@/components/sz/SzApproversField.tsx";
@@ -868,6 +869,11 @@ export function SzCardPage() {
                         }/>
                     </div>
                 </div>
+            )}
+
+            {/* Бюджет и позиция плана по СЗ на обучение (КСЗ-08): проставляет УЧР. */}
+            {sz && formKey === "Training" && (
+                <SzTrainingBudgetPanel sz={sz} canEdit={hasPermission(PermissionCode.ViewAllSz)} onChanged={reload}/>
             )}
 
             {/* Исполнение начинается после согласования — панель ведёт поручения и сроки. */}

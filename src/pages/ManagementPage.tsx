@@ -67,6 +67,13 @@ const GROUPS: { title: string; items: Item[] }[] = [
                 icon: Building2,
             },
             {
+                path: "/management/refs/unit-curators",
+                title: "Кураторство подразделений",
+                hint: "Начальник и куратор у каждого подразделения — для маршрутов кадровых СЗ",
+                icon: UserCog,
+                permission: PermissionCode.ManageGeneralDictionaries,
+            },
+            {
                 path: "/management/document-types",
                 title: "Типы документов",
                 hint: "Свои виды документов: поля карточки и маршрут",

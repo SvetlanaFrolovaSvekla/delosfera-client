@@ -32,9 +32,9 @@ export interface UpdateOrganizationUnitRequest {
     titleRu: string;
     titleEn?: string;
     titleKg?: string;
-    parentId?: number;
-    headUserId?: number;
-    curatorUserId?: number;
+    parentId?: number | null;
+    headUserId?: number | null;
+    curatorUserId?: number | null;
 }
 
 export interface OrganizationUnitFilter {

@@ -3,6 +3,7 @@ import {useLayoutEffect, useRef, useState} from "react";
 import {Link} from "react-router-dom";
 import {useAuth} from "@/context/AuthContext.ts";
 import type {
+    ApprovalPhaseRoundResponse,
     ApprovalStageAttachmentResponse,
     ApprovalStageDecisionResponse,
     ApprovalStageResponse,
@@ -50,8 +51,18 @@ interface PhaseCommentEntry {
  * выдержка), у которых есть текст комментария/замечания — не только последняя. Раньше карточка
  * показывала комментарий только к самой последней фазе, из-за чего замечания/комментарии
  * из более ранних кругов согласования пропадали из вида, как только у этого же согласующего
- * появлялась резолюция следующей фазы — другие согласующие, решающие позже, их уже не видели. */
-function collectPhaseComments(stage: ApprovalStageResponse): PhaseCommentEntry[] {
+ * появлялась резолюция следующей фазы — другие согласующие, решающие позже, их уже не видели.
+ *
+ * ⚠ 14.09.2026 (реальная причина исчезновения "Повторное согласование" с плиток маршрута):
+ * stage.repeatComment/repeatDecision (и finalHold-аналоги) — ЖИВЫЕ поля, бэк перезаписывает их
+ * на КАЖДЫЙ новый круг фазы (см. комментарий у ApprovalPhaseRoundResponse в
+ * coordinationServiceTypes.ts) — в них всегда видно решение только ПОСЛЕДНЕГО круга. Если в
+ * рамках одного процесса замечания на повторном согласовании устраняли несколько раз подряд,
+ * предыдущие круги в этих полях уже стёрты новыми. process.phaseRounds — это как раз архив
+ * ЗАВЕРШЁННЫХ (уже перезаписанных) кругов, специально заведённый на бэке для этого случая, но
+ * карточка его до сих пор не читала. Теперь собираем полную историю: все круги из phaseRounds
+ * (кроме текущего/последнего — он ещё не архивирован и лежит в живых полях) + сам живой круг. */
+function collectPhaseComments(stage: ApprovalStageResponse, phaseRounds: ApprovalPhaseRoundResponse[]): PhaseCommentEntry[] {
     const entries: PhaseCommentEntry[] = [];
 
     if (stage.primaryComment && !AUTO_GENERATED_COMMENT_TEXTS.has(stage.primaryComment)) {
@@ -64,21 +75,66 @@ function collectPhaseComments(stage: ApprovalStageResponse): PhaseCommentEntry[]
             quotes: stage.primaryQuotes,
         });
     }
-    if (stage.repeatComment && stage.repeatDecision && !AUTO_GENERATED_COMMENT_TEXTS.has(stage.repeatComment)) {
+
+    // Повторное согласование: сначала все УЖЕ ЗАВЕРШЁННЫЕ круги из архива (phaseRounds), потом
+    // текущий/последний круг из живых полей стейджа — именно в этом порядке (архив всегда
+    // старше живых полей, см. пояснение выше).
+    const repeatRounds = phaseRounds
+        .filter((r) => r.phase === "repeat")
+        .sort((a, b) => a.roundNumber - b.roundNumber);
+    const hasLiveRepeat = !!(stage.repeatComment && stage.repeatDecision && !AUTO_GENERATED_COMMENT_TEXTS.has(stage.repeatComment));
+    const repeatTotalRounds = repeatRounds.length + (hasLiveRepeat ? 1 : 0);
+    // Нумеруем круги в подписи, только если их реально больше одного - иначе (обычный случай,
+    // без повторных доработок) подпись остаётся простой "Повторное согласование", как раньше.
+    for (const round of repeatRounds) {
+        const sd = round.stageDecisions.find((s) => s.stageId === stage.id);
+        if (!sd || !sd.comment || AUTO_GENERATED_COMMENT_TEXTS.has(sd.comment)) continue;
         entries.push({
-            phaseLabel: "Повторное согласование",
-            decision: stage.repeatDecision,
-            comment: stage.repeatComment,
+            phaseLabel: repeatTotalRounds > 1 ? `Повторное согласование (круг ${round.roundNumber})` : "Повторное согласование",
+            decision: sd.decision,
+            comment: sd.comment,
+            decidedAt: sd.decidedAt,
+            // Архивные круги (VndApprovalPhaseRound на бэке) не хранят вложения/цитаты этого
+            // круга отдельно - только решение/комментарий/дату. Текущий (живой) круг ниже их
+            // по-прежнему показывает.
+            attachments: [],
+            quotes: [],
+        });
+    }
+    if (hasLiveRepeat) {
+        entries.push({
+            phaseLabel: repeatTotalRounds > 1 ? `Повторное согласование (круг ${repeatTotalRounds})` : "Повторное согласование",
+            decision: stage.repeatDecision as ApprovalStageDecisionResponse,
+            comment: stage.repeatComment as string,
             decidedAt: stage.repeatDecidedAt,
             attachments: stage.repeatAttachments,
             quotes: stage.repeatQuotes,
         });
     }
-    if (stage.finalHoldComment && stage.finalHoldDecision && !AUTO_GENERATED_COMMENT_TEXTS.has(stage.finalHoldComment)) {
+
+    // Финальная выдержка - тот же принцип: архивные круги, затем живой.
+    const finalHoldRounds = phaseRounds
+        .filter((r) => r.phase === "finalHold")
+        .sort((a, b) => a.roundNumber - b.roundNumber);
+    const hasLiveFinalHold = !!(stage.finalHoldComment && stage.finalHoldDecision && !AUTO_GENERATED_COMMENT_TEXTS.has(stage.finalHoldComment));
+    const finalHoldTotalRounds = finalHoldRounds.length + (hasLiveFinalHold ? 1 : 0);
+    for (const round of finalHoldRounds) {
+        const sd = round.stageDecisions.find((s) => s.stageId === stage.id);
+        if (!sd || !sd.comment || AUTO_GENERATED_COMMENT_TEXTS.has(sd.comment)) continue;
         entries.push({
-            phaseLabel: "Финальная выдержка",
-            decision: stage.finalHoldDecision,
-            comment: stage.finalHoldComment,
+            phaseLabel: finalHoldTotalRounds > 1 ? `Финальная выдержка (круг ${round.roundNumber})` : "Финальная выдержка",
+            decision: sd.decision,
+            comment: sd.comment,
+            decidedAt: sd.decidedAt,
+            attachments: [],
+            quotes: [],
+        });
+    }
+    if (hasLiveFinalHold) {
+        entries.push({
+            phaseLabel: finalHoldTotalRounds > 1 ? `Финальная выдержка (круг ${finalHoldTotalRounds})` : "Финальная выдержка",
+            decision: stage.finalHoldDecision as ApprovalStageDecisionResponse,
+            comment: stage.finalHoldComment as string,
             decidedAt: stage.finalHoldDecidedAt,
             attachments: stage.finalHoldAttachments,
             quotes: stage.finalHoldQuotes,
@@ -103,9 +159,15 @@ interface StageCardViewProps {
      * решает вызывающая сторона (см. VndCoordinationTab.handleShowQuoteInText/
      * RejectedApprovalDetailsModal). Без этого пропа кнопки-лупы не рисуются. */
     onShowQuoteInText?: (quote: FormattedCommentQuoteRef) => void;
+    /** Архив завершённых кругов фаз "Повторное согласование"/"Финальная выдержка" за весь
+     * процесс (см. ApprovalProcessResponse.phaseRounds) - нужен, чтобы восстановить полную
+     * историю резолюций этого этапа (см. collectPhaseComments), а не только решение последнего
+     * круга. Без этого пропа история кругов не восстанавливается (используется как раньше -
+     * только живые поля стейджа). */
+    phaseRounds?: ApprovalPhaseRoundResponse[];
 }
 
-export function StageCardView({stage, cardRef, isCurrentUserStage, isProcessEnded, onShowQuoteInText}: StageCardViewProps) {
+export function StageCardView({stage, cardRef, isCurrentUserStage, isProcessEnded, onShowQuoteInText, phaseRounds}: StageCardViewProps) {
     const {user} = useAuth();
 
     const isCustom = isCustomStageKind(stage.kind);
@@ -146,7 +208,7 @@ export function StageCardView({stage, cardRef, isCurrentUserStage, isProcessEnde
     // История резолюций/комментариев этого согласующего по ВСЕМ пройденным фазам - не только
     // самой последней (см. collectPhaseComments) - чтобы более ранние замечания/комментарии не
     // пропадали из вида для остальных согласующих, решающих позже.
-    const phaseComments = collectPhaseComments(stage);
+    const phaseComments = collectPhaseComments(stage, phaseRounds ?? []);
 
     // Пока решение не принято, а это этап текущего пользователя — показываем отдельный жёлтый статус
     const isPendingForCurrentUser = isCurrentUserStage && decision === "pending" && !isProcessEnded;

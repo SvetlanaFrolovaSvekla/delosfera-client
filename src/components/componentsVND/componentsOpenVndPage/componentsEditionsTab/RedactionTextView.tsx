@@ -29,8 +29,11 @@ interface RedactionTextViewProps {
     /** Кликабельны ли маркеры (открывают резолюцию целиком) - только во время активного
      * согласования этой редакции. */
     quoteMarksClickable?: boolean;
-    onHoverQuoteMark?: (mark: QuoteMarkInfo | null, rect: DOMRect | null) => void;
-    onClickQuoteMark?: (mark: QuoteMarkInfo) => void;
+    /** Список цитат, накрывающих отрезок под курсором - обычно один элемент, но может быть
+     * несколько, если разные согласующие процитировали одно и то же место (см.
+     * useDocxQuoteMarks) - пустой массив при уходе курсора. */
+    onHoverQuoteMark?: (marks: QuoteMarkInfo[], rect: DOMRect | null) => void;
+    onClickQuoteMark?: (marks: QuoteMarkInfo[]) => void;
 }
 
 export interface RedactionTextViewHandle {

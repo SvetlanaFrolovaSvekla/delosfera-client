@@ -182,6 +182,7 @@ export function VndApprovalRouteView({process, highlightStageId, frameless, onSh
                         isCurrentUserStage={stage.id === highlightStageId}
                         isProcessEnded={isProcessEnded}
                         onShowQuoteInText={onShowQuoteInText}
+                        phaseRounds={process.phaseRounds}
                     />
                 ))}
             </div>

@@ -2,6 +2,7 @@ import {useCallback, useEffect, useState} from "react";
 import {planService, type Plan} from "@/service/procurementService/planService.ts";
 import {organizationUnitService} from "@/service/dictionariesService/organizationUnitService/organizationUnitService.ts";
 import type {OrganizationUnitResponse} from "@/service/dictionariesService/organizationUnitService/organizationUnitServiceType.ts";
+import {SelectDropdown} from "@/components/componentsGeneral/selects/SingleSelects/SelectDropdown.tsx";
 
 /**
  * Годовой План закупок и отчёт об исполнении (PRC-22, приложение №5).
@@ -73,14 +74,22 @@ export const ProcurementPlanPage = () => {
                     </div>
                 </div>
 
-                <select value={year} onChange={e => setYear(Number(e.target.value))} style={{...input, width: 120}}>
-                    {[...new Set([currentYear, currentYear + 1, ...years])].sort((a, b) => b - a).map(y => (
-                        <option key={y} value={y}>{y}</option>
-                    ))}
-                </select>
+                <SelectDropdown
+                    options={[...new Set([currentYear, currentYear + 1, ...years])]
+                        .sort((a, b) => b - a)
+                        .map(y => ({value: String(y), label: String(y)}))}
+                    value={String(year)}
+                    onChange={(v) => setYear(Number(v))}
+                    minWidth="120px"
+                />
 
                 {plan?.status === "Draft" && (
-                    <button onClick={approve} disabled={busy} style={primaryButton}>Утвердить план</button>
+                    <button
+                        onClick={approve}
+                        disabled={busy}
+                        className="cursor-pointer inline-flex h-[42px] items-center gap-2 rounded-[11px] bg-[#2f68f5] px-[18px] text-[13.5px] font-semibold text-white shadow-[0_6px_16px_-6px_#2f68f5] hover:brightness-[1.06] disabled:cursor-not-allowed disabled:opacity-60 disabled:shadow-none">
+                        Утвердить план
+                    </button>
                 )}
             </div>
 
@@ -186,16 +195,22 @@ export const ProcurementPlanPage = () => {
                                 <input type="number" value={form.amount || ""}
                                        onChange={e => setForm({...form, amount: Number(e.target.value) || 0})}
                                        placeholder="Плановая сумма" style={{...input, width: 160}}/>
-                                <select value={form.quarter} onChange={e => setForm({...form, quarter: e.target.value})}
-                                        style={{...input, width: 110}}>
-                                    <option value="">квартал</option>
-                                    {[1, 2, 3, 4].map(q => <option key={q} value={q}>{q} кв.</option>)}
-                                </select>
-                                <select value={form.unitId} onChange={e => setForm({...form, unitId: e.target.value})}
-                                        style={{...input, width: 220}}>
-                                    <option value="">— подразделение —</option>
-                                    {units.map(u => <option key={u.id} value={u.id}>{u.titleRu}</option>)}
-                                </select>
+                                <SelectDropdown
+                                    options={units.map(u => ({value: String(u.id), label: u.titleRu}))}
+                                    value={form.unitId}
+                                    onChange={(v) => setForm({...form, unitId: v})}
+                                    placeholder="— подразделение —"
+                                    searchable
+                                    searchPlaceholder="Поиск подразделения…"
+                                    minWidth="120px"
+                                />
+                                <SelectDropdown
+                                    options={[1, 2, 3, 4].map(q => ({value: String(q), label: `${q} кв.`}))}
+                                    value={form.quarter}
+                                    onChange={(v) => setForm({...form, quarter: v})}
+                                    placeholder="квартал"
+                                    minWidth="110px"
+                                />
                                 <button
                                     onClick={() => run(() => planService.addItem(plan.id, {
                                         code: form.code.trim(),

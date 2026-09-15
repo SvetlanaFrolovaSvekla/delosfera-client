@@ -9,6 +9,7 @@ import {
     type ProcurementListItem,
     type ProcurementStatusCode,
 } from "@/service/procurementService/procurementService.ts";
+import {SearchBar} from "@/components/componentsGeneral/SearchBar.tsx";
 
 /**
  * Реестр «Заявки и закупки» (экран v8 isPrc). Вкладки — срезы по статусу,
@@ -126,15 +127,12 @@ export const ProcurementRegistryPage = () => {
                     </button>
                 ))}
 
-                <input
+                <SearchBar
+                    variant="white"
                     value={query}
-                    onChange={e => setQuery(e.target.value)}
+                    onChange={setQuery}
                     placeholder="Поиск по предмету или номеру…"
-                    style={{
-                        flex: 1, minWidth: 220, height: 36, padding: "0 12px",
-                        border: "1px solid #e5e9f0", borderRadius: 9, background: "#f6f8fb",
-                        font: "inherit", fontSize: 12.5, outline: "none",
-                    }}
+                    className="flex-1 min-w-[220px]"
                 />
             </div>
 

@@ -16,7 +16,13 @@
 // surroundContents — это сохраняет исходную структуру DOM (в т.ч. границы форматирования)
 // внутри совпадения, а не схлопывает его в один текстовый узел.
 export interface CrossNodeMatch {
-    el: HTMLElement;
+    /** Одно логическое совпадение может состоять из НЕСКОЛЬКИХ соседних <mark> — по одному на
+     * каждый задетый текстовый узел, а не один <mark> на весь диапазон — см. подробное объяснение
+     * в highlightCrossNodeMatches ниже (это и есть настоящая причина "Совпадений нет"/пропавшей
+     * подсветки для цитаты длиннее одного абзаца или взятой из ячейки таблицы). Для совпадения,
+     * целиком лежащего в одном узле (короткая цитата внутри одного абзаца), els.length === 1 —
+     * ведёт себя как раньше. */
+    els: HTMLElement[];
     text: string;
 }
 
@@ -152,33 +158,142 @@ export function buildWhitespaceTolerantRegex(query: string, flags = "gi"): RegEx
 
 /** Ищет непересекающиеся вхождения regex (может быть без флага "g" — здесь он выставится сам)
  * в СКЛЕЕННОМ тексте всех текстовых узлов внутри root и оборачивает каждое найденное совпадение
- * в элемент, который возвращает makeMark(matchedText) — через Range.surroundContents, поэтому
- * найденный текст может продолжать лежать в нескольких DOM-узлах внутри одного <mark>.
+ * в один или несколько элементов, которые возвращает makeMark(matchedFragment).
  *
  * limit — не более скольких совпадений оборачивать (по умолчанию — все). Возвращает обёрнутые
- * элементы строго в порядке появления в документе. */
-export function highlightCrossNodeMatches(
-    root: HTMLElement,
-    regex: RegExp,
-    makeMark: (matchedText: string) => HTMLElement,
-    limit: number = Infinity,
-    rejectTags: readonly string[] = [],
-): CrossNodeMatch[] {
-    const textNodes = collectTextNodes(root, rejectTags);
-    if (textNodes.length === 0) return [];
+ * совпадения строго в порядке появления в документе.
+ *
+ * ⚠ 14.09.2026 (реальная причина "Совпадений нет" для цитаты длиннее одного абзаца/ячейки
+ * таблицы - см. также комментарий в шапке файла): раньше на КАЖДОЕ совпадение создавался ОДИН
+ * Range на весь диапазон [start, end) целиком, который затем оборачивался в <mark> через
+ * range.surroundContents(mark). Это работает, только если весь диапазон лежит в границах ОДНОГО
+ * родителя без пересечения других элементов "наполовину". Как только совпадение пересекает
+ * границу двух СОСЕДНИХ блочных элементов (конец одного <p>/<td> и начало следующего — то есть
+ * ИМЕННО протяжённая цитата длиннее одного абзаца, или цитата, задевающая соседнюю ячейку
+ * таблицы — самый частый случай для сколько-нибудь длинной цитаты), surroundContents кидает
+ * "Failed to execute 'surroundContents' on 'Range': The Range has partially contains a non-Text
+ * node" — потому что Range на такое совпадение неизбежно ЧАСТИЧНО захватывает оба блочных
+ * элемента, не включая их целиком. Это исключение раньше просто ловилось (см. git-историю) и
+ * совпадение целиком отбрасывалось — притом что buildWhitespaceTolerantRegex НАХОДИЛ его
+ * абсолютно верно (отсюда и сбивающая с толку диагностика debugNoMatch: она видела текст в
+ * документе и указывала на пробелы, хотя дело было не в них). Из-за этого ощущалось, что
+ * поиск/подсветка "работает только в пределах одной строки/абзаца" — на самом деле работал
+ * ВЕСЬ поиск, но ПОДСВЕТИТЬ найденное совпадение не получалось, как только оно выходило за
+ * пределы одного абзаца/ячейки.
+ *
+ * Исправление: вместо одного Range на весь диапазон — по одному Range+<mark> НА КАЖДЫЙ задетый
+ * текстовый узел (сегмент совпадения внутри этого узла). Range, ограниченный ОДНИМ текстовым
+ * узлом, в принципе не может "наполовину" захватить не-текстовый узел, поэтому surroundContents
+ * для него никогда не кидает это исключение. Одно логическое совпадение при этом может стать
+ * несколькими соседними <mark> подряд (см. CrossNodeMatch.els) — визуально это по-прежнему
+ * читается как один непрерывный подсвеченный фрагмент, просто "прерывающийся" ровно на границах
+ * абзацев/ячеек, как и сам текст. */
+/** Карта "склеенного" текста всех текстовых узлов внутри root + сами узлы и их смещения в этой
+ * склейке. Вынесена отдельно (а не спрятана внутри highlightCrossNodeMatches), потому что
+ * подсветке цитат НЕСКОЛЬКИХ согласующих (см. useDocxQuoteMarks) нужно искать МНОГО регулярок
+ * по ОДНОЙ и той же, ещё не тронутой оборачиванием карте — сначала найти позиции ВСЕХ цитат
+ * (в т.ч. пересекающихся друг с другом), и только потом решить, как их подсвечивать вместе
+ * (см. findFirstMatch/wrapSpan ниже), вместо того чтобы оборачивать каждую по очереди, теряя
+ * при этом информацию о пересечениях (как было раньше). */
+export interface TextMap {
+    textNodes: Text[];
+    starts: number[];
+    full: string;
+}
 
+export function buildTextMap(root: HTMLElement, rejectTags: readonly string[] = []): TextMap {
+    const textNodes = collectTextNodes(root, rejectTags);
     let full = "";
     const starts: number[] = [];
     for (const node of textNodes) {
         starts.push(full.length);
         full += node.nodeValue ?? "";
     }
+    return {textNodes, starts, full};
+}
+
+/** Первое непересекающееся вхождение regex в map.full (начиная с fromIndex) - только считает
+ * позиции, НИКАК не трогает DOM. */
+export function findFirstMatch(
+    map: TextMap, regex: RegExp, fromIndex: number = 0,
+): { start: number; end: number; text: string } | null {
+    const re = new RegExp(regex.source, regex.flags.includes("g") ? regex.flags : `${regex.flags}g`);
+    re.lastIndex = fromIndex;
+    let m: RegExpExecArray | null;
+    while ((m = re.exec(map.full))) {
+        if (m[0].length === 0) {
+            re.lastIndex++;
+            continue;
+        }
+        return {start: m.index, end: m.index + m[0].length, text: m[0]};
+    }
+    return null;
+}
+
+/** Оборачивает диапазон [start, end) карты map в один или несколько СОСЕДНИХ элементов — по
+ * одному на каждый задетый текстовый узел, а не один элемент на весь диапазон (см. подробное
+ * объяснение в highlightCrossNodeMatches ниже). Если оборачиваете НЕСКОЛЬКО диапазонов одной и
+ * той же карты подряд — делайте это от конца документа к началу (по убыванию start), иначе
+ * оффсеты ещё не обработанных диапазонов, "живущих" в уже обрезанном узле, станут неверными
+ * (см. вызовы в highlightCrossNodeMatches и useDocxQuoteMarks). */
+export function wrapSpan(
+    map: TextMap, start: number, end: number, makeMark: (matchedFragment: string) => HTMLElement,
+): HTMLElement[] {
+    const {textNodes, starts} = map;
+    const locateIndex = (pos: number): number => {
+        let idx = 0;
+        for (let i = 0; i < starts.length; i++) {
+            if (starts[i] <= pos) idx = i;
+            else break;
+        }
+        return idx;
+    };
+
+    const startIdx = locateIndex(start);
+    const endIdx = locateIndex(end - 1);
+
+    const els: HTMLElement[] = [];
+    for (let idx = startIdx; idx <= endIdx; idx++) {
+        const node = textNodes[idx];
+        const nodeStart = starts[idx];
+        // node.length читаем ЖИВЫМ, а не из исходного замера — если этот же узел уже был
+        // частично обрезан оборачиванием более позднего (по позиции в документе) диапазона той
+        // же карты, актуальная длина корректно ограничит текущий сегмент его оставшейся
+        // ("головной") частью.
+        const nodeLen = node.length;
+        const segStart = Math.max(start, nodeStart) - nodeStart;
+        const segEnd = Math.min(end, nodeStart + nodeLen) - nodeStart;
+        if (segEnd <= segStart) continue;
+        try {
+            const range = document.createRange();
+            range.setStart(node, segStart);
+            range.setEnd(node, segEnd);
+            const mark = makeMark(node.nodeValue!.slice(segStart, segEnd));
+            range.surroundContents(mark);
+            els.push(mark);
+        } catch {
+            // Диапазон ограничен одним текстовым узлом - сюда в норме попадать не должно, но не
+            // роняем весь поиск из-за одного непредвиденного фрагмента.
+        }
+    }
+    return els;
+}
+
+export function highlightCrossNodeMatches(
+    root: HTMLElement,
+    regex: RegExp,
+    makeMark: (matchedFragment: string) => HTMLElement,
+    limit: number = Infinity,
+    rejectTags: readonly string[] = [],
+): CrossNodeMatch[] {
+    const map = buildTextMap(root, rejectTags);
+    if (map.textNodes.length === 0) return [];
 
     const re = new RegExp(regex.source, regex.flags.includes("g") ? regex.flags : `${regex.flags}g`);
     const spans: { start: number; end: number; text: string }[] = [];
     re.lastIndex = 0;
     let m: RegExpExecArray | null;
-    while ((m = re.exec(full))) {
+    while ((m = re.exec(map.full))) {
         if (m[0].length === 0) {
             re.lastIndex++;
             continue;
@@ -188,33 +303,12 @@ export function highlightCrossNodeMatches(
     }
     if (spans.length === 0) return [];
 
-    const locate = (pos: number): { node: Text; offset: number } => {
-        let idx = 0;
-        for (let i = 0; i < starts.length; i++) {
-            if (starts[i] <= pos) idx = i;
-            else break;
-        }
-        return {node: textNodes[idx], offset: Math.min(pos - starts[idx], textNodes[idx].length)};
-    };
-
     const result: CrossNodeMatch[] = [];
-    // С конца документа к началу — оборачивание более позднего совпадения никогда не смещает
-    // узлы/оффсеты ещё не обработанных (более ранних) совпадений.
+    // С конца документа к началу — см. комментарий у wrapSpan выше.
     for (let i = spans.length - 1; i >= 0; i--) {
         const {start, end, text} = spans[i];
-        const from = locate(start);
-        const to = locate(end);
-        try {
-            const range = document.createRange();
-            range.setStart(from.node, from.offset);
-            range.setEnd(to.node, to.offset);
-            const mark = makeMark(text);
-            range.surroundContents(mark);
-            result.unshift({el: mark, text});
-        } catch {
-            // Range частично пересекает границу не-текстового узла (случается на "неровных"
-            // стыках форматирования) — пропускаем конкретно это совпадение, не роняя весь поиск.
-        }
+        const els = wrapSpan(map, start, end, makeMark);
+        if (els.length > 0) result.unshift({els, text});
     }
 
     return result;

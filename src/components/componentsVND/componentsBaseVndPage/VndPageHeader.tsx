@@ -9,7 +9,7 @@ export function VndPageHeader({onCreateClick}: VndPageHeaderProps) {
     return (
         <PageHeader
             title="Реестр ВНД"
-            description="Централизованный реестр действующих ВНД · поиск и фильтрация по всем реквизитам и по тексту редакций"
+            description="Централизованный реестр действующих внутренних нормативных документов · поиск и фильтрация по всем реквизитам и по тексту редакций"
             actions={
                 <button
                     onClick={onCreateClick}

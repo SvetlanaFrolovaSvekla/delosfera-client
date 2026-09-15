@@ -1,6 +1,5 @@
 import {useCallback, useEffect, useState} from "react";
 import {Link, useNavigate} from "react-router-dom";
-import {Plus} from "lucide-react";
 import {colors} from "@/design/tokens";
 import {
     SZ_STATUS_LABEL,
@@ -16,6 +15,10 @@ import {
     type SzAssignment,
 } from "@/service/szService/szExecutionService.ts";
 import {szPaperService, type SzOriginal} from "@/service/szService/szPaperService.ts";
+import {SelectDropdown} from "@/components/componentsGeneral/selects/SingleSelects/SelectDropdown.tsx";
+import {CheckBoxOne} from "@/components/componentsGeneral/componentsCheckBox/CheckBoxOne.tsx";
+import {SearchBar} from "@/components/componentsGeneral/SearchBar.tsx";
+import {Icon} from "@/components/icons/Icon";
 
 type ScopeId = "all" | "inbox" | "assignments" | "originals" | "mine" | "drafts"
     | "approval" | "pending" | "signing" | "archive";
@@ -124,6 +127,7 @@ export function SzRegistryPage() {
     }, [scope, query, kindId, overdueOnly]);
 
     useEffect(() => {
+        // eslint-disable-next-line react-hooks/set-state-in-effect
         void load();
     }, [load]);
 
@@ -140,16 +144,16 @@ export function SzRegistryPage() {
         <div className="px-7 py-6">
             <div className="flex items-start justify-between gap-4">
                 <div>
-                    <h1 className="m-0 text-[23px] font-bold tracking-[-0.02em]">Служебные записки</h1>
+                    <h1 className="m-0 text-[23px] font-bold tracking-[-0.02em]">Реестр служебных записок</h1>
                     <p className="mt-[7px] mb-0 text-[13px] text-[#8b97ab]">
-                        Реестр СЗ · регистрация, сроки исполнения и статусы согласования
+                        Централизованный реестр служебных записок · регистрация, сроки исполнения и статусы согласования
                     </p>
                 </div>
                 <button
                     onClick={() => navigate("/sz/new")}
-                    className="inline-flex items-center gap-2 h-10 px-[15px] rounded-[10px] border-none bg-[#2f68f5] text-white font-semibold text-[13px] cursor-pointer hover:brightness-[1.06]"
-                >
-                    <Plus className="w-4 h-4"/> Создать СЗ
+                    className="cursor-pointer inline-flex h-[42px] items-center gap-2 rounded-[11px] bg-[#2f68f5] px-[18px] text-[13.5px] font-semibold text-white shadow-[0_6px_16px_-6px_#2f68f5] hover:brightness-[1.06]">
+                    <Icon name="plus" width={18} height={18} strokeWidth={2}/>
+                    Создать СЗ
                 </button>
             </div>
 
@@ -180,24 +184,30 @@ export function SzRegistryPage() {
 
             {/* В «Согласую я» фильтры не применяются — список формирует сам движок согласования. */}
             <div className={`mt-4 flex flex-wrap items-center gap-2.5 ${scope === "inbox" || scope === "assignments" || scope === "originals" ? "hidden" : ""}`}>
-                <input
+                <SearchBar
+                    variant="white"
                     value={query}
-                    onChange={(e) => setQuery(e.target.value)}
+                    onChange={setQuery}
                     placeholder="Поиск по номеру, заголовку и тексту…"
-                    className="h-10 min-w-[280px] flex-1 rounded-[10px] border border-[#e5e9f0] bg-white px-3.5 text-[13px] outline-none focus:border-[#2f68f5]"
+                    className="min-w-[280px] flex-1"
                 />
-                <select
-                    value={kindId}
-                    onChange={(e) => setKindId(e.target.value ? Number(e.target.value) : "")}
-                    className="h-10 rounded-[10px] border border-[#e5e9f0] bg-white px-3 text-[13px] font-semibold text-[#3a4560]"
+                <SelectDropdown
+                    options={[
+                        {value: "", label: "Все виды"},
+                        ...kinds.map((k) => ({value: String(k.id), label: k.titleRu})),
+                    ]}
+                    value={kindId === "" ? "" : String(kindId)}
+                    onChange={(v) => setKindId(v ? Number(v) : "")}
+                    searchable
+                    searchPlaceholder="Поиск вида…"
+                    minWidth="150px"
+                />
+                <CheckBoxOne
+                    checked={overdueOnly}
+                    onChange={setOverdueOnly}
                 >
-                    <option value="">Все виды</option>
-                    {kinds.map((k) => <option key={k.id} value={k.id}>{k.titleRu}</option>)}
-                </select>
-                <label className="inline-flex items-center gap-2 h-10 px-3 rounded-[10px] border border-[#e5e9f0] bg-white text-[12.5px] font-semibold text-[#55617a] cursor-pointer">
-                    <input type="checkbox" checked={overdueOnly} onChange={(e) => setOverdueOnly(e.target.checked)}/>
                     Только просроченные
-                </label>
+                </CheckBoxOne>
                 <div className="text-[12.5px] text-[#8b97ab]">
                     Найдено: <b className="font-mono text-[#3a4560]">{total}</b>
                 </div>

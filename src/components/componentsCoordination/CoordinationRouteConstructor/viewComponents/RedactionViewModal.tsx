@@ -15,12 +15,13 @@ import {
 import {buildRedactionFileName} from "@/utils/fileNaming.ts";
 import {Tooltip} from "@/components/componentsGeneral/Tooltip.tsx";
 import {SearchBar} from "@/components/componentsGeneral/SearchBar.tsx";
-import {Download, FileText, ListTree, Loader2, MessageSquareText, Quote, X} from "lucide-react";
+import {Download, Eye, EyeOff, FileText, Highlighter, ListTree, Loader2, MessageSquareText, Quote, X} from "lucide-react";
 import {
     collectAllStageComments, collectQuoteMarks, quoteMarkModalProps, type QuoteMarkInfo
 } from "@/utils/redactionQuoteMarks.ts";
 import {CommentViewModal} from "./CommentViewModal.tsx";
 import {getInitials} from "@/utils/getInitials.ts";
+import {getApproverColor} from "@/utils/approverColors.ts";
 
 interface RedactionViewModalProps {
     vnd: VndResponse;
@@ -59,6 +60,11 @@ interface QuoteHint {
     top: number;
     left: number;
 }
+
+// Порядок фаз согласования - для группировки панели "Комментарии" и подписи активной подсветки
+// (см. commentsByPhase/highlightedPhase ниже). Значения совпадают со строками phaseLabel,
+// которые проставляют collectQuoteMarks/collectAllStageComments в redactionQuoteMarks.ts.
+const PHASE_ORDER = ["Первичное согласование", "Повторное согласование", "Финальная выдержка"] as const;
 
 const LANG_LABELS: Record<RedactionViewTarget, string> = {
     ru: "RU", kg: "KG", en: "EN", tid: "ТИД", approvalSheet: "Лист согласования",
@@ -122,12 +128,30 @@ export function RedactionViewModal({
         setSearchQuery("");
     }, [activeLanguage, redaction.id]);
 
+    // Подстраховка: если проп initialSearchQuery изменился, а вкладка при этом НЕ переключилась
+    // (тот случай выше это уже покрывает через pendingJumpQueryRef) - например, родитель когда-
+    // нибудь переиспользует этот же экземпляр модалки под новый вызов "Показать в тексте" вместо
+    // полного размонтирования - подхватываем новое значение явно, а не полагаемся только на
+    // исходный useState(initialSearchQuery), который читается ОДИН РАЗ при монтировании и не
+    // видит последующих изменений пропа. Сравниваем с предыдущим ЗНАЧЕНИЕМ пропа (не с текущим
+    // searchQuery) - иначе ручной ввод в строке поиска после открытия каждый раз откатывался бы
+    // назад к initialSearchQuery.
+    const prevInitialSearchQueryRef = useRef(initialSearchQuery);
+    useEffect(() => {
+        if (initialSearchQuery !== prevInitialSearchQueryRef.current) {
+            prevInitialSearchQueryRef.current = initialSearchQuery;
+            // eslint-disable-next-line react-hooks/set-state-in-effect
+            if (initialSearchQuery) setSearchQuery(initialSearchQuery);
+        }
+    }, [initialSearchQuery]);
+
     // Плавающая кнопка "Сослаться на выделенное" - только в режиме цитирования (onInsertQuote
     // передан). Слушаем selectionchange на document (а не mouseup только на контейнере) - так
     // ловим и выделение с клавиатуры (Shift+стрелки), а не только мышью.
     const [quoteHint, setQuoteHint] = useState<QuoteHint | null>(null);
 
     useEffect(() => {
+        // eslint-disable-next-line react-hooks/set-state-in-effect
         setQuoteHint(null);
     }, [activeLanguage]);
 
@@ -173,21 +197,44 @@ export function RedactionViewModal({
         onClose();
     };
 
-    // Маркеры цитат из резолюций согласующих (см. VndApproverResolutionPanel) - подсвечиваются
-    // поверх текста только на той вкладке, к которой относятся (см. QuoteMarkInfo.documentTarget).
     const quoteMarks = useMemo(
         () => (approvalProcess ? collectQuoteMarks(approvalProcess, activeLanguage) : []),
         [approvalProcess, activeLanguage],
     );
 
-    // ВСЕ комментарии согласования (по всем этапам/фазам, по всем вкладкам) - для панели
-    // "Комментарии" (список). В отличие от quoteMarks выше, не ограничено только резолюциями
-    // с явной цитатой - иначе панель пропускала бы согласующего, оставившего решение с обычным
-    // комментарием без "+ Сослаться на текст редакции" (см. collectAllStageComments).
+// Какого этапа комментарии сейчас подсвечиваются поверх текста документа - null означает
+// "подсветка не ограничена одним этапом". По умолчанию - последний этап, у которого есть
+// комментарии. Объявлено здесь (до displayedQuoteMarks), а не ниже рядом с commentsByPhase -
+// иначе useMemo ниже обращался бы к highlightedPhase до её инициализации (TDZ).
+    const [highlightedPhase, setHighlightedPhase] = useState<string | null>(() => {
+        if (!approvalProcess) return null;
+        const comments = collectAllStageComments(approvalProcess);
+        for (let i = PHASE_ORDER.length - 1; i >= 0; i--) {
+            if (comments.some((c) => c.phaseLabel === PHASE_ORDER[i])) return PHASE_ORDER[i];
+        }
+        return null;
+    });
+
+    const displayedQuoteMarks = useMemo(
+        () => (highlightedPhase ? quoteMarks.filter((m) => m.phaseLabel === highlightedPhase) : quoteMarks),
+        [quoteMarks, highlightedPhase], // добавлен highlightedPhase
+    );
+
     const allComments = useMemo(
         () => (approvalProcess ? collectAllStageComments(approvalProcess) : []),
         [approvalProcess],
     );
+
+    const commentsByPhase = useMemo(() => {
+        const map = new Map<string, QuoteMarkInfo[]>();
+        for (const item of allComments) {
+            const list = map.get(item.phaseLabel);
+            if (list) list.push(item);
+            else map.set(item.phaseLabel, [item]);
+        }
+        return map;
+    }, [allComments]);
+    const phasesWithComments = PHASE_ORDER.filter((label) => (commentsByPhase.get(label)?.length ?? 0) > 0);
 
     // Комментарий инициатора о внесённых исправлениях (см. ResubmitAfterRevisionAsync на бэке) -
     // раньше был виден только на вкладке "Маршрут согласования" (VndApprovalSummary), а при
@@ -197,9 +244,45 @@ export function RedactionViewModal({
     const commentsCount = allComments.length + (hasInitiatorComment ? 1 : 0);
     const [initiatorCommentOpen, setInitiatorCommentOpen] = useState(false);
 
-    const [hoverMark, setHoverMark] = useState<{mark: QuoteMarkInfo; rect: DOMRect} | null>(null);
+    // marks - ВСЕ цитаты, которые накрывают отрезок под курсором/по клику (обычно одна, но
+    // может быть несколько, если разные согласующие процитировали одно и то же место - см.
+    // useDocxQuoteMarks). Если их несколько - подряд идущие клики по этому же месту открывают
+    // их ПО ОЧЕРЕДИ (см. handleClickMark ниже), а не только самого первого автора.
+    const [hoverMark, setHoverMark] = useState<{marks: QuoteMarkInfo[]; rect: DOMRect} | null>(null);
     const [openMark, setOpenMark] = useState<QuoteMarkInfo | null>(null);
     const [marksPanelOpen, setMarksPanelOpen] = useState(false);
+    // Кнопка "глаз" рядом с "Содержание"/"Комментарии"/"Скачать" - временно выключает подсветку
+    // цитат согласующих в тексте (и, соответственно, подсказки при наведении на неё) - на случай,
+    // когда цветные маркеры и всплывающие тултипы мешают спокойно читать сам текст редакции.
+    // Ничего не удаляет - просто не рисует (см. quoteMarks ниже - при выключении в
+    // RedactionTextView уходит пустой массив, и useDocxQuoteMarks сам снимает уже нарисованные
+    // маркеры). Показываем кнопку только когда маркерам вообще есть из чего берись - т.е. вместе
+    // с approvalProcess, как и кнопку "Комментарии" рядом.
+    const [quoteMarksVisible, setQuoteMarksVisible] = useState(true);
+    // На выключении подсветки маркеры убираются программно (не настоящим уходом курсора мышью),
+    // поэтому mouseout может не сработать - без этого подсказка при наведении могла бы "зависнуть"
+    // на экране поверх уже погашенной подсветки.
+    useEffect(() => {
+        // eslint-disable-next-line react-hooks/set-state-in-effect
+        if (!quoteMarksVisible) setHoverMark(null);
+    }, [quoteMarksVisible]);
+    // Для места с несколькими пересекшимися цитатами - какую по счёту показали в прошлый раз
+    // (ключ - отсортированные id всех цитат этого места), чтобы следующий клик по тому же месту
+    // открыл СЛЕДУЮЩЕГО автора, а не всегда одного и того же.
+    const overlapCycleRef = useRef<Map<string, number>>(new Map());
+
+    const handleClickMark = (marks: QuoteMarkInfo[]) => {
+        if (marks.length === 0) return;
+        if (marks.length === 1) {
+            setOpenMark(marks[0]);
+            return;
+        }
+        const key = marks.map((m) => m.id).sort((a, b) => a - b).join(",");
+        const prevIdx = overlapCycleRef.current.get(key) ?? -1;
+        const nextIdx = (prevIdx + 1) % marks.length;
+        overlapCycleRef.current.set(key, nextIdx);
+        setOpenMark(marks[nextIdx]);
+    };
 
     useEffect(() => {
         setHoverMark(null);
@@ -359,6 +442,28 @@ export function RedactionViewModal({
                             </Tooltip>
                         )}
 
+                        {approvalProcess && (
+                            <Tooltip
+                                content={quoteMarksVisible
+                                    ? "Скрыть подсветку цитат согласующих"
+                                    : "Показать подсветку цитат согласующих"}
+                                side="bottom"
+                            >
+                                <button
+                                    type="button"
+                                    onClick={() => setQuoteMarksVisible((v) => !v)}
+                                    className="cursor-pointer flex-none grid h-9 w-9 place-items-center rounded-[9px] border transition-colors"
+                                    style={
+                                        quoteMarksVisible
+                                            ? {borderColor: "#d7dee8", background: "#fff", color: "#3a4560"}
+                                            : {borderColor: "#4e57d6", background: "#ececfc", color: "#4e57d6"}
+                                    }
+                                >
+                                    {quoteMarksVisible ? <Eye size={16}/> : <EyeOff size={16}/>}
+                                </button>
+                            </Tooltip>
+                        )}
+
                         <Tooltip content="Скачать документ" side="bottom">
                             <button
                                 type="button"
@@ -385,6 +490,17 @@ export function RedactionViewModal({
 
                 <div className="flex min-h-0 flex-1 gap-4 overflow-hidden px-6 py-4">
                     <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
+                        {/* Подпись, какого этапа комментарии сейчас подсвечены в тексте (см.
+                            highlightedPhase выше и переключатели-"маркеры" в панели
+                            "Комментарии" ниже) - видна независимо от того, открыта ли сама
+                            панель, чтобы не забывалось, что подсветка сейчас ограничена одним
+                            этапом. */}
+                        {quoteMarksVisible && highlightedPhase && (
+                            <div className="mb-2 flex flex-none items-center gap-1.5 self-start rounded-full border border-[#d7dee8] bg-[#f5f6fd] px-3 py-1 text-[11px] font-semibold text-[#4e57d6]">
+                                <Highlighter size={12} className="flex-none"/>
+                                Подсвечены комментарии этапа: {highlightedPhase}
+                            </div>
+                        )}
                         <RedactionTextView
                             ref={textViewRef}
                             vnd={vnd}
@@ -394,10 +510,10 @@ export function RedactionViewModal({
                             onDownload={onDownload}
                             searchQuery={searchQuery}
                             onClearSearch={() => setSearchQuery("")}
-                            quoteMarks={quoteMarks}
+                            quoteMarks={quoteMarksVisible ? displayedQuoteMarks : []}
                             quoteMarksClickable={quoteMarksClickable}
-                            onHoverQuoteMark={(mark, rect) => setHoverMark(mark && rect ? {mark, rect} : null)}
-                            onClickQuoteMark={(mark) => setOpenMark(mark)}
+                            onHoverQuoteMark={(marks, rect) => setHoverMark(marks.length > 0 && rect ? {marks, rect} : null)}
+                            onClickQuoteMark={handleClickMark}
                         />
                     </div>
 
@@ -462,29 +578,63 @@ export function RedactionViewModal({
                                                 </span>
                                             </button>
                                         )}
-                                        {allComments.map((item) => (
-                                            <button
-                                                key={item.id}
-                                                type="button"
-                                                onClick={() => handleCommentClick(item)}
-                                                className="cursor-pointer flex flex-col gap-1 rounded-[9px] border border-[#e9edf3] bg-[#fbfcfe] px-2.5 py-2 text-left hover:border-[#4e57d6]/40 hover:bg-white"
-                                            >
-                                                <span className="flex items-center gap-1.5">
-                                                    <span className="flex h-5 w-5 flex-none items-center justify-center rounded-md bg-[#ececfc] text-[8.5px] font-bold text-[#4e57d6]">
-                                                        {getInitials(item.approverName)}
-                                                    </span>
-                                                    <span className="truncate text-[11.5px] font-semibold text-[#26324a]">
-                                                        {item.approverName}
-                                                    </span>
-                                                    <span className="flex-none text-[9.5px] text-[#a3adbd]">
-                                                        · {item.phaseLabel}
-                                                    </span>
-                                                </span>
-                                                <span className="line-clamp-2 break-words text-[11px] leading-snug text-[#6b7488]">
-                                                    {item.text ? `«${item.text}»` : item.comment}
-                                                </span>
-                                            </button>
-                                        ))}
+                                        {/* Комментарии сгруппированы по этапам (Первичное/
+                                            Повторное/Финальная выдержка) - у каждого этапа своя
+                                            кнопка-"маркер", включающая подсветку в тексте только
+                                            цитат ЭТОГО этапа (highlightedPhase выше). Повторный
+                                            клик по уже активному этапу снимает ограничение -
+                                            подсвечиваются цитаты всех этапов разом. */}
+                                        {phasesWithComments.map((label) => {
+                                            const isActive = highlightedPhase === label;
+                                            return (
+                                                <div key={label} className="flex flex-col gap-1.5">
+                                                    <div className="flex items-center justify-between gap-2 px-0.5 pt-1 first:pt-0">
+                                                        <span className="text-[10px] font-semibold uppercase tracking-[0.03em] text-[#a3adbd]">
+                                                            {label}
+                                                        </span>
+                                                        <Tooltip
+                                                            content={isActive
+                                                                ? "Показывать цитаты всех этапов"
+                                                                : "Подсветить в тексте только цитаты этого этапа"}
+                                                            side="top"
+                                                        >
+                                                            <button
+                                                                type="button"
+                                                                onClick={() => setHighlightedPhase((prev) => (prev === label ? null : label))}
+                                                                className="cursor-pointer flex-none grid h-6 w-6 place-items-center rounded-[7px] border transition-colors"
+                                                                style={
+                                                                    isActive
+                                                                        ? {borderColor: "#4e57d6", background: "#ececfc", color: "#4e57d6"}
+                                                                        : {borderColor: "#e5e9f0", background: "#fff", color: "#a3adbd"}
+                                                                }
+                                                            >
+                                                                <Highlighter size={12}/>
+                                                            </button>
+                                                        </Tooltip>
+                                                    </div>
+                                                    {commentsByPhase.get(label)!.map((item) => (
+                                                        <button
+                                                            key={item.id}
+                                                            type="button"
+                                                            onClick={() => handleCommentClick(item)}
+                                                            className="cursor-pointer flex flex-col gap-1 rounded-[9px] border border-[#e9edf3] bg-[#fbfcfe] px-2.5 py-2 text-left hover:border-[#4e57d6]/40 hover:bg-white"
+                                                        >
+                                                            <span className="flex items-center gap-1.5">
+                                                                <span className="flex h-5 w-5 flex-none items-center justify-center rounded-md bg-[#ececfc] text-[8.5px] font-bold text-[#4e57d6]">
+                                                                    {getInitials(item.approverName)}
+                                                                </span>
+                                                                <span className="truncate text-[11.5px] font-semibold text-[#26324a]">
+                                                                    {item.approverName}
+                                                                </span>
+                                                            </span>
+                                                            <span className="line-clamp-2 break-words text-[11px] leading-snug text-[#6b7488]">
+                                                                {item.text ? `«${item.text}»` : item.comment}
+                                                            </span>
+                                                        </button>
+                                                    ))}
+                                                </div>
+                                            );
+                                        })}
                                     </div>
                                 )}
                             </div>
@@ -493,14 +643,30 @@ export function RedactionViewModal({
                 </div>
             </div>
 
+            {/* Подсказка при наведении на подсветку цитаты - если это место процитировали
+                НЕСКОЛЬКО согласующих (полосатая подсветка, см. useDocxQuoteMarks), перечисляем
+                их ВСЕХ, каждого своей точкой цвета, а не только первого - иначе было бы не
+                понять, кто именно ещё сослался на этот же фрагмент. */}
             {hoverMark && (
                 <div
                     style={{top: hoverMark.rect.bottom + 6, left: hoverMark.rect.left}}
-                    className="pointer-events-none fixed z-[70] flex items-center gap-1.5 rounded-[8px] border border-[#e5e9f0] bg-[#1c2740] px-2.5 py-[6px] text-[11.5px] font-medium text-white shadow-lg"
+                    className="pointer-events-none fixed z-[70] flex flex-col gap-1 rounded-[8px] border border-[#e5e9f0] bg-[#1c2740] px-2.5 py-[6px] text-[11.5px] font-medium text-white shadow-lg"
                 >
-                    <span className="font-semibold">{hoverMark.mark.approverName}</span>
-                    <span className="text-[#a3adbd]">— {hoverMark.mark.phaseLabel.toLowerCase()}</span>
-                    {quoteMarksClickable && <span className="text-[#a3adbd]">· клик — посмотреть</span>}
+                    {hoverMark.marks.map((m) => (
+                        <div key={m.id} className="flex items-center gap-1.5 whitespace-nowrap">
+                            <span
+                                className="h-[7px] w-[7px] flex-none rounded-full"
+                                style={{background: getApproverColor(m.approverUserId).accent}}
+                            />
+                            <span className="font-semibold">{m.approverName}</span>
+                            <span className="text-[#a3adbd]">— {m.phaseLabel.toLowerCase()}</span>
+                        </div>
+                    ))}
+                    {quoteMarksClickable && (
+                        <span className="text-[#a3adbd]">
+                            {hoverMark.marks.length > 1 ? "клик — по очереди посмотреть каждого" : "клик — посмотреть"}
+                        </span>
+                    )}
                 </div>
             )}
 

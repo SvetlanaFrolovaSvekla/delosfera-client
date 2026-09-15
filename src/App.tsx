@@ -68,6 +68,7 @@ const CalendarPage = lazy(() => import("@/pages/CalendarPage.tsx").then(m => ({d
 const NotificationSettingsPage = lazy(() => import("@/pages/NotificationSettingsPage.tsx").then(m => ({default: m.NotificationSettingsPage})));
 const TaskStatsPage = lazy(() => import("@/pages/TasksPages/TaskStatsPage.tsx").then(m => ({default: m.TaskStatsPage})));
 const ObligationsBoardPage = lazy(() => import("@/pages/ObligationsBoardPage.tsx").then(m => ({default: m.ObligationsBoardPage})));
+const HrRoutingSettingsPage = lazy(() => import("@/pages/HrRoutingSettingsPage.tsx").then(m => ({default: m.HrRoutingSettingsPage})));
 
 // Полная лента событий по всем контурам — развёрнутая версия виджета
 // "Последняя активность" с главной (кнопка "Смотреть всю активность").
@@ -241,6 +242,7 @@ function App() {
                                         <Route path="changes" element={<SettingsChangesPage/>}/>
                                         <Route path="integrations" element={<SystemSettingsPage/>}/>
                                         <Route path="signing" element={<SystemSettingsPage/>}/>
+                                        <Route path="hr-routing" element={<HrRoutingSettingsPage/>}/>
                                         <Route path="help" element={<HelpPage/>}/>
                                     </Route>
                                 </Route>

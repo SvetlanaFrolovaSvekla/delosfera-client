@@ -48,6 +48,13 @@ const GROUPS: { title: string; items: Item[] }[] = [
                 icon: UserCog,
                 permission: PermissionCode.ManageUsers,
             },
+            {
+                path: "/management/hr-routing",
+                title: "Маршрутизация кадровых СЗ",
+                hint: "Кадровик УЧР по областям: ГО и филиалы",
+                icon: Settings2,
+                permission: PermissionCode.ManageSystemSettings,
+            },
         ],
     },
     {

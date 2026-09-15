@@ -54,6 +54,8 @@ export const navGroups: NavGroup[] = [
             { id: "sz", icon: "sz", labelKey: "sidebar.items.sz", path: "/sz" },
             // Доска записок по стадиям (РС-4)
             { id: "sz-tracker", icon: "sz", labelKey: "Доска записок", path: "/sz/tracker" },
+            // Заявки на замещение (КСЗ-В9)
+            { id: "substitutions", icon: "user", labelKey: "Заявки на замещение", path: "/substitutions" },
         ],
     },
     {

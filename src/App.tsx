@@ -70,6 +70,8 @@ const NotificationSettingsPage = lazy(() => import("@/pages/NotificationSettings
 const TaskStatsPage = lazy(() => import("@/pages/TasksPages/TaskStatsPage.tsx").then(m => ({default: m.TaskStatsPage})));
 const ObligationsBoardPage = lazy(() => import("@/pages/ObligationsBoardPage.tsx").then(m => ({default: m.ObligationsBoardPage})));
 const HrRoutingSettingsPage = lazy(() => import("@/pages/HrRoutingSettingsPage.tsx").then(m => ({default: m.HrRoutingSettingsPage})));
+const SubstitutionsPage = lazy(() => import("@/pages/SubstitutionsPages/SubstitutionsPage.tsx").then(m => ({default: m.SubstitutionsPage})));
+const SubstitutionCardPage = lazy(() => import("@/pages/SubstitutionsPages/SubstitutionCardPage.tsx").then(m => ({default: m.SubstitutionCardPage})));
 
 // Полная лента событий по всем контурам — развёрнутая версия виджета
 // "Последняя активность" с главной (кнопка "Смотреть всю активность").
@@ -259,6 +261,10 @@ function App() {
                                 </Route>
 
                                 {/* Периодичность заседаний и отчётов; отбор вопросов секретарём */}
+                                <Route path="/substitutions/new" element={<SubstitutionCardPage/>}/>
+                                <Route path="/substitutions/:id" element={<SubstitutionCardPage/>}/>
+                                <Route path="/substitutions" element={<SubstitutionsPage/>}/>
+
                                 <Route path="/obligations/board" element={<ObligationsBoardPage/>}/>
                                 <Route path="/obligations" element={<ObligationsPage/>}/>
                                 <Route element={<RequirePermission code={PermissionCode.ViewHrOrders}/>}>

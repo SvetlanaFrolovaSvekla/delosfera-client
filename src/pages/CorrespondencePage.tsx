@@ -1,5 +1,5 @@
 import {useEffect, useState} from "react";
-import {ArrowDownLeft, ArrowUpRight, Plus, TriangleAlert} from "lucide-react";
+import {ArrowDownLeft, ArrowUpRight, Download, Plus, TriangleAlert} from "lucide-react";
 import {
     correspondenceService,
     CATEGORY_ORDER, CATEGORY_SHORT,
@@ -55,6 +55,23 @@ export function CorrespondencePage() {
 
     const [opened, setOpened] = useState<number | null>(null);
     const [registering, setRegistering] = useState(false);
+    const [exporting, setExporting] = useState(false);
+
+    const currentFilter = () => ({
+        direction: direction || undefined,
+        categories: category ? [category] : undefined,
+        onlyOverdue: onlyOverdue || undefined,
+        text: text.trim() || undefined,
+    });
+
+    const doExport = async () => {
+        setExporting(true);
+        try {
+            await correspondenceService.exportRegistry(currentFilter());
+        } finally {
+            setExporting(false);
+        }
+    };
 
     const load = async () => {
         setLoading(true);
@@ -86,17 +103,31 @@ export function CorrespondencePage() {
             <PageHeader
                 title="Корреспонденция"
                 description="Книга регистрации входящих и исходящих писем"
-                actions={canRegister ? (
-                    <button
-                        type="button"
-                        onClick={() => setRegistering(true)}
-                        className="flex items-center gap-2 rounded-[10px] bg-[#2f68f5] px-4 py-2
-                                   text-[14px] font-medium text-white transition hover:bg-[#2554cc]"
-                    >
-                        <Plus size={17}/>
-                        Зарегистрировать
-                    </button>
-                ) : undefined}
+                actions={(
+                    <div className="flex items-center gap-2">
+                        <button
+                            type="button"
+                            onClick={() => void doExport()}
+                            disabled={exporting}
+                            className="flex items-center gap-2 rounded-[10px] border border-[#d5dbe6] bg-white px-4 py-2
+                                       text-[14px] font-medium text-[#374253] transition hover:bg-[#f4f6fa] disabled:opacity-50"
+                        >
+                            <Download size={17}/>
+                            {exporting ? "Готовим…" : "Выгрузить в Excel"}
+                        </button>
+                        {canRegister && (
+                            <button
+                                type="button"
+                                onClick={() => setRegistering(true)}
+                                className="flex items-center gap-2 rounded-[10px] bg-[#2f68f5] px-4 py-2
+                                           text-[14px] font-medium text-white transition hover:bg-[#2554cc]"
+                            >
+                                <Plus size={17}/>
+                                Зарегистрировать
+                            </button>
+                        )}
+                    </div>
+                )}
             />
 
             {/* Просроченное — первый вопрос к книге, и он не должен требовать фильтра. */}

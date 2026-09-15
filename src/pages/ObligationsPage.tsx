@@ -1,5 +1,5 @@
 import {useEffect, useState} from "react";
-import {CalendarClock, CircleCheck, Info, TriangleAlert} from "lucide-react";
+import {CalendarClock, CircleCheck, Download, Info, TriangleAlert} from "lucide-react";
 import {
     obligationsService,
     BODY_TITLE, KIND_TITLE, PERIOD_STATUS_TITLE, PERIODICITY_TITLE, SELF_CLOSING,
@@ -38,6 +38,16 @@ export function ObligationsPage() {
     const [loading, setLoading] = useState(true);
     const [opened, setOpened] = useState<Obligation | null>(null);
     const [periods, setPeriods] = useState<ObligationPeriod[]>([]);
+    const [exporting, setExporting] = useState(false);
+
+    const doExport = async () => {
+        setExporting(true);
+        try {
+            await obligationsService.exportRegistry();
+        } finally {
+            setExporting(false);
+        }
+    };
 
     const load = async () => {
         setLoading(true);
@@ -76,6 +86,18 @@ export function ObligationsPage() {
             <PageHeader
                 title="Регулярные обязательства"
                 description="Заседания комитетов, отчёты, пересмотр политик, график сдачи в НБКР"
+                actions={(
+                    <button
+                        type="button"
+                        onClick={() => void doExport()}
+                        disabled={exporting}
+                        className="flex items-center gap-2 rounded-[10px] border border-[#d5dbe6] bg-white px-4 py-2
+                                   text-[14px] font-medium text-[#374253] transition hover:bg-[#f4f6fa] disabled:opacity-50"
+                    >
+                        <Download size={17}/>
+                        {exporting ? "Готовим…" : "Выгрузить в Excel"}
+                    </button>
+                )}
             />
 
             {loading ? (

@@ -1,5 +1,5 @@
 import {useEffect, useState} from "react";
-import {Plus, ScrollText} from "lucide-react";
+import {Download, Plus, ScrollText} from "lucide-react";
 import {
     hrOrderService,
     ORDER_STATUS_ORDER, ORDER_STATUS_TITLE,
@@ -41,6 +41,7 @@ export function HrOrdersPage() {
     const [kind, setKind] = useState<HrOrderKind | "">("");
     const [text, setText] = useState("");
     const [loading, setLoading] = useState(true);
+    const [exporting, setExporting] = useState(false);
 
     const [editing, setEditing] = useState<number | null | "new">(null);
     const [opened, setOpened] = useState<number | null>(null);
@@ -72,22 +73,49 @@ export function HrOrdersPage() {
     const kindTitle = (value: HrOrderKind) =>
         kinds.find((k) => k.kind === value)?.title ?? value;
 
+    const doExport = async () => {
+        setExporting(true);
+        try {
+            await hrOrderService.exportRegistry({
+                status: status || undefined,
+                kind: kind || undefined,
+                text: text.trim() || undefined,
+            });
+        } finally {
+            setExporting(false);
+        }
+    };
+
     return (
         <div className="flex flex-col gap-5 p-6">
             <PageHeader
                 title="Приказы по личному составу"
                 description="Книга регистрации: приём, перевод, отпуск, командировка, увольнение"
-                actions={canManage ? (
-                    <button
-                        type="button"
-                        onClick={() => setEditing("new")}
-                        className="flex items-center gap-2 rounded-[10px] bg-[#2f68f5] px-4 py-2
-                                   text-[14px] font-medium text-white transition hover:bg-[#2554cc]"
-                    >
-                        <Plus size={17}/>
-                        Издать приказ
-                    </button>
-                ) : undefined}
+                actions={(
+                    <div className="flex items-center gap-2">
+                        <button
+                            type="button"
+                            onClick={() => void doExport()}
+                            disabled={exporting}
+                            className="flex items-center gap-2 rounded-[10px] border border-[#d5dbe6] bg-white px-4 py-2
+                                       text-[14px] font-medium text-[#374253] transition hover:bg-[#f4f6fa] disabled:opacity-50"
+                        >
+                            <Download size={17}/>
+                            {exporting ? "Готовим…" : "Выгрузить в Excel"}
+                        </button>
+                        {canManage && (
+                            <button
+                                type="button"
+                                onClick={() => setEditing("new")}
+                                className="flex items-center gap-2 rounded-[10px] bg-[#2f68f5] px-4 py-2
+                                           text-[14px] font-medium text-white transition hover:bg-[#2554cc]"
+                            >
+                                <Plus size={17}/>
+                                Издать приказ
+                            </button>
+                        )}
+                    </div>
+                )}
             />
 
             <div className="flex flex-wrap items-center gap-2">

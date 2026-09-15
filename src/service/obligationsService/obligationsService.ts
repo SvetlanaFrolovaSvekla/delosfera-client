@@ -119,12 +119,50 @@ export interface ObligationSaveRequest {
     isActive: boolean;
 }
 
+/** Карточка обязательства на доске (ПР-1). */
+export interface ObligationBoardItem {
+    id: number;
+    title: string;
+    responsible: string | null;
+    periodicityTitle: string;
+    dueDate: string | null;
+    isOverdue: boolean;
+    missedCount: number;
+}
+
+/** Колонка доски: стадия текущего периода и обязательства на ней. */
+export interface ObligationBoardColumn {
+    code: PeriodStatus;
+    title: string;
+    count: number;
+    items: ObligationBoardItem[];
+}
+
 const BASE = "/obligations";
 
 export const obligationsService = {
     async list(includeInactive = false) {
         const {data} = await apiClient.get<Obligation[]>(BASE, {params: {includeInactive}});
         return data;
+    },
+
+    /** Доска обязательств по стадии текущего периода (ПР-1). */
+    async board() {
+        const {data} = await apiClient.get<ObligationBoardColumn[]>(`${BASE}/board`);
+        return data;
+    },
+
+    /** Выгрузка реестра обязательств в Excel (ЭК-3). */
+    async exportRegistry(includeInactive = false) {
+        const response = await apiClient.get(`${BASE}/export`, {params: {includeInactive}, responseType: "blob"});
+        const url = URL.createObjectURL(response.data as Blob);
+        const link = document.createElement("a");
+        link.href = url;
+        link.download = `Реестр обязательств ${new Date().toLocaleDateString("ru-RU")}.xlsx`;
+        document.body.appendChild(link);
+        link.click();
+        link.remove();
+        URL.revokeObjectURL(url);
     },
 
     async periods(id: number) {

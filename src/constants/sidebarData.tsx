@@ -65,6 +65,8 @@ export const navGroups: NavGroup[] = [
             { id: "meet-candidates", icon: "check", labelKey: "Вопросы на рассмотрение", path: "/meetings/candidates", permission: PermissionCode.ViewMeetings },
             // Периодичность, которой мыслит регулятор: «не реже раза в месяц»
             { id: "obligations", icon: "clock", labelKey: "Регулярные обязательства", path: "/obligations" },
+            // Доска обязательств по стадиям (ПР-1)
+            { id: "obligations-board", icon: "clock", labelKey: "Доска обязательств", path: "/obligations/board" },
         ],
     },
     {

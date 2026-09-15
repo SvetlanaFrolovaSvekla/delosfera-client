@@ -186,6 +186,19 @@ export const correspondenceService = {
         return data;
     },
 
+    /** Выгрузка книги регистрации в Excel под текущим фильтром (ЭК-1). */
+    async exportRegistry(filter: LetterFilter = {}) {
+        const response = await apiClient.post(`${BASE}/export`, filter, {responseType: "blob"});
+        const url = URL.createObjectURL(response.data as Blob);
+        const link = document.createElement("a");
+        link.href = url;
+        link.download = `Реестр писем ${new Date().toLocaleDateString("ru-RU")}.xlsx`;
+        document.body.appendChild(link);
+        link.click();
+        link.remove();
+        URL.revokeObjectURL(url);
+    },
+
     async get(id: number) {
         const {data} = await apiClient.get<Letter>(`${BASE}/${id}`);
         return data;

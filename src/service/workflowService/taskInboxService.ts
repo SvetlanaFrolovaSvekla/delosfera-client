@@ -44,11 +44,36 @@ export interface TaskInbox {
     delegated: number;
 }
 
+/** Группа в статистике задач: контур или тип, со счётчиком и просрочкой (ЗД-1). */
+export interface TaskStatGroup {
+    key: string;
+    title: string;
+    count: number;
+    overdue: number;
+}
+
+export interface TaskStats {
+    total: number;
+    overdue: number;
+    delegated: number;
+    dueToday: number;
+    dueThisWeek: number;
+    noDue: number;
+    byContour: TaskStatGroup[];
+    byType: TaskStatGroup[];
+}
+
 export const taskInboxService = {
     async get(documentType?: string): Promise<TaskInbox> {
         const {data} = await apiClient.get<TaskInbox>("/workflow/inbox", {
             params: documentType ? {documentType} : undefined,
         });
+        return data;
+    },
+
+    /** Статистика по моим задачам (ЗД-1). */
+    async stats(): Promise<TaskStats> {
+        const {data} = await apiClient.get<TaskStats>("/workflow/inbox/stats");
         return data;
     },
 

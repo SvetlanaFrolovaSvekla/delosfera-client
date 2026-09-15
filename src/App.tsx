@@ -67,6 +67,8 @@ const TaskInboxPage = lazy(() => import("@/pages/TasksPages/TaskInboxPage.tsx").
 const DigestPage = lazy(() => import("@/pages/DigestPage.tsx").then(m => ({default: m.DigestPage})));
 const CalendarPage = lazy(() => import("@/pages/CalendarPage.tsx").then(m => ({default: m.CalendarPage})));
 const NotificationSettingsPage = lazy(() => import("@/pages/NotificationSettingsPage.tsx").then(m => ({default: m.NotificationSettingsPage})));
+const TaskStatsPage = lazy(() => import("@/pages/TasksPages/TaskStatsPage.tsx").then(m => ({default: m.TaskStatsPage})));
+const ObligationsBoardPage = lazy(() => import("@/pages/ObligationsBoardPage.tsx").then(m => ({default: m.ObligationsBoardPage})));
 
 // Полная лента событий по всем контурам — развёрнутая версия виджета
 // "Последняя активность" с главной (кнопка "Смотреть всю активность").
@@ -167,6 +169,7 @@ function App() {
                                 <Route path="/notifications/:id" element={<OpenNotificationPage/>}/>
 
                                 <Route path="/tasks" element={<TaskInboxPage/>}/>
+                                <Route path="/tasks/stats" element={<TaskStatsPage/>}/>
                                 <Route path="/activity" element={<ActivityFeedPage/>}/>
                                 <Route path="/digest" element={<DigestPage/>}/>
                                 <Route path="/calendar" element={<CalendarPage/>}/>
@@ -254,6 +257,7 @@ function App() {
                                 </Route>
 
                                 {/* Периодичность заседаний и отчётов; отбор вопросов секретарём */}
+                                <Route path="/obligations/board" element={<ObligationsBoardPage/>}/>
                                 <Route path="/obligations" element={<ObligationsPage/>}/>
                                 <Route element={<RequirePermission code={PermissionCode.ViewHrOrders}/>}>
                                     <Route path="/hr/orders" element={<HrOrdersPage/>}/>

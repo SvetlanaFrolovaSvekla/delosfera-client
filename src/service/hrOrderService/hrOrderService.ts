@@ -106,6 +106,25 @@ export const hrOrderService = {
         return data;
     },
 
+    /** Выгрузка книги приказов в Excel под текущими фильтрами (ЭК-2). */
+    async exportRegistry(params: {
+        kind?: HrOrderKind;
+        status?: HrOrderStatus;
+        userId?: number;
+        year?: number;
+        text?: string;
+    } = {}) {
+        const response = await apiClient.get(`${BASE}/export`, {params, responseType: "blob"});
+        const url = URL.createObjectURL(response.data as Blob);
+        const link = document.createElement("a");
+        link.href = url;
+        link.download = `Реестр приказов ${new Date().toLocaleDateString("ru-RU")}.xlsx`;
+        document.body.appendChild(link);
+        link.click();
+        link.remove();
+        URL.revokeObjectURL(url);
+    },
+
     async get(id: number) {
         const {data} = await apiClient.get<HrOrder>(`${BASE}/${id}`);
         return data;

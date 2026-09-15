@@ -1,4 +1,5 @@
 import {useState} from "react";
+import {useLocation} from "react-router-dom";
 import {DirectoryIntegrationForm} from "@/components/system/DirectoryIntegrationForm.tsx";
 import {ProcurementParametersForm} from "@/components/system/ProcurementParametersForm.tsx";
 import {SignatureLevelForm} from "@/components/system/SignatureLevelForm.tsx";
@@ -9,10 +10,18 @@ import {MailSettingsForm} from "@/components/system/MailSettingsForm.tsx";
 
 type IntegrationState = { enabled: boolean; hasError: boolean } | null;
 
+/**
+ * Куда попадает вкладка. Одна страница обслуживает два пункта меню — «Интеграции»
+ * и «Настройки подписания», — и без разбиения обе показывали весь список: служба
+ * каталогов и оргструктура двоились под подписанием, к которому не относятся (НС-1).
+ */
+type SettingsGroup = "integration" | "signing";
+
 interface Integration {
     id: string;
     title: string;
     subtitle: string;
+    group: SettingsGroup;
 
     /** Форма настроек; отсутствует у интеграций, которые пока живут в конфигурации сервера. */
     render?: (report: (enabled: boolean, hasError: boolean) => void) => React.ReactNode;
@@ -33,12 +42,14 @@ const INTEGRATIONS: Integration[] = [
         id: "directory",
         title: "Служба каталогов",
         subtitle: "LDAP · пользователи домена",
+        group: "integration",
         render: (report) => <DirectoryIntegrationForm onStateChange={report}/>,
     },
     {
         id: "org-structure",
         title: "Организационная структура",
         subtitle: "Портал банка · подразделения и подчинённость",
+        group: "integration",
         render: (report) => <OrgStructureIntegrationForm onStateChange={report}/>,
     },
     {
@@ -47,31 +58,36 @@ const INTEGRATIONS: Integration[] = [
         id: "procurement",
         title: "Параметры закупок",
         subtitle: "Пороги Положения и Матрицы полномочий",
+        group: "integration",
         render: () => <ProcurementParametersForm/>,
+    },
+    {
+        id: "mail",
+        title: "Почтовые уведомления",
+        subtitle: "SMTP · письма о задачах и сроках",
+        group: "integration",
+        render: (report) => <MailSettingsForm onStateChange={report}/>,
     },
     {
         id: "signature",
         title: "Электронная подпись",
         subtitle: "Чем закрываются этапы согласования",
+        group: "signing",
         render: () => <SignatureLevelForm/>,
     },
     {
         id: "authorities",
         title: "Удостоверяющие центры",
         subtitle: "Кому банк доверяет выпуск сертификатов",
+        group: "signing",
         render: () => <CertificateAuthoritiesForm/>,
     },
     {
         id: "timestamp",
         title: "Метка времени и отзыв",
         subtitle: "Служба меток RFC 3161 · списки отзыва",
+        group: "signing",
         render: () => <SigningSettingsForm/>,
-    },
-    {
-        id: "mail",
-        title: "Почтовые уведомления",
-        subtitle: "SMTP · письма о задачах и сроках",
-        render: (report) => <MailSettingsForm onStateChange={report}/>,
     },
 ];
 
@@ -91,10 +107,22 @@ function StateDot({state}: { state: IntegrationState }) {
  * учётные записи и расписания задаются здесь и вступают в силу без перезапуска.
  */
 export function SystemSettingsPage() {
-    const [selected, setSelected] = useState(INTEGRATIONS[0].id);
+    const {pathname} = useLocation();
+    // Один компонент на два пункта меню: подписание отдельно от интеграций (НС-1).
+    const mode: SettingsGroup = pathname.endsWith("/signing") ? "signing" : "integration";
+    const items = INTEGRATIONS.filter((x) => x.group === mode);
+
+    const [selected, setSelected] = useState(items[0].id);
     const [states, setStates] = useState<Record<string, IntegrationState>>({});
 
-    const current = INTEGRATIONS.find((x) => x.id === selected) ?? INTEGRATIONS[0];
+    // Выбранная вкладка может остаться от другого раздела при переходе между
+    // пунктами меню — тогда откатываемся на первую вкладку текущего раздела.
+    const current = items.find((x) => x.id === selected) ?? items[0];
+
+    const heading = mode === "signing" ? "Настройки подписания" : "Системные настройки";
+    const subheading = mode === "signing"
+        ? "Электронная подпись, удостоверяющие центры, метки времени и отзыв"
+        : "Интеграции с внешними системами: адреса, учётные записи и расписания обмена";
 
     const report = (id: string) => (enabled: boolean, hasError: boolean) =>
         setStates((s) => (s[id]?.enabled === enabled && s[id]?.hasError === hasError
@@ -103,15 +131,13 @@ export function SystemSettingsPage() {
 
     return (
         <div className="p-6">
-            <h1 className="m-0 text-[19px] font-bold text-[#0f1b2d]">Системные настройки</h1>
-            <div className="mt-1 text-[13px] text-[#8b97ab]">
-                Интеграции с внешними системами: адреса, учётные записи и расписания обмена
-            </div>
+            <h1 className="m-0 text-[19px] font-bold text-[#0f1b2d]">{heading}</h1>
+            <div className="mt-1 text-[13px] text-[#8b97ab]">{subheading}</div>
 
             <div className="mt-5 grid gap-5" style={{gridTemplateColumns: "minmax(220px, 280px) 1fr"}}>
                 <aside className="rounded-[12px] border border-[#e5e9f0] bg-white p-2 self-start">
-                    {INTEGRATIONS.map((integration) => {
-                        const active = integration.id === selected;
+                    {items.map((integration) => {
+                        const active = integration.id === current.id;
 
                         return (
                             <button

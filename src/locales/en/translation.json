@@ -141,7 +141,10 @@
     "n1": "Document No. SZ-1245 approved by E. Sydykov",
     "n2": "TID-88 returned for revision",
     "n3": "New procurement request requires your approval",
-    "title": "No notifications!"
+    "title": "No notifications!",
+    "emptyState": {
+      "title": "No notifications!"
+    }
   },
   "notificationsTime": {
     "n1": "5 minutes ago",

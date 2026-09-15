@@ -1,6 +1,6 @@
 import {NavLink, Outlet, useLocation} from "react-router-dom";
 import {
-    Building2, Eye, FileCog, FileStack, History, KeyRound, Mail,
+    Bell, Building2, Eye, FileCog, FileStack, History, KeyRound, Mail,
     MessageSquareWarning, ScrollText, Settings2, ShieldCheck, UserCog, Users,
 } from "lucide-react";
 import {useAuth} from "@/context/AuthContext.ts";
@@ -116,6 +116,12 @@ const GROUPS: { title: string; items: Item[] }[] = [
     {
         title: "Уведомления",
         items: [
+            {
+                path: "/settings/notifications",
+                title: "Настройки уведомлений",
+                hint: "Утренний email-дайджест и другие личные оповещения",
+                icon: Bell,
+            },
             {
                 path: "/management/mailing-settings",
                 title: "Настройки рассылок по актуализации ВНД",

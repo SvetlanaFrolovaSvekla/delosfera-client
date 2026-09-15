@@ -80,7 +80,7 @@ export function CalendarPage() {
     }
 
     return (
-        <div className="w-full max-w-[1100px] mx-auto px-4 sm:px-6 pt-5 pb-12">
+        <div className="w-full max-w-[1700px] mx-auto px-4 sm:px-6 pt-5 pb-12">
             <div className="flex items-center justify-between gap-4 mb-4 flex-wrap">
                 <h1 className="m-0 text-[19px] font-bold text-[#0f1b2d]">Календарь сроков</h1>
                 <div className="flex items-center gap-2">

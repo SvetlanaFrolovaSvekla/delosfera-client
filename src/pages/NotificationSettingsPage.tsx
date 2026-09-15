@@ -33,7 +33,7 @@ export function NotificationSettingsPage() {
     }
 
     return (
-        <div className="w-full max-w-[640px] mx-auto px-4 sm:px-6 pt-5 pb-12">
+        <div className="w-full max-w-[1700px] mx-auto px-4 sm:px-6 pt-5 pb-12">
             <h1 className="m-0 text-[19px] font-bold text-[#0f1b2d]">Уведомления</h1>
             <div className="mt-1 text-[12.5px] text-[#8b97ab]">Как система напоминает о задачах и сроках</div>
 

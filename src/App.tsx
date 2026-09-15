@@ -45,7 +45,6 @@ const ActualizationPlanPage = lazy(() => import("@/pages/ActualizationPage/Actua
 const ActualizationPage = lazy(() => import("@/pages/ActualizationPage/ActualizationPage.tsx").then(m => ({default: m.ActualizationPage})));
 const ReportVndPage = lazy(() => import("@/pages/ReportPages/ReportVndPages/ReportVndPage.tsx").then(m => ({default: m.ReportVndPage})));
 const AnalyticsPage = lazy(() => import("@/pages/AnalyticsPage.tsx").then(m => ({default: m.AnalyticsPage})));
-const TasksVndPage = lazy(() => import("@/pages/TasksPages/TasksVndPage.tsx").then(m => ({default: m.TasksVndPage})));
 const UsersPage = lazy(() => import("@/pages/UsersPages/UsersPage.tsx").then(m => ({default: m.UsersPage})));
 
 // Контур служебных записок (контур 4 ТЗ)
@@ -155,7 +154,7 @@ function App() {
                                 <Route path="/base-vnd/new" element={<CreateVndPage/>}/>
                                 <Route path="/base-vnd/:id" element={<OpenVndPage/>}/>
 
-                                <Route path="/tasks" element={<TasksVndPage/>}/>
+                                <Route path="/tasks" element={<TaskInboxPage/>}/>
 
                                 <Route element={<RequirePermission code={PermissionCode.ViewVndActualizationPage}/>}>
                                     <Route path="/actualization" element={<ActualizationPage/>}/>
@@ -168,7 +167,6 @@ function App() {
                                 <Route path="/notifications" element={<NotificationsPage/>}/>
                                 <Route path="/notifications/:id" element={<OpenNotificationPage/>}/>
 
-                                <Route path="/tasks" element={<TaskInboxPage/>}/>
                                 <Route path="/tasks/stats" element={<TaskStatsPage/>}/>
                                 <Route path="/activity" element={<ActivityFeedPage/>}/>
                                 <Route path="/digest" element={<DigestPage/>}/>

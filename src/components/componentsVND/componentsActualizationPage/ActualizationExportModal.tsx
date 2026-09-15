@@ -26,6 +26,7 @@ import {
 import {DateFilterGroup, type DateFilterValue} from "@/components/componentsGeneral/datePickers/DateFilterGroup.tsx";
 import {MultiSelectField} from "@/components/componentsGeneral/selects/MultiSelects/MultiSelectField.tsx";
 import {HelpTooltip} from "@/components/componentsGeneral/knowledgeBaseComponents/HelpTooltip.tsx";
+import {CheckBoxOne} from "@/components/componentsGeneral/componentsCheckBox/CheckBoxOne.tsx";
 
 interface ActualizationExportModalProps {
     onClose: () => void;
@@ -147,16 +148,14 @@ export function ActualizationExportModal({
 
                     <ActualizationFilterPills value={bucketFilter} onChange={setBucketFilter} summary={summary}/>
 
-                    <label className="mb-4 inline-flex cursor-pointer select-none items-center gap-1.5 text-[12.5px] font-semibold text-[#3a4560]">
-                        <input
-                            type="checkbox"
-                            checked={neverActualizedOnly}
-                            onChange={(e) => setNeverActualizedOnly(e.target.checked)}
-                            className="h-[15px] w-[15px] cursor-pointer accent-[#4e57d6]"
-                        />
+                    <CheckBoxOne
+                        checked={neverActualizedOnly}
+                        onChange={setNeverActualizedOnly}
+                        className="mb-4"
+                    >
                         Только ни разу не актуализированные
                         <HelpTooltip content="Показывает документы только с одной (первой) редакцией — т.е. те, которые ещё ни разу не проходили актуализацию."/>
-                    </label>
+                    </CheckBoxOne>
 
                     <div className="mb-4 grid [grid-template-columns:repeat(auto-fit,minmax(200px,1fr))] gap-x-[14px] gap-y-3">
                         <MultiSelectField
@@ -225,18 +224,15 @@ export function ActualizationExportModal({
                         Колонки выше входят в файл всегда. Ниже — дополнительные, на выбор.
                     </div>
 
-                    <div className="grid [grid-template-columns:repeat(auto-fit,minmax(220px,1fr))] gap-x-3 gap-y-1.5 rounded-xl border border-[#eef2f7] p-3.5">
+                    <div className="grid [grid-template-columns:repeat(auto-fit,minmax(220px,1fr))] gap-2 rounded-xl border border-[#eef2f7] p-3.5">
                         {TOGGLEABLE_COLUMNS.map((c) => (
-                            <label key={c.key}
-                                   className="inline-flex cursor-pointer select-none items-center gap-2 rounded-lg px-1.5 py-1 text-[12.5px] text-[#3a4560] hover:bg-[#f6f8fb]">
-                                <input
-                                    type="checkbox"
-                                    checked={visibleCols[c.key] === true}
-                                    onChange={() => toggleColumn(c.key)}
-                                    className="h-[15px] w-[15px] cursor-pointer accent-[#4e57d6]"
-                                />
+                            <CheckBoxOne
+                                key={c.key}
+                                checked={visibleCols[c.key] === true}
+                                onChange={() => toggleColumn(c.key)}
+                            >
                                 {c.label}
-                            </label>
+                            </CheckBoxOne>
                         ))}
                     </div>
 

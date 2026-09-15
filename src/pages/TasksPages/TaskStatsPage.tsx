@@ -21,7 +21,7 @@ export function TaskStatsPage() {
     }, []);
 
     return (
-        <div className="w-full max-w-[1100px] mx-auto px-4 sm:px-6 lg:px-8 pt-5 sm:pt-[26px] pb-10 sm:pb-[60px]">
+        <div className="w-full max-w-[1700px] mx-auto px-4 sm:px-6 lg:px-8 pt-5 sm:pt-[26px] pb-10 sm:pb-[60px]">
             <PageHeader
                 title="Статистика по моим задачам"
                 description="Открытые задачи по всем контурам: сроки, распределение по контурам и типам"
@@ -29,7 +29,7 @@ export function TaskStatsPage() {
                     <button
                         type="button"
                         onClick={() => navigate("/tasks")}
-                        className="flex items-center gap-2 rounded-[10px] border border-[#d5dbe6] bg-white px-4 py-2
+                        className="cursor-pointer flex items-center gap-2 rounded-[10px] border border-[#d5dbe6] bg-white px-4 py-2
                                    text-[14px] font-medium text-[#374253] transition hover:bg-[#f4f6fa]"
                     >
                         <ArrowLeft size={17}/>

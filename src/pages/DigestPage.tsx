@@ -68,7 +68,7 @@ export function DigestPage() {
     const today = new Date().toLocaleDateString("ru-RU", {weekday: "long", day: "numeric", month: "long"});
 
     return (
-        <div className="w-full max-w-[900px] mx-auto px-4 sm:px-6 pt-5 pb-12">
+        <div className="w-full max-w-[1700px] mx-auto px-4 sm:px-6 pt-5 pb-12">
             <div className="mb-4">
                 <h1 className="m-0 text-[19px] font-bold text-[#0f1b2d]">Мой дайджест</h1>
                 <div className="mt-1 text-[12.5px] text-[#8b97ab] first-letter:uppercase">{today}</div>

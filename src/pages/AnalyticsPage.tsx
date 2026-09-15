@@ -24,8 +24,8 @@ import {contourReportsService} from "@/service/analyticsService/contourReportsSe
  */
 
 const TABS = [
-    {id: "sla", label: "Сроки и SLA"},
     {id: "vnd", label: "ВНД"},
+    {id: "sla", label: "Сроки и SLA"},
     {id: "sz", label: "Служебные записки"},
     {id: "prc", label: "Заявки и закупки"},
     {id: "meetings", label: "Заседания"},

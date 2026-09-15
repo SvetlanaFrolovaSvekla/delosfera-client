@@ -19,7 +19,6 @@ export const navGroups: NavGroup[] = [
     { items: [{ id: "home", icon: "dash", labelKey: "sidebar.items.home", path: "/" },
             // Согласования по всем контурам в одном месте, включая задачи по замещению
             { id: "inbox", icon: "check", labelKey: "Мои задачи", path: "/inbox" },
-            { id: "inbox", icon: "check", labelKey: "Мои задачи (все контуры)", path: "/inboxAll" },
             // Персональный дайджест (УВ-14) и календарь сроков (ЗС-13)
             { id: "digest", icon: "check", labelKey: "Дайджест", path: "/digest" },
             { id: "calendar", icon: "check", labelKey: "Календарь сроков", path: "/calendar" },

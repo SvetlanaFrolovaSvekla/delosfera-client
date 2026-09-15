@@ -37,6 +37,7 @@ const CONTOUR_META: Record<string, { icon: LucideIcon; color: string; bg: string
     vnd: {icon: FileText, color: "#0e8091", bg: "#dbf2f5", ring: "#b4e6ec"},
     sz: {icon: StickyNote, color: "#b3730a", bg: "#fbeecf", ring: "#f0d9ad"},
     prc: {icon: ShoppingCart, color: "#7a5ce0", bg: "#efeafe", ring: "#ddd0fa"},
+    ack: {icon: FileText, color: "#1c7a4d", bg: "#e2f4ea", ring: "#c7e9d6"},
 };
 
 // Заглушка пустого списка — своя на каждой вкладке (кроме "ВНД": там свой набор
@@ -74,8 +75,8 @@ export const TaskInboxPage = () => {
     const [searchQuery, setSearchQuery] = useState("");
     const [delegateTask, setDelegateTask] = useState<InboxTask | null>(null);
 
-    const вндВкладка = filter === "vnd";
-    const allВкладка = filter === "all";
+    const isVndTab = filter === "vnd";
+    const isAllTab = filter === "all";
 
     const load = useCallback(async () => {
         if (filter === "vnd") return;
@@ -99,7 +100,7 @@ export const TaskInboxPage = () => {
     // отдельным механизмом (см. TasksService на бэке) и через этот реестр не проходят вообще.
     // Тянем их тем же способом, что и вкладка "ВНД" внутри VndTasksPanel (scope "all" - пять
     // разделов одним списком), но только когда реально нужно (enabled).
-    const {tasks: vndAllTasks, isLoading: vndAllLoading} = useVndTasks("all", allВкладка);
+    const {tasks: vndAllTasks, isLoading: vndAllLoading} = useVndTasks("all", isAllTab);
 
     const filteredTasks = useMemo(() => {
         const tasks = inbox?.tasks ?? [];
@@ -108,17 +109,17 @@ export const TaskInboxPage = () => {
     }, [inbox, searchQuery]);
 
     const filteredVndTasks = useMemo(() => {
-        if (!allВкладка) return [];
+        if (!isAllTab) return [];
         if (!searchQuery.trim()) return vndAllTasks;
         return vndAllTasks.filter((task) => matchesTaskSearch(task, searchQuery));
-    }, [allВкладка, vndAllTasks, searchQuery]);
+    }, [isAllTab, vndAllTasks, searchQuery]);
 
     // Поиск сузил непустой список до нуля — это "ничего не нашлось", а не "в разделе
     // пусто" (у этих двух причин разные заглушки, см. INBOX_EMPTY_META и ниже). На "Все
     // контуры" считаем оба источника сразу — иначе поиск, не нашедший ничего среди записок/
     // закупок, но нашедший что-то среди ВНД (или наоборот), ошибочно показал бы "ничего не
     // найдено" прямо над найденными строками.
-    const rawTotalCount = (inbox?.tasks.length ?? 0) + (allВкладка ? vndAllTasks.length : 0);
+    const rawTotalCount = (inbox?.tasks.length ?? 0) + (isAllTab ? vndAllTasks.length : 0);
     const isSearchEmpty = searchQuery.trim().length > 0 && rawTotalCount > 0
         && filteredTasks.length === 0 && filteredVndTasks.length === 0;
 
@@ -133,7 +134,7 @@ export const TaskInboxPage = () => {
                 <div>
                     <h1 style={{margin: 0, fontSize: 19, fontWeight: 700, color: "#0f1b2d"}}>Мои задачи</h1>
                     <div style={{marginTop: 4, fontSize: 12.5, color: "#8b97ab"}}>
-                        {вндВкладка ? (
+                        {isVndTab ? (
                             "Согласование, актуализация и консолидация ВНД"
                         ) : inbox ? (
                             // "Всего" раньше считал только записки/закупки (inbox.total из
@@ -142,8 +143,8 @@ export const TaskInboxPage = () => {
                             // даже когда задачи явно были видны на экране. Добавляем их количество.
                             <>
                                 Всего: <b style={{color: "#4e57d6"}}>
-                                    {inbox.total + (allВкладка ? vndAllTasks.length : 0)}
-                                </b>
+                                {inbox.total + (isAllTab ? vndAllTasks.length : 0)}
+                            </b>
                                 {inbox.overdue > 0 && ` · просрочено ${inbox.overdue}`}
                                 {inbox.delegated > 0 && ` · по замещению ${inbox.delegated}`}
                             </>
@@ -153,8 +154,8 @@ export const TaskInboxPage = () => {
                     </div>
                 </div>
 
-                {/* TODO: страницы статистики по задачам ещё нет — кнопка пока заглушка */}
-                {вндВкладка && (
+              {/*   TODO: страницы статистики по задачам ещё нет — кнопка пока заглушка
+                {isVndTab && (
                     <button
                         type="button"
                         className="inline-flex items-center gap-2 h-10 px-[15px] rounded-[10px] border-none bg-[#4e57d6] text-white font-semibold text-[13px] cursor-pointer hover:brightness-[1.06] shadow-[0_6px_16px_-6px_#4e57d6]"
@@ -162,10 +163,10 @@ export const TaskInboxPage = () => {
                         <ChartColumn className="w-[18px] h-[18px]" strokeWidth={2}/>
                         Статистика по моим задачам
                     </button>
-                )}
+                )}*/}
             </div>
 
-            <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-4">
+            <div className="flex flex-wrap gap-2.5">
                 {FILTERS.map((f) => {
                     const active = filter === f.id;
 
@@ -175,7 +176,7 @@ export const TaskInboxPage = () => {
                                 key={f.id}
                                 onClick={() => setFilter("all")}
                                 className={
-                                    "cursor-pointer group flex items-center gap-3 rounded-2xl border px-4 py-3.5 text-left transition-all " +
+                                    "flex-1 min-w-[150px] cursor-pointer group flex items-center gap-3 rounded-2xl border px-4 py-3.5 text-left transition-all " +
                                     (active
                                         ? "border-[#4e57d6] bg-[#ececfc] shadow-[0_4px_14px_-6px_rgba(78,87,214,0.35)]"
                                         : "border-slate-200 bg-white hover:border-slate-300 hover:bg-slate-50")
@@ -204,7 +205,7 @@ export const TaskInboxPage = () => {
                             key={f.id}
                             onClick={() => setFilter(f.id)}
                             className={
-                                "cursor-pointer group flex items-center gap-3 overflow-hidden rounded-2xl border px-4 py-3.5 text-left transition-all " +
+                                "flex-1 min-w-[150px] cursor-pointer group flex items-center gap-3 overflow-hidden rounded-2xl border px-4 py-3.5 text-left transition-all " +
                                 (active
                                     ? "border-transparent shadow-[0_4px_14px_-6px_rgba(15,27,45,0.28)]"
                                     : "border-slate-200 bg-white hover:-translate-y-[1px] hover:shadow-[0_6px_16px_-10px_rgba(15,27,45,0.25)]")
@@ -223,56 +224,56 @@ export const TaskInboxPage = () => {
                 })}
             </div>
 
-            {вндВкладка && <VndTasksPanel/>}
+            {isVndTab && <VndTasksPanel/>}
 
-            {!вндВкладка && (
-            <>
-            <SearchBar
-                placeholder={searchPlaceholder}
-                value={searchQuery}
-                onChange={setSearchQuery}
-            />
+            {!isVndTab && (
+                <>
+                    <SearchBar
+                        placeholder={searchPlaceholder}
+                        value={searchQuery}
+                        onChange={setSearchQuery}
+                    />
 
-            {/* Задачи ВНД — только на "Все контуры" (см. filteredVndTasks выше), простыми
+                    {/* Задачи ВНД — только на "Все контуры" (см. filteredVndTasks выше), простыми
                 строчками карточек, как и везде на "Мои задачи": тип виден по бейджу раздела
                 на самой карточке (VndTaskCard — "Согласование"/"Актуализация"/"Консолидация"
                 и т.п.), не отдельным подзаголовком, как и у записок/закупок ниже (там тип —
                 тоже просто бейдж на строке, а не заголовок группы). */}
-            {allВкладка && filteredVndTasks.length > 0 && (
-                <section className="flex flex-col gap-2.5">
-                    {filteredVndTasks.map((task) => (
-                        <VndTaskCard
-                            key={`vnd-${task.vndId}-${task.scope}-${task.stageId ?? task.redactionId ?? "x"}`}
-                            task={task}
-                            searchQuery={searchQuery}
-                        />
-                    ))}
-                </section>
-            )}
+                    {isAllTab && filteredVndTasks.length > 0 && (
+                        <section className="flex flex-col gap-2.5">
+                            {filteredVndTasks.map((task) => (
+                                <VndTaskCard
+                                    key={`vnd-${task.vndId}-${task.scope}-${task.stageId ?? task.redactionId ?? "x"}`}
+                                    task={task}
+                                    searchQuery={searchQuery}
+                                />
+                            ))}
+                        </section>
+                    )}
 
-            {/* Записки и закупки - тот же сводный реестр (taskInboxService), что и раньше.
+                    {/* Записки и закупки - тот же сводный реестр (taskInboxService), что и раньше.
                 На "Все контуры" эта секция скрывается, если в ней самой пусто, но выше уже
                 что-то нашлось среди ВНД - иначе под настоящими карточками висела бы ещё и
                 пустая заглушка "задач нет". */}
-            {(filteredTasks.length > 0 || loading || !(allВкладка && filteredVndTasks.length > 0)) && (
-            <section style={{background: "#fff", border: "1px solid #e5e9f0", borderRadius: 13, overflow: "hidden"}}>
-                {filteredTasks.map((task: InboxTask) => (
-                    <div
-                        key={taskKey(task)}
-                        style={{
-                            display: "flex", alignItems: "stretch",
-                            borderTop: "1px solid #eef2f7",
-                            background: task.isOverdue ? "#fdf6f5" : undefined,
-                        }}
-                    >
-                    <Link
-                        to={taskLink(task)}
-                        style={{
-                            flex: 1, minWidth: 0,
-                            display: "flex", alignItems: "center", gap: 14, padding: "13px 16px",
-                            textDecoration: "none", color: "inherit",
-                        }}
-                    >
+                    {(filteredTasks.length > 0 || loading || !(isAllTab && filteredVndTasks.length > 0)) && (
+                        <section style={{background: "#fff", border: "1px solid #e5e9f0", borderRadius: 13, overflow: "hidden"}}>
+                            {filteredTasks.map((task: InboxTask) => (
+                                <div
+                                    key={taskKey(task)}
+                                    style={{
+                                        display: "flex", alignItems: "stretch",
+                                        borderTop: "1px solid #eef2f7",
+                                        background: task.isOverdue ? "#fdf6f5" : undefined,
+                                    }}
+                                >
+                                    <Link
+                                        to={taskLink(task)}
+                                        style={{
+                                            flex: 1, minWidth: 0,
+                                            display: "flex", alignItems: "center", gap: 14, padding: "13px 16px",
+                                            textDecoration: "none", color: "inherit",
+                                        }}
+                                    >
                         <span style={{
                             padding: "3px 8px", borderRadius: 6, fontSize: 11, fontWeight: 700,
                             background: "#f2f5f9", color: "#55617a", whiteSpace: "nowrap",
@@ -280,7 +281,7 @@ export const TaskInboxPage = () => {
                             {task.documentTypeTitle}
                         </span>
 
-                        <span style={{flex: 1, minWidth: 0}}>
+                                        <span style={{flex: 1, minWidth: 0}}>
                             <span style={{display: "block", fontSize: 13.5, fontWeight: 600, color: "#0f1b2d"}}>
                                 {task.documentTitle}
                             </span>
@@ -294,59 +295,59 @@ export const TaskInboxPage = () => {
                             </span>
                         </span>
 
-                        <span style={{
-                            fontSize: 12, fontWeight: 600, whiteSpace: "nowrap",
-                            color: task.isOverdue ? "#c0392b" : "#55617a",
-                        }}>
+                                        <span style={{
+                                            fontSize: 12, fontWeight: 600, whiteSpace: "nowrap",
+                                            color: task.isOverdue ? "#c0392b" : "#55617a",
+                                        }}>
                             {task.isOverdue ? "просрочено · " : "до "}{formatDue(task.dueAt)}
                         </span>
-                    </Link>
+                                    </Link>
 
-                        {/* Делегировать можно только задачу согласования: у неё есть
+                                    {/* Делегировать можно только задачу согласования: у неё есть
                             участник маршрута, которого движок и проверяет. */}
-                        {task.participantId !== null && (
-                            <button
-                                type="button"
-                                title="Делегировать коллеге"
-                                onClick={() => setDelegateTask(task)}
-                                style={{
-                                    flexShrink: 0, width: 44, display: "grid", placeItems: "center",
-                                    border: "none", borderLeft: "1px solid #eef2f7", background: "none",
-                                    color: "#8b97ab", cursor: "pointer",
-                                }}
-                            >
-                                <Share2 style={{width: 16, height: 16}}/>
-                            </button>
-                        )}
-                    </div>
-                ))}
+                                    {task.participantId !== null && (
+                                        <button
+                                            type="button"
+                                            title="Делегировать коллеге"
+                                            onClick={() => setDelegateTask(task)}
+                                            style={{
+                                                flexShrink: 0, width: 44, display: "grid", placeItems: "center",
+                                                border: "none", borderLeft: "1px solid #eef2f7", background: "none",
+                                                color: "#8b97ab", cursor: "pointer",
+                                            }}
+                                        >
+                                            <Share2 style={{width: 16, height: 16}}/>
+                                        </button>
+                                    )}
+                                </div>
+                            ))}
 
-                {/* Пустая заглушка - только когда ОБА источника (записки/закупки и, на "Все
+                            {/* Пустая заглушка - только когда ОБА источника (записки/закупки и, на "Все
                     контуры", ВНД) пусты; не только записки/закупки сами по себе (см. секцию
                     ВНД выше). */}
-                {!loading && !(allВкладка && vndAllLoading) && filteredTasks.length === 0
-                    && !(allВкладка && filteredVndTasks.length > 0) && (
-                    isSearchEmpty ? (
-                        <EmptyState
-                            embedded
-                            title="Ничего не найдено"
-                            description="Попробуйте изменить запрос поиска."
-                        />
-                    ) : (
-                        <EmptyState
-                            embedded
-                            icon={(INBOX_EMPTY_META[filter] ?? INBOX_EMPTY_META.all).icon}
-                            title={(INBOX_EMPTY_META[filter] ?? INBOX_EMPTY_META.all).title}
-                            description={(INBOX_EMPTY_META[filter] ?? INBOX_EMPTY_META.all).description}
-                        />
-                    )
-                )}
-                {(loading || (allВкладка && vndAllLoading && filteredTasks.length === 0 && filteredVndTasks.length === 0)) && (
-                    <div style={{padding: 28, textAlign: "center", color: "#8b97ab", fontSize: 13}}>Загрузка…</div>
-                )}
-            </section>
-            )}
-            </>
+                            {!loading && !(isAllTab && vndAllLoading) && filteredTasks.length === 0
+                                && !(isAllTab && filteredVndTasks.length > 0) && (
+                                    isSearchEmpty ? (
+                                        <EmptyState
+                                            embedded
+                                            title="Ничего не найдено"
+                                            description="Попробуйте изменить запрос поиска."
+                                        />
+                                    ) : (
+                                        <EmptyState
+                                            embedded
+                                            icon={(INBOX_EMPTY_META[filter] ?? INBOX_EMPTY_META.all).icon}
+                                            title={(INBOX_EMPTY_META[filter] ?? INBOX_EMPTY_META.all).title}
+                                            description={(INBOX_EMPTY_META[filter] ?? INBOX_EMPTY_META.all).description}
+                                        />
+                                    )
+                                )}
+                            {(loading || (isAllTab && vndAllLoading && filteredTasks.length === 0 && filteredVndTasks.length === 0)) && (
+                                <div style={{padding: 28, textAlign: "center", color: "#8b97ab", fontSize: 13}}>Загрузка…</div>
+                            )}
+                        </section>
+                    )}
+                </>
             )}
 
             {delegateTask && (

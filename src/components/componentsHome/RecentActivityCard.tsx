@@ -110,13 +110,13 @@ export function RecentActivityCard({limit = 15, module}: RecentActivityCardProps
                         const locked = !item.canOpen;
                         return (
                             <Tooltip
+                                key={item.id}
                                 content="Черновик недоступен — нет прав на просмотр чужих черновиков"
                                 side="top"
                                 disabled={!locked}
                                 className="w-full"
                             >
                                 <div
-                                    key={item.id}
                                     onClick={locked ? undefined : () => navigate(item.url)}
                                     className={
                                         "flex gap-[11px] border-t border-[#f3f6f9] py-[9px] first:border-t-0 " +

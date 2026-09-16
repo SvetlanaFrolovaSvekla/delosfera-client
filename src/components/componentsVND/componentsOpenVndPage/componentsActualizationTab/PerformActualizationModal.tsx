@@ -158,7 +158,7 @@ export function PerformActualizationModal({
                         className="cursor-pointer inline-flex h-[38px] items-center gap-2 rounded-[10px] bg-[#4e57d6] px-4 text-[13px] font-semibold text-white hover:bg-[#3f47bd] disabled:cursor-not-allowed disabled:opacity-50"
                     >
                         {submitting && <Loader2 size={14} className="animate-spin"/>}
-                        {confirmLabel ?? "Сохранить"}
+                        {confirmLabel ?? "ОК"}
                     </button>
                 </div>
             </div>

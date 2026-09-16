@@ -33,7 +33,7 @@ const COMMENT_TRUNCATE_LENGTH = 500; // Лимит обрезки коммент
  * что и в VndRevisionNeededPanel.tsx). */
 const AUTO_GENERATED_COMMENT_TEXTS = new Set([
     "Согласовано автоматически — инициатор является согласующим на этом этапе",
-    "Согласовано автоматически — вы уже согласовали эту редакцию без замечаний ранее",
+    "Согласовано автоматически",
 ]);
 
 interface PhaseCommentEntry {

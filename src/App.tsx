@@ -13,6 +13,7 @@ import {Sidebar} from "@/components/componentsSidebar/Sidebar.tsx";
 import {Header} from "@/components/componentsHeader/Header.tsx";
 import {RegulationConsentGate} from "@/components/signing/RegulationConsentGate.tsx";
 import {useUsageTracking} from "@/hooks/useUsageTracking.ts";
+import {FeedbackButton} from "@/components/feedback/FeedbackButton.tsx";
 
 // Страницы грузятся лениво — каждая попадает в отдельный чанк, а не в один общий бандл.
 // Named-экспорты оборачиваем в { default } для React.lazy.
@@ -125,7 +126,7 @@ const MainLayout = () => {
             </div>
             {/* Кнопка «Сообщить» — на каждом экране, а не в отдельном разделе:
                 замечание случается посреди работы, и искать его некуда некогда. */}
-          {/*  <FeedbackButton/>*/}
+            <FeedbackButton/>
         </DictionariesProvider>
     );
 };

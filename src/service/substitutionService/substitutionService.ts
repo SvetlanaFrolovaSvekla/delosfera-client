@@ -145,4 +145,17 @@ export const substitutionService = {
     async remove(id: number) {
         await apiClient.delete(`${BASE}/${id}`);
     },
+
+    /** Скачать печатную форму: form = "order" (приказ) или "liability" (договор МО). */
+    async print(id: number, form: "order" | "liability", fileName: string) {
+        const response = await apiClient.get(`${BASE}/${id}/print/${form}`, {responseType: "blob"});
+        const url = URL.createObjectURL(response.data as Blob);
+        const link = document.createElement("a");
+        link.href = url;
+        link.download = fileName;
+        document.body.appendChild(link);
+        link.click();
+        link.remove();
+        URL.revokeObjectURL(url);
+    },
 };

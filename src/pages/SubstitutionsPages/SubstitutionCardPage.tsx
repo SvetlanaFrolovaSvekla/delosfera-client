@@ -1,6 +1,6 @@
 import {useEffect, useMemo, useState} from "react";
 import {useNavigate, useParams} from "react-router-dom";
-import {ArrowLeft, Plus, Trash2} from "lucide-react";
+import {ArrowLeft, Plus, Printer, Trash2} from "lucide-react";
 import {UserPicker, type PickableUser} from "@/components/componentsGeneral/UserPicker.tsx";
 import {userService} from "@/service/userService/userService.ts";
 import {
@@ -273,6 +273,18 @@ export function SubstitutionCardPage() {
                             <button type="button" onClick={() => void submit()} disabled={busy}
                                     className="h-10 px-5 rounded-[10px] bg-[#2f68f5] text-white text-[14px] font-semibold cursor-pointer hover:bg-[#2554cc] disabled:opacity-50">
                                 Отправить в УЧР
+                            </button>
+                        </>
+                    )}
+                    {details && (
+                        <>
+                            <button type="button" onClick={() => void substitutionService.print(details.id, "order", `Приказ ${details.regNumber ?? details.id}.docx`)}
+                                    className="h-10 px-4 rounded-[10px] border border-[#d5dbe6] bg-white text-[14px] font-medium text-[#374253] cursor-pointer hover:bg-[#f4f6fa] flex items-center gap-2">
+                                <Printer size={16}/> Приказ
+                            </button>
+                            <button type="button" onClick={() => void substitutionService.print(details.id, "liability", `Договор МО ${details.regNumber ?? details.id}.docx`)}
+                                    className="h-10 px-4 rounded-[10px] border border-[#d5dbe6] bg-white text-[14px] font-medium text-[#374253] cursor-pointer hover:bg-[#f4f6fa] flex items-center gap-2">
+                                <Printer size={16}/> Договор МО
                             </button>
                         </>
                     )}

@@ -48,6 +48,13 @@ const GROUPS: { title: string; items: Item[] }[] = [
                 icon: UserCog,
                 permission: PermissionCode.ManageUsers,
             },
+            {
+                path: "/management/hr-routing",
+                title: "Маршрутизация кадровых СЗ",
+                hint: "Кадровик УЧР по областям: ГО и филиалы",
+                icon: Settings2,
+                permission: PermissionCode.ManageSystemSettings,
+            },
         ],
     },
     {
@@ -58,6 +65,13 @@ const GROUPS: { title: string; items: Item[] }[] = [
                 title: "Справочники",
                 hint: "Подразделения, должности, виды документов",
                 icon: Building2,
+            },
+            {
+                path: "/management/refs/unit-curators",
+                title: "Кураторство подразделений",
+                hint: "Начальник и куратор у каждого подразделения — для маршрутов кадровых СЗ",
+                icon: UserCog,
+                permission: PermissionCode.ManageGeneralDictionaries,
             },
             {
                 path: "/management/document-types",

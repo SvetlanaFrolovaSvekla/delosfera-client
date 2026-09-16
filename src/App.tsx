@@ -21,6 +21,7 @@ const HomePage = lazy(() => import("@/pages/HomePage.tsx").then(m => ({default: 
 const DictionariesPages = lazy(() => import("@/pages/DictionariesPages/DictionariesPages.tsx").then(m => ({default: m.DictionariesPages})));
 const ApprovalBodyPage = lazy(() => import("@/pages/DictionariesPages/ApprovalBodyPage.tsx").then(m => ({default: m.ApprovalBodyPage})));
 const OrganizationUnitPage = lazy(() => import("@/pages/DictionariesPages/OrganizationUnitPage.tsx").then(m => ({default: m.OrganizationUnitPage})));
+const UnitCuratorsPage = lazy(() => import("@/pages/DictionariesPages/UnitCuratorsPage.tsx").then(m => ({default: m.UnitCuratorsPage})));
 const PositionPage = lazy(() => import("@/pages/DictionariesPages/PositionPage.tsx").then(m => ({default: m.PositionPage})));
 const BodyMembersPage = lazy(() => import("@/pages/DictionariesPages/BodyMembersPage.tsx").then(m => ({default: m.BodyMembersPage})));
 const RouteTemplatesPage = lazy(() => import("@/pages/RouteTemplatesPage.tsx").then(m => ({default: m.RouteTemplatesPage})));
@@ -67,6 +68,9 @@ const CalendarPage = lazy(() => import("@/pages/CalendarPage.tsx").then(m => ({d
 const NotificationSettingsPage = lazy(() => import("@/pages/NotificationSettingsPage.tsx").then(m => ({default: m.NotificationSettingsPage})));
 const TaskStatsPage = lazy(() => import("@/pages/TasksPages/TaskStatsPage.tsx").then(m => ({default: m.TaskStatsPage})));
 const ObligationsBoardPage = lazy(() => import("@/pages/ObligationsBoardPage.tsx").then(m => ({default: m.ObligationsBoardPage})));
+const HrRoutingSettingsPage = lazy(() => import("@/pages/HrRoutingSettingsPage.tsx").then(m => ({default: m.HrRoutingSettingsPage})));
+const SubstitutionRequestsPage = lazy(() => import("@/pages/SubstitutionsPages/SubstitutionsPage.tsx").then(m => ({default: m.SubstitutionRequestsPage})));
+const SubstitutionCardPage = lazy(() => import("@/pages/SubstitutionsPages/SubstitutionCardPage.tsx").then(m => ({default: m.SubstitutionCardPage})));
 
 // Полная лента событий по всем контурам — развёрнутая версия виджета
 // "Последняя активность" с главной (кнопка "Смотреть всю активность").
@@ -207,6 +211,7 @@ function App() {
                                     <Route path="document-types" element={<DocumentTypesPage/>}/>
                                     <Route path="refs/approval-body" element={<ApprovalBodyPage/>}/>
                                     <Route path="refs/organization-unit" element={<OrganizationUnitPage/>}/>
+                                    <Route path="refs/unit-curators" element={<UnitCuratorsPage/>}/>
                                     <Route path="refs/position" element={<PositionPage/>}/>
                                     <Route path="refs/body-members" element={<BodyMembersPage/>}/>
                                     <Route path="refs/keyword" element={<KeywordPage/>}/>
@@ -238,6 +243,7 @@ function App() {
                                         <Route path="changes" element={<SettingsChangesPage/>}/>
                                         <Route path="integrations" element={<SystemSettingsPage/>}/>
                                         <Route path="signing" element={<SystemSettingsPage/>}/>
+                                        <Route path="hr-routing" element={<HrRoutingSettingsPage/>}/>
                                         <Route path="help" element={<HelpPage/>}/>
                                     </Route>
                                 </Route>
@@ -252,6 +258,10 @@ function App() {
                                 </Route>
 
                                 {/* Периодичность заседаний и отчётов; отбор вопросов секретарём */}
+                                <Route path="/substitutions/new" element={<SubstitutionCardPage/>}/>
+                                <Route path="/substitutions/:id" element={<SubstitutionCardPage/>}/>
+                                <Route path="/substitutions" element={<SubstitutionRequestsPage/>}/>
+
                                 <Route path="/obligations/board" element={<ObligationsBoardPage/>}/>
                                 <Route path="/obligations" element={<ObligationsPage/>}/>
                                 <Route element={<RequirePermission code={PermissionCode.ViewHrOrders}/>}>

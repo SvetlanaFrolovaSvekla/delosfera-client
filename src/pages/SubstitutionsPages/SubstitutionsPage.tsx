@@ -16,7 +16,7 @@ function period(a: string | null, b: string | null): string {
     return `${f(a)} — ${f(b)}`;
 }
 
-export function SubstitutionsPage() {
+export function SubstitutionRequestsPage() {
     const navigate = useNavigate();
     const [rows, setRows] = useState<SubstitutionListItem[]>([]);
     const [query, setQuery] = useState("");

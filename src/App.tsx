@@ -70,7 +70,7 @@ const NotificationSettingsPage = lazy(() => import("@/pages/NotificationSettings
 const TaskStatsPage = lazy(() => import("@/pages/TasksPages/TaskStatsPage.tsx").then(m => ({default: m.TaskStatsPage})));
 const ObligationsBoardPage = lazy(() => import("@/pages/ObligationsBoardPage.tsx").then(m => ({default: m.ObligationsBoardPage})));
 const HrRoutingSettingsPage = lazy(() => import("@/pages/HrRoutingSettingsPage.tsx").then(m => ({default: m.HrRoutingSettingsPage})));
-const SubstitutionsPage = lazy(() => import("@/pages/SubstitutionsPages/SubstitutionsPage.tsx").then(m => ({default: m.SubstitutionsPage})));
+const SubstitutionRequestsPage = lazy(() => import("@/pages/SubstitutionsPages/SubstitutionsPage.tsx").then(m => ({default: m.SubstitutionRequestsPage})));
 const SubstitutionCardPage = lazy(() => import("@/pages/SubstitutionsPages/SubstitutionCardPage.tsx").then(m => ({default: m.SubstitutionCardPage})));
 
 // Полная лента событий по всем контурам — развёрнутая версия виджета
@@ -263,7 +263,7 @@ function App() {
                                 {/* Периодичность заседаний и отчётов; отбор вопросов секретарём */}
                                 <Route path="/substitutions/new" element={<SubstitutionCardPage/>}/>
                                 <Route path="/substitutions/:id" element={<SubstitutionCardPage/>}/>
-                                <Route path="/substitutions" element={<SubstitutionsPage/>}/>
+                                <Route path="/substitutions" element={<SubstitutionRequestsPage/>}/>
 
                                 <Route path="/obligations/board" element={<ObligationsBoardPage/>}/>
                                 <Route path="/obligations" element={<ObligationsPage/>}/>

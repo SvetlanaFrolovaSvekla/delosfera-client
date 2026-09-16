@@ -1,6 +1,6 @@
 // Одна строка дерева + дочерние строки - для любого иерархического справочника
 import {useTranslation} from "react-i18next";
-import {HighlightText} from "@/utils/HighlightText.tsx";
+import {HighlightText} from "@/utils/highlightText.tsx";
 import type {TreeDictItem, DictTreeNode} from "@/utils/dictionaries/hierarchicalDictTree.ts";
 import {Tooltip} from "@/components/componentsGeneral/Tooltip.tsx";
 import {ChevronRight, Pencil, Plus, Trash2} from "lucide-react";

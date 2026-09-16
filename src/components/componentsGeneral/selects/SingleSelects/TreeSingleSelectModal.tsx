@@ -2,7 +2,7 @@
 import {useRef, useState} from "react";
 import {useTranslation} from "react-i18next";
 import {ChevronRight, X} from "lucide-react";
-import {HighlightText} from "@/utils/HighlightText.tsx";
+import {HighlightText} from "@/utils/highlightText.tsx";
 import {SearchBar} from "@/components/componentsGeneral/SearchBar.tsx";
 
 export interface TreeSelectOption {

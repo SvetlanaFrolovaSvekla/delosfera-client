@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import type { Notification } from "@/service/notificationsService/notificationsServiceType.ts";
-import { HighlightText } from "@/utils/HighlightText.tsx";
+import { HighlightText } from "@/utils/highlightText.tsx";
 import { NOTIFICATION_CATEGORY_META, DEFAULT_CATEGORY_META } from "@/constants/notificationCategory.ts";
 import { SeverityDot } from "./SeverityDot.tsx";
 import { Bell, ChevronRight, Paperclip, Star, Trash2 } from "lucide-react";

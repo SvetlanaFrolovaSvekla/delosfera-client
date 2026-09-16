@@ -1,6 +1,6 @@
-import {apiClient} from "@/service/apiClient.ts";
+// Настройки уведомлений пользователя
 
-// Настройки уведомлений пользователя (УВ-16).
+import {apiClient} from "@/service/apiClient.ts";
 
 export interface NotificationSetting {
     emailDigestEnabled: boolean;

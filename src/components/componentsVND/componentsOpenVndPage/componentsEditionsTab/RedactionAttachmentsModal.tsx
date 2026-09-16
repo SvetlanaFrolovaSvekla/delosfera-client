@@ -3,7 +3,7 @@ import {useState} from "react";
 import {createPortal} from "react-dom";
 import {Download, Eye, FileText, Loader2, Paperclip, X} from "lucide-react";
 import type {VndRedactionResponse} from "@/service/vndService/vndServiceType.ts";
-import {isDocxFile} from "@/utils/fileNaming.ts";
+import {isDocxFile} from "@/utils/downloadFiles/fileNaming.ts";
 import {Tooltip} from "@/components/componentsGeneral/Tooltip.tsx";
 import {TruncatedTooltip} from "@/components/componentsGeneral/TruncatedTooltip.tsx";
 import {

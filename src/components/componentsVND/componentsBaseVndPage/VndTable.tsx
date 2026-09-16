@@ -1,7 +1,7 @@
 import {useTranslation} from "react-i18next";
 import {Link} from "react-router-dom";
 import {useActualizationBucketMeta} from "@/hooks/actualizationHooks/useActualizationBucketMeta.ts";
-import {HighlightText} from "@/utils/HighlightText.tsx";
+import {HighlightText} from "@/utils/highlightText.tsx";
 import type {VndResponse} from "@/service/vndService/vndServiceType.ts";
 import {collapseDocumentStatus, DOCUMENT_STATUS_META, getVndDisplayMeta, STATUS_META} from "@/constants/vndStatus.ts";
 import {LINKED_TO_ME_RELATION_META, type LinkedToMeRelationKey} from "@/constants/linkedToMeRelations.ts";

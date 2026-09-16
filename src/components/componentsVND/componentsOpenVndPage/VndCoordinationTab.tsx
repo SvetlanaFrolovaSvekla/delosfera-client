@@ -13,7 +13,7 @@ import {toast} from "@/service/toastService.ts";
 import {PermissionCode} from "@/constants/permissions/permissions.ts";
 import {useVndRedactions} from "@/hooks/vndHooks/useVndRedactions.ts";
 import {useAsyncAction} from "@/hooks/useAsyncAction.ts";
-import {downloadWithToast} from "@/utils/downloadFile.ts";
+import {downloadWithToast} from "@/utils/downloadFiles/downloadFile.ts";
 
 ///
 import {
@@ -44,7 +44,7 @@ import {
 } from "@/components/componentsCoordination/CoordinationRouteConstructor/viewComponents/RedactionViewModal.tsx";
 import {ConfirmActionModal} from "@/components/componentsGeneral/modal/ConfirmActionModal.tsx";
 import {AlertTriangle, CheckCircle2, Clock3, Columns2, FileCheck2, Info, XCircle} from "lucide-react";
-import type {RedactionViewTarget} from "@/utils/redactionLanguagePanelUtils.ts";
+import type {RedactionViewTarget} from "@/utils/vndProcess/redactionLanguagePanelUtils.ts";
 import {useApprovalProcess} from "@/hooks/coordinationHooks/useApprovalProcess.ts";
 
 ///

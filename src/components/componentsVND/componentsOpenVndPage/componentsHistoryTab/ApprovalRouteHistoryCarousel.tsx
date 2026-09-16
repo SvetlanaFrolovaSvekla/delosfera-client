@@ -15,7 +15,7 @@ import {useTranslation} from "react-i18next";
 import type {TFunction} from "i18next";
 import {ChevronLeft, ChevronRight} from "lucide-react";
 import {formatDateTime} from "@/utils/dateUtils.ts";
-import {getInitials} from "@/utils/getInitials.ts";
+import {getInitials} from "@/utils/namingUsers/getInitials.ts";
 import {
     FormattedResolutionComment
 } from "@/components/componentsCoordination/CoordinationRouteConstructor/viewComponents/FormattedResolutionComment.tsx";

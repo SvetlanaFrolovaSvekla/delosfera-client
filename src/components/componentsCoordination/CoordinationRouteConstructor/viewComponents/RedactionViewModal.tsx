@@ -11,17 +11,17 @@ import {
 } from "@/components/componentsVND/componentsOpenVndPage/componentsEditionsTab/RedactionContentsPanel.tsx";
 import {
     getAvailableLanguages, type RedactionLanguage, type RedactionViewTarget
-} from "@/utils/redactionLanguagePanelUtils.ts";
-import {buildRedactionFileName} from "@/utils/fileNaming.ts";
+} from "@/utils/vndProcess/redactionLanguagePanelUtils.ts";
+import {buildRedactionFileName} from "@/utils/downloadFiles/fileNaming.ts";
 import {Tooltip} from "@/components/componentsGeneral/Tooltip.tsx";
 import {SearchBar} from "@/components/componentsGeneral/SearchBar.tsx";
 import {Download, Eye, EyeOff, FileText, Highlighter, ListTree, Loader2, MessageSquareText, Quote, X} from "lucide-react";
 import {
     collectAllStageComments, collectQuoteMarks, quoteMarkModalProps, type QuoteMarkInfo
-} from "@/utils/redactionQuoteMarks.ts";
+} from "@/utils/vndProcess/redactionQuoteMarks.ts";
 import {CommentViewModal} from "./CommentViewModal.tsx";
-import {getInitials} from "@/utils/getInitials.ts";
-import {getApproverColor} from "@/utils/approverColors.ts";
+import {getInitials} from "@/utils/namingUsers/getInitials.ts";
+import {getApproverColor} from "@/utils/docxWork/approverColors.ts";
 
 interface RedactionViewModalProps {
     vnd: VndResponse;

@@ -4,7 +4,7 @@ import {useTranslation} from "react-i18next";
 import {useNavigate} from "react-router-dom";
 import {User, LogOut, ChevronRight} from "lucide-react";
 import {useAuth} from "@/context/AuthContext.ts";
-import {transliterate} from "@/utils/transliterate.ts";
+import {transliterate} from "@/utils/translations/transliterate.ts";
 
 function getInitials(fullName: string): string {
     return fullName

@@ -101,15 +101,29 @@ const BOTTOM_DEFAULT_TONE = {
    - слот 5 (фиолетовый) — "Закупки в процедуре" (prc-active) — без изменений. */
 const BOTTOM_SLOT_ORDER = ["sz-inbox", "vnd-actualization", "prc-approval", "sz-overdue", "prc-active"];
 
-// Нижний ряд, как и раньше, не локализован — короткие описания для тултипов держим
-// здесь же, рядом с порядком слотов. При необходимости поправь текст под реальные
-// формулировки бизнеса.
+// Короткие описания для тултипов нижнего ряда — ключи i18n (namespace home.kpi.tooltip),
+// а не готовый текст: переводятся на месте использования, где уже есть доступ к
+// useTranslation.
 const BOTTOM_TOOLTIPS: Record<string, string> = {
-    "sz-inbox": "Служебные записки, которые сейчас ожидают вашего решения как согласующего.",
-    "vnd-actualization": "Документы, актуализация которых поручена вам как ответственному.",
-    "prc-approval": "Заявки на закупку, которые сейчас проходят согласование.",
-    "sz-overdue": "Служебные записки с нарушенным сроком согласования или исполнения.",
-    "prc-active": "Закупки, которые сейчас находятся в активной процедуре проведения.",
+    "sz-inbox": "home.kpi.tooltip.szInbox",
+    "vnd-actualization": "home.kpi.tooltip.vndActualization",
+    "prc-approval": "home.kpi.tooltip.prcApproval",
+    "sz-overdue": "home.kpi.tooltip.szOverdue",
+    "prc-active": "home.kpi.tooltip.prcActive",
+};
+
+// Заголовки карточек нижнего ряда переводятся на клиенте по стабильному DashboardKpi.code,
+// а не по DashboardKpi.label с бэка — там текст приходит уже готовой русской строкой
+// (DashboardService.GetSummaryAsync), которую i18next перевести не может: это не ключ, а
+// произвольное значение. Бэкендовый label используется только как fallback для кода, для
+// которого клиент ещё не завёл перевод (см. ниже resolveBottomLabel) — так новый код с бэка
+// не пропадёт молча, просто будет нелокализован до того, как здесь заведут перевод.
+const BOTTOM_LABEL_KEYS: Record<string, string> = {
+    "sz-inbox": "home.kpi.card.szInbox",
+    "vnd-actualization": "home.kpi.vndActualizationResponsible",
+    "prc-approval": "home.kpi.card.prcApproval",
+    "sz-overdue": "home.kpi.card.szOverdue",
+    "prc-active": "home.kpi.card.prcActive",
 };
 
 interface HomeKpiSectionProps {
@@ -153,7 +167,9 @@ export function HomeKpiSection({summary, totalTasksCount}: HomeKpiSectionProps) 
 
     const tasksKpi = dashboard?.kpis.find((k) => k.code === "tasks");
     const tasksValue = totalTasksCount ?? tasksKpi?.value ?? 0;
-    const topKpis = buildTopKpis(summary, tasksKpi?.label ?? "Мои задачи", tasksValue);
+    // Заголовок карточки — всегда клиентский перевод по коду "tasks", бэкендовый
+    // DashboardKpi.label ("Мои задачи") сюда не идёт — см. комментарий у BOTTOM_LABEL_KEYS.
+    const topKpis = buildTopKpis(summary, t("sidebar.items.tasks"), tasksValue);
 
     // "На актуализации под моей ответственностью" берётся из той же сводки ВНД
     // (summary), что уже используется верхним рядом — раньше нижний ряд запрашивал
@@ -161,7 +177,7 @@ export function HomeKpiSection({summary, totalTasksCount}: HomeKpiSectionProps) 
     const otherKpis = dashboard?.kpis.filter((k) => k.code !== "tasks") ?? [];
     const actualizationCard: DashboardKpi = {
         code: "vnd-actualization",
-        label: "ВНД на актуализации под моей ответственностью",
+        label: t("home.kpi.vndActualizationResponsible"),
         value: summary?.myResponsibleActualizations ?? 0,
         note: null,
         tone: "normal",
@@ -226,11 +242,11 @@ export function HomeKpiSection({summary, totalTasksCount}: HomeKpiSectionProps) 
                 <>
                     {dashboard.actingFor.length > 0 && (
                         <div className="mb-5 rounded-[14px] border border-[#f0c98a] bg-[#fffaf0] px-4 py-3">
-                            <div className="text-[13px] font-semibold text-[#8a5a00]">Активно замещение</div>
+                            <div className="text-[13px] font-semibold text-[#8a5a00]">{t("home.substitution.activeTitle")}</div>
                             {dashboard.actingFor.map((s) => (
                                 <div key={s.id} className="mt-1 text-[12.5px] leading-[1.6] text-[#8a5a00]">
-                                    Вы замещаете: <b>{s.userName}</b> — задачи перенаправлены вам автоматически
-                                    с сохранением сроков. Период: {s.startsOn} — {s.endsOn}
+                                    {t("home.substitution.actingForPrefix")} <b>{s.userName}</b>{" "}
+                                    {t("home.substitution.actingForSuffix", {start: s.startsOn, end: s.endsOn})}
                                     {s.reason ? ` · ${s.reason}` : ""}
                                 </div>
                             ))}
@@ -241,7 +257,8 @@ export function HomeKpiSection({summary, totalTasksCount}: HomeKpiSectionProps) 
                         <div className="mb-5 rounded-[14px] border border-[#cbddff] bg-[#e9f0ff] px-4 py-3">
                             {dashboard.replacedBy.map((s) => (
                                 <div key={s.id} className="text-[12.5px] leading-[1.6] text-[#2f68f5]">
-                                    Вас замещает <b>{s.userName}</b> до {s.endsOn}
+                                    {t("home.substitution.replacedByPrefix")} <b>{s.userName}</b>{" "}
+                                    {t("home.substitution.replacedBySuffix", {end: s.endsOn})}
                                     {s.reason ? ` · ${s.reason}` : ""}
                                 </div>
                             ))}
@@ -252,7 +269,10 @@ export function HomeKpiSection({summary, totalTasksCount}: HomeKpiSectionProps) 
                         <div className="mb-5 grid grid-cols-2 lg:grid-cols-5 gap-4">
                             {bottomCards.map((k, i) => {
                                 const tone = BOTTOM_SLOT_TONES[i] ?? BOTTOM_DEFAULT_TONE;
-                                const tooltip = BOTTOM_TOOLTIPS[k.code];
+                                const tooltipKey = BOTTOM_TOOLTIPS[k.code];
+                                const tooltip = tooltipKey ? t(tooltipKey) : undefined;
+                                const labelKey = BOTTOM_LABEL_KEYS[k.code];
+                                const label = labelKey ? t(labelKey) : k.label;
 
                                 // "ВНД на актуализации под моей ответственностью" ведёт на
                                 // "Мои задачи" сразу на вкладку "Актуализация" (VndTasksPanel
@@ -283,7 +303,7 @@ export function HomeKpiSection({summary, totalTasksCount}: HomeKpiSectionProps) 
                                             <span className="absolute inset-y-0 left-0 w-1" style={{background: tone.col}}/>
                                             <div className="flex items-center justify-between">
                                                 <span className="min-h-8 text-[12px] font-medium leading-[1.35] text-[#5b6675]">
-                                                    {k.label}
+                                                    {label}
                                                 </span>
                                                 <Icon name="chevr" width={15} height={15} className="ml-2 flex-none text-[#c3ccd8]"/>
                                             </div>

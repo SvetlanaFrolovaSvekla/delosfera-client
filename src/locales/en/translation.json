@@ -17,14 +17,40 @@
     "saving": "Saving…",
     "archiving": "Archiving…"
   },
+  "time": {
+    "days_one": "{{count}} day",
+    "days_other": "{{count}} days",
+    "hours_one": "{{count}} hour",
+    "hours_other": "{{count}} hours",
+    "minutes_one": "{{count}} minute",
+    "minutes_other": "{{count}} minutes",
+    "lessThanMinute": "less than a minute",
+    "overdueBy": "overdue by {{time}}",
+    "remaining": "{{time}} remaining",
+    "ago": "{{time}} ago",
+    "justNow": "just now"
+  },
+  "coordination": {
+    "currentPhaseHint": {
+      "title": "Current phase",
+      "phaseStarted": "Phase started: {{time}}",
+      "deadline": "Deadline: {{time}}"
+    },
+    "normBlock": {
+      "phaseStarted": "Phase started {{date}}"
+    }
+  },
   "sidebar": {
     "badgeTooltips": {
       "planning": "Overdue and critical VND: {{count}}",
-      "tasks": "Tasks requiring attention: {{count}}"
+      "tasks": "Tasks requiring attention: {{count}}",
+      "notif": "Unread notifications: {{count}}"
     },
     "appName": "Delosfera",
     "appSub": "EDMS",
     "collapse": "Collapse menu",
+    "showMenu": "Show menu",
+    "hideMenu": "Hide menu",
     "groups": {
       "normotvorchestvo": "Rulemaking (VND)",
       "sz": "Memos",
@@ -32,12 +58,15 @@
       "meetings": "Meetings",
       "hr": "HR Document Flow",
       "system": "System",
-      "admin": "Administration"
+      "admin": "Administration",
+      "office": "Records Office",
+      "management": "Administration"
     },
     "items": {
       "home": "Dashboard",
       "rubric": "Rubricator",
       "vnd": "VND Registry",
+      "notif": "Notifications",
       "pln": "Actualization Planning",
       "tid": "Approval",
       "tasks": "My Tasks",
@@ -62,7 +91,24 @@
       "admRoles": "Roles & Permissions",
       "admSub": "Substitutions",
       "admLog": "Action Log",
-      "admAuth": "Authentication"
+      "admAuth": "Authentication",
+      "digest": "Digest",
+      "calendar": "Deadline Calendar",
+      "analytics": "Analytics",
+      "szTracker": "Memo Board",
+      "meetings": "Committee Decisions",
+      "meetCandidates": "Items for Review",
+      "obligations": "Recurring Obligations",
+      "obligationsBoard": "Obligations Board",
+      "prcTracker": "Procurement Board",
+      "prcAnnualPlan": "Procurement Plan",
+      "prcSuppliers": "Suppliers & Blacklist",
+      "correspondence": "Correspondence",
+      "poa": "Powers of Attorney",
+      "hrOrders": "Personnel Orders",
+      "help": "How to Use the System",
+      "signingWorkplace": "Signing Workstation",
+      "management": "System Settings"
     }
   },
   "header": {
@@ -106,8 +152,27 @@
         "tasks": "Total count of active tasks across all areas — VND, memos and procurements.",
         "myTimeoutApprovalsThisMonth": "Approvals you missed the deadline for this month.",
         "myVndAwaitingApproval": "Your VND documents sent for approval and awaiting a decision.",
-        "pendingMyApproval": "VND documents that currently require your decision as an approver."
+        "pendingMyApproval": "VND documents that currently require your decision as an approver.",
+        "szInbox": "Memos currently awaiting your decision as an approver.",
+        "vndActualization": "Documents whose actualization has been assigned to you as the responsible person.",
+        "prcApproval": "Procurement requests that are currently under approval.",
+        "szOverdue": "Memos with a missed approval or execution deadline.",
+        "prcActive": "Procurements currently in an active procedure."
+      },
+      "vndActualizationResponsible": "VND under actualization under my responsibility",
+      "card": {
+        "szInbox": "Memos Pending My Approval",
+        "szOverdue": "Overdue Memos",
+        "prcApproval": "Procurement Requests Under Approval",
+        "prcActive": "Procurements In Progress"
       }
+    },
+    "substitution": {
+      "activeTitle": "Substitution active",
+      "actingForPrefix": "You are covering for:",
+      "actingForSuffix": "— tasks are automatically redirected to you with deadlines preserved. Period: {{start}} — {{end}}",
+      "replacedByPrefix": "You are being covered by",
+      "replacedBySuffix": "until {{end}}"
     },
     "planActualizationTitle": "VND Actualization Plan",
     "seeActualization": "View plan",
@@ -138,13 +203,30 @@
     "empty": "No events yet"
   },
   "notifications": {
-    "n1": "Document No. SZ-1245 approved by E. Sydykov",
-    "n2": "TID-88 returned for revision",
-    "n3": "New procurement request requires your approval",
-    "title": "No notifications!",
-    "emptyState": {
-      "title": "No notifications!"
-    }
+    "tabs": {
+      "all": "All",
+      "unread": "Unread",
+      "favorites": "Favorites"
+    },
+    "loadingNotifications": "Loading notifications…",
+    "loadError": "Failed to load data",
+    "shownOfTotal": "Showing {{shown}} of {{total}}",
+    "pagination": {
+      "prev": "Previous",
+      "next": "Next"
+    },
+    "goToTheTask": "Go to task",
+    "title": "Notifications",
+    "loadingNotification": "Loading notification…",
+    "notificationNotFound": "Notification not found",
+    "maybeDeleted": "It may have been deleted",
+    "backToList": "Back to list",
+    "confirmDelete": "Delete this notification?",
+    "removeFromFavorites": "Remove from favorites",
+    "addToFavorites": "Add to favorites",
+    "delete": "Delete",
+    "attachment": "Attachment",
+    "defaultFileName": "file.xlsx"
   },
   "notificationsTime": {
     "n1": "5 minutes ago",

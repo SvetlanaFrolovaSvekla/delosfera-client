@@ -3,7 +3,7 @@
 // контейнера и красит несовпадающие куски прямо в уже отрисованном DOM — так же, как
 // useDocxTextSearch подсвечивает совпадения поиска.
 import {useEffect, useRef, useState} from "react";
-import {diffWords, type DiffOp} from "@/utils/textDiff.ts";
+import {diffWords, type DiffOp} from "@/utils/docxWork/diffDocx/textDiff.ts";
 
 const DIFF_ATTR = "data-diff-hl";
 

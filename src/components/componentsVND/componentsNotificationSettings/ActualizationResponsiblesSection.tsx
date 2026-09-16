@@ -18,7 +18,7 @@ import {
     AssignResponsiblesModal,
     type AssignResponsiblesSelectedUser,
 } from "@/components/componentsVND/componentsNotificationSettings/AssignResponsiblesModal.tsx";
-import {HighlightText} from "@/utils/HighlightText.tsx";
+import {HighlightText} from "@/utils/highlightText.tsx";
 
 export function ActualizationResponsiblesSection() {
     const {orgUnitOptions} = useDictionaries();

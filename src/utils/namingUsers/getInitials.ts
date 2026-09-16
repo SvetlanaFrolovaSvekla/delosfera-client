@@ -1,3 +1,4 @@
+// Инициалы от ФИО пользователя
 export function getInitials(fullName: string): string {
     return fullName
         .split(" ")

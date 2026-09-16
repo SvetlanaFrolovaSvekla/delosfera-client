@@ -43,6 +43,13 @@ export type HelpBlock =
            * и метка в пикселях уехала бы с нужной кнопки.
            */
           markers?: {x: number; y: number; text?: string}[];
+      }
+    | {
+          /** Приложенный файл (.docx, .pdf) — карточка со скачиванием и просмотром. */
+          kind: "file";
+          fileId: number;
+          fileName: string;
+          size: number;
       };
 
 export interface HelpArticleBrief {
@@ -135,6 +142,35 @@ export const helpService = {
             responseType: "blob",
         });
         return URL.createObjectURL(data);
+    },
+
+    /** Загрузить файл (.docx, .pdf) для блока "file". Возвращает id, имя и размер для блока. */
+    async uploadFile(file: File): Promise<{fileId: number; fileName: string; size: number}> {
+        const form = new FormData();
+        form.append("file", file);
+        const {data} = await apiClient.post<{fileId: number; fileName: string; size: number}>(
+            `${BASE}/files`, form);
+        return data;
+    },
+
+    /**
+     * Скачивает файл, приложенный к статье, и сохраняет его в браузере под
+     * настоящим именем. Через apiClient (авторизованный запрос), как и вложения
+     * документов (см. attachmentService.download) — обычная ссылка получила бы 401.
+     */
+    async downloadFile(fileId: number, fileName: string): Promise<void> {
+        const {data} = await apiClient.get<Blob>(`${BASE}/files/${fileId}`, {
+            responseType: "blob",
+        });
+
+        const url = URL.createObjectURL(data);
+        const link = document.createElement("a");
+        link.href = url;
+        link.download = fileName;
+        document.body.appendChild(link);
+        link.click();
+        link.remove();
+        URL.revokeObjectURL(url);
     },
 
     async remove(id: number): Promise<void> {

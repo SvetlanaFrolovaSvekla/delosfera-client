@@ -1,16 +1,18 @@
 import {useEffect, useState} from "react";
 import {useNavigate, useParams} from "react-router-dom";
-import {Bell, ChevronRight, ArrowLeft, Star, Trash2, Paperclip, Download} from "lucide-react";
+import {useTranslation} from "react-i18next";
 
-import {useNotificationById} from "@/hooks/notificationsHooks/useNotificationById.ts";
 import {notificationsService} from "@/service/notificationsService/notificationsService.ts";
 import type {NotificationCategoryOption} from "@/service/notificationsService/notificationsServiceType.ts";
 import {NOTIFICATION_CATEGORY_META, DEFAULT_CATEGORY_META} from "@/constants/notificationCategory.ts";
-import {SeverityDot} from "@/components/componentsNotifications/SeverityDot.tsx";
-import {downloadWithToast} from "@/utils/downloadFile.ts";
+import {useNotificationById} from "@/hooks/notificationsHooks/useNotificationById.ts";
+import {downloadWithToast} from "@/utils/downloadFiles/downloadFile.ts";
 
+import {SeverityDot} from "@/components/componentsNotifications/SeverityDot.tsx";
 import {Loader} from "@/components/componentsGeneral/Loader";
 import {EmptyState} from "@/components/componentsGeneral/EmptyState.tsx";
+import {Bell, ChevronRight, ArrowLeft, Star, Trash2, Paperclip, Download} from "lucide-react";
+
 
 function formatFullDate(iso: string) {
     return new Date(iso).toLocaleString("ru-RU", {
@@ -23,6 +25,7 @@ function formatFullDate(iso: string) {
 }
 
 export function OpenNotificationPage() {
+    const {t} = useTranslation();
     const {id} = useParams<{ id: string }>();
     const navigate = useNavigate();
     const notificationId = id ? Number(id) : undefined;
@@ -55,7 +58,8 @@ export function OpenNotificationPage() {
     if (loading) {
         return (
             <div className="w-full max-w-[900px] mx-auto px-4 sm:px-6 pt-5 sm:pt-[26px] pb-10">
-                <Loader label="Загрузка уведомления…"/>
+                {/* Загрузка уведомления… */}
+                <Loader label={t("notifications.loadingNotification")}/>
             </div>
         );
     }
@@ -66,9 +70,12 @@ export function OpenNotificationPage() {
                 <EmptyState
                     icon={Bell}
                     variant="error"
-                    title="Уведомление не найдено"
-                    description={error ?? "Возможно, оно было удалено"}
-                    actionLabel="Назад к списку"
+                    // Уведомление не найдено
+                    title={t("notifications.notificationNotFound")}
+                    // Возможно, оно было удалено
+                    description={error ?? t("notifications.maybeDeleted")}
+                    // Назад к списку
+                    actionLabel={t("notifications.backToList")}
                     onAction={() => navigate("/notifications")}
                 />
             </div>
@@ -80,7 +87,8 @@ export function OpenNotificationPage() {
     const categoryName = categories.find((c) => c.key === notification.category)?.name ?? notification.category;
 
     const handleDelete = async () => {
-        if (!window.confirm("Удалить это уведомление?")) return;
+        // Удалить это уведомление?
+        if (!window.confirm(t("notifications.confirmDelete"))) return;
         await remove();
         navigate("/notifications");
     };
@@ -89,7 +97,11 @@ export function OpenNotificationPage() {
         if (!notification.attachmentFileId) return;
         setDownloading(true);
         try {
-            await downloadWithToast(notification.attachmentFileId, notification.attachmentFileName ?? "файл.xlsx");
+            await downloadWithToast(
+                notification.attachmentFileId,
+                // файл.xlsx
+                notification.attachmentFileName ?? t("notifications.defaultFileName"),
+            );
         } catch {
             // downloadWithToast уже показал тост с ошибкой
         } finally {
@@ -107,7 +119,8 @@ export function OpenNotificationPage() {
                     className="inline-flex items-center gap-[7px] border-none bg-transparent text-[#8b97ab] text-[13px] font-medium cursor-pointer p-0 mb-1 hover:text-[#4e57d6]"
                 >
                     <ArrowLeft className="w-4 h-4" strokeWidth={2}/>
-                    Уведомления
+                    {/* Уведомления */}
+                    {t("notifications.title")}
                 </button>
 
 
@@ -121,7 +134,10 @@ export function OpenNotificationPage() {
                             strokeWidth={1.8}
                             className={notification.isFavorite ? "text-amber-500 fill-amber-500" : ""}
                         />
-                        {notification.isFavorite ? "Убрать из избранного" : "В избранное"}
+                        {/* Убрать из избранного / В избранное */}
+                        {notification.isFavorite
+                            ? t("notifications.removeFromFavorites")
+                            : t("notifications.addToFavorites")}
                     </button>
 
                     <button
@@ -129,7 +145,8 @@ export function OpenNotificationPage() {
                         className="hover:bg-[#f6f8fb] cursor-pointer flex h-9 items-center justify-center gap-1.5 rounded-lg border border-[#e5e9f0] bg-white px-3 text-[12.5px] font-semibold text-[#3a4560] transition-colors"
                     >
                         <Trash2 size={16} strokeWidth={1.8}/>
-                        Удалить
+                        {/* Удалить */}
+                        {t("notifications.delete")}
                     </button>
 
 
@@ -183,7 +200,8 @@ export function OpenNotificationPage() {
                             className="cursor-pointer inline-flex items-center gap-2 rounded-lg border border-[#e5e9f0] bg-[#f6f8fb] px-4 py-2 text-sm font-semibold text-[#3a4560] transition hover:bg-[#eef1f7] disabled:cursor-not-allowed disabled:opacity-60"
                         >
                             <Paperclip className="h-4 w-4 text-[#8b97ab]"/>
-                            {notification.attachmentFileName ?? "Вложение"}
+                            {/* Вложение */}
+                            {notification.attachmentFileName ?? t("notifications.attachment")}
                             <Download className="h-4 w-4"/>
                         </button>
                     </div>
@@ -201,7 +219,8 @@ export function OpenNotificationPage() {
                             }
                             className="cursor-pointer inline-flex items-center gap-1.5 rounded-lg bg-[#4e57d6] px-4 py-2 text-sm font-semibold text-white transition hover:bg-[#3d45c0]"
                         >
-                            Перейти к задаче
+                            {/* Перейти к задаче */}
+                            {t("notifications.goToTheTask")}
                             <ChevronRight className="h-4 w-4"/>
                         </button>
                     </div>

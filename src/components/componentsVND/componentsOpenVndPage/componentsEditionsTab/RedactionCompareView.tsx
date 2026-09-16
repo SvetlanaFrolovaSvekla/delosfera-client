@@ -1,5 +1,5 @@
 import type {VndRedactionResponse, VndResponse} from "@/service/vndService/vndServiceType.ts";
-import {buildRedactionFileName} from "@/utils/fileNaming.ts";
+import {buildRedactionFileName} from "@/utils/downloadFiles/fileNaming.ts";
 import {FileText} from "lucide-react";
 
 interface RedactionCompareViewProps {

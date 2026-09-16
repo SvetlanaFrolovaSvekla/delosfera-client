@@ -117,7 +117,7 @@ const GROUPS: { title: string; items: Item[] }[] = [
         title: "Уведомления",
         items: [
             {
-                path: "/settings/notifications",
+                path: "/management/notification-settings",
                 title: "Настройки уведомлений",
                 hint: "Утренний email-дайджест и другие личные оповещения",
                 icon: Bell,

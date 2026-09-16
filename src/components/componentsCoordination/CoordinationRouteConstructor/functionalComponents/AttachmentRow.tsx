@@ -3,7 +3,7 @@
 // отслеживает обрезку независимо (свой ref/своё состояние).
 import {useLayoutEffect, useRef, useState} from "react";
 import {Tooltip} from "@/components/componentsGeneral/Tooltip.tsx";
-import {downloadWithToast} from "@/utils/downloadFile.ts";
+import {downloadWithToast} from "@/utils/downloadFiles/downloadFile.ts";
 import {Paperclip, Download} from "lucide-react";
 
 export function AttachmentRow({fileId, fileName}: {fileId: number; fileName: string}) {

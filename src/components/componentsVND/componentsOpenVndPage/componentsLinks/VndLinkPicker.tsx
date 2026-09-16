@@ -5,7 +5,7 @@ import type { VndResponse } from "@/service/vndService/vndServiceType.ts";
 import { useDictionaries } from "@/context/DictionariesContext.tsx";
 import { MultiSelectField } from "@/components/componentsGeneral/selects/MultiSelects/MultiSelectField.tsx";
 import { SearchBar } from "@/components/componentsGeneral/SearchBar.tsx";
-import {HighlightText} from "@/utils/HighlightText.tsx";
+import {HighlightText} from "@/utils/highlightText.tsx";
 
 interface VndLinkPickerProps {
     excludeIds: number[];

@@ -1,7 +1,7 @@
 // Одна строка плоского справочника
 import {Pencil, Trash2} from "lucide-react";
 import {useTranslation} from "react-i18next";
-import {HighlightText} from "@/utils/HighlightText.tsx";
+import {HighlightText} from "@/utils/highlightText.tsx";
 import {Tooltip} from "@/components/componentsGeneral/Tooltip.tsx";
 import type {FlatDictItem} from "@/hooks/dictionariesHooks/useFlatDictList.ts";
 

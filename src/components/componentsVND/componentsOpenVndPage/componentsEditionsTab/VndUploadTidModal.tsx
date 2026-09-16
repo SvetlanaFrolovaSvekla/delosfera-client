@@ -7,7 +7,7 @@ import type {VndRedactionResponse} from "@/service/vndService/vndServiceType.ts"
 import {useTidDiffRows} from "@/hooks/vndHooks/useTidDiffRows.ts";
 import {TidChangesTable} from "@/components/componentsVND/componentsOpenVndPage/componentsEditionsTab/TidChangesTable.tsx";
 import {Clue} from "@/components/componentsGeneral/knowledgeBaseComponents/Clue.tsx";
-import {downloadBlob} from "@/utils/docxTidExport.ts";
+import {downloadBlob} from "@/utils/docxWork/docxTidExport.ts";
 import tidTemplateBlankUrl from "@/assets/tid/tidTemplateBlank.docx?url";
 
 interface VndUploadTidModalProps {

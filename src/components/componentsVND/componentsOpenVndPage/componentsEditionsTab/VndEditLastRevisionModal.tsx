@@ -8,11 +8,11 @@ import {vndService} from "@/service/vndService/vndService.ts";
 import type {VndRedactionResponse, VndResponse} from "@/service/vndService/vndServiceType.ts";
 import {CharCounter} from "@/components/componentsGeneral/CharCounter.tsx";
 import {VND_REDACTION_DESCRIPTION_MAX_LENGTH, VND_REDACTION_MAX_ATTACHMENTS} from "@/constants/validation/vndValidation.ts";
-import {resolveVndDocTitle, buildRedactionFileName, isDocxFile} from "@/utils/fileNaming.ts";
+import {resolveVndDocTitle, buildRedactionFileName, isDocxFile} from "@/utils/downloadFiles/fileNaming.ts";
 import {formatFileSize} from "@/service/documentService/attachmentService.ts";
-import {downloadWithToast} from "@/utils/downloadFile.ts";
+import {downloadWithToast} from "@/utils/downloadFiles/downloadFile.ts";
 import {useAsyncAction} from "@/hooks/useAsyncAction.ts";
-import type {RedactionLanguage, RedactionViewTarget} from "@/utils/redactionLanguagePanelUtils.ts";
+import type {RedactionLanguage, RedactionViewTarget} from "@/utils/vndProcess/redactionLanguagePanelUtils.ts";
 import {
     RedactionViewModal
 } from "@/components/componentsCoordination/CoordinationRouteConstructor/viewComponents/RedactionViewModal.tsx";

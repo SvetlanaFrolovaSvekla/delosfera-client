@@ -1,8 +1,8 @@
 // Компонента с карточкой панели для скачивания ВНД (Документы редакции) в RedactionColumn, RedactionSummaryCard
 import React, {useState} from "react";
 import type {VndRedactionResponse, VndResponse} from "@/service/vndService/vndServiceType.ts";
-import {buildRedactionFileName, resolveVndDocTitle} from "@/utils/fileNaming.ts";
-import type {RedactionLanguage, RedactionViewTarget} from "@/utils/redactionLanguagePanelUtils.ts";
+import {buildRedactionFileName, resolveVndDocTitle} from "@/utils/downloadFiles/fileNaming.ts";
+import type {RedactionLanguage, RedactionViewTarget} from "@/utils/vndProcess/redactionLanguagePanelUtils.ts";
 import {formatDate} from "@/utils/dateUtils.ts";
 import {Download, FileText, Loader2} from "lucide-react";
 import {

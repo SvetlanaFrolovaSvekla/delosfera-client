@@ -2,7 +2,7 @@
 import {useNavigate} from "react-router-dom";
 import {useTranslation} from "react-i18next";
 import type {VndQuickSearchResult} from "@/service/vndService/vndServiceType.ts";
-import {HighlightText} from "@/utils/HighlightText.tsx";
+import {HighlightText} from "@/utils/highlightText.tsx";
 import {STATUS_META} from "@/constants/vndStatus.ts";
 
 interface HeaderSearchResultsProps {

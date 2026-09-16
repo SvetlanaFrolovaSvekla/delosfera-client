@@ -34,6 +34,7 @@ const ВИДЫ: {kind: HelpBlock["kind"]; label: string; hint: string}[] = [
     {kind: "link", label: "Переход", hint: "Кнопка в раздел системы"},
     {kind: "vnd", label: "Документ", hint: "Ссылка на ВНД"},
     {kind: "image", label: "Снимок экрана", hint: "С выносками: куда нажимать"},
+    {kind: "file", label: "Файл", hint: "Документ .docx или .pdf — скачивание и просмотр"},
 ];
 
 /** Общий вид поля ввода — используется и в статье, и в редакторе снимка. */
@@ -59,6 +60,7 @@ export const HelpArticleEditor = ({article, onClose, onSaved}: Props) => {
             link: {kind: "link", label: "", path: ""},
             vnd: {kind: "vnd", label: "", documentId: 0},
             image: {kind: "image", fileId: 0, caption: "", markers: []},
+            file: {kind: "file", fileId: 0, fileName: "", size: 0},
         };
         setBody([...body, пустой[kind]]);
     };
@@ -277,6 +279,13 @@ export const HelpArticleEditor = ({article, onClose, onSaved}: Props) => {
                                 />
                             )}
 
+                            {block.kind === "file" && (
+                                <HelpFileBlockEditor
+                                    block={block}
+                                    onChange={(next) => заменить(i, next)}
+                                />
+                            )}
+
                             {block.kind === "vnd" && (
                                 <div className="grid gap-2" style={{gridTemplateColumns: "1fr 140px"}}>
                                     <input className={поле} value={block.label} placeholder="Название документа"
@@ -410,6 +419,62 @@ function HelpImageBlockEditor({block, onChange}: {
                     />
                 </>
             )}
+        </div>
+    );
+}
+
+/**
+ * Редактор блока с приложенным файлом (.docx, .pdf) — карточка со скачиванием и
+ * просмотром на странице статьи. Устроен так же, как HelpImageBlockEditor: один
+ * файл на блок, замена вместо правки содержимого.
+ */
+function HelpFileBlockEditor({block, onChange}: {
+    block: Extract<HelpBlock, {kind: "file"}>;
+    onChange: (block: HelpBlock) => void;
+}) {
+    const [загрузка, setЗагрузка] = useState(false);
+    const [ошибка, setОшибка] = useState<string | null>(null);
+
+    const загрузить = async (file: File) => {
+        setЗагрузка(true);
+        setОшибка(null);
+        try {
+            const {fileId, fileName, size} = await helpService.uploadFile(file);
+            onChange({...block, fileId, fileName, size});
+        } catch (e) {
+            const текст = (e as {response?: {data?: {message?: string}}})?.response?.data?.message;
+            setОшибка(текст ?? "Не удалось загрузить файл.");
+        } finally {
+            setЗагрузка(false);
+        }
+    };
+
+    return (
+        <div className="flex flex-col gap-2">
+            <div className="flex flex-wrap items-center gap-2">
+                <label className="cursor-pointer rounded-[9px] border border-[#e5e9f0] px-3 py-1.5
+                                  text-[13px] text-[#55617a] transition hover:border-[#2f68f5]">
+                    {block.fileId > 0 ? "Заменить файл" : "Загрузить файл"}
+                    <input
+                        type="file"
+                        accept=".docx,application/vnd.openxmlformats-officedocument.wordprocessingml.document,.pdf,application/pdf"
+                        className="hidden"
+                        onChange={(e) => {
+                            const file = e.target.files?.[0];
+                            if (file) void загрузить(file);
+                            e.target.value = "";
+                        }}
+                    />
+                </label>
+
+                {загрузка && <span className="text-[12.5px] text-[#8b97ab]">Загружаем…</span>}
+
+                {block.fileId > 0 && !загрузка && (
+                    <span className="text-[12.5px] text-[#8b97ab]">{block.fileName}</span>
+                )}
+            </div>
+
+            {ошибка && <p className="m-0 text-[13px] text-[#c0392b]">{ошибка}</p>}
         </div>
     );
 }

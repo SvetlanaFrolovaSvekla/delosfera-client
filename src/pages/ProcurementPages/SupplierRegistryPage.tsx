@@ -4,7 +4,7 @@ import {SupplierRatingsModal} from "@/components/procurement/SupplierRatingsModa
 import {CheckBoxOne} from "@/components/componentsGeneral/componentsCheckBox/CheckBoxOne.tsx";
 import {Tooltip} from "@/components/componentsGeneral/Tooltip.tsx";
 import {SearchBar} from "@/components/componentsGeneral/SearchBar.tsx";
-import {HighlightText} from "@/utils/HighlightText.tsx";
+import {HighlightText} from "@/utils/highlightText.tsx";
 import {useAuth} from "@/context/AuthContext.ts";
 import {PermissionCode} from "@/constants/permissions/permissions.ts";
 

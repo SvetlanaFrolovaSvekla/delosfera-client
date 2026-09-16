@@ -10,7 +10,7 @@ import {AlertTriangle, X} from "lucide-react";
 import type {ApprovalProcessResponse} from "@/service/coordinationService/coordinationServiceTypes.ts";
 import type {VndRedactionResponse, VndResponse} from "@/service/vndService/vndServiceType.ts";
 import {formatDateTime} from "@/utils/dateUtils.ts";
-import type {RedactionViewTarget} from "@/utils/redactionLanguagePanelUtils.ts";
+import type {RedactionViewTarget} from "@/utils/vndProcess/redactionLanguagePanelUtils.ts";
 import {
     VndApprovalRouteView
 } from "@/components/componentsCoordination/CoordinationRouteConstructor/viewComponents/VndApprovalRouteView.tsx";

@@ -4,7 +4,7 @@ import {ChevronRight, FileText, Link2, Loader2, Plus, Sparkles, X} from "lucide-
 import type {VndAttachmentLinkItem, VndLinkItem, VndResponse} from "@/service/vndService/vndServiceType.ts";
 import {useVndLinks} from "@/hooks/vndHooks/useVndLinks.ts";
 import {VndLinkPicker} from "@/components/componentsVND/componentsOpenVndPage/componentsLinks/VndLinkPicker.tsx";
-import {downloadWithToast} from "@/utils/downloadFile.ts";
+import {downloadWithToast} from "@/utils/downloadFiles/downloadFile.ts";
 
 interface VndLinksTabProps {
     vndId: number;

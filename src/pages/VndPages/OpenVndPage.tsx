@@ -41,7 +41,7 @@ import {ConfirmActionModal} from "@/components/componentsGeneral/modal/ConfirmAc
 import {Tooltip} from "@/components/componentsGeneral/Tooltip.tsx";
 import {Archive, Eye, Trash2} from "lucide-react";
 import {useAsyncAction} from "@/hooks/useAsyncAction.ts";
-import {downloadWithToast} from "@/utils/downloadFile.ts";
+import {downloadWithToast} from "@/utils/downloadFiles/downloadFile.ts";
 
 export function OpenVndPage() {
     const {t} = useTranslation();

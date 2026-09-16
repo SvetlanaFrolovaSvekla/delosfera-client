@@ -170,7 +170,6 @@ function App() {
                                 <Route path="/activity" element={<ActivityFeedPage/>}/>
                                 <Route path="/digest" element={<DigestPage/>}/>
                                 <Route path="/calendar" element={<CalendarPage/>}/>
-                                <Route path="/settings/notifications" element={<NotificationSettingsPage/>}/>
 
                                 <Route path="/prc" element={<ProcurementRegistryPage/>}/>
                                 <Route path="/prc/new" element={<ProcurementNewPage/>}/>
@@ -220,6 +219,7 @@ function App() {
                                     <Route path="refs/coordination-users" element={<CoordinationApproversPage/>}/>
                                     <Route path="refs/actualization-thresholds" element={<ActualizationBucketSettingsPage/>}/>
                                     <Route path="mailing-settings" element={<NotificationMailingSettingsPage/>}/>
+                                    <Route path="notification-settings" element={<NotificationSettingsPage/>}/>
 
 
                                     <Route element={<RequirePermission code={PermissionCode.ManageRoles}/>}>

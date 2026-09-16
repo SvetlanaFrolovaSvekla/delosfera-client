@@ -5,7 +5,7 @@ import {useAuth} from "@/context/AuthContext.ts";
 import type {ApprovalProcessResponse} from "@/service/coordinationService/coordinationServiceTypes.ts";
 import {COMMENT_TRUNCATE_LENGTH, PHASE_LABELS, PROCESS_STATUS_META, type ApprovalPhase} from "@/constants/coordinationParams.ts";
 import {User, Calendar, CheckCircle2, Hourglass, MessageSquareText} from "lucide-react";
-import {getInitials} from "@/utils/getInitials.ts";
+import {getInitials} from "@/utils/namingUsers/getInitials.ts";
 import {
     AttachmentRow
 } from "@/components/componentsCoordination/CoordinationRouteConstructor/functionalComponents/AttachmentRow.tsx";

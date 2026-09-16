@@ -14,9 +14,9 @@ import {
 } from "@/constants/coordinationParams.ts";
 import {VND_REDACTION_MAX_ATTACHMENTS} from "@/constants/validation/vndValidation.ts";
 import type {VndRedactionResponse, VndResponse} from "@/service/vndService/vndServiceType.ts";
-import {resolveVndDocTitle} from "@/utils/fileNaming.ts";
+import {resolveVndDocTitle} from "@/utils/downloadFiles/fileNaming.ts";
 import {formatFileSize} from "@/service/documentService/attachmentService.ts";
-import {downloadWithToast} from "@/utils/downloadFile.ts";
+import {downloadWithToast} from "@/utils/downloadFiles/downloadFile.ts";
 import {Tooltip} from "@/components/componentsGeneral/Tooltip.tsx";
 import {HelpTooltip} from "@/components/componentsGeneral/knowledgeBaseComponents/HelpTooltip.tsx";
 import {ConfirmActionModal} from "@/components/componentsGeneral/modal/ConfirmActionModal.tsx";
@@ -35,7 +35,7 @@ import {
 import {
     VndDisagreementMatrixSection, type DisagreementMatrixMode
 } from "./VndDisagreementMatrixSection.tsx";
-import {generateDisagreementMatrixDocx} from "@/utils/docxDisagreementMatrixExport.ts";
+import {generateDisagreementMatrixDocx} from "@/utils/docxWork/docxDisagreementMatrixExport.ts";
 import {
     AttachmentRow
 } from "@/components/componentsCoordination/CoordinationRouteConstructor/functionalComponents/AttachmentRow.tsx";

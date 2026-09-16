@@ -7,7 +7,7 @@
 // колонки - HTML (могут быть частично покрашены красным/зелёным/чёрным через RichDiffEditor),
 // а не только "было"/"стало".
 import JSZip from "jszip";
-import {htmlToDocxParagraphs} from "@/utils/htmlToDocxRuns.ts";
+import {htmlToDocxParagraphs} from "@/utils/docxWork/htmlToDocxRuns.ts";
 import templateUrl from "@/assets/disagreementMatrix/disagreementMatrixTemplate.docx?url";
 
 export interface DisagreementMatrixExportRow {

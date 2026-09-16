@@ -3,7 +3,7 @@ import {Fragment} from "react";
 import {useTranslation} from "react-i18next";
 import type {VndRedactionResponse} from "@/service/vndService/vndServiceType.ts";
 import {formatDate} from "@/utils/dateUtils.ts";
-import {getRedactionDisplayStatus, REDACTION_STATUS_META} from "@/utils/redactionStatus.ts";
+import {getRedactionDisplayStatus, REDACTION_STATUS_META} from "@/utils/vndProcess/redactionStatus.ts";
 
 /** Компактный формат для строки "Актуализация {дата} №{код}" / "Первая редакция {дата} №{код}" —
  * ДД.ММ.ГГг. (двузначный год), как на макете. Отдельно от formatDate (там полный год) — это

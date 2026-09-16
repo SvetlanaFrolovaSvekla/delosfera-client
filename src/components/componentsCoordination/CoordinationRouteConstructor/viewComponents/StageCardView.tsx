@@ -23,7 +23,7 @@ import {FormattedResolutionComment, type FormattedCommentQuoteRef} from "./Forma
 import {
     AttachmentRow
 } from "@/components/componentsCoordination/CoordinationRouteConstructor/functionalComponents/AttachmentRow.tsx";
-import {getInitials} from "@/utils/getInitials.ts";
+import {getInitials} from "@/utils/namingUsers/getInitials.ts";
 
 const COMMENT_TRUNCATE_LENGTH = 500; // Лимит обрезки комментария/замечания в карточке
 

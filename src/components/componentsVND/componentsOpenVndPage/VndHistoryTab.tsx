@@ -11,7 +11,7 @@ import type {
     ApprovalStageResponse,
 } from "@/service/coordinationService/coordinationServiceTypes.ts";
 import type {VndRedactionResponse, VndResponse} from "@/service/vndService/vndServiceType.ts";
-import {getRedactionDisplayStatus, REDACTION_STATUS_META} from "@/utils/redactionStatus.ts";
+import {getRedactionDisplayStatus, REDACTION_STATUS_META} from "@/utils/vndProcess/redactionStatus.ts";
 import {
     VndRedactionHistoryDetail
 } from "@/components/componentsVND/componentsOpenVndPage/componentsHistoryTab/VndRedactionHistoryDetail.tsx";

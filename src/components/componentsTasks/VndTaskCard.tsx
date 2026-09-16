@@ -7,7 +7,7 @@ import {COORDINATION_STAGE_META, REVISION_NEEDED_META, TASK_SCOPE_META} from "@/
 import {getActionTitle, getDeadlineTone, getMetaText} from "@/utils/tasksUtils.ts";
 import {timeAgo} from "@/utils/dateUtils.ts";
 import {Icon} from "@/assets/icons/Icon.tsx";
-import {HighlightText} from "@/utils/HighlightText.tsx";
+import {HighlightText} from "@/utils/highlightText.tsx";
 
 
 interface VndTaskCardProps {
@@ -65,8 +65,8 @@ export function VndTaskCard({task, searchQuery = "", square = false, noTopBorder
 
     const hasStagePhase = task.scope === "coordination" || task.scope === "myVndApproval";
     const due = hasStagePhase
-        ? getDeadlineTone(task.deadlineAt, task.deadlineMinutes)
-        : getDeadlineTone(task.dueActualizationDate, null);
+        ? getDeadlineTone(task.deadlineAt, task.deadlineMinutes, t)
+        : getDeadlineTone(task.dueActualizationDate, null, t);
 
     return (
         <Link

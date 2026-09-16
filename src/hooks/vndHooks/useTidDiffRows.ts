@@ -1,9 +1,9 @@
 // Автоформирование строк таблицы ТИД
 import {useEffect, useState} from "react";
-import {fetchFileBlob} from "@/utils/downloadFile.ts";
-import {extractDocxParagraphs} from "@/utils/docxParagraphs.ts";
-import {diffArrays} from "@/utils/arrayDiff.ts";
-import {diffWords} from "@/utils/textDiff.ts";
+import {fetchFileBlob} from "@/utils/downloadFiles/downloadFile.ts";
+import {extractDocxParagraphs} from "@/utils/docxWork/docxParagraphs.ts";
+import {diffArrays} from "@/utils/docxWork/diffDocx/arrayDiff.ts";
+import {diffWords} from "@/utils/docxWork/diffDocx/textDiff.ts";
 
 export interface TidDiffSegment {
     text: string;

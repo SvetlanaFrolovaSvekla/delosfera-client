@@ -26,8 +26,8 @@ import {
     FormattedResolutionComment
 } from "@/components/componentsCoordination/CoordinationRouteConstructor/viewComponents/FormattedResolutionComment.tsx";
 import {ApprovalRouteHistoryCarousel} from "./ApprovalRouteHistoryCarousel.tsx";
-import type {RedactionDisplayStatus} from "@/utils/redactionStatus.ts";
-import {REDACTION_STATUS_META} from "@/utils/redactionStatus.ts";
+import type {RedactionDisplayStatus} from "@/utils/vndProcess/redactionStatus.ts";
+import {REDACTION_STATUS_META} from "@/utils/vndProcess/redactionStatus.ts";
 
 interface VndRedactionHistoryDetailProps {
     vnd: VndResponse;

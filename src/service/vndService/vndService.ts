@@ -13,6 +13,7 @@ import type {
 } from "./vndServiceType.ts";
 
 import {getAccessToken} from "@/service/tokenStore.ts";
+import {parseContentDispositionFileName, saveBlob} from "@/utils/downloadFiles/downloadFile.ts";
 
 const API_BASE = `${import.meta.env.VITE_API_BASE_URL ?? ""}/api`;
 
@@ -27,7 +28,7 @@ async function handleResponse<T>(response: Response): Promise<T> {
         const message = errorBody?.message ?? `Ошибка запроса: ${response.status}`;
         throw new Error(message);
     }
-    return response.json() as Promise<T>;
+    return await response.json() as Promise<T>;
 }
 
 /** Общая сборка FormData для editLastRevisionDirectly/editRedactionDirectly (последняя редакция и
@@ -275,23 +276,10 @@ export const vndService = {
             throw new Error(errorBody?.message ?? `Ошибка запроса: ${response.status}`);
         }
 
-        // Тот же разбор Content-Disposition, что и в fetchFileBlob (downloadFile.ts): filename*
-        // (RFC 5987, корректная кириллица) предпочитается обычному filename= (ASCII-фолбэк).
-        const disposition = response.headers.get("Content-Disposition");
-        const starMatch = disposition?.match(/filename\*=UTF-8''([^;]+)/i);
-        const plainMatch = disposition?.match(/filename="?([^";]+)"?/i);
-        const fileName = starMatch
-            ? decodeURIComponent(starMatch[1])
-            : (plainMatch ? plainMatch[1] : "Планирование актуализации.xlsx");
-
-        const blob = await response.blob();
-        const url = URL.createObjectURL(blob);
-        const link = document.createElement("a");
-        link.href = url;
-        link.download = fileName;
-        document.body.appendChild(link);
-        link.click();
-        link.remove();
-        URL.revokeObjectURL(url);
+        const fileName = parseContentDispositionFileName(
+            response.headers.get("Content-Disposition"),
+            "Планирование актуализации.xlsx",
+        );
+        saveBlob(await response.blob(), fileName);
     },
 };

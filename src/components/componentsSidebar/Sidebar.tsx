@@ -7,9 +7,11 @@ import {useDictionaries} from "@/context/DictionariesContext.tsx";
 import {useVndActualizationSummary} from "@/hooks/vndHooks/useVndActualizationSummary.tsx";
 import {useVndTaskCounts} from "@/hooks/tasksVndHooks/useVndTaskCounts.ts";
 import {navGroups} from "@/constants/sidebarData.tsx";
+import {PermissionCode} from "@/constants/permissions/permissions.ts";
 import {CountBadge} from "@/components/componentsSidebar/CountBadge.tsx";
-import {Icon} from "@/assets/icons/Icon";
 import {RubricTreeModal} from "@/components/componentsGeneral/rubricator/RubricTreeModal.tsx";
+
+import {Icon} from "@/assets/icons/Icon";
 import {ChevronRight, PanelLeftClose, PanelLeftOpen} from "lucide-react";
 
 const MODAL_ITEM_IDS = ["rubric"];
@@ -52,9 +54,14 @@ export function Sidebar() {
     const activeRubricSelection = rubricVariant === "vnd" ? vndRubricSelection : szRubricSelection;
     const setActiveRubricSelection = rubricVariant === "vnd" ? setVndRubricSelection : setSzRubricSelection;
 
-    // Планирование актуализации: Просрочено + Критический срок
+    // Планирование актуализации: Просрочено + Критический срок. Отдельное право от
+    // ViewVndActualizationPage (тот открывает саму страницу и со временем станет доступен
+    // всем ролям) — без ViewVndActualizationOverdueBadge кружок на сайдбаре не показывается,
+    // даже если сам пункт меню виден.
     const {summary: actualizationSummary} = useVndActualizationSummary();
-    const planningBadge = (actualizationSummary?.critical ?? 0) + (actualizationSummary?.overdue ?? 0);
+    const planningBadge = hasPermission(PermissionCode.ViewVndActualizationOverdueBadge)
+        ? (actualizationSummary?.critical ?? 0) + (actualizationSummary?.overdue ?? 0)
+        : 0;
 
     // Мои задачи: Согласование (ждущие меня) + Актуализация + Консолидация
     const {counts: taskCounts} = useVndTaskCounts();
@@ -124,8 +131,8 @@ export function Sidebar() {
             <button
                 type="button"
                 onClick={() => setHiddenPersisted(false)}
-                title="Показать меню"
-                aria-label="Показать меню"
+                title={t("sidebar.showMenu")}
+                aria-label={t("sidebar.showMenu")}
                 className="fixed left-0 top-[70px] z-30 grid h-9 w-7 place-items-center
                            rounded-r-[9px] border border-l-0 border-[#e5e9f0] bg-white
                            text-[#8b97ab] shadow-sm transition hover:text-[#2f68f5]"
@@ -271,8 +278,8 @@ export function Sidebar() {
 
                 <button
                     onClick={() => setHiddenPersisted(true)}
-                    title="Скрыть меню"
-                    aria-label="Скрыть меню"
+                    title={t("sidebar.hideMenu")}
+                    aria-label={t("sidebar.hideMenu")}
                     className="flex-none cursor-pointer rounded-[9px] p-[9px] text-[#8b97ab]
                                transition hover:bg-[#f2f5f9] hover:text-[#2f68f5]"
                 >
@@ -291,7 +298,7 @@ export function Sidebar() {
                     setActiveRubricSelection(keys);
                     goToRubricRegistry(rubricVariant, keys);
                 }}
-                searchPlaceholder="Поиск рубрики…"
+                searchPlaceholder={t("createVnd.classifiers.rubricSearchPlaceholder")}
                 onGoToRubric={(key) => goToRubricRegistry(rubricVariant, [key])}
                 variantOptions={[
                     {value: "vnd", label: t("rubricTreeModal.variantVnd")},

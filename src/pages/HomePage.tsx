@@ -8,8 +8,8 @@ import {useTimeGreeting} from "@/hooks/generalHooks/useTimeGreeting.ts";
 import {useFormattedDate} from "@/hooks/generalHooks/useFormattedDate.ts";
 import {useVndHomeSummary} from "@/hooks/analyticsHooks/useVndHomeSummary.ts";
 import {useVndTasks} from "@/hooks/tasksVndHooks/useVndTasks.ts";
-import {getFirstLastName} from "@/utils/userNaming.ts";
-import {transliterate} from "@/utils/transliterate.ts";
+import {getFirstLastName} from "@/utils/namingUsers/userNaming.ts";
+import {transliterate} from "@/utils/translations/transliterate.ts";
 import {HOME_TASKS_LIMIT} from "@/constants/validation/HomeTasksLimit.ts";
 
 import {Loader} from "@/components/componentsGeneral/Loader.tsx";

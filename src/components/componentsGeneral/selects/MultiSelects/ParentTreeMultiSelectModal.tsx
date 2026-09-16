@@ -2,7 +2,7 @@
 import {useEffect, useMemo, useState} from "react";
 import {useTranslation} from "react-i18next";
 import {useModalShake} from "@/hooks//useModalShake.ts";
-import {HighlightText} from "@/utils/HighlightText.tsx";
+import {HighlightText} from "@/utils/highlightText.tsx";
 import {SearchBar} from "@/components/componentsGeneral/SearchBar.tsx";
 import {Check, ChevronRight, X} from "lucide-react";
 

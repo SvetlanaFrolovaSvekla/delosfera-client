@@ -3,7 +3,7 @@ import React, {memo} from "react";
 import {ChevronRight, ArrowUpRight} from "lucide-react";
 import type {TreeNodeOf} from "@/utils/treeSelectUtils.ts";
 import type {RubricTreeOption} from "./RubricTreeModal";
-import {HighlightText} from "@/utils/HighlightText.tsx";
+import {HighlightText} from "@/utils/highlightText.tsx";
 import {TreeCheckbox} from "@/components/componentsGeneral/rubricator/TreeCheckbox.tsx";
 
 interface RubricTreeNodeProps {

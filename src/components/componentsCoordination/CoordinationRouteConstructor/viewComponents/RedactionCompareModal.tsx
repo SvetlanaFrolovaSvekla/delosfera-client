@@ -17,7 +17,7 @@ import {
 } from "@/components/componentsVND/componentsOpenVndPage/componentsEditionsTab/RedactionContentsPanel.tsx";
 import {
     getAvailableLanguages, getRedactionFileId, type RedactionLanguage
-} from "@/utils/redactionLanguagePanelUtils.ts";
+} from "@/utils/vndProcess/redactionLanguagePanelUtils.ts";
 import {useDocxDiffHighlight} from "@/hooks/vndHooks/useDocxDiffHighlight.ts";
 
 interface RedactionCompareModalProps {

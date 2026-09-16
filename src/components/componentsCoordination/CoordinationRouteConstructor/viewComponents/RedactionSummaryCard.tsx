@@ -1,6 +1,6 @@
 // Панель с редакциями (панель ниже "Данная редакция:")
 import type {VndRedactionResponse, VndResponse} from "@/service/vndService/vndServiceType.ts";
-import type {RedactionViewTarget} from "@/utils/redactionLanguagePanelUtils.ts";
+import type {RedactionViewTarget} from "@/utils/vndProcess/redactionLanguagePanelUtils.ts";
 import {formatDate} from "@/utils/dateUtils.ts";
 import {
     RedactionDocumentsPanel

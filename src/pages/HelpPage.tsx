@@ -14,76 +14,78 @@ import {HelpArticleView} from "@/components/help/HelpArticleView.tsx";
 import {HelpArticleEditor} from "@/components/help/HelpArticleEditor.tsx";
 
 export function HelpPage() {
-    const [оглавление, setОглавление] = useState<HelpArticleBrief[]>([]);
-    const [можноПравить, setМожноПравить] = useState(false);
-    const [открыта, setОткрыта] = useState<HelpArticle | null>(null);
-    const [поиск, setПоиск] = useState("");
-    const [занято, setЗанято] = useState(true);
-    const [ошибка, setОшибка] = useState<string | null>(null);
+    const [toc, setToc] = useState<HelpArticleBrief[]>([]);
+    const [canEdit, setCanEdit] = useState(false);
+    const [openArticle, setOpenArticle] = useState<HelpArticle | null>(null);
+    const [search, setSearch] = useState("");
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState<string | null>(null);
 
     /** Открыт редактор: либо новая статья, либо правка открытой. */
-    const [правим, setПравим] = useState<HelpArticle | "новая" | null>(null);
+    const [editing, setEditing] = useState<HelpArticle | "new" | null>(null);
 
-    const загрузить = useCallback(async (выбрать?: number) => {
+    // eslint-disable-next-line react-hooks/preserve-manual-memoization
+    const load = useCallback(async (selectId?: number) => {
         try {
-            setЗанято(true);
-            setОшибка(null);
+            setLoading(true);
+            setError(null);
 
             const {articles, mayEdit} = await helpService.index(true);
-            setОглавление(articles);
-            setМожноПравить(mayEdit);
+            setToc(articles);
+            setCanEdit(mayEdit);
 
-            const id = выбрать ?? открыта?.id ?? articles[0]?.id;
-            setОткрыта(id ? await helpService.article(id) : null);
+            const id = selectId ?? openArticle?.id ?? articles[0]?.id;
+            setOpenArticle(id ? await helpService.article(id) : null);
         } catch {
-            setОшибка("Не удалось загрузить инструкции");
+            setError("Не удалось загрузить инструкции");
         } finally {
-            setЗанято(false);
+            setLoading(false);
         }
-    }, [открыта?.id]);
+    }, [openArticle?.id]);
 
-    useEffect(() => { void загрузить(); /* один раз при входе */ // eslint-disable-next-line
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    useEffect(() => { void load(); /* один раз при входе */ // eslint-disable-next-line
     }, []);
 
-    const открыть = async (id: number) => {
+    const openArticleById = async (id: number) => {
         try {
-            setОшибка(null);
-            setОткрыта(await helpService.article(id));
+            setError(null);
+            setOpenArticle(await helpService.article(id));
         } catch {
-            setОшибка("Не удалось открыть статью");
+            setError("Не удалось открыть статью");
         }
     };
 
-    const удалить = async (article: HelpArticleBrief) => {
+    const removeArticle = async (article: HelpArticleBrief) => {
         if (!window.confirm(`Удалить статью «${article.titleRu}»? Действие необратимо.`)) return;
 
         try {
             await helpService.remove(article.id);
-            setОткрыта(null);
-            await загрузить();
+            setOpenArticle(null);
+            await load();
         } catch {
-            setОшибка("Не удалось удалить статью");
+            setError("Не удалось удалить статью");
         }
     };
 
-    const найденные = useMemo(() => {
-        const q = поиск.trim().toLowerCase();
-        if (!q) return оглавление;
+    const filtered = useMemo(() => {
+        const q = search.trim().toLowerCase();
+        if (!q) return toc;
 
-        return оглавление.filter((a) =>
+        return toc.filter((a) =>
             a.titleRu.toLowerCase().includes(q) ||
             (a.summaryRu ?? "").toLowerCase().includes(q));
-    }, [оглавление, поиск]);
+    }, [toc, search]);
 
-    const поРазделам = useMemo(() => {
+    const bySection = useMemo(() => {
         const map = new Map<HelpSection, HelpArticleBrief[]>();
-        for (const a of найденные) {
+        for (const a of filtered) {
             const list = map.get(a.section) ?? [];
             list.push(a);
             map.set(a.section, list);
         }
         return map;
-    }, [найденные]);
+    }, [filtered]);
 
     return (
         <div className="flex flex-col gap-4 p-[22px_26px]">
@@ -99,8 +101,8 @@ export function HelpPage() {
                     </p>
                 </div>
 
-                {можноПравить && (
-                    <button onClick={() => setПравим("новая")}
+                {canEdit && (
+                    <button onClick={() => setEditing("new")}
                             className="flex h-10 items-center gap-2 rounded-[10px] border-none bg-[#2f68f5] px-4 text-[13px] font-semibold text-white">
                         <Plus className="h-4 w-4" strokeWidth={2.5}/>
                         Новая статья
@@ -108,9 +110,9 @@ export function HelpPage() {
                 )}
             </div>
 
-            {ошибка && (
+            {error && (
                 <div className="rounded-[9px] border border-[#f1c9c2] bg-[#fbeae7] px-4 py-2.5 text-[13px] text-[#c0392b]">
-                    {ошибка}
+                    {error}
                 </div>
             )}
 
@@ -120,32 +122,32 @@ export function HelpPage() {
                     <label className="relative flex items-center">
                         <Search className="pointer-events-none absolute left-3 h-4 w-4 text-[#a3adbd]" strokeWidth={2}/>
                         <input
-                            value={поиск}
-                            onChange={(e) => setПоиск(e.target.value)}
+                            value={search}
+                            onChange={(e) => setSearch(e.target.value)}
                             placeholder="Поиск по инструкциям"
                             className="h-10 w-full rounded-[10px] border border-[#e5e9f0] bg-white pl-9 pr-3 text-[13px] outline-none focus:border-[#2f68f5]"
                         />
                     </label>
 
                     <nav className="rounded-[12px] border border-[#e5e9f0] bg-white p-2">
-                        {найденные.length === 0 ? (
+                        {filtered.length === 0 ? (
                             <p className="m-0 px-3 py-6 text-center text-[12.5px] text-[#8b97ab]">
-                                {занято ? "Загрузка…" : поиск ? "Ничего не нашлось" : "Статей пока нет"}
+                                {loading ? "Загрузка…" : search ? "Ничего не нашлось" : "Статей пока нет"}
                             </p>
-                        ) : SECTION_ORDER.filter((s) => поРазделам.has(s)).map((section) => (
+                        ) : SECTION_ORDER.filter((s) => bySection.has(s)).map((section) => (
                             <div key={section} className="mb-1.5 last:mb-0">
                                 <div className="px-3 pb-1 pt-2 text-[11px] font-bold uppercase tracking-[0.09em] text-[#8b97ab]">
                                     {SECTION_TITLE[section]}
                                 </div>
-                                {поРазделам.get(section)!.map((a) => (
+                                {bySection.get(section)!.map((a) => (
                                     <button
                                         key={a.id}
-                                        onClick={() => открыть(a.id)}
+                                        onClick={() => openArticleById(a.id)}
                                         className={`w-full cursor-pointer rounded-[9px] border-none px-3 py-2 text-left ${
-                                            открыта?.id === a.id ? "bg-[#e9f0ff]" : "bg-transparent hover:bg-[#f6f8fb]"}`}
+                                            openArticle?.id === a.id ? "bg-[#e9f0ff]" : "bg-transparent hover:bg-[#f6f8fb]"}`}
                                     >
                                         <span className={`block text-[13px] font-semibold ${
-                                            открыта?.id === a.id ? "text-[#2f68f5]" : "text-[#1c2740]"}`}>
+                                            openArticle?.id === a.id ? "text-[#2f68f5]" : "text-[#1c2740]"}`}>
                                             {a.titleRu}
                                             {!a.isPublished && (
                                                 <span className="ml-1.5 text-[11px] font-normal text-[#b3730a]">
@@ -167,36 +169,36 @@ export function HelpPage() {
 
                 {/* ── статья ─────────────────────────────────── */}
                 <section className="rounded-[12px] border border-[#e5e9f0] bg-white p-6">
-                    {!открыта ? (
+                    {!openArticle ? (
                         <p className="m-0 py-10 text-center text-[13px] text-[#8b97ab]">
-                            {занято ? "Загрузка…" : "Выберите статью слева"}
+                            {loading ? "Загрузка…" : "Выберите статью слева"}
                         </p>
                     ) : (
                         <article className="flex flex-col gap-4">
                             <header className="flex flex-wrap items-start justify-between gap-3 border-b border-[#eef2f7] pb-4">
                                 <div>
                                     <div className="text-[11px] font-bold uppercase tracking-[0.09em] text-[#8b97ab]">
-                                        {SECTION_TITLE[открыта.section]}
+                                        {SECTION_TITLE[openArticle.section]}
                                     </div>
                                     <h2 className="m-0 mt-1 text-[20px] font-bold text-[#0f1b2d]">
-                                        {открыта.titleRu}
+                                        {openArticle.titleRu}
                                     </h2>
-                                    {открыта.summaryRu && (
+                                    {openArticle.summaryRu && (
                                         <p className="m-0 mt-1 max-w-[66ch] text-[13.5px] text-[#55617a]">
-                                            {открыта.summaryRu}
+                                            {openArticle.summaryRu}
                                         </p>
                                     )}
                                 </div>
 
-                                {можноПравить && (
+                                {canEdit && (
                                     <div className="flex gap-2">
-                                        <button onClick={() => setПравим(открыта)}
+                                        <button onClick={() => setEditing(openArticle)}
                                                 title="Изменить статью"
                                                 className="flex h-9 items-center gap-1.5 rounded-[9px] border border-[#e5e9f0] bg-white px-3 text-[12.5px] text-[#55617a]">
                                             <Pencil className="h-3.5 w-3.5" strokeWidth={2}/>
                                             Изменить
                                         </button>
-                                        <button onClick={() => удалить(открыта)}
+                                        <button onClick={() => removeArticle(openArticle)}
                                                 title="Удалить статью"
                                                 className="flex h-9 w-9 items-center justify-center rounded-[9px] border border-[#e5e9f0] bg-white text-[#c0392b]">
                                             <Trash2 className="h-3.5 w-3.5" strokeWidth={2}/>
@@ -205,24 +207,24 @@ export function HelpPage() {
                                 )}
                             </header>
 
-                            <HelpArticleView body={открыта.body}/>
+                            <HelpArticleView body={openArticle.body}/>
 
                             <footer className="border-t border-[#eef2f7] pt-3 text-[11.5px] text-[#a3adbd]">
-                                Изменено {formatDateTime(открыта.updatedAt)}
-                                {открыта.updatedByName && ` · ${открыта.updatedByName}`}
+                                Изменено {formatDateTime(openArticle.updatedAt)}
+                                {openArticle.updatedByName && ` · ${openArticle.updatedByName}`}
                             </footer>
                         </article>
                     )}
                 </section>
             </div>
 
-            {правим && (
+            {editing && (
                 <HelpArticleEditor
-                    article={правим === "новая" ? null : правим}
-                    onClose={() => setПравим(null)}
+                    article={editing === "new" ? null : editing}
+                    onClose={() => setEditing(null)}
                     onSaved={async (id) => {
-                        setПравим(null);
-                        await загрузить(id);
+                        setEditing(null);
+                        await load(id);
                     }}
                 />
             )}

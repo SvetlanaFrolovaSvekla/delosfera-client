@@ -1,5 +1,5 @@
 // Компонента с header панели для скачивания ВНД
-import type {RedactionDisplayStatus} from "@/utils/redactionStatus.ts";
+import type {RedactionDisplayStatus} from "@/utils/vndProcess/redactionStatus.ts";
 import {Loader2} from "lucide-react";
 import {Tooltip} from "@/components/componentsGeneral/Tooltip.tsx";
 import {formatDate} from "@/utils/dateUtils.ts";

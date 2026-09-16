@@ -1,6 +1,6 @@
 import {useEffect, useState} from "react";
-import {fetchFileBlob} from "@/utils/downloadFile.ts";
-import {extractDocxHeadings, type DocxHeadingItem} from "@/utils/docxHeadings.ts";
+import {fetchFileBlob} from "@/utils/downloadFiles/downloadFile.ts";
+import {extractDocxHeadings, type DocxHeadingItem} from "@/utils/docxWork/docxHeadings.ts";
 
 interface UseDocxHeadingsResult {
     headings: DocxHeadingItem[];

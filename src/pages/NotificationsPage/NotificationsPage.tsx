@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { notificationsService } from "@/service/notificationsService/notificationsService.ts";
 import type {
     NotificationCategoryOption,
@@ -20,6 +21,7 @@ import { Loader } from "@/components/componentsGeneral/Loader.tsx";
 import { EmptyState } from "@/components/componentsGeneral/EmptyState.tsx";
 
 export function NotificationsPage() {
+    const { t } = useTranslation();
     const [search, setSearch] = useState("");
     const [debouncedSearch, setDebouncedSearch] = useState("");
     const [severities, setSeverities] = useState<NotificationSeverity[]>([]);
@@ -69,9 +71,12 @@ export function NotificationsPage() {
     };
 
     const mainTabs = [
-        { id: "all" as const, label: "Все", n: counts.all },
-        { id: "unread" as const, label: "Непрочитанные", n: counts.unread },
-        { id: "favorites" as const, label: "Избранное", n: counts.favorites },
+        // Все
+        { id: "all" as const, label: t("notifications.tabs.all"), n: counts.all },
+        // Непрочитанные
+        { id: "unread" as const, label: t("notifications.tabs.unread"), n: counts.unread },
+        // Избранное
+        { id: "favorites" as const, label: t("notifications.tabs.favorites"), n: counts.favorites },
     ];
 
     return (
@@ -97,9 +102,15 @@ export function NotificationsPage() {
             <NotificationSeverityFilter value={severities} onChange={setSeverities} />
 
             {loading ? (
-                <Loader label="Загрузка уведомлений…" />
+                // Загрузка уведомлений…
+                <Loader label={t("notifications.loadingNotifications")} />
             ) : error ? (
-                <EmptyState variant="error" title="Не удалось загрузить данные" description={error} />
+                <EmptyState
+                    variant="error"
+                    // Не удалось загрузить данные
+                    title={t("notifications.loadError")}
+                    description={error}
+                />
             ) : (
                 <>
                     <NotificationList
@@ -116,7 +127,8 @@ export function NotificationsPage() {
                     {totalPages > 1 && (
                         <div className="mt-4 flex items-center justify-between gap-3">
                             <span className="text-xs text-slate-400">
-                                Показано {rows.length} из {totalCount}
+                                {/* Показано {rows.length} из {totalCount} */}
+                                {t("notifications.shownOfTotal", { shown: rows.length, total: totalCount })}
                             </span>
                             <div className="flex items-center gap-1">
                                 <button
@@ -124,7 +136,8 @@ export function NotificationsPage() {
                                     disabled={page <= 1}
                                     className="h-8 rounded-lg border border-slate-200 bg-white px-3 text-xs font-semibold text-slate-600 disabled:opacity-40"
                                 >
-                                    Назад
+                                    {/* Назад */}
+                                    {t("notifications.pagination.prev")}
                                 </button>
                                 <span className="px-2 text-xs text-slate-500">
                                     {page} / {totalPages}
@@ -134,7 +147,8 @@ export function NotificationsPage() {
                                     disabled={page >= totalPages}
                                     className="h-8 rounded-lg border border-slate-200 bg-white px-3 text-xs font-semibold text-slate-600 disabled:opacity-40"
                                 >
-                                    Вперёд
+                                    {/* Вперёд */}
+                                    {t("notifications.pagination.next")}
                                 </button>
                             </div>
                         </div>

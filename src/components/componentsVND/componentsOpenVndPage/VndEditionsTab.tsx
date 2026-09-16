@@ -15,16 +15,16 @@ import {actualizationService} from "@/service/actualizationService/actualization
 import {coordinationService} from "@/service/coordinationService/coordinationService.ts";
 import type {ApprovalProcessResponse} from "@/service/coordinationService/coordinationServiceTypes.ts";
 
-import {downloadWithToast} from "@/utils/downloadFile.ts";
-import {getRedactionDisplayStatus, isRedactionVisibleToRegularUser} from "@/utils/redactionStatus.ts";
+import {downloadWithToast} from "@/utils/downloadFiles/downloadFile.ts";
+import {getRedactionDisplayStatus, isRedactionVisibleToRegularUser} from "@/utils/vndProcess/redactionStatus.ts";
 import {useIsVndEditor} from "@/hooks/vndHooks/useIsVndEditor.ts";
 import {isVndPendingEffective} from "@/constants/vndStatus.ts";
-import {buildRedactionFileName} from "@/utils/fileNaming.ts";
+import {buildRedactionFileName} from "@/utils/downloadFiles/fileNaming.ts";
 import {
     getAvailableLanguages,
     getRedactionFileId,
     type RedactionLanguage
-} from "@/utils/redactionLanguagePanelUtils.ts";
+} from "@/utils/vndProcess/redactionLanguagePanelUtils.ts";
 
 import {PermissionCode} from "@/constants/permissions/permissions.ts";
 

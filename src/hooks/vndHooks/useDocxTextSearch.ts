@@ -1,6 +1,6 @@
 import React, {useCallback, useEffect, useRef, useState} from "react";
-import {buildWhitespaceTolerantRegex, debugNoMatch, highlightCrossNodeMatches} from "@/utils/domCrossNodeSearch.ts";
-import {scrollElementIntoCenter} from "@/utils/scrollElementIntoCenter.ts";
+import {buildWhitespaceTolerantRegex, debugNoMatch, highlightCrossNodeMatches} from "@/utils/docxWork/domCrossNodeSearch.ts";
+import {scrollElementIntoCenter} from "@/utils/docxWork/scrollElementIntoCenter.ts";
 
 interface UseDocxTextSearchResult {
     matchCount: number;

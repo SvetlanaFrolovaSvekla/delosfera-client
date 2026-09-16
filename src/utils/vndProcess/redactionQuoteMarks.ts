@@ -11,7 +11,7 @@ import type {
     ApprovalStageResponse,
 } from "@/service/coordinationService/coordinationServiceTypes.ts";
 import {STAGE_DECISION_META} from "@/constants/coordinationParams.ts";
-import type {RedactionViewTarget} from "@/utils/redactionLanguagePanelUtils.ts";
+import type {RedactionViewTarget} from "@/utils/vndProcess/redactionLanguagePanelUtils.ts";
 
 /** Один маркер - цитата, привязанная к конкретной резолюции конкретного согласующего на
  * конкретной фазе. По клику на маркер в тексте показывается вся резолюция целиком (comment) -

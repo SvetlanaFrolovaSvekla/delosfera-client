@@ -1,13 +1,14 @@
 // Read-only маршрут уже запущенного/завершённого согласования
 import {useMemo, useState} from "react";
+import {useTranslation} from "react-i18next";
 import type {ApprovalProcessResponse} from "@/service/coordinationService/coordinationServiceTypes.ts";
 import {useApprovalRouteLines} from "@/hooks/coordinationHooks/useApprovalRouteLines.ts";
 import {StageCardView} from "./StageCardView";
 import type {FormattedCommentQuoteRef} from "./FormattedResolutionComment.tsx";
 import {NormBlockView, type NormPhaseStatus} from "./NormBlockView";
 import {ArrowDown, ArrowLeft, MessageSquareText} from "lucide-react";
-import {getElapsedLabel} from "@/utils/dateUtils.ts";
-import {getInitials} from "@/utils/getInitials.ts";
+import {getElapsedLabel, getRemainingLabel} from "@/utils/dateUtils.ts";
+import {getInitials} from "@/utils/namingUsers/getInitials.ts";
 import {COMMENT_TRUNCATE_LENGTH} from "@/constants/coordinationParams.ts";
 import {
     AttachmentRow
@@ -45,40 +46,31 @@ function getFinalHoldPhaseStatus(process: ApprovalProcessResponse): NormPhaseSta
     return "upcoming";
 }
 
-// Сколько времени осталось до дедлайна (дни, часы, минуты)
-function getRemainingLabel(deadlineAt: string | null | undefined): string {
-    if (!deadlineAt) return "—";
-
-    const diffMs = new Date(deadlineAt).getTime() - Date.now();
-    if (diffMs <= 0) return "просрочено";
-
-    const totalMinutes = Math.floor(diffMs / 60000);
-    const days = Math.floor(totalMinutes / (60 * 24));
-    const hours = Math.floor((totalMinutes % (60 * 24)) / 60);
-    const minutes = totalMinutes % 60;
-
-    const parts: string[] = [];
-    if (days > 0) parts.push(`${days} дн`);
-    if (hours > 0) parts.push(`${hours} ч`);
-    if (minutes > 0) parts.push(`${minutes} мин`);
-
-    return parts.length > 0 ? parts.join(" ") : "меньше минуты";
-}
-
 interface CurrentPhaseHintProps {
     startedAt: string | null | undefined;
     deadlineAt: string | null | undefined;
 }
 
-// Подсказка "Текущий этап" со стрелочкой, выводится правее блока активной фазы
+// Подсказка "Текущий этап" со стрелочкой, выводится правее блока активной фазы.
+//
+// Раньше здесь была собственная копия getRemainingLabel (не импортированная из
+// dateUtils.ts) - более бедная версия оригинала: для просрочки не показывала, на сколько
+// именно (просто "просрочено" без суммы), и использовала сокращения ("дн"/"ч"/"мин") вместо
+// склоняемых слов. Теперь используется общая getRemainingLabel из dateUtils - она уже
+// возвращает готовую фразу ("осталось X"/"просрочено на X"), поэтому подпись строки
+// заменена с "Осталось до дедлайна:" на нейтральное "Дедлайн:", чтобы не задваивать
+// "осталось" ("Осталось до дедлайна: осталось 3 часа" читалось бы странно).
 function CurrentPhaseHint({startedAt, deadlineAt}: CurrentPhaseHintProps) {
+    const {t} = useTranslation();
+    const elapsed = startedAt ? getElapsedLabel(startedAt, t) : "—";
+
     return (
         <div className="absolute left-full top-1/2 ml-3 flex -translate-y-1/2 items-center gap-2 whitespace-nowrap">
             <ArrowLeft size={16} className="flex-none"/>
             <div className="flex flex-col text-[11.5px] leading-[1.5]">
-                <span className="font-semibold">Текущий этап</span>
-                <span className="text-[#8b97ab]">Прошло с начала этапа: {startedAt ? getElapsedLabel(startedAt) : "—"}</span>
-                <span className="text-[#8b97ab]">Осталось до дедлайна: {getRemainingLabel(deadlineAt)}</span>
+                <span className="font-semibold">{t("coordination.currentPhaseHint.title")}</span>
+                <span className="text-[#8b97ab]">{t("coordination.currentPhaseHint.phaseStarted", {time: elapsed})}</span>
+                <span className="text-[#8b97ab]">{t("coordination.currentPhaseHint.deadline", {time: getRemainingLabel(deadlineAt, t)})}</span>
             </div>
         </div>
     );

@@ -215,7 +215,7 @@ export function VndStartApprovalModal({
                                         className="flex h-[110px] w-[210px] flex-none cursor-pointer flex-col items-center justify-center gap-2 rounded-[14px] border border-dashed border-[#d5dae3] bg-white text-[#8b97ab] transition-colors hover:border-[#4e57d6]/50 hover:bg-[#f6f8fb]"
                                     >
                                         <Plus size={18}/>
-                                        <span className="text-[12px] font-medium">Добавить этап</span>
+                                        <span className="text-[12px] font-medium">Добавить согласующего</span>
                                     </button>
                                 )}
                             </div>

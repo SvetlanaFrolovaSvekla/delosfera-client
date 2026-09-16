@@ -1,6 +1,8 @@
 import {useEffect, useMemo, useState} from "react";
 import {useNavigate, useParams} from "react-router-dom";
 import {ArrowLeft, Plus, Printer, Trash2} from "lucide-react";
+import {useAuth} from "@/context/AuthContext.ts";
+import {PermissionCode} from "@/constants/permissions/permissions.ts";
 import {UserPicker, type PickableUser} from "@/components/componentsGeneral/UserPicker.tsx";
 import {userService} from "@/service/userService/userService.ts";
 import {
@@ -18,6 +20,7 @@ export function SubstitutionCardPage() {
     const {id} = useParams<{id: string}>();
     const isNew = !id || id === "new";
     const navigate = useNavigate();
+    const {hasPermission} = useAuth();
 
     const [users, setUsers] = useState<PickableUser[]>([]);
     const [form, setForm] = useState<SubstitutionSaveRequest>(empty);
@@ -79,6 +82,13 @@ export function SubstitutionCardPage() {
         try { const d = await fn(); setDetails(d); setForm(toForm(d)); }
         catch (e) { setError(msgOf(e)); }
         finally { setBusy(false); }
+    }
+
+    async function remove() {
+        if (details == null) return;
+        setBusy(true); setError(null);
+        try { await substitutionService.remove(details.id); navigate("/substitutions"); }
+        catch (e) { setError(msgOf(e)); setBusy(false); }
     }
 
     if (loading) return <div className="p-6 text-[13px] text-[#8b97ab]">Загрузка…</div>;
@@ -288,13 +298,19 @@ export function SubstitutionCardPage() {
                             </button>
                         </>
                     )}
-                    {details?.status === "OnExecution" && (
+                    {details?.status === "OnExecution" && hasPermission(PermissionCode.ViewAllSz) && (
                         <button type="button" onClick={() => void act(() => substitutionService.execute(details.id))} disabled={busy}
                                 className="h-10 px-5 rounded-[10px] bg-[#1c7a4d] text-white text-[14px] font-semibold cursor-pointer hover:brightness-95 disabled:opacity-50">
                             Исполнено (приказ оформлен)
                         </button>
                     )}
-                    {details && details.status !== "Executed" && details.status !== "Withdrawn" && (
+                    {details?.status === "Draft" && (
+                        <button type="button" onClick={() => void remove()} disabled={busy}
+                                className="h-10 px-4 rounded-[10px] border border-[#f0c8c0] bg-white text-[14px] font-medium text-[#c0392b] cursor-pointer hover:bg-[#fbeae7] disabled:opacity-50 flex items-center gap-2">
+                            <Trash2 size={16}/> Удалить
+                        </button>
+                    )}
+                    {(details?.status === "OnApproval" || details?.status === "OnExecution") && (
                         <button type="button" onClick={() => void act(() => substitutionService.withdraw(details.id))} disabled={busy}
                                 className="h-10 px-4 rounded-[10px] border border-[#f0c8c0] bg-white text-[14px] font-medium text-[#c0392b] cursor-pointer hover:bg-[#fbeae7] disabled:opacity-50">
                             Отозвать

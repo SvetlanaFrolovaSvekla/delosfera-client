@@ -1,5 +1,5 @@
 import {PageHeader} from "@/components/componentsGeneral/PageHeader.tsx";
-import {Icon} from "@/components/icons/Icon";
+import {Icon} from "@/assets/icons/Icon";
 import {Plus} from "lucide-react";
 
 interface UsersPageHeaderProps {

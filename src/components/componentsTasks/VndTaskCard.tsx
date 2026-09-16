@@ -1,11 +1,12 @@
 import type {MouseEvent} from "react";
 import {Link} from "react-router-dom";
+import {useTranslation} from "react-i18next";
 import {CheckCircle2} from "lucide-react";
 import type {VndTaskResponse} from "@/service/tasksVndService/tasksServiceTypes.ts";
 import {COORDINATION_STAGE_META, REVISION_NEEDED_META, TASK_SCOPE_META} from "@/constants/vndStatus.ts";
 import {getActionTitle, getDeadlineTone, getMetaText} from "@/utils/tasksUtils.ts";
 import {timeAgo} from "@/utils/dateUtils.ts";
-import {Icon} from "@/components/icons/Icon.tsx";
+import {Icon} from "@/assets/icons/Icon.tsx";
 import {HighlightText} from "@/utils/HighlightText.tsx";
 
 
@@ -46,6 +47,8 @@ const APPROVAL_TAB_SCOPES: VndTaskResponse["scope"][] = ["coordination", "myVndA
 const ACTUAL_TAB_SCOPES: VndTaskResponse["scope"][] = ["actualizationRequest", "actualizationApproved"];
 
 export function VndTaskCard({task, searchQuery = "", square = false, noTopBorder = false}: VndTaskCardProps) {
+    const {t} = useTranslation();
+
     // Основной бейдж = раздел/вкладка "Мои задачи", в которую ведёт карточка
     // ("Ждущие моего согласования" / "Мои ВНД на согласовании" / "Актуализация" / "Консолидация")
     const scopeMeta = TASK_SCOPE_META[task.scope];
@@ -109,7 +112,7 @@ export function VndTaskCard({task, searchQuery = "", square = false, noTopBorder
                         className="rounded-full px-[9px] py-[2px] text-[11px] font-semibold"
                         style={{background: scopeMeta.bg, color: scopeMeta.color}}
                     >
-                        {scopeMeta.label}
+                        {t(scopeMeta.label)}
                     </span>
                     {/* Текущий этап согласования — отдельно от раздела выше. На доработке
                         (isRevisionNeeded) - отдельная иконка (FileEdit), чтобы бейдж не
@@ -121,19 +124,19 @@ export function VndTaskCard({task, searchQuery = "", square = false, noTopBorder
                             style={{background: stageMeta.bg, color: stageMeta.color}}
                         >
                             {task.isRevisionNeeded && <stageMeta.icon size={11}/>}
-                            {stageMeta.label}
+                            {t(stageMeta.label)}
                         </span>
                     )}
                     {task.actualizationPlannedNoChanges && (
                         <span className="rounded-full bg-[#fdf6e8] px-[9px] py-[2px] text-[11px] font-semibold text-[#9a6408]">
-                            Без изменений
+                            {t("tasks.vnd.noChanges")}
                         </span>
                     )}
                     {/* Пока шаг "Выполнить актуализацию" не пройден - ни "без изменений", ни сдвиг
                         срока ещё не решены, карточка ведёт на этот шаг, а не на загрузку/согласование */}
                     {task.scope === "actualization" && !task.actualizationPerformed && (
                         <span className="rounded-full bg-[#ececfc] px-[9px] py-[2px] text-[11px] font-semibold text-[#4e57d6]">
-                            Требуется выполнить актуализацию
+                            {t("tasks.vnd.actualizationRequired")}
                         </span>
                     )}
                 </span>
@@ -145,13 +148,13 @@ export function VndTaskCard({task, searchQuery = "", square = false, noTopBorder
 
                 {/* Суть задачи */}
                 <span className="mt-0.5 block truncate text-[12.5px] font-medium text-[#3a4560]">
-                    {getActionTitle(task)}
+                    {getActionTitle(task, t)}
                 </span>
 
                 {/* Здесь же встречается редакция/инициатор/отклонивший — тоже участвуют
                     в поиске (см. matchesTaskSearch), поэтому подсвечиваем строку целиком. */}
                 <span className="mt-0.5 block truncate text-[11.5px] text-[#8b97ab]">
-                    <HighlightText text={getMetaText(task)} query={searchQuery}/>
+                    <HighlightText text={getMetaText(task, t)} query={searchQuery}/>
                 </span>
 
                 {/* Комментарий инициатора по предыдущему кругу — контекст, зачем документ снова здесь.
@@ -171,7 +174,7 @@ export function VndTaskCard({task, searchQuery = "", square = false, noTopBorder
             {task.isCompleted ? (
                 <span className="flex flex-none items-center gap-1.5 text-[11.5px] font-semibold text-[#1c7a4d]">
                     <CheckCircle2 size={14}/>
-                    {task.completedAt ? timeAgo(task.completedAt) : "Выполнено"}
+                    {task.completedAt ? timeAgo(task.completedAt) : t("tasks.vnd.completedFallback")}
                 </span>
             ) : due.label !== "—" ? (
                 <span className="flex flex-none items-center gap-1.5 text-[11.5px] font-semibold"

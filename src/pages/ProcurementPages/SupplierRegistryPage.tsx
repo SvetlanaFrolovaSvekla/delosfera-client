@@ -1,6 +1,12 @@
 import {useCallback, useEffect, useState} from "react";
 import {apiClient} from "@/service/apiClient.ts";
 import {SupplierRatingsModal} from "@/components/procurement/SupplierRatingsModal.tsx";
+import {CheckBoxOne} from "@/components/componentsGeneral/componentsCheckBox/CheckBoxOne.tsx";
+import {Tooltip} from "@/components/componentsGeneral/Tooltip.tsx";
+import {SearchBar} from "@/components/componentsGeneral/SearchBar.tsx";
+import {HighlightText} from "@/utils/HighlightText.tsx";
+import {useAuth} from "@/context/AuthContext.ts";
+import {PermissionCode} from "@/constants/permissions/permissions.ts";
 
 /**
  * Реестр поставщиков и чёрный список недобросовестных (PRC-07/17).
@@ -28,7 +34,16 @@ interface Supplier {
 
 const BASE = "/procurement/suppliers";
 
+// Заведение/изменение поставщика, чёрный список и заключение ДБ требуют право
+// ManageSuppliers (см. [RequirePermission] на бэке в SupplierController) - без него запрос
+// падает 403 с сырым "Операция не выполнена". Чтобы до этого не доходило, кнопки блокируются
+// на фронте с тултипом-пояснением. Сам просмотр реестра и оценки поставщика (ЗК-9) прав не
+// требуют - там ничего не блокируем.
+const NO_MANAGE_SUPPLIERS_TOOLTIP = "У Вас нет прав на управление поставщиками!";
+
 export const SupplierRegistryPage = () => {
+    const {hasPermission} = useAuth();
+    const canManageSuppliers = hasPermission(PermissionCode.ManageSuppliers);
     const [items, setItems] = useState<Supplier[]>([]);
     const [query, setQuery] = useState("");
     const [onlyBlacklisted, setOnlyBlacklisted] = useState(false);
@@ -84,24 +99,20 @@ export const SupplierRegistryPage = () => {
             <div>
                 <h1 style={{margin: 0, fontSize: 19, fontWeight: 700, color: "#0f1b2d"}}>Поставщики</h1>
                 <div style={{marginTop: 4, fontSize: 12.5, color: "#8b97ab"}}>
-                    Благонадёжность (PRC-07) и чёрный список недобросовестных поставщиков (PRC-17)
+                    Благонадёжность и чёрный список недобросовестных поставщиков
                 </div>
             </div>
 
             <div style={{display: "flex", gap: 8, flexWrap: "wrap", alignItems: "center"}}>
-                <input
+                <SearchBar
                     value={query}
-                    onChange={e => setQuery(e.target.value)}
+                    onChange={setQuery}
                     placeholder="Поиск по наименованию или ИНН…"
-                    style={{flex: 1, minWidth: 240, height: 36, padding: "0 12px", border: "1px solid #e5e9f0",
-                        borderRadius: 9, background: "#f6f8fb", font: "inherit", fontSize: 12.5, outline: "none"}}
+                    className="min-w-[240px]"
                 />
-                <label style={{display: "flex", alignItems: "center", gap: 6, fontSize: 12.5, color: "#55617a"}}>
-                    <input type="checkbox" checked={onlyBlacklisted}
-                           onChange={e => setOnlyBlacklisted(e.target.checked)}
-                           style={{accentColor: "#2f68f5"}}/>
+                <CheckBoxOne checked={onlyBlacklisted} onChange={setOnlyBlacklisted}>
                     только чёрный список
-                </label>
+                </CheckBoxOne>
             </div>
 
             {/* Завести поставщика вручную: без этого в реестр попадали только те, кто
@@ -121,10 +132,14 @@ export const SupplierRegistryPage = () => {
                     style={{width: 160, height: 36, padding: "0 12px", border: "1px solid #e5e9f0",
                         borderRadius: 9, background: "#fff", font: "inherit", fontSize: 12.5, outline: "none"}}
                 />
-                <button onClick={addSupplier} disabled={busy || !draft.title.trim()}
-                        style={{...button, background: "#2f68f5", color: "#fff", borderColor: "#2f68f5"}}>
-                    Добавить поставщика
-                </button>
+                <Tooltip content={NO_MANAGE_SUPPLIERS_TOOLTIP} disabled={canManageSuppliers} side="top">
+                    <button
+                        onClick={addSupplier}
+                        disabled={busy || !draft.title.trim() || !canManageSuppliers}
+                        className="cursor-pointer inline-flex h-[36px] items-center gap-2 rounded-[9px] border-none bg-[#2f68f5] px-[12px] text-[12.5px] font-semibold text-white shadow-[0_6px_16px_-6px_#2f68f5] hover:brightness-[1.06] disabled:opacity-60 disabled:cursor-default disabled:hover:brightness-100">
+                        Добавить поставщика
+                    </button>
+                </Tooltip>
             </div>
 
             {error && <div style={{color: "#e0483d", fontSize: 13}}>{error}</div>}
@@ -144,9 +159,13 @@ export const SupplierRegistryPage = () => {
                         {items.map(s => (
                             <tr key={s.id} style={{borderTop: "1px solid #eef2f7"}}>
                                 <td style={td}>
-                                    <div style={{fontWeight: 600}}>{s.title}</div>
+                                    <div style={{fontWeight: 600}}>
+                                        <HighlightText text={s.title} query={query}/>
+                                    </div>
                                     <div style={{fontSize: 11, color: "#8b97ab"}}>
-                                        {s.inn ? `ИНН ${s.inn}` : "ИНН не указан"}
+                                        {s.inn
+                                            ? <>ИНН <HighlightText text={s.inn} query={query}/></>
+                                            : "ИНН не указан"}
                                         {s.isAffiliated && " · аффилированное лицо"}
                                     </div>
                                 </td>
@@ -194,22 +213,28 @@ export const SupplierRegistryPage = () => {
                                     <button onClick={() => setRatingSupplier(s)} disabled={busy} style={{...button, marginRight: 6}}>
                                         Оценки
                                     </button>
-                                    {s.isBlacklisted ? (
-                                        <button onClick={() => run(() => apiClient.delete(`${BASE}/${s.id}/blacklist`))}
-                                                disabled={busy} style={button}>Снять ограничение</button>
-                                    ) : (
-                                        <button onClick={() => blacklist(s)} disabled={busy} style={button}>
-                                            В чёрный список
+                                    <Tooltip content={NO_MANAGE_SUPPLIERS_TOOLTIP} disabled={canManageSuppliers} side="top">
+                                        {s.isBlacklisted ? (
+                                            <button onClick={() => run(() => apiClient.delete(`${BASE}/${s.id}/blacklist`))}
+                                                    disabled={busy || !canManageSuppliers}
+                                                    style={canManageSuppliers ? button : disabledButton}>Снять ограничение</button>
+                                        ) : (
+                                            <button onClick={() => blacklist(s)} disabled={busy || !canManageSuppliers}
+                                                    style={canManageSuppliers ? button : disabledButton}>
+                                                В чёрный список
+                                            </button>
+                                        )}
+                                    </Tooltip>
+                                    <Tooltip content={NO_MANAGE_SUPPLIERS_TOOLTIP} disabled={canManageSuppliers} side="top">
+                                        <button
+                                            onClick={() => run(() => apiClient.post(`${BASE}/${s.id}/reliability`,
+                                                {isReliable: true, hasTaxClearance: true, hasSocialFundClearance: true}))}
+                                            disabled={busy || !canManageSuppliers}
+                                            style={{...(canManageSuppliers ? button : disabledButton), marginLeft: 6}}
+                                        >
+                                            Заключение ДБ
                                         </button>
-                                    )}
-                                    <button
-                                        onClick={() => run(() => apiClient.post(`${BASE}/${s.id}/reliability`,
-                                            {isReliable: true, hasTaxClearance: true, hasSocialFundClearance: true}))}
-                                        disabled={busy}
-                                        style={{...button, marginLeft: 6}}
-                                    >
-                                        Заключение ДБ
-                                    </button>
+                                    </Tooltip>
                                 </td>
                             </tr>
                         ))}
@@ -241,4 +266,8 @@ const td: React.CSSProperties = {padding: "11px 14px", verticalAlign: "top", col
 const button: React.CSSProperties = {
     height: 30, padding: "0 12px", border: "1px solid #e5e9f0", borderRadius: 8,
     background: "#fff", color: "#55617a", font: "inherit", fontSize: 12, fontWeight: 600, cursor: "pointer",
+};
+
+const disabledButton: React.CSSProperties = {
+    ...button, color: "#a3adbd", cursor: "not-allowed", opacity: 0.6,
 };

@@ -16,7 +16,8 @@ import {coordinationService} from "@/service/coordinationService/coordinationSer
 import type {ApprovalProcessResponse} from "@/service/coordinationService/coordinationServiceTypes.ts";
 
 import {downloadWithToast} from "@/utils/downloadFile.ts";
-import {getRedactionDisplayStatus} from "@/utils/redactionStatus.ts";
+import {getRedactionDisplayStatus, isRedactionVisibleToRegularUser} from "@/utils/redactionStatus.ts";
+import {useIsVndEditor} from "@/hooks/vndHooks/useIsVndEditor.ts";
 import {isVndPendingEffective} from "@/constants/vndStatus.ts";
 import {buildRedactionFileName} from "@/utils/fileNaming.ts";
 import {
@@ -122,8 +123,37 @@ export function VndEditionsTab({vnd, onVndChanged, onGoToApproval}: VndEditionsT
     const [searchQuery, setSearchQuery] = useState("");
     const textViewRef = useRef<RedactionTextViewHandle>(null);
 
-    const {sortedDesc, lastByNumber, current, selected, compareTarget, uploadBlocked} =
+    const {sortedDesc, lastByNumber, current, selected: rawSelected, compareTarget: rawCompareTarget, uploadBlocked} =
         useRedactionSelection(redactions, selectedId);
+
+    // "Рядовой" пользователь (не редактор ВНД) не должен видеть редакции, которые ещё не стали
+    // официальным текстом документа - черновик/на согласовании/отклонена/на консолидации (см.
+    // isRedactionVisibleToRegularUser). Действующую и прошлые официально принятые (outdated)
+    // редакции показываем всем, как и раньше. isVndEditor решает, применять ли фильтр вовсе.
+    const isVndEditor = useIsVndEditor();
+    const visibleRedactions = useMemo(
+        () => isVndEditor
+            ? sortedDesc
+            : sortedDesc.filter((r) =>
+                isRedactionVisibleToRegularUser(r, vnd.status, r.id === lastByNumber?.id, vnd.effectiveDate)
+            ),
+        [isVndEditor, sortedDesc, vnd.status, vnd.effectiveDate, lastByNumber]
+    );
+
+    // Если то, что выбрано по умолчанию (или явно) из ПОЛНОГО списка редакций - скрыто от
+    // рядового пользователя, откатываемся на самую свежую из видимых ему редакций вместо того,
+    // чтобы показать скрытое содержимое в центральной панели.
+    const selected = isVndEditor || (rawSelected && visibleRedactions.some((r) => r.id === rawSelected.id))
+        ? rawSelected
+        : visibleRedactions[0];
+
+    const compareTarget = useMemo(() => {
+        if (isVndEditor) return rawCompareTarget;
+        if (!selected) return undefined;
+        const idx = visibleRedactions.findIndex((r) => r.id === selected.id);
+        if (idx === -1) return undefined;
+        return visibleRedactions[idx + 1] ?? visibleRedactions[idx - 1];
+    }, [isVndEditor, rawCompareTarget, selected, visibleRedactions]);
 
     const hasStatusBannerAbove =
         vnd.status === "draft" || vnd.status === "consol" || isVndPendingEffective(vnd.status, vnd.effectiveDate);
@@ -333,8 +363,8 @@ export function VndEditionsTab({vnd, onVndChanged, onGoToApproval}: VndEditionsT
         );
     }
 
-    /* Если нет редакций */
-    if (!selected) {
+    /* Ни одной редакции у документа ещё нет вовсе */
+    if (!rawSelected) {
         return (
             <div className="mx-auto mt-30 max-w-[420px]">
                 <EmptyState
@@ -353,6 +383,20 @@ export function VndEditionsTab({vnd, onVndChanged, onGoToApproval}: VndEditionsT
                         onUploaded={handleRedactionUploaded}
                     />
                 )}
+            </div>
+        );
+    }
+
+    /* Редакции у документа есть, но все они пока черновик/на согласовании/на консолидации -
+       рядовому пользователю (не редактору ВНД) их показывать нельзя, а действующей или ранее
+       официально принятой редакции у документа ещё не было (см. isRedactionVisibleToRegularUser) */
+    if (!selected) {
+        return (
+            <div className="mx-auto mt-30 max-w-[420px]">
+                <EmptyState
+                    title="Редакция пока недоступна для просмотра"
+                    description="Документ ещё не прошёл согласование. Текст появится здесь, как только редакция будет официально принята."
+                />
             </div>
         );
     }
@@ -581,7 +625,8 @@ export function VndEditionsTab({vnd, onVndChanged, onGoToApproval}: VndEditionsT
 
                 {/* Редакции документа */}
                 <RedactionsSidebar
-                    redactions={sortedDesc}
+                    redactions={visibleRedactions}
+                    lastRedactionId={lastByNumber?.id}
                     selectedId={selected.id}
                     vndStatus={vnd.status}
                     effectiveDate={vnd.effectiveDate}

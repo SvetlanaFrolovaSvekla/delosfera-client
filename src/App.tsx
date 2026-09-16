@@ -74,7 +74,6 @@ const ObligationsBoardPage = lazy(() => import("@/pages/ObligationsBoardPage.tsx
 const ActivityFeedPage = lazy(() => import("@/pages/ActivityFeedPage.tsx").then(m => ({default: m.ActivityFeedPage})));
 
 // Поиск по документам: реквизиты и текстовые поля карточек (GEN-02/04)
-const BaseKnowPage = lazy(() => import("@/pages/BaseKnowPages/BaseKnowPage.tsx").then(m => ({default: m.BaseKnowPage})));
 const UserCardPage = lazy(() => import("@/pages/UsersPages/UserCardPage.tsx").then(m => ({default: m.UserCardPage})));
 const SystemSettingsPage = lazy(() => import("@/pages/SystemSettingsPage.tsx").then(m => ({default: m.SystemSettingsPage})));
 const SearchPage = lazy(() => import("@/pages/SearchPage/SearchPage.tsx").then(m => ({default: m.SearchPage})));
@@ -183,7 +182,6 @@ function App() {
                                 <Route path="/prc/:id" element={<ProcurementCardPage/>}/>
                                 <Route path="/prc/:id/protocol" element={<ProcurementProtocolPage/>}/>
 
-                                <Route path="/base-know" element={<BaseKnowPage/>}/>
                                 <Route path="/search" element={<SearchPage/>}/>
 
                                 <Route path="/meetings" element={<MeetingRegistryPage/>}/>

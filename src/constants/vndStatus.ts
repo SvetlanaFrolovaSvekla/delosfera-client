@@ -1,3 +1,4 @@
+import type {ComponentType} from "react";
 import type {VndScope, VndStatusKey} from "@/constants/vndTabs.ts";
 import type {DocumentStatusKey} from "@/service/vndService/vndServiceType.ts";
 import {
@@ -12,28 +13,25 @@ import {
     FileEdit,
     Layers
 } from "lucide-react";
-import type {ComponentType} from "react";
 
 // Статус последней редакции (детальный, требует право ViewVndRegistryExtended):
-// консолидация / актуальная / на актуализации / на согласовании / черновик / в архиве
+// консолидация / актуальная / на актуализации / на согласовании / черновик / в архиве.
+// label — ключ i18n (namespace vnd.redactionStatusMeta), а не готовый текст: переводится на
+// месте использования (BaseVndPage, VndTable, OpenVndPage, ActualizationTable), где уже есть
+// доступ к useTranslation.
 export const STATUS_META: Record<
     VndStatusKey,
     { label: string; color: string; bg: string; icon: typeof Check }
 > = {
-    active: {label: "Актуальная", color: "#1c7a4d", bg: "#e2f4ea", icon: Check},
-    onact: {label: "На актуализации", color: "#b3730a", bg: "#fbeecf", icon: Clock},
-    review: {label: "На согласовании", color: "#2f68f5", bg: "#e9f0ff", icon: Clock},
-    consol: {label: "Консолидация", color: "#7a5ce0", bg: "#efeafe", icon: Layers},
-    arch: {label: "В архиве", color: "#c0392b", bg: "#fdecea", icon: Archive},
-    draft: {label: "Черновик", color: "#5b6472", bg: "#eef0f3", icon: FileEdit}
+    active: {label: "vnd.redactionStatusMeta.active", color: "#1c7a4d", bg: "#e2f4ea", icon: Check},
+    onact: {label: "vnd.redactionStatusMeta.onact", color: "#b3730a", bg: "#fbeecf", icon: Clock},
+    review: {label: "vnd.redactionStatusMeta.review", color: "#2f68f5", bg: "#e9f0ff", icon: Clock},
+    consol: {label: "vnd.redactionStatusMeta.consol", color: "#7a5ce0", bg: "#efeafe", icon: Layers},
+    arch: {label: "vnd.redactionStatusMeta.arch", color: "#c0392b", bg: "#fdecea", icon: Archive},
+    draft: {label: "vnd.redactionStatusMeta.draft", color: "#5b6472", bg: "#eef0f3", icon: FileEdit}
 };
 
 // "Ожидание вступления в силу" — вычисляемый статус, НЕ хранится в БД отдельным значением
-// VndStatus и не заводится как новый VndStatusKey (см. обсуждение): документ уже прошёл
-// консолидацию (status === "active"), но указанная при консолидации "Дата вступления в силу"
-// ещё не наступила (см. ConsolidateVndModal/VndActualizationService.PublishAsync). Как только
-// дата наступает, следующий же запрос сам перестаёт считать документ "ожидающим" — фоновые
-// задачи/миграции статуса не нужны.
 export function isVndPendingEffective(status: VndStatusKey, effectiveDate: string | null | undefined): boolean {
     if (status !== "active" || !effectiveDate) return false;
     return effectiveDate.slice(0, 10) > todayIso();
@@ -43,46 +41,18 @@ function todayIso(): string {
     return new Date().toISOString().slice(0, 10);
 }
 
+// label — ключ i18n, см. комментарий у STATUS_META выше.
 export const PENDING_EFFECTIVE_META: { label: string; color: string; bg: string; icon: typeof Check } = {
-    label: "Ожидание вступления в силу",
+    label: "vnd.redactionStatusMeta.pendingEffective",
     color: "#c2410c",
     bg: "#ffedd5",
     icon: CalendarClock,
 };
 
-// Мета для отображения статуса "последней редакции" с учётом "Ожидания вступления в силу" —
-// использовать вместо прямого STATUS_META[status] везде, где статус показывается пользователю
-// (колонка реестра, статус-баннер и т.п.). Сам STATUS_META/VndStatusKey не трогаем, чтобы не
-// задевать фильтры/вкладки/поиск, которые опираются на реальный статус документа в БД.
+// Мета для отображения статуса "последней редакции" с учётом "Ожидания вступления в силу"
 export function getVndDisplayMeta(status: VndStatusKey, effectiveDate: string | null | undefined) {
     return isVndPendingEffective(status, effectiveDate) ? PENDING_EFFECTIVE_META : STATUS_META[status];
 }
-
-// УСТАРЕЛО: SimpleVndStatusKey/getSimplifiedVndStatus/SIMPLE_STATUS_META — старая, неполная
-// свёртка статуса для пользователей без права ViewVndRegistryExtended (не различала
-// "ещё не действующий" ВНД от полноценно действующего). Заменено на "Статус ВНД"
-// (документ-уровня) ниже — DOCUMENT_STATUS_META/DocumentStatusKey, приходящий готовым полем
-// с бэка (VndResponse.documentStatus, см. VndService.ComputeDocumentStatus), а не
-// пересчитываемый на фронте по эвристике. Оставлено как есть (не удалено) — используется
-// только для значка "Черновик" в VndTable, т.к. "Статус ВНД" концептуально не описывает
-// черновики (это отдельная ось видимости, завязанная на право создавать ВНД, а не на
-// ViewVndRegistryExtended).
-export type SimpleVndStatusKey = "active" | "arch" | "draft";
-
-export function getSimplifiedVndStatus(status: VndStatusKey): SimpleVndStatusKey {
-    if (status === "arch") return "arch";
-    if (status === "draft") return "draft";
-    return "active"; // active/onact/review/consol — все действующие
-}
-
-export const SIMPLE_STATUS_META: Record<
-    SimpleVndStatusKey,
-    { label: string; color: string; bg: string; icon: typeof Check }
-> = {
-    active: {label: "Действующий", color: STATUS_META.active.color, bg: STATUS_META.active.bg, icon: Check},
-    arch: {label: STATUS_META.arch.label, color: STATUS_META.arch.color, bg: STATUS_META.arch.bg, icon: Archive},
-    draft: {label: STATUS_META.draft.label, color: STATUS_META.draft.color, bg: STATUS_META.draft.bg, icon: FileEdit},
-};
 
 // "Статус ВНД" (документ-уровня) — НЕ путать со STATUS_META выше ("Статус последней редакции
 // ВНД"). Ровно 3 значения, приходят с бэка готовыми (VndResponse.documentStatus):
@@ -99,13 +69,19 @@ export const SIMPLE_STATUS_META: Record<
 // CollapseDocumentStatus на бэке всё ещё используется, но только для прямого открытия
 // документа по ссылке (GetById) — не для реестра. collapseDocumentStatus ниже — тот же
 // защитный дубль для этого случая (идемпотентен, если данные уже свёрнуты/отфильтрованы).
+//
+// "Черновик" в реестре (VndTable) — отдельная, не связанная с ViewVndRegistryExtended ось
+// видимости (завязана на право создавать ВНД, а не на ViewVndRegistryExtended), поэтому не
+// входит в этот Record и проверяется в VndTable отдельно, до него, через STATUS_META.draft.
+//
+// label — ключ i18n (namespace vnd.documentStatusMeta), см. комментарий у STATUS_META выше.
 export const DOCUMENT_STATUS_META: Record<
     DocumentStatusKey,
     { label: string; color: string; bg: string; icon: typeof Check }
 > = {
-    active: {label: "Действующий", color: STATUS_META.active.color, bg: STATUS_META.active.bg, icon: Check},
-    notYetActive: {label: "Ещё не действующий", color: "#b3730a", bg: "#fbeecf", icon: Clock},
-    arch: {label: STATUS_META.arch.label, color: STATUS_META.arch.color, bg: STATUS_META.arch.bg, icon: Archive},
+    active: {label: "vnd.documentStatusMeta.active", color: STATUS_META.active.color, bg: STATUS_META.active.bg, icon: Check},
+    notYetActive: {label: "vnd.documentStatusMeta.notYetActive", color: "#b3730a", bg: "#fbeecf", icon: Clock},
+    arch: {label: "vnd.documentStatusMeta.arch", color: STATUS_META.arch.color, bg: STATUS_META.arch.bg, icon: Archive},
 };
 
 export function collapseDocumentStatus(status: DocumentStatusKey, canViewExtended: boolean): DocumentStatusKey {
@@ -123,26 +99,27 @@ export const STATUS_OPTIONS_BY_SCOPE: Partial<Record<VndScope, VndStatusKey[]>> 
     all: ["active", "onact", "review", "consol", "arch", "draft"],
 };
 
+// label — ключи i18n (namespace vnd.scopeCountLabels), см. комментарий у STATUS_META выше.
 export const SCOPE_COUNT_LABELS: Record<VndScope, { total: string; found: string }> = {
     all: {
-        total: "Всего ВНД",
-        found: "Найдено ВНД",
+        total: "vnd.scopeCountLabels.all.total",
+        found: "vnd.scopeCountLabels.all.found",
     },
     active: {
-        total: "Всего действующих ВНД",
-        found: "Найдено действующих ВНД",
+        total: "vnd.scopeCountLabels.active.total",
+        found: "vnd.scopeCountLabels.active.found",
     },
     notYetActive: {
-        total: "Всего ещё не действующих ВНД",
-        found: "Найдено ещё не действующих ВНД",
+        total: "vnd.scopeCountLabels.notYetActive.total",
+        found: "vnd.scopeCountLabels.notYetActive.found",
     },
     draft: {
-        total: "Всего черновиков",
-        found: "Найдено черновиков",
+        total: "vnd.scopeCountLabels.draft.total",
+        found: "vnd.scopeCountLabels.draft.found",
     },
     arch: {
-        total: "Всего архивированных ВНД",
-        found: "Найдено архивированных ВНД",
+        total: "vnd.scopeCountLabels.arch.total",
+        found: "vnd.scopeCountLabels.arch.found",
     },
 };
 
@@ -154,22 +131,27 @@ interface TaskStatusMeta {
     icon: ComponentType<{ size?: number; className?: string }>;
 }
 
-// Цвета фаз согласования
+// Цвета фаз согласования.
+// label — ключ i18n, а не готовый текст: переводится на месте использования (VndTaskCard,
+// VndTasksPanel), где уже есть доступ к useTranslation. Те же ключи используют
+// STAGE_PHASE_FILTER_OPTIONS в VndTasksPanel — оба места обязаны показывать один и тот же
+// текст на всех трёх языках, дублировать литералы означало бы однажды поправить один и
+// забыть другой.
 export const COORDINATION_STAGE_META: Record<"primary" | "repeat" | "final", TaskStatusMeta> = {
     primary: {
-        label: "Первичное согласование",
+        label: "tasks.vnd.stagePhase.primary",
         color: "#2f68f5",
         bg: "#e9f0ff",
         icon: Clock,
     },
     repeat: {
-        label: "Согласование после внесённых изменений",
+        label: "tasks.vnd.stagePhase.repeat",
         color: "#1d4fd1",
         bg: "#cfe0ff",
         icon: Clock,
     },
     final: {
-        label: "Финальная выдержка",
+        label: "tasks.vnd.stagePhase.final",
         color: "#123a9e",
         bg: "#b3ccff",
         icon: FileCheck,
@@ -177,50 +159,52 @@ export const COORDINATION_STAGE_META: Record<"primary" | "repeat" | "final", Tas
 };
 
 // Цвета разделов задач - совпадают с названиями вложенных вкладок на странице "Мои задачи"
-// (см. TasksVndPage), чтобы бейдж на карточке однозначно указывал, в какой раздел вести.
+// (см. VndTasksPanel), чтобы бейдж на карточке однозначно указывал, в какой раздел вести.
+// label — ключ i18n (см. комментарий у COORDINATION_STAGE_META выше); те же ключи использует
+// VndTasksPanel для подписей верхних/вложенных вкладок.
 export const TASK_SCOPE_META: Record<
     "coordination" | "actualization" | "consolidation" | "myVndApproval" | "rejected"
     | "actualizationRequest" | "actualizationApproved",
     TaskStatusMeta
 > = {
     coordination: {
-        label: "Ждущие моего согласования",
+        label: "tasks.vnd.scopes.coordination",
         color: "#2f68f5",
         bg: "#e9f0ff",
         icon: Clock,
     },
     actualization: {
-        label: "На актуализации",
+        label: "tasks.vnd.scopes.actualization",
         color: "#b3730a",
         bg: "#fbeecf",
         icon: Clock,
     },
     consolidation: {
-        label: "Консолидация",
+        label: "tasks.vnd.scopes.consolidation",
         color: "#7a5ce0",
         bg: "#efeafe",
         icon: Layers,
     },
     myVndApproval: {
-        label: "Мои ВНД на согласовании",
+        label: "tasks.vnd.scopes.myVndApproval",
         color: "#2f68f5",
         bg: "#e9f0ff",
         icon: Clock,
     },
     rejected: {
-        label: "Отклонено",
+        label: "tasks.vnd.scopes.rejected",
         color: "#c0392b",
         bg: "#fdecea",
         icon: AlertOctagon,
     },
     actualizationRequest: {
-        label: "Заявка на актуализацию",
+        label: "tasks.vnd.scopes.actualizationRequest",
         color: "#4e57d6",
         bg: "#ececfc",
         icon: FileCheck,
     },
     actualizationApproved: {
-        label: "Заявка одобрена",
+        label: "tasks.vnd.scopes.actualizationApproved",
         color: "#1c7a4d",
         bg: "#e2f4ea",
         icon: CheckCircle2,
@@ -232,20 +216,23 @@ export const TASK_SCOPE_META: Record<
 // бэке - для RevisionNeeded возвращает null). Цвет/иконка сознательно другие, чем у обычных
 // фаз согласования (синие) - это состояние принципиально другое: мяч на стороне инициатора,
 // а не согласующих, и раньше карточка выглядела так же, как обычное "в процессе согласования".
+// label — ключ i18n, см. комментарий у COORDINATION_STAGE_META выше.
 export const REVISION_NEEDED_META: TaskStatusMeta = {
-    label: "ВНД на доработке",
+    label: "tasks.vnd.revisionNeeded",
     color: "#b3730a",
     bg: "#fbeecf",
     icon: FileEdit,
 };
 
-
-// Цвета/иконки срочности дедлайна согласования
+// Срочность дедлайна согласования по проценту оставшегося времени от норматива (см.
+// getDeadlineUrgency в dateUtils.ts). label — ключ i18n (namespace vnd.deadlineUrgencyMeta),
+// а не готовый текст: переводится на месте использования (VndTaskCard через tasksUtils.ts),
+// где уже есть доступ к useTranslation.
 export const DEADLINE_URGENCY_META = {
-    normal: { label: "В пределах срока", color: "#1c7a4d", bg: "#e2f4ea", icon: CheckCircle2 },
-    approaching: { label: "Срок приближается", color: "#2957c3", bg: "#e7eefc", icon: Clock },
-    critical: { label: "Критичный срок", color: "#b3730a", bg: "#fdf3d9", icon: AlertTriangle },
-    overdue: { label: "Просрочено", color: "#c0392b", bg: "#fdecea", icon: AlertOctagon },
+    normal: {label: "vnd.deadlineUrgencyMeta.normal", color: "#1c7a4d", bg: "#e2f4ea", icon: CheckCircle2},
+    approaching: {label: "vnd.deadlineUrgencyMeta.approaching", color: "#2957c3", bg: "#e7eefc", icon: Clock},
+    critical: {label: "vnd.deadlineUrgencyMeta.critical", color: "#b3730a", bg: "#fdf3d9", icon: AlertTriangle},
+    overdue: {label: "vnd.deadlineUrgencyMeta.overdue", color: "#c0392b", bg: "#fdecea", icon: AlertOctagon},
 } as const;
 
 export type DeadlineUrgencyKey = keyof typeof DEADLINE_URGENCY_META;

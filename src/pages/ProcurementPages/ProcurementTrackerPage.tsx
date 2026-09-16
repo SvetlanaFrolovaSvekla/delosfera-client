@@ -1,6 +1,7 @@
-import {useEffect, useState} from "react";
+import {useCallback, useEffect, useState} from "react";
 import {Link} from "react-router-dom";
 import {procurementService, type TrackerColumn} from "@/service/procurementService/procurementService.ts";
+import {EmptyState} from "@/components/componentsGeneral/EmptyState.tsx";
 
 /**
  * Доска закупок по стадиям (ЗК-11). Реестр отвечает «какие заявки есть», доска — «на
@@ -20,12 +21,17 @@ function ageLabel(days: number): string {
 export function ProcurementTrackerPage() {
     const [columns, setColumns] = useState<TrackerColumn[] | null>(null);
     const [error, setError] = useState<string | null>(null);
+    const [reloadKey, setReloadKey] = useState(0);
+
+    const refetch = useCallback(() => setReloadKey((k) => k + 1), []);
 
     useEffect(() => {
+        // eslint-disable-next-line react-hooks/set-state-in-effect
+        setError(null);
         procurementService.tracker()
             .then(setColumns)
             .catch(() => setError("Не удалось загрузить доску закупок"));
-    }, []);
+    }, [reloadKey]);
 
     const total = columns?.reduce((s, c) => s + c.count, 0) ?? 0;
     const stale = columns?.reduce((s, c) => s + c.items.filter(i => i.isStale).length, 0) ?? 0;
@@ -46,7 +52,18 @@ export function ProcurementTrackerPage() {
                 </Link>
             </div>
 
-            {error && <div className="text-[13px] text-[#c0392b]">{error}</div>}
+
+            {error && (
+                <EmptyState
+                    variant="error"
+                    title="Не удалось загрузить доску записок"
+                    description={error}
+                    actionLabel="Повторить"
+                    onAction={refetch}
+                />
+            )}
+
+
             {!columns && !error && <div className="text-[13px] text-[#8b97ab]">Загрузка…</div>}
 
             {columns && (

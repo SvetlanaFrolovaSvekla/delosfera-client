@@ -1,4 +1,5 @@
 import {useEffect, useMemo, useState} from "react";
+import {useTranslation} from "react-i18next";
 import {Archive, CalendarCheck, FileText, History, Pencil, RotateCw, Tags, Type, X, Loader2} from "lucide-react";
 import {useAuth} from "@/context/AuthContext";
 import type {VndRedactionResponse, VndResponse} from "@/service/vndService/vndServiceType.ts";
@@ -57,6 +58,7 @@ export function VndPassportTab({
                                    secrecyOptions,
                                    userGroupOptions,
                                }: VndPassportTabProps) {
+    const {t} = useTranslation();
     const {user: authUser} = useAuth();
     const isInitiatorMe = Boolean(authUser && vnd.createdByUserId && authUser.id === vnd.createdByUserId);
 
@@ -185,7 +187,7 @@ export function VndPassportTab({
         <>
             <div className="px-4 sm:px-6 flex items-center justify-between gap-2 mb-[15px]">
                 <p className="m-0 text-[#8b97ab] text-[13px]">
-                    Реквизиты по редакциям
+                    {t("openVndPage.passportTab.subtitle")}
                 </p>
 
                 <div className="flex gap-2.5">
@@ -199,7 +201,7 @@ export function VndPassportTab({
                                  cursor-pointer hover:bg-[#f6f8fb] disabled:opacity-60"
                             >
                                 <X className="w-[16px] h-[16px]" strokeWidth={2}/>
-                                Отмена
+                                {t("general.cancel")}
                             </button>
                             <button
                                 onClick={save}
@@ -209,7 +211,7 @@ export function VndPassportTab({
                                  cursor-pointer hover:brightness-[1.06] shadow-[0_6px_16px_-6px_#4e57d6] disabled:opacity-60"
                             >
                                 {saving && <Loader2 className="w-[16px] h-[16px] animate-spin" strokeWidth={2}/>}
-                                Сохранить
+                                {t("general.save")}
                             </button>
                         </>
                     ) : (
@@ -220,7 +222,7 @@ export function VndPassportTab({
                              cursor-pointer hover:brightness-[1.06] shadow-[0_6px_16px_-6px_#4e57d6]"
                         >
                             <Pencil className="w-[18px] h-[18px]" strokeWidth={2}/>
-                            Изменить реквизиты
+                            {t("openVndPage.passportTab.editButton")}
                         </button>
                     )}
                 </div>
@@ -242,7 +244,7 @@ export function VndPassportTab({
                                         : "bg-[#f6f8fb] text-[#55617a] hover:bg-[#eef2f7]"
                                 }`}
                             >
-                                Р{r.number}
+                                {t("openVndPage.passportTab.redactionTabLabel", {number: r.number})}
                             </button>
                         ))}
                     </div>
@@ -259,7 +261,7 @@ export function VndPassportTab({
                             onChange={(e) => setShowDiff(e.target.checked)}
                             className="w-[15px] h-[15px] cursor-pointer disabled:cursor-not-allowed"
                         />
-                        Показать изменения в связи с предыдущей редакцией
+                        {t("openVndPage.passportTab.showDiffCheckbox")}
                     </label>
                 </div>
             )}
@@ -273,20 +275,20 @@ export function VndPassportTab({
             <div className="border border-[#e9edf3] rounded-2xl px-6">
 
                 {/* Основная информация */}
-                <Section icon={<FileText className="w-[15px] h-[15px]" strokeWidth={1.9}/>} title="Основная информация">
+                <Section icon={<FileText className="w-[15px] h-[15px]" strokeWidth={1.9}/>} title={t("openVndPage.passportTab.sections.mainInfo")}>
                     {/* Инициатор и ответственный за актуализацию — всегда read-only,
                         независимо от режима редактирования: проставляются автоматически системой.
                         Ответственного за актуализацию не показываем для черновиков — там его
                         просто не может быть (документ ещё ни разу не проходил цикл актуализации). */}
                     <div className={`grid grid-cols-1 gap-4 mb-4 ${isDraft ? "" : "sm:grid-cols-2"}`}>
                         <ReadOnlyField
-                            label="Инициатор"
-                            value={vnd.createdByUserName ? `${vnd.createdByUserName}${isInitiatorMe ? " (я)" : ""}` : "—"}
+                            label={t("openVndPage.passportTab.initiatorLabel")}
+                            value={vnd.createdByUserName ? `${vnd.createdByUserName}${isInitiatorMe ? t("openVndPage.passportTab.meSuffix") : ""}` : "—"}
                             linkTo={vnd.createdByUserId ? (isInitiatorMe ? "/profile" : `/users/${vnd.createdByUserId}`) : undefined}
                         />
                         {!isDraft && (
                             <ReadOnlyField
-                                label="Ответственный за последнюю актуализацию"
+                                label={t("openVndPage.passportTab.actualizationResponsibleLabel")}
                                 value={vnd.actualizationResponsibleUserName || "—"}
                                 linkTo={vnd.actualizationResponsibleUserId ? `/users/${vnd.actualizationResponsibleUserId}` : undefined}
                             />
@@ -297,8 +299,8 @@ export function VndPassportTab({
                         <>
                             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4 [&>*]:min-w-0">
                                 <SingleSelectListField
-                                    label="Вид документа"
-                                    modalTitle="Вид документа"
+                                    label={t("createVnd.fields.docType")}
+                                    modalTitle={t("createVnd.fields.docType")}
                                     options={typeOptions}
                                     selectedKey={draft.typeId || null}
                                     onChange={(key) => update("typeId", key ?? "")}
@@ -308,8 +310,8 @@ export function VndPassportTab({
                             </div>
                             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4 [&>*]:min-w-0">
                                 <SingleSelectListField
-                                    label="Орган утверждения"
-                                    modalTitle="Орган утверждения"
+                                    label={t("createVnd.fields.approvalBody")}
+                                    modalTitle={t("createVnd.fields.approvalBody")}
                                     options={organOptions}
                                     selectedKey={draft.organId || null}
                                     onChange={(key) => update("organId", key ?? "")}
@@ -317,8 +319,8 @@ export function VndPassportTab({
                                     required
                                 />
                                 <ParentMultiSelectField
-                                    label="Ответственные исполнители"
-                                    modalTitle="Ответственные исполнители"
+                                    label={t("createVnd.fields.responsibleExecutors")}
+                                    modalTitle={t("createVnd.fields.responsibleExecutors")}
                                     options={executorOptions}
                                     selectedKeys={draft.responsibleExecutorIds}
                                     onChange={(ids) => update("responsibleExecutorIds", ids)}
@@ -327,16 +329,16 @@ export function VndPassportTab({
                             </div>
                             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 [&>*]:min-w-0">
                                 <SingleSelectListField
-                                    label="Разработчик (СП)"
-                                    modalTitle="Разработчик (СП)"
+                                    label={t("createVnd.fields.developer")}
+                                    modalTitle={t("createVnd.fields.developer")}
                                     options={developerOptions}
                                     selectedKey={draft.developerId || null}
                                     onChange={(key) => update("developerId", key ?? "")}
                                     boldLabel={false}
                                 />
                                 <SingleSelectListField
-                                    label="Куратор разработчика"
-                                    modalTitle="Куратор разработчика"
+                                    label={t("openVndPage.passportTab.curatorLabel")}
+                                    modalTitle={t("openVndPage.passportTab.curatorLabel")}
                                     options={curatorOptions}
                                     selectedKey={draft.curatorDeveloperId || null}
                                     onChange={(key) => update("curatorDeveloperId", key ?? "")}
@@ -348,31 +350,31 @@ export function VndPassportTab({
                         <>
                             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
                                 <ReadOnlyField
-                                    label="Вид документа"
+                                    label={t("createVnd.fields.docType")}
                                     value={activeRequisites.typeName || "—"}
                                     highlighted={diffScalar((r) => r.typeId)}
                                 />
                             </div>
                             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
                                 <ReadOnlyField
-                                    label="Орган утверждения"
+                                    label={t("createVnd.fields.approvalBody")}
                                     value={activeRequisites.organName || "—"}
                                     highlighted={diffScalar((r) => r.organId)}
                                 />
                                 <ReadOnlyField
-                                    label="Ответственные исполнители"
+                                    label={t("createVnd.fields.responsibleExecutors")}
                                     value={responsibleExecutorNames(activeRequisites.responsibleExecutorIds)}
                                     highlighted={diffArray((r) => r.responsibleExecutorIds)}
                                 />
                             </div>
                             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                 <ReadOnlyField
-                                    label="Разработчик (СП)"
+                                    label={t("createVnd.fields.developer")}
                                     value={activeRequisites.developerName || "—"}
                                     highlighted={diffScalar((r) => r.developerId)}
                                 />
                                 <ReadOnlyField
-                                    label="Куратор разработчика"
+                                    label={t("openVndPage.passportTab.curatorLabel")}
                                     value={activeRequisites.curatorDeveloperName || "—"}
                                     highlighted={diffScalar((r) => r.curatorDeveloperId ?? 0)}
                                     linkTo={activeRequisites.curatorDeveloperId ? `/users/${activeRequisites.curatorDeveloperId}` : undefined}
@@ -383,27 +385,27 @@ export function VndPassportTab({
                 </Section>
 
                 {/* Заголовки */}
-                <Section icon={<Type className="w-[15px] h-[15px]" strokeWidth={1.9}/>} title="Заголовки">
+                <Section icon={<Type className="w-[15px] h-[15px]" strokeWidth={1.9}/>} title={t("createVnd.titlesSection.title")}>
                     {isEditing ? (
                         <div className="flex flex-col gap-3 mx-auto px-22">
-                            <EditableTextField label="Заголовок (рус)" value={draft.titleRu} onChange={(v) => update("titleRu", v)} required/>
-                            <EditableTextField label="Заголовок (кырг)" value={draft.titleKg} onChange={(v) => update("titleKg", v)}/>
-                            <EditableTextField label="Заголовок (англ)" value={draft.titleEn} onChange={(v) => update("titleEn", v)}/>
+                            <EditableTextField label={t("createVnd.titlesSection.titleRu")} value={draft.titleRu} onChange={(v) => update("titleRu", v)} required/>
+                            <EditableTextField label={t("createVnd.titlesSection.titleKy")} value={draft.titleKg} onChange={(v) => update("titleKg", v)}/>
+                            <EditableTextField label={t("createVnd.titlesSection.titleEn")} value={draft.titleEn} onChange={(v) => update("titleEn", v)}/>
                         </div>
                     ) : (
                         <div className="flex flex-col gap-3 mx-auto px-22">
                             <ReadOnlyField
-                                label="Заголовок (рус)"
+                                label={t("createVnd.titlesSection.titleRu")}
                                 value={activeRequisites.titleRu}
                                 highlighted={diffScalar((r) => r.titleRu)}
                             />
                             <ReadOnlyField
-                                label="Заголовок (кырг)"
+                                label={t("createVnd.titlesSection.titleKy")}
                                 value={activeRequisites.titleKg || "—"}
                                 highlighted={diffScalar((r) => r.titleKg)}
                             />
                             <ReadOnlyField
-                                label="Заголовок (англ)"
+                                label={t("createVnd.titlesSection.titleEn")}
                                 value={activeRequisites.titleEn || "—"}
                                 highlighted={diffScalar((r) => r.titleEn)}
                             />
@@ -415,37 +417,34 @@ export function VndPassportTab({
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-4">
                     <Section
                         icon={<CalendarCheck className="w-[15px] h-[15px]" strokeWidth={1.9}/>}
-                        title="Принятие и вступление в силу"
+                        title={t("openVndPage.passportTab.sections.adoption")}
                         noMarginBottom
                     >
                         {isEditing ? (
                             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 [&>*]:min-w-0">
-                                <EditableDateField label="Дата принятия" value={draft.adoptionDate} onChange={(v) => update("adoptionDate", v)}/>
-                                <EditableTextField label="№ принятия" value={draft.adoptionCode} onChange={(v) => update("adoptionCode", v)}/>
+                                <EditableDateField label={t("openVndPage.passportTab.adoptionDateLabel")} value={draft.adoptionDate} onChange={(v) => update("adoptionDate", v)}/>
+                                <EditableTextField label={t("openVndPage.passportTab.adoptionCodeLabel")} value={draft.adoptionCode} onChange={(v) => update("adoptionCode", v)}/>
                                 <EditableDateField
-                                    label="Дата вступления в силу"
+                                    label={t("openVndPage.passportTab.effectiveDateLabel")}
                                     value={draft.effectiveDate}
                                     onChange={(v) => update("effectiveDate", v)}
-                                    helpText={
-                                        "Дата, с которой редакция становится действующей; до этого момента " +
-                                        "документ находится в статусе «Ожидание вступления в силу»."
-                                    }
+                                    helpText={t("openVndPage.passportTab.effectiveDateHelp")}
                                 />
                             </div>
                         ) : (
                             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                 <ReadOnlyField
-                                    label="Дата принятия"
+                                    label={t("openVndPage.passportTab.adoptionDateLabel")}
                                     value={formatDate(activeRequisites.adoptionDate)}
                                     highlighted={diffScalar((r) => r.adoptionDate)}
                                 />
                                 <ReadOnlyField
-                                    label="№ принятия"
+                                    label={t("openVndPage.passportTab.adoptionCodeLabel")}
                                     value={activeRequisites.adoptionCode || "—"}
                                     highlighted={diffScalar((r) => r.adoptionCode)}
                                 />
                                 <ReadOnlyField
-                                    label="Дата вступления в силу"
+                                    label={t("openVndPage.passportTab.effectiveDateLabel")}
                                     value={formatDate(activeRequisites.effectiveDate)}
                                     highlighted={diffScalar((r) => r.effectiveDate)}
                                 />
@@ -456,39 +455,36 @@ export function VndPassportTab({
                     {/* Изменения - всегда автоматически */}
                     <Section
                         icon={<History className="w-[15px] h-[15px]" strokeWidth={1.9}/>}
-                        title="Изменения"
+                        title={t("openVndPage.passportTab.sections.changes")}
                         noMarginBottom
                     >
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-3">
-                            <ReadOnlyField label="Изменение реквизитов" value={formatDate(vnd.requisitesChangedDate)}/>
+                            <ReadOnlyField label={t("openVndPage.passportTab.requisitesChangedLabel")} value={formatDate(vnd.requisitesChangedDate)}/>
                             <ReadOnlyField
-                                label="Изменение редакции"
+                                label={t("openVndPage.passportTab.revisionChangedLabel")}
                                 value={formatDate(activeRequisites.revisionChangedDate)}
                                 highlighted={diffScalar((r) => r.docRuUpdatedAt ?? r.adoptionDate ?? r.createdAt)}
                             />
                         </div>
 
                         <Clue>
-                            Эти даты проставляются автоматически: «Изменение реквизитов» — при сохранении реквизитов
-                            документа, «Изменение редакции» — при замене файла именно этой редакции (для старых
-                            документов, перенесённых без единой правки — датой принятия этой редакции). Вручную их
-                            изменить нельзя.
+                            {t("openVndPage.passportTab.changesClue")}
                         </Clue>
                     </Section>
                 </div>
 
                 {/* Актуализация */}
-                <Section icon={<RotateCw className="w-[15px] h-[15px]" strokeWidth={1.9}/>} title="Актуализация">
+                <Section icon={<RotateCw className="w-[15px] h-[15px]" strokeWidth={1.9}/>} title={t("openVndPage.passportTab.sections.actualization")}>
                     {isEditing ? (
                         <>
                             <div className="grid grid-cols-2 lg:grid-cols-3 gap-4 mb-4 [&>*]:min-w-0">
                                 <EditableDateField
-                                    label="Дата посл. актуализации"
+                                    label={t("openVndPage.passportTab.lastActualizationDateLabel")}
                                     value={draft.lastActualizationDate}
                                     onChange={(v) => update("lastActualizationDate", v)}
                                 />
                                 <EditableCheckboxField
-                                    label="Последняя актуализация с изменениями"
+                                    label={t("openVndPage.passportTab.lastActualizationHadChangesLabel")}
                                     checked={draft.lastActualizationHadChanges}
                                     onChange={(v) => update("lastActualizationHadChanges", v)}
                                     disabled={!draft.lastActualizationDate}
@@ -497,7 +493,7 @@ export function VndPassportTab({
 
                             <div className="border-t border-[#eef2f7] pt-4">
                                 <span className="block text-[11.5px] text-[#8b97ab] mb-2">
-                                    Срок актуализации — период
+                                    {t("openVndPage.passportTab.actualizationPeriodModeLabel")}
                                 </span>
                                 <div className="flex flex-wrap gap-1 mb-3">
                                     {ACTUALIZATION_MODE_OPTIONS.map((opt) => {
@@ -525,7 +521,7 @@ export function VndPassportTab({
                                         onChange={(display) => updateDueDateManually(displayToIsoDate(display))}
                                         disabled={draft.actualizationMode !== "Custom"}
                                         modal
-                                        modalTitle="Срок актуализации"
+                                        modalTitle={t("openVndPage.passportTab.dueActualizationDateModalTitle")}
                                     />
                                 </div>
                             </div>
@@ -540,37 +536,37 @@ export function VndPassportTab({
                         // "Период" остаются документ-уровневыми и показываются всегда — вопрос "когда
                         // следующая актуализация" не зависит от того, какую редакцию сейчас смотрят.
                         <div className={`grid grid-cols-2 gap-4 ${isViewingCurrentRedaction ? "lg:grid-cols-4" : "lg:grid-cols-2"}`}>
-                            <ReadOnlyField label="Срок актуализации" value={formatDate(vnd.dueActualizationDate)}/>
+                            <ReadOnlyField label={t("openVndPage.passportTab.dueActualizationDateLabel")} value={formatDate(vnd.dueActualizationDate)}/>
                             {isViewingCurrentRedaction && (
-                                <ReadOnlyField label="Дата посл. актуализации" value={formatDate(vnd.lastActualizationDate)}/>
+                                <ReadOnlyField label={t("openVndPage.passportTab.lastActualizationDateLabel")} value={formatDate(vnd.lastActualizationDate)}/>
                             )}
-                            <ReadOnlyField label="Период" value={periodLabel}/>
+                            <ReadOnlyField label={t("openVndPage.passportTab.periodLabel")} value={periodLabel}/>
                             {isViewingCurrentRedaction && (
                                 <ReadOnlyField
-                                    label="Последняя актуализация с изменениям"
-                                    value={vnd.lastActualizationDate ? (vnd.lastActualizationHadChanges ? "Да" : "Нет") : "—"}
+                                    label={t("openVndPage.passportTab.lastActualizationHadChangesLabel")}
+                                    value={vnd.lastActualizationDate ? (vnd.lastActualizationHadChanges ? t("openVndPage.passportTab.yes") : t("openVndPage.passportTab.no")) : "—"}
                                 />
                             )}
                         </div>
                     )}
                     <Clue className="mt-3">
-                        Подробную историю всех актуализаций документа можно посмотреть в журнале актуализации ВНД, после добавления первой редакции.
+                        {t("openVndPage.passportTab.actualizationClue")}
                     </Clue>
                 </Section>
 
                 {/* Отмена и архивация */}
                 {(isCancelledOrArchived || isEditing) && (
-                    <Section icon={<Archive className="w-[15px] h-[15px]" strokeWidth={1.9}/>} title="Отмена и архивация">
+                    <Section icon={<Archive className="w-[15px] h-[15px]" strokeWidth={1.9}/>} title={t("openVndPage.passportTab.sections.cancelArchive")}>
                         {isEditing ? (
                             <div className="flex flex-col gap-4">
                                 <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 [&>*]:min-w-0">
-                                    <EditableDateField label="Дата отмены" value={draft.cancelDate} onChange={(v) => update("cancelDate", v)}/>
-                                    <EditableTextField label="№ отмены" value={draft.cancelCode} onChange={(v) => update("cancelCode", v)}/>
-                                    <EditableDateField label="Дата архивации" value={draft.archivedDate} onChange={(v) => update("archivedDate", v)}/>
-                                    <EditableTextField label="Дней в архиве" value={draft.daysInArchive} onChange={(v) => update("daysInArchive", v)}/>
+                                    <EditableDateField label={t("openVndPage.passportTab.cancelDateLabel")} value={draft.cancelDate} onChange={(v) => update("cancelDate", v)}/>
+                                    <EditableTextField label={t("openVndPage.passportTab.cancelCodeLabel")} value={draft.cancelCode} onChange={(v) => update("cancelCode", v)}/>
+                                    <EditableDateField label={t("openVndPage.passportTab.archivedDateLabel")} value={draft.archivedDate} onChange={(v) => update("archivedDate", v)}/>
+                                    <EditableTextField label={t("openVndPage.passportTab.daysInArchiveLabel")} value={draft.daysInArchive} onChange={(v) => update("daysInArchive", v)}/>
                                 </div>
                                 <EditableTextAreaField
-                                    label="Причина отмены"
+                                    label={t("openVndPage.passportTab.cancelReasonLabel")}
                                     value={draft.cancelReason}
                                     onChange={(v) => update("cancelReason", v)}
                                     rows={4}
@@ -578,23 +574,23 @@ export function VndPassportTab({
                             </div>
                         ) : (
                             <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-                                <ReadOnlyField label="Дата отмены" value={formatDate(vnd.cancelDate)}/>
-                                <ReadOnlyField label="№ отмены" value={vnd.cancelCode || "—"}/>
-                                <ReadOnlyField label="Причина отмены" value={vnd.cancelReason || "—"}/>
-                                <ReadOnlyField label="Дата архивации" value={formatDate(vnd.archivedDate)}/>
-                                <ReadOnlyField label="Дней в архиве" value={vnd.archivedDate ? String(vnd.daysInArchive) : "—"}/>
+                                <ReadOnlyField label={t("openVndPage.passportTab.cancelDateLabel")} value={formatDate(vnd.cancelDate)}/>
+                                <ReadOnlyField label={t("openVndPage.passportTab.cancelCodeLabel")} value={vnd.cancelCode || "—"}/>
+                                <ReadOnlyField label={t("openVndPage.passportTab.cancelReasonLabel")} value={vnd.cancelReason || "—"}/>
+                                <ReadOnlyField label={t("openVndPage.passportTab.archivedDateLabel")} value={formatDate(vnd.archivedDate)}/>
+                                <ReadOnlyField label={t("openVndPage.passportTab.daysInArchiveLabel")} value={vnd.archivedDate ? String(vnd.daysInArchive) : "—"}/>
                             </div>
                         )}
                     </Section>
                 )}
 
                 {/* Классификаторы */}
-                <Section icon={<Tags className="w-[15px] h-[15px]" strokeWidth={1.9}/>} title="Классификаторы" noMarginBottom>
+                <Section icon={<Tags className="w-[15px] h-[15px]" strokeWidth={1.9}/>} title={t("createVnd.classifiers.title")} noMarginBottom>
                     {isEditing ? (
                         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 [&>*]:min-w-0">
                             <MultiSelectField
-                                label="Ключевые слова"
-                                modalTitle="Ключевые слова"
+                                label={t("createVnd.classifiers.keywords")}
+                                modalTitle={t("createVnd.classifiers.keywords")}
                                 options={keywordOptions}
                                 selectedKeys={draft.keywordIds}
                                 onChange={(ids) => update("keywordIds", ids)}
@@ -602,24 +598,24 @@ export function VndPassportTab({
                                 boldLabel={false}
                             />
                             <MultiSelectField
-                                label="Группы доступа"
-                                modalTitle="Группы доступа"
+                                label={t("createVnd.classifiers.userGroups")}
+                                modalTitle={t("createVnd.classifiers.userGroups")}
                                 options={userGroupOptions}
                                 selectedKeys={draft.userGroupIds}
                                 onChange={(ids) => update("userGroupIds", ids)}
                                 boldLabel={false}
                             />
                             <SingleSelectListField
-                                label="Уровень секретности"
-                                modalTitle="Уровень секретности"
+                                label={t("createVnd.classifiers.secrecyLevel")}
+                                modalTitle={t("createVnd.classifiers.secrecyLevel")}
                                 options={secrecyOptions}
                                 selectedKey={draft.secrecyLevelId || null}
                                 onChange={(key) => update("secrecyLevelId", key ?? "")}
                                 boldLabel={false}
                             />
                             <MultiSelectField
-                                label="Рубрикатор"
-                                modalTitle="Рубрикатор"
+                                label={t("createVnd.classifiers.rubric")}
+                                modalTitle={t("createVnd.classifiers.rubric")}
                                 options={rubricOptions}
                                 selectedKeys={draft.rubricIds}
                                 onChange={(ids) => update("rubricIds", ids)}
@@ -630,21 +626,21 @@ export function VndPassportTab({
                     ) : (
                         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
                             <ReadOnlyChipsField
-                                label="Ключевые слова"
+                                label={t("createVnd.classifiers.keywords")}
                                 items={activeRequisites.keywordIds.length ? keywordNames(activeRequisites.keywordIds).split(", ") : []}
                                 highlighted={diffArray((r) => r.keywordIds)}
                             />
                             <ReadOnlyChipsField
-                                label="Группы доступа"
+                                label={t("createVnd.classifiers.userGroups")}
                                 items={vnd.userGroupIds.length ? userGroupNames(vnd.userGroupIds).split(", ") : []}
                             />
                             <ReadOnlyChipsField
-                                label="Уровень секретности"
+                                label={t("createVnd.classifiers.secrecyLevel")}
                                 items={[secrecyLevelName(activeRequisites.secrecyLevelId)]}
                                 highlighted={diffScalar((r) => r.secrecyLevelId)}
                             />
                             <ReadOnlyChipsField
-                                label="Рубрикатор"
+                                label={t("createVnd.classifiers.rubric")}
                                 items={activeRequisites.rubricIds.length ? rubricNames(activeRequisites.rubricIds).split(", ") : []}
                                 highlighted={diffArray((r) => r.rubricIds)}
                             />

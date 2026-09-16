@@ -1,3 +1,4 @@
+// Инструкции по работе с системой "Как работать в системе"
 import {useCallback, useEffect, useMemo, useState} from "react";
 import {Pencil, Plus, Search, Trash2} from "lucide-react";
 import {
@@ -8,21 +9,9 @@ import {
     type HelpArticleBrief,
     type HelpSection,
 } from "@/service/helpService/helpService.ts";
+import {formatDateTime} from "@/utils/dateUtils.ts";
 import {HelpArticleView} from "@/components/help/HelpArticleView.tsx";
 import {HelpArticleEditor} from "@/components/help/HelpArticleEditor.tsx";
-import {formatDateTime} from "@/utils/dateUtils.ts";
-
-/**
- * Инструкции по работе с системой (KB-01..03).
- *
- * Слева оглавление по разделам, справа статья. Разделы названы работой человека
- * («Служебные записки», «Закупки»), а не пунктами меню: искать инструкцию идут от
- * задачи, а не от того, где лежит экран.
- *
- * Поиск фильтрует оглавление сразу, без отдельной страницы результатов: статей
- * в разделе десятки, а не тысячи, и переносить человека на другой экран ради
- * фильтра значит терять место, где он читал.
- */
 
 export function HelpPage() {
     const [оглавление, setОглавление] = useState<HelpArticleBrief[]>([]);
@@ -100,7 +89,7 @@ export function HelpPage() {
         <div className="flex flex-col gap-4 p-[22px_26px]">
             <div className="flex flex-wrap items-start justify-between gap-3">
                 <div>
-                    <div className="text-[12.5px] text-[#8b97ab]">Система</div>
+                    <div className="text-[12.5px] text-[#8b97ab]">Инструкция</div>
                     <h1 className="m-0 mt-[3px] text-[19px] font-bold text-[#0f1b2d]">
                         Как работать в системе
                     </h1>

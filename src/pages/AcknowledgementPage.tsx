@@ -53,7 +53,9 @@ export function AcknowledgementPage() {
     }, [showAnswered]);
 
     // eslint-disable-next-line react-hooks/set-state-in-effect
-    useEffect(() => { void load(); }, [load]);
+    useEffect(() => {
+        void load();
+    }, [load]);
 
     const acknowledge = async (row: MyAck) => {
         try {
@@ -66,7 +68,7 @@ export function AcknowledgementPage() {
         } catch (e) {
             // Сервер отказывает по существу — не принят регламент подписи, документ
             // изменился. Общее «не удалось» спрятало бы причину.
-            const message = (e as {response?: {data?: {message?: string}}}).response?.data?.message;
+            const message = (e as { response?: { data?: { message?: string } } }).response?.data?.message;
             setError(message ?? "Не удалось зафиксировать ознакомление");
         } finally {
             setBusy(false);
@@ -89,7 +91,7 @@ export function AcknowledgementPage() {
             setSuccess("Отказ зафиксирован, кадровая служба уведомлена");
             await load();
         } catch (e) {
-            const message = (e as {response?: {data?: {message?: string}}}).response?.data?.message;
+            const message = (e as { response?: { data?: { message?: string } } }).response?.data?.message;
             setError(message ?? "Не удалось зафиксировать отказ");
         } finally {
             setBusy(false);
@@ -100,12 +102,14 @@ export function AcknowledgementPage() {
     const overdueItems = pending.filter((x) => x.overdue);
 
     return (
-        <div className="w-full max-w-[1700px] mx-auto px-4 sm:px-6 lg:px-8 xl:px-10 pt-5 sm:pt-[26px] pb-10 sm:pb-[60px]">
+        <div
+            className="w-full max-w-[1700px] mx-auto px-4 sm:px-6 lg:px-8 xl:px-10 pt-5 sm:pt-[26px] pb-10 sm:pb-[60px]">
             <div className="flex items-start justify-between gap-4">
                 <div>
                     <h1 className="m-0 text-[23px] font-bold tracking-[-0.02em]">Ознакомление</h1>
                     <p className="mt-[7px] mb-0 text-[13px] text-[#8b97ab]">
-                        Кадровый документооборот. Документы, с которыми вы обязаны ознакомиться. Ознакомление подписывается
+                        Кадровый документооборот. Документы, с которыми вы обязаны ознакомиться. Ознакомление
+                        подписывается
                         вашей простой электронной подписью — под ней остаётся время и отпечаток
                         той версии документа, которую вы видели.
                     </p>
@@ -115,32 +119,38 @@ export function AcknowledgementPage() {
             <RegulationConsentGate/>
 
             {overdueItems.length > 0 && (
-                <div className="rounded-[9px] border border-[#f1c9c2] bg-[#fbeae7] px-4 py-2.5 text-[13px] text-[#c0392b]">
+                <div
+                    className="rounded-[9px] border border-[#f1c9c2] bg-[#fbeae7] px-4 py-2.5 text-[13px] text-[#c0392b]">
                     Просрочено: {overdueItems.length}. Срок ознакомления прошёл.
                 </div>
             )}
 
             {error && (
-                <div className="rounded-[9px] border border-[#f1c9c2] bg-[#fbeae7] px-4 py-2.5 text-[13px] text-[#c0392b]">
+                <div
+                    className="rounded-[9px] border border-[#f1c9c2] bg-[#fbeae7] px-4 py-2.5 text-[13px] text-[#c0392b]">
                     {error}
                 </div>
             )}
             {success && (
-                <div className="rounded-[9px] border border-[#cfe3d6] bg-[#f2f9f5] px-4 py-2.5 text-[13px] text-[#1c7a4d]">
+                <div
+                    className="rounded-[9px] border border-[#cfe3d6] bg-[#f2f9f5] px-4 py-2.5 text-[13px] text-[#1c7a4d]">
                     {success}
                 </div>
             )}
 
-            <CheckBoxOne
-                checked={showAnswered}
-                onChange={setShowAnswered}
-            >
-                Показывать то, на что уже ответил
-            </CheckBoxOne>
+            <div className="py-4">
+                <CheckBoxOne
+                    checked={showAnswered}
+                    onChange={setShowAnswered}
+                >
+                    Показывать то, на что уже ответил
+                </CheckBoxOne>
+            </div>
 
             {items.length === 0 ? (
                 busy ? (
-                    <div className="rounded-[12px] border border-[#e5e9f0] bg-white p-8 text-center text-[13px] text-[#8b97ab]">
+                    <div
+                        className="rounded-[12px] border border-[#e5e9f0] bg-white p-8 text-center text-[13px] text-[#8b97ab]">
                         Загрузка…
                     </div>
                 ) : showAnswered ? (

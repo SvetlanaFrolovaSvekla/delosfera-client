@@ -6,10 +6,10 @@ import {History, Lock} from "lucide-react";
 import type {ActivityIcon} from "@/service/activityLogService/activityLogServiceType.ts";
 import {useRecentActivity} from "@/hooks/activityLogHooks/useRecentActivity.ts";
 import {timeAgo} from "@/utils/dateUtils.ts";
-import {Icon} from "@/components/icons/Icon";
+import {Icon} from "@/assets/icons/Icon";
 import {Loader} from "@/components/componentsGeneral/Loader.tsx";
 import {EmptyState} from "@/components/componentsGeneral/EmptyState.tsx";
-import {HOME_BOTTOM_ROW_HEIGHT} from "@/constants/home.ts";
+import {HOME_BOTTOM_ROW_HEIGHT} from "@/constants/homeConst.ts";
 import {Tooltip} from "@/components/componentsGeneral/Tooltip.tsx";
 
 const ICON_STYLE: Record<ActivityIcon, { iconName: string; col: string; bg: string }> = {

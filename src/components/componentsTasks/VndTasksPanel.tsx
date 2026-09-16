@@ -1,5 +1,6 @@
 import {useEffect, useMemo, useState} from "react";
 import {useSearchParams} from "react-router-dom";
+import {useTranslation} from "react-i18next";
 import {CheckCircle2} from "lucide-react";
 import {useVndTasks} from "@/hooks/tasksVndHooks/useVndTasks.ts";
 import {useVndTasksDone} from "@/hooks/tasksVndHooks/useVndTasksDone.ts";
@@ -44,42 +45,47 @@ type DoneToggle = "active" | "done";
 
 const DONE_PAGE_SIZE = 20;
 
-const TOP_TABS: { id: TopTab; label: string }[] = [
-    { id: "all", label: "Все" },
-    { id: "coordination", label: "Согласование" },
-    { id: "actualization", label: "Актуализация" },
-    { id: "consolidation", label: "Консолидация" },
-];
+const TOP_TAB_IDS: TopTab[] = ["all", "coordination", "actualization", "consolidation"];
+const COORDINATION_SUB_TAB_IDS: CoordinationSubTab[] = ["coordination", "myVndApproval", "rejected"];
+const ACTUALIZATION_SUB_TAB_IDS: ActualizationSubTab[] = ["actualization", "actualizationRequest", "actualizationApproved"];
+const DONE_TOGGLE_IDS: DoneToggle[] = ["active", "done"];
+const STAGE_PHASE_FILTER_IDS: ("" | TaskStagePhase)[] = ["", "primary", "repeat", "final"];
 
-const COORDINATION_SUB_TABS: { id: CoordinationSubTab; label: string }[] = [
-    { id: "coordination", label: "Ждущие моего согласования" },
-    { id: "myVndApproval", label: "Мои ВНД на согласовании" },
-    { id: "rejected", label: "Отклонено" },
-];
+// Ключи i18n для вкладок/фильтров ниже. Там, где текст дословно совпадает с бейджем
+// карточки (см. TASK_SCOPE_META/COORDINATION_STAGE_META в vndStatus.ts), берём тот же ключ
+// i18n, что и бейдж, — чтобы однажды поправленный перевод не разошёлся по двум местам.
+// Там, где название вкладки и текст бейджа отличаются по смыслу (например, вкладка
+// "Заявки на доступ" ведёт к бейджу "Заявка на актуализацию" — разные формулировки для
+// разных целей), у вкладки свой отдельный ключ.
+const TOP_TAB_LABEL_KEYS: Record<TopTab, string> = {
+    all: "tasks.vnd.topTabs.all",
+    coordination: "tasks.vnd.topTabs.coordination",
+    actualization: "tasks.vnd.topTabs.actualization",
+    consolidation: "tasks.vnd.topTabs.consolidation",
+};
 
-const ACTUALIZATION_SUB_TABS: { id: ActualizationSubTab; label: string }[] = [
-    { id: "actualization", label: "На актуализации" },
-    { id: "actualizationRequest", label: "Заявки на доступ" },
-    { id: "actualizationApproved", label: "Одобрено — начать" },
-];
+const COORDINATION_SUB_TAB_LABEL_KEYS: Record<CoordinationSubTab, string> = {
+    coordination: "tasks.vnd.scopes.coordination",
+    myVndApproval: "tasks.vnd.scopes.myVndApproval",
+    rejected: "tasks.vnd.scopes.rejected",
+};
 
-// Выпадающий список "По выполненности" рядом со строкой поиска — не таб, чтобы не плодить
-// ещё один ряд вкладок под и без того тремя уровнями (верхние табы → подвкладки согласования).
-const DONE_FILTER_OPTIONS: { value: DoneToggle; label: string }[] = [
-    { value: "active", label: "Активные" },
-    { value: "done", label: "Выполненные" },
-];
+const ACTUALIZATION_SUB_TAB_LABEL_KEYS: Record<ActualizationSubTab, string> = {
+    actualization: "tasks.vnd.scopes.actualization",
+    actualizationRequest: "tasks.vnd.subTabs.actualizationRequest",
+    actualizationApproved: "tasks.vnd.subTabs.actualizationApproved",
+};
 
-// Фильтр «Этап согласования» — доступен на обеих вложенных вкладках «Согласования»,
-// и в "Активных", и в "Выполненных" (в истории показывает, на каком круге приняли решение).
-const STAGE_PHASE_FILTER_OPTIONS: { value: "" | TaskStagePhase; label: string }[] = [
-    { value: "", label: "Все этапы" },
-    { value: "primary", label: "Первичное согласование" },
-    { value: "repeat", label: "Согласование после внесённых изменений" },
-    { value: "final", label: "Финальная выдержка" },
-];
+const STAGE_PHASE_FILTER_LABEL_KEYS: Record<"" | TaskStagePhase, string> = {
+    "": "tasks.vnd.stagePhase.allPhases",
+    primary: "tasks.vnd.stagePhase.primary",
+    repeat: "tasks.vnd.stagePhase.repeat",
+    final: "tasks.vnd.stagePhase.final",
+};
 
 export function VndTasksPanel() {
+    const {t} = useTranslation();
+
     // Сюда попадают и по прямой ссылке с заранее выбранной вкладкой/подвкладкой —
     // например, карточки с рабочего стола ведут сюда с ?tab=coordination&sub=coordination
     // (см. HomeKpiGrid.tsx / HomeContoursCard.tsx). Читаем один раз при монтировании,
@@ -89,15 +95,15 @@ export function VndTasksPanel() {
 
     const [topTab, setTopTab] = useState<TopTab>(() => {
         const fromUrl = searchParams.get("tab");
-        return TOP_TABS.some((t) => t.id === fromUrl) ? (fromUrl as TopTab) : "coordination";
+        return TOP_TAB_IDS.includes(fromUrl as TopTab) ? (fromUrl as TopTab) : "coordination";
     });
     const [coordinationSubTab, setCoordinationSubTab] = useState<CoordinationSubTab>(() => {
         const fromUrl = searchParams.get("sub");
-        return COORDINATION_SUB_TABS.some((s) => s.id === fromUrl) ? (fromUrl as CoordinationSubTab) : "coordination";
+        return COORDINATION_SUB_TAB_IDS.includes(fromUrl as CoordinationSubTab) ? (fromUrl as CoordinationSubTab) : "coordination";
     });
     const [actualizationSubTab, setActualizationSubTab] = useState<ActualizationSubTab>(() => {
         const fromUrl = searchParams.get("sub");
-        return ACTUALIZATION_SUB_TABS.some((s) => s.id === fromUrl) ? (fromUrl as ActualizationSubTab) : "actualization";
+        return ACTUALIZATION_SUB_TAB_IDS.includes(fromUrl as ActualizationSubTab) ? (fromUrl as ActualizationSubTab) : "actualization";
     });
     const [doneToggle, setDoneToggle] = useState<DoneToggle>("active");
     const [donePage, setDonePage] = useState(1);
@@ -144,73 +150,86 @@ export function VndTasksPanel() {
         return phaseFilteredTasks.filter((task) => matchesTaskSearch(task, searchQuery));
     }, [phaseFilteredTasks, searchQuery]);
 
-    const topTabsWithCounts = TOP_TABS.map((tab) => ({
-        ...tab,
-        n: tab.id === "all"
+    const topTabsWithCounts = TOP_TAB_IDS.map((id) => ({
+        id,
+        label: t(TOP_TAB_LABEL_KEYS[id]),
+        n: id === "all"
             ? counts.coordination + counts.myVndApproval + counts.rejected + counts.actualization + counts.consolidation
                 + counts.actualizationRequests + counts.actualizationApproved
-            : tab.id === "coordination"
+            : id === "coordination"
                 ? counts.coordination + counts.myVndApproval + counts.rejected
-                : tab.id === "actualization"
+                : id === "actualization"
                     ? counts.actualization + counts.actualizationRequests + counts.actualizationApproved
-                    : counts[tab.id],
+                    : counts[id],
     }));
 
-    const subTabsWithCounts = COORDINATION_SUB_TABS.map((tab) => ({
-        ...tab,
-        n: counts[tab.id],
+    const subTabsWithCounts = COORDINATION_SUB_TAB_IDS.map((id) => ({
+        id,
+        label: t(COORDINATION_SUB_TAB_LABEL_KEYS[id]),
+        n: counts[id],
     }));
 
-    const actualizationSubTabsWithCounts = ACTUALIZATION_SUB_TABS.map((tab) => ({
-        ...tab,
-        n: tab.id === "actualizationRequest"
+    const actualizationSubTabsWithCounts = ACTUALIZATION_SUB_TAB_IDS.map((id) => ({
+        id,
+        label: t(ACTUALIZATION_SUB_TAB_LABEL_KEYS[id]),
+        n: id === "actualizationRequest"
             ? counts.actualizationRequests
-            : tab.id === "actualizationApproved"
+            : id === "actualizationApproved"
                 ? counts.actualizationApproved
                 : counts.actualization,
     }));
 
+    const doneFilterOptions = DONE_TOGGLE_IDS.map((value) => ({
+        value,
+        label: t(`tasks.vnd.doneFilter.${value}`),
+    }));
+
+    const stagePhaseFilterOptions = STAGE_PHASE_FILTER_IDS.map((value) => ({
+        value,
+        label: t(STAGE_PHASE_FILTER_LABEL_KEYS[value]),
+    }));
+
     // Название текущего раздела — общее и для плейсхолдера поиска, и для строки счётчика
-    // ниже. На "Все" у самого TOP_TABS есть своя запись ("Все"), но там она не годится
+    // ниже. На "Все" у самого TOP_TAB_LABEL_KEYS есть своя запись ("Все"), но там она не годится
     // ни там, ни там — у обоих мест свой особый случай для этой вкладки, см. ниже.
     const sectionLabel = useMemo(() => {
         if (topTab === "coordination") {
-            return COORDINATION_SUB_TABS.find((tab) => tab.id === coordinationSubTab)?.label ?? "";
+            return t(COORDINATION_SUB_TAB_LABEL_KEYS[coordinationSubTab]);
         }
         if (topTab === "actualization") {
-            return ACTUALIZATION_SUB_TABS.find((tab) => tab.id === actualizationSubTab)?.label ?? "";
+            return t(ACTUALIZATION_SUB_TAB_LABEL_KEYS[actualizationSubTab]);
         }
-        return TOP_TABS.find((tab) => tab.id === topTab)?.label ?? "";
-    }, [topTab, coordinationSubTab, actualizationSubTab]);
+        return t(TOP_TAB_LABEL_KEYS[topTab]);
+    }, [t, topTab, coordinationSubTab, actualizationSubTab]);
 
     // Плейсхолдер строки поиска отражает раздел (и активные/выполненные), в котором сейчас
     // ищем — чтобы не выглядело, будто поиск идёт по всей странице задач или по всей истории
     // сразу, когда на "Выполненные" он на самом деле видит только текущую страницу списка.
     const searchPlaceholder = useMemo(() => {
-        if (topTab === "all") return "Поиск по всем задачам...";
+        if (topTab === "all") return t("tasks.vnd.searchAll");
 
         return isDoneView
-            ? `Поиск на этой странице «${sectionLabel}» (выполненные)...`
-            : `Поиск в разделе «${sectionLabel}»...`;
-    }, [topTab, sectionLabel, isDoneView]);
+            ? t("tasks.vnd.searchDoneSection", {section: sectionLabel})
+            : t("tasks.vnd.searchSection", {section: sectionLabel});
+    }, [t, topTab, sectionLabel, isDoneView]);
 
     // Строка-счётчик над списком: без запроса — просто сколько задач в разделе; с запросом —
     // сколько из них нашлось, с названием раздела (на "Выполненные" — с пометкой в скобках,
     // как в плейсхолдере поиска, там ведь тоже считает только по загруженной странице истории).
     const tasksCountText = useMemo(() => {
         const total = phaseFilteredTasks.length;
-        if (!searchQuery.trim()) return `Всего задач: ${total}`;
+        if (!searchQuery.trim()) return t("tasks.vnd.totalCount", {count: total});
 
-        const label = topTab === "all" ? "всего" : sectionLabel;
-        const suffix = isDoneView ? " (выполненные)" : "";
-        return `Найдено задач: ${filteredTasks.length} из ${total} ${label}${suffix}`;
-    }, [phaseFilteredTasks, filteredTasks, searchQuery, topTab, sectionLabel, isDoneView]);
+        const label = topTab === "all" ? t("tasks.vnd.allLabel") : sectionLabel;
+        const suffix = isDoneView ? t("tasks.vnd.doneSuffix") : "";
+        return t("tasks.vnd.foundCount", {found: filteredTasks.length, total, label, suffix});
+    }, [t, phaseFilteredTasks, filteredTasks, searchQuery, topTab, sectionLabel, isDoneView]);
 
     // Раньше ошибка загрузки (activeError) нигде не читалась — список молча выглядел просто
     // пустым ("задач нет"), неотличимо от честного "пусто", хотя на деле запрос упал. Показываем
     // отдельным баннером над списком, не подменяя пустое состояние.
     const activeErrorMessage = !isDoneView && activeError
-        ? activeError instanceof Error ? activeError.message : "Не удалось загрузить задачи"
+        ? activeError instanceof Error ? activeError.message : t("tasks.vnd.loadError")
         : null;
 
     // Если поиск сузил непустой список до нуля карточек — это "ничего не нашлось", а не
@@ -218,19 +237,19 @@ export function VndTasksPanel() {
     const isSearchEmpty = searchQuery.trim().length > 0 && rawTasks.length > 0;
 
     const emptyText = isSearchEmpty
-        ? "Ничего не найдено"
+        ? t("tasks.common.searchEmptyTitle")
         : isDoneView
-            ? "Пока нет выполненных задач"
-            : emptyTextByScope[scope];
+            ? t("tasks.vnd.doneEmptyTitle")
+            : t(emptyTextByScope[scope]);
 
     // Пояснение и значок под заголовком — свои для "ничего не нашлось" (лупа с крестиком,
     // значение по умолчанию у EmptyState) и "выполненные пусты", а для обычного пустого
     // раздела — по разделу (согласование/актуализация/консолидация и т.п.).
     const emptyDescription = isSearchEmpty
-        ? "Попробуйте изменить запрос поиска."
+        ? t("tasks.common.searchEmptyDescription")
         : isDoneView
-            ? "Здесь появится история решений по этому разделу, как только вы примете первое."
-            : emptyDescriptionByScope[scope];
+            ? t("tasks.vnd.doneEmptyDescription")
+            : t(emptyDescriptionByScope[scope]);
 
     const emptyIcon = isSearchEmpty
         ? undefined
@@ -273,7 +292,6 @@ export function VndTasksPanel() {
         setDonePage(1);
     }, [scope]);
 
-    // @ts-ignore
     return (
         <>
             <Tabs<TopTab>
@@ -313,24 +331,24 @@ export function VndTasksPanel() {
                         <div className="flex flex-wrap items-start gap-4">
                             {isDoneAvailable && (
                                 <SelectDropdown
-                                    options={DONE_FILTER_OPTIONS}
+                                    options={doneFilterOptions}
                                     value={doneToggle}
                                     onChange={(value) => handleDoneToggleChange(value as DoneToggle)}
-                                    label="По выполненности"
+                                    label={t("tasks.vnd.doneFilterLabel")}
                                     labelPosition="inline"
-                                    placeholder="Активные"
+                                    placeholder={t("tasks.vnd.doneFilter.active")}
                                     minWidth="200px"
                                 />
                             )}
 
                             {topTab === "coordination" && coordinationSubTab !== "rejected" && (
                                 <SelectDropdown
-                                    options={STAGE_PHASE_FILTER_OPTIONS}
+                                    options={stagePhaseFilterOptions}
                                     value={stagePhaseFilter}
                                     onChange={(value) => setStagePhaseFilter(value as "" | TaskStagePhase)}
-                                    label="Этап согласования"
+                                    label={t("tasks.vnd.stagePhaseFilterLabel")}
                                     labelPosition="inline"
-                                    placeholder="Все этапы"
+                                    placeholder={t("tasks.vnd.stagePhase.allPhases")}
                                     minWidth="260px"
                                 />
                             )}
@@ -383,6 +401,7 @@ function DonePagination({
     totalCount: number;
     onChange: (page: number) => void;
 }) {
+    const {t} = useTranslation();
     const totalPages = Math.max(1, Math.ceil(totalCount / pageSize));
 
     return (
@@ -394,9 +413,9 @@ function DonePagination({
                 className="cursor-pointer rounded-[8px] border border-[#e5e9f0] px-3 py-1.5 font-medium
                            text-[#3a4560] hover:bg-[#f6f8fb] disabled:cursor-not-allowed disabled:opacity-40"
             >
-                Назад
+                {t("tasks.vnd.pagination.back")}
             </button>
-            <span className="text-[#8b97ab]">Страница {page} из {totalPages}</span>
+            <span className="text-[#8b97ab]">{t("tasks.vnd.pagination.page", {page, totalPages})}</span>
             <button
                 type="button"
                 disabled={page >= totalPages}
@@ -404,7 +423,7 @@ function DonePagination({
                 className="cursor-pointer rounded-[8px] border border-[#e5e9f0] px-3 py-1.5 font-medium
                            text-[#3a4560] hover:bg-[#f6f8fb] disabled:cursor-not-allowed disabled:opacity-40"
             >
-                Вперёд
+                {t("tasks.vnd.pagination.forward")}
             </button>
         </div>
     );

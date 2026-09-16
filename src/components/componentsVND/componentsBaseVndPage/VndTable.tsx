@@ -3,7 +3,7 @@ import {Link} from "react-router-dom";
 import {useActualizationBucketMeta} from "@/hooks/actualizationHooks/useActualizationBucketMeta.ts";
 import {HighlightText} from "@/utils/HighlightText.tsx";
 import type {VndResponse} from "@/service/vndService/vndServiceType.ts";
-import {collapseDocumentStatus, DOCUMENT_STATUS_META, getVndDisplayMeta, SIMPLE_STATUS_META} from "@/constants/vndStatus.ts";
+import {collapseDocumentStatus, DOCUMENT_STATUS_META, getVndDisplayMeta, STATUS_META} from "@/constants/vndStatus.ts";
 import {LINKED_TO_ME_RELATION_META, type LinkedToMeRelationKey} from "@/constants/linkedToMeRelations.ts";
 import type {ColDef} from "@/constants/columnsFilters/vndColumns.ts";
 import {EmptyState} from "@/components/componentsGeneral/EmptyState.tsx";
@@ -83,11 +83,13 @@ export function VndTable({
                     // свёрнутым из GetById, см. VndService.CollapseDocumentStatus), без деталей
                     // о стадии жизненного цикла (на актуализации/согласовании/консолидации).
                     // "Черновик" — отдельная, не связанная с ViewVndRegistryExtended ось видимости
-                    // (см. SimpleVndStatusKey), поэтому проверяется отдельно и первым.
+                    // (завязана на право создавать ВНД), поэтому проверяется отдельно и первым, в
+                    // обход DOCUMENT_STATUS_META - тем же STATUS_META.draft, что и для
+                    // ViewVndRegistryExtended-варианта выше (getVndDisplayMeta).
                     const meta = canViewExtended
                         ? getVndDisplayMeta(r.status, r.effectiveDate)
                         : r.status === "draft"
-                            ? SIMPLE_STATUS_META.draft
+                            ? STATUS_META.draft
                             : DOCUMENT_STATUS_META[collapseDocumentStatus(r.documentStatus, canViewExtended)];
                     const StatusIcon = meta.icon;
                     const days = daysUntil(r.dueActualizationDate);
@@ -116,7 +118,7 @@ export function VndTable({
                                                 <span
                                                     className="w-7 h-7 rounded-lg grid place-items-center"
                                                     style={{background: meta.bg, color: meta.color}}
-                                                    title={meta.label}
+                                                    title={t(meta.label)}
                                                 >
                                                     <StatusIcon className="w-[15px] h-[15px]" strokeWidth={2}/>
                                                 </span>
@@ -240,7 +242,7 @@ export function VndTable({
                                                     className="inline-flex items-center text-[11px] font-semibold py-0.5 px-[9px] rounded-full whitespace-nowrap"
                                                     style={{color: meta.color, background: meta.bg}}
                                                 >
-                                                    {meta.label}
+                                                    {t(meta.label)}
                                                 </span>
                                             </div>
                                         );

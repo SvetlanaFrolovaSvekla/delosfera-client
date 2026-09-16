@@ -457,7 +457,7 @@ export function SzCardPage() {
     const tone = sz ? STATUS_TONE[sz.statusCode] ?? colors.status.draft : colors.status.draft;
 
     return (
-        <div className="px-7 py-6 max-w-[1100px]">
+        <div className="px-7 py-6 max-w-[1700px]">
             <button
                 onClick={() => navigate("/sz")}
                 className="inline-flex items-center gap-1.5 mb-3 border-none bg-transparent text-[13px] font-medium text-[#55617a] cursor-pointer hover:text-[#2f68f5]"

@@ -5,7 +5,7 @@ import {notificationsService} from "@/service/notificationsService/notifications
 import type {Notification} from "@/service/notificationsService/notificationsServiceType.ts";
 import {PREVIEW_COUNT, SEVERITY_DOT} from "@/constants/notificationConst.ts";
 import {formatRelativeTime} from "@/utils/dateUtils.ts";
-import {Icon} from "@/components/icons/Icon";
+import {Icon} from "@/assets/icons/Icon";
 import {Tooltip} from "../componentsGeneral/Tooltip";
 import {Loader} from "@/components/componentsGeneral/Loader.tsx";
 import {EmptyState} from "@/components/componentsGeneral/EmptyState.tsx";

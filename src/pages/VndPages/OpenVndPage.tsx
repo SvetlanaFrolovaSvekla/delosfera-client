@@ -16,6 +16,7 @@ import {formatDate} from "@/utils/dateUtils.ts";
 import {collapseDocumentStatus, DOCUMENT_STATUS_META, getVndDisplayMeta} from "@/constants/vndStatus.ts";
 import {getVndTabs, type VndTabId} from "@/constants/vndTabs.ts";
 import {PermissionCode} from "@/constants/permissions/permissions.ts";
+import {useIsVndEditor} from "@/hooks/vndHooks/useIsVndEditor.ts";
 
 import {VndEditionsTab} from "@/components/componentsVND/componentsOpenVndPage/VndEditionsTab.tsx";
 import {
@@ -63,6 +64,11 @@ export function OpenVndPage() {
     };
     const navigate = useNavigate();
     const {user, hasPermission} = useAuth();
+    // Хук, а не просто вызов hasPermission(...) по месту - обязан вызываться безусловно на
+    // каждом рендере, ДО возможных ранних return'ов ниже (loading/error/!vnd), иначе порядок
+    // хуков между рендерами разъедется (Rules of Hooks). Сам результат используется только
+    // ниже, у canSeeDocumentStatus.
+    const isVndEditor = useIsVndEditor();
 
     // Таб при открытии страницы: сначала react-router state (переход внутри приложения,
     // например с карточки задачи), затем ?tab= в URL (переход из уведомления — там нет
@@ -238,18 +244,10 @@ export function OpenVndPage() {
     const canViewVndRegistryExtended = hasPermission(PermissionCode.ViewVndRegistryExtended);
     const documentStatusMeta =
         DOCUMENT_STATUS_META[collapseDocumentStatus(vnd.documentStatus, canViewVndRegistryExtended)];
-    // Строка "Статус ВНД:" видна только "редакторам ВНД" (тот же набор прав, что и
-    // canFilterLinkedToMe в BaseVndPage.tsx — согласование/создание/актуализация ВНД) и/или
+    // Строка "Статус ВНД:" видна только "редакторам ВНД" (isVndEditor выше - тот же набор прав,
+    // что и canFilterLinkedToMe в BaseVndPage.tsx и фильтр редакций в VndEditionsTab.tsx) и/или
     // пользователям с расширенным просмотром реестра. Рядовой пользователь без этих прав строку
     // вообще не видит (не просто свёрнутое значение — сам блок не рендерится).
-    const isVndEditor =
-        hasPermission(PermissionCode.ActAsApprover) ||
-        hasPermission(PermissionCode.CreateVndWithApproval) ||
-        hasPermission(PermissionCode.CreateVndWithoutApproval) ||
-        hasPermission(PermissionCode.ActualizeAnyVndWithApproval) ||
-        hasPermission(PermissionCode.ActualizeAnyVndWithoutApproval) ||
-        hasPermission(PermissionCode.ActualizeVndWithApprovalByRequest) ||
-        hasPermission(PermissionCode.ActualizeVndWithoutApprovalByRequest);
     const canSeeDocumentStatus = isVndEditor || canViewVndRegistryExtended;
     const tabs = getVndTabs(vnd.status);
     // Если сменился статус и текущий выбранный таб для него больше не доступен - откатываемся на «Реквизиты»
@@ -323,7 +321,7 @@ export function OpenVndPage() {
                             className="px-2.5 py-0.5 rounded-full text-[12px]"
                             style={{ color: meta.color, background: meta.bg }}
                         >
-                            {meta.label}
+                            {t(meta.label)}
                         </span>
                     </div>
 
@@ -340,7 +338,7 @@ export function OpenVndPage() {
                                 className="px-2.5 py-0.5 rounded-full text-[12px]"
                                 style={{ color: documentStatusMeta.color, background: documentStatusMeta.bg }}
                             >
-                                {documentStatusMeta.label}
+                                {t(documentStatusMeta.label)}
                             </span>
                         </div>
                     )}

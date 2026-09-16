@@ -64,7 +64,7 @@ export function SigningWorkplacePage() {
         : null;
 
     return (
-        <div className="flex max-w-[980px] flex-col gap-4 p-[22px_26px]">
+        <div className="flex max-w-[1700px] flex-col gap-4 p-[22px_26px]">
             <div>
                 <div className="text-[12.5px] text-[#8b97ab]">Система</div>
                 <h1 className="m-0 mt-[3px] text-[19px] font-bold text-[#0f1b2d]">
@@ -173,7 +173,7 @@ export function SigningWorkplacePage() {
 
             <div>
                 <button onClick={проверить} disabled={занято}
-                        className="h-10 rounded-[10px] border border-[#e5e9f0] bg-white px-4 text-[13px] font-semibold text-[#2f68f5] disabled:opacity-50">
+                        className="cursor-pointer h-10 rounded-[10px] border border-[#e5e9f0] bg-white px-4 text-[13px] font-semibold text-[#2f68f5] disabled:opacity-50">
                     Проверить заново
                 </button>
             </div>

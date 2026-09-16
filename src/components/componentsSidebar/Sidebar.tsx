@@ -8,7 +8,7 @@ import {useVndActualizationSummary} from "@/hooks/vndHooks/useVndActualizationSu
 import {useVndTaskCounts} from "@/hooks/tasksVndHooks/useVndTaskCounts.ts";
 import {navGroups} from "@/constants/sidebarData.tsx";
 import {CountBadge} from "@/components/componentsSidebar/CountBadge.tsx";
-import {Icon} from "@/components/icons/Icon";
+import {Icon} from "@/assets/icons/Icon";
 import {RubricTreeModal} from "@/components/componentsGeneral/rubricator/RubricTreeModal.tsx";
 import {ChevronRight, PanelLeftClose, PanelLeftOpen} from "lucide-react";
 

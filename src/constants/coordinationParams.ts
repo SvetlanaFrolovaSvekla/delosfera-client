@@ -8,42 +8,27 @@ import {ShieldCheck, User} from "lucide-react";
 export const MAX_STAGES = 10;
 
 // Максимальное число файлов, которые согласующий может приложить к своей резолюции
-// (см. VndApproverResolutionPanel) — ограничивает нагрузку на хранилище документа;
-// вложения хранятся бессрочно как часть истории согласования.
 export const MAX_RESOLUTION_ATTACHMENTS = 5;
 
-// Максимальный размер ОДНОГО файла, приложенного согласующим к резолюции
-// (см. VndApproverResolutionPanel) — лимит на каждый файл по отдельности, а не суммарно.
-// Должен совпадать с MaxResolutionAttachmentSizeBytes на бэкенде (VndApprovalService.DecideAsync) —
-// там это уже реальная защита от прямых запросов к API, здесь — блокировка выбора слишком
-// большого файла и подсказка пользователю.
+// Максимальный размер ОДНОГО файла, приложенного согласующим к резолюции (100 МБ)
 export const MAX_RESOLUTION_ATTACHMENT_SIZE_BYTES = 100 * 1024 * 1024;
 
 // Максимальная длина текста комментария/причины отклонения в резолюции согласующего
-// (см. VndApproverResolutionPanel).
 export const MAX_RESOLUTION_COMMENT_LENGTH = 35000;
 
 // Длина, после которой комментарий/замечание обрезается в списках с кнопкой "См. полностью"
-// (см. RemarkCard в VndRevisionNeededPanel, VndApprovalSummary, VndApprovalRouteView) —
-// полный текст открывается в CommentViewModal.
 export const COMMENT_TRUNCATE_LENGTH = 260;
 
-// Верхняя граница норматива срока согласования (в минутах) — 90 дней.
-// Ограничивает поля "ч." / "м." в NormBlock и должна совпадать с MaxDeadlineMinutes
-// на бэкенде (VndApprovalService.StartAsync), где является финальной защитой:
-// без неё слишком большое значение минут ломает расчёт дедлайна (DateTime overflow).
+// Верхняя граница норматива срока согласования (в минутах) - 90 дней.
+// Ограничивает поля "ч." / "м." в NormBlock и должна совпадать с MaxDeadlineMinutes на бэкенде
 export const MAX_DEADLINE_MINUTES = 90 * 24 * 60;
-export const MAX_DEADLINE_HOURS = Math.floor(MAX_DEADLINE_MINUTES / 60);
 
-// Обязательные (фиксированные) этапы теперь ведутся динамическим справочником
-// (dictionaries/coordination-users, см. useCoordinationApprovers) - их название, СП и
-// согласующий по умолчанию больше не хардкодятся на фронте. Иконка у всех обязательных
-// этапов одна общая (в отличие от произвольных Custom-этапов, добавляемых инициатором).
+// Обязательные (фиксированные) этапы ведутся динамическим справочником (dictionaries/coordination-users)
 export const FIXED_STAGE_ICON = ShieldCheck;
 export const CUSTOM_STAGE_ICON = User;
 
 // Название для произвольного (не из справочника) этапа, добавленного инициатором вручную
-export const CUSTOM_STAGE_LABEL = "Доп. этап";
+export const CUSTOM_STAGE_LABEL = "Доп. согласующий";
 
 /** true, если ответ бэка описывает произвольный (не обязательный) этап маршрута */
 export function isCustomStageKind(kind: ApprovalStageKindResponse): boolean {

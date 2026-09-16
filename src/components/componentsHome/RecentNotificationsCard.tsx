@@ -8,7 +8,7 @@ import {NOTIFICATION_CATEGORY_META, DEFAULT_CATEGORY_META} from "@/constants/not
 import {timeAgo} from "@/utils/dateUtils.ts";
 import {Loader} from "@/components/componentsGeneral/Loader.tsx";
 import {EmptyState} from "@/components/componentsGeneral/EmptyState.tsx";
-import {HOME_BOTTOM_ROW_HEIGHT} from "@/constants/home.ts";
+import {HOME_BOTTOM_ROW_HEIGHT} from "@/constants/homeConst.ts";
 
 interface RecentNotificationsCardProps {
     limit?: number;

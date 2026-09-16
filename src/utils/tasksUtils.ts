@@ -1,3 +1,4 @@
+import type {TFunction} from "i18next";
 import {formatDurationMinutes, getDeadlineUrgency, getRemainingLabel} from "@/utils/dateUtils.ts";
 import {DEADLINE_URGENCY_META} from "@/constants/vndStatus.ts";
 import type {VndTaskResponse} from "@/service/tasksVndService/tasksServiceTypes.ts";
@@ -12,18 +13,15 @@ export function getDeadlineTone(deadlineAt: string | null, totalMinutes: number 
     return { label, color: DEADLINE_URGENCY_META[urgency].color };
 }
 
-// Лейбл этапа согласования ("Юридическое управление" и т.п.) — бэкенд отдаёт готовое
-// название (VndTaskResponse.stageTitle), т.к. с динамическим справочником обязательных
-// этапов набор возможных названий не ограничен фиксированным списком.
+// Лейбл этапа согласования
 export function getStageKindLabel(stageTitle: VndTaskResponse["stageTitle"]): string | null {
     return stageTitle ?? null;
 }
 
-// Название/суть задачи — само название ВНД показывается на карточке отдельной строкой
-// (см. VndTaskCard), поэтому здесь оно больше не дублируется.
-export function getActionTitle(task: VndTaskResponse): string {
+// Название/суть задачи - само название ВНД показывается на карточке отдельной строкой
+export function getActionTitle(task: VndTaskResponse, t: TFunction): string {
     // Для myVndApproval и (если пришёл) consolidation бэкенд уже отдаёт готовый
-    // человекочитаемый статус — используем его вместо старой производной формулировки.
+    // человекочитаемый статус
     if (task.statusLabel) {
         return task.statusLabel;
     }
@@ -31,69 +29,73 @@ export function getActionTitle(task: VndTaskResponse): string {
     if (task.scope === "coordination") {
         switch (task.stagePhase) {
             case "primary":
-                return "Провести первичное согласование редакции";
+                return t("tasks.vnd.actionTitle.coordinationPrimary");
             case "repeat":
-                return "Провести согласование после внесённых инициатором изменений по вашим правкам";
+                return t("tasks.vnd.actionTitle.coordinationRepeat");
             case "final":
-                return "Ознакомиться с редакцией на финальной выдержке";
+                return t("tasks.vnd.actionTitle.coordinationFinal");
             default:
-                return "Согласовать редакцию";
+                return t("tasks.vnd.actionTitle.coordinationDefault");
         }
     }
 
     if (task.scope === "actualization") {
-        return "Актуализировать ВНД";
+        return t("tasks.vnd.actionTitle.actualization");
     }
 
     if (task.scope === "actualizationRequest") {
-        return "Рассмотреть заявку на доступ к актуализации";
+        return t("tasks.vnd.actionTitle.actualizationRequest");
     }
 
     if (task.scope === "actualizationApproved") {
-        return "Начать актуализацию по одобренной заявке";
+        return t("tasks.vnd.actionTitle.actualizationApproved");
     }
 
-    return "Провести консолидацию ВНД";
+    return t("tasks.vnd.actionTitle.consolidationDefault");
 }
 
-export function getMetaText(task: VndTaskResponse): string {
+export function getMetaText(task: VndTaskResponse, t: TFunction): string {
     if (task.scope === "coordination") {
         const parts: string[] = [];
 
-        if (task.redactionCode) parts.push(`Редакция ${task.redactionCode}`);
+        if (task.redactionCode) parts.push(t("tasks.vnd.meta.redaction", {code: task.redactionCode}));
         const stageLabel = getStageKindLabel(task.stageTitle);
         if (stageLabel) parts.push(stageLabel);
-        if (task.initiatorName) parts.push(`Инициатор: ${task.initiatorName}`);
-        if (task.deadlineMinutes) parts.push(`Норматив: ${formatDurationMinutes(task.deadlineMinutes)}`);
+        if (task.initiatorName) parts.push(t("tasks.vnd.meta.initiator", {name: task.initiatorName}));
+        if (task.deadlineMinutes) {
+            parts.push(t("tasks.vnd.meta.norm", {value: formatDurationMinutes(task.deadlineMinutes)}));
+        }
 
-        return parts.length > 0 ? parts.join(" · ") : "Ожидает вашего решения";
+        return parts.length > 0 ? parts.join(" · ") : t("tasks.vnd.meta.waitingDecision");
     }
 
     if (task.scope === "myVndApproval") {
-        return task.redactionCode ? `Редакция ${task.redactionCode}` : "Отслеживайте ход согласования";
+        return task.redactionCode
+            ? t("tasks.vnd.meta.redaction", {code: task.redactionCode})
+            : t("tasks.vnd.meta.trackApproval");
     }
 
     if (task.scope === "rejected") {
         const parts: string[] = [];
-        if (task.redactionCode) parts.push(`Редакция ${task.redactionCode}`);
-        if (task.rejectedByName) parts.push(`Отклонил: ${task.rejectedByName}`);
-        return parts.length > 0 ? parts.join(" · ") : "Требует внимания инициатора";
+        if (task.redactionCode) parts.push(t("tasks.vnd.meta.redaction", {code: task.redactionCode}));
+        if (task.rejectedByName) parts.push(t("tasks.vnd.meta.rejectedBy", {name: task.rejectedByName}));
+        return parts.length > 0 ? parts.join(" · ") : t("tasks.vnd.meta.needsInitiatorAttention");
     }
 
     if (task.scope === "actualizationRequest") {
-        return task.initiatorName ? `Заявитель: ${task.initiatorName}` : "Ожидает вашего решения";
+        return task.initiatorName
+            ? t("tasks.vnd.meta.applicant", {name: task.initiatorName})
+            : t("tasks.vnd.meta.waitingDecision");
     }
 
     if (task.scope === "actualizationApproved") {
-        return "Подтвердите начало цикла актуализации";
+        return t("tasks.vnd.meta.confirmStartCycle");
     }
 
-    return "Требует внимания ответственного";
+    return t("tasks.vnd.meta.needsResponsibleAttention");
 }
 
-// Поиск по подстроке (без учёта регистра) на странице "Мои задачи" — по тем полям,
-// что человек реально пробегает глазами в списке карточек: название ВНД, номер ВНД,
-// номер редакции, инициатор, кто отклонил.
+// Поиск по подстроке (без учёта регистра)
 export function matchesTaskSearch(task: VndTaskResponse, query: string): boolean {
     const q = query.trim().toLowerCase();
     if (!q) return true;
@@ -102,8 +104,7 @@ export function matchesTaskSearch(task: VndTaskResponse, query: string): boolean
         .some((field) => field?.toLowerCase().includes(q));
 }
 
-// Тот же поиск по подстроке, но для сводного реестра задач (TaskInboxPage) — по названию
-// документа, рег. номеру, типу контура/задачи и тому, за кого задача выполняется по замещению.
+// Тот же поиск по подстроке
 export function matchesInboxTaskSearch(task: InboxTask, query: string): boolean {
     const q = query.trim().toLowerCase();
     if (!q) return true;

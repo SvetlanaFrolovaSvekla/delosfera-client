@@ -36,6 +36,23 @@ export function getRedactionDisplayStatus(
     return "outdated";
 }
 
+// "Рядовой" пользователь (не редактор ВНД - см. useIsVndEditor) не должен видеть редакции,
+// которые ещё не стали официальным текстом документа - черновик, на согласовании, отклонена,
+// или согласована, но ещё не консолидирована (см. RedactionStatusBanner.getBannerMessage -
+// там эти статусы уже описаны как "доступно для просмотра только редакторам ВНД", хотя раньше
+// это нигде не проверялось). Действующую редакцию (current/pendingEffective) и историю уже
+// принятых, но не самых свежих редакций (outdated) показываем всем как и раньше - это уже
+// официально принятые версии документа.
+export function isRedactionVisibleToRegularUser(
+    r: VndRedactionResponse,
+    vndStatus: VndStatusKey,
+    isLatest: boolean,
+    effectiveDate?: string | null,
+): boolean {
+    if (r.isCurrent) return true;
+    return getRedactionDisplayStatus(r, vndStatus, isLatest, effectiveDate) === "outdated";
+}
+
 export const REDACTION_STATUS_META: Record<
 RedactionDisplayStatus,
     { label: string; color: string; bg: string }

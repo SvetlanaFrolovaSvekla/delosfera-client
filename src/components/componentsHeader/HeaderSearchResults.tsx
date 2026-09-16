@@ -47,7 +47,7 @@ export function HeaderSearchResults({results, loading, query, onSelect}: HeaderS
                                     <span
                                         className="w-7 h-7 flex-none rounded-lg grid place-items-center mt-px"
                                         style={{background: meta.bg, color: meta.color}}
-                                        title={meta.label}
+                                        title={t(meta.label)}
                                     >
                                         <StatusIcon className="w-[15px] h-[15px]" strokeWidth={2}/>
                                     </span>
@@ -64,7 +64,7 @@ export function HeaderSearchResults({results, loading, query, onSelect}: HeaderS
                                         className="flex-none inline-flex items-center text-[11px] font-semibold py-0.5 px-[9px] rounded-full whitespace-nowrap mt-px"
                                         style={{color: meta.color, background: meta.bg}}
                                     >
-                                        {meta.label}
+                                        {t(meta.label)}
                                     </span>
                                 </button>
                             </li>

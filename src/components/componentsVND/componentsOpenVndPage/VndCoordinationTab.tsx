@@ -1,5 +1,6 @@
 // Таб "Ход согласования"
 import {useRef, useState} from "react";
+import {useTranslation} from "react-i18next";
 import {useAuth} from "@/context/AuthContext.ts";
 import {coordinationService} from "@/service/coordinationService/coordinationService.ts";
 import {
@@ -86,6 +87,7 @@ type CoordinationModal =
 };
 
 export function VndCoordinationTab({vnd, onVndChanged}: VndCoordinationTabProps) {
+    const {t} = useTranslation();
     const {user, hasPermission} = useAuth();
     const currentUserId = user?.id;
 
@@ -133,22 +135,22 @@ export function VndCoordinationTab({vnd, onVndChanged}: VndCoordinationTabProps)
     // которые уже придут в свежих данных с бэка, отдельного состояния для этого не нужно.
     const handleResubmitted = async () => {
         await Promise.all([reload(), refetchRedactions()]);
-        toast.success("Отправлено на согласование", "Исправленная редакция отправлена дальше по маршруту");
+        toast.success(t("openVndPage.coordinationTab.resubmittedToastTitle"), t("openVndPage.coordinationTab.resubmittedToastDescription"));
     };
 
     const download = useAsyncAction<number>();
     const handleDownload = (fileId: number, name: string) =>
-        download.run(fileId, () => downloadWithToast(fileId, name), "Не удалось скачать редакцию!");
+        download.run(fileId, () => downloadWithToast(fileId, name), t("openVndPage.coordinationTab.downloadError"));
 
     if (loading || redactionsLoading) {
-        return <Loader label="Загрузка страницы хода согласования…" fullHeight={false}/>;
+        return <Loader label={t("openVndPage.coordinationTab.loadingLabel")} fullHeight={false}/>;
     }
 
     if (error) {
         return (
             <EmptyState
                 variant="error"
-                title="Не удалось загрузить страницу хода согласования!"
+                title={t("openVndPage.coordinationTab.loadErrorTitle")}
                 description={error}
             />
         );
@@ -165,22 +167,21 @@ export function VndCoordinationTab({vnd, onVndChanged}: VndCoordinationTabProps)
                     <EmptyState
                         embedded
                         icon={Clock3}
-                        title="Согласование ещё не запущено!"
-                        description="Здесь появится маршрут согласования, этапы и резолюции согласующих — после того как согласование этой редакции будет запущено."
+                        title={t("openVndPage.coordinationTab.notStartedTitle")}
+                        description={t("openVndPage.coordinationTab.notStartedDescription")}
                     />
                 </div>
                 {canStartNoChangesReview && (
                     <div className="mt-4 flex flex-col items-start gap-2">
                         <p className="text-[12.5px] leading-[1.6] text-[#55617a]">
-                            Заявлена актуализация без изменений — можно отправить существующую
-                            действующую редакцию на согласование как есть, без загрузки нового файла.
+                            {t("openVndPage.coordinationTab.noChangesReviewHint")}
                         </p>
                         <button
                             type="button"
                             onClick={() => setModal({kind: "startApproval"})}
                             className="cursor-pointer inline-flex h-9 items-center gap-2 rounded-[9px] bg-[#4e57d6] px-3.5 text-[12.5px] font-semibold text-white hover:bg-[#3f47bd]"
                         >
-                            Начать согласование (без изменений)
+                            {t("openVndPage.coordinationTab.startNoChangesButton")}
                         </button>
                     </div>
                 )}
@@ -256,9 +257,9 @@ export function VndCoordinationTab({vnd, onVndChanged}: VndCoordinationTabProps)
                 quotes: quotes.length > 0 ? quotes : undefined,
             });
             await reload();
-            toast.success("Резолюция отправлена", "Ваше решение по согласованию учтено");
+            toast.success(t("openVndPage.coordinationTab.decisionSubmittedToastTitle"), t("openVndPage.coordinationTab.decisionSubmittedToastDescription"));
         } catch (err) {
-            setDecisionError(err instanceof Error ? err.message : "Не удалось отправить резолюцию");
+            setDecisionError(err instanceof Error ? err.message : t("openVndPage.coordinationTab.decisionErrorDefault"));
         } finally {
             decisionInFlightRef.current = false;
             setSubmitting(false);
@@ -311,11 +312,11 @@ export function VndCoordinationTab({vnd, onVndChanged}: VndCoordinationTabProps)
         setCancelling(true);
         try {
             await coordinationService.cancel(vnd.id);
-            toast.success("Согласование отозвано", "Документ возвращён в черновик");
+            toast.success(t("openVndPage.coordinationTab.cancelledToastTitle"), t("openVndPage.coordinationTab.cancelledToastDescription"));
             setCancelModalOpen(false);
             onVndChanged?.();
         } catch (err) {
-            toast.error("Не удалось отозвать", err instanceof Error ? err.message : undefined);
+            toast.error(t("openVndPage.coordinationTab.cancelErrorTitle"), err instanceof Error ? err.message : undefined);
         } finally {
             setCancelling(false);
         }
@@ -327,24 +328,24 @@ export function VndCoordinationTab({vnd, onVndChanged}: VndCoordinationTabProps)
             border: "border-[#bfe3cc]", bg: "bg-[#eef9f2]",
             icon: CheckCircle2, iconColor: "text-[#1f7a4c]",
             titleColor: "text-[#1c5e37]", textColor: "text-[#2f6b47]",
-            title: "Редакция согласована",
-            description: "Все согласующие приняли решение без замечаний. Осталось дождаться консолидации редакции — её выполняет инициатор согласования или главный редактор.",
+            title: t("openVndPage.coordinationTab.approvedTitle"),
+            description: t("openVndPage.coordinationTab.approvedDescription"),
         }
         : isRejected
             ? {
                 border: "border-[#f2c2c2]", bg: "bg-[#fdf1f1]",
                 icon: XCircle, iconColor: "text-[#c0392b]",
                 titleColor: "text-[#8f2a1f]", textColor: "text-[#a63a2c]",
-                title: "Редакция отклонена",
-                description: "Один из согласующих отклонил редакцию — согласование прекращено. Редакция вернулась в черновик, изменения нужно внести заново и отправить на новое согласование.",
+                title: t("openVndPage.coordinationTab.rejectedTitle"),
+                description: t("openVndPage.coordinationTab.rejectedDescription"),
             }
             : (isRevisionNeeded && !isInitiator)
                 ? {
                     border: "border-[#f0dcae]", bg: "bg-[#fdf6e8]",
                     icon: Clock3, iconColor: "text-[#9a6408]",
                     titleColor: "text-[#7a5006]", textColor: "text-[#8a6a1f]",
-                    title: "Инициатор согласования работает над замечаниями",
-                    description: "Все согласующие уже приняли решение на этом этапе. Документ вернётся к вам на повторное согласование, как только инициатор внесёт правки по замечаниям или заполнит матрицу разногласий.",
+                    title: t("openVndPage.coordinationTab.revisionInProgressTitle"),
+                    description: t("openVndPage.coordinationTab.revisionInProgressDescription"),
                 }
                 : null;
 
@@ -357,9 +358,7 @@ export function VndCoordinationTab({vnd, onVndChanged}: VndCoordinationTabProps)
                         className="mb-3 inline-flex items-start gap-2.5 rounded-[12px] border border-[#dde0fa] bg-[#f4f5fd] px-3.5 py-3 max-w-full">
                         <FileCheck2 size={16} strokeWidth={2} className="mt-[1px] flex-none text-[#4e57d6]"/>
                         <p className="text-[12.5px] leading-[1.55] text-[#3a4560]">
-                            Обратите внимание: Инициатор текущего согласования считает, что актуализация данного ВНД
-                            должна пройти без изменений редакции. На согласовании находится
-                            существующая действующая редакция как есть, без нового файла.
+                            {t("openVndPage.coordinationTab.noChangesApproverHint")}
                         </p>
                     </div>
                 )}
@@ -373,8 +372,8 @@ export function VndCoordinationTab({vnd, onVndChanged}: VndCoordinationTabProps)
                         className="mb-3 flex items-start gap-2.5 rounded-[12px] border border-[#bcd6f5] bg-[#eef5fd] px-3.5 py-3 max-w-full">
                         <Info size={16} strokeWidth={2} className="mt-[1px] flex-none text-[#2f68c4]"/>
                         <p className="text-[12.5px] leading-[1.55] text-[#1c4a80]">
-                            <span className="font-semibold">Файлы редакции были обновлены по вашим замечаниям.</span>
-                            {" "}Пожалуйста, проверьте обновлённые файлы ниже и вынесите решение по согласованию.
+                            <span className="font-semibold">{t("openVndPage.coordinationTab.repeatedPhaseHintBold")}</span>
+                            {" "}{t("openVndPage.coordinationTab.repeatedPhaseHintRest")}
                         </p>
                     </div>
                 )}
@@ -385,7 +384,7 @@ export function VndCoordinationTab({vnd, onVndChanged}: VndCoordinationTabProps)
                     <div>
                         <EmptyState
                             variant="error"
-                            title="Не удалось загрузить документы редакции: "
+                            title={t("openVndPage.coordinationTab.redactionsLoadErrorTitle")}
                             description={redactionsError}
                         />
                     </div>
@@ -394,8 +393,8 @@ export function VndCoordinationTab({vnd, onVndChanged}: VndCoordinationTabProps)
                 <div className="mb-2 flex items-center justify-between gap-3">
                     <div className="text-[13.5px] font-bold text-[#1c2740]">
                         {isFirstRedaction
-                            ? "Данная редакция (первая для этого ВНД):"
-                            : "Новая редакция и предыдущая для этого ВНД:"}
+                            ? t("openVndPage.coordinationTab.firstRedactionLabel")
+                            : t("openVndPage.coordinationTab.newRedactionLabel")}
                     </div>
                     {!isFirstRedaction && redaction && previousRedaction && (
                         <button
@@ -404,7 +403,7 @@ export function VndCoordinationTab({vnd, onVndChanged}: VndCoordinationTabProps)
                             className="cursor-pointer flex h-[35px] shrink-0 items-center justify-center gap-2 rounded-[10px] bg-[#4e57d6] px-4 text-[12.5px] font-semibold text-white hover:bg-[#3f47bd] disabled:cursor-not-allowed disabled:bg-[#c7cbe6]"
                         >
                             <Columns2 size={15} strokeWidth={2}/>
-                            Просмотр и сравнение редакций
+                            {t("openVndPage.coordinationTab.compareButton")}
                         </button>
                     )}
                 </div>
@@ -446,7 +445,7 @@ export function VndCoordinationTab({vnd, onVndChanged}: VndCoordinationTabProps)
                     />
                 )}
 
-                <div className="mb-2 text-[13.5px] font-bold text-[#1c2740]">Установленный маршрут согласования:</div>
+                <div className="mb-2 text-[13.5px] font-bold text-[#1c2740]">{t("openVndPage.coordinationTab.establishedRouteLabel")}</div>
                 <div
                     className={`rounded-[16px] border overflow-hidden ${routeHeaderConfig ? routeHeaderConfig.border : "border-[#e5e9f0]"}`}>
                     {routeHeaderConfig && (
@@ -474,8 +473,7 @@ export function VndCoordinationTab({vnd, onVndChanged}: VndCoordinationTabProps)
                         {isFinalHoldPhase && (
                             <div
                                 className="mb-3 rounded-[10px] border border-[#e0e6ef] bg-[#f6f8fb] px-4 py-[10px] text-[12.5px] text-[#5c6779]">
-                                Финальная выдержка — этап ознакомления. Оставлять решение по нему необязательно:
-                                если у вас нет замечаний, можно ничего не делать, документ пройдёт дальше сам.
+                                {t("openVndPage.coordinationTab.finalHoldPendingHint")}
                             </div>
                         )}
                         <VndApproverResolutionPanel
@@ -503,23 +501,23 @@ export function VndCoordinationTab({vnd, onVndChanged}: VndCoordinationTabProps)
                     <div className="mt-8 rounded-[14px] border border-[#f0dede] overflow-hidden">
                         <div className="bg-[#fdf6f5] px-4 py-2.5 border-b border-[#f0dede]">
                             <span className="text-[11px] font-bold uppercase tracking-wide text-[#c0392b]">
-                                Опасная зона
+                                {t("openVndPage.coordinationTab.dangerZoneLabel")}
                             </span>
                         </div>
                         <div className="flex items-center justify-between gap-3 px-4 py-3.5 bg-white">
                             <div>
                                 <div className="text-[13px] font-semibold text-[#1c2740]">
-                                    Отозвать согласование
+                                    {t("openVndPage.coordinationTab.cancelApprovalTitle")}
                                 </div>
                                 <span className="text-[12.5px] text-[#8b97ab]">
-                                    Документ вернётся в черновик, задачи у согласующих будут сняты.
+                                    {t("openVndPage.coordinationTab.cancelApprovalHint")}
                                 </span>
                             </div>
                             <button
                                 onClick={() => setCancelModalOpen(true)}
                                 className="shrink-0 rounded-[9px] border border-[#e0b4ae] bg-white px-[14px] py-[8px] text-[12.5px] font-semibold text-[#c0392b] cursor-pointer hover:bg-[#fbecea] transition-colors"
                             >
-                                Отозвать
+                                {t("openVndPage.coordinationTab.cancelButton")}
                             </button>
                         </div>
                     </div>
@@ -528,10 +526,10 @@ export function VndCoordinationTab({vnd, onVndChanged}: VndCoordinationTabProps)
                     open={cancelModalOpen}
                     onClose={() => setCancelModalOpen(false)}
                     onConfirm={handleCancel}
-                    title="Отозвать согласование?"
-                    message="Редакция и документ вернутся в черновик, задача у согласующих будет снята."
-                    confirmLabel="Отозвать"
-                    loadingLabel="Отзываю…"
+                    title={t("openVndPage.coordinationTab.cancelConfirmTitle")}
+                    message={t("openVndPage.coordinationTab.cancelConfirmMessage")}
+                    confirmLabel={t("openVndPage.coordinationTab.cancelButton")}
+                    loadingLabel={t("openVndPage.coordinationTab.cancelLoadingLabel")}
                     loading={cancelling}
                     variant="danger"
                     icon={AlertTriangle}
@@ -549,9 +547,7 @@ export function VndCoordinationTab({vnd, onVndChanged}: VndCoordinationTabProps)
                     className="mb-3 inline-flex items-start gap-2.5 rounded-[12px] border border-[#dde0fa] bg-[#f4f5fd] px-3.5 py-3 max-w-full">
                     <FileCheck2 size={16} strokeWidth={2} className="mt-[1px] flex-none text-[#4e57d6]"/>
                     <p className="text-[12.5px] leading-[1.55] text-[#3a4560]">
-                        Обратите внимание: Вы заявили, что актуализация должна пройти без
-                        изменений. На согласовании действующая редакция как есть, без нового
-                        файла. Согласующие также увидят соответствующее сообщение.
+                        {t("openVndPage.coordinationTab.noChangesInitiatorHint")}
                     </p>
                 </div>
             )}
@@ -564,9 +560,8 @@ export function VndCoordinationTab({vnd, onVndChanged}: VndCoordinationTabProps)
                     className="mx-auto mb-5 flex w-fit max-w-full items-start gap-2.5 rounded-[12px] border border-[#f0dcae] bg-[#fdf6e8] px-4 py-3">
                     <AlertTriangle size={16} strokeWidth={2} className="mt-[1px] flex-none text-[#9a6408]"/>
                     <p className="text-[12.5px] leading-[1.55] text-[#7a5006]">
-                        <span className="font-semibold">Редакцию ВНД отправили на доработку — есть замечания.</span>
-                        {" "}Пожалуйста, исправьте их: после отправки согласование перейдёт на следующий этап
-                        «Согласование после внесённых изменений».
+                        <span className="font-semibold">{t("openVndPage.coordinationTab.revisionNeededInitiatorBold")}</span>
+                        {" "}{t("openVndPage.coordinationTab.revisionNeededInitiatorRest")}
                     </p>
                 </div>
             )}
@@ -578,7 +573,7 @@ export function VndCoordinationTab({vnd, onVndChanged}: VndCoordinationTabProps)
                 <div>
                     <EmptyState
                         variant="error"
-                        title="Не удалось загрузить документы редакции: "
+                        title={t("openVndPage.coordinationTab.redactionsLoadErrorTitle")}
                         description={redactionsError}
                     />
                 </div>
@@ -588,8 +583,8 @@ export function VndCoordinationTab({vnd, onVndChanged}: VndCoordinationTabProps)
             <div className="mb-4 flex items-center justify-between gap-3">
                 <div className="text-[13.5px] font-bold text-[#1c2740]">
                     {isFirstRedaction
-                        ? "Данная редакция (первая для этого ВНД):"
-                        : "Новая редакция и предыдущая для этого ВНД:"}
+                        ? t("openVndPage.coordinationTab.firstRedactionLabel")
+                        : t("openVndPage.coordinationTab.newRedactionLabel")}
                 </div>
                 {!isFirstRedaction && redaction && previousRedaction && (
                     <button
@@ -598,7 +593,7 @@ export function VndCoordinationTab({vnd, onVndChanged}: VndCoordinationTabProps)
                         className="cursor-pointer flex h-[35px] shrink-0 items-center justify-center gap-2 rounded-[10px] bg-[#4e57d6] px-4 text-[12.5px] font-semibold text-white hover:bg-[#3f47bd] disabled:cursor-not-allowed disabled:bg-[#c7cbe6]"
                     >
                         <Columns2 size={15} strokeWidth={2}/>
-                        Просмотр и сравнение редакций
+                        {t("openVndPage.coordinationTab.compareButton")}
                     </button>
                 )}
             </div>
@@ -644,7 +639,7 @@ export function VndCoordinationTab({vnd, onVndChanged}: VndCoordinationTabProps)
             )}
 
             {/* Установленный маршрут согласования — с цветной шапкой-статусом, если применимо */}
-            <div className="mb-2 text-[13.5px] font-bold text-[#1c2740]">Установленный маршрут согласования:</div>
+            <div className="mb-2 text-[13.5px] font-bold text-[#1c2740]">{t("openVndPage.coordinationTab.establishedRouteLabel")}</div>
             <div
                 className={`rounded-[16px] border overflow-hidden ${routeHeaderConfig ? routeHeaderConfig.border : "border-[#e5e9f0]"}`}>
                 {routeHeaderConfig && (
@@ -684,23 +679,23 @@ export function VndCoordinationTab({vnd, onVndChanged}: VndCoordinationTabProps)
                 <div className="mt-8 rounded-[14px] border border-[#f0dede] overflow-hidden">
                     <div className="bg-[#fdf6f5] px-4 py-2.5 border-b border-[#f0dede]">
                         <span className="text-[11px] font-bold uppercase tracking-wide text-[#c0392b]">
-                            Опасная зона
+                            {t("openVndPage.coordinationTab.dangerZoneLabel")}
                         </span>
                     </div>
                     <div className="flex items-center justify-between gap-3 px-4 py-3.5 bg-white">
                         <div>
                             <div className="text-[13px] font-semibold text-[#1c2740]">
-                                Отозвать согласование
+                                {t("openVndPage.coordinationTab.cancelApprovalTitle")}
                             </div>
                             <span className="text-[12.5px] text-[#8b97ab]">
-                                Документ вернётся в черновик, задачи у согласующих будут сняты.
+                                {t("openVndPage.coordinationTab.cancelApprovalHint")}
                             </span>
                         </div>
                         <button
                             onClick={() => setCancelModalOpen(true)}
                             className="shrink-0 rounded-[9px] border border-[#e0b4ae] bg-white px-[14px] py-[8px] text-[12.5px] font-semibold text-[#c0392b] cursor-pointer hover:bg-[#fbecea] transition-colors"
                         >
-                            Отозвать
+                            {t("openVndPage.coordinationTab.cancelButton")}
                         </button>
                     </div>
                 </div>
@@ -709,10 +704,10 @@ export function VndCoordinationTab({vnd, onVndChanged}: VndCoordinationTabProps)
                 open={cancelModalOpen}
                 onClose={() => setCancelModalOpen(false)}
                 onConfirm={handleCancel}
-                title="Отозвать согласование?"
-                message="Редакция и документ вернутся в черновик, задача у согласующих будет снята."
-                confirmLabel="Отозвать"
-                loadingLabel="Отзываю…"
+                title={t("openVndPage.coordinationTab.cancelConfirmTitle")}
+                message={t("openVndPage.coordinationTab.cancelConfirmMessage")}
+                confirmLabel={t("openVndPage.coordinationTab.cancelButton")}
+                loadingLabel={t("openVndPage.coordinationTab.cancelLoadingLabel")}
                 loading={cancelling}
                 variant="danger"
                 icon={AlertTriangle}

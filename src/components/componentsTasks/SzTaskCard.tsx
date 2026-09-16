@@ -1,6 +1,6 @@
 import {Link} from "react-router-dom";
 import {taskLink, type InboxTask} from "@/service/workflowService/taskInboxService.ts";
-import {Icon} from "@/components/icons/Icon.tsx";
+import {Icon} from "@/assets/icons/Icon.tsx";
 
 interface SzTaskCardProps {
     task: InboxTask;

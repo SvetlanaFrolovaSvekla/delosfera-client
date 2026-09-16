@@ -1,13 +1,11 @@
-// Чекбокс-плашка с самодельным квадратиком-галочкой (не нативный input) — вид как у
-// "Только связанные со мной" на странице ВНД (VndFilters). Целиком кликабельная кнопка,
-// поэтому удобна там, где нужен явный hover/focus на всей плашке, а не только на квадратике.
+// Чекбокс-плашка с самодельным квадратиком-галочкой
 import type {ReactNode} from "react";
 import {Check} from "lucide-react";
 
 interface CheckBoxOneProps {
     checked: boolean;
     onChange: (checked: boolean) => void;
-    /** Подпись рядом с чекбоксом — текст и/или иконки (например, HelpTooltip) */
+    /* Подпись рядом с чекбоксом */
     children: ReactNode;
     className?: string;
     disabled?: boolean;

@@ -204,6 +204,33 @@
     "lastActualizationStatus": {
       "withChanges": "Changed",
       "withoutChanges": "Unchanged"
+    },
+    "redactionStatusMeta": {
+      "active": "Current",
+      "onact": "Under actualization",
+      "review": "Under approval",
+      "consol": "Consolidation",
+      "arch": "Archived",
+      "draft": "Draft",
+      "pendingEffective": "Awaiting entry into force"
+    },
+    "documentStatusMeta": {
+      "active": "Effective",
+      "notYetActive": "Not yet effective",
+      "arch": "Archived"
+    },
+    "scopeCountLabels": {
+      "all": {"total": "Total VND", "found": "Found VND"},
+      "active": {"total": "Total effective VND", "found": "Found effective VND"},
+      "notYetActive": {"total": "Total not-yet-effective VND", "found": "Found not-yet-effective VND"},
+      "draft": {"total": "Total drafts", "found": "Found drafts"},
+      "arch": {"total": "Total archived VND", "found": "Found archived VND"}
+    },
+    "deadlineUrgencyMeta": {
+      "normal": "Within deadline",
+      "approaching": "Deadline approaching",
+      "critical": "Critical deadline",
+      "overdue": "Overdue"
     }
   },
   "openVndPage": {
@@ -274,7 +301,243 @@
       "unavailableHint": "Text in this language hasn't been uploaded yet"
     },
     "redactionTextView": {
-      "noTextInLanguage": "Text in this language is not available"
+      "noTextInLanguage": "Text in this language is not available",
+      "loadingPreview": "Loading document..."
+    },
+    "passportTab": {
+      "subtitle": "Requisites by edition",
+      "editButton": "Edit requisites",
+      "redactionTabLabel": "E{{number}}",
+      "showDiffCheckbox": "Show changes vs. previous edition",
+      "sections": {
+        "mainInfo": "Main information",
+        "adoption": "Adoption and entry into force",
+        "changes": "Changes",
+        "actualization": "Actualization",
+        "cancelArchive": "Cancellation and archiving"
+      },
+      "initiatorLabel": "Initiator",
+      "meSuffix": " (me)",
+      "actualizationResponsibleLabel": "Responsible for the last actualization",
+      "curatorLabel": "Developer curator",
+      "adoptionDateLabel": "Adoption date",
+      "adoptionCodeLabel": "Adoption No.",
+      "effectiveDateLabel": "Effective date",
+      "effectiveDateHelp": "The date from which the edition becomes effective; until then the document is in the \"Awaiting entry into force\" status.",
+      "requisitesChangedLabel": "Requisites changed",
+      "revisionChangedLabel": "Edition changed",
+      "changesClue": "These dates are set automatically: \"Requisites changed\" — when the document's requisites are saved, \"Edition changed\" — when this edition's file is replaced (for legacy documents migrated without a single edit — the adoption date of this edition). They cannot be changed manually.",
+      "actualizationPeriodModeLabel": "Actualization period",
+      "dueActualizationDateLabel": "Actualization due date",
+      "dueActualizationDateModalTitle": "Actualization due date",
+      "lastActualizationDateLabel": "Last actualization date",
+      "periodLabel": "Period",
+      "lastActualizationHadChangesLabel": "Last actualization had changes",
+      "yes": "Yes",
+      "no": "No",
+      "actualizationClue": "The full history of all document actualizations can be viewed in the VND actualization log, once the first edition is added.",
+      "cancelDateLabel": "Cancellation date",
+      "cancelCodeLabel": "Cancellation No.",
+      "cancelReasonLabel": "Cancellation reason",
+      "archivedDateLabel": "Archiving date",
+      "daysInArchiveLabel": "Days in archive"
+    },
+    "linksTab": {
+      "title": "Related documents",
+      "addLinkButton": "Add link",
+      "outgoingTabLabel": "Links to documents",
+      "incomingTabLabel": "Documents referencing this one",
+      "emptyOutgoing": "No links to other documents yet",
+      "emptyIncoming": "No one links to this document yet",
+      "attachmentRefsHeader": "Attachment links (found in the text)",
+      "autoDetectedTooltip": "Detected automatically from a reference in the document text",
+      "autoDetectedBadge": "from text",
+      "deleteLinkTooltip": "Remove link",
+      "openAttachmentTooltip": "Open attachment",
+      "attachmentNotFoundTooltip": "No attachment found with this number",
+      "attachmentRefLabel": "Attachment No. {{index}} from the document text",
+      "attachmentRefNotFoundSuffix": " — not found",
+      "statuses": {
+        "active": "Effective",
+        "onact": "Under actualization",
+        "review": "Under approval",
+        "consol": "Under consolidation",
+        "arch": "Archived",
+        "draft": "Draft"
+      }
+    },
+    "actualizationTab": {
+      "performStepTitle": "Actualization started — the \"Perform actualization\" step is not done yet",
+      "performStepHintNeedsPerform": "Before working with editions, specify whether the next actualization due date should be shifted and whether the actualization will be without document changes — the \"Perform actualization\" button is on the Editions tab.",
+      "performStepHintWaiting": "The person responsible for actualization has not completed this step yet — uploading a new edition is unavailable until then.",
+      "goToEditionsButton": "Go to editions",
+      "inProgressTitle": "The document is being actualized",
+      "noChangesBadge": "No changes",
+      "noChangesHintWithApproval": "It has been declared that the actualization will proceed without document changes — a new edition will not be required. Submit the current effective edition for approval on the Approval tab as is, without uploading a new file. A new edition will appear only if the approvers request revisions.",
+      "noChangesHintWithoutApproval": "It has been declared that the actualization will proceed without document changes — a new edition will not be required. Confirm the absence of changes — the document will move straight to the \"Consolidation\" status, without approval.",
+      "goToApprovalButton": "Go to approval",
+      "confirmNoChangesButton": "Confirm absence of changes",
+      "uploadChangesAnywayButton": "Upload changes anyway",
+      "withChangesHint": "Upload the new edition on the Editions tab. If actualization requires approval — submit the edition for approval there. Once the document reaches the \"Consolidation\" status, confirm publication with the button in the document header.",
+      "consolStatusHint": "The edition is approved and awaiting consolidation — use the \"Consolidate approved version\" button in the document header.",
+      "notActiveHint": "Actualization is only available for an effective document.",
+      "dueDatesTitle": "Actualization due dates",
+      "lastActualizationLabel": "Last actualization",
+      "withChangesSuffix": "with changes",
+      "withoutChangesSuffix": "without changes",
+      "pendingRequestsTitle": "Requests for access to actualize this document",
+      "withApprovalTag": "with approval",
+      "withoutApprovalTag": "without approval",
+      "shiftPeriodTag": "shift the due date",
+      "keepPeriodTag": "keep the due date",
+      "approveButton": "Approve",
+      "rejectButton": "Reject",
+      "approvedHint": "Request approved{{decidedBy}}. Perform the actualization on the Editions tab to start the cycle.",
+      "startDirectlyTitle": "Start actualization",
+      "startDirectlyHint": "You have the right to take this document into actualization directly.",
+      "startDirectlyButton": "Start actualization",
+      "accessByRequestTitle": "Access by request",
+      "accessByRequestHint": "Request access to actualization from the VND chief editor!",
+      "requestAccessButton": "Request access",
+      "historyTitle": "Actualization history",
+      "historyLoading": "Loading actualization history…",
+      "historyEmpty": "There have been no actualizations yet",
+      "tookIntoActualizationLabel": "took into actualization",
+      "performStepNotDoneHint": "The \"Perform actualization\" step is not done yet",
+      "performedAtLabel": "Performed {{date}}",
+      "plannedNoChangesSuffix": ", declared without changes",
+      "cycleNotCompletedHint": "The cycle is not completed yet",
+      "publishedAtLabel": "Published {{date}}",
+      "requestsTitle": "Requests for actualization access",
+      "requestsEmpty": "There have been no requests yet",
+      "requestedAccessLabel": "requested access {{date}}",
+      "approvedLabel": "Approved",
+      "rejectedLabel": "Rejected",
+      "toast": {
+        "noChangesConfirmedTitle": "Absence of changes confirmed",
+        "noChangesConfirmedDescription": "The document moved to consolidation",
+        "confirmErrorTitle": "Failed to confirm"
+      }
+    },
+    "historyTab": {
+      "loading": "Loading history…",
+      "loadError": "Failed to load VND history",
+      "processStatuses": {
+        "primary": "Primary approval",
+        "revision_needed": "Needs revision",
+        "repeated": "Repeat approval",
+        "final_hold": "Final hold",
+        "approved": "Approved",
+        "cancelled": "Withdrawn",
+        "rejected": "Rejected"
+      },
+      "decisionLabels": {
+        "pending": "pending",
+        "approved": "Approved",
+        "approved_with_comment": "Approved with comments",
+        "rejected": "Rejected",
+        "auto_approved_timeout": "Auto-approved (timed out)"
+      },
+      "auditLogTitle": "Audit log",
+      "auditLogSubtitle": "History of all actions on this document",
+      "auditLogEmpty": "No entries yet",
+      "redactionsPanelTitle": "Editions and legal effect",
+      "redactionsEmptyTitle": "No editions yet",
+      "redactionsEmptyDescription": "Document editions will appear here once the first version of the VND is uploaded.",
+      "developerLabel": "Developer",
+      "approvalBodyLabel": "Approval body",
+      "initiatorLabel": "Approval initiator",
+      "statusLabel": "Approval status",
+      "completedSuffix": " (completed {{date}})",
+      "notStartedHint": "Approval has not been started",
+      "viewDetailsButton": "View details",
+      "backToHistoryButton": "Back to history",
+      "detailedLogTitle": "Detailed edition log",
+      "notStartedForRedaction": "Approval for this edition has not been started",
+      "routeHistoryTitle": "Approval route history",
+      "routeNotStartedTitle": "Approval has not been started!",
+      "routeNotStartedDescription": "The route will appear once approval is started for this edition.",
+      "attemptLabel": "Attempt {{number}}",
+      "completedAtLabel": " · completed {{date}}",
+      "timeline": {
+        "primaryStartedTitle": "Primary approval started",
+        "initiatorDetailLabel": "Initiator: {{name}}",
+        "decisionVerbs": {
+          "pending": "pending",
+          "approved": "approved",
+          "approved_with_comment": "approved with comments",
+          "rejected": "rejected",
+          "auto_approved_timeout": "auto-approved (waiting time expired)"
+        },
+        "roundSuffix": " (round {{number}})",
+        "repeatPhaseLabel": "Sent for repeat approval after addressing comments",
+        "finalHoldPhaseLabel": "Final hold started",
+        "repeatedSuffix": " (repeat)",
+        "finalHoldSuffix": " (final hold)",
+        "processCompletionLabels": {
+          "approved": "Edition approved — process completed",
+          "cancelled": "Approval withdrawn",
+          "rejected": "Edition rejected"
+        },
+        "processCompletedDefault": "Process completed"
+      },
+      "carousel": {
+        "repeatPhaseLabel": "Approval after the changes were made",
+        "roundLabel": "Round {{number}}",
+        "currentStageLabel": "Current stage",
+        "completedLabel": "Completed",
+        "correctionsCommentLabel": "Comment on the corrections: ",
+        "noDataForStage": "No data for this stage",
+        "decisionLabels": {
+          "pending": "Pending",
+          "approved": "Approved",
+          "approved_with_comment": "With comments",
+          "rejected": "Rejected",
+          "auto_approved_timeout": "Auto-approved"
+        }
+      }
+    },
+    "coordinationTab": {
+      "loadingLabel": "Loading the approval process page…",
+      "loadErrorTitle": "Failed to load the approval process page!",
+      "notStartedTitle": "Approval has not been started yet!",
+      "notStartedDescription": "The approval route, stages and approvers' resolutions will appear here once approval of this edition is started.",
+      "noChangesReviewHint": "An actualization without changes has been declared — the current effective edition can be submitted for approval as is, without uploading a new file.",
+      "startNoChangesButton": "Start approval (no changes)",
+      "resubmittedToastTitle": "Submitted for approval",
+      "resubmittedToastDescription": "The corrected edition has been sent further along the route",
+      "downloadError": "Failed to download the edition!",
+      "noChangesApproverHint": "Please note: the initiator of this approval considers that this document's actualization should proceed without edition changes. The current effective edition is under approval as is, without a new file.",
+      "repeatedPhaseHintBold": "The edition files have been updated per your comments.",
+      "repeatedPhaseHintRest": "Please review the updated files below and issue your approval decision.",
+      "redactionsLoadErrorTitle": "Failed to load the edition's documents: ",
+      "firstRedactionLabel": "This edition (the first one for this VND):",
+      "newRedactionLabel": "New edition and the previous one for this VND:",
+      "compareButton": "View and compare editions",
+      "establishedRouteLabel": "Established approval route:",
+      "approvedTitle": "Edition approved",
+      "approvedDescription": "All approvers made a decision without comments. It remains to wait for the edition's consolidation — performed by the approval initiator or the chief editor.",
+      "rejectedTitle": "Edition rejected",
+      "rejectedDescription": "One of the approvers rejected the edition — approval has been stopped. The edition returned to draft; the changes need to be made again and submitted for a new approval.",
+      "revisionInProgressTitle": "The approval initiator is working on the comments",
+      "revisionInProgressDescription": "All approvers have already made a decision at this stage. The document will return to you for repeat approval once the initiator makes the corrections or fills in the disagreement matrix.",
+      "finalHoldPendingHint": "Final hold is a review stage. Leaving a decision on it is optional: if you have no comments, you may do nothing and the document will move on by itself.",
+      "dangerZoneLabel": "Danger zone",
+      "cancelApprovalTitle": "Withdraw approval",
+      "cancelApprovalHint": "The document will return to draft, and the approvers' tasks will be cleared.",
+      "cancelButton": "Withdraw",
+      "cancelConfirmTitle": "Withdraw approval?",
+      "cancelConfirmMessage": "The edition and the document will return to draft, and the approvers' task will be cleared.",
+      "cancelLoadingLabel": "Withdrawing…",
+      "cancelledToastTitle": "Approval withdrawn",
+      "cancelledToastDescription": "The document was returned to draft",
+      "cancelErrorTitle": "Failed to withdraw",
+      "noChangesInitiatorHint": "Please note: you declared that the actualization should proceed without changes. The effective edition is under approval as is, without a new file. Approvers will also see the corresponding message.",
+      "revisionNeededInitiatorBold": "The VND edition was sent back for revision — there are comments.",
+      "revisionNeededInitiatorRest": "Please address them: once submitted, approval will move to the next stage, \"Approval after the changes were made\".",
+      "decisionSubmittedToastTitle": "Resolution submitted",
+      "decisionSubmittedToastDescription": "Your approval decision has been recorded",
+      "decisionErrorDefault": "Failed to submit the resolution"
     }
   },
   "docxEditor": {
@@ -343,7 +606,6 @@
     "addChildAction": "Add child item",
     "editAction": "Edit",
     "deleteAction": "Delete",
-
     "fieldTitleRu": "Name (Russian)",
     "fieldTitleEn": "Name (English)",
     "fieldTitleKg": "Name (Kyrgyz)",
@@ -353,7 +615,6 @@
     "saveError": "Failed to save. Please try again.",
     "deleteError": "Failed to delete. The item may be in use elsewhere.",
     "deleteConfirmMessage": "Are you sure you want to delete \"{{name}}\"? This action cannot be undone.",
-
     "sectionSubtitleGeneral": "General Directories",
     "sectionSubtitleVnd": "VND Directories"
   },
@@ -539,7 +800,194 @@
       "allTasks": "All tasks",
       "loading": "Loading tasks…",
       "empty": "No active tasks",
-      "emptyDescription": "Tasks that need your input — approval, revision, actualization — will appear here."
+      "emptyDescription": "Tasks that need your input — approval, revision, actualization — will appear here.",
+      "showMore": "View more tasks"
+    },
+    "common": {
+      "noRegNumber": "no number",
+      "searchEmptyTitle": "Nothing found",
+      "searchEmptyDescription": "Try changing your search query.",
+      "statsTitle": "My tasks statistics"
+    },
+    "inbox": {
+      "title": "My tasks",
+      "vndDescription": "Approval, actualization and consolidation of VND",
+      "allContoursDescription": "Approvals across all workflows",
+      "totalLabel": "Total:",
+      "overdueSuffix": "{{count}} overdue",
+      "delegatedSuffix": "{{count}} delegated",
+      "filters": {
+        "all": "All workflows",
+        "vnd": "VND",
+        "sz": "Memos",
+        "prc": "Procurement",
+        "ack": "Acknowledgment"
+      },
+      "searchPlaceholderAll": "Search across all workflows...",
+      "searchPlaceholderSection": "Search in “{{section}}”...",
+      "duePrefix": "due ",
+      "overduePrefix": "overdue · ",
+      "noDue": "no due date",
+      "stepSuffix": "step {{step}}",
+      "onBehalfOfSuffix": "on behalf of {{name}}",
+      "delegatedBySuffix": "delegated by {{name}}",
+      "delegateAction": "Delegate to a colleague",
+      "empty": {
+        "all": {
+          "title": "No tasks — all approved",
+          "description": "Tasks that need approval or processing across all workflows will appear here."
+        },
+        "sz": {
+          "title": "No memo tasks",
+          "description": "Memos awaiting your decision — approval, signature, acknowledgment — will appear here."
+        },
+        "prc": {
+          "title": "No procurement tasks",
+          "description": "Procurement documents that need approval or processing will appear here."
+        },
+        "ack": {
+          "title": "No acknowledgment tasks",
+          "description": "Documents you need to review and acknowledge will appear here."
+        }
+      }
+    },
+    "delegate": {
+      "title": "Delegate task",
+      "toLabel": "Delegate to",
+      "toPlaceholder": "Select an employee",
+      "reasonLabel": "Reason (optional)",
+      "reasonPlaceholder": "E.g.: on leave until Friday",
+      "submit": "Delegate",
+      "submitting": "Delegating…",
+      "loadUsersError": "Failed to load the employee list",
+      "chooseRecipientError": "Choose who to delegate the task to",
+      "genericError": "Failed to delegate the task"
+    },
+    "stats": {
+      "back": "Back to tasks",
+      "description": "Open tasks across all workflows: deadlines, breakdown by workflow and type",
+      "loadError": "Failed to load statistics",
+      "noOpenTasks": "No open tasks.",
+      "overdueSuffix": "{{count}} overdue",
+      "byContour": "By workflow",
+      "byType": "By task type",
+      "kpis": {
+        "total": "Total",
+        "overdue": "Overdue",
+        "dueToday": "Due today",
+        "dueThisWeek": "Due this week",
+        "noDue": "No due date",
+        "delegated": "Delegated"
+      }
+    },
+    "vnd": {
+      "topTabs": {
+        "all": "All",
+        "coordination": "Approval",
+        "actualization": "Actualization",
+        "consolidation": "Consolidation"
+      },
+      "subTabs": {
+        "actualizationRequest": "Access requests",
+        "actualizationApproved": "Approved — start"
+      },
+      "scopes": {
+        "coordination": "Awaiting my approval",
+        "actualization": "Under actualization",
+        "consolidation": "Consolidation",
+        "myVndApproval": "My VND under approval",
+        "rejected": "Rejected",
+        "actualizationRequest": "Actualization access request",
+        "actualizationApproved": "Request approved"
+      },
+      "stagePhase": {
+        "allPhases": "All stages",
+        "primary": "Initial approval",
+        "repeat": "Approval after changes",
+        "final": "Final review"
+      },
+      "stagePhaseFilterLabel": "Approval stage",
+      "doneFilterLabel": "Completion status",
+      "doneFilter": {
+        "active": "Active",
+        "done": "Completed"
+      },
+      "allLabel": "total",
+      "searchAll": "Search across all tasks...",
+      "searchSection": "Search in “{{section}}”...",
+      "searchDoneSection": "Search this page of “{{section}}” (completed)...",
+      "doneSuffix": " (completed)",
+      "totalCount": "Total tasks: {{count}}",
+      "foundCount": "Found: {{found}} of {{total}} {{label}}{{suffix}}",
+      "loadError": "Failed to load tasks",
+      "loadErrorPartial": "Failed to load some tasks ({{scopes}})",
+      "doneEmptyTitle": "No completed tasks yet",
+      "doneEmptyDescription": "The history of decisions for this section will appear here once you make the first one.",
+      "pagination": {
+        "back": "Back",
+        "forward": "Next",
+        "page": "Page {{page}} of {{totalPages}}"
+      },
+      "revisionNeeded": "Needs revision",
+      "noChanges": "No changes",
+      "actualizationRequired": "Actualization required",
+      "completedFallback": "Completed",
+      "actionTitle": {
+        "coordinationPrimary": "Carry out the initial approval of the revision",
+        "coordinationRepeat": "Approve the revision after the initiator's changes to your remarks",
+        "coordinationFinal": "Review the revision during the final review period",
+        "coordinationDefault": "Approve the revision",
+        "actualization": "Actualize the VND",
+        "actualizationRequest": "Review the actualization access request",
+        "actualizationApproved": "Start actualization for the approved request",
+        "consolidationDefault": "Carry out VND consolidation"
+      },
+      "meta": {
+        "redaction": "Revision {{code}}",
+        "initiator": "Initiator: {{name}}",
+        "norm": "SLA: {{value}}",
+        "waitingDecision": "Awaiting your decision",
+        "trackApproval": "Track the approval progress",
+        "rejectedBy": "Rejected by: {{name}}",
+        "needsInitiatorAttention": "Needs the initiator's attention",
+        "applicant": "Applicant: {{name}}",
+        "confirmStartCycle": "Confirm the start of the actualization cycle",
+        "needsResponsibleAttention": "Needs the responsible person's attention"
+      },
+      "empty": {
+        "all": {
+          "title": "No active tasks",
+          "description": "Tasks from all rulemaking sections — approval, actualization, consolidation — will appear here."
+        },
+        "coordination": {
+          "title": "No tasks for approval",
+          "description": "Document revisions awaiting your decision as an approver will appear here."
+        },
+        "actualization": {
+          "title": "No documents awaiting actualization",
+          "description": "Documents whose actualization deadline has arrived or is approaching will appear here."
+        },
+        "consolidation": {
+          "title": "No documents in consolidation",
+          "description": "Documents whose revisions in different languages need to be merged into one will appear here."
+        },
+        "myVndApproval": {
+          "title": "No VND awaiting approval",
+          "description": "Your documents sent for approval that have not yet received a decision are shown here."
+        },
+        "rejected": {
+          "title": "No rejected revisions",
+          "description": "Revisions sent back for rework will appear here — from rejection until resubmission."
+        },
+        "actualizationRequest": {
+          "title": "No actualization access requests",
+          "description": "Requests for actualization access awaiting your decision as chief editor will appear here."
+        },
+        "actualizationApproved": {
+          "title": "No approved requests awaiting actualization",
+          "description": "Your approved actualization access requests for which the cycle has not started yet will appear here."
+        }
+      }
     }
   },
   "successModal": {

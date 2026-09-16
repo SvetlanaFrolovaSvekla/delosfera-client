@@ -54,11 +54,22 @@ export type RedactionsPrimaryActionVariant =
     | "confirmNoChanges";
 
 interface RedactionsSidebarProps {
+    /** Список редакций к показу - для рядового пользователя (не редактора ВНД) это уже
+     * ОТФИЛЬТРОВАННОЕ подмножество без черновиков/на согласовании/на консолидации (см.
+     * isRedactionVisibleToRegularUser и VndEditionsTab). */
     redactions: VndRedactionResponse[];
     vndStatus: VndStatusKey;
     /** Дата вступления в силу ВНД — определяет, показывать ли действующей редакции статус
      * "ожидание вступления в силу" вместо "актуальная" (см. getRedactionDisplayStatus). */
     effectiveDate?: string | null;
+    /** Настоящий id самой свежой ПО НОМЕРУ редакции документа - независимо от того, что
+     * реально попало в `redactions` выше. Нужен, чтобы отметка "это последняя редакция" при
+     * расчёте статуса КАЖДОЙ строки (см. RedactionListItem → getRedactionDisplayStatus) не
+     * съезжала на самую свежую из ВИДИМЫХ, если настоящая последняя скрыта от рядового
+     * пользователя - иначе более старая (уже принятая, "неактуальная") редакция могла бы по
+     * ошибке показать статус "консолидация". Если не передан, берётся `redactions[0]` (старое
+     * поведение - подходит, только когда `redactions` не отфильтрован). */
+    lastRedactionId?: number;
     selectedId: number | undefined;
     /** id редакции, чей последний процесс согласования был отклонён - под ней покажем
      * подсказку "отредактируйте, чтобы отправить вновь" (см. VndEditionsTab) */
@@ -108,6 +119,7 @@ export function RedactionsSidebar({
                                       redactions,
                                       vndStatus,
                                       effectiveDate,
+                                      lastRedactionId: lastRedactionIdProp,
                                       selectedId,
                                       rejectedRedactionId,
                                       onShowRejectedDetails,
@@ -133,7 +145,7 @@ export function RedactionsSidebar({
                                       downloading,
                                   }: RedactionsSidebarProps) {
     const {t} = useTranslation();
-    const lastRedactionId = redactions[0]?.id;
+    const lastRedactionId = lastRedactionIdProp ?? redactions[0]?.id;
     const firstRedactionId = redactions[redactions.length - 1]?.id;
     const primaryMeta = PRIMARY_ACTION_META[primaryActionVariant];
     const PrimaryIcon = primaryMeta.icon;

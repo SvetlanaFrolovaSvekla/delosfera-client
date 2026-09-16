@@ -1,11 +1,10 @@
 // Переключатель языков
 import {useTranslation} from "react-i18next";
-import {Tooltip} from "../componentsGeneral/Tooltip";
 
 type Lang = "ru" | "ky" | "en";
 
 export function LanguageSwitcher() {
-    const {t, i18n} = useTranslation();
+    const {i18n} = useTranslation();
     const lang = i18n.language as Lang;
     const setLang = (l: Lang) => i18n.changeLanguage(l);
 
@@ -17,8 +16,7 @@ export function LanguageSwitcher() {
 
     return (
         <div className="flex items-center gap-0.5 rounded-[9px] bg-[#f2f5f9] p-[3px]">
-            {langs.map(({code, label, tooltipKey}) => (
-                <Tooltip key={code} content={t(tooltipKey)} side="bottom" disabled={lang === code}>
+            {langs.map(({code, label}) => (
                     <button
                         onClick={() => setLang(code)}
                         className="cursor-pointer rounded-[6px] px-2.5 py-1 text-[12px] font-semibold"
@@ -34,7 +32,6 @@ export function LanguageSwitcher() {
                     >
                         {label}
                     </button>
-                </Tooltip>
             ))}
         </div>
     );

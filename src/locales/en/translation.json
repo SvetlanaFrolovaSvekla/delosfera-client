@@ -115,8 +115,9 @@
     "searching": "Searching…",
     "noResultsFor": "No results for \"{{query}}\"",
     "profileTooltip": "Go to my profile",
-    "langRu": "Russian",
-    "langKy": "Kyrgyz",
+    "langRu": "Русский",
+    "langKy": "Кыргызча",
+    "langEN": "English",
     "notifTooltip": "Notifications",
     "allNotifs": "All notifications",
     "search": "Search documents: VND, memos, procurement…",
@@ -134,14 +135,28 @@
       "loading": "Loading activity…",
       "empty": "No events yet",
       "emptyDescription": "Actions on documents and tasks will appear here as soon as something happens.",
-      "viewAll": "All activity"
+      "viewAll": "All activity",
+      "tabs": {
+        "all": "All",
+        "vnd": "VND",
+        "sz": "Memos",
+        "procurement": "Procurement"
+      }
     },
     "recentNotifications": {
       "title": "Recent Notifications",
       "loading": "Loading notifications…",
       "empty": "No notifications yet",
       "emptyDescription": "Notifications about tasks, approvals and other events that concern you will appear here.",
-      "viewAll": "All notifications"
+      "viewAll": "All notifications",
+      "tabs": {
+        "all": "All",
+        "system": "System",
+        "vnd": "VND",
+        "sz": "Memos",
+        "procurement": "Procurement",
+        "acknowledgement": "Acknowledgment"
+      }
     },
     "kpi": {
       "myResponsibleActualizations": "Actualizations under my responsibility",
@@ -194,7 +209,8 @@
       "over30": "> 30 days",
       "under30": "< 30 days",
       "late": "overdue"
-    }
+    },
+    "showMore": "View more tasks"
   },
   "activityFeed": {
     "title": "Portal activity",
@@ -302,11 +318,26 @@
       "arch": "Archived"
     },
     "scopeCountLabels": {
-      "all": {"total": "Total VND", "found": "Found VND"},
-      "active": {"total": "Total effective VND", "found": "Found effective VND"},
-      "notYetActive": {"total": "Total not-yet-effective VND", "found": "Found not-yet-effective VND"},
-      "draft": {"total": "Total drafts", "found": "Found drafts"},
-      "arch": {"total": "Total archived VND", "found": "Found archived VND"}
+      "all": {
+        "total": "Total VND",
+        "found": "Found VND"
+      },
+      "active": {
+        "total": "Total effective VND",
+        "found": "Found effective VND"
+      },
+      "notYetActive": {
+        "total": "Total not-yet-effective VND",
+        "found": "Found not-yet-effective VND"
+      },
+      "draft": {
+        "total": "Total drafts",
+        "found": "Found drafts"
+      },
+      "arch": {
+        "total": "Total archived VND",
+        "found": "Found archived VND"
+      }
     },
     "deadlineUrgencyMeta": {
       "normal": "Within deadline",
@@ -883,7 +914,14 @@
       "loading": "Loading tasks…",
       "empty": "No active tasks",
       "emptyDescription": "Tasks that need your input — approval, revision, actualization — will appear here.",
-      "showMore": "View more tasks"
+      "showMore": "View more tasks",
+      "tabs": {
+        "all": "All",
+        "vnd": "VND",
+        "sz": "Memos",
+        "procurement": "Procurement",
+        "acknowledgement": "Acknowledgment"
+      }
     },
     "common": {
       "noRegNumber": "no number",

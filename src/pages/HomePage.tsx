@@ -94,6 +94,29 @@ export function HomePage() {
         };
     }, []);
 
+    // Задачи по ознакомлению с документами — тоже из сводного реестра, вне контура ВНД
+    // (листы ознакомления живут отдельной таблицей без маршрута, см. TaskInboxService).
+    const [ackTasks, setAckTasks] = useState<InboxTask[]>([]);
+    const [ackTasksLoading, setAckTasksLoading] = useState(true);
+    useEffect(() => {
+        let cancelled = false;
+        // eslint-disable-next-line react-hooks/set-state-in-effect
+        setAckTasksLoading(true);
+        taskInboxService.get("Acknowledgement")
+            .then((inbox) => {
+                if (!cancelled) setAckTasks(inbox.tasks);
+            })
+            .catch(() => {
+                if (!cancelled) setAckTasks([]);
+            })
+            .finally(() => {
+                if (!cancelled) setAckTasksLoading(false);
+            });
+        return () => {
+            cancelled = true;
+        };
+    }, []);
+
     // "Последние задачи"
     const homeTasks = useMemo(() => {
         const allTasks = [
@@ -117,11 +140,11 @@ export function HomePage() {
     const vndTasksCount = coordination.tasks.length + myVndApproval.tasks.length
         + actualization.tasks.length + consolidation.tasks.length + rejected.tasks.length
         + actualizationRequest.tasks.length + actualizationApproved.tasks.length;
-    const tasksTotalCount = vndTasksCount + szTasks.length + prcTasks.length;
+    const tasksTotalCount = vndTasksCount + szTasks.length + prcTasks.length + ackTasks.length;
     const tasksLoading = coordination.isLoading || myVndApproval.isLoading
         || actualization.isLoading || consolidation.isLoading || rejected.isLoading
         || actualizationRequest.isLoading || actualizationApproved.isLoading
-        || szTasksLoading || prcTasksLoading;
+        || szTasksLoading || prcTasksLoading || ackTasksLoading;
 
     // Текущая дата - локализуется под текущий язык
     const formattedDate = useFormattedDate();
@@ -158,8 +181,9 @@ export function HomePage() {
                     tasks={homeTasks}
                     szTasks={szTasks}
                     prcTasks={prcTasks}
+                    ackTasks={ackTasks}
                     isLoading={tasksLoading}
-                    counts={{vnd: vndTasksCount, sz: szTasks.length, prc: prcTasks.length}}
+                    counts={{vnd: vndTasksCount, sz: szTasks.length, prc: prcTasks.length, ack: ackTasks.length}}
                 />
                 <ActualizationPlanCard summary={actualizationSummary} isLoading={actualizationLoading}/>
             </div>

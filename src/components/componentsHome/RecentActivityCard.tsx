@@ -31,12 +31,14 @@ interface RecentActivityCardProps {
 }
 
 // Фильтр активности по разделам (#11): всё / ВНД / служебные записки / закупки.
-// undefined = все контуры сразу.
-const SECTIONS: { id: string; label: string; module?: string }[] = [
-    {id: "all", label: "Все"},
-    {id: "vnd", label: "ВНД", module: "vnd"},
-    {id: "sz", label: "СЗ", module: "sz"},
-    {id: "prc", label: "Закупки", module: "prc"},
+// undefined = все контуры сразу. labelKey - ключ i18n (см.
+// home.recentActivity.tabs.* в translation.json), а не готовый текст: иначе табы
+// оставались русскими при переключении языка интерфейса.
+const SECTIONS: { id: string; labelKey: string; module?: string }[] = [
+    {id: "all", labelKey: "home.recentActivity.tabs.all"},
+    {id: "vnd", labelKey: "home.recentActivity.tabs.vnd", module: "vnd"},
+    {id: "sz", labelKey: "home.recentActivity.tabs.sz", module: "sz"},
+    {id: "prc", labelKey: "home.recentActivity.tabs.procurement", module: "prc"},
 ];
 
 export function RecentActivityCard({limit = 15, module}: RecentActivityCardProps) {
@@ -73,7 +75,7 @@ export function RecentActivityCard({limit = 15, module}: RecentActivityCardProps
                                 color: section === s.id ? "#2f68f5" : "#55617a",
                             }}
                         >
-                            {s.label}
+                            {t(s.labelKey)}
                         </button>
                     ))}
                     <button

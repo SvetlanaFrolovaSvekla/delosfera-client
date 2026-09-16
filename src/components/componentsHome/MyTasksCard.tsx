@@ -18,25 +18,31 @@ interface MyTasksCardProps {
     szTasks?: InboxTask[];
     // Задачи по закупкам — тоже из сводного реестра, вне контура ВНД.
     prcTasks?: InboxTask[];
+    // Листы ознакомления — тоже из сводного реестра, своей карточки-контура у них нет
+    // (см. TaskInboxService.GetAsync: DocumentType = "Acknowledgement").
+    ackTasks?: InboxTask[];
     isLoading: boolean;
     // Настоящее (неусечённое) число задач по контурам — переданный tasks уже обрезан общим
     // лимитом "последних задач" на главной (см. HOME_TASKS_LIMIT в HomePage.tsx), поэтому
     // tasks.length не годится для бейджа с количеством: считает HomePage.tsx по всем скоупам
     // ВНД сразу, без обрезки.
-    counts?: {vnd: number; sz: number; prc: number};
+    counts?: {vnd: number; sz: number; prc: number; ack: number};
 }
 
 const VISIBLE_TASKS_LIMIT = 15;
 
-// Табы панели (как на "Последняя активность"): все / ВНД / служебные записки / закупки.
-const SECTIONS: { id: string; label: string }[] = [
-    {id: "all", label: "Все"},
-    {id: "vnd", label: "ВНД"},
-    {id: "sz", label: "СЗ"},
-    {id: "prc", label: "Закупки"},
+// Табы панели (как на "Последняя активность"): все / ВНД / служебные записки / закупки /
+// ознакомление. labelKey - ключ i18n (см. tasks.myTasks.tabs.* в translation.json),
+// а не готовый текст: иначе табы оставались русскими при переключении языка интерфейса.
+const SECTIONS: { id: string; labelKey: string }[] = [
+    {id: "all", labelKey: "tasks.myTasks.tabs.all"},
+    {id: "vnd", labelKey: "tasks.myTasks.tabs.vnd"},
+    {id: "sz", labelKey: "tasks.myTasks.tabs.sz"},
+    {id: "prc", labelKey: "tasks.myTasks.tabs.procurement"},
+    {id: "ack", labelKey: "tasks.myTasks.tabs.acknowledgement"},
 ];
 
-export function MyTasksCard({tasks, szTasks = [], prcTasks = [], isLoading, counts}: MyTasksCardProps) {
+export function MyTasksCard({tasks, szTasks = [], prcTasks = [], ackTasks = [], isLoading, counts}: MyTasksCardProps) {
     const {t} = useTranslation();
     const navigate = useNavigate();
     const [section, setSection] = useState<string>("all");
@@ -47,28 +53,38 @@ export function MyTasksCard({tasks, szTasks = [], prcTasks = [], isLoading, coun
     // приходится резать по VISIBLE_TASKS_LIMIT для самого списка карточек.
     const sectionCount = counts
         ? section === "all"
-            ? counts.vnd + counts.sz + counts.prc
+            ? counts.vnd + counts.sz + counts.prc + counts.ack
             : section === "vnd"
                 ? counts.vnd
                 : section === "sz"
                     ? counts.sz
-                    : counts.prc
+                    : section === "prc"
+                        ? counts.prc
+                        : counts.ack
         : null;
 
     const vndTasks = section === "all" || section === "vnd" ? tasks : [];
     const visibleSzSource = section === "all" || section === "sz" ? szTasks : [];
     const visiblePrcSource = section === "all" || section === "prc" ? prcTasks : [];
+    const visibleAckSource = section === "all" || section === "ack" ? ackTasks : [];
 
     const visibleTasks = vndTasks.slice(0, VISIBLE_TASKS_LIMIT);
-    // ВНД занимают первые VISIBLE_TASKS_LIMIT мест; записками добираем остаток,
-    // закупками — то, что осталось после записок, чтобы виджет не разрастался сверх лимита.
+    // ВНД занимают первые VISIBLE_TASKS_LIMIT мест; записками добираем остаток, закупками —
+    // то, что осталось после записок, ознакомлением — то, что осталось после закупок, чтобы
+    // виджет не разрастался сверх лимита.
     const visibleSzTasks = visibleSzSource.slice(0, Math.max(0, VISIBLE_TASKS_LIMIT - visibleTasks.length));
     const visiblePrcTasks = visiblePrcSource.slice(
         0,
         Math.max(0, VISIBLE_TASKS_LIMIT - visibleTasks.length - visibleSzTasks.length),
     );
-    const hasMoreTasks = vndTasks.length + visibleSzSource.length + visiblePrcSource.length > VISIBLE_TASKS_LIMIT;
-    const isEmpty = vndTasks.length === 0 && visibleSzSource.length === 0 && visiblePrcSource.length === 0;
+    const visibleAckTasks = visibleAckSource.slice(
+        0,
+        Math.max(0, VISIBLE_TASKS_LIMIT - visibleTasks.length - visibleSzTasks.length - visiblePrcTasks.length),
+    );
+    const hasMoreTasks = vndTasks.length + visibleSzSource.length + visiblePrcSource.length
+        + visibleAckSource.length > VISIBLE_TASKS_LIMIT;
+    const isEmpty = vndTasks.length === 0 && visibleSzSource.length === 0 && visiblePrcSource.length === 0
+        && visibleAckSource.length === 0;
 
     return (
         // Высота карточки зафиксирована (HOME_TOP_ROW_HEIGHT) и совпадает с "План актуализации
@@ -104,7 +120,7 @@ export function MyTasksCard({tasks, szTasks = [], prcTasks = [], isLoading, coun
                                     color: section === s.id ? "#2f68f5" : "#55617a",
                                 }}
                             >
-                                {s.label}
+                                {t(s.labelKey)}
                             </button>
                         ))}
                     </div>
@@ -155,6 +171,16 @@ export function MyTasksCard({tasks, szTasks = [], prcTasks = [], isLoading, coun
                                 key={`prc-${task.taskId}`}
                                 task={task}
                                 noTopBorder={visibleTasks.length === 0 && visibleSzTasks.length === 0 && i === 0}
+                            />
+                        ))}
+                        {visibleAckTasks.map((task, i) => (
+                            <SzTaskCard
+                                key={`ack-${task.taskId}`}
+                                task={task}
+                                noTopBorder={
+                                    visibleTasks.length === 0 && visibleSzTasks.length === 0
+                                    && visiblePrcTasks.length === 0 && i === 0
+                                }
                             />
                         ))}
                         {hasMoreTasks && (

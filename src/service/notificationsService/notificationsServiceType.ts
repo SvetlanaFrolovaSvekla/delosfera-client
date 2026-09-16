@@ -1,7 +1,9 @@
 // --- Категории уведомлений (совпадают с NotificationCategory на бэке,
 // сериализуются как строки благодаря JsonStringEnumConverter)
-// Approval/Task оставлены только ради уже существующих старых уведомлений с такой
-// категорией - новых с ними не создаётся, отдельной вкладки у них больше нет.
+// Approval/Task/Other оставлены только ради уже существующих старых уведомлений с такой
+// категорией - новых с ними не создаётся, отдельной вкладки у них больше нет (Other раньше
+// была "Разное" - теперь то, что было в ней про ознакомление, ушло в свою Acknowledgement,
+// а обязательства/встречи/переписка остались без вкладки, см. NotificationCategoryCatalog).
 export type NotificationCategory =
     | "System"
     | "Vnd"
@@ -9,7 +11,8 @@ export type NotificationCategory =
     | "Task"
     | "Other"
     | "Sz"
-    | "Procurement";
+    | "Procurement"
+    | "Acknowledgement";
 
 export type NotificationSeverity = "Info" | "Success" | "Warning" | "Urgent";
 

@@ -6,7 +6,6 @@ import type {Notification} from "@/service/notificationsService/notificationsSer
 import {PREVIEW_COUNT, SEVERITY_DOT} from "@/constants/notificationConst.ts";
 import {formatRelativeTime} from "@/utils/dateUtils.ts";
 import {Icon} from "@/assets/icons/Icon";
-import {Tooltip} from "../componentsGeneral/Tooltip";
 import {Loader} from "@/components/componentsGeneral/Loader.tsx";
 import {EmptyState} from "@/components/componentsGeneral/EmptyState.tsx";
 
@@ -85,7 +84,6 @@ export function NotificationsDropdown() {
 
     return (
         <div className="relative" ref={rootRef}>
-            <Tooltip content={t("header.notifTooltip")} side="bottom">
                 <button
                     onClick={() => setOpen((v) => !v)}
                     className="cursor-pointer relative grid h-[38px] w-[38px] place-items-center rounded-[10px] border border-[#e5e9f0] bg-white text-[#55617a] hover:bg-[#f6f8fb]"
@@ -96,7 +94,6 @@ export function NotificationsDropdown() {
                             className="absolute right-2 top-[7px] h-[7px] w-[7px] rounded-full border-[1.5px] border-white bg-[#e0483d]"/>
                     )}
                 </button>
-            </Tooltip>
 
             {open && (
                 <div

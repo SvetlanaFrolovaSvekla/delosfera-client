@@ -8,6 +8,7 @@ import {
     MoreHorizontal,
     FileSignature,
     ShoppingCart,
+    BookOpenCheck,
     type LucideIcon,
 } from "lucide-react";
 
@@ -23,6 +24,10 @@ export const NOTIFICATION_CATEGORY_META: Record<NotificationCategory, Notificati
     Vnd: { icon: FileText, color: "#0e8091", bg: "#dbf2f5", ring: "#b4e6ec" },
     Sz: { icon: FileSignature, color: "#b45309", bg: "#fef3e0", ring: "#fbe3b8" },
     Procurement: { icon: ShoppingCart, color: "#0f8a5f", bg: "#e3f7ee", ring: "#c3ecd9" },
+    Acknowledgement: { icon: BookOpenCheck, color: "#7c3aed", bg: "#f3ecfe", ring: "#e4d2fb" },
+    // Other - легаси-"Разное", своей вкладки больше нет (см. notificationsServiceType.ts):
+    // то, что было в ней про ознакомление, теперь отдельная категория выше, а обязательства/
+    // встречи/переписка остаются с этой категорией, просто без вкладки-фильтра.
     Other: { icon: MoreHorizontal, color: "#6b7686", bg: "#eceff3", ring: "#d7dde6" },
     // Approval/Task - легаси, своей вкладки больше нет (см. notificationsServiceType.ts),
     // но карточки старых уведомлений с такой категорией должны на что-то отрисоваться.

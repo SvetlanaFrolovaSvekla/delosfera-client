@@ -20,14 +20,16 @@ interface RecentNotificationsCardProps {
 }
 
 // Табы панели (как на "Последняя активность"/"Мои задачи"): все / по категориям
-// уведомлений (см. NotificationCategoryCatalog на бэке).
-const SECTIONS: { id: string; label: string; category?: NotificationCategory }[] = [
-    {id: "all", label: "Все"},
-    {id: "System", label: "Системные", category: "System"},
-    {id: "Vnd", label: "ВНД", category: "Vnd"},
-    {id: "Sz", label: "СЗ", category: "Sz"},
-    {id: "Procurement", label: "Закупки", category: "Procurement"},
-    {id: "Other", label: "Разное", category: "Other"},
+// уведомлений (см. NotificationCategoryCatalog на бэке). labelKey - ключ i18n
+// (см. home.recentNotifications.tabs.* в translation.json), а не готовый текст:
+// иначе табы оставались русскими при переключении языка интерфейса.
+const SECTIONS: { id: string; labelKey: string; category?: NotificationCategory }[] = [
+    {id: "all", labelKey: "home.recentNotifications.tabs.all"},
+    {id: "System", labelKey: "home.recentNotifications.tabs.system", category: "System"},
+    {id: "Vnd", labelKey: "home.recentNotifications.tabs.vnd", category: "Vnd"},
+    {id: "Sz", labelKey: "home.recentNotifications.tabs.sz", category: "Sz"},
+    {id: "Procurement", labelKey: "home.recentNotifications.tabs.procurement", category: "Procurement"},
+    {id: "Acknowledgement", labelKey: "home.recentNotifications.tabs.acknowledgement", category: "Acknowledgement"},
 ];
 
 export function RecentNotificationsCard({limit = 15}: RecentNotificationsCardProps) {
@@ -70,7 +72,7 @@ export function RecentNotificationsCard({limit = 15}: RecentNotificationsCardPro
                                     color: section === s.id ? "#2f68f5" : "#55617a",
                                 }}
                             >
-                                {s.label}
+                                {t(s.labelKey)}
                             </button>
                         ))}
                     </div>

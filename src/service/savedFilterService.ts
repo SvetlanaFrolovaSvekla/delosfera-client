@@ -1,7 +1,6 @@
 import {apiClient} from "@/service/apiClient.ts";
 
-// Личные сохранённые фильтры реестров (БП-16).
-
+// Личные сохранённые фильтры реестров (БП-16)
 export interface SavedFilter {
     id: number;
     scope: string;

@@ -1,9 +1,9 @@
 import axios, {type InternalAxiosRequestConfig} from "axios";
 import type {LoginResponse} from "@/service/authService/authServiceType.ts";
-import {getLanguage} from "@/utils/getLanguage.ts";
 import {getAccessToken, setAccessToken} from "@/service/tokenStore.ts";
+import {getLanguage} from "@/utils/translations/getLanguage.ts";
 
-// Пусто — тот же адрес, по которому открыт клиент; префикс /api разбирает
+// Пусто - тот же адрес, по которому открыт клиент; префикс /api разбирает
 // reverse-proxy и передаёт запрос приложению как есть.
 const API_BASE_URL = `${import.meta.env.VITE_API_BASE_URL ?? ""}/api`;
 

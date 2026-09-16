@@ -1,6 +1,7 @@
-import type {DateFilterValue} from "@/components/componentsGeneral/datePickers/DateFilterGroup.tsx";
+import type {TFunction} from "i18next";
 import type {DateRangeFilter} from "@/service/vndService/vndServiceType.ts";
 import type {DeadlineUrgencyKey} from "@/constants/vndStatus.ts";
+import type {DateFilterValue} from "@/components/componentsGeneral/datePickers/DateFilterGroup.tsx";
 
 export function formatDateTime(iso: string): string {
     return new Date(iso).toLocaleString("ru-RU", {
@@ -53,11 +54,6 @@ export function getDeadlineUrgency(deadlineAt: string | null, totalMinutes: numb
     const remainingMs = new Date(deadlineAt).getTime() - Date.now();
     if (remainingMs <= 0) return "overdue";
 
-    // ВАЖНО: норматив (VndApprovalStage.PrimaryDeadlineMinutes и т.п.) хранится и приходит с
-    // бэка В МИНУТАХ (см. VndTaskResponse.deadlineMinutes) - раньше здесь ошибочно умножалось
-    // как на часы (totalHours * 60 * 60 * 1000), из-за чего totalMs получался в 60 раз больше
-    // нужного, а процент оставшегося времени - завышенным (почти всегда "normal"/зелёный,
-    // даже когда дедлайн уже почти наступил).
     const totalMs = totalMinutes * 60 * 1000;
     const percentRemaining = (remainingMs / totalMs) * 100;
 
@@ -67,7 +63,7 @@ export function getDeadlineUrgency(deadlineAt: string | null, totalMinutes: numb
 }
 
 // Сколько времени осталось до дедлайна, в формате "2 дня 5 часов" или "просрочено на 3 часа"
-export function getRemainingLabel(deadlineAt: string | null | undefined): string {
+export function getRemainingLabel(deadlineAt: string | null | undefined, t: TFunction): string {
     if (!deadlineAt) return "—";
 
     const diffMs = new Date(deadlineAt).getTime() - Date.now();
@@ -79,96 +75,77 @@ export function getRemainingLabel(deadlineAt: string | null | undefined): string
     const hours = Math.floor((totalMinutes % (60 * 24)) / 60);
     const minutes = totalMinutes % 60;
 
-    let label: string;
+    let time: string;
 
     if (days > 0) {
-        const daysLabel = `${days} ${pluralize(days, "день", "дня", "дней")}`;
-        label = hours > 0
-            ? `${daysLabel} ${hours} ${pluralize(hours, "час", "часа", "часов")}`
+        const daysLabel = t("time.days", {count: days});
+        time = hours > 0
+            ? `${daysLabel} ${t("time.hours", {count: hours})}`
             : daysLabel;
     } else if (hours > 0) {
-        const hoursLabel = `${hours} ${pluralize(hours, "час", "часа", "часов")}`;
-        label = minutes > 0
-            ? `${hoursLabel} ${minutes} ${pluralize(minutes, "минута", "минуты", "минут")}`
+        const hoursLabel = t("time.hours", {count: hours});
+        time = minutes > 0
+            ? `${hoursLabel} ${t("time.minutes", {count: minutes})}`
             : hoursLabel;
     } else if (minutes > 0) {
-        label = `${minutes} ${pluralize(minutes, "минута", "минуты", "минут")}`;
+        time = t("time.minutes", {count: minutes});
     } else {
-        label = "меньше минуты";
+        time = t("time.lessThanMinute");
     }
 
-    return isOverdue ? `просрочено на ${label}` : `осталось ${label}`;
+    return isOverdue ? t("time.overdueBy", {time}) : t("time.remaining", {time});
 }
 
-// Русское склонение слова по числу (1 день, 2 дня, 5 дней)
-export function pluralize(count: number, one: string, few: string, many: string): string {
-    const mod10 = count % 10;
-    const mod100 = count % 100;
-    if (mod10 === 1 && mod100 !== 11) return one;
-    if (mod10 >= 2 && mod10 <= 4 && (mod100 < 12 || mod100 > 14)) return few;
-    return many;
-}
-
-// Норматив срока (в минутах, как хранится и приходит с бэка - см. VndApprovalStage.
-// PrimaryDeadlineMinutes и т.п.) в виде "3 дня", "2 дня 5 часов", "45 минут" - без "осталось"/
-// "просрочено" (это для самого норматива, а не для оставшегося времени до дедлайна - см.
-// getRemainingLabel выше для этого случая). Раньше норматив в минутах показывался как есть с
-// суффиксом "ч" (например, "4320 ч" вместо "3 дня") - см. VndTaskCard/getMetaText.
-export function formatDurationMinutes(totalMinutes: number): string {
+// Норматив срока (в минутах, как хранится и приходит с бэка)
+export function formatDurationMinutes(totalMinutes: number, t: TFunction): string {
     const days = Math.floor(totalMinutes / (60 * 24));
     const hours = Math.floor((totalMinutes % (60 * 24)) / 60);
     const minutes = totalMinutes % 60;
 
     if (days > 0) {
-        const daysLabel = `${days} ${pluralize(days, "день", "дня", "дней")}`;
+        const daysLabel = t("time.days", {count: days});
         return hours > 0
-            ? `${daysLabel} ${hours} ${pluralize(hours, "час", "часа", "часов")}`
+            ? `${daysLabel} ${t("time.hours", {count: hours})}`
             : daysLabel;
     }
     if (hours > 0) {
-        const hoursLabel = `${hours} ${pluralize(hours, "час", "часа", "часов")}`;
+        const hoursLabel = t("time.hours", {count: hours});
         return minutes > 0
-            ? `${hoursLabel} ${minutes} ${pluralize(minutes, "минута", "минуты", "минут")}`
+            ? `${hoursLabel} ${t("time.minutes", {count: minutes})}`
             : hoursLabel;
     }
-    if (minutes > 0) return `${minutes} ${pluralize(minutes, "минута", "минуты", "минут")}`;
-    return "0 минут";
+    if (minutes > 0) return t("time.minutes", {count: minutes});
+    return t("time.minutes", {count: 0});
 }
 
-// Сколько времени прошло с указанной даты, в формате "2 дня 5 часов + назад"
-export function getElapsedLabel(dateString: string): string {
+// Сколько времени прошло с указанной даты, в формате "2 дня 5 часов назад"
+export function getElapsedLabel(dateString: string, t: TFunction): string {
     const diffMs = Date.now() - new Date(dateString).getTime();
-    if (diffMs < 0) return "только что";
+    if (diffMs < 0) return t("time.justNow");
 
     const totalMinutes = Math.floor(diffMs / 60000);
     const days = Math.floor(totalMinutes / (60 * 24));
     const hours = Math.floor((totalMinutes % (60 * 24)) / 60);
     const minutes = totalMinutes % 60;
 
+    let time: string;
+
     if (days > 0) {
-        const daysLabel = `${days} ${pluralize(days, "день", "дня", "дней")}`;
-        if (hours > 0) {
-            return `${daysLabel} ${hours} ${pluralize(hours, "час", "часа", "часов")}`;
-        }
-        return `${daysLabel}`;
+        const daysLabel = t("time.days", {count: days});
+        time = hours > 0 ? `${daysLabel} ${t("time.hours", {count: hours})}` : daysLabel;
+    } else if (hours > 0) {
+        const hoursLabel = t("time.hours", {count: hours});
+        time = minutes > 0 ? `${hoursLabel} ${t("time.minutes", {count: minutes})}` : hoursLabel;
+    } else if (minutes > 0) {
+        time = t("time.minutes", {count: minutes});
+    } else {
+        return t("time.justNow");
     }
 
-    if (hours > 0) {
-        const hoursLabel = `${hours} ${pluralize(hours, "час", "часа", "часов")}`;
-        if (minutes > 0) {
-            return `${hoursLabel} ${minutes} ${pluralize(minutes, "минута", "минуты", "минут")} назад`;
-        }
-        return `${hoursLabel}`;
-    }
-
-    if (minutes > 0) {
-        return `${minutes} ${pluralize(minutes, "минута", "минуты", "минут")}`;
-    }
-
-    return "только что";
+    return t("time.ago", {time});
 }
 
-// Берем значение из UI (DatePicker/RangePicker), преобразуем в { exact, from, to } для фильтрации.
+// Берем значение из UI (DatePicker/RangePicker), преобразуем в { exact, from, to } для фильтрации
 // Значения из DatePickerInput/DateFilterGroup приходят в формате "дд.мм.гггг" (см. DatePickerInput) -
 // парсим их через parseDDMMYYYY, а не отдаём напрямую в formatISO/new Date(), иначе для дат вида
 // "03.09.2026" получим либо некорректный разбор (день/месяц перепутаны местами), либо Invalid Date.
@@ -294,18 +271,6 @@ export function describePeriod(fromISO: string | null | undefined, toISO: string
     if (closest) return closest.label;
 
     return approxMonths < 1 ? `${days} дн.` : `≈ ${Math.round(approxMonths)} мес.`;
-}
-
-// Возвращает текущую дату и день недели
-export function getFormattedDate(): string {
-    const date = new Date();
-    const formatter = new Intl.DateTimeFormat("ru-RU", {
-        weekday: "long",
-        day: "numeric",
-        month: "long",
-    });
-    const formatted = formatter.format(date); // Например: "Четверг, 23 июля"
-    return formatted.charAt(0).toLowerCase() + formatted.slice(1);
 }
 
 /**

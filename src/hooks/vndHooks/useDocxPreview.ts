@@ -1,6 +1,6 @@
 import React, {useEffect, useRef, useState} from "react";
 import {renderAsync} from "docx-preview";
-import {fetchFileBlob} from "@/utils/downloadFile.ts";
+import {fetchFileBlob} from "@/utils/downloadFiles/downloadFile.ts";
 import {DOCX_PREVIEW_CLASS_NAME} from "@/constants/docxPreview.ts";
 
 interface UseDocxPreviewResult {
@@ -15,13 +15,17 @@ interface UseDocxPreviewOptions {
      * (например, для широких таблиц ТИД, которые должны скроллиться по горизонтали, а не
      * сжиматься). */
     ignoreWidth?: boolean;
+
+    /** См. fetchFileBlob: путь на бэке, если файл выдаёт не общий /api/files/{id}
+     * (например, "help/files" для вложений статьи инструкции). */
+    endpoint?: string;
 }
 
 export function useDocxPreview(
     fileId: number | null,
     options: UseDocxPreviewOptions = {},
 ): UseDocxPreviewResult {
-    const {ignoreWidth = true} = options;
+    const {ignoreWidth = true, endpoint} = options;
     const containerRef = useRef<HTMLDivElement>(null);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
@@ -48,7 +52,7 @@ export function useDocxPreview(
             setError(null);
 
             try {
-                const {blob} = await fetchFileBlob(fileId, undefined, controller.signal);
+                const {blob} = await fetchFileBlob(fileId, undefined, controller.signal, endpoint);
 
                 if (cancelled || !containerRef.current) return;
 
@@ -81,7 +85,7 @@ export function useDocxPreview(
             cancelled = true;
             controller.abort();
         };
-    }, [fileId, ignoreWidth]);
+    }, [fileId, ignoreWidth, endpoint]);
 
     return {containerRef, loading, error};
 }

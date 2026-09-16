@@ -17,3 +17,4 @@ export function getFirstLastName(fullName?: string): string {
     const [lastName, firstName] = parts;
     return `${firstName} ${lastName}`;
 }
+

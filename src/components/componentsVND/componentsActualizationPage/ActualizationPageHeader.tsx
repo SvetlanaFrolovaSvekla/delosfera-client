@@ -1,5 +1,7 @@
 import {useNavigate} from "react-router-dom";
 import {ChartLine, Download, Settings} from "lucide-react";
+import {useAuth} from "@/context/AuthContext.ts";
+import {PermissionCode} from "@/constants/permissions/permissions.ts";
 
 interface ActualizationPageHeaderProps {
     onExportClick?: () => void;
@@ -7,6 +9,7 @@ interface ActualizationPageHeaderProps {
 
 export function ActualizationPageHeader({onExportClick}: ActualizationPageHeaderProps) {
     const navigate = useNavigate();
+    const {hasPermission} = useAuth();
 
     return (
         <div className="flex items-end justify-between gap-5 flex-wrap mb-[18px]">
@@ -19,14 +22,15 @@ export function ActualizationPageHeader({onExportClick}: ActualizationPageHeader
                 </p>
             </div>
             <div className="flex gap-2.5">
-                {/*TODO: кнопку настроить, чтоб её видел только админ, главный методолог*/}
-                <button
-                    onClick={() => navigate("/management/mailing-settings")}
-                    className="inline-flex items-center gap-2 h-10 px-[15px] rounded-[10px] border-none bg-[#4e57d6] text-white font-semibold text-[13px] cursor-pointer hover:brightness-[1.06] shadow-[0_6px_16px_-6px_#4e57d6]"
-                >
-                    <Settings className="w-[18px] h-[18px]" strokeWidth={2}/>
-                    Настройки рассылок плана
-                </button>
+                {hasPermission(PermissionCode.ManageVndActualizationMailing) && (
+                    <button
+                        onClick={() => navigate("/management/mailing-settings")}
+                        className="inline-flex items-center gap-2 h-10 px-[15px] rounded-[10px] border-none bg-[#4e57d6] text-white font-semibold text-[13px] cursor-pointer hover:brightness-[1.06] shadow-[0_6px_16px_-6px_#4e57d6]"
+                    >
+                        <Settings className="w-[18px] h-[18px]" strokeWidth={2}/>
+                        Настройки рассылок плана
+                    </button>
+                )}
 
                 <button
                     onClick={onExportClick}

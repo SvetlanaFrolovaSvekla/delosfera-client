@@ -4,7 +4,7 @@ import {
     RichDiffEditor
 } from "@/components/componentsVND/componentsOpenVndPage/componentsEditionsTab/RichDiffEditor.tsx";
 import {colors} from "@/design/tokens";
-import {downloadBlob, generateDisagreementMatrixDocx} from "@/utils/docxDisagreementMatrixExport.ts";
+import {downloadBlob, generateDisagreementMatrixDocx} from "@/utils/docxWork/docxDisagreementMatrixExport.ts";
 import {Download, Loader2} from "lucide-react";
 
 const NEGATIVE_COLOR = colors.ryg.red.fg;

@@ -10,12 +10,18 @@ import {
 import type {OrganizationUnitResponse} from "@/service/dictionariesService/organizationUnitService/organizationUnitServiceType.ts";
 import {useVndDictionaries} from "@/hooks/vndHooks/useVndDictionaries.ts";
 import {useVndActualization} from "@/hooks/vndHooks/useVndActualization.ts";
+import {CANNOT_CREATE_VND_MESSAGE, useCanCreateVnd} from "@/hooks/vndHooks/useCanCreateVnd.ts";
 import {VND_TITLE_MAX_LENGTH, VND_TITLE_MIN_LENGTH} from "@/constants/validation/vndValidation.ts";
 import {toast} from "@/service/toastService.ts";
 
 export function useCreateVndForm() {
     const navigate = useNavigate();
     const actualization = useVndActualization();
+    // Страница доступна по прямому URL любому авторизованному пользователю (не только
+    // тому, кто пришёл сюда через "Создать ВНД"/"Далее" - там кнопки уже заблокированы),
+    // поэтому право проверяем и здесь: иначе отправка формы дойдёт до бэкенда и упадёт
+    // там сырой ошибкой авторизации вместо понятного сообщения.
+    const canCreateVnd = useCanCreateVnd();
 
     // --- Все справочники разом (виды ВНД, органы утверждения, СП, ключевые слова, рубрики, секретность, группы)
     const dictionaries = useVndDictionaries();
@@ -122,11 +128,13 @@ export function useCreateVndForm() {
         return labels;
     }, [typeId, organId, titleRu, developerId, responsibleExecutorIds, actualization.isDateModeValid]);
 
-    const missingFieldsTooltip = missingFieldLabels.length > 0
-        ? `Заполните ${missingFieldLabels.length === 1 ? "поле" : "поля"}: «${missingFieldLabels.join("», «")}»`
-        : "";
+    const missingFieldsTooltip = !canCreateVnd
+        ? CANNOT_CREATE_VND_MESSAGE
+        : missingFieldLabels.length > 0
+            ? `Заполните ${missingFieldLabels.length === 1 ? "поле" : "поля"}: «${missingFieldLabels.join("», «")}»`
+            : "";
 
-    const isValid = missingFieldLabels.length === 0;
+    const isValid = canCreateVnd && missingFieldLabels.length === 0;
 
     const handleSubmit = async () => {
         if (!isValid || isSubmitting) return;

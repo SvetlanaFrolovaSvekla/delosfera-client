@@ -1,5 +1,6 @@
 // Read-only блок норматива (уже установленное значение по запущенному согласованию)
 import React from "react";
+import {useTranslation} from "react-i18next";
 import {formatDateTime, formatDurationMinutes} from "@/utils/dateUtils.ts";
 
 export type NormPhaseStatus = "passed" | "current" | "upcoming";
@@ -40,6 +41,7 @@ NormPhaseStatus,
     };
 
 export function NormBlockView({label, value, phaseStatus, blockRef, startedAt}: NormBlockViewProps) {
+    const {t} = useTranslation();
     const style = PHASE_STYLES[phaseStatus];
 
     return (
@@ -53,14 +55,14 @@ export function NormBlockView({label, value, phaseStatus, blockRef, startedAt}: 
                 </span>
                 {startedAt && (
                     <span className="text-[10.5px] leading-tight text-[#a3adbd]">
-                        Этап начался {formatDateTime(startedAt)}
+                        {t("coordination.normBlock.phaseStarted", {date: formatDateTime(startedAt)})}
                     </span>
                 )}
             </span>
             <span
                 className={`flex-none whitespace-nowrap rounded-[8px] border bg-white px-2.5 py-1 text-[12.5px] font-semibold ${style.badgeBorder} ${style.badgeText}`}
             >
-                {formatDurationMinutes(value)}
+                {formatDurationMinutes(value, t)}
             </span>
         </div>
     );

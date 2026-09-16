@@ -2,7 +2,7 @@
 import {useMemo, useState} from "react";
 import {useNavigate} from "react-router-dom";
 import {useTranslation} from "react-i18next";
-import {HighlightText} from "@/utils/HighlightText.tsx";
+import {HighlightText} from "@/utils/highlightText.tsx";
 import {getRefSections} from "@/constants/getRefSections.ts";
 import {SearchBar} from "@/components/componentsGeneral/SearchBar.tsx";
 import {Tooltip} from "@/components/componentsGeneral/Tooltip.tsx";

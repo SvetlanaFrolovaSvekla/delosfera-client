@@ -66,11 +66,11 @@ export function debugNoMatch(root: HTMLElement, query: string): void {
         const strippedFull = stripAll(full);
         const foundIgnoringWhitespace = strippedQuery.length > 0 && strippedFull.includes(strippedQuery);
 
-        // eslint-disable-next-line no-console
+         
         console.warn("[поиск по документу] Совпадений нет для запроса:", query);
-        // eslint-disable-next-line no-console
+         
         console.warn("[поиск по документу] Длина запроса / текста документа (символов):", query.length, "/", full.length);
-        // eslint-disable-next-line no-console
+         
         console.warn(
             "[поиск по документу] Найдено при полном игнорировании пробелов и невидимых символов:",
             foundIgnoringWhitespace,
@@ -86,14 +86,14 @@ export function debugNoMatch(root: HTMLElement, query: string): void {
                 const mid = Math.ceil((lo + hi) / 2);
                 if (strippedFull.includes(strippedQuery.slice(0, mid))) lo = mid; else hi = mid - 1;
             }
-            // eslint-disable-next-line no-console
+             
             console.warn(
                 "[поиск по документу] Совпадающий префикс запроса (без пробелов) длиной", lo, "символов:",
                 JSON.stringify(query.slice(0, Math.min(lo + 20, query.length))) + (lo < query.length ? "…" : ""),
             );
         }
     } catch (e) {
-        // eslint-disable-next-line no-console
+         
         console.warn("[поиск по документу] Ошибка диагностики:", e);
     }
 }
@@ -108,6 +108,7 @@ export function debugNoMatch(root: HTMLElement, query: string): void {
 // ПОСЕРЕДИНЕ слова там, где в запросе его нет (или наоборот), и посимвольное сравнение просто не
 // совпадало ни в одном месте. Заданы через \u-escape, а не литеральными символами в исходнике —
 // иначе невидимые символы в самом файле легко потерять/испортить при копировании и редактировании.
+// eslint-disable-next-line no-misleading-character-class
 const INVISIBLE_CHARS_RE = /[\u00AD\u200B\u200C\u200D\uFEFF]/g;
 // Между КАЖДОЙ парой символов слова допускаем необязательное появление любого из этих символов —
 // это не ослабляет точность поиска (сравниваются те же самые видимые символы один в один), а

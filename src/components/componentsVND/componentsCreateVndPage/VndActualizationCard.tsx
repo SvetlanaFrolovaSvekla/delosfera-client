@@ -1,4 +1,4 @@
-import {ACTUALIZATION_MODE_OPTIONS, type ActualizationMode} from "@/utils/vndActualizationUtils.ts";
+import {ACTUALIZATION_MODE_OPTIONS, type ActualizationMode} from "@/utils/vndProcess/vndActualizationUtils.ts";
 import {DatePickerInput} from "@/components/componentsGeneral/datePickers/DatePickerInput.tsx";
 import {Tooltip} from "@/components/componentsGeneral/Tooltip.tsx";
 

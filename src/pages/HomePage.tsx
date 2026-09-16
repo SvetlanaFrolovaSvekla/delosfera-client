@@ -1,15 +1,17 @@
 import {useEffect, useMemo, useState} from "react";
 import {useTranslation} from "react-i18next";
 import {useAuth} from "@/context/AuthContext";
-import {useVndHomeSummary} from "@/hooks/analyticsHooks/useVndHomeSummary.ts";
-import {useVndTasks} from "@/hooks/tasksVndHooks/useVndTasks.ts";
+
 import {taskInboxService, type InboxTask} from "@/service/workflowService/taskInboxService.ts";
 import {useActualizationSummary} from "@/hooks/vndHooks/useActualizationSummary.ts";
 import {useTimeGreeting} from "@/hooks/generalHooks/useTimeGreeting.ts";
 import {useFormattedDate} from "@/hooks/generalHooks/useFormattedDate.ts";
-import {getFirstLastName} from "@/utils/userNaming.ts";
-import {transliterate} from "@/utils/transliterate.ts";
+import {useVndHomeSummary} from "@/hooks/analyticsHooks/useVndHomeSummary.ts";
+import {useVndTasks} from "@/hooks/tasksVndHooks/useVndTasks.ts";
+import {getFirstLastName} from "@/utils/namingUsers/userNaming.ts";
+import {transliterate} from "@/utils/translations/transliterate.ts";
 import {HOME_TASKS_LIMIT} from "@/constants/validation/HomeTasksLimit.ts";
+
 import {Loader} from "@/components/componentsGeneral/Loader.tsx";
 import {CreateDocumentModal} from "@/components/componentsModal/CreateDocumentModal.tsx";
 import {HomePageHeader} from "@/components/componentsHome/HomePageHeader.tsx";
@@ -35,31 +37,25 @@ export function HomePage() {
         return isLatin ? transliterate(position) : position;
     }, [user?.position?.name, isLatin]);
 
-    // Реальные задачи по всем скоупам (как на странице "Мои задачи"), объединённые в одну сводку.
-    // "coordination" уже включает финальную выдержку (см. TasksService.GetCoordinationTasksAsync) —
-    // отдельного скоупа для неё больше нет. Раньше здесь не хватало myVndApproval (свои ВНД
-    // на согласовании) — добавлен. "rejected" (отклонённые редакции, ждущие правок инициатора) —
-    // добавлен туда же.
+    // Реальные задачи по всем скоупам
     const coordination = useVndTasks("coordination");
     const myVndApproval = useVndTasks("myVndApproval");
     const actualization = useVndTasks("actualization");
     const consolidation = useVndTasks("consolidation");
     const rejected = useVndTasks("rejected");
     // Заявки на доступ к актуализации, ждущие решения главного редактора, и уже одобренные
-    // заявки, по которым заявитель ещё не начал цикл — раньше по обеим уходило только
-    // уведомление, на главной странице задача не появлялась вовсе (см.
-    // TasksService.GetActualizationRequestTasksAsync/GetActualizationApprovedTasksAsync).
+    // заявки, по которым заявитель ещё не начал цикл
     const actualizationRequest = useVndTasks("actualizationRequest");
     const actualizationApproved = useVndTasks("actualizationApproved");
     const {summary: actualizationSummary, isLoading: actualizationLoading} = useActualizationSummary();
     const {summary: homeSummary} = useVndHomeSummary();
 
-    // Задачи по служебным запискам живут в сводном реестре (а не в контуре ВНД),
-    // поэтому тянутся отдельно — иначе на главной их не видно (#12).
+    // Задачи по служебным запискам живут в сводном реестре
     const [szTasks, setSzTasks] = useState<InboxTask[]>([]);
     const [szTasksLoading, setSzTasksLoading] = useState(true);
     useEffect(() => {
         let cancelled = false;
+        // eslint-disable-next-line react-hooks/set-state-in-effect
         setSzTasksLoading(true);
         taskInboxService.get("Sz")
             .then((inbox) => {
@@ -76,12 +72,12 @@ export function HomePage() {
         };
     }, []);
 
-    // Задачи по закупкам — тоже из сводного реестра, вне контура ВНД (нужны для таба
-    // "Закупки" в виджете "Мои задачи").
+    // Задачи по закупкам
     const [prcTasks, setPrcTasks] = useState<InboxTask[]>([]);
     const [prcTasksLoading, setPrcTasksLoading] = useState(true);
     useEffect(() => {
         let cancelled = false;
+        // eslint-disable-next-line react-hooks/set-state-in-effect
         setPrcTasksLoading(true);
         taskInboxService.get("Procurement")
             .then((inbox) => {
@@ -98,9 +94,7 @@ export function HomePage() {
         };
     }, []);
 
-    // "Последние задачи" = отсортированные по дате появления (createdAt), самые новые сверху —
-    // раньше список просто склеивался по скоупам и обрезался по лимиту, из-за чего порядок
-    // не отражал реальную свежесть задач.
+    // "Последние задачи"
     const homeTasks = useMemo(() => {
         const allTasks = [
             ...coordination.tasks,
@@ -119,10 +113,7 @@ export function HomePage() {
         actualizationRequest.tasks, actualizationApproved.tasks,
     ]);
 
-    // Настоящее (неусечённое) число задач по контуру ВНД — в отличие от homeTasks выше,
-    // которое обрезано общим лимитом HOME_TASKS_LIMIT по всем скоупам сразу. Нужно отдельной
-    // переменной для бейджа с числом задач на вкладке "ВНД" в "Мои задачи" (см. counts ниже) —
-    // tasks.length там после обрезки уже не отражает реальное количество.
+    // Настоящее число задач по контуру ВНД
     const vndTasksCount = coordination.tasks.length + myVndApproval.tasks.length
         + actualization.tasks.length + consolidation.tasks.length + rejected.tasks.length
         + actualizationRequest.tasks.length + actualizationApproved.tasks.length;
@@ -161,11 +152,7 @@ export function HomePage() {
             {/* Сетка с карточками с информацией об активности деятельности */}
             <HomeKpiSection summary={homeSummary} totalTasksCount={tasksTotalCount}/>
 
-            {/* Верхняя пара — "Мои задачи" и "План актуализации", высоты независимые.
-                items-start - без него грид растягивает обе ячейки по умолчанию (align-items:
-                stretch) до высоты более высокой из них: "План актуализации" (компактная сетка
-                из 4 показателей) раздувался вровень с "Мои задачи" и снизу оставалось пустое
-                белое место. Теперь у каждой панели своя собственная высота по содержимому. */}
+            {/* Верхняя пара - "Мои задачи" и "План актуализации" */}
             <div className="grid grid-cols-1 items-start gap-[18px] xl:grid-cols-[1.65fr_1fr]">
                 <MyTasksCard
                     tasks={homeTasks}
@@ -177,11 +164,7 @@ export function HomePage() {
                 <ActualizationPlanCard summary={actualizationSummary} isLoading={actualizationLoading}/>
             </div>
 
-            {/* Нижняя пара — "Последние уведомления" и "Последняя активность". Обе карточки —
-                одной и той же фиксированной высоты (HOME_BOTTOM_ROW_HEIGHT, см. constants/home.ts),
-                а не растянуты по содержимому: при лимите в 15 строк это было бы слишком высоко.
-                Список внутри каждой скроллится сам, если 15 строк не помещаются (см.
-                RecentNotificationsCard.tsx и RecentActivityCard.tsx). */}
+            {/* Нижняя пара — "Последние уведомления" и "Последняя активность" */}
             <div className="mt-[18px] grid grid-cols-1 items-start xl:grid-cols-[1.65fr_1fr] gap-[18px]">
                 <RecentNotificationsCard limit={15}/>
                 <RecentActivityCard limit={15}/>

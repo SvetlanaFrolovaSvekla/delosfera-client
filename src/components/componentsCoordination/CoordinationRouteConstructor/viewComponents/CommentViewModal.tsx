@@ -10,7 +10,7 @@ import {
     AttachmentRow
 } from "@/components/componentsCoordination/CoordinationRouteConstructor/functionalComponents/AttachmentRow.tsx";
 import {createPortal} from "react-dom";
-import {getInitials} from "@/utils/getInitials.ts";
+import {getInitials} from "@/utils/namingUsers/getInitials.ts";
 import {FormattedResolutionComment, type FormattedCommentQuoteRef} from "./FormattedResolutionComment.tsx";
 
 export function CommentViewModal({

@@ -4,6 +4,8 @@ import {createPortal} from "react-dom";
 import {useNavigate} from "react-router-dom";
 import {FilePlus2, X} from "lucide-react";
 import {useModalShake} from "@/hooks//useModalShake.ts";
+import {Tooltip} from "@/components/componentsGeneral/Tooltip.tsx";
+import {CANNOT_CREATE_VND_MESSAGE, useCanCreateVnd} from "@/hooks/vndHooks/useCanCreateVnd.ts";
 
 type DocumentType = "vnd" | "memo" | "procurement";
 
@@ -35,11 +37,15 @@ export function CreateDocumentModal({onClose}: CreateDocumentModalProps) {
     const navigate = useNavigate();
     const {panelRef, handleBackdropClick} = useModalShake();
     const [selected, setSelected] = useState<DocumentType | null>(null);
+    const canCreateVnd = useCanCreateVnd();
 
-    const canConfirm = selected !== null;
+    // Нет прав создавать ВНД - блокируем "Далее" именно на выборе ВНД, а не сам клик по
+    // радио-кнопке, чтобы пользователь мог выбрать другой вид документа и продолжить
+    const blockedTooltip = selected === "vnd" && !canCreateVnd ? CANNOT_CREATE_VND_MESSAGE : "";
+    const canConfirm = selected !== null && !blockedTooltip;
 
     const handleConfirm = () => {
-        if (!selected) return;
+        if (!selected || blockedTooltip) return;
         navigate(DOCUMENT_ROUTES[selected]);
 
     };
@@ -94,13 +100,15 @@ export function CreateDocumentModal({onClose}: CreateDocumentModalProps) {
                     >
                         Отмена
                     </button>
-                    <button
-                        onClick={handleConfirm}
-                        disabled={!canConfirm}
-                        className="cursor-pointer inline-flex h-[38px] items-center gap-2 rounded-[10px] bg-[var(--app-accent,_#2f68f5)] px-4 text-[13px] font-semibold text-white hover:brightness-[1.06] disabled:cursor-not-allowed disabled:opacity-50"
-                    >
-                        Далее
-                    </button>
+                    <Tooltip content={blockedTooltip} disabled={!blockedTooltip} side="top">
+                        <button
+                            onClick={handleConfirm}
+                            disabled={!canConfirm}
+                            className="cursor-pointer inline-flex h-[38px] items-center gap-2 rounded-[10px] bg-[var(--app-accent,_#2f68f5)] px-4 text-[13px] font-semibold text-white hover:brightness-[1.06] disabled:cursor-not-allowed disabled:opacity-50"
+                        >
+                            Далее
+                        </button>
+                    </Tooltip>
                 </div>
             </div>
         </div>,

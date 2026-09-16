@@ -16,7 +16,7 @@ import {useDictionaries} from "@/context/DictionariesContext.tsx";
 import {vndService} from "@/service/vndService/vndService.ts";
 import type {VndActualizationSummaryResponse, VndSearchRequest} from "@/service/vndService/vndServiceType.ts";
 import {ACTUALIZATION_COLUMNS} from "@/constants/actualizationColumns.ts";
-import {ACTUALIZATION_PLANNING_STATUSES, toDateRangeFilter} from "@/utils/actualizationSearchRequest.ts";
+import {ACTUALIZATION_PLANNING_STATUSES, toDateRangeFilter} from "@/utils/vndProcess/actualizationSearchRequest.ts";
 import {toast} from "@/service/toastService.ts";
 
 import {

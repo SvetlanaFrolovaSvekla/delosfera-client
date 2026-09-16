@@ -1,7 +1,10 @@
+import {useState} from "react";
 import {useNavigate} from "react-router-dom";
-import {ArrowRight, BookOpen, Info, TriangleAlert} from "lucide-react";
-import type {HelpBlock} from "@/service/helpService/helpService.ts";
+import {ArrowRight, BookOpen, Download, Eye, FileText, Info, Loader2, TriangleAlert} from "lucide-react";
+import {helpService, type HelpBlock} from "@/service/helpService/helpService.ts";
+import {formatFileSize} from "@/service/documentService/attachmentService.ts";
 import {HelpScreenshot} from "@/components/help/HelpScreenshot.tsx";
+import {HelpAttachmentPreviewModal} from "@/components/help/HelpAttachmentPreviewModal.tsx";
 
 /**
  * Отрисовка тела статьи.
@@ -104,6 +107,16 @@ export const HelpArticleView = ({body}: Props) => {
                             </button>
                         );
 
+                    case "file":
+                        return (
+                            <HelpFileAttachment
+                                key={i}
+                                fileId={block.fileId}
+                                fileName={block.fileName}
+                                size={block.size}
+                            />
+                        );
+
                     default:
                         // Блок неизвестного вида мог прийти из более новой версии:
                         // молча пропускаем, чтобы не рушить всю статью.
@@ -113,3 +126,67 @@ export const HelpArticleView = ({body}: Props) => {
         </div>
     );
 };
+
+/**
+ * Карточка приложенного файла (блок "file"): имя, размер и две кнопки — «Просмотр»
+ * открывает файл в модалке (рендер через docx-preview), «Скачать» сохраняет его в
+ * браузере. Обе читают файл с /help/files (см. HelpController.GetFile) — доступ
+ * зависит от публикации статьи, а не от общих правил доступа к файлам ВНД.
+ */
+function HelpFileAttachment({fileId, fileName, size}: {fileId: number; fileName: string; size: number}) {
+    const [просмотр, setПросмотр] = useState(false);
+    const [скачивается, setСкачивается] = useState(false);
+    const [ошибка, setОшибка] = useState<string | null>(null);
+
+    const скачать = async () => {
+        setСкачивается(true);
+        setОшибка(null);
+        try {
+            await helpService.downloadFile(fileId, fileName);
+        } catch {
+            setОшибка("Не удалось скачать файл");
+        } finally {
+            setСкачивается(false);
+        }
+    };
+
+    return (
+        <div className="flex max-w-[70ch] items-center gap-3 rounded-[12px] border border-[#e5e9f0] bg-white px-4 py-3">
+            <span className="grid h-10 w-10 flex-none place-items-center rounded-[10px] bg-[#ececfc] text-[#4e57d6]">
+                <FileText size={18} strokeWidth={1.8}/>
+            </span>
+
+            <div className="min-w-0 flex-1">
+                <div className="truncate text-[13.5px] font-semibold text-[#1c2740]">{fileName}</div>
+                <div className="mt-0.5 text-[11.5px] text-[#8b97ab]">
+                    {formatFileSize(size)}{ошибка && <span className="ml-2 text-[#c0392b]">{ошибка}</span>}
+                </div>
+            </div>
+
+            <div className="flex flex-none items-center gap-2">
+                <button onClick={() => setПросмотр(true)}
+                        className="flex items-center gap-1.5 rounded-[9px] border border-[#e5e9f0] bg-white px-3 py-2 text-[12.5px] font-semibold text-[#55617a] hover:border-[#cbddff]">
+                    <Eye className="h-4 w-4" strokeWidth={2}/>
+                    Просмотр
+                </button>
+                <button onClick={() => void скачать()} disabled={скачивается}
+                        className="flex items-center gap-1.5 rounded-[9px] border border-[#cbddff] bg-white px-3 py-2 text-[12.5px] font-semibold text-[#2f68f5] hover:bg-[#f5f8ff] disabled:opacity-50">
+                    {скачивается ? (
+                        <Loader2 className="h-4 w-4 animate-spin"/>
+                    ) : (
+                        <Download className="h-4 w-4" strokeWidth={2}/>
+                    )}
+                    Скачать
+                </button>
+            </div>
+
+            {просмотр && (
+                <HelpAttachmentPreviewModal
+                    fileId={fileId}
+                    fileName={fileName}
+                    onClose={() => setПросмотр(false)}
+                />
+            )}
+        </div>
+    );
+}

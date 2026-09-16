@@ -1,6 +1,7 @@
-import {useEffect, useState} from "react";
+import {useCallback, useEffect, useState} from "react";
 import {Link} from "react-router-dom";
 import {szService, type SzTrackerColumn} from "@/service/szService/szService.ts";
+import {EmptyState} from "@/components/componentsGeneral/EmptyState.tsx";
 
 /**
  * Доска записок по стадиям (РС-4). Реестр отвечает «какие записки есть», доска — «на
@@ -17,12 +18,17 @@ function ageLabel(days: number): string {
 export function SzTrackerPage() {
     const [columns, setColumns] = useState<SzTrackerColumn[] | null>(null);
     const [error, setError] = useState<string | null>(null);
+    const [reloadKey, setReloadKey] = useState(0);
+
+    const refetch = useCallback(() => setReloadKey((k) => k + 1), []);
 
     useEffect(() => {
+        // eslint-disable-next-line react-hooks/set-state-in-effect
+        setError(null);
         szService.tracker()
             .then(setColumns)
             .catch(() => setError("Не удалось загрузить доску записок"));
-    }, []);
+    }, [reloadKey]);
 
     const total = columns?.reduce((s, c) => s + c.count, 0) ?? 0;
     const stale = columns?.reduce((s, c) => s + c.items.filter(i => i.isStale).length, 0) ?? 0;
@@ -43,7 +49,15 @@ export function SzTrackerPage() {
                 </Link>
             </div>
 
-            {error && <div className="text-[13px] text-[#c0392b]">{error}</div>}
+            {error && (
+                <EmptyState
+                    variant="error"
+                    title="Не удалось загрузить доску записок"
+                    description={error}
+                    actionLabel="Повторить"
+                    onAction={refetch}
+                />
+            )}
             {!columns && !error && <div className="text-[13px] text-[#8b97ab]">Загрузка…</div>}
 
             {columns && (

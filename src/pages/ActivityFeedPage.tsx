@@ -7,7 +7,7 @@ import {useNavigate} from "react-router-dom";
 import type {ActivityIcon} from "@/service/activityLogService/activityLogServiceType.ts";
 import {useRecentActivity} from "@/hooks/activityLogHooks/useRecentActivity.ts";
 import {timeAgo} from "@/utils/dateUtils.ts";
-import {Icon} from "@/components/icons/Icon";
+import {Icon} from "@/assets/icons/Icon";
 import {Loader} from "@/components/componentsGeneral/Loader.tsx";
 import {Lock} from "lucide-react";
 

@@ -10,7 +10,7 @@ import {HelpTooltip} from "@/components/componentsGeneral/knowledgeBaseComponent
 import {Tooltip} from "@/components/componentsGeneral/Tooltip.tsx";
 import {Download, FileUp, Loader2, Paperclip, Trash2, X, Check} from "lucide-react";
 import {CharCounter} from "@/components/componentsGeneral/CharCounter.tsx";
-import {downloadWithToast} from "@/utils/downloadFile.ts";
+import {downloadWithToast} from "@/utils/downloadFiles/downloadFile.ts";
 import {
     VND_REDACTION_DESCRIPTION_MAX_LENGTH,
     VND_REDACTION_MAX_ATTACHMENTS,

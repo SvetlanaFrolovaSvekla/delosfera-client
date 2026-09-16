@@ -17,7 +17,7 @@ import {
     actualizationNotificationsService,
     type ActualizationNotificationResponsible,
 } from "@/service/actualizationNotificationsService/actualizationNotificationsService.ts";
-import {HighlightText} from "@/utils/HighlightText.tsx";
+import {HighlightText} from "@/utils/highlightText.tsx";
 
 export interface AssignResponsiblesSelectedUser {
     id: number;

@@ -89,7 +89,7 @@ export function ActualizationTable({
                                                 <span
                                                     className="w-7 h-7 rounded-lg grid place-items-center"
                                                     style={{background: meta.bg, color: meta.color}}
-                                                    title={meta.label}
+                                                    title={t(meta.label)}
                                                 >
                                                     <StatusIcon className="w-[15px] h-[15px]" strokeWidth={2}/>
                                                 </span>
@@ -102,7 +102,7 @@ export function ActualizationTable({
                                                     className="inline-flex items-center text-[11px] font-semibold py-0.5 px-[9px] rounded-full whitespace-nowrap"
                                                     style={{color: meta.color, background: meta.bg}}
                                                 >
-                                                    {meta.label}
+                                                    {t(meta.label)}
                                                 </span>
                                             </div>
                                         );

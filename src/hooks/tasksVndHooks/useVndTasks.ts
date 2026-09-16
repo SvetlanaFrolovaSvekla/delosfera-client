@@ -1,7 +1,9 @@
 import { useEffect, useState, useCallback } from "react";
+import { useTranslation } from "react-i18next";
 import type {TaskScope, VndTaskResponse} from "@/service/tasksVndService/tasksServiceTypes.ts";
 import {tasksService} from "@/service/tasksVndService/tasksService.ts";
 import type {TasksScope} from "@/constants/tasksConst.ts";
+import {TASK_SCOPE_META} from "@/constants/vndStatus.ts";
 
 // Порядок слияния для вкладки "Все": сначала то, что реально ждёт решения
 // (согласование, мои ВНД на согласовании, отклонено, заявки на актуализацию — свои и
@@ -36,6 +38,7 @@ function sortMerged(tasks: VndTaskResponse[]): VndTaskResponse[] {
 // странице "Мои задачи", когда выбран переключатель "Выполненные": активный список в этот
 // момент не показывается, и незачем гонять его запрос вхолостую при каждом переключении.
 export function useVndTasks(scope: TasksScope, enabled: boolean = true) {
+    const { t } = useTranslation();
     const [tasks, setTasks] = useState<VndTaskResponse[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState<unknown>(null);
@@ -64,9 +67,10 @@ export function useVndTasks(scope: TasksScope, enabled: boolean = true) {
                     .filter(({r}) => r.status === "rejected");
 
                 if (failedScopes.length > 0) {
-                    setError(new Error(
-                        `Не удалось загрузить часть задач (${failedScopes.map((f) => f.scope).join(", ")})`
-                    ));
+                    const scopeLabels = failedScopes
+                        .map((f) => t(TASK_SCOPE_META[f.scope as keyof typeof TASK_SCOPE_META]?.label ?? f.scope))
+                        .join(", ");
+                    setError(new Error(t("tasks.vnd.loadErrorPartial", {scopes: scopeLabels})));
                 }
             } else {
                 const data = await tasksService.getByScope(scope);
@@ -77,7 +81,7 @@ export function useVndTasks(scope: TasksScope, enabled: boolean = true) {
         } finally {
             setIsLoading(false);
         }
-    }, [scope, enabled]);
+    }, [scope, enabled, t]);
 
     useEffect(() => {
         void refetch();

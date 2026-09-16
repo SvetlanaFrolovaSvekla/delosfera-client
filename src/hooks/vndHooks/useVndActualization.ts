@@ -9,7 +9,7 @@ import {
     describeNextCycleInterval,
     PERIOD_MONTHS,
     PERIOD_TO_BACKEND,
-} from "@/utils/vndActualizationUtils.ts";
+} from "@/utils/vndProcess/vndActualizationUtils.ts";
 
 export function useVndActualization() {
     const today = useMemo(() => new Date(), []);

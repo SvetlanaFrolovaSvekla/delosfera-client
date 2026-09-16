@@ -1,4 +1,5 @@
 import {useEffect, useState} from "react";
+import {useTranslation} from "react-i18next";
 import {axiosInstance} from "@/service/axiosInstance.ts";
 import {UserPicker, type PickableUser} from "@/components/componentsGeneral/UserPicker.tsx";
 import {taskInboxService, type InboxTask} from "@/service/workflowService/taskInboxService.ts";
@@ -14,6 +15,7 @@ interface Props {
 }
 
 export function DelegateTaskModal({task, onClose, onDone}: Props) {
+    const {t} = useTranslation();
     const [users, setUsers] = useState<PickableUser[]>([]);
     const [toUserId, setToUserId] = useState<number | null>(null);
     const [comment, setComment] = useState("");
@@ -25,15 +27,15 @@ export function DelegateTaskModal({task, onClose, onDone}: Props) {
         axiosInstance
             .get<PickableUser[]>("users/lookup")
             .then(({data}) => alive && setUsers(data))
-            .catch(() => alive && setError("Не удалось загрузить список сотрудников"));
+            .catch(() => alive && setError(t("tasks.delegate.loadUsersError")));
         return () => {
             alive = false;
         };
-    }, []);
+    }, [t]);
 
     async function submit() {
         if (toUserId === null) {
-            setError("Выберите, кому передать задачу");
+            setError(t("tasks.delegate.chooseRecipientError"));
             return;
         }
         setBusy(true);
@@ -43,7 +45,7 @@ export function DelegateTaskModal({task, onClose, onDone}: Props) {
             onDone();
         } catch (e: unknown) {
             const msg = (e as {response?: {data?: {message?: string}}})?.response?.data?.message;
-            setError(msg ?? "Не удалось делегировать задачу");
+            setError(msg ?? t("tasks.delegate.genericError"));
             setBusy(false);
         }
     }
@@ -51,75 +53,62 @@ export function DelegateTaskModal({task, onClose, onDone}: Props) {
     return (
         <div
             onClick={onClose}
-            style={{
-                position: "fixed", inset: 0, background: "rgba(15,27,45,0.4)", zIndex: 60,
-                display: "flex", alignItems: "center", justifyContent: "center", padding: 16,
-            }}
+            className="fixed inset-0 z-[60] flex items-center justify-center bg-[rgba(15,27,45,0.4)] p-4"
         >
             <div
-                onClick={e => e.stopPropagation()}
-                style={{
-                    background: "#fff", borderRadius: 14, width: "min(460px, 100%)",
-                    padding: 20, display: "flex", flexDirection: "column", gap: 14,
-                    boxShadow: "0 20px 60px -20px rgba(15,27,45,0.5)",
-                }}
+                onClick={(e) => e.stopPropagation()}
+                className="flex w-[min(460px,100%)] flex-col gap-3.5 rounded-[14px] bg-white p-5 shadow-[0_20px_60px_-20px_rgba(15,27,45,0.5)]"
             >
                 <div>
-                    <h2 style={{margin: 0, fontSize: 16, fontWeight: 700, color: "#0f1b2d"}}>Делегировать задачу</h2>
-                    <div style={{marginTop: 4, fontSize: 12.5, color: "#8b97ab"}}>
-                        {task.documentTypeTitle} · {task.regNumber ?? "без номера"} · {task.taskType}
+                    <h2 className="m-0 text-[16px] font-bold text-[#0f1b2d]">{t("tasks.delegate.title")}</h2>
+                    <div className="mt-1 text-[12.5px] text-[#8b97ab]">
+                        {task.documentTypeTitle} · {task.regNumber ?? t("tasks.common.noRegNumber")} · {task.taskType}
                     </div>
                 </div>
 
                 <div>
-                    <label style={{display: "block", fontSize: 12.5, fontWeight: 600, color: "#55617a", marginBottom: 6}}>
-                        Кому передать
+                    <label className="mb-1.5 block text-[12.5px] font-semibold text-[#55617a]">
+                        {t("tasks.delegate.toLabel")}
                     </label>
                     <UserPicker
                         users={users}
                         value={toUserId}
-                        onChange={u => setToUserId(u?.id ?? null)}
-                        placeholder="Выберите сотрудника"
+                        onChange={(u) => setToUserId(u?.id ?? null)}
+                        placeholder={t("tasks.delegate.toPlaceholder")}
                     />
                 </div>
 
                 <div>
-                    <label style={{display: "block", fontSize: 12.5, fontWeight: 600, color: "#55617a", marginBottom: 6}}>
-                        Причина (необязательно)
+                    <label className="mb-1.5 block text-[12.5px] font-semibold text-[#55617a]">
+                        {t("tasks.delegate.reasonLabel")}
                     </label>
                     <textarea
                         value={comment}
-                        onChange={e => setComment(e.target.value)}
+                        onChange={(e) => setComment(e.target.value)}
                         rows={3}
-                        style={{
-                            width: "100%", resize: "vertical", borderRadius: 9, border: "1px solid #e5e9f0",
-                            padding: "8px 10px", fontSize: 13, font: "inherit", boxSizing: "border-box",
-                        }}
-                        placeholder="Например: в отпуске до пятницы"
+                        className="box-border w-full resize-y rounded-[9px] border border-[#e5e9f0] px-2.5 py-2 font-[inherit] text-[13px]"
+                        placeholder={t("tasks.delegate.reasonPlaceholder")}
                     />
                 </div>
 
-                {error && <div style={{fontSize: 12.5, color: "#c0392b"}}>{error}</div>}
+                {error && <div className="text-[12.5px] text-[#c0392b]">{error}</div>}
 
-                <div style={{display: "flex", justifyContent: "flex-end", gap: 8}}>
+                <div className="flex justify-end gap-2">
                     <button
-                        type="button" onClick={onClose} disabled={busy}
-                        style={{
-                            padding: "8px 14px", borderRadius: 9, border: "1px solid #e5e9f0",
-                            background: "#fff", color: "#55617a", fontSize: 13, fontWeight: 600, cursor: "pointer",
-                        }}
+                        type="button"
+                        onClick={onClose}
+                        disabled={busy}
+                        className="cursor-pointer rounded-[9px] border border-[#e5e9f0] bg-white px-3.5 py-2 text-[13px] font-semibold text-[#55617a] hover:bg-[#f6f8fb] disabled:cursor-not-allowed disabled:opacity-60"
                     >
-                        Отмена
+                        {t("general.cancel")}
                     </button>
                     <button
-                        type="button" onClick={submit} disabled={busy}
-                        style={{
-                            padding: "8px 14px", borderRadius: 9, border: "none",
-                            background: "#2f68f5", color: "#fff", fontSize: 13, fontWeight: 600,
-                            cursor: busy ? "default" : "pointer", opacity: busy ? 0.6 : 1,
-                        }}
+                        type="button"
+                        onClick={submit}
+                        disabled={busy}
+                        className="cursor-pointer rounded-[9px] border-none bg-[#2f68f5] px-3.5 py-2 text-[13px] font-semibold text-white disabled:cursor-default disabled:opacity-60"
                     >
-                        {busy ? "Передаю…" : "Делегировать"}
+                        {busy ? t("tasks.delegate.submitting") : t("tasks.delegate.submit")}
                     </button>
                 </div>
             </div>

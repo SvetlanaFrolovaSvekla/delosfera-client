@@ -2,7 +2,7 @@
 import {Fragment} from "react";
 import {useTranslation} from "react-i18next";
 import type {VndRedactionResponse} from "@/service/vndService/vndServiceType.ts";
-import {LANGUAGE_TABS, type RedactionLanguage} from "@/utils/redactionLanguagePanelUtils.ts";
+import {LANGUAGE_TABS, type RedactionLanguage} from "@/utils/vndProcess/redactionLanguagePanelUtils.ts";
 import {Tooltip} from "@/components/componentsGeneral/Tooltip";
 import {Check, Lock} from "lucide-react";
 

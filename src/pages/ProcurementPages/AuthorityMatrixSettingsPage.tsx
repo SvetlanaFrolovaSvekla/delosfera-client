@@ -87,7 +87,7 @@ export function AuthorityMatrixSettingsPage() {
     }));
 
     return (
-        <div className="p-[22px_26px] max-w-[1100px]">
+        <div className="p-[22px_26px] max-w-[1700px]">
             <h1 className="m-0 mb-1 text-[18px] font-semibold text-[#0f1b2d]">Матрица полномочий</h1>
             <p className="m-0 mb-5 text-[13px] text-[#8b97ab]">
                 Пороги сумм, минимум коммерческих предложений и состав согласования по Положению о закупках.

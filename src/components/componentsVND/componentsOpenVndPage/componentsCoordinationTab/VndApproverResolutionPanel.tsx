@@ -11,7 +11,7 @@ import {
 } from "@/constants/coordinationParams.ts";
 import {CharCounter} from "@/components/componentsGeneral/CharCounter.tsx";
 import type {ApprovalQuoteItem} from "@/service/coordinationService/coordinationServiceTypes.ts";
-import type {RedactionViewTarget} from "@/utils/redactionLanguagePanelUtils.ts";
+import type {RedactionViewTarget} from "@/utils/vndProcess/redactionLanguagePanelUtils.ts";
 
 export type ResolutionChoice = "approve" | "approveWithComment" | "reject";
 export type ResolutionPhase = "primary" | "repeated" | "finalHold";

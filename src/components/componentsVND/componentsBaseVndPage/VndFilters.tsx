@@ -1,5 +1,6 @@
 // Расширенный поиск для реестра ВНД
 import type {ReactNode} from "react";
+import {useTranslation} from "react-i18next";
 import {useDictionaries} from "@/context/DictionariesContext.tsx";
 import {useVndAdvancedFiltersDraft, type AdvancedDraft} from "@/hooks/vndHooks/useVndAdvancedFiltersDraft.ts";
 import {useVndHasActiveFilters} from "@/hooks/vndHooks/useVndHasActiveFilters.ts";
@@ -161,6 +162,8 @@ export function VndFilters(props: VndFiltersProps) {
         userGroupFilters, onUserGroupFiltersChange,
         secrecyLevelFilters, onSecrecyLevelFiltersChange,
     } = props;
+
+    const {t} = useTranslation();
 
     // Справочники берём из общего контекста — грузятся один раз на всё приложение
     const dictionaries = useDictionaries();
@@ -364,13 +367,13 @@ export function VndFilters(props: VndFiltersProps) {
                 <div className="text-[12.5px] text-[#8b97ab]">
                     {hasActiveFilters ? (
                         <>
-                            {SCOPE_COUNT_LABELS[scope].found}:{" "}
+                            {t(SCOPE_COUNT_LABELS[scope].found)}:{" "}
                             <b className="text-[#3a4560] font-mono">{resultCount}</b>{" "}из{" "}
                             {totalCount}
                         </>
                     ) : (
                         <>
-                            {SCOPE_COUNT_LABELS[scope].total}:{" "}
+                            {t(SCOPE_COUNT_LABELS[scope].total)}:{" "}
                             <b className="text-[#3a4560] font-mono">{totalCount}</b>
                         </>
                     )}

@@ -1,33 +1,29 @@
-import {FileX, Layers, ListChecks, RefreshCw, Send, UserCheck} from "lucide-react";
 import type {LucideIcon} from "lucide-react";
 import type {TaskScope} from "@/service/tasksVndService/tasksServiceTypes.ts";
+import {FileX, Layers, ListChecks, RefreshCw, Send, UserCheck} from "lucide-react";
 
-// "all" — вкладка "Все" на странице задач: не отдельный бэкенд-скоуп, а объединение
-// всех пяти на фронте (см. useVndTasks).
 export type TasksScope = TaskScope | "all";
 
 export const emptyTextByScope: Record<TasksScope, string> = {
-    all: "Нет активных задач",
-    coordination: "Нет задач на согласование",
-    actualization: "Нет документов, ожидающих актуализации",
-    consolidation: "Нет документов на консолидации",
-    myVndApproval: "Нет ВНД, ожидающих согласования",
-    rejected: "Нет отклонённых редакций",
-    actualizationRequest: "Нет заявок на доступ к актуализации",
-    actualizationApproved: "Нет одобренных заявок, ожидающих начала актуализации",
+    all: "tasks.vnd.empty.all.title",
+    coordination: "tasks.vnd.empty.coordination.title",
+    actualization: "tasks.vnd.empty.actualization.title",
+    consolidation: "tasks.vnd.empty.consolidation.title",
+    myVndApproval: "tasks.vnd.empty.myVndApproval.title",
+    rejected: "tasks.vnd.empty.rejected.title",
+    actualizationRequest: "tasks.vnd.empty.actualizationRequest.title",
+    actualizationApproved: "tasks.vnd.empty.actualizationApproved.title",
 };
 
-// Пояснение под заголовком заглушки — что за задачи попадают в раздел и когда он перестанет
-// быть пустым (см. EmptyState.tsx на VndTaskList.tsx).
 export const emptyDescriptionByScope: Record<TasksScope, string> = {
-    all: "Здесь появятся задачи по всем разделам нормотворчества — согласование, актуализация, консолидация.",
-    coordination: "Здесь появляются редакции ВНД, которые ждут вашего решения как согласующего.",
-    actualization: "Здесь появляются документы, для которых наступил или приближается срок актуализации.",
-    consolidation: "Здесь появляются документы, для которых редакции на разных языках нужно свести в одну.",
-    myVndApproval: "Здесь отображаются ваши документы, отправленные на согласование и ещё не получившие решения.",
-    rejected: "Здесь появляются редакции, которые вернули на доработку — с момента отклонения до повторной отправки.",
-    actualizationRequest: "Здесь появляются заявки на доступ к актуализации, ожидающие вашего решения как главного редактора.",
-    actualizationApproved: "Здесь появляются ваши одобренные заявки на доступ к актуализации, по которым ещё не начат цикл.",
+    all: "tasks.vnd.empty.all.description",
+    coordination: "tasks.vnd.empty.coordination.description",
+    actualization: "tasks.vnd.empty.actualization.description",
+    consolidation: "tasks.vnd.empty.consolidation.description",
+    myVndApproval: "tasks.vnd.empty.myVndApproval.description",
+    rejected: "tasks.vnd.empty.rejected.description",
+    actualizationRequest: "tasks.vnd.empty.actualizationRequest.description",
+    actualizationApproved: "tasks.vnd.empty.actualizationApproved.description",
 };
 
 export const emptyIconByScope: Record<TasksScope, LucideIcon> = {

@@ -1,4 +1,5 @@
 import {useEffect, useState} from "react";
+import {useTranslation} from "react-i18next";
 import {Eye, FileStack, Loader2, Shield} from "lucide-react";
 import {EmptyState} from "@/components/componentsGeneral/EmptyState.tsx";
 import {activityLogService} from "@/service/activityLogService/activityLogService.ts";
@@ -6,38 +7,22 @@ import type {ActivityLogEntryResponse} from "@/service/activityLogService/activi
 import {coordinationService} from "@/service/coordinationService/coordinationService.ts";
 import type {
     ApprovalProcessResponse,
-    ApprovalProcessStatus,
     ApprovalStageDecisionResponse,
     ApprovalStageResponse,
 } from "@/service/coordinationService/coordinationServiceTypes.ts";
 import type {VndRedactionResponse, VndResponse} from "@/service/vndService/vndServiceType.ts";
-import {getRedactionDisplayStatus, REDACTION_STATUS_META} from "@/utils/redactionStatus.ts";
+import {getRedactionDisplayStatus, REDACTION_STATUS_META} from "@/utils/vndProcess/redactionStatus.ts";
 import {
     VndRedactionHistoryDetail
 } from "@/components/componentsVND/componentsOpenVndPage/componentsHistoryTab/VndRedactionHistoryDetail.tsx";
+import {
+    FormattedResolutionComment
+} from "@/components/componentsCoordination/CoordinationRouteConstructor/viewComponents/FormattedResolutionComment.tsx";
 
 interface VndHistoryTabProps {
     vnd: VndResponse;
     redactions: VndRedactionResponse[];
 }
-
-const PROCESS_STATUS_LABEL: Record<ApprovalProcessStatus, string> = {
-    primary: "Первичное согласование",
-    revision_needed: "На доработке",
-    repeated: "Повторное согласование",
-    final_hold: "Финальная выдержка",
-    approved: "Согласовано",
-    cancelled: "Отозвано",
-    rejected: "Отклонено",
-};
-
-const DECISION_LABEL: Record<ApprovalStageDecisionResponse, string> = {
-    pending: "в ожидании",
-    approved: "Согласовано",
-    approved_with_comment: "Согласовано с замечаниями",
-    rejected: "Отклонено",
-    auto_approved_timeout: "Согласовано автоматически (истёк срок)",
-};
 
 const ICON_DOT_COLOR: Record<string, string> = {
     check: "bg-emerald-500",
@@ -55,23 +40,24 @@ function formatDateTime(iso: string): string {
 /** Финальное решение согласующего по этапу — самая поздняя из пройденных фаз
  * (финальная выдержка > повторное согласование > первичное), без "в ожидании". */
 function stageFinalDecision(s: ApprovalStageResponse): {
-    label: string;
+    decisionKey: ApprovalStageDecisionResponse;
     decidedAt: string | null;
     comment: string | null;
 } {
     if (s.finalHoldDecision && s.finalHoldDecision !== "pending") {
-        return {label: DECISION_LABEL[s.finalHoldDecision], decidedAt: s.finalHoldDecidedAt, comment: s.finalHoldComment};
+        return {decisionKey: s.finalHoldDecision, decidedAt: s.finalHoldDecidedAt, comment: s.finalHoldComment};
     }
     if (s.repeatDecision && s.repeatDecision !== "pending") {
-        return {label: DECISION_LABEL[s.repeatDecision], decidedAt: s.repeatDecidedAt, comment: s.repeatComment};
+        return {decisionKey: s.repeatDecision, decidedAt: s.repeatDecidedAt, comment: s.repeatComment};
     }
     if (s.primaryDecision !== "pending") {
-        return {label: DECISION_LABEL[s.primaryDecision], decidedAt: s.primaryDecidedAt, comment: s.primaryComment};
+        return {decisionKey: s.primaryDecision, decidedAt: s.primaryDecidedAt, comment: s.primaryComment};
     }
-    return {label: DECISION_LABEL.pending, decidedAt: null, comment: null};
+    return {decisionKey: "pending", decidedAt: null, comment: null};
 }
 
 export function VndHistoryTab({vnd, redactions}: VndHistoryTabProps) {
+    const {t} = useTranslation();
     const [auditEntries, setAuditEntries] = useState<ActivityLogEntryResponse[] | null>(null);
     const [approvalHistory, setApprovalHistory] = useState<ApprovalProcessResponse[] | null>(null);
     const [loading, setLoading] = useState(true);
@@ -96,7 +82,7 @@ export function VndHistoryTab({vnd, redactions}: VndHistoryTabProps) {
                 setApprovalHistory(approvals);
             })
             .catch(() => {
-                if (!cancelled) setError("Не удалось загрузить историю ВНД");
+                if (!cancelled) setError(t("openVndPage.historyTab.loadError"));
             })
             .finally(() => {
                 if (!cancelled) setLoading(false);
@@ -105,7 +91,7 @@ export function VndHistoryTab({vnd, redactions}: VndHistoryTabProps) {
         return () => {
             cancelled = true;
         };
-    }, [vnd.id]);
+    }, [vnd.id, t]);
 
     // Открытая по кнопке "Смотреть подробно" редакция относится к конкретному ВНД — при
     // переключении на другой документ (без размонтирования таба) детальный лог нужно закрыть.
@@ -123,7 +109,7 @@ export function VndHistoryTab({vnd, redactions}: VndHistoryTabProps) {
         return (
             <div className="px-4 sm:px-6 flex items-center gap-2 text-sm text-[#8b97ab] py-10 justify-center">
                 <Loader2 size={16} className="animate-spin"/>
-                Загрузка истории…
+                {t("openVndPage.historyTab.loading")}
             </div>
         );
     }
@@ -164,12 +150,12 @@ export function VndHistoryTab({vnd, redactions}: VndHistoryTabProps) {
                 <div className="bg-white border border-[#e9edf3] rounded-2xl overflow-hidden">
                     <div className="px-5 pt-4 pb-3 border-b border-[#eef2f7] flex items-center gap-[9px]">
                         <Shield size={17} strokeWidth={1.8} className="text-[#8b97ab]"/>
-                        <h2 className="m-0 text-sm font-semibold">Журнал аудита</h2>
-                        <span className="ml-auto text-[11px] text-[#a3adbd]">История всех действий с данным ВНД</span>
+                        <h2 className="m-0 text-sm font-semibold">{t("openVndPage.historyTab.auditLogTitle")}</h2>
+                        <span className="ml-auto text-[11px] text-[#a3adbd]">{t("openVndPage.historyTab.auditLogSubtitle")}</span>
                     </div>
                     <div className="px-5 pt-1.5 pb-3.5">
                         {(auditEntries?.length ?? 0) === 0 ? (
-                            <div className="py-4 text-[12.5px] text-[#a3adbd]">Записей пока нет</div>
+                            <div className="py-4 text-[12.5px] text-[#a3adbd]">{t("openVndPage.historyTab.auditLogEmpty")}</div>
                         ) : (
                             auditEntries!.map((a) => (
                                 <div key={a.id}
@@ -193,15 +179,15 @@ export function VndHistoryTab({vnd, redactions}: VndHistoryTabProps) {
             {/* Правая колонка: редакции и юридическая значимость */}
             <div className="bg-white border border-[#e9edf3] rounded-2xl overflow-hidden">
                 <div className="px-5 pt-4 pb-3 border-b border-[#eef2f7]">
-                    <h2 className="m-0 text-sm font-semibold">Редакции и юридическая значимость</h2>
+                    <h2 className="m-0 text-sm font-semibold">{t("openVndPage.historyTab.redactionsPanelTitle")}</h2>
                 </div>
                 <div className="px-5 pt-1.5 pb-3.5">
                     {sortedRedactions.length === 0 ? (
                         <EmptyState
                             embedded
                             icon={FileStack}
-                            title="Редакций пока нет"
-                            description="Здесь появятся редакции документа, когда будет загружена первая версия ВНД."
+                            title={t("openVndPage.historyTab.redactionsEmptyTitle")}
+                            description={t("openVndPage.historyTab.redactionsEmptyDescription")}
                         />
                     ) : (
                         sortedRedactions.map((r) => {
@@ -226,22 +212,22 @@ export function VndHistoryTab({vnd, redactions}: VndHistoryTabProps) {
                                     </div>
                                     <div className="flex-1 min-w-0 border-l-2 border-[#eef2f7] pl-[13px]">
                                         <div className="text-[11.5px] text-[#8b97ab] mt-0.5">
-                                            Разработчик: {r.developerName}
+                                            {t("openVndPage.historyTab.developerLabel")}: {r.developerName}
                                         </div>
                                         <div className="text-[11.5px] text-[#8b97ab] mt-0.5">
-                                            Орган утверждения: {r.organName}
+                                            {t("openVndPage.historyTab.approvalBodyLabel")}: {r.organName}
                                         </div>
 
                                         {process ? (
                                             <>
                                                 <div className="text-[11.5px] text-[#8b97ab] mt-0.5">
-                                                    Инициатор согласования: {process.initiatorName}
+                                                    {t("openVndPage.historyTab.initiatorLabel")}: {process.initiatorName}
                                                     {process.initiatorPosition ? ` (${process.initiatorPosition})` : ""}
                                                     {" "}— {formatDateTime(process.primaryStartedAt)}
                                                 </div>
                                                 <div className="text-[11.5px] text-[#8b97ab] mt-0.5">
-                                                    Статус согласования: {PROCESS_STATUS_LABEL[process.status]}
-                                                    {process.completedAt ? ` (завершено ${formatDateTime(process.completedAt)})` : ""}
+                                                    {t("openVndPage.historyTab.statusLabel")}: {t(`openVndPage.historyTab.processStatuses.${process.status}`)}
+                                                    {process.completedAt ? t("openVndPage.historyTab.completedSuffix", {date: formatDateTime(process.completedAt)}) : ""}
                                                 </div>
                                                 {process.stages.length > 0 && (
                                                     <div className="mt-1.5 flex flex-col gap-1">
@@ -254,12 +240,17 @@ export function VndHistoryTab({vnd, redactions}: VndHistoryTabProps) {
                                                                         <span className="text-[#a3adbd]"> ({s.orgUnitName})</span>
                                                                     ) : null}
                                                                     {" — "}
-                                                                    <span>{decision.label}</span>
+                                                                    <span>{t(`openVndPage.historyTab.decisionLabels.${decision.decisionKey}`)}</span>
                                                                     {decision.decidedAt ? (
                                                                         <span className="text-[#a3adbd]">
                                                                             {" · "}{formatDateTime(decision.decidedAt)}
                                                                         </span>
                                                                     ) : null}
+                                                                    {decision.comment && (
+                                                                        <div className="mt-1 whitespace-pre-wrap break-words text-[11px] leading-[1.4] text-[#6b7488]">
+                                                                            <FormattedResolutionComment text={decision.comment}/>
+                                                                        </div>
+                                                                    )}
                                                                 </div>
                                                             );
                                                         })}
@@ -268,7 +259,7 @@ export function VndHistoryTab({vnd, redactions}: VndHistoryTabProps) {
                                             </>
                                         ) : (
                                             <div className="text-[11.5px] text-[#a3adbd] mt-0.5">
-                                                Согласование не запускалось
+                                                {t("openVndPage.historyTab.notStartedHint")}
                                             </div>
                                         )}
                                     </div>
@@ -278,7 +269,7 @@ export function VndHistoryTab({vnd, redactions}: VndHistoryTabProps) {
                                         className="flex-none self-start inline-flex items-center gap-1 rounded-[8px] border border-[#e5e9f0] bg-white px-2.5 py-1.5 text-[11px] font-semibold text-[#4e57d6] hover:bg-[#ececfc] whitespace-nowrap cursor-pointer"
                                     >
                                         <Eye size={13}/>
-                                        Смотреть подробно
+                                        {t("openVndPage.historyTab.viewDetailsButton")}
                                     </button>
                                 </div>
                             );

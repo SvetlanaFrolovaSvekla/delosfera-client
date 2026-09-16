@@ -4,7 +4,7 @@
 import {useEffect, useRef, useState} from "react";
 import {ListTree, Loader2, X} from "lucide-react";
 import {useDocxHeadings} from "@/hooks/vndHooks/useDocxHeadings.ts";
-import type {DocxHeadingItem} from "@/utils/docxHeadings.ts";
+import type {DocxHeadingItem} from "@/utils/docxWork/docxHeadings.ts";
 import {Tooltip} from "@/components/componentsGeneral/Tooltip.tsx";
 
 const LEVEL_PADDING: Record<DocxHeadingItem["level"], string> = {

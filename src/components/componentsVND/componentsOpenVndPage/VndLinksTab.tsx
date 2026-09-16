@@ -1,22 +1,14 @@
 import {useState} from "react";
+import {useTranslation} from "react-i18next";
 import {ChevronRight, FileText, Link2, Loader2, Plus, Sparkles, X} from "lucide-react";
 import type {VndAttachmentLinkItem, VndLinkItem, VndResponse} from "@/service/vndService/vndServiceType.ts";
 import {useVndLinks} from "@/hooks/vndHooks/useVndLinks.ts";
 import {VndLinkPicker} from "@/components/componentsVND/componentsOpenVndPage/componentsLinks/VndLinkPicker.tsx";
-import {downloadWithToast} from "@/utils/downloadFile.ts";
+import {downloadWithToast} from "@/utils/downloadFiles/downloadFile.ts";
 
 interface VndLinksTabProps {
     vndId: number;
 }
-
-const STATUS_LABELS: Record<string, string> = {
-    active: "Действующий",
-    onact: "На актуализации",
-    review: "На согласовании",
-    consol: "На консолидации",
-    arch: "В архиве",
-    draft: "Черновик",
-};
 
 const STATUS_STYLES: Record<string, string> = {
     active: "text-emerald-700 bg-emerald-100",
@@ -30,6 +22,7 @@ const STATUS_STYLES: Record<string, string> = {
 type SubTab = "outgoing" | "incoming";
 
 export function VndLinksTab({vndId}: VndLinksTabProps) {
+    const {t} = useTranslation();
     const [subTab, setSubTab] = useState<SubTab>("outgoing");
     const [pickerOpen, setPickerOpen] = useState(false);
 
@@ -46,14 +39,14 @@ export function VndLinksTab({vndId}: VndLinksTabProps) {
         <div className="mx-4 sm:mx-6 bg-white border border-[#e9edf3] rounded-2xl overflow-hidden">
             <div className="px-5 pt-4 pb-3 border-b border-[#eef2f7] flex items-center gap-3">
                 <Link2 size={18} strokeWidth={1.8} className="text-[#4e57d6]"/>
-                <h2 className="m-0 text-sm font-semibold flex-1">Связанные документы</h2>
+                <h2 className="m-0 text-sm font-semibold flex-1">{t("openVndPage.linksTab.title")}</h2>
                 {subTab === "outgoing" && (
                     <button
                         onClick={() => setPickerOpen(true)}
                         className="flex items-center gap-1.5 cursor-pointer text-xs font-medium bg-[var(--app-accent,_#2f68f5)] font-semibold text-white hover:brightness-[1.06] rounded-lg px-2.5 py-1.5 transition-colors"
                     >
                         <Plus size={14} strokeWidth={2}/>
-                        Добавить ссылку
+                        {t("openVndPage.linksTab.addLinkButton")}
                     </button>
                 )}
             </div>
@@ -65,7 +58,7 @@ export function VndLinksTab({vndId}: VndLinksTabProps) {
                         subTab === "outgoing" ? "bg-indigo-50 text-[#4e57d6]" : "text-[#8b97ab] hover:bg-slate-50"
                     }`}
                 >
-                    Ссылки на документы {data ? `(${data.outgoing.length})` : ""}
+                    {t("openVndPage.linksTab.outgoingTabLabel")} {data ? `(${data.outgoing.length})` : ""}
                 </button>
                 <button
                     onClick={() => setSubTab("incoming")}
@@ -73,7 +66,7 @@ export function VndLinksTab({vndId}: VndLinksTabProps) {
                         subTab === "incoming" ? "bg-indigo-50 text-[#4e57d6]" : "text-[#8b97ab] hover:bg-slate-50"
                     }`}
                 >
-                    Ссылающиеся документы {data ? `(${data.incoming.length})` : ""}
+                    {t("openVndPage.linksTab.incomingTabLabel")} {data ? `(${data.incoming.length})` : ""}
                 </button>
             </div>
 
@@ -84,7 +77,7 @@ export function VndLinksTab({vndId}: VndLinksTabProps) {
                     </div>
                 ) : list.length === 0 ? (
                     <div className="text-center py-10 text-[13px] text-[#8b97ab]">
-                        {subTab === "outgoing" ? "Ссылок на другие документы пока нет" : "Никто ещё не ссылается на этот документ"}
+                        {subTab === "outgoing" ? t("openVndPage.linksTab.emptyOutgoing") : t("openVndPage.linksTab.emptyIncoming")}
                     </div>
                 ) : (
                     list.map((item, idx) => (
@@ -101,7 +94,7 @@ export function VndLinksTab({vndId}: VndLinksTabProps) {
                 {subTab === "outgoing" && !!data?.attachmentReferences.length && (
                     <div className="mt-2 pt-2 border-t border-[#eef2f7]">
                         <div className="px-3 pb-1 text-[11px] font-semibold text-[#8b97ab] uppercase tracking-wide">
-                            Ссылки на вложения (найдено в тексте)
+                            {t("openVndPage.linksTab.attachmentRefsHeader")}
                         </div>
                         {data!.attachmentReferences.map((ref) => (
                             <AttachmentLinkRow key={ref.legacyIndex} item={ref}/>
@@ -132,6 +125,7 @@ function LinkRow({
     disabled: boolean;
     onDelete: () => void;
 }) {
+    const {t} = useTranslation();
     return (
         <div className="w-full flex items-center gap-3 px-3 py-3 rounded-xl hover:bg-slate-50 transition-colors group">
       <span
@@ -143,14 +137,14 @@ function LinkRow({
           <span className="font-mono text-[11.5px] font-semibold text-[#4e57d6]">{item.code}</span>
           <span
               className={`text-[10px] font-semibold px-1.5 py-0.5 rounded ${STATUS_STYLES[item.status] ?? "text-slate-500 bg-slate-100"}`}>
-            {STATUS_LABELS[item.status] ?? item.status}
+            {t(`openVndPage.linksTab.statuses.${item.status}`, {defaultValue: item.status})}
           </span>
                     {item.isAutoDetected && (
                         <span
-                            title="Обнаружено автоматически по ссылке в тексте документа"
+                            title={t("openVndPage.linksTab.autoDetectedTooltip")}
                             className="flex items-center gap-1 text-[10px] font-medium px-1.5 py-0.5 rounded bg-violet-50 text-violet-600"
                         >
-              <Sparkles size={10} strokeWidth={2}/> из текста
+              <Sparkles size={10} strokeWidth={2}/> {t("openVndPage.linksTab.autoDetectedBadge")}
             </span>
                     )}
         </span>
@@ -161,7 +155,7 @@ function LinkRow({
                     onClick={onDelete}
                     disabled={disabled}
                     className="opacity-0 group-hover:opacity-100 flex-none text-[#c3ccd8] hover:text-red-500 transition-all disabled:opacity-40"
-                    title="Удалить ссылку"
+                    title={t("openVndPage.linksTab.deleteLinkTooltip")}
                 >
                     <X size={16} strokeWidth={2}/>
                 </button>
@@ -172,6 +166,7 @@ function LinkRow({
 }
 
 function AttachmentLinkRow({item}: { item: VndAttachmentLinkItem }) {
+    const {t} = useTranslation();
     const handleClick = () => {
         if (!item.resolved) return;
         void downloadWithToast(item.fileId, item.fileName);
@@ -183,7 +178,7 @@ function AttachmentLinkRow({item}: { item: VndAttachmentLinkItem }) {
             className={`w-full flex items-center gap-3 px-3 py-3 rounded-xl transition-colors ${
                 item.resolved ? "cursor-pointer hover:bg-slate-50" : "opacity-60 cursor-not-allowed"
             }`}
-            title={item.resolved ? "Открыть вложение" : "Вложение с таким номером не найдено"}
+            title={item.resolved ? t("openVndPage.linksTab.openAttachmentTooltip") : t("openVndPage.linksTab.attachmentNotFoundTooltip")}
         >
       <span className="w-9 h-9 flex-none rounded-[9px] bg-[#f2f5f9] text-[#55617a] grid place-items-center">
         <FileText size={16} strokeWidth={1.8}/>
@@ -191,7 +186,7 @@ function AttachmentLinkRow({item}: { item: VndAttachmentLinkItem }) {
             <span className="flex-1 min-w-0">
         <span className="block text-[12.5px] font-medium text-[#2c3446] truncate">{item.fileName}</span>
         <span className="block text-[11px] text-[#8b97ab] mt-0.5">
-          Вложение №{item.legacyIndex} из текста документа{!item.resolved && " — не найдено"}
+          {t("openVndPage.linksTab.attachmentRefLabel", {index: item.legacyIndex})}{!item.resolved && t("openVndPage.linksTab.attachmentRefNotFoundSuffix")}
         </span>
       </span>
             {item.resolved && <ChevronRight size={16} strokeWidth={2} className="flex-none text-[#c3ccd8]"/>}

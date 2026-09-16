@@ -6,7 +6,7 @@
 // оформление: границы, ширины колонок, шрифт) клонируется под каждую строку данных, остальной
 // документ (шапка, стили, поля) остаётся как в шаблоне без изменений.
 import JSZip from "jszip";
-import {htmlToDocxParagraphs, plainTextToDocxParagraphs, type DocxParagraph} from "@/utils/htmlToDocxRuns.ts";
+import {htmlToDocxParagraphs, plainTextToDocxParagraphs, type DocxParagraph} from "@/utils/docxWork/htmlToDocxRuns.ts";
 import templateUrl from "@/assets/tid/tidTemplate.docx?url";
 
 export interface TidExportRow {

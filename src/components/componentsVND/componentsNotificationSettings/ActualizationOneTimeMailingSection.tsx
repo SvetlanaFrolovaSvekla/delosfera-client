@@ -15,7 +15,7 @@ import {userService} from "@/service/userService/userService.ts";
 import type {UserResponse} from "@/service/userService/userServiceType.ts";
 import {actualizationNotificationsService} from "@/service/actualizationNotificationsService/actualizationNotificationsService.ts";
 import {ACTUALIZATION_COLUMNS} from "@/constants/actualizationColumns.ts";
-import {ACTUALIZATION_PLANNING_STATUSES, toDateRangeFilter} from "@/utils/actualizationSearchRequest.ts";
+import {ACTUALIZATION_PLANNING_STATUSES, toDateRangeFilter} from "@/utils/vndProcess/actualizationSearchRequest.ts";
 
 import {SearchBar} from "@/components/componentsGeneral/SearchBar.tsx";
 import {MultiSelectField} from "@/components/componentsGeneral/selects/MultiSelects/MultiSelectField.tsx";
@@ -25,7 +25,7 @@ import {
 } from "@/components/componentsVND/componentsActualizationPage/ActualizationFilterPills.tsx";
 import {DateFilterGroup, EMPTY_DATE_FILTER, type DateFilterValue} from "@/components/componentsGeneral/datePickers/DateFilterGroup.tsx";
 import {HelpTooltip} from "@/components/componentsGeneral/knowledgeBaseComponents/HelpTooltip.tsx";
-import {HighlightText} from "@/utils/HighlightText.tsx";
+import {HighlightText} from "@/utils/highlightText.tsx";
 
 interface SelectedUser {
     id: number;

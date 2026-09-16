@@ -1,4 +1,4 @@
-import type {IconName} from "@/components/icons/Icon.tsx";
+import type {IconName} from "@/assets/icons/Icon.tsx";
 import {PermissionCode} from "@/constants/permissions/permissions.ts";
 
 interface NavItem {
@@ -18,17 +18,17 @@ interface NavGroup {
 export const navGroups: NavGroup[] = [
     { items: [{ id: "home", icon: "dash", labelKey: "sidebar.items.home", path: "/" },
             // Согласования по всем контурам в одном месте, включая задачи по замещению
-            { id: "inbox", icon: "tasks", labelKey: "Мои задачи", path: "/tasks" },
+            { id: "inbox", icon: "tasks", labelKey: "sidebar.items.tasks", path: "/tasks" },
             // Персональный дайджест (УВ-14) и календарь сроков (ЗС-13)
-            { id: "digest", icon: "rpt", labelKey: "Дайджест", path: "/digest" },
-            { id: "calendar", icon: "clock", labelKey: "Календарь сроков", path: "/calendar" },
+            { id: "digest", icon: "rpt", labelKey: "sidebar.items.digest", path: "/digest" },
+            { id: "calendar", icon: "clock", labelKey: "sidebar.items.calendar", path: "/calendar" },
             { id: "notif", icon: "bell", labelKey: "sidebar.items.notif", path: "/notifications" },
             // Настройки уведомлений переехали в "Настройки системы" → "Уведомления",
             // рядом с настройками рассылок по актуализации ВНД.
             // Отчёты всех контуров в одном месте: раньше отчётность ВНД и аналитика
             // записок лежали каждая в своём разделе, и человек, которому нужны обе,
             // ходил за ними в разные концы меню.
-            { id: "analytics", icon: "rpt", labelKey: "Аналитика", path: "/analytics", permission: PermissionCode.ViewFullStatistics },
+            { id: "analytics", icon: "rpt", labelKey: "sidebar.items.analytics", path: "/analytics", permission: PermissionCode.ViewFullStatistics },
             // Раньше жила внутри "Нормотворчество" под именем "vnd-rubric" и открывала
             // только Рубрикатор ВНД. Теперь общая для всех контуров: сама модалка даёт
             // выбор "Рубрикатор ВНД" / "Рубрикатор СЗ" — см. Sidebar.tsx.
@@ -52,23 +52,23 @@ export const navGroups: NavGroup[] = [
         items: [
             // Реестр служебных записок: карточка, согласование, исполнение, архив, закупка
             { id: "sz", icon: "sz", labelKey: "sidebar.items.sz", path: "/sz" },
-            // Доска записок по стадиям (РС-4)
-            { id: "sz-tracker", icon: "sz", labelKey: "Доска записок", path: "/sz/tracker" },
             // Заявки на замещение (КСЗ-В9)
-            { id: "substitutions", icon: "user", labelKey: "Заявки на замещение", path: "/substitutions" },
+            { id: "substitutions", icon: "user", labelKey: "Заявки на замещение", path: "/substitutions"},
+            // Доска записок по стадиям
+            { id: "sz-tracker", icon: "sz", labelKey: "sidebar.items.szTracker", path: "/sz/tracker" },
         ],
     },
     {
-        titleKey: "Заседания",
+        titleKey: "sidebar.groups.meetings",
         items: [
             // Журнал заседаний Правления, КПА и комитетов: повестка, протоколы, исполнение решений
-            { id: "meetings", icon: "committee", labelKey: "Решения комитетов", path: "/meetings", permission: PermissionCode.ViewMeetings },
+            { id: "meetings", icon: "committee", labelKey: "sidebar.items.meetings", path: "/meetings", permission: PermissionCode.ViewMeetings },
             // Очередь записок с отметкой «вынести на орган» — отбирает секретарь
-            { id: "meet-candidates", icon: "check", labelKey: "Вопросы на рассмотрение", path: "/meetings/candidates", permission: PermissionCode.ViewMeetings },
+            { id: "meet-candidates", icon: "check", labelKey: "sidebar.items.meetCandidates", path: "/meetings/candidates", permission: PermissionCode.ViewMeetings },
             // Периодичность, которой мыслит регулятор: «не реже раза в месяц»
-            { id: "obligations", icon: "clock", labelKey: "Регулярные обязательства", path: "/obligations" },
+            { id: "obligations", icon: "clock", labelKey: "sidebar.items.obligations", path: "/obligations" },
             // Доска обязательств по стадиям (ПР-1)
-            { id: "obligations-board", icon: "clock", labelKey: "Доска обязательств", path: "/obligations/board" },
+            { id: "obligations-board", icon: "clock", labelKey: "sidebar.items.obligationsBoard", path: "/obligations/board" },
         ],
     },
     {
@@ -76,158 +76,43 @@ export const navGroups: NavGroup[] = [
         items: [
             { id: "prc", icon: "prc", labelKey: "sidebar.items.prc", path: "/prc" },
             // Доска закупок по стадиям (ЗК-11): где какая заявка и что зависло
-            { id: "prc-tracker", icon: "prc", labelKey: "Доска закупок", path: "/prc/tracker" },
+            { id: "prc-tracker", icon: "prc", labelKey: "sidebar.items.prcTracker", path: "/prc/tracker" },
             // Годовой План закупок с отчётом об исполнении (PRC-22)
-            { id: "prc-plan", icon: "pln", labelKey: "План закупок", path: "/prc/plan" },
+            { id: "prc-plan", icon: "pln", labelKey: "sidebar.items.prcAnnualPlan", path: "/prc/plan" },
             // Матрица определяет способ закупки, состав согласования и орган утверждения
             { id: "matrix", icon: "matrix", labelKey: "sidebar.items.matrix", path: "/prc/matrix" },
             // Благонадёжность и чёрный список недобросовестных (PRC-07/17)
-            { id: "prc-suppliers", icon: "flag", labelKey: "Поставщики и чёрный список", path: "/prc/suppliers" },
+            { id: "prc-suppliers", icon: "flag", labelKey: "sidebar.items.prcSuppliers", path: "/prc/suppliers" },
         ],
     },
     {
-        titleKey: "Канцелярия",
+        titleKey: "sidebar.groups.office",
         items: [
             // Книга регистрации: входящие, исходящие, запросы НБКР, обращения клиентов
-            { id: "correspondence", icon: "sz", labelKey: "Корреспонденция", path: "/correspondence", permission: PermissionCode.ViewCorrespondence },
+            { id: "correspondence", icon: "sz", labelKey: "sidebar.items.correspondence", path: "/correspondence", permission: PermissionCode.ViewCorrespondence },
             // «Вправе ли этот человек подписать вот это сегодня»
-            { id: "poa", icon: "shield", labelKey: "Доверенности", path: "/poa", permission: PermissionCode.ViewPowersOfAttorney },
+            { id: "poa", icon: "shield", labelKey: "sidebar.items.poa", path: "/poa", permission: PermissionCode.ViewPowersOfAttorney },
         ],
-    },
-    {
-        titleKey: "Кадровый документооборот",
-        items: [
-            // Ознакомление с приказами и документами: роспись сотрудника простой
-            // электронной подписью (Б-19)
-            // Книга приказов по личному составу — нумерация своя, «12-лс»
-            { id: "hr-orders", icon: "hr", labelKey: "Приказы по личному составу", path: "/hr/orders", permission: PermissionCode.ViewHrOrders },
-            { id: "hr-ack", icon: "check", labelKey: "Ознакомление", path: "/hr-ack" },
-        ],
-    },
-    {
-        titleKey: "Управление",
-        items: [
-            // Инструкции и рабочее место подписи нужны всем — остаются в общем меню
-            { id: "help", icon: "kb", labelKey: "Как работать в системе", path: "/help" },
-            { id: "signing-workplace", icon: "check", labelKey: "Рабочее место подписи", path: "/signing-workplace" },
-            // Настройки, справочники, доступы и наблюдение — одним входом со своим
-            // подменю: пунктов полтора десятка, в общем меню они вытесняли бы работу
-            { id: "management", icon: "refs", labelKey: "Настройки системы", path: "/management" },
-        ],
-    }
-];
-
-   /* {
-        titleKey: "sidebar.groups.sz",
-        items: [
-            { id: "sz", icon: "sz", labelKey: "sidebar.items.sz" },
-            { id: "sz-analytics", icon: "rpt", labelKey: "sidebar.items.szAnalytics" },
-            { id: "notifs", icon: "bell", labelKey: "sidebar.items.notifs", badge: 4 },
-        ],
-    },
-    {
-    {
-        titleKey: "sidebar.groups.purchases",
-        items: [
-            { id: "prc", icon: "prc", labelKey: "sidebar.items.prc" },
-            { id: "matrix", icon: "matrix", labelKey: "sidebar.items.matrix" },
-            { id: "prc-plan", icon: "pln", labelKey: "sidebar.items.prcPlan" },
-            { id: "prc-blacklist", icon: "flag", labelKey: "sidebar.items.prcBlacklist" },
-            { id: "prc-appraisers", icon: "shield", labelKey: "sidebar.items.prcAppraisers" },
-        ],
-    },
-    {
-        titleKey: "sidebar.groups.meetings",
-        items: [{ id: "kom", icon: "committee", labelKey: "sidebar.items.kom" }],
     },
     {
         titleKey: "sidebar.groups.hr",
         items: [
-            { id: "hr", icon: "hr", labelKey: "sidebar.items.hr" },
-            { id: "hr-ack", icon: "check", labelKey: "sidebar.items.hrAck" },
+            // Ознакомление с приказами и документами: роспись сотрудника простой
+            // электронной подписью (Б-19)
+            // Книга приказов по личному составу — нумерация своя, «12-лс»
+            { id: "hr-orders", icon: "hr", labelKey: "sidebar.items.hrOrders", path: "/hr/orders", permission: PermissionCode.ViewHrOrders },
+            { id: "hr-ack", icon: "check", labelKey: "sidebar.items.hrAck", path: "/hr-ack" },
         ],
     },
     {
-        titleKey: "sidebar.groups.system",
+        titleKey: "sidebar.groups.management",
         items: [
-            { id: "mobile", icon: "mobile", labelKey: "sidebar.items.mobile" },
-            { id: "refs", icon: "refs", labelKey: "sidebar.items.refs" },
-            { id: "kb", icon: "kb", labelKey: "sidebar.items.kb" },
-            { id: "future", icon: "future", labelKey: "sidebar.items.future" },
+            // Инструкции и рабочее место подписи нужны всем — остаются в общем меню
+            { id: "help", icon: "kb", labelKey: "sidebar.items.help", path: "/help" },
+            { id: "signing-workplace", icon: "check", labelKey: "sidebar.items.signingWorkplace", path: "/signing-workplace" },
+            // Настройки, справочники, доступы и наблюдение — одним входом со своим
+            // подменю: пунктов полтора десятка, в общем меню они вытесняли бы работу
+            { id: "management", icon: "refs", labelKey: "sidebar.items.management", path: "/management" },
         ],
-    },
-    {
-        titleKey: "sidebar.groups.admin",
-        items: [
-            { id: "org", icon: "refs", labelKey: "sidebar.items.org" },
-            { id: "adm-users", icon: "user", labelKey: "sidebar.items.admUsers" },
-            { id: "adm-roles", icon: "shield", labelKey: "sidebar.items.admRoles" },
-            { id: "adm-sub", icon: "user", labelKey: "sidebar.items.admSub" },
-            { id: "adm-log", icon: "clock", labelKey: "sidebar.items.admLog" },
-            { id: "adm-auth", icon: "lock", labelKey: "sidebar.items.admAuth" },
-        ],
-    },*/
-
-/*
-export const navGroups: NavGroup[] = [
-
-    { items: [{ id: "home", icon: "dash", label: "Рабочий стол" }] },
-    {
-        title: "Нормотворчество",
-        items: [
-            { id: "vnd", icon: "vnd", label: "База ВНД" },
-            { id: "pln", icon: "pln", label: "Планирование", badge: 3 },
-            { id: "tid", icon: "tid", label: "Согласование ТИД", badge: 4 },
-            { id: "rpt", icon: "rpt", label: "Отчётность" },
-        ],
-    },
-    {
-        title: "Служебные записки",
-        items: [
-            { id: "sz", icon: "sz", label: "Реестр СЗ" },
-            { id: "sz-analytics", icon: "rpt", label: "Аналитика СЗ" },
-            { id: "notifs", icon: "bell", label: "Уведомления", badge: 4 },
-        ],
-    },
-    {
-        title: "Закупки",
-        items: [
-            { id: "prc", icon: "prc", label: "Заявки и закупки" },
-            { id: "matrix", icon: "matrix", label: "Матрица полномочий" },
-            { id: "prc-plan", icon: "pln", label: "Планирование закупок" },
-            { id: "prc-blacklist", icon: "flag", label: "Чёрный список" },
-            { id: "prc-appraisers", icon: "shield", label: "Оценщики" },
-        ],
-    },
-    {
-        title: "Заседания",
-        items: [{ id: "kom", icon: "committee", label: "Решение комитетов" }],
-    },
-    {
-        title: "Кадровый документооборот",
-        items: [
-            { id: "hr", icon: "hr", label: "Кадровые документы" },
-            { id: "hr-ack", icon: "check", label: "Ознакомление" },
-        ],
-    },
-    {
-        title: "Система",
-        items: [
-            { id: "mobile", icon: "mobile", label: "Мобильная подпись" },
-            { id: "refs", icon: "refs", label: "Справочники" },
-            { id: "kb", icon: "kb", label: "База знаний" },
-            { id: "future", icon: "future", label: "Развитие" },
-        ],
-    },
-    {
-        title: "Администрирование",
-        items: [
-            { id: "org", icon: "refs", label: "Оргструктура" },
-            { id: "adm-users", icon: "user", label: "Пользователи" },
-            { id: "adm-roles", icon: "shield", label: "Роли и права" },
-            { id: "adm-sub", icon: "user", label: "Замещения" },
-            { id: "adm-log", icon: "clock", label: "Журнал действий" },
-            { id: "adm-auth", icon: "lock", label: "Аутентификация" },
-        ],
-    },
-];*/
+    }
+];

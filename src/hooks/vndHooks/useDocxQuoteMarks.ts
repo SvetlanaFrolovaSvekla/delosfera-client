@@ -19,9 +19,9 @@
 // причастных (см. buildApproverBackground), а наведение/клик отдают ВЕСЬ список авторов этого
 // места, а не произвольно выбранного одного.
 import React, {useEffect, useRef} from "react";
-import type {QuoteMarkInfo} from "@/utils/redactionQuoteMarks.ts";
-import {buildTextMap, buildWhitespaceTolerantRegex, findFirstMatch, wrapSpan} from "@/utils/domCrossNodeSearch.ts";
-import {buildApproverBackground, getApproverColor} from "@/utils/approverColors.ts";
+import type {QuoteMarkInfo} from "@/utils/vndProcess/redactionQuoteMarks.ts";
+import {buildTextMap, buildWhitespaceTolerantRegex, findFirstMatch, wrapSpan} from "@/utils/docxWork/domCrossNodeSearch.ts";
+import {buildApproverBackground, getApproverColor} from "@/utils/docxWork/approverColors.ts";
 
 const MARK_ATTR = "data-quote-mark-ids";
 

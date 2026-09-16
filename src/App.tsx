@@ -78,7 +78,6 @@ const SubstitutionCardPage = lazy(() => import("@/pages/SubstitutionsPages/Subst
 const ActivityFeedPage = lazy(() => import("@/pages/ActivityFeedPage.tsx").then(m => ({default: m.ActivityFeedPage})));
 
 // Поиск по документам: реквизиты и текстовые поля карточек (GEN-02/04)
-const BaseKnowPage = lazy(() => import("@/pages/BaseKnowPages/BaseKnowPage.tsx").then(m => ({default: m.BaseKnowPage})));
 const UserCardPage = lazy(() => import("@/pages/UsersPages/UserCardPage.tsx").then(m => ({default: m.UserCardPage})));
 const SystemSettingsPage = lazy(() => import("@/pages/SystemSettingsPage.tsx").then(m => ({default: m.SystemSettingsPage})));
 const SearchPage = lazy(() => import("@/pages/SearchPage/SearchPage.tsx").then(m => ({default: m.SearchPage})));
@@ -175,7 +174,6 @@ function App() {
                                 <Route path="/activity" element={<ActivityFeedPage/>}/>
                                 <Route path="/digest" element={<DigestPage/>}/>
                                 <Route path="/calendar" element={<CalendarPage/>}/>
-                                <Route path="/settings/notifications" element={<NotificationSettingsPage/>}/>
 
                                 <Route path="/prc" element={<ProcurementRegistryPage/>}/>
                                 <Route path="/prc/new" element={<ProcurementNewPage/>}/>
@@ -187,7 +185,6 @@ function App() {
                                 <Route path="/prc/:id" element={<ProcurementCardPage/>}/>
                                 <Route path="/prc/:id/protocol" element={<ProcurementProtocolPage/>}/>
 
-                                <Route path="/base-know" element={<BaseKnowPage/>}/>
                                 <Route path="/search" element={<SearchPage/>}/>
 
                                 <Route path="/meetings" element={<MeetingRegistryPage/>}/>
@@ -227,6 +224,7 @@ function App() {
                                     <Route path="refs/coordination-users" element={<CoordinationApproversPage/>}/>
                                     <Route path="refs/actualization-thresholds" element={<ActualizationBucketSettingsPage/>}/>
                                     <Route path="mailing-settings" element={<NotificationMailingSettingsPage/>}/>
+                                    <Route path="notification-settings" element={<NotificationSettingsPage/>}/>
 
 
                                     <Route element={<RequirePermission code={PermissionCode.ManageRoles}/>}>

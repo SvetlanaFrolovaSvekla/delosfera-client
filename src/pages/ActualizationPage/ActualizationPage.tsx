@@ -34,7 +34,7 @@ import {useDictionaries} from "@/context/DictionariesContext.tsx";
 import {
     ACTUALIZATION_PLANNING_STATUSES,
     toDateRangeFilter,
-} from "@/utils/actualizationSearchRequest.ts";
+} from "@/utils/vndProcess/actualizationSearchRequest.ts";
 
 export function ActualizationPage() {
     const {hasPermission} = useAuth();

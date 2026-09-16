@@ -13,7 +13,7 @@
 // (db://attachments/{n}) - см. VndController.ResolveLegacyLink.
 import React, {useEffect, useRef} from "react";
 import {vndService} from "@/service/vndService/vndService.ts";
-import {downloadWithToast} from "@/utils/downloadFile.ts";
+import {downloadWithToast} from "@/utils/downloadFiles/downloadFile.ts";
 import {toast} from "@/service/toastService.ts";
 
 const LEGACY_LINK_ATTR = "data-legacy-link-bound";

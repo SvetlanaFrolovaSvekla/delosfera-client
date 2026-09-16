@@ -1,5 +1,6 @@
 // Страница "Реестр ВНД"
 import {useState} from "react";
+import {useTranslation} from "react-i18next";
 import {useNavigate} from "react-router-dom";
 import {useDictionaries} from "@/context/DictionariesContext.tsx";
 import {daysUntil} from "@/utils/dateUtils.ts";
@@ -25,31 +26,26 @@ import {Loader} from "@/components/componentsGeneral/Loader";
 import {EmptyState} from "@/components/componentsGeneral/EmptyState.tsx";
 import {useAuth} from "@/context/AuthContext.ts";
 import {PermissionCode} from "@/constants/permissions/permissions.ts";
+import {useCanCreateVnd} from "@/hooks/vndHooks/useCanCreateVnd.ts";
+import {useIsVndEditor} from "@/hooks/vndHooks/useIsVndEditor.ts";
 import {FileEdit} from "lucide-react";
 
 type DraftOwnerScope = "mine" | "others" | "allDraft";
 
 export function BaseVndPage() {
     const navigate = useNavigate();
+    const {t} = useTranslation();
     const {hasPermission} = useAuth();
     const canViewOtherUsersDrafts = hasPermission(PermissionCode.ViewOtherUsersDrafts);
-    // Право создавать ВНД - от него зависит видимость вкладки "Черновики" и состав таба "Все"
-    const canCreateVnd =
-        hasPermission(PermissionCode.CreateVndWithApproval) ||
-        hasPermission(PermissionCode.CreateVndWithoutApproval);
+    // Право создавать ВНД - от него зависит видимость вкладки "Черновики", состав таба "Все"
+    // и активность кнопки "Создать ВНД" (см. useCanCreateVnd)
+    const canCreateVnd = useCanCreateVnd();
     // Право "Просмотр реестра ВНД в расширенном режиме" - колонки/фильтры
     // "Статус последней редакции" и "Актуализация"
     const canViewVndRegistryExtended = hasPermission(PermissionCode.ViewVndRegistryExtended);
-    // Чекбокс "Только связанные со мной" — только для "редакторов ВНД": тех, кто может
-    // согласовывать, создавать или актуализировать/консолидировать документы
-    const canFilterLinkedToMe =
-        hasPermission(PermissionCode.ActAsApprover) ||
-        hasPermission(PermissionCode.CreateVndWithApproval) ||
-        hasPermission(PermissionCode.CreateVndWithoutApproval) ||
-        hasPermission(PermissionCode.ActualizeAnyVndWithApproval) ||
-        hasPermission(PermissionCode.ActualizeAnyVndWithoutApproval) ||
-        hasPermission(PermissionCode.ActualizeVndWithApprovalByRequest) ||
-        hasPermission(PermissionCode.ActualizeVndWithoutApprovalByRequest);
+    // Чекбокс "Только связанные со мной" — только для "редакторов ВНД" (см. useIsVndEditor):
+    // тех, кто может согласовывать, создавать или актуализировать/консолидировать документы
+    const canFilterLinkedToMe = useIsVndEditor();
 
     const [scope, setScope] = useState<VndScope>("all");
     const [draftOwnerScope, setDraftOwnerScope] = useState<DraftOwnerScope>("allDraft");
@@ -85,7 +81,7 @@ export function BaseVndPage() {
     // STATUS_OPTIONS_BY_SCOPE): на "Действующих"/"Ещё не действующих" документ не может быть
     // в архиве или черновиком, поэтому эти пункты там не показываем.
     const statusOptionsForScope = (STATUS_OPTIONS_BY_SCOPE[scope] ?? (Object.keys(STATUS_META) as VndStatusKey[]))
-        .map((key) => ({key, label: STATUS_META[key].label}));
+        .map((key) => ({key, label: t(STATUS_META[key].label)}));
 
     const selectAllStatuses = () => filters.setStatusFilters(statusOptionsForScope.map((o) => o.key));
     const deselectAllStatuses = () => filters.setStatusFilters([]);
@@ -111,7 +107,7 @@ export function BaseVndPage() {
 
     return (
         <div className="w-full max-w-[1700px] mx-auto px-4 sm:px-6 lg:px-8 xl:px-10 pt-5 sm:pt-[26px] pb-10 sm:pb-[60px]">
-            <VndPageHeader onCreateClick={() => navigate("/base-vnd/new")}/>
+            <VndPageHeader onCreateClick={() => navigate("/base-vnd/new")} canCreate={canCreateVnd}/>
 
             <Tabs<VndScope> tabs={scopeTabs} value={scope} onChange={setScope}/>
 

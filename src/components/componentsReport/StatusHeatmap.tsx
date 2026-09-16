@@ -1,3 +1,4 @@
+import {useTranslation} from "react-i18next";
 import {STATUS_META} from "@/constants/vndStatus.ts";
 import type {VndOrgUnitStatusMatrixItem} from "@/service/analyticsService/vndAnalyticsServiceType.ts";
 
@@ -14,6 +15,8 @@ function hexToRgb(hex: string): [number, number, number] {
 }
 
 export function StatusHeatmap({items, maxRows = 12}: StatusHeatmapProps) {
+    const {t} = useTranslation();
+
     if (items.length === 0) {
         return (
             <div className="flex items-center justify-center h-full text-[12.5px] text-[#a3adbd] py-8">
@@ -46,7 +49,7 @@ export function StatusHeatmap({items, maxRows = 12}: StatusHeatmapProps) {
                     </th>
                     {STATUS_ORDER.map((s) => (
                         <th key={s} className="text-center text-[11px] font-semibold text-[#8b97ab] pb-2 px-1 whitespace-nowrap">
-                            {STATUS_META[s].label}
+                            {t(STATUS_META[s].label)}
                         </th>
                     ))}
                 </tr>
@@ -69,7 +72,7 @@ export function StatusHeatmap({items, maxRows = 12}: StatusHeatmapProps) {
                                             background: `rgba(${r},${g},${b},${alpha})`,
                                             color: alpha > 0.4 ? "#fff" : "#8b97ab",
                                         }}
-                                        title={`${row.label} — ${STATUS_META[s].label}: ${count}`}
+                                        title={`${row.label} — ${t(STATUS_META[s].label)}: ${count}`}
                                     >
                                         {count > 0 ? count : ""}
                                     </div>

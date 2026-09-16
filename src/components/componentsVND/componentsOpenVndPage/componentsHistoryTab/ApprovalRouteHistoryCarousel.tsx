@@ -11,21 +11,26 @@
 // что просила Светлана: "либо текущее состояние (если этап - сейчас), либо конечное состояние
 // схемы - когда все согласующие отправили свои резолюции".
 import {useState} from "react";
+import {useTranslation} from "react-i18next";
+import type {TFunction} from "i18next";
 import {ChevronLeft, ChevronRight} from "lucide-react";
 import {formatDateTime} from "@/utils/dateUtils.ts";
-import {getInitials} from "@/utils/getInitials.ts";
+import {getInitials} from "@/utils/namingUsers/getInitials.ts";
+import {
+    FormattedResolutionComment
+} from "@/components/componentsCoordination/CoordinationRouteConstructor/viewComponents/FormattedResolutionComment.tsx";
 import type {
     ApprovalPhaseRoundResponse,
     ApprovalProcessResponse,
     ApprovalStageDecisionResponse,
 } from "@/service/coordinationService/coordinationServiceTypes.ts";
 
-const DECISION_META: Record<ApprovalStageDecisionResponse, { label: string; color: string; bg: string }> = {
-    pending: {label: "В ожидании", color: "#8b97ab", bg: "#f1f3f6"},
-    approved: {label: "Согласовано", color: "#1f9d55", bg: "#e8f8ee"},
-    approved_with_comment: {label: "С замечаниями", color: "#c9820a", bg: "#fdf3e2"},
-    rejected: {label: "Отклонено", color: "#d1453b", bg: "#fdeceb"},
-    auto_approved_timeout: {label: "Автосогласовано", color: "#5c6b8a", bg: "#eef1f6"},
+const DECISION_COLORS: Record<ApprovalStageDecisionResponse, { color: string; bg: string }> = {
+    pending: {color: "#8b97ab", bg: "#f1f3f6"},
+    approved: {color: "#1f9d55", bg: "#e8f8ee"},
+    approved_with_comment: {color: "#c9820a", bg: "#fdf3e2"},
+    rejected: {color: "#d1453b", bg: "#fdeceb"},
+    auto_approved_timeout: {color: "#5c6b8a", bg: "#eef1f6"},
 };
 
 interface SchemaStageDecision {
@@ -45,11 +50,11 @@ interface SchemaPage {
     decisions: SchemaStageDecision[];
 }
 
-function buildPrimaryPage(process: ApprovalProcessResponse): SchemaPage {
+function buildPrimaryPage(t: TFunction, process: ApprovalProcessResponse): SchemaPage {
     const isCurrent = process.status === "primary";
     return {
         key: "primary",
-        phaseLabel: "Первичное согласование",
+        phaseLabel: t("openVndPage.historyTab.processStatuses.primary"),
         roundLabel: null,
         isCurrent,
         completedAt: isCurrent ? null : (process.repeatStartedAt ?? process.finalHoldStartedAt ?? process.completedAt),
@@ -72,12 +77,12 @@ function roundToPage(round: ApprovalPhaseRoundResponse, phaseLabel: string, roun
     };
 }
 
-function buildCurrentRepeatPage(process: ApprovalProcessResponse, roundLabel: string | null): SchemaPage | null {
+function buildCurrentRepeatPage(t: TFunction, process: ApprovalProcessResponse, roundLabel: string | null): SchemaPage | null {
     if (!process.repeatStartedAt) return null;
     const isCurrent = process.status === "repeated";
     return {
         key: "repeat-current",
-        phaseLabel: "Согласование после внесённых изменений",
+        phaseLabel: t("openVndPage.historyTab.carousel.repeatPhaseLabel"),
         roundLabel,
         isCurrent,
         completedAt: isCurrent ? null : (process.finalHoldStartedAt ?? process.completedAt),
@@ -90,12 +95,12 @@ function buildCurrentRepeatPage(process: ApprovalProcessResponse, roundLabel: st
     };
 }
 
-function buildCurrentFinalHoldPage(process: ApprovalProcessResponse, roundLabel: string | null): SchemaPage | null {
+function buildCurrentFinalHoldPage(t: TFunction, process: ApprovalProcessResponse, roundLabel: string | null): SchemaPage | null {
     if (!process.finalHoldStartedAt) return null;
     const isCurrent = process.status === "final_hold";
     return {
         key: "finalHold-current",
-        phaseLabel: "Финальная выдержка",
+        phaseLabel: t("openVndPage.historyTab.processStatuses.final_hold"),
         roundLabel,
         isCurrent,
         completedAt: isCurrent ? null : process.completedAt,
@@ -106,8 +111,8 @@ function buildCurrentFinalHoldPage(process: ApprovalProcessResponse, roundLabel:
     };
 }
 
-function buildSchemaPages(process: ApprovalProcessResponse): SchemaPage[] {
-    const pages: SchemaPage[] = [buildPrimaryPage(process)];
+function buildSchemaPages(t: TFunction, process: ApprovalProcessResponse): SchemaPage[] {
+    const pages: SchemaPage[] = [buildPrimaryPage(t, process)];
 
     const repeatRounds = [...process.phaseRounds]
         .filter((r) => r.phase === "repeat")
@@ -120,16 +125,16 @@ function buildSchemaPages(process: ApprovalProcessResponse): SchemaPage[] {
     // когда доработка была только одна.
     const repeatTotal = repeatRounds.length + (process.repeatStartedAt ? 1 : 0);
     repeatRounds.forEach((r) => pages.push(
-        roundToPage(r, "Согласование после внесённых изменений", repeatTotal > 1 ? `Круг ${r.roundNumber}` : null),
+        roundToPage(r, t("openVndPage.historyTab.carousel.repeatPhaseLabel"), repeatTotal > 1 ? t("openVndPage.historyTab.carousel.roundLabel", {number: r.roundNumber}) : null),
     ));
-    const currentRepeat = buildCurrentRepeatPage(process, repeatTotal > 1 ? `Круг ${repeatTotal}` : null);
+    const currentRepeat = buildCurrentRepeatPage(t, process, repeatTotal > 1 ? t("openVndPage.historyTab.carousel.roundLabel", {number: repeatTotal}) : null);
     if (currentRepeat) pages.push(currentRepeat);
 
     const finalHoldTotal = finalHoldRounds.length + (process.finalHoldStartedAt ? 1 : 0);
     finalHoldRounds.forEach((r) => pages.push(
-        roundToPage(r, "Финальная выдержка", finalHoldTotal > 1 ? `Круг ${r.roundNumber}` : null),
+        roundToPage(r, t("openVndPage.historyTab.processStatuses.final_hold"), finalHoldTotal > 1 ? t("openVndPage.historyTab.carousel.roundLabel", {number: r.roundNumber}) : null),
     ));
-    const currentFinalHold = buildCurrentFinalHoldPage(process, finalHoldTotal > 1 ? `Круг ${finalHoldTotal}` : null);
+    const currentFinalHold = buildCurrentFinalHoldPage(t, process, finalHoldTotal > 1 ? t("openVndPage.historyTab.carousel.roundLabel", {number: finalHoldTotal}) : null);
     if (currentFinalHold) pages.push(currentFinalHold);
 
     return pages;
@@ -140,7 +145,8 @@ interface ApprovalRouteHistoryCarouselProps {
 }
 
 export function ApprovalRouteHistoryCarousel({process}: ApprovalRouteHistoryCarouselProps) {
-    const pages = buildSchemaPages(process);
+    const {t} = useTranslation();
+    const pages = buildSchemaPages(t, process);
     // По умолчанию открываем ПОСЛЕДНЮЮ страницу (текущий/самый свежий этап) - так сразу видно,
     // на чём процесс сейчас, а назад можно пролистать всю историю кругов.
     const [index, setIndex] = useState(pages.length - 1);
@@ -163,11 +169,11 @@ export function ApprovalRouteHistoryCarousel({process}: ApprovalRouteHistoryCaro
                     )}
                     {page.isCurrent ? (
                         <span className="rounded-full bg-[#ececfc] px-2 py-0.5 text-[10px] font-bold text-[#4e57d6]">
-                            Текущий этап
+                            {t("openVndPage.historyTab.carousel.currentStageLabel")}
                         </span>
                     ) : (
                         <span className="rounded-full bg-[#f1f3f6] px-2 py-0.5 text-[10px] font-bold text-[#8b97ab]">
-                            Завершено{page.completedAt ? ` · ${formatDateTime(page.completedAt)}` : ""}
+                            {t("openVndPage.historyTab.carousel.completedLabel")}{page.completedAt ? ` · ${formatDateTime(page.completedAt)}` : ""}
                         </span>
                     )}
                 </div>
@@ -199,18 +205,18 @@ export function ApprovalRouteHistoryCarousel({process}: ApprovalRouteHistoryCaro
 
             {page.initiatorComment && (
                 <div className="whitespace-pre-wrap break-words rounded-[10px] border border-[#d4d6f8] bg-[#f5f6fd] px-3 py-2 text-[11.5px] text-[#3c424a]">
-                    <span className="font-semibold text-[#4e57d6]">Комментарий к исправлениям: </span>
-                    {page.initiatorComment}
+                    <span className="font-semibold text-[#4e57d6]">{t("openVndPage.historyTab.carousel.correctionsCommentLabel")}</span>
+                    <FormattedResolutionComment text={page.initiatorComment}/>
                 </div>
             )}
 
             <div className="flex flex-wrap gap-2.5 rounded-[14px] border border-[#e5e9f0] bg-[#fbfcfe] p-3.5">
                 {page.decisions.length === 0 ? (
-                    <div className="py-2 text-[11.5px] text-[#a3adbd]">Нет данных по этому этапу</div>
+                    <div className="py-2 text-[11.5px] text-[#a3adbd]">{t("openVndPage.historyTab.carousel.noDataForStage")}</div>
                 ) : (
                     page.decisions.map((d) => {
                         const stage = stageById.get(d.stageId);
-                        const meta = DECISION_META[d.decision];
+                        const colors = DECISION_COLORS[d.decision];
                         return (
                             <div
                                 key={d.stageId}
@@ -226,13 +232,13 @@ export function ApprovalRouteHistoryCarousel({process}: ApprovalRouteHistoryCaro
                                 </div>
                                 <span
                                     className="w-fit rounded px-1.5 py-0.5 text-[9.5px] font-bold"
-                                    style={{color: meta.color, background: meta.bg}}
+                                    style={{color: colors.color, background: colors.bg}}
                                 >
-                                    {meta.label}
+                                    {t(`openVndPage.historyTab.carousel.decisionLabels.${d.decision}`)}
                                 </span>
                                 {d.comment && (
                                     <div className="whitespace-pre-wrap break-words text-[10.5px] text-[#6b7488]">
-                                        {d.comment}
+                                        <FormattedResolutionComment text={d.comment}/>
                                     </div>
                                 )}
                                 {d.decidedAt && (

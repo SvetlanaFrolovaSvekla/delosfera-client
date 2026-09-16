@@ -1,4 +1,4 @@
-// Виды связи текущего пользователя с ВНД — используются фильтром "Только связанные со мной"
+// Виды связи текущего пользователя с ВНД - используются фильтром "Только связанные со мной"
 // (чекбокс + выпадающий список "Тип связи" + колонка "Связь со мной" в реестре).
 import {STATUS_META} from "@/constants/vndStatus.ts";
 
@@ -18,9 +18,6 @@ export interface LinkedToMeRelationOption {
 }
 
 // Группы окрашены теми же цветами, что и "таблетка" статуса последней редакции
-// (STATUS_META): согласование — синий (review), актуализация — коричневый (onact),
-// консолидация — фиолетовый (consol). У "инициатора" нет своего статуса ВНД, поэтому
-// для него взят нейтральный серый.
 const INITIATOR_COLOR = "#5b6472";
 
 export const LINKED_TO_ME_RELATION_GROUPS: { title: string; color: string; options: LinkedToMeRelationOption[] }[] = [
@@ -63,8 +60,8 @@ export const LINKED_TO_ME_RELATION_OPTIONS: LinkedToMeRelationOption[] =
 export const ALL_LINKED_TO_ME_RELATION_KEYS: LinkedToMeRelationKey[] =
     LINKED_TO_ME_RELATION_OPTIONS.map((o) => o.key);
 
-// Цвет и порядковый номер (для сортировки бэйджей в колонке "Связь со мной" в постоянном,
-// сгруппированном по смыслу порядке — а не в том, в каком их вернул бэкенд)
+// Цвет и порядковый номер (для сортировки в колонке "Связь со мной" в постоянном,
+// сгруппированном по смыслу порядке)
 export const LINKED_TO_ME_RELATION_META: Record<LinkedToMeRelationKey, { label: string; color: string; order: number }> =
     Object.fromEntries(
         LINKED_TO_ME_RELATION_OPTIONS.map((o, i) => [o.key, {label: o.label, color: o.color, order: i}])

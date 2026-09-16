@@ -9,7 +9,7 @@ import {Loader} from "@/components/componentsGeneral/Loader.tsx";
 import {EmptyState} from "@/components/componentsGeneral/EmptyState.tsx";
 import {VndTaskCard} from "@/components/componentsTasks/VndTaskCard.tsx";
 import {SzTaskCard} from "@/components/componentsTasks/SzTaskCard.tsx";
-import {HOME_TOP_ROW_HEIGHT} from "@/constants/home.ts";
+import {HOME_TOP_ROW_HEIGHT} from "@/constants/homeConst.ts";
 
 interface MyTasksCardProps {
     tasks: VndTaskResponse[];

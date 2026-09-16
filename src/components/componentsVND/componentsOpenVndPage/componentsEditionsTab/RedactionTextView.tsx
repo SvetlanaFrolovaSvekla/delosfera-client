@@ -1,14 +1,14 @@
 import {forwardRef, useImperativeHandle} from "react";
 import {useTranslation} from "react-i18next";
 import type {VndRedactionResponse, VndResponse} from "@/service/vndService/vndServiceType.ts";
-import {buildRedactionFileName} from "@/utils/fileNaming.ts";
-import type {RedactionLanguage, RedactionViewTarget} from "@/utils/redactionLanguagePanelUtils.ts";
+import {buildRedactionFileName} from "@/utils/downloadFiles/fileNaming.ts";
+import type {RedactionLanguage, RedactionViewTarget} from "@/utils/vndProcess/redactionLanguagePanelUtils.ts";
 import {FileText, Loader2, ChevronUp, ChevronDown, X} from "lucide-react";
 import {useDocxPreview} from "@/hooks/vndHooks/useDocxPreview.ts";
 import {useDocxTextSearch} from "@/hooks/vndHooks/useDocxTextSearch.ts";
 import {useDocxQuoteMarks} from "@/hooks/vndHooks/useDocxQuoteMarks.ts";
 import {useDocxLegacyLinks} from "@/hooks/vndHooks/useDocxLegacyLinks.ts";
-import type {QuoteMarkInfo} from "@/utils/redactionQuoteMarks.ts";
+import type {QuoteMarkInfo} from "@/utils/vndProcess/redactionQuoteMarks.ts";
 
 interface RedactionTextViewProps {
     vnd: VndResponse;

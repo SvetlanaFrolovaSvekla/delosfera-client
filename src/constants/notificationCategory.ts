@@ -1,3 +1,5 @@
+// Категории уведомлений
+import type { NotificationCategory } from "@/service/notificationsService/notificationsServiceType.ts";
 import {
     Bell,
     FileText,
@@ -6,7 +8,6 @@ import {
     MoreHorizontal,
     type LucideIcon,
 } from "lucide-react";
-import type { NotificationCategory } from "@/service/notificationsService/notificationsServiceType.ts";
 
 interface NotificationCategoryMeta {
     icon: LucideIcon;

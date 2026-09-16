@@ -1,8 +1,9 @@
 import {useEffect, useState} from "react";
+import {Check} from "lucide-react";
 import {notificationSettingService, type NotificationSetting} from "@/service/notificationSettingService.ts";
 
 /**
- * Настройки уведомлений (УВ-16). Пока один переключатель — утренний email-дайджест;
+ * Настройки уведомлений. Пока один переключатель — утренний email-дайджест;
  * страница заведена так, чтобы сюда легли и другие тумблеры без переделки.
  */
 export function NotificationSettingsPage() {
@@ -49,13 +50,28 @@ export function NotificationSettingsPage() {
                                 Раз в день письмо со сводкой: что горит и что на подходе.
                             </span>
                         </span>
-                        <input
-                            type="checkbox"
-                            checked={setting.emailDigestEnabled}
-                            onChange={() => void toggle("emailDigestEnabled")}
-                            disabled={saving}
-                            className="w-5 h-5 shrink-0 cursor-pointer"
-                        />
+                        <span className="relative shrink-0">
+                            <input
+                                type="checkbox"
+                                checked={setting.emailDigestEnabled}
+                                onChange={() => void toggle("emailDigestEnabled")}
+                                disabled={saving}
+                                className="absolute inset-0 w-5 h-5 opacity-0 cursor-pointer disabled:cursor-default"
+                            />
+                            <span
+                                className="w-5 h-5 flex-none rounded-md grid place-items-center border-[1.5px] pointer-events-none"
+                                style={{
+                                    borderColor: setting.emailDigestEnabled ? "#4e57d6" : "#cbd3df",
+                                    background: setting.emailDigestEnabled ? "#4e57d6" : "white",
+                                }}
+                            >
+                                <Check
+                                    className="w-[13px] h-[13px] text-white"
+                                    strokeWidth={3}
+                                    style={{opacity: setting.emailDigestEnabled ? 1 : 0}}
+                                />
+                            </span>
+                        </span>
                     </label>
                 </div>
             )}

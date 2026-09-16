@@ -22,7 +22,7 @@ import {szPaperService, type SzOriginal} from "@/service/szService/szPaperServic
 import {SelectDropdown} from "@/components/componentsGeneral/selects/SingleSelects/SelectDropdown.tsx";
 import {CheckBoxOne} from "@/components/componentsGeneral/componentsCheckBox/CheckBoxOne.tsx";
 import {SearchBar} from "@/components/componentsGeneral/SearchBar.tsx";
-import {Icon} from "@/components/icons/Icon";
+import {Icon} from "@/assets/icons/Icon";
 
 type ScopeId = "all" | "inbox" | "assignments" | "originals" | "mine" | "drafts"
     | "approval" | "pending" | "signing" | "archive";

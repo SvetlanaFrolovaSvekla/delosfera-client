@@ -7,7 +7,7 @@ import {Download, FileUp, Trash2} from "lucide-react";
 import type {DisagreementMatrixRowResponse} from "@/service/coordinationService/coordinationServiceTypes.ts";
 import {DisagreementMatrixTable} from "@/components/componentsVND/componentsOpenVndPage/componentsCoordinationTab/DisagreementMatrixTable.tsx";
 import {Clue} from "@/components/componentsGeneral/knowledgeBaseComponents/Clue.tsx";
-import {downloadBlob} from "@/utils/docxDisagreementMatrixExport.ts";
+import {downloadBlob} from "@/utils/docxWork/docxDisagreementMatrixExport.ts";
 import disagreementMatrixTemplateBlankUrl from "@/assets/disagreementMatrix/disagreementMatrixTemplateBlank.docx?url";
 
 export type DisagreementMatrixMode = "generate" | "upload";

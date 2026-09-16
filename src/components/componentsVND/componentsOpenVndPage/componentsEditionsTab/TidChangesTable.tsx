@@ -3,7 +3,7 @@
 import {useEffect, useState} from "react";
 import type {TidAutoRow, TidDiffSegment} from "@/hooks/vndHooks/useTidDiffRows.ts";
 import {userService} from "@/service/userService/userService.ts";
-import {downloadBlob, generateTidDocx, type TidExportRow} from "@/utils/docxTidExport.ts";
+import {downloadBlob, generateTidDocx, type TidExportRow} from "@/utils/docxWork/docxTidExport.ts";
 import {
     RichDiffEditor
 } from "@/components/componentsVND/componentsOpenVndPage/componentsEditionsTab/RichDiffEditor.tsx";

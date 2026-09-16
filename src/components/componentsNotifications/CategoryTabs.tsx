@@ -2,15 +2,18 @@ import clsx from "clsx";
 import React from "react";
 import type {NotificationCategoryOption} from "@/service/notificationsService/notificationsServiceType";
 import type {ActiveTab} from "@/hooks/notificationsHooks/useNotifications.ts";
-import {Star, Bell, FileText, Shield, ListChecks, MoreHorizontal, Users} from "lucide-react";
+import {Star, Bell, FileText, Shield, ListChecks, MoreHorizontal, Users, FileSignature, ShoppingCart} from "lucide-react";
 
 const CATEGORY_ICONS: Record<string, React.ReactNode> = {
     System: <Bell className="h-3.5 w-3.5"/>,
     Vnd: <FileText className="h-3.5 w-3.5"/>,
-    Approval: <Shield className="h-3.5 w-3.5"/>,
-    Task: <ListChecks className="h-3.5 w-3.5"/>,
+    Sz: <FileSignature className="h-3.5 w-3.5"/>,
+    Procurement: <ShoppingCart className="h-3.5 w-3.5"/>,
     Hr: <Users className="h-3.5 w-3.5"/>,
     Other: <MoreHorizontal className="h-3.5 w-3.5"/>,
+    // Approval/Task - легаси, см. notificationsServiceType.ts
+    Approval: <Shield className="h-3.5 w-3.5"/>,
+    Task: <ListChecks className="h-3.5 w-3.5"/>,
 };
 
 interface CategoryTabsProps {

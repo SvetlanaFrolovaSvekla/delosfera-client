@@ -1,9 +1,11 @@
 // Виджет "Последние уведомления" на главной странице
+import {useState} from "react";
 import {useTranslation} from "react-i18next";
 import {useNavigate} from "react-router-dom";
 
 import {notificationsService} from "@/service/notificationsService/notificationsService.ts";
 import {useRecentNotifications} from "@/hooks/notificationsHooks/useRecentNotifications.ts";
+import type {NotificationCategory} from "@/service/notificationsService/notificationsServiceType.ts";
 import {timeAgo} from "@/utils/dateUtils.ts";
 import {HOME_BOTTOM_ROW_HEIGHT} from "@/constants/homeConst.ts";
 import {NOTIFICATION_CATEGORY_META, DEFAULT_CATEGORY_META} from "@/constants/notificationCategory.ts";
@@ -17,10 +19,23 @@ interface RecentNotificationsCardProps {
     limit?: number;
 }
 
+// Табы панели (как на "Последняя активность"/"Мои задачи"): все / по категориям
+// уведомлений (см. NotificationCategoryCatalog на бэке).
+const SECTIONS: { id: string; label: string; category?: NotificationCategory }[] = [
+    {id: "all", label: "Все"},
+    {id: "System", label: "Системные", category: "System"},
+    {id: "Vnd", label: "ВНД", category: "Vnd"},
+    {id: "Sz", label: "СЗ", category: "Sz"},
+    {id: "Procurement", label: "Закупки", category: "Procurement"},
+    {id: "Other", label: "Разное", category: "Other"},
+];
+
 export function RecentNotificationsCard({limit = 15}: RecentNotificationsCardProps) {
     const {t} = useTranslation();
     const navigate = useNavigate();
-    const {items, isLoading, error} = useRecentNotifications(limit);
+    const [section, setSection] = useState<string>("all");
+    const activeCategory = SECTIONS.find((s) => s.id === section)?.category;
+    const {items, isLoading, error} = useRecentNotifications(limit, activeCategory);
 
     const handleOpen = (id: number, isRead: boolean) => {
         if (!isRead) notificationsService.markAsRead(id).catch(() => undefined);
@@ -42,13 +57,31 @@ export function RecentNotificationsCard({limit = 15}: RecentNotificationsCardPro
             <div className="flex flex-none flex-wrap items-center justify-between gap-2 border-b border-[#eef2f7] px-[18px] py-4 pb-[13px]">
                 {/* Последние уведомления */}
                 <h2 className="text-[15px] font-semibold">{t("home.recentNotifications.title")}</h2>
-                <button
-                    className="cursor-pointer text-[12.5px] font-semibold text-[var(--app-accent,_#2f68f5)] hover:underline"
-                    onClick={() => navigate("/notifications")}
-                >
-                    {/* Все уведомления */}
-                    {t("home.recentNotifications.viewAll")}
-                </button>
+                <div className="flex flex-wrap items-center gap-2.5">
+                    <div className="flex flex-wrap gap-1.5">
+                        {SECTIONS.map((s) => (
+                            <button
+                                key={s.id}
+                                onClick={() => setSection(s.id)}
+                                className="cursor-pointer rounded-full px-2.5 py-[3px] text-[11px] font-semibold transition-colors"
+                                style={{
+                                    border: `1px solid ${section === s.id ? "#2f68f5" : "#e5e9f0"}`,
+                                    background: section === s.id ? "#eef3ff" : "#fff",
+                                    color: section === s.id ? "#2f68f5" : "#55617a",
+                                }}
+                            >
+                                {s.label}
+                            </button>
+                        ))}
+                    </div>
+                    <button
+                        className="cursor-pointer text-[12.5px] font-semibold text-[var(--app-accent,_#2f68f5)] hover:underline"
+                        onClick={() => navigate("/notifications")}
+                    >
+                        {/* Все уведомления */}
+                        {t("home.recentNotifications.viewAll")}
+                    </button>
+                </div>
             </div>
             <div className="min-h-0 flex-1 overflow-y-auto px-[18px] pb-[14px] pt-1.5">
                 {isLoading ? (

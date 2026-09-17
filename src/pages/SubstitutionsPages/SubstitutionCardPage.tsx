@@ -6,7 +6,7 @@ import {PermissionCode} from "@/constants/permissions/permissions.ts";
 import {UserPicker, type PickableUser} from "@/components/componentsGeneral/UserPicker.tsx";
 import {userService} from "@/service/userService/userService.ts";
 import {
-    substitutionService, REASON_LABEL, HANDOVER_LABEL,
+    substitutionService, REASON_LABEL, HANDOVER_LABEL, APPROVAL_STATE_LABEL,
     type SubstitutionSaveRequest, type SubstitutionReason, type HandoverMoment,
     type CommissionMember, type SubstitutionDetails,
 } from "@/service/substitutionService/substitutionService.ts";
@@ -20,7 +20,7 @@ export function SubstitutionCardPage() {
     const {id} = useParams<{id: string}>();
     const isNew = !id || id === "new";
     const navigate = useNavigate();
-    const {hasPermission} = useAuth();
+    const {hasPermission, user} = useAuth();
 
     const [users, setUsers] = useState<PickableUser[]>([]);
     const [form, setForm] = useState<SubstitutionSaveRequest>(empty);
@@ -272,6 +272,27 @@ export function SubstitutionCardPage() {
                     </Field>
                 </Section>
 
+                {/* Маршрут согласования */}
+                {details && details.approvals.length > 0 && (
+                    <Section title="Маршрут согласования">
+                        <div className="flex flex-col gap-2">
+                            {details.approvals.map((a) => {
+                                const color = a.state === "Approved" ? "#1c7a4d"
+                                    : a.state === "Rejected" ? "#c0392b"
+                                    : a.state === "Active" ? "#2f68f5" : "#8b97ab";
+                                return (
+                                    <div key={a.order} className="flex items-center gap-3 text-[13px]">
+                                        <span className="inline-flex h-6 w-6 items-center justify-center rounded-full text-white text-[12px] font-semibold" style={{background: color}}>{a.order}</span>
+                                        <span className="font-medium text-[#374253] min-w-[170px]">{a.roleLabel}</span>
+                                        <span className="text-[#55617a] flex-1">{a.userName ?? "—"}</span>
+                                        <span className="font-medium" style={{color}}>{APPROVAL_STATE_LABEL[a.state]}</span>
+                                    </div>
+                                );
+                            })}
+                        </div>
+                    </Section>
+                )}
+
                 {/* Действия */}
                 <div className="flex items-center gap-2.5 flex-wrap">
                     {editable && (
@@ -309,6 +330,22 @@ export function SubstitutionCardPage() {
                                 className="h-10 px-4 rounded-[10px] border border-[#f0c8c0] bg-white text-[14px] font-medium text-[#c0392b] cursor-pointer hover:bg-[#fbeae7] disabled:opacity-50 flex items-center gap-2">
                             <Trash2 size={16}/> Удалить
                         </button>
+                    )}
+                    {details?.status === "OnApproval"
+                        && details.approvals.find((a) => a.state === "Active")?.userId === user?.id && (
+                        <>
+                            <button type="button" onClick={() => void act(() => substitutionService.approve(details.id))} disabled={busy}
+                                    className="h-10 px-5 rounded-[10px] bg-[#1c7a4d] !text-white text-[14px] font-semibold cursor-pointer hover:brightness-95 disabled:opacity-50">
+                                Согласовать
+                            </button>
+                            <button type="button" onClick={() => {
+                                const c = window.prompt("Причина отклонения (необязательно):") ?? undefined;
+                                void act(() => substitutionService.reject(details.id, c));
+                            }} disabled={busy}
+                                    className="h-10 px-4 rounded-[10px] border border-[#f0c8c0] bg-white text-[14px] font-medium text-[#c0392b] cursor-pointer hover:bg-[#fbeae7] disabled:opacity-50">
+                                Отклонить
+                            </button>
+                        </>
                     )}
                     {(details?.status === "OnApproval" || details?.status === "OnExecution") && (
                         <button type="button" onClick={() => void act(() => substitutionService.withdraw(details.id))} disabled={busy}

@@ -17,6 +17,16 @@
     "saving": "Сохранение…",
     "archiving": "Архивация…"
   },
+  "createDocumentModal": {
+    "title": "Создать документ",
+    "description": "Выберите вид документа, который необходимо создать.",
+    "types": {
+      "vnd": "Внутренний нормативный документ (ВНД)",
+      "memo": "Служебная записка (СЗ)",
+      "procurement": "Документ на закупку"
+    },
+    "next": "Далее"
+  },
   "dateFilterGroup": {
     "exactLabel": "Exact",
     "rangeLabel": "Range",

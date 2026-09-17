@@ -52,6 +52,10 @@ export function ActualizationOneTimeMailingSection() {
     const [subject, setSubject] = useState("");
     const [message, setMessage] = useState("");
 
+    // ── каналы отправки ─────────────────────────────────────────────────────
+    const [sendInApp, setSendInApp] = useState(true);
+    const [sendEmail, setSendEmail] = useState(false);
+
     // ── план актуализации (вложение) ───────────────────────────────────────
     const [includePlan, setIncludePlan] = useState(false);
     const [summary, setSummary] = useState<VndActualizationSummaryResponse | null>(null);
@@ -131,13 +135,16 @@ export function ActualizationOneTimeMailingSection() {
     }), [bucketFilter, typeFilters, developerFilters, organFilters, dueDateFilter]);
 
     const canSend = subject.trim() !== "" && message.trim() !== ""
-        && (orgUnitIds.length > 0 || selectedUsers.size > 0);
+        && (orgUnitIds.length > 0 || selectedUsers.size > 0)
+        && (sendInApp || sendEmail);
 
     const resetForm = () => {
         setOrgUnitIds([]);
         setSelectedUsers(new Map());
         setSubject("");
         setMessage("");
+        setSendInApp(true);
+        setSendEmail(false);
         setIncludePlan(false);
         setBucketFilter("all");
         setTypeFilters([]);
@@ -165,6 +172,8 @@ export function ActualizationOneTimeMailingSection() {
                 message: message.trim(),
                 includePlan,
                 planExport: includePlan ? {filter: planFilter, columns, neverActualizedOnly} : null,
+                sendInApp,
+                sendEmail,
             });
 
             toast.update(toastId, {
@@ -316,6 +325,35 @@ export function ActualizationOneTimeMailingSection() {
                     rows={5}
                     className="w-full rounded-[9px] border border-[#e5e9f0] bg-white p-2.5 text-[13px] text-[#1c2740] outline-none focus:border-[#4e57d6] resize-y"
                 />
+
+                <div className="mt-3 flex flex-wrap items-center gap-x-5 gap-y-2 rounded-xl border border-[#eef2f7] bg-[#fafbfd] px-3.5 py-3">
+                    <span className="text-[11px] font-bold uppercase tracking-[.06em] text-[#a3adbd]">
+                        Куда отправлять
+                    </span>
+                    <label className="inline-flex cursor-pointer select-none items-center gap-2 text-[12.5px] font-medium text-[#3a4560]">
+                        <input
+                            type="checkbox"
+                            checked={sendInApp}
+                            onChange={(e) => setSendInApp(e.target.checked)}
+                            className="h-[15px] w-[15px] cursor-pointer accent-[#4e57d6]"
+                        />
+                        В системе (уведомление в Делосфере)
+                    </label>
+                    <label className="inline-flex cursor-pointer select-none items-center gap-2 text-[12.5px] font-medium text-[#3a4560]">
+                        <input
+                            type="checkbox"
+                            checked={sendEmail}
+                            onChange={(e) => setSendEmail(e.target.checked)}
+                            className="h-[15px] w-[15px] cursor-pointer accent-[#4e57d6]"
+                        />
+                        На почту
+                    </label>
+                    {!sendInApp && !sendEmail && (
+                        <span className="text-[11.5px] font-semibold text-[#c0392b]">
+                            Выберите хотя бы один канал
+                        </span>
+                    )}
+                </div>
             </div>
 
             {/* План актуализации */}

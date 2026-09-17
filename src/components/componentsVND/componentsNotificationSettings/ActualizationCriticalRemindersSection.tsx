@@ -16,6 +16,8 @@ export function ActualizationCriticalRemindersSection() {
     const [loadError, setLoadError] = useState<string | null>(null);
 
     const [enabled, setEnabled] = useState(false);
+    const [notifyInApp, setNotifyInApp] = useState(true);
+    const [notifyEmail, setNotifyEmail] = useState(true);
     const [days, setDays] = useState<number[]>([]);
     const [draftValue, setDraftValue] = useState("");
     const [saving, setSaving] = useState(false);
@@ -24,6 +26,8 @@ export function ActualizationCriticalRemindersSection() {
         actualizationNotificationsService.getSettings()
             .then((s) => {
                 setEnabled(s.criticalRemindersEnabled);
+                setNotifyInApp(s.criticalRemindersNotifyInApp);
+                setNotifyEmail(s.criticalRemindersNotifyEmail);
                 setDays(s.criticalReminderDays);
             })
             .catch(() => setLoadError("Не удалось загрузить настройки напоминаний"))
@@ -50,6 +54,11 @@ export function ActualizationCriticalRemindersSection() {
     const removeThreshold = (value: number) => setDays((prev) => prev.filter((d) => d !== value));
 
     const handleSave = async () => {
+        if (enabled && !notifyInApp && !notifyEmail) {
+            toast.error("Не удалось сохранить", "Выберите хотя бы один канал — в системе или по почте");
+            return;
+        }
+
         setSaving(true);
 
         try {
@@ -58,9 +67,13 @@ export function ActualizationCriticalRemindersSection() {
                 ...settings,
                 criticalRemindersEnabled: enabled,
                 criticalReminderDays: days,
+                criticalRemindersNotifyInApp: notifyInApp,
+                criticalRemindersNotifyEmail: notifyEmail,
             });
             setEnabled(updated.criticalRemindersEnabled);
             setDays(updated.criticalReminderDays);
+            setNotifyInApp(updated.criticalRemindersNotifyInApp);
+            setNotifyEmail(updated.criticalRemindersNotifyEmail);
             toast.success("Настройки напоминаний сохранены");
         } catch (e) {
             const message = e instanceof Error ? e.message : "Не удалось сохранить";
@@ -110,6 +123,35 @@ export function ActualizationCriticalRemindersSection() {
                 />
                 Рассылать критические напоминания
             </label>
+
+            <div className="mt-3 flex flex-wrap items-center gap-x-5 gap-y-2 rounded-xl border border-[#eef2f7] bg-[#fafbfd] px-3.5 py-3">
+                <span className="text-[11px] font-bold uppercase tracking-[.06em] text-[#a3adbd]">
+                    Куда отправлять
+                </span>
+                <label className="inline-flex cursor-pointer select-none items-center gap-2 text-[12.5px] font-medium text-[#3a4560]">
+                    <input
+                        type="checkbox"
+                        checked={notifyInApp}
+                        onChange={(e) => setNotifyInApp(e.target.checked)}
+                        className="h-[15px] w-[15px] cursor-pointer accent-[#4e57d6]"
+                    />
+                    В системе (уведомление в Делосфере)
+                </label>
+                <label className="inline-flex cursor-pointer select-none items-center gap-2 text-[12.5px] font-medium text-[#3a4560]">
+                    <input
+                        type="checkbox"
+                        checked={notifyEmail}
+                        onChange={(e) => setNotifyEmail(e.target.checked)}
+                        className="h-[15px] w-[15px] cursor-pointer accent-[#4e57d6]"
+                    />
+                    На почту
+                </label>
+                {!notifyInApp && !notifyEmail && (
+                    <span className="text-[11.5px] font-semibold text-[#c0392b]">
+                        Выберите хотя бы один канал
+                    </span>
+                )}
+            </div>
 
             <div className="mt-4">
                 <div className="mb-2 text-[11px] font-bold uppercase tracking-[.06em] text-[#a3adbd]">
@@ -163,7 +205,7 @@ export function ActualizationCriticalRemindersSection() {
             <div className="mt-4">
                 <button
                     onClick={handleSave}
-                    disabled={saving}
+                    disabled={saving || (enabled && !notifyInApp && !notifyEmail)}
                     className="cursor-pointer h-9 rounded-[9px] bg-[#4e57d6] px-4 text-[13px] font-semibold text-white hover:bg-[#3f47bd] disabled:cursor-not-allowed disabled:opacity-50"
                 >
                     {saving ? "Сохранение…" : "Сохранить"}

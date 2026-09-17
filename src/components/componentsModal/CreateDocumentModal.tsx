@@ -2,6 +2,7 @@
 import {useState} from "react";
 import {createPortal} from "react-dom";
 import {useNavigate} from "react-router-dom";
+import {useTranslation} from "react-i18next";
 import {FilePlus2, X} from "lucide-react";
 import {useModalShake} from "@/hooks//useModalShake.ts";
 import {Tooltip} from "@/components/componentsGeneral/Tooltip.tsx";
@@ -11,14 +12,14 @@ type DocumentType = "vnd" | "memo" | "procurement";
 
 interface DocumentTypeOption {
     value: DocumentType;
-    label: string;
+    labelKey: string;
     disabled?: boolean;
 }
 
 const DOCUMENT_TYPES: DocumentTypeOption[] = [
-    {value: "vnd", label: "Внутренний нормативный документ (ВНД)"},
-    {value: "memo", label: "Служебная записка (СЗ)"},
-    {value: "procurement", label: "Документ на закупку"},
+    {value: "vnd", labelKey: "createDocumentModal.types.vnd"},
+    {value: "memo", labelKey: "createDocumentModal.types.memo"},
+    {value: "procurement", labelKey: "createDocumentModal.types.procurement"},
 ];
 
 // Маршруты для перехода после выбора типа документа
@@ -34,6 +35,7 @@ interface CreateDocumentModalProps {
 }
 
 export function CreateDocumentModal({onClose}: CreateDocumentModalProps) {
+    const {t} = useTranslation();
     const navigate = useNavigate();
     const {panelRef, handleBackdropClick} = useModalShake();
     const [selected, setSelected] = useState<DocumentType | null>(null);
@@ -67,7 +69,8 @@ export function CreateDocumentModal({onClose}: CreateDocumentModalProps) {
                             <FilePlus2 size={19} strokeWidth={1.8}/>
                         </span>
                         <h2 className="text-[16px] font-bold text-[#1c2740]">
-                            Создать документ
+                            {/* Создать документ */}
+                            {t("createDocumentModal.title")}
                         </h2>
                     </div>
                     <button
@@ -79,14 +82,15 @@ export function CreateDocumentModal({onClose}: CreateDocumentModalProps) {
                 </div>
 
                 <p className="mb-3 text-[13px] leading-[1.6] text-[#55617a]">
-                    Выберите вид документа, который необходимо создать.
+                    {/* Выберите вид документа, который необходимо создать. */}
+                    {t("createDocumentModal.description")}
                 </p>
 
                 <div className="flex flex-col gap-2">
                     {DOCUMENT_TYPES.map((opt) => (
                         <DocTypeRadioRow
                             key={opt.value}
-                            label={opt.label}
+                            label={t(opt.labelKey)}
                             checked={selected === opt.value}
                             disabled={opt.disabled}
                             onSelect={() => setSelected(opt.value)}
@@ -99,7 +103,8 @@ export function CreateDocumentModal({onClose}: CreateDocumentModalProps) {
                         onClick={onClose}
                         className="cursor-pointer h-[38px] rounded-[10px] border border-[#e5e9f0] px-4 text-[13px] font-semibold text-[#3a4560] hover:bg-[#f6f8fb]"
                     >
-                        Отмена
+                        {/* Отмена */}
+                        {t("general.cancel")}
                     </button>
                     <Tooltip content={blockedTooltip} disabled={!blockedTooltip} side="top">
                         <button
@@ -107,7 +112,8 @@ export function CreateDocumentModal({onClose}: CreateDocumentModalProps) {
                             disabled={!canConfirm}
                             className="cursor-pointer inline-flex h-[38px] items-center gap-2 rounded-[10px] bg-[var(--app-accent,_#2f68f5)] px-4 text-[13px] font-semibold text-white hover:brightness-[1.06] disabled:cursor-not-allowed disabled:opacity-50"
                         >
-                            Далее
+                            {/* Далее */}
+                            {t("createDocumentModal.next")}
                         </button>
                     </Tooltip>
                 </div>
@@ -128,6 +134,8 @@ function DocTypeRadioRow({
     disabled?: boolean;
     onSelect: () => void;
 }) {
+    const {t} = useTranslation();
+
     return (
         <button
             type="button"
@@ -157,7 +165,8 @@ function DocTypeRadioRow({
             <span className="flex-1">{label}</span>
             {disabled && (
                 <span className="flex-none rounded-full bg-[#eef1f5] px-2 py-[2px] text-[10.5px] font-semibold text-[#a3adbd]">
-                    Скоро
+                    {/* Скоро */}
+                    {t("general.comingSoon")}
                 </span>
             )}
         </button>

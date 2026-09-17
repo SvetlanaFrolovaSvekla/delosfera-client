@@ -23,12 +23,22 @@ export interface ActualizationNotificationSettings {
     /** Ключи доп. колонок Excel-вложения — те же, что ACTUALIZATION_COLUMNS на фронте.
      * Обязательные (fixed) колонки сюда не входят — вкладываются всегда. */
     monthlyDigestColumns: string[];
+    /** Показывать ли сводку в уведомлениях внутри Делосферы. Пока monthlyDigestEnabled = true,
+     * хотя бы один из monthlyDigestNotifyInApp/monthlyDigestNotifyEmail обязан быть включён. */
+    monthlyDigestNotifyInApp: boolean;
+    /** Дублировать ли сводку на почту (с Excel-планом вложением). */
+    monthlyDigestNotifyEmail: boolean;
 
     /** Раздел "Критические напоминания" — рассылаются ли они вообще. */
     criticalRemindersEnabled: boolean;
     /** Пороги в днях ДО наступления просрочки актуализации, за которые отправляется
      * напоминание (например [30, 14, 7, 3, 1, 0]). */
     criticalReminderDays: number[];
+    /** Показывать ли критические напоминания в уведомлениях внутри Делосферы. Та же проверка
+     * "хотя бы один канал", что и у сводки. */
+    criticalRemindersNotifyInApp: boolean;
+    /** Дублировать ли критические напоминания на почту. */
+    criticalRemindersNotifyEmail: boolean;
 }
 
 /** Раздел "Создать единоразовую рассылку плана актуализации" — разовое письмо, не связанное с
@@ -46,6 +56,12 @@ export interface SendActualizationOneTimeMailingRequest {
     /** Настройки плана для вложения — обязательны, если includePlan = true. Тот же формат, что
      * и у vndService.exportActualizationPlan (VndActualizationExportRequest). */
     planExport?: VndActualizationExportRequest | null;
+
+    /** Показать письмо в уведомлениях внутри Делосферы. Хотя бы один из sendInApp/sendEmail
+     * обязан быть true. */
+    sendInApp: boolean;
+    /** Также отправить копию на почту получателям. */
+    sendEmail: boolean;
 }
 
 export interface SendActualizationOneTimeMailingResponse {

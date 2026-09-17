@@ -17,6 +17,16 @@
     "saving": "Saving…",
     "archiving": "Archiving…"
   },
+  "createDocumentModal": {
+    "title": "Create document",
+    "description": "Select the type of document you want to create.",
+    "types": {
+      "vnd": "Internal regulatory document (IRD)",
+      "memo": "Memo",
+      "procurement": "Procurement document"
+    },
+    "next": "Next"
+  },
   "dateFilterGroup": {
     "exactLabel": "точная",
     "rangeLabel": "диапазон",

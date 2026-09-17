@@ -17,6 +17,16 @@
     "saving": "Сакталууда…",
     "archiving": "Архивдөө…"
   },
+  "createDocumentModal": {
+    "title": "Документ түзүү",
+    "description": "Түзүүчү документтин түрүн тандаңыз.",
+    "types": {
+      "vnd": "Ички ченемдик документ (ВНД)",
+      "memo": "Кызматтык жазуу (КЖ)",
+      "procurement": "Сатып алуу документи"
+    },
+    "next": "Кийинки"
+  },
   "dateFilterGroup": {
     "exactLabel": "Так",
     "rangeLabel": "Аралык",

@@ -21,7 +21,13 @@ export function ActualizationMonthlyDigestSection() {
     const [loadError, setLoadError] = useState<string | null>(null);
 
     const [enabled, setEnabled] = useState(false);
-    const [restSettings, setRestSettings] = useState<Pick<ActualizationNotificationSettings, "criticalRemindersEnabled" | "criticalReminderDays">>({criticalRemindersEnabled: false, criticalReminderDays: []});
+    const [notifyInApp, setNotifyInApp] = useState(true);
+    const [notifyEmail, setNotifyEmail] = useState(true);
+    const [restSettings, setRestSettings] = useState<Pick<ActualizationNotificationSettings,
+        "criticalRemindersEnabled" | "criticalReminderDays" | "criticalRemindersNotifyInApp" | "criticalRemindersNotifyEmail">>({
+        criticalRemindersEnabled: false, criticalReminderDays: [],
+        criticalRemindersNotifyInApp: true, criticalRemindersNotifyEmail: true,
+    });
     const [columns, setColumns] = useState<Record<string, boolean>>({});
     const [saving, setSaving] = useState(false);
     const [previewOpen, setPreviewOpen] = useState(false);
@@ -30,8 +36,14 @@ export function ActualizationMonthlyDigestSection() {
         actualizationNotificationsService.getSettings()
             .then((s) => {
                 setEnabled(s.monthlyDigestEnabled);
+                setNotifyInApp(s.monthlyDigestNotifyInApp);
+                setNotifyEmail(s.monthlyDigestNotifyEmail);
                 setColumns(Object.fromEntries(s.monthlyDigestColumns.map((k) => [k, true])));
-                setRestSettings({criticalRemindersEnabled: s.criticalRemindersEnabled, criticalReminderDays: s.criticalReminderDays});
+                setRestSettings({
+                    criticalRemindersEnabled: s.criticalRemindersEnabled, criticalReminderDays: s.criticalReminderDays,
+                    criticalRemindersNotifyInApp: s.criticalRemindersNotifyInApp,
+                    criticalRemindersNotifyEmail: s.criticalRemindersNotifyEmail,
+                });
             })
             .catch(() => setLoadError("Не удалось загрузить настройки рассылки"))
             .finally(() => setLoading(false));
@@ -41,6 +53,11 @@ export function ActualizationMonthlyDigestSection() {
         setColumns((prev) => ({...prev, [key]: !(prev[key] === true)}));
 
     const handleSave = async () => {
+        if (enabled && !notifyInApp && !notifyEmail) {
+            toast.error("Не удалось сохранить", "Выберите хотя бы один канал — в системе или по почте");
+            return;
+        }
+
         setSaving(true);
 
         try {
@@ -51,6 +68,8 @@ export function ActualizationMonthlyDigestSection() {
             await actualizationNotificationsService.updateSettings({
                 monthlyDigestEnabled: enabled,
                 monthlyDigestColumns,
+                monthlyDigestNotifyInApp: notifyInApp,
+                monthlyDigestNotifyEmail: notifyEmail,
                 ...restSettings,
             });
             toast.success("Настройки рассылки сохранены");
@@ -102,6 +121,35 @@ export function ActualizationMonthlyDigestSection() {
                 Рассылать сводку 1-го числа каждого месяца
             </label>
 
+            <div className="mt-3 flex flex-wrap items-center gap-x-5 gap-y-2 rounded-xl border border-[#eef2f7] bg-[#fafbfd] px-3.5 py-3">
+                <span className="text-[11px] font-bold uppercase tracking-[.06em] text-[#a3adbd]">
+                    Куда отправлять
+                </span>
+                <label className="inline-flex cursor-pointer select-none items-center gap-2 text-[12.5px] font-medium text-[#3a4560]">
+                    <input
+                        type="checkbox"
+                        checked={notifyInApp}
+                        onChange={(e) => setNotifyInApp(e.target.checked)}
+                        className="h-[15px] w-[15px] cursor-pointer accent-[#4e57d6]"
+                    />
+                    В системе (уведомление в Делосфере)
+                </label>
+                <label className="inline-flex cursor-pointer select-none items-center gap-2 text-[12.5px] font-medium text-[#3a4560]">
+                    <input
+                        type="checkbox"
+                        checked={notifyEmail}
+                        onChange={(e) => setNotifyEmail(e.target.checked)}
+                        className="h-[15px] w-[15px] cursor-pointer accent-[#4e57d6]"
+                    />
+                    На почту (письмо с планом в Excel)
+                </label>
+                {!notifyInApp && !notifyEmail && (
+                    <span className="text-[11.5px] font-semibold text-[#c0392b]">
+                        Выберите хотя бы один канал
+                    </span>
+                )}
+            </div>
+
             <div className="mt-4">
                 <div className="mb-2 flex flex-wrap gap-1.5">
                     {FIXED_COLUMNS.map((c) => (
@@ -134,7 +182,7 @@ export function ActualizationMonthlyDigestSection() {
             <div className="mt-4 flex gap-2">
                 <button
                     onClick={handleSave}
-                    disabled={saving}
+                    disabled={saving || (enabled && !notifyInApp && !notifyEmail)}
                     className="cursor-pointer h-9 rounded-[9px] bg-[#4e57d6] px-4 text-[13px] font-semibold text-white hover:bg-[#3f47bd] disabled:cursor-not-allowed disabled:opacity-50"
                 >
                     {saving ? "Сохранение…" : "Сохранить"}

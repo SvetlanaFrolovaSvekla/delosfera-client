@@ -116,6 +116,26 @@ a:hover { color: #1b4fd0; }
 @keyframes dsIn { from { opacity: 0; transform: translateY(7px); } to { opacity: 1; transform: none; } }
 @keyframes dsPop { from { opacity: 0; transform: translateY(6px) scale(.98); } to { opacity: 1; transform: none; } }
 
+/* Колокольчик в шапке трясётся, когда приходит новое уведомление (см. NotificationsDropdown) */
+@keyframes bellShake {
+    0%, 100% { transform: rotate(0deg); }
+    15% { transform: rotate(14deg); }
+    30% { transform: rotate(-12deg); }
+    45% { transform: rotate(9deg); }
+    60% { transform: rotate(-7deg); }
+    75% { transform: rotate(4deg); }
+    90% { transform: rotate(-2deg); }
+}
+.bell-shake {
+    animation: bellShake .65s ease-in-out;
+    transform-origin: 50% 0;
+}
+/* Тряска колокольчика - не декоративная анимация, а единственный визуальный сигнал
+   о новом уведомлении помимо тоста, поэтому prefers-reduced-motion её не гасит
+   (в отличие от authFloat выше) - иначе на системах с "уменьшить анимацию"
+   (см. Windows: Параметры -> Спец. возможности -> Экран) колокольчик молча
+   переставал бы трястись без какой-либо альтернативы. */
+
 .kpi-shine-sweep {
     position: absolute;
     inset: 0;

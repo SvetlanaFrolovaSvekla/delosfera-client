@@ -1,4 +1,5 @@
-export type ToastVariant = "success" | "error" | "info" | "loading";
+// Всплывающее уведомление при успехе, загрузки, предупреждении и др.
+export type ToastVariant = "success" | "error" | "info" | "warning" | "loading";
 
 export interface ToastItem {
     id: number;
@@ -6,6 +7,7 @@ export interface ToastItem {
     title: string;
     description?: string;
     duration: number; // 0 = не скрывать автоматически (используется для "loading")
+    onClick?: () => void; // если задан - тост кликабелен (например, переход к уведомлению)
 }
 
 type Listener = (toasts: ToastItem[]) => void;
@@ -23,9 +25,9 @@ function remove(id: number) {
     emit();
 }
 
-function push(variant: ToastVariant, title: string, description?: string, duration = 4500) {
+function push(variant: ToastVariant, title: string, description?: string, duration = 4500, onClick?: () => void) {
     const id = nextId++;
-    toasts = [...toasts, { id, variant, title, description, duration }];
+    toasts = [...toasts, { id, variant, title, description, duration, onClick }];
     emit();
     return id;
 }
@@ -36,12 +38,14 @@ function update(id: number, patch: Partial<Omit<ToastItem, "id">>) {
 }
 
 export const toast = {
-    success: (title: string, description?: string, duration?: number) =>
-        push("success", title, description, duration),
-    error: (title: string, description?: string, duration?: number) =>
-        push("error", title, description, duration),
-    info: (title: string, description?: string, duration?: number) =>
-        push("info", title, description, duration),
+    success: (title: string, description?: string, duration?: number, onClick?: () => void) =>
+        push("success", title, description, duration, onClick),
+    error: (title: string, description?: string, duration?: number, onClick?: () => void) =>
+        push("error", title, description, duration, onClick),
+    warning: (title: string, description?: string, duration?: number, onClick?: () => void) =>
+        push("warning", title, description, duration, onClick),
+    info: (title: string, description?: string, duration?: number, onClick?: () => void) =>
+        push("info", title, description, duration, onClick),
     loading: (title: string, description?: string) => push("loading", title, description, 0), // не скрывается сам
     update,
     dismiss: remove,

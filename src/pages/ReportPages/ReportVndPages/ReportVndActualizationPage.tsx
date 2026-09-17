@@ -1,3 +1,4 @@
+import {useTranslation} from "react-i18next";
 import {
     AlertTriangle,
     CalendarClock,
@@ -26,6 +27,7 @@ import {useVndReportPeriod} from "@/hooks/analyticsHooks/useVndReport.ts";
  * открытым циклам и заявкам на доступ к актуализации. Держит свой собственный шаг
  * группировки по периодам (PeriodControl) - независимо от того, что выбрано на вкладке "Все". */
 export function ReportVndActualizationPage() {
+    const {t} = useTranslation();
     const {hasPermission} = useAuth();
     const canView = hasPermission(PermissionCode.ViewFullStatistics);
 
@@ -36,67 +38,69 @@ export function ReportVndActualizationPage() {
         return (
             <EmptyState
                 variant="error"
-                title="Недостаточно прав"
-                description="У вас нет доступа к странице отчётности по ВНД"
+                title={t("reportVndActualizationPage.accessDenied.title")}
+                description={t("reportVndActualizationPage.accessDenied.description")}
             />
         );
     }
 
     if (loading) {
-        return <Loader label="Формируем статистику…"/>;
+        return <Loader label={t("reportVndActualizationPage.loading")}/>;
     }
 
     if (error || !overview) {
         return (
             <EmptyState
                 variant="error"
-                title="Не удалось загрузить статистику актуализации"
+                title={t("reportVndActualizationPage.loadError.title")}
                 description={error ?? undefined}
             />
         );
     }
 
     const bucketDonutData = [
-        {label: "В норме", value: overview.normal, percent: pct(overview.normal, overview.trackedTotal), color: "#24a36b"},
-        {label: "Срок приближается", value: overview.approaching, percent: pct(overview.approaching, overview.trackedTotal), color: "#b3730a"},
-        {label: "Критично", value: overview.critical, percent: pct(overview.critical, overview.trackedTotal), color: "#e0483d"},
-        {label: "Просрочено", value: overview.overdue, percent: pct(overview.overdue, overview.trackedTotal), color: "#c0392b"},
+        {label: t("reportVndActualizationPage.buckets.normal"), value: overview.normal, percent: pct(overview.normal, overview.trackedTotal), color: "#24a36b"},
+        {label: t("reportVndActualizationPage.buckets.approaching"), value: overview.approaching, percent: pct(overview.approaching, overview.trackedTotal), color: "#b3730a"},
+        {label: t("reportVndActualizationPage.buckets.critical"), value: overview.critical, percent: pct(overview.critical, overview.trackedTotal), color: "#e0483d"},
+        {label: t("reportVndActualizationPage.buckets.overdue"), value: overview.overdue, percent: pct(overview.overdue, overview.trackedTotal), color: "#c0392b"},
     ];
+
+    const loadingSectionLabel = t("reportVndActualizationPage.loadingSection");
 
     return (
         <div className="w-full">
             {/* KPI-плашки */}
             <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 mb-5 mt-1">
-                <KpiCard label="На контроле сроков" value={overview.trackedTotal} icon={CalendarClock} color="#4e57d6" bg="#ececfc"/>
-                <KpiCard label="Просрочено" value={overview.overdue} icon={AlertTriangle} color="#c0392b" bg="#fdecea"/>
-                <KpiCard label="Критично" value={overview.critical} icon={ShieldAlert} color="#e0483d" bg="#fdecea"/>
-                <KpiCard label="Срок приближается" value={overview.approaching} icon={Clock} color="#b3730a" bg="#fbeecf"/>
-                <KpiCard label="Открытых циклов" value={overview.openCycles} icon={RefreshCcw} color="#2f68f5" bg="#e9f0ff"/>
-                <KpiCard label="Заявок в ожидании" value={overview.pendingRequests} icon={FileClock} color="#7a5ce0" bg="#efeafe"/>
+                <KpiCard label={t("reportVndActualizationPage.kpi.trackedTotal")} value={overview.trackedTotal} icon={CalendarClock} color="#4e57d6" bg="#ececfc"/>
+                <KpiCard label={t("reportVndActualizationPage.kpi.overdue")} value={overview.overdue} icon={AlertTriangle} color="#c0392b" bg="#fdecea"/>
+                <KpiCard label={t("reportVndActualizationPage.kpi.critical")} value={overview.critical} icon={ShieldAlert} color="#e0483d" bg="#fdecea"/>
+                <KpiCard label={t("reportVndActualizationPage.kpi.approaching")} value={overview.approaching} icon={Clock} color="#b3730a" bg="#fbeecf"/>
+                <KpiCard label={t("reportVndActualizationPage.kpi.openCycles")} value={overview.openCycles} icon={RefreshCcw} color="#2f68f5" bg="#e9f0ff"/>
+                <KpiCard label={t("reportVndActualizationPage.kpi.pendingRequests")} value={overview.pendingRequests} icon={FileClock} color="#7a5ce0" bg="#efeafe"/>
                 <KpiCard
-                    label="Средний срок цикла"
-                    value={`${overview.averageCycleDurationDays} дн.`}
+                    label={t("reportVndActualizationPage.kpi.avgCycleDuration")}
+                    value={t("reportVndActualizationPage.kpi.avgCycleDurationValue", {days: overview.averageCycleDurationDays})}
                     icon={Hourglass}
                     color="#7a5ce0"
                     bg="#efeafe"
-                    hint={`медиана: ${overview.medianCycleDurationDays} дн.`}
+                    hint={t("reportVndActualizationPage.kpi.avgCycleDurationHint", {days: overview.medianCycleDurationDays})}
                 />
                 <KpiCard
-                    label="С реальными изменениями"
-                    value={`${overview.cyclesWithChangesRatePercent}%`}
+                    label={t("reportVndActualizationPage.kpi.withRealChanges")}
+                    value={t("reportVndActualizationPage.kpi.withRealChangesValue", {percent: overview.cyclesWithChangesRatePercent})}
                     icon={CheckCircle2}
                     color="#1c7a4d"
                     bg="#eafaf1"
-                    hint="доля завершённых циклов"
+                    hint={t("reportVndActualizationPage.kpi.withRealChangesHint")}
                 />
             </div>
 
             {/* Распределения */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-4">
-                <ChartCard title="Сроки актуализации" subtitle="Распределение действующих ВНД по близости к сроку">
-                    <DonutChart data={bucketDonutData} centerLabel="документов"/>
+                <ChartCard title={t("reportVndActualizationPage.charts.deadlines.title")} subtitle={t("reportVndActualizationPage.charts.deadlines.subtitle")}>
+                    <DonutChart data={bucketDonutData} centerLabel={t("reportVndActualizationPage.charts.documentsUnit")}/>
                 </ChartCard>
-                <ChartCard title="Подразделения с наибольшим числом просрочек" subtitle="Критично + просрочено, по подразделению-разработчику">
+                <ChartCard title={t("reportVndActualizationPage.charts.topOverdueDevelopers.title")} subtitle={t("reportVndActualizationPage.charts.topOverdueDevelopers.subtitle")}>
                     <HorizontalBarList
                         data={overview.topOverdueDevelopers.map((d, i) => ({
                             label: d.label,
@@ -110,18 +114,18 @@ export function ReportVndActualizationPage() {
 
             {/* Длительность цикла по периодам */}
             <div className="flex items-center justify-between flex-wrap gap-3 mt-7 mb-3">
-                <h2 className="m-0 text-[16px] font-bold text-[#1c2740]">Длительность цикла актуализации по периодам</h2>
+                <h2 className="m-0 text-[16px] font-bold text-[#1c2740]">{t("reportVndActualizationPage.charts.durationSectionTitle")}</h2>
                 <PeriodControl granularity={granularity} onGranularityChange={setGranularity}/>
             </div>
-            <ChartCard title="Средняя длительность цикла" subtitle="От старта актуализации до публикации, дней" className="mb-4">
+            <ChartCard title={t("reportVndActualizationPage.charts.duration.title")} subtitle={t("reportVndActualizationPage.charts.duration.subtitle")} className="mb-4">
                 {trendLoading ? (
-                    <Loader label="Загрузка…" fullHeight={false}/>
+                    <Loader label={loadingSectionLabel} fullHeight={false}/>
                 ) : (
                     <TimeSeriesChart
                         labels={actualizationTrend.map((d) => d.periodLabel)}
                         series={[
                             {
-                                name: "Дней в среднем",
+                                name: t("reportVndActualizationPage.charts.duration.seriesName"),
                                 color: "#7a5ce0",
                                 values: actualizationTrend.map((d) => d.averageDurationDays),
                                 area: true,
@@ -132,11 +136,11 @@ export function ReportVndActualizationPage() {
             </ChartCard>
 
             {/* Заявки на доступ к актуализации */}
-            <h2 className="m-0 text-[16px] font-bold text-[#1c2740] mt-7 mb-3">Заявки на актуализацию</h2>
+            <h2 className="m-0 text-[16px] font-bold text-[#1c2740] mt-7 mb-3">{t("reportVndActualizationPage.requests.sectionTitle")}</h2>
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-4">
-                <MiniStatCard label="Ожидают решения" value={overview.pendingRequests} color="#7a5ce0"/>
-                <MiniStatCard label="Одобрено" value={overview.approvedRequests} color="#1c7a4d"/>
-                <MiniStatCard label="Отклонено" value={overview.rejectedRequests} color="#c0392b"/>
+                <MiniStatCard label={t("reportVndActualizationPage.requests.pending")} value={overview.pendingRequests} color="#7a5ce0"/>
+                <MiniStatCard label={t("reportVndActualizationPage.requests.approved")} value={overview.approvedRequests} color="#1c7a4d"/>
+                <MiniStatCard label={t("reportVndActualizationPage.requests.rejected")} value={overview.rejectedRequests} color="#c0392b"/>
             </div>
         </div>
     );

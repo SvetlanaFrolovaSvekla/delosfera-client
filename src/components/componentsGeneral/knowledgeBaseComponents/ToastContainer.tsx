@@ -1,12 +1,13 @@
 // Всплывающее уведомление при успехе, загрузки, предупреждении и др.
 import { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
-import { CheckCircle2, Info, Loader2, X, XCircle } from "lucide-react";
+import { AlertTriangle, CheckCircle2, Info, Loader2, X, XCircle } from "lucide-react";
 import { toast, type ToastItem } from "@/service/toastService.ts";
 
 const VARIANT_META = {
     success: { icon: CheckCircle2, color: "#1c7a4d", bg: "#eafaf1", border: "#bfe8d0" },
     error: { icon: XCircle, color: "#c0392b", bg: "#fdf1f1", border: "#f2c2c2" },
+    warning: { icon: AlertTriangle, color: "#b3730a", bg: "#fdf3e0", border: "#f0dcae" },
     info: { icon: Info, color: "#4e57d6", bg: "#f2f3fd", border: "#dadcf7" },
     loading: { icon: Loader2, color: "#4e57d6", bg: "#f2f3fd", border: "#dadcf7" },
 } as const;
@@ -34,16 +35,19 @@ function ToastCard({ item }: { item: ToastItem }) {
         };
     }, [item.id, item.duration]);
 
-    const handleClose = () => {
+    const handleCardClick = () => {
+        if (!item.onClick) return;
+        item.onClick();
         setLeaving(true);
         setTimeout(() => toast.dismiss(item.id), 200);
     };
 
     return (
         <div
+            onClick={handleCardClick}
             className={`pointer-events-auto flex w-[340px] items-start gap-3 rounded-[12px] border px-4 py-3 shadow-[0_10px_30px_-8px_rgba(28,39,64,0.25)] transition-all duration-200 ${
-                visible && !leaving ? "translate-y-0 opacity-100" : "translate-y-2 opacity-0"
-            }`}
+                item.onClick ? "cursor-pointer" : ""
+            } ${visible && !leaving ? "translate-y-0 opacity-100" : "translate-y-2 opacity-0"}`}
             style={{ background: meta.bg, borderColor: meta.border }}
         >
             <Icon
@@ -58,7 +62,14 @@ function ToastCard({ item }: { item: ToastItem }) {
                 )}
             </div>
             {item.variant !== "loading" && (
-                <button onClick={handleClose} className="flex-none cursor-pointer text-[#8b97ab] hover:text-[#3a4560]">
+                <button
+                    onClick={(e) => {
+                        e.stopPropagation();
+                        setLeaving(true);
+                        setTimeout(() => toast.dismiss(item.id), 200);
+                    }}
+                    className="flex-none cursor-pointer text-[#8b97ab] hover:text-[#3a4560]"
+                >
                     <X size={15} />
                 </button>
             )}

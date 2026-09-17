@@ -17,6 +17,164 @@
     "saving": "Сохранение…",
     "archiving": "Архивация…"
   },
+  "reportVndActualizationPage": {
+    "accessDenied": {
+      "title": "Недостаточно прав",
+      "description": "У вас нет доступа к странице отчётности по ВНД"
+    },
+    "loading": "Формируем статистику…",
+    "loadingSection": "Загрузка…",
+    "loadError": {
+      "title": "Не удалось загрузить статистику актуализации"
+    },
+    "kpi": {
+      "trackedTotal": "На контроле сроков",
+      "overdue": "Просрочено",
+      "critical": "Критично",
+      "approaching": "Срок приближается",
+      "openCycles": "Открытых циклов",
+      "pendingRequests": "Заявок в ожидании",
+      "avgCycleDuration": "Средний срок цикла",
+      "avgCycleDurationValue": "{{days}} дн.",
+      "avgCycleDurationHint": "медиана: {{days}} дн.",
+      "withRealChanges": "С реальными изменениями",
+      "withRealChangesValue": "{{percent}}%",
+      "withRealChangesHint": "доля завершённых циклов"
+    },
+    "buckets": {
+      "normal": "В норме",
+      "approaching": "Срок приближается",
+      "critical": "Критично",
+      "overdue": "Просрочено"
+    },
+    "charts": {
+      "documentsUnit": "документов",
+      "deadlines": {
+        "title": "Сроки актуализации",
+        "subtitle": "Распределение действующих ВНД по близости к сроку"
+      },
+      "topOverdueDevelopers": {
+        "title": "Подразделения с наибольшим числом просрочек",
+        "subtitle": "Критично + просрочено, по подразделению-разработчику"
+      },
+      "durationSectionTitle": "Длительность цикла актуализации по периодам",
+      "duration": {
+        "title": "Средняя длительность цикла",
+        "subtitle": "От старта актуализации до публикации, дней",
+        "seriesName": "Дней в среднем"
+      }
+    },
+    "requests": {
+      "sectionTitle": "Заявки на актуализацию",
+      "pending": "Ожидают решения",
+      "approved": "Одобрено",
+      "rejected": "Отклонено"
+    }
+  },
+  "reportVndPage": {
+    "accessDenied": {
+      "title": "Недостаточно прав",
+      "description": "У вас нет доступа к странице отчётности по ВНД"
+    },
+    "loading": "Формируем отчёт…",
+    "loadingSection": "Загрузка…",
+    "loadError": {
+      "title": "Не удалось загрузить отчётность"
+    },
+    "header": {
+      "title": "Отчётность по ВНД",
+      "description": "Сводная аналитика по документам, согласованию и актуализации"
+    },
+    "export": {
+      "xlsx": "Скачать Excel",
+      "xlsxLoading": "Формируем…",
+      "csv": "Скачать CSV",
+      "error": {
+        "title": "Не удалось скачать отчёт",
+        "description": "Попробуйте ещё раз чуть позже"
+      }
+    },
+    "kpi": {
+      "total": "Всего документов",
+      "active": "Действующие",
+      "onActualization": "На актуализации",
+      "onReview": "На согласовании",
+      "onConsolidation": "На консолидации",
+      "requiresAttention": "Требуют внимания",
+      "requiresAttentionHint": "из них просрочено: {{count}}",
+      "draft": "Черновики",
+      "archived": "В архиве",
+      "approvalsInProgress": "Активных согласований",
+      "avgApprovalDuration": "Средний срок согласования",
+      "avgApprovalDurationValue": "{{days}} дн.",
+      "avgApprovalDurationHint": "решений по таймауту: {{percent}}%"
+    },
+    "charts": {
+      "documentsUnit": "документов",
+      "statusDistribution": {
+        "title": "Статусы документов",
+        "subtitle": "Распределение ВНД по жизненному циклу"
+      },
+      "typeDistribution": {
+        "title": "Виды документов",
+        "subtitle": "Распределение по типам ВНД"
+      },
+      "topDevelopers": {
+        "title": "Топ подразделений-разработчиков",
+        "subtitle": "По количеству ВНД"
+      },
+      "securityLevels": {
+        "title": "Уровни секретности",
+        "subtitle": "Распределение документов"
+      },
+      "topRubrics": {
+        "title": "Топ рубрик классификатора",
+        "subtitle": "По количеству привязанных ВНД"
+      },
+      "keywordCloud": {
+        "title": "Облако ключевых слов",
+        "subtitle": "Самые часто используемые ключевые слова"
+      },
+      "dynamicsSectionTitle": "Динамика по периодам",
+      "lifecycle": {
+        "title": "Жизненный цикл ВНД",
+        "subtitle": "Создано / отправлено на согласование / опубликовано / архивировано",
+        "created": "Создано",
+        "sentToApproval": "На согласование",
+        "published": "Опубликовано",
+        "archived": "Архивировано"
+      },
+      "actualization": {
+        "title": "Циклы актуализации",
+        "subtitle": "Запущено / опубликовано по периодам",
+        "started": "Запущено",
+        "published": "Опубликовано",
+        "publishedWithChanges": "С изменениями"
+      },
+      "workload": {
+        "title": "Подразделения × статусы",
+        "subtitle": "Тепловая карта: сколько документов какого статуса у каждого подразделения-разработчика"
+      }
+    }
+  },
+  "analyticsPage": {
+    "title": "Аналитика",
+    "description": "Отчётность по всем контурам системы: нормотворчество, служебные записки, закупки, заседания, кадры и канцелярия.",
+    "tabs": {
+      "vnd": "ВНД",
+      "sla": "Сроки и SLA",
+      "sz": "Служебные записки",
+      "prc": "Заявки и закупки",
+      "meetings": "Заседания",
+      "hr": "Кадровый документооборот",
+      "office": "Канцелярия"
+    },
+    "vndSubTabs": {
+      "all": "Все",
+      "actualization": "Актуализация",
+      "approvals": "Согласования"
+    }
+  },
   "createDocumentModal": {
     "title": "Создать документ",
     "description": "Выберите вид документа, который необходимо создать.",

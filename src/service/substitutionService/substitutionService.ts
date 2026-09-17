@@ -25,6 +25,21 @@ export interface CommissionMember {
     position?: string | null;
 }
 
+export type ApprovalState = "Pending" | "Active" | "Approved" | "Rejected";
+export const APPROVAL_STATE_LABEL: Record<ApprovalState, string> = {
+    Pending: "Ожидает", Active: "На согласовании", Approved: "Согласовано", Rejected: "Отклонено",
+};
+
+export interface ApprovalStep {
+    order: number;
+    roleLabel: string;
+    userId: number;
+    userName: string | null;
+    state: ApprovalState;
+    comment: string | null;
+    decidedAt: string | null;
+}
+
 export interface SubstitutionListItem {
     id: number;
     regNumber: string | null;
@@ -69,6 +84,7 @@ export interface SubstitutionDetails extends SubstitutionListItem {
     commissionMembers: CommissionMember[];
     description: string | null;
     passportExpiresBeforeEnd: boolean;
+    approvals: ApprovalStep[];
 }
 
 export interface SubstitutionSaveRequest {
@@ -132,6 +148,14 @@ export const substitutionService = {
     },
     async submit(id: number) {
         const {data} = await apiClient.post<SubstitutionDetails>(`${BASE}/${id}/submit`);
+        return data;
+    },
+    async approve(id: number, comment?: string) {
+        const {data} = await apiClient.post<SubstitutionDetails>(`${BASE}/${id}/approve`, {comment});
+        return data;
+    },
+    async reject(id: number, comment?: string) {
+        const {data} = await apiClient.post<SubstitutionDetails>(`${BASE}/${id}/reject`, {comment});
         return data;
     },
     async execute(id: number) {

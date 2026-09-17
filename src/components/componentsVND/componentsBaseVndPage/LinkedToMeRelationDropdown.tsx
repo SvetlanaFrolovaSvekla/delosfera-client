@@ -61,7 +61,7 @@ export function LinkedToMeRelationDropdown({
                 >
                     <div className="px-2.5 pt-2 pb-1.5">
                         <span className="block text-[10.5px] font-bold tracking-[.05em] uppercase text-[#a3adbd] mb-1.5">
-                            Тип связи со мной
+                            {t("registry.filters.linkedToMe.header")}
                         </span>
                         <div className="flex items-center justify-between">
                             <button
@@ -95,7 +95,7 @@ export function LinkedToMeRelationDropdown({
                                         className="text-[10.5px] font-bold tracking-[.04em] uppercase"
                                         style={{color: group.color}}
                                     >
-                                        {group.title}
+                                        {t(group.title)}
                                     </span>
                                 </div>
 
@@ -126,7 +126,7 @@ export function LinkedToMeRelationDropdown({
                                                 />
                                             </span>
                                                 <span className="text-[13px] text-[#3a4560]">
-                                                {o.label}
+                                                {t(o.label)}
                                             </span>
                                             </button>
                                         );

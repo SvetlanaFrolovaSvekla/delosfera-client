@@ -13,37 +13,40 @@ export function formatDateTime(iso: string): string {
     });
 }
 
-export function timeAgo(iso: string): string {
+// "только что" / "N мин назад" / "N ч назад" / "N дн назад" - переиспользует те же
+// ключи time.justNow/time.minutes/time.hours/time.days/time.ago, что и getElapsedLabel,
+// только без комбинирования двух единиц (напр. "2 дня 5 часов") - тут всегда одна.
+export function timeAgo(iso: string, t: TFunction): string {
     const diffMs = Date.now() - new Date(iso).getTime();
     const min = Math.floor(diffMs / 60000);
 
-    if (min < 1) return "только что";
-    if (min < 60) return `${min} мин назад`;
+    if (min < 1) return t("time.justNow");
+    if (min < 60) return t("time.ago", {time: t("time.minutes", {count: min})});
 
     const hrs = Math.floor(min / 60);
-    if (hrs < 24) return `${hrs} ч назад`;
+    if (hrs < 24) return t("time.ago", {time: t("time.hours", {count: hrs})});
 
     const days = Math.floor(hrs / 24);
-    return `${days} дн назад`;
+    return t("time.ago", {time: t("time.days", {count: days})});
 }
 
 // Форматирование времени для уведомлений
-export function formatRelativeTime(iso: string): string {
+export function formatRelativeTime(iso: string, t: TFunction): string {
     const date = new Date(iso);
     const diffSec = Math.floor((Date.now() - date.getTime()) / 1000);
 
-    if (diffSec < 60) return "только что";
+    if (diffSec < 60) return t("time.justNow");
 
     const diffMin = Math.floor(diffSec / 60);
-    if (diffMin < 60) return `${diffMin} мин назад`;
+    if (diffMin < 60) return t("time.ago", {time: t("time.minutes", {count: diffMin})});
 
     const diffHour = Math.floor(diffMin / 60);
-    if (diffHour < 24) return `${diffHour} ч назад`;
+    if (diffHour < 24) return t("time.ago", {time: t("time.hours", {count: diffHour})});
 
     const diffDay = Math.floor(diffHour / 24);
-    if (diffDay < 7) return `${diffDay} дн назад`;
+    if (diffDay < 7) return t("time.ago", {time: t("time.days", {count: diffDay})});
 
-    return date.toLocaleDateString("ru-RU", { day: "2-digit", month: "2-digit" });
+    return date.toLocaleDateString("ru-RU", {day: "2-digit", month: "2-digit"});
 }
 
 // Определяет срочность дедлайна по проценту оставшегося времени от норматива.
@@ -252,7 +255,7 @@ export function formatDate(iso: string | null | undefined): string {
  * приблизительное количество дней/месяцев. Возвращает "—", если даты нет
  * или интервал некорректен (to <= from).
  */
-export function describePeriod(fromISO: string | null | undefined, toISO: string | null | undefined): string {
+export function describePeriod(fromISO: string | null | undefined, toISO: string | null | undefined, t: TFunction): string {
     if (!fromISO || !toISO) return "—";
     const from = new Date(fromISO);
     const to = new Date(toISO);
@@ -261,16 +264,18 @@ export function describePeriod(fromISO: string | null | undefined, toISO: string
 
     const approxMonths = days / 30.44;
     const buckets = [
-        {months: 3, label: "раз в квартал"},
-        {months: 6, label: "раз в полгода"},
-        {months: 12, label: "раз в год"},
-        {months: 24, label: "раз в два года"},
-        {months: 36, label: "раз в три года"},
+        {months: 3, key: "time.periodicity.quarterly"},   // раз в квартал
+        {months: 6, key: "time.periodicity.semiannual"},  // раз в полгода
+        {months: 12, key: "time.periodicity.annual"},     // раз в год
+        {months: 24, key: "time.periodicity.biennial"},   // раз в два года
+        {months: 36, key: "time.periodicity.triennial"},  // раз в три года
     ];
     const closest = buckets.find((b) => Math.abs(approxMonths - b.months) <= b.months * 0.1);
-    if (closest) return closest.label;
+    if (closest) return t(closest.key);
 
-    return approxMonths < 1 ? `${days} дн.` : `≈ ${Math.round(approxMonths)} мес.`;
+    return approxMonths < 1
+        ? t("time.periodicity.daysCount", {days})               // "N дн."
+        : t("time.periodicity.approxMonths", {months: Math.round(approxMonths)}); // "≈ N мес."
 }
 
 /**

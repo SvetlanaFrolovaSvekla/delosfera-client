@@ -1,3 +1,4 @@
+// Компонент-счётчик символов
 interface CharCounterProps {
     length: number;
     max: number;

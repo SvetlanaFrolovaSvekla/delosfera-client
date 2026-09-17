@@ -111,7 +111,7 @@ export function ActivityFeedPage() {
                                         реквизитов по строкам через \n (см. VndService.BuildChangedFieldsList) */}
                                     <div className="whitespace-pre-line text-[12.5px] leading-[1.4] text-[#26324a]">{item.text}</div>
                                     <div className="mt-0.5 text-[11px] text-[#8b97ab]">
-                                        {timeAgo(item.createdAt)}
+                                        {timeAgo(item.createdAt, t)}
                                         {locked && " · нет доступа"}
                                     </div>
                                 </div>

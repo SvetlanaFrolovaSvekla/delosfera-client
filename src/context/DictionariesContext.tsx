@@ -1,4 +1,5 @@
 import {createContext, useContext, useEffect, useMemo, useState, type ReactNode} from "react";
+import {useTranslation} from "react-i18next";
 import {typeVndService} from "@/service/dictionariesService/typeVndService/typeVndService.ts";
 import {approvalBodyService} from "@/service/dictionariesService/approvalBodyService/approvalBodyService.ts";
 import {
@@ -68,6 +69,7 @@ const toOptions = <T extends { id: number; name: string; parentId?: number | nul
     }));
 
 export function DictionariesProvider({children}: { children: ReactNode }) {
+    const {t} = useTranslation();
     const [types, setTypes] = useState<TypeVndResponse[]>([]);
     const [organs, setOrgans] = useState<ApprovalBodyResponse[]>([]);
     const [orgUnits, setOrgUnits] = useState<OrganizationUnitResponse[]>([]);
@@ -113,7 +115,8 @@ export function DictionariesProvider({children}: { children: ReactNode }) {
                 setPositions(positionsRes);
             })
             .catch(() => {
-                if (!cancelled) setError("Не удалось загрузить справочники");
+                // Не удалось загрузить справочники
+                if (!cancelled) setError(t("dictionaries.loadError"));
             })
             .finally(() => {
                 if (!cancelled) setLoading(false);
@@ -122,7 +125,7 @@ export function DictionariesProvider({children}: { children: ReactNode }) {
         return () => {
             cancelled = true;
         };
-    }, [reloadKey]);
+    }, [reloadKey, t]);
 
     const value = useMemo<DictionariesContextValue>(() => ({
         types, organs, orgUnits, keywords, rubrics, szRubrics, secrecyLevels, userGroups, positions,
@@ -148,6 +151,6 @@ export function DictionariesProvider({children}: { children: ReactNode }) {
 // eslint-disable-next-line react-refresh/only-export-components
 export function useDictionaries(): DictionariesContextValue {
     const ctx = useContext(DictionariesContext);
-    if (!ctx) throw new Error("useDictionaries должен использоваться внутри DictionariesProvider");
+    if (!ctx) throw new Error("useDictionaries должен использоваться внутри DictionariesProvider!");
     return ctx;
 }

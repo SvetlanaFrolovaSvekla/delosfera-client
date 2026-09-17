@@ -1,4 +1,5 @@
-import {useEffect, useLayoutEffect, useRef, useState} from "react";
+import React, {useEffect, useLayoutEffect, useRef, useState} from "react";
+import {useTranslation} from "react-i18next";
 import {createPortal} from "react-dom";
 import {Calendar, Check, ChevronLeft, ChevronRight} from "lucide-react";
 import {parseDDMMYYYY, formatDDMMYYYY, isSameDay} from "@/utils/dateUtils.ts";
@@ -12,12 +13,6 @@ interface DatePickerInputProps {
     modal?: boolean;
     modalTitle?: string;
 }
-
-const WEEKDAYS = ["Пн", "Вт", "Ср", "Чт", "Пт", "Сб", "Вс"];
-const MONTHS = [
-    "Январь", "Февраль", "Март", "Апрель", "Май", "Июнь",
-    "Июль", "Август", "Сентябрь", "Октябрь", "Ноябрь", "Декабрь",
-];
 
 interface DayCell {
     date: Date;
@@ -48,20 +43,22 @@ function maskDateInput(raw: string): string {
     return out;
 }
 
+type DateValidationErrorCode = "invalidMonth" | "invalidDay" | "invalidYear" | "dateNotExist";
+
 // Полноценная проверка даты — отсекает и некорректные диапазоны (месяц 93),
 // и несуществующие даты (30 февраля), которые формально прошли бы по диапазону
-function validateDateString(s: string): { valid: boolean; error?: string; date?: Date } {
+function validateDateString(s: string): { valid: boolean; errorCode?: DateValidationErrorCode; date?: Date } {
     const match = /^(\d{2})\.(\d{2})\.(\d{4})$/.exec(s);
     if (!match) return {valid: false};
     const day = Number(match[1]);
     const month = Number(match[2]);
     const year = Number(match[3]);
-    if (month < 1 || month > 12) return {valid: false, error: "Некорректный месяц"};
-    if (day < 1 || day > 31) return {valid: false, error: "Некорректный день"};
-    if (year < 1900 || year > 2100) return {valid: false, error: "Некорректный год"};
+    if (month < 1 || month > 12) return {valid: false, errorCode: "invalidMonth"};
+    if (day < 1 || day > 31) return {valid: false, errorCode: "invalidDay"};
+    if (year < 1900 || year > 2100) return {valid: false, errorCode: "invalidYear"};
     const d = new Date(year, month - 1, day);
     if (d.getFullYear() !== year || d.getMonth() !== month - 1 || d.getDate() !== day) {
-        return {valid: false, error: "Такой даты не существует"};
+        return {valid: false, errorCode: "dateNotExist"};
     }
     return {valid: true, date: d};
 }
@@ -72,12 +69,24 @@ const POPUP_WIDTH = 264;
 export function DatePickerInput({
                                     value,
                                     onChange,
-                                    placeholder = "дд.мм.гггг",
+                                    placeholder: placeholderProp,
                                     className = "",
                                     disabled = false,
                                     modal = false,
-                                    modalTitle = "Выбор даты",
+                                    modalTitle: modalTitleProp,
                                 }: DatePickerInputProps) {
+    const {t} = useTranslation();
+
+    // дд.мм.гггг
+    const dateFormatPlaceholder = t("datePickerInput.dateFormatPlaceholder");
+    const placeholder = placeholderProp ?? dateFormatPlaceholder;
+    // Выбор даты
+    const modalTitle = modalTitleProp ?? t("datePickerInput.modalTitle");
+    // Пн, Вт, Ср, Чт, Пт, Сб, Вс
+    const WEEKDAYS = t("datePickerInput.weekdays", {returnObjects: true}) as string[];
+    // Январь, Февраль, Март, Апрель, Май, Июнь, Июль, Август, Сентябрь, Октябрь, Ноябрь, Декабрь
+    const MONTHS = t("datePickerInput.months", {returnObjects: true}) as string[];
+
     const [open, setOpen] = useState(false);
     const [view, setView] = useState<"days" | "years">("days");
     const today = new Date();
@@ -113,6 +122,7 @@ export function DatePickerInput({
     // при каждом открытии — подтягиваем черновик ручного ввода из текущего value
     useEffect(() => {
         if (open) {
+            // eslint-disable-next-line react-hooks/set-state-in-effect
             setManualInput(value);
             setManualError(null);
         }
@@ -175,7 +185,16 @@ export function DatePickerInput({
             return;
         }
         const result = validateDateString(masked);
-        setManualError(result.valid ? null : (result.error ?? "Некорректная дата"));
+        if (result.valid) {
+            setManualError(null);
+            return;
+        }
+        // Некорректный месяц / Некорректный день / Некорректный год / Такой даты не существует / Некорректная дата
+        setManualError(
+            result.errorCode
+                ? t(`datePickerInput.errors.${result.errorCode}`)
+                : t("datePickerInput.errors.invalidDate")
+        );
     };
 
     const applyManualInput = () => {
@@ -292,14 +311,14 @@ export function DatePickerInput({
                         <div className="mt-2.5 pt-2.5 border-t border-[#eef2f7] flex justify-center">
                             <button type="button" onClick={goToday}
                                     className="cursor-pointer h-8 px-3 rounded-[8px] text-[12px] font-semibold text-[#4e57d6] hover:bg-[#f6f8fb]">
-                                Сегодня
+                                {t("datePickerInput.today")} {/* Сегодня */}
                             </button>
                         </div>
 
                         {/* Ручной ввод даты */}
                         <div className="mt-2.5 pt-2.5 border-t border-[#eef2f7]">
                             <div className="text-[10.5px] font-bold tracking-[.04em] uppercase text-[#a3adbd] mb-1.5">
-                                Ввести вручную
+                                {t("datePickerInput.manualEntryLabel")} {/* Ввести вручную */}
                             </div>
                             <div className="flex items-center gap-1.5">
                                 <input
@@ -309,7 +328,7 @@ export function DatePickerInput({
                                     value={manualInput}
                                     onChange={handleManualChange}
                                     onKeyDown={handleManualKeyDown}
-                                    placeholder="дд.мм.гггг"
+                                    placeholder={dateFormatPlaceholder} // дд.мм.гггг
                                     maxLength={10}
                                     className={`h-9 px-2.5 rounded-[8px] border text-[12.5px] text-[#1c2740] outline-none flex-1 box-border focus:border-[#4e57d6] ${
                                         manualError ? "border-[#e0525f] focus:border-[#e0525f]" : "border-[#e5e9f0]"
@@ -319,7 +338,7 @@ export function DatePickerInput({
                                     type="button"
                                     onClick={applyManualInput}
                                     disabled={!manualIsValid}
-                                    aria-label="Подтвердить дату"
+                                    aria-label={t("datePickerInput.confirmDateAria")} // Подтвердить дату
                                     className={`w-9 h-9 flex-none grid place-items-center rounded-[8px] border-none transition-colors ${
                                         manualIsValid
                                             ? "bg-[#4e57d6] text-white cursor-pointer hover:brightness-105"

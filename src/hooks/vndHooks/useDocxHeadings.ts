@@ -13,7 +13,12 @@ interface UseDocxHeadingsResult {
  * такого оглавления нет и не предполагается, содержание собирается по факту оформления текста
  * (см. utils/docxHeadings.ts). Файл разбирается отдельным проходом (JSZip), независимо от
  * рендера docx-preview в useDocxPreview — оба хука читают один и тот же fileId параллельно. */
-export function useDocxHeadings(fileId: number | null): UseDocxHeadingsResult {
+export function useDocxHeadings(
+    fileId: number | null,
+    /** См. fetchFileBlob: путь на бэке, если файл выдаёт не общий /api/files/{id}
+     * (например, "help/files" для вложений статьи инструкции). */
+    endpoint?: string,
+): UseDocxHeadingsResult {
     const [headings, setHeadings] = useState<DocxHeadingItem[]>([]);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
@@ -33,7 +38,7 @@ export function useDocxHeadings(fileId: number | null): UseDocxHeadingsResult {
             setLoading(true);
             setError(null);
             try {
-                const {blob} = await fetchFileBlob(fileId);
+                const {blob} = await fetchFileBlob(fileId, undefined, undefined, endpoint);
                 if (cancelled) return;
                 const result = await extractDocxHeadings(blob);
                 if (cancelled) return;
@@ -52,7 +57,7 @@ export function useDocxHeadings(fileId: number | null): UseDocxHeadingsResult {
         return () => {
             cancelled = true;
         };
-    }, [fileId]);
+    }, [fileId, endpoint]);
 
     return {headings, loading, error};
 }

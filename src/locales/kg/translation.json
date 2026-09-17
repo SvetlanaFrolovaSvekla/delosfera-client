@@ -17,7 +17,48 @@
     "saving": "Сакталууда…",
     "archiving": "Архивдөө…"
   },
+  "dateFilterGroup": {
+    "exactLabel": "Так",
+    "rangeLabel": "Аралык",
+    "or": "же",
+    "numberColumn": "№",
+    "numberPlaceholder": "номер"
+  },
+  "datePickerInput": {
+    "dateFormatPlaceholder": "кк.аа.жжжж",
+    "modalTitle": "Датаны тандоо",
+    "weekdays": ["Дүй", "Шей", "Шар", "Бей", "Жум", "Ише", "Жек"],
+    "months": [
+      "Январь", "Февраль", "Март", "Апрель", "Май", "Июнь",
+      "Июль", "Август", "Сентябрь", "Октябрь", "Ноябрь", "Декабрь"
+    ],
+    "today": "Бүгүн",
+    "manualEntryLabel": "Кол менен киргизүү",
+    "confirmDateAria": "Датаны ырастоо",
+    "errors": {
+      "invalidMonth": "Ай туура эмес",
+      "invalidDay": "Күн туура эмес",
+      "invalidYear": "Жыл туура эмес",
+      "dateNotExist": "Мындай дата жок",
+      "invalidDate": "Дата туура эмес"
+    }
+  },
+  "journalViews": {
+    "loadError": "Көрүнүштөр жүктөлгөн жок",
+    "saveError": "Көрүнүштү сактоо мүмкүн болгон жок",
+    "updateError": "Көрүнүштү өзгөртүү мүмкүн болгон жок",
+    "removeError": "Көрүнүштү өчүрүү мүмкүн болгон жок"
+  },
   "time": {
+    "periodicity": {
+      "quarterly": "чейрек сайын 1 жолу",
+      "semiannual": "жарым жылда 1 жолу",
+      "annual": "жылына 1 жолу",
+      "biennial": "эки жылда 1 жолу",
+      "triennial": "үч жылда 1 жолу",
+      "approxMonths": "≈ {{months}} ай",
+      "daysCount": "{{days}} күн"
+    },
     "days": "{{count}} күн",
     "hours": "{{count}} саат",
     "minutes": "{{count}} мүнөт",
@@ -227,6 +268,9 @@
       "prev": "Артка",
       "next": "Алдыга"
     },
+    "emptyState": {
+      "title": "Азырынча эскертмелер жок!"
+    },
     "goToTheTask": "Тапшырмага өтүү",
     "title": "Билдирүүлөр",
     "loadingNotification": "Билдирүү жүктөлүүдө…",
@@ -276,7 +320,68 @@
     "footerVersion": "Делосфера ЭДА · v8.2",
     "support": "Колдоо"
   },
+  "journalViewPicker": {
+    "performance": "Көрүнүш",
+    "activeTooltip": "Көрүнүш: «{{name}}»",
+    "rememberTooltip": "Көрсөтүлгөн мамычаларды «{{name}}» көрүнүшүнө сактоо",
+    "save": "Сактоо",
+    "panelTitle": "Журналдын көрүнүшү",
+    "helpTooltip": "Көрүнүш — атайын атка сакталган көрүнүп турган мамычалардын жыйындысы. Өзүңүздүн көрүнүшүңүздү сиз гана көрөсүз, жалпы көрүнүштү бул журналды ачкандардын баары көрөт.",
+    "defaultColumns": "Демейки мамычалар",
+    "myViews": "Меники",
+    "sharedViews": "Жалпы",
+    "saveAsNew": "Көрсөтүлгөн мамычаларды көрүнүш катары сактоо…",
+    "namePlaceholder": "Көрүнүштүн аты",
+    "sharedLabel": "Жалпы — баары көрөт",
+    "sharedHint": "Болбосо көрүнүш сизде гана калат",
+    "setAsDefaultLabel": "Журналды ушул менен ачуу",
+    "cancel": "Жокко чыгаруу",
+    "deleteTitle": "Көрүнүштү өчүрүүгө уруксат бересизби?",
+    "deleteMessage": "«{{name}}» тизмеден жок болот, аны кайтаруу мүмкүн эмес.",
+    "delete": "Өчүрүү",
+    "deleteAriaLabel": "{{name}} өчүрүү",
+    "columnsCount_other": "{{count}} мамыча",
+    "defaultSuffix": "демейки"
+  },
+  "columns": {
+    "code": "Код",
+    "name": "Аталышы",
+    "type": "Түрү",
+    "developer": "Түзүүчү",
+    "organ": "Бекиткен орган",
+    "act": "Актуалдаштыруу",
+    "status": "Акыркы ред. статусу",
+    "statusArchive": "Акыркы редакциянын статусу",
+    "cancelDate": "Жокко чыгарылган күнү",
+    "cancelCode": "Жокко чыгаруу №",
+    "archivedDate": "Архивге өткөн күнү",
+    "daysInArchive": "Архивде",
+    "linkedToMe": "Мен менен байланышы",
+    "redactionCount": "Редакциялардын саны",
+    "responsibleExecutors": "Жооптуу аткаруучулар",
+    "adoptionDate": "Кабыл алынган күнү",
+    "adoptionCode": "Кабыл алуу №",
+    "effectiveDate": "Күчүнө кирген күнү",
+    "requisitesChangedDate": "Реквизиттердин өзгөрүшү",
+    "revisionChangedDate": "Редакциянын өзгөрүшү",
+    "dueActualizationDate": "Актуалдаштыруу мөөнөтү",
+    "lastActualizationDate": "Акыркы актуалдаштыруу күнү",
+    "lastActualizationStatus": "Акыркы актуалдаштыруунун статусу",
+    "keywords": "Негизги сөздөр",
+    "rubric": "Рубрика",
+    "secrecyLevel": "Купуялуулук деңгээли",
+    "userGroups": "Жеткиликтүүлүк топтору"
+  },
   "vnd": {
+    "vndTabs": {
+      "editions": "Редакциялар",
+      "editionsFirstDraft": "Биринчи редакция",
+      "passport": "Реквизиттер",
+      "links": "Байланыштар",
+      "history": "Тарых",
+      "approval": "Макулдашуунун жүрүшү",
+      "actual": "Актуалдаштыруу"
+    },
     "shortLabel": "ИНД",
     "status": "Статус",
     "emptyState": {
@@ -340,6 +445,20 @@
       "approaching": "Мөөнөт жакындап калды",
       "critical": "Критикалык мөөнөт",
       "overdue": "Мөөнөтү өтүп кетти"
+    },
+    "linkedToMeRelation": {
+      "groups": {
+        "initiative": "Демилге"
+      },
+      "options": {
+        "currentApprover": "Мен азыр макулдашуучумун",
+        "pastApprover": "Мен мурда макулдашуучу болгонмун",
+        "currentActualizer": "Мен актуалдаштырып жатам",
+        "pastActualizer": "Мен мурда актуалдаштырганмын",
+        "currentConsolidator": "Мен консолидациялап жатам",
+        "pastConsolidator": "Мен мурда консолидациялаганмын",
+        "initiator": "Мен демилгечимин"
+      }
     }
   },
   "openVndPage": {
@@ -657,12 +776,87 @@
       "searchInGoogle": "Google'дон «{{query}}» издөө"
     }
   },
+  "registry": {
+    "title": "ВНД реестри",
+    "description": "Колдонуудагы ички ченемдик документтердин борборлоштурулган реестри · бардык реквизиттер жана редакциялардын тексти боюнча издөө жана чыпкалоо",
+    "createButton": "ВНД түзүү",
+    "tabs": {
+      "all": "Баары",
+      "active": "Колдонуудагы",
+      "notYetActive": "Дагы деле колдонууга кирбеген",
+      "arch": "Архивделген",
+      "draft": "Долбоорлор"
+    },
+    "draftOwnerScope": {
+      "allDraft": "Бардык долбоорлор",
+      "mine": "Менин долбоорлорум",
+      "others": "Башка колдонуучулардын долбоорлору"
+    },
+    "loadingData": "Маалыматтар жүктөлүүдө…",
+    "errors": {
+      "loadDataTitle": "Маалыматтарды жүктөп алуу мүмкүн болгон жок",
+      "loadDictionariesTitle": "Справочниктерди жүктөп алуу мүмкүн болгон жок",
+      "retry": "Кайталоо"
+    },
+    "filters": {
+      "searchPlaceholder": "Код, аталышы, реквизиттери жана редакциялардын тексти боюнча издөө…",
+      "archiveNotice": "Архивделген (күчүн жоготкон) ВНД документтери. Жокко чыгаруу кызматтык баянкат менен таризделет жана макулдашылбайт.",
+      "advancedSearch": "Кеңири издөө",
+      "resultOfTotal": "{{total}} ичинен <b>{{result}}</b>",
+      "statusLabel": "Акыркы редакциянын статусу",
+      "linkedToMeOnly": "Мага гана байланыштуулар",
+      "columns": {
+        "trigger": "Мамычалар",
+        "label": "Мамычаларды көрсөтүү",
+        "searchPlaceholder": "Мамыча боюнча издөө…"
+      },
+      "linkedToMe": {
+        "trigger": "Байланыш түрү",
+        "header": "Мени менен байланыш түрү"
+      },
+      "advanced": {
+        "name": "Аталышы",
+        "namePlaceholder": "Аталышы боюнча издөө…",
+        "codePlaceholder": "Код боюнча издөө…",
+        "revisionText": "Редакциянын тексти",
+        "revisionTextPlaceholder": "Редакциянын тексти боюнча издөө…",
+        "orgUnitSearchPlaceholder": "Бөлүм боюнча издөө…",
+        "initiatorSearchPlaceholder": "Аты-жөнү боюнча издөө…",
+        "collapse": "Жыйыштыруу",
+        "reset": "Тазалоо",
+        "apply": "Издөө"
+      }
+    },
+    "table": {
+      "revisionsCountTooltip": "Редакциялардын саны (актуалдуу жана эмес)"
+    }
+  },
   "createVnd": {
+    "cannotCreateMessage": "Сизде жаңы ВНД түзүүгө укугуңуз жок!",
+    "successModal": {
+      "title": "Долбоор-карточка ийгиликтүү түзүлдү!",
+      "codeLabel": "ВНД-{{code}}",
+      "redirecting": "ВНД карточкасына өтүү…"
+    },
+    "cancel": "Артка",
+    "codeCard": {
+      "title": "Документтин коду",
+      "example": "Мисалы: 10101",
+      "assignedAfterSave": "Документтин коду сакталгандан кийин системa тарабынан ыйгарылат",
+      "note": "Бекитилгенден кийин убактылуу идентификатор документтин туруктуу номерине айланат."
+    },
     "titlesSection": {
       "title": "Аталыштар",
       "titleRu": "Аталышы (орус)",
       "titleKy": "Аталышы (кырг)",
-      "titleEn": "Аталышы (англ)"
+      "titleEn": "Аталышы (англ)",
+      "placeholders": {
+        "ru": "Документтин аталышы",
+        "ky": "Документтин аталышы",
+        "en": "Document title"
+      },
+      "requiredField": "Милдеттүү талаа",
+      "minLength": "Минимум {{min}} белги"
     },
     "classifiers": {
       "title": "Классификаторлор",
@@ -696,7 +890,21 @@
       "executorHeads": "Башчылар: {{names}}"
     },
     "submitting": "Түзүлүүдө…",
-    "submit": "Долбоор-карточка түзүү"
+    "submit": "Долбоор-карточка түзүү",
+    "actualizationCard": {
+      "title": "Актуалдаштыруу мөөнөтү",
+      "description": "ВНДти кайсы күнгө чейин актуалдаштыруу керек экени. Даяр мезгилдүүлүктү тандаңыз (түзүлгөн күндөн эсептелет) — же датаны кол менен коюңуз, ошондо мезгилдүүлүк өзү эсептелет.",
+      "recommendation": "«<1>Кодекс</1>» жана «<1>Саясат</1>» түрүндөгү документтер үчүн мезгилдүүлүктү <1>жылына 1 жолу</1> коюу сунушталат. Калган бардык документтер үчүн — <1>эки жылда 1 жолу</1>. Келечекте пландан тыш актуалдаштыруу өткөрүлүшү мүмкүн.",
+      "modes": {
+        "year": "Жылына 1 жолу",
+        "biennial": "Эки жылда 1 жолу",
+        "date": "Датаны киргизүү"
+      },
+      "dateTooltip": "Биринчи актуалдаштыруу мөөнөтү. Түзөтүү \"Датаны киргизүү\" режиминде гана жеткиликтүү",
+      "modalTitle": "Актуалдаштыруу мөөнөтү",
+      "periodicityLabel": "Мезгилдүүлүк:",
+      "nextCycleHint": "Биринчи актуалдаштыруу мөөнөтү {{date}} чейин болот, андан кийин — биринчи мөөнөт боюнча ВНДди иш жүзүндө актуалдаштырган күндөн тартып {{interval}} сайын."
+    }
   },
   "dictionaries": {
     "maxDepthTag": "макс. тереңдик",
@@ -1171,5 +1379,109 @@
     "signatureCount": "кол тамгалар: {{count}}",
     "signaturesRevoked": "кол тамгалар жокко чыгарылды",
     "signaturesRevokedTitle": "Файл алмаштырылды — мурунку кол тамгалар жокко чыгарылды"
+  },
+  "actualizationPage": {
+    "loadingData": "Маалыматтар жүктөлүүдө…",
+    "loadDataErrorTitle": "Маалыматтарды жүктөп алуу мүмкүн болгон жок",
+    "header": {
+      "title": "Актуалдаштырууну пландаштыруу",
+      "subtitle": "ИНДди актуалдаштыруу мөөнөттөрүн көзөмөлдөө жана алдыдагы кайра каралууларды пландаштыруу",
+      "mailingSettingsButton": "План боюнча жөнөтүүлөрдүн жөндөөлөрү",
+      "exportButton": "Планды Excel'ге экспорттоо",
+      "analyticsButton": "Актуалдаштыруу боюнча аналитика"
+    },
+    "requestsPanel": {
+      "title": "Актуалдаштырууга кирүү укугуна арыздар",
+      "loading": "Жүктөлүүдө…",
+      "empty": "Арыздар жок",
+      "loadError": "Арыздарды жүктөп алуу мүмкүн болгон жок",
+      "approveSuccess": "Арыз бекитилди",
+      "approveError": "Арызды бекитүү мүмкүн болгон жок",
+      "rejectSuccess": "Арыз четке кагылды",
+      "rejectErrorTitle": "Чечим кабыл алуу мүмкүн болгон жок",
+      "requiresApproval": "макулдашуу менен",
+      "noApprovalRequired": "макулдашуусуз",
+      "approveAction": "Бекитүү",
+      "rejectAction": "Четке кагуу"
+    },
+    "summaryCards": {
+      "totalActive": "Бардык колдонуудагы ИНД",
+      "neverActualized": "Эч качан актуалдаштырылбаган (бир редакция менен)"
+    },
+    "filters": {
+      "searchPlaceholder": "Код же аталышы боюнча издөө…",
+      "advancedSearch": "Кеңири издөө",
+      "columnsTrigger": "Мамычалар",
+      "columnsLabel": "Мамычаларды көрсөтүү",
+      "columnsSearchPlaceholder": "Мамыча боюнча издөө…",
+      "neverActualizedOnly": "Эч качан актуалдаштырылбагандар гана",
+      "neverActualizedOnlyHint": "Бир (биринчи) редакциясы бар документтерди гана көрсөтөт — башкача айтканда, азырынча бир да жолу актуалдаштырылбагандарды.",
+      "resetFilters": "Чыпкаларды баштапкы абалга келтирүү",
+      "foundCount": "Табылды:",
+      "typeLabel": "Документтин түрү",
+      "typeModalTitle": "Документтин түрү",
+      "typeSearchPlaceholder": "Документтин түрү боюнча издөө…",
+      "developerLabel": "Иштеп чыгуучу",
+      "developerModalTitle": "Иштеп чыгуучу (структуралык бөлүм)",
+      "developerSearchPlaceholder": "Бөлүм боюнча издөө…",
+      "organLabel": "Бекитүүчү орган",
+      "organModalTitle": "Бекитүүчү орган",
+      "organSearchPlaceholder": "Бекитүүчү орган боюнча издөө…",
+      "dueDate": "Актуалдаштыруу мөөнөтү",
+      "collapse": "Жыйыштыруу",
+      "reset": "Тазалоо",
+      "apply": "Издөө"
+    },
+    "exportModal": {
+      "title": "Планды Excel'ге экспорттоо",
+      "subtitle": "Мамычаларды жана чыпкаларды тууралаңыз — файл чыпкаланган таблицадан түзүлөт",
+      "filtersLabel": "Чыпкалар",
+      "neverActualizedOnly": "Эч качан актуалдаштырылбагандар гана",
+      "neverActualizedOnlyHint": "Бир (биринчи) редакциясы бар документтерди гана көрсөтөт — башкача айтканда, азырынча бир да жолу актуалдаштырылбагандарды.",
+      "typeLabel": "Документтин түрү",
+      "typeModalTitle": "Документтин түрү",
+      "typeSearchPlaceholder": "Документтин түрү боюнча издөө…",
+      "developerLabel": "Иштеп чыгуучу",
+      "developerModalTitle": "Иштеп чыгуучу (структуралык бөлүм)",
+      "developerSearchPlaceholder": "Бөлүм боюнча издөө…",
+      "organLabel": "Бекитүүчү орган",
+      "organModalTitle": "Бекитүүчү орган",
+      "organSearchPlaceholder": "Бекитүүчү орган боюнча издөө…",
+      "dueDateLabel": "Актуалдаштыруу мөөнөтү",
+      "columnsLabel": "Мамычалар",
+      "selectedCount": "Кошумча тандалды: {{total}} ичинен {{count}}",
+      "selectAll": "Баарын тандоо",
+      "deselectAll": "Баарынан алып салуу",
+      "fixedColumnsHint": "Жогорудагы мамычалар файлга ар дайым кирет. Төмөндөгүлөр — тандоо боюнча кошумча.",
+      "cancel": "Жокко чыгаруу",
+      "exportAction": "Экспорттоо",
+      "toastLoading": "Файл түзүлүүдө…",
+      "toastLoadingTitle": "Планды Excel'ге экспорттоо",
+      "toastSuccessTitle": "Даяр",
+      "toastSuccessDescription": "Экспорт файлы жүктөлүп алынды",
+      "exportErrorGeneric": "Файлды түзүү мүмкүн болгон жок"
+    }
+  },
+  "actualizationColumns": {
+    "code": "Код",
+    "name": "Аталышы",
+    "status": "Акыркы редакциянын статусу",
+    "dueActualizationDate": "Актуалдаштыруу мөөнөтү",
+    "lastActualizationDate": "Акыркы актуалдаштыруу",
+    "lastActualizationStatus": "Акыркы актуалдаштыруунун статусу",
+    "actualizationBucket": "Мөөнөттүн статусу",
+    "type": "Түрү",
+    "developer": "Түзүүчү",
+    "organ": "Бекиткен орган",
+    "responsibleExecutors": "Жооптуу аткаруучулар",
+    "adoptionDate": "Кабыл алынган күнү",
+    "adoptionCode": "Кабыл алуу №",
+    "effectiveDate": "Күчүнө кирген күнү",
+    "requisitesChangedDate": "Реквизиттердин өзгөрүшү",
+    "revisionChangedDate": "Редакциянын өзгөрүшү",
+    "keywords": "Негизги сөздөр",
+    "rubric": "Рубрика",
+    "secrecyLevel": "Купуялуулук деңгээли",
+    "userGroups": "Жеткиликтүүлүк топтору"
   }
 }

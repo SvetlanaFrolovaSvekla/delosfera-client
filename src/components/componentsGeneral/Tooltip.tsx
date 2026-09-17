@@ -141,7 +141,6 @@ export function Tooltip({content, children, side = "bottom", delay = 300, disabl
         const observer = new MutationObserver(() => recomputeBlocking());
         observer.observe(document.body, {childList: true, subtree: true});
         return () => observer.disconnect();
-        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [mounted]);
 
     const handleEnter = () => {

@@ -5,7 +5,7 @@ import {useNavigate} from "react-router-dom";
 import {FilePlus2, X} from "lucide-react";
 import {useModalShake} from "@/hooks//useModalShake.ts";
 import {Tooltip} from "@/components/componentsGeneral/Tooltip.tsx";
-import {CANNOT_CREATE_VND_MESSAGE, useCanCreateVnd} from "@/hooks/vndHooks/useCanCreateVnd.ts";
+import {useCannotCreateVndMessage, useCanCreateVnd} from "@/hooks/vndHooks/useCanCreateVnd.ts";
 
 type DocumentType = "vnd" | "memo" | "procurement";
 
@@ -38,10 +38,11 @@ export function CreateDocumentModal({onClose}: CreateDocumentModalProps) {
     const {panelRef, handleBackdropClick} = useModalShake();
     const [selected, setSelected] = useState<DocumentType | null>(null);
     const canCreateVnd = useCanCreateVnd();
+    const cannotCreateVndMessage = useCannotCreateVndMessage();
 
     // Нет прав создавать ВНД - блокируем "Далее" именно на выборе ВНД, а не сам клик по
     // радио-кнопке, чтобы пользователь мог выбрать другой вид документа и продолжить
-    const blockedTooltip = selected === "vnd" && !canCreateVnd ? CANNOT_CREATE_VND_MESSAGE : "";
+    const blockedTooltip = selected === "vnd" && !canCreateVnd ? cannotCreateVndMessage : "";
     const canConfirm = selected !== null && !blockedTooltip;
 
     const handleConfirm = () => {

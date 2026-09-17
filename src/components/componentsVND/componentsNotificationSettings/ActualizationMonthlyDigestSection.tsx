@@ -3,6 +3,7 @@
 // (ActualizationResponsiblesSection) по каждому СП; здесь настраивается только сама рассылка:
 // включена ли она и какие доп. колонки идут во вложенный Excel-план.
 import {useEffect, useState} from "react";
+import {useTranslation} from "react-i18next";
 import {Eye, Mail} from "lucide-react";
 
 import {toast} from "@/service/toastService.ts";
@@ -15,6 +16,7 @@ const TOGGLEABLE_COLUMNS = ACTUALIZATION_COLUMNS.filter((c) => !c.fixed);
 const FIXED_COLUMNS = ACTUALIZATION_COLUMNS.filter((c) => c.fixed);
 
 export function ActualizationMonthlyDigestSection() {
+    const {t} = useTranslation();
     const [loading, setLoading] = useState(true);
     const [loadError, setLoadError] = useState<string | null>(null);
 
@@ -105,7 +107,7 @@ export function ActualizationMonthlyDigestSection() {
                     {FIXED_COLUMNS.map((c) => (
                         <span key={c.key}
                               className="inline-flex items-center gap-1 rounded-full border border-[#e5e9f0] bg-[#f6f8fb] px-2.5 py-1 text-[11.5px] font-semibold text-[#8b97ab]">
-                            {c.label}
+                            {t(c.labelKey)}
                         </span>
                     ))}
                 </div>
@@ -123,7 +125,7 @@ export function ActualizationMonthlyDigestSection() {
                                 onChange={() => toggleColumn(c.key)}
                                 className="h-[15px] w-[15px] cursor-pointer accent-[#4e57d6]"
                             />
-                            {c.label}
+                            {t(c.labelKey)}
                         </label>
                     ))}
                 </div>

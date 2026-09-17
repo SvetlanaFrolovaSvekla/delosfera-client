@@ -1,3 +1,5 @@
+import type {TFunction} from "i18next";
+
 // статусы ВНД действующие, на актуализации, на согласовании, на консолидации, архивирован, черновик
 export type VndStatusKey = "active" | "onact" | "review" | "consol" | "arch" | "draft";
 
@@ -17,20 +19,25 @@ interface VndTabMeta {
     label: string;
 }
 
+// label — ключи i18n (namespace vnd.vndTabs), а не готовый текст: переводится в getVndTabs,
+// которая теперь принимает t параметром (сама функция — не хук и не компонент, так что
+// useTranslation() внутри неё вызвать нельзя; t передаётся из места использования, где он
+// уже есть через useTranslation).
 const BASE_LABELS: Record<VndTabId, string> = {
-    editions: "Редакции",
-    passport: "Реквизиты",
-    links: "Связи",
-    history: "История",
-    approval: "Ход согласования",
-    actual: "Актуализация",
+    editions: "vnd.vndTabs.editions",
+    passport: "vnd.vndTabs.passport",
+    links: "vnd.vndTabs.links",
+    history: "vnd.vndTabs.history",
+    approval: "vnd.vndTabs.approval",
+    actual: "vnd.vndTabs.actual",
 };
 
 // Лейбл таба «editions» переопределяется для отдельных статусов — сам таб
 // один и тот же слот интерфейса, просто для черновика в нём ещё нет истории
 // версий, а есть только форма создания первой редакции.
+// label — ключ i18n, см. комментарий у BASE_LABELS выше.
 const EDITIONS_LABEL_BY_STATUS: Partial<Record<VndStatusKey, string>> = {
-    draft: "Первая редакция",
+    draft: "vnd.vndTabs.editionsFirstDraft",
 };
 
 // «Реквизиты» и «Редакции» показываются для любого статуса — паспорт общий
@@ -64,12 +71,12 @@ const TABS_BY_STATUS: Partial<Record<VndStatusKey, VndTabId[]>> = {
     consol: ["passport", "editions", "approval", "links", "history", "actual"],
 };
 
-export function getVndTabs(status: VndStatusKey): VndTabMeta[] {
+export function getVndTabs(status: VndStatusKey, t: TFunction): VndTabMeta[] {
     const allowedIds = TABS_BY_STATUS[status] ?? VND_TAB_IDS.filter((id) => id !== "approval");
     return VND_TAB_IDS
         .filter((id) => allowedIds.includes(id))
         .map((id) => ({
             id,
-            label: id === "editions" ? (EDITIONS_LABEL_BY_STATUS[status] ?? BASE_LABELS.editions) : BASE_LABELS[id],
+            label: t(id === "editions" ? (EDITIONS_LABEL_BY_STATUS[status] ?? BASE_LABELS.editions) : BASE_LABELS[id]),
         }));
 }

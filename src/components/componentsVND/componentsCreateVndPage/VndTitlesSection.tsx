@@ -1,4 +1,6 @@
+// Секция с заголовками на странице "Разработка нового ВНД"
 import {useState} from "react";
+import {useTranslation} from "react-i18next";
 import {VND_TITLE_MAX_LENGTH, VND_TITLE_MIN_LENGTH} from "@/constants/validation/vndValidation.ts";
 import {CharCounter} from "@/components/componentsGeneral/CharCounter.tsx";
 
@@ -30,6 +32,7 @@ interface TitleFieldProps {
 }
 
 function TitleField({label, required = false, boldLabel = true, value, onChange, placeholder}: TitleFieldProps) {
+    const {t} = useTranslation();
     const [touched, setTouched] = useState(false);
 
     const trimmedLength = value.trim().length;
@@ -55,7 +58,10 @@ function TitleField({label, required = false, boldLabel = true, value, onChange,
             />
             {showError && (
                 <p className="mt-1 text-[11px] text-[#c0392b]">
-                    {isMissing ? "Обязательное поле" : `Минимум ${VND_TITLE_MIN_LENGTH} символа`}
+                    {/*Обязательное поле / "Минимум {{min}} символа"*/}
+                    {isMissing
+                        ? t("createVnd.titlesSection.requiredField")
+                        : t("createVnd.titlesSection.minLength", {min: VND_TITLE_MIN_LENGTH})}
                 </p>
             )}
         </div>
@@ -67,31 +73,33 @@ export function VndTitlesSection({
                                      titleKy, onTitleKyChange,
                                      titleEn, onTitleEnChange,
                                  }: VndTitlesSectionProps) {
+    const {t} = useTranslation();
     return (
         <div className="border border-[#eef2f7] rounded-xl p-3.5 mb-4">
             <div className="text-[11px] font-bold tracking-[.04em] uppercase text-[#a3adbd] mb-2.5">
-                Заголовки
+                {/*Заголовки*/}
+                {t("createVnd.titlesSection.title")}
             </div>
             <div className="flex flex-col gap-3">
                 <TitleField
-                    label="Заголовок (рус)"
+                    label={t("createVnd.titlesSection.titleRu")} // Заголовок (рус)
                     required
                     value={titleRu}
                     onChange={onTitleRuChange}
-                    placeholder="Наименование документа"
+                    placeholder={t("createVnd.titlesSection.placeholders.ru")} // Наименование документа
                 />
                 <TitleField
-                    label="Заголовок (кырг)"
+                    label={t("createVnd.titlesSection.titleKy")} // Заголовок (кырг)
                     boldLabel={false}
                     value={titleKy}
                     onChange={onTitleKyChange}
-                    placeholder="Документтин аталышы"
+                    placeholder={t("createVnd.titlesSection.placeholders.ky")} // Документтин аталышы
                 />
                 <TitleField
-                    label="Заголовок (англ)"
+                    label={t("createVnd.titlesSection.titleEn")} // Заголовок (англ)
                     value={titleEn}
                     onChange={onTitleEnChange}
-                    placeholder="Document title"
+                    placeholder={t("createVnd.titlesSection.placeholders.en")} // Document title
                 />
             </div>
         </div>

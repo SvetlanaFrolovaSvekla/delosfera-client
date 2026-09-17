@@ -9,6 +9,7 @@
 // "Экспортировать" строит независимый VndSearchRequest и скачивает файл, ничего не применяя
 // к отображаемой таблице.
 import {useMemo, useState} from "react";
+import {useTranslation} from "react-i18next";
 import {createPortal} from "react-dom";
 import {Download, Loader2, X} from "lucide-react";
 
@@ -54,6 +55,7 @@ export function ActualizationExportModal({
     initialSearch, initialBucketFilter, initialTypeFilters, initialDeveloperFilters, initialOrganFilters,
     initialDueDateFilter, initialNeverActualizedOnly, initialVisibleCols, summary,
 }: ActualizationExportModalProps) {
+    const {t} = useTranslation();
     const {typeOptions, organOptions, orgUnitOptions} = useDictionaries();
 
     const [bucketFilter, setBucketFilter] = useState<ActualizationFilterValue>(initialBucketFilter);
@@ -90,7 +92,10 @@ export function ActualizationExportModal({
     const handleExport = async () => {
         setSubmitting(true);
         setError(null);
-        const toastId = toast.loading("Формируется файл…", "Экспорт плана в Excel");
+        const toastId = toast.loading(
+            t("actualizationPage.exportModal.toastLoading"),
+            t("actualizationPage.exportModal.toastLoadingTitle"),
+        );
 
         try {
             const columns = ACTUALIZATION_COLUMNS
@@ -101,17 +106,17 @@ export function ActualizationExportModal({
 
             toast.update(toastId, {
                 variant: "success",
-                title: "Готово",
-                description: "Файл экспорта скачан",
+                title: t("actualizationPage.exportModal.toastSuccessTitle"),
+                description: t("actualizationPage.exportModal.toastSuccessDescription"),
                 duration: 4500,
             });
             onClose();
         } catch (e) {
-            const message = e instanceof Error ? e.message : "Не удалось сформировать файл";
+            const message = e instanceof Error ? e.message : t("actualizationPage.exportModal.exportErrorGeneric");
             setError(message);
             toast.update(toastId, {
                 variant: "error",
-                title: "Не удалось сформировать файл",
+                title: t("actualizationPage.exportModal.exportErrorGeneric"),
                 description: message,
                 duration: 5500,
             });
@@ -129,9 +134,13 @@ export function ActualizationExportModal({
                             <Download size={19} strokeWidth={1.8}/>
                         </span>
                         <div>
-                            <h2 className="text-[16px] font-bold text-[#1c2740]">Экспорт плана в Excel</h2>
+                            <h2 className="text-[16px] font-bold text-[#1c2740]">
+                                {/* Экспорт плана в Excel */}
+                                {t("actualizationPage.exportModal.title")}
+                            </h2>
                             <p className="mt-0.5 text-[12px] text-[#8b97ab]">
-                                Настройте колонки и фильтры — файл соберётся из отфильтрованной таблицы
+                                {/* Настройте колонки и фильтры — файл соберётся из отфильтрованной таблицы */}
+                                {t("actualizationPage.exportModal.subtitle")}
                             </p>
                         </div>
                     </div>
@@ -143,7 +152,8 @@ export function ActualizationExportModal({
 
                 <div className="overflow-y-auto px-6 py-5">
                     <div className="mb-2 text-[11px] font-bold uppercase tracking-[.06em] text-[#a3adbd]">
-                        Фильтры
+                        {/* Фильтры */}
+                        {t("actualizationPage.exportModal.filtersLabel")}
                     </div>
 
                     <ActualizationFilterPills value={bucketFilter} onChange={setBucketFilter} summary={summary}/>
@@ -153,61 +163,69 @@ export function ActualizationExportModal({
                         onChange={setNeverActualizedOnly}
                         className="mb-4"
                     >
-                        Только ни разу не актуализированные
-                        <HelpTooltip content="Показывает документы только с одной (первой) редакцией — т.е. те, которые ещё ни разу не проходили актуализацию."/>
+                        {/* Только ни разу не актуализированные */}
+                        {t("actualizationPage.exportModal.neverActualizedOnly")}
+                        <HelpTooltip content={t("actualizationPage.exportModal.neverActualizedOnlyHint")}/>
                     </CheckBoxOne>
 
                     <div className="mb-4 grid [grid-template-columns:repeat(auto-fit,minmax(200px,1fr))] gap-x-[14px] gap-y-3">
                         <MultiSelectField
-                            label="Вид документа"
-                            modalTitle="Вид документа"
+                            label={t("actualizationPage.exportModal.typeLabel")}
+                            modalTitle={t("actualizationPage.exportModal.typeModalTitle")}
                             options={typeOptions}
                             selectedKeys={typeFilters}
                             onChange={setTypeFilters}
-                            searchPlaceholder="Поиск вида документа…"
+                            searchPlaceholder={t("actualizationPage.exportModal.typeSearchPlaceholder")}
                         />
                         <MultiSelectField
-                            label="Разработчик"
-                            modalTitle="Разработчик (СП)"
+                            label={t("actualizationPage.exportModal.developerLabel")}
+                            modalTitle={t("actualizationPage.exportModal.developerModalTitle")}
                             options={orgUnitOptions}
                             selectedKeys={developerFilters}
                             onChange={setDeveloperFilters}
-                            searchPlaceholder="Поиск подразделения…"
+                            searchPlaceholder={t("actualizationPage.exportModal.developerSearchPlaceholder")}
                             hierarchical
                         />
                         <MultiSelectField
-                            label="Орган утверждения"
-                            modalTitle="Орган утверждения"
+                            label={t("actualizationPage.exportModal.organLabel")}
+                            modalTitle={t("actualizationPage.exportModal.organModalTitle")}
                             options={organOptions}
                             selectedKeys={organFilters}
                             onChange={setOrganFilters}
-                            searchPlaceholder="Поиск органа утверждения…"
+                            searchPlaceholder={t("actualizationPage.exportModal.organSearchPlaceholder")}
                             hierarchical
                         />
                     </div>
 
                     <div className="mb-5 rounded-xl border border-[#eef2f7] p-3.5">
                         <div className="mb-2.5 text-[11px] font-bold uppercase tracking-[.04em] text-[#a3adbd]">
-                            Срок актуализации
+                            {/* Срок актуализации */}
+                            {t("actualizationPage.exportModal.dueDateLabel")}
                         </div>
                         <DateFilterGroup
                             rows={[
-                                {key: "dueActualization", label: "Срок актуализации", value: dueDateFilter, onChange: setDueDateFilter},
+                                {key: "dueActualization", label: t("actualizationPage.exportModal.dueDateLabel"), value: dueDateFilter, onChange: setDueDateFilter},
                             ]}
                         />
                     </div>
 
                     <div className="mb-2 flex items-center justify-between">
                         <div className="text-[11px] font-bold uppercase tracking-[.06em] text-[#a3adbd]">
-                            Колонки
+                            {/* Колонки */}
+                            {t("actualizationPage.exportModal.columnsLabel")}
                         </div>
                         <div className="flex items-center gap-3 text-[12px]">
-                            <span className="text-[#8b97ab]">Выбрано доп.: {selectedCount} из {TOGGLEABLE_COLUMNS.length}</span>
+                            <span className="text-[#8b97ab]">
+                                {/* Выбрано доп.: {selectedCount} из {TOGGLEABLE_COLUMNS.length} */}
+                                {t("actualizationPage.exportModal.selectedCount", {count: selectedCount, total: TOGGLEABLE_COLUMNS.length})}
+                            </span>
                             <button onClick={selectAllColumns} className="cursor-pointer font-semibold text-[#4e57d6] hover:underline">
-                                Выбрать все
+                                {/* Выбрать все */}
+                                {t("actualizationPage.exportModal.selectAll")}
                             </button>
                             <button onClick={deselectAllColumns} className="cursor-pointer font-semibold text-[#4e57d6] hover:underline">
-                                Снять всё
+                                {/* Снять всё */}
+                                {t("actualizationPage.exportModal.deselectAll")}
                             </button>
                         </div>
                     </div>
@@ -216,12 +234,13 @@ export function ActualizationExportModal({
                         {FIXED_COLUMNS.map((c) => (
                             <span key={c.key}
                                   className="inline-flex items-center gap-1 rounded-full border border-[#e5e9f0] bg-[#f6f8fb] px-2.5 py-1 text-[11.5px] font-semibold text-[#8b97ab]">
-                                {c.label}
+                                {t(c.labelKey)}
                             </span>
                         ))}
                     </div>
                     <div className="mb-1 text-[11px] text-[#a3adbd]">
-                        Колонки выше входят в файл всегда. Ниже — дополнительные, на выбор.
+                        {/* Колонки выше входят в файл всегда. Ниже — дополнительные, на выбор. */}
+                        {t("actualizationPage.exportModal.fixedColumnsHint")}
                     </div>
 
                     <div className="grid [grid-template-columns:repeat(auto-fit,minmax(220px,1fr))] gap-2 rounded-xl border border-[#eef2f7] p-3.5">
@@ -231,7 +250,7 @@ export function ActualizationExportModal({
                                 checked={visibleCols[c.key] === true}
                                 onChange={() => toggleColumn(c.key)}
                             >
-                                {c.label}
+                                {t(c.labelKey)}
                             </CheckBoxOne>
                         ))}
                     </div>
@@ -246,7 +265,8 @@ export function ActualizationExportModal({
                 <div className="flex justify-end gap-2 border-t border-[#eef2f7] px-6 py-4">
                     <button onClick={onClose} disabled={submitting}
                             className="cursor-pointer h-[38px] rounded-[10px] border border-[#e5e9f0] px-4 text-[13px] font-semibold text-[#3a4560] hover:bg-[#f6f8fb] disabled:opacity-50">
-                        Отмена
+                        {/* Отмена */}
+                        {t("actualizationPage.exportModal.cancel")}
                     </button>
                     <button
                         onClick={handleExport}
@@ -254,7 +274,8 @@ export function ActualizationExportModal({
                         className="cursor-pointer inline-flex h-[38px] items-center gap-2 rounded-[10px] bg-[#4e57d6] px-4 text-[13px] font-semibold text-white hover:bg-[#3f47bd] disabled:cursor-not-allowed disabled:opacity-50"
                     >
                         {submitting ? <Loader2 size={14} className="animate-spin"/> : <Download size={14}/>}
-                        Экспортировать
+                        {/* Экспортировать */}
+                        {t("actualizationPage.exportModal.exportAction")}
                     </button>
                 </div>
             </div>

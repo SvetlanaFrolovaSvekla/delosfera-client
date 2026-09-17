@@ -1,3 +1,4 @@
+import {useTranslation} from "react-i18next";
 import {DatePickerInput} from "@/components/componentsGeneral/datePickers/DatePickerInput.tsx";
 
 export interface DateFilterValue {
@@ -36,15 +37,23 @@ const codeInputClass =
 const GRID_COLS = "180px 130px 22px 130px 14px 130px 140px";
 
 export function DateFilterGroup({rows}: DateFilterGroupProps) {
+    const {t} = useTranslation();
     const hasAnyCode = rows.some((r) => r.codeLabel);
 
     return (
         <div className="grid gap-x-2.5 gap-y-1.5 items-center" style={{gridTemplateColumns: GRID_COLS}}>
             <div/>
-            <div className="text-[10.5px] text-[#a3adbd]">точная</div>
+            {/* точная */}
+            <div className="text-[10.5px] text-[#a3adbd]">{t("dateFilterGroup.exactLabel")}</div>
             <div/>
-            <div className="text-[10.5px] text-[#a3adbd] col-span-3">диапазон</div>
-            {hasAnyCode ? <div className="text-[10.5px] text-[#a3adbd]">№</div> : <div/>}
+            {/* диапазон */}
+            <div className="text-[10.5px] text-[#a3adbd] col-span-3">{t("dateFilterGroup.rangeLabel")}</div>
+            {/* № */}
+            {hasAnyCode ? (
+                <div className="text-[10.5px] text-[#a3adbd]">{t("dateFilterGroup.numberColumn")}</div>
+            ) : (
+                <div/>
+            )}
 
             {rows.map((row) => {
                 const setExact = (v: string) => row.onChange({mode: "exact", exact: v, from: "", to: ""});
@@ -57,7 +66,8 @@ export function DateFilterGroup({rows}: DateFilterGroupProps) {
 
                         <DatePickerInput value={row.value.exact} onChange={setExact}/>
 
-                        <span className="text-[11.5px] text-[#a3adbd] text-center">или</span>
+                        {/* или */}
+                        <span className="text-[11.5px] text-[#a3adbd] text-center">{t("dateFilterGroup.or")}</span>
 
                         <DatePickerInput value={row.value.from} onChange={setFrom}/>
 
@@ -68,7 +78,7 @@ export function DateFilterGroup({rows}: DateFilterGroupProps) {
                         {row.codeLabel && row.onCodeChange ? (
                             <input
                                 type="text"
-                                placeholder={row.codeLabel || "номер"}
+                                placeholder={row.codeLabel || t("dateFilterGroup.numberPlaceholder")} /* номер */
                                 value={row.codeValue ?? ""}
                                 onChange={(e) => row.onCodeChange!(e.target.value)}
                                 className={codeInputClass}

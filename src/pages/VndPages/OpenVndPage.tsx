@@ -249,9 +249,9 @@ export function OpenVndPage() {
     // пользователям с расширенным просмотром реестра. Рядовой пользователь без этих прав строку
     // вообще не видит (не просто свёрнутое значение — сам блок не рендерится).
     const canSeeDocumentStatus = isVndEditor || canViewVndRegistryExtended;
-    const tabs = getVndTabs(vnd.status);
+    const tabs = getVndTabs(vnd.status, t);
     // Если сменился статус и текущий выбранный таб для него больше не доступен - откатываемся на «Реквизиты»
-    const activeTab = tabs.some((t) => t.id === tab) ? tab : "passport";
+    const activeTab = tabs.some((tabItem) => tabItem.id === tab) ? tab : "passport";
 
     return (
         <div className={`w-full max-w-[1800px] mx-auto pt-5 sm:pt-[16px] ${

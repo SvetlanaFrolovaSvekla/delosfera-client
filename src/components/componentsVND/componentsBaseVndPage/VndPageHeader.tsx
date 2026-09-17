@@ -1,6 +1,8 @@
+// Header страницы "Реестр ВНД"
+import {useTranslation} from "react-i18next";
+import {useCannotCreateVndMessage} from "@/hooks/vndHooks/useCanCreateVnd.ts";
 import {PageHeader} from "@/components/componentsGeneral/PageHeader.tsx";
 import {Tooltip} from "@/components/componentsGeneral/Tooltip.tsx";
-import {CANNOT_CREATE_VND_MESSAGE} from "@/hooks/vndHooks/useCanCreateVnd.ts";
 import {Plus} from "lucide-react";
 
 interface VndPageHeaderProps {
@@ -11,12 +13,18 @@ interface VndPageHeaderProps {
 }
 
 export function VndPageHeader({onCreateClick, canCreate = true}: VndPageHeaderProps) {
+    const {t} = useTranslation();
+    const cannotCreateVndMessage = useCannotCreateVndMessage();
+
     return (
         <PageHeader
-            title="Реестр ВНД"
-            description="Централизованный реестр действующих внутренних нормативных документов · поиск и фильтрация по всем реквизитам и по тексту редакций"
+            /*Реестр ВНД*/
+            title={t("registry.title")}
+            /*Централизованный реестр действующих внутренних нормативных документов · поиск и фильтрация
+            по всем реквизитам и по тексту редакций*/
+            description={t("registry.description")}
             actions={
-                <Tooltip content={CANNOT_CREATE_VND_MESSAGE} disabled={canCreate} side="left">
+                <Tooltip content={cannotCreateVndMessage} disabled={canCreate} side="left">
                     <button
                         onClick={canCreate ? onCreateClick : undefined}
                         disabled={!canCreate}
@@ -27,7 +35,8 @@ export function VndPageHeader({onCreateClick, canCreate = true}: VndPageHeaderPr
                         }`}
                     >
                         <Plus className="w-[18px] h-[18px]" strokeWidth={2}/>
-                        Создать ВНД
+                        {/*Создать ВНД*/}
+                        {t("registry.createButton")}
                     </button>
                 </Tooltip>
             }

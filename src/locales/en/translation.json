@@ -17,7 +17,48 @@
     "saving": "Saving…",
     "archiving": "Archiving…"
   },
+  "dateFilterGroup": {
+    "exactLabel": "точная",
+    "rangeLabel": "диапазон",
+    "or": "или",
+    "numberColumn": "№",
+    "numberPlaceholder": "номер"
+  },
+  "datePickerInput": {
+    "dateFormatPlaceholder": "DD.MM.YYYY",
+    "modalTitle": "Select date",
+    "weekdays": ["Mo", "Tu", "We", "Th", "Fr", "Sa", "Su"],
+    "months": [
+      "January", "February", "March", "April", "May", "June",
+      "July", "August", "September", "October", "November", "December"
+    ],
+    "today": "Today",
+    "manualEntryLabel": "Enter manually",
+    "confirmDateAria": "Confirm date",
+    "errors": {
+      "invalidMonth": "Invalid month",
+      "invalidDay": "Invalid day",
+      "invalidYear": "Invalid year",
+      "dateNotExist": "This date does not exist",
+      "invalidDate": "Invalid date"
+    }
+  },
+  "journalViews": {
+    "loadError": "Views failed to load",
+    "saveError": "Failed to save the view",
+    "updateError": "Failed to update the view",
+    "removeError": "Failed to delete the view"
+  },
   "time": {
+    "periodicity": {
+      "quarterly": "quarterly",
+      "semiannual": "twice a year",
+      "annual": "annually",
+      "biennial": "every two years",
+      "triennial": "every three years",
+      "approxMonths": "≈ {{months}} mo.",
+      "daysCount": "{{days}} days"
+    },
     "days_one": "{{count}} day",
     "days_other": "{{count}} days",
     "hours_one": "{{count}} hour",
@@ -231,6 +272,9 @@
       "prev": "Previous",
       "next": "Next"
     },
+    "emptyState": {
+      "title": "There are no notifications yet!"
+    },
     "goToTheTask": "Go to task",
     "title": "Notifications",
     "loadingNotification": "Loading notification…",
@@ -280,7 +324,69 @@
     "footerVersion": "Delosfera EDMS · v8.2",
     "support": "Support"
   },
+  "journalViewPicker": {
+    "performance": "View",
+    "activeTooltip": "View: \"{{name}}\"",
+    "rememberTooltip": "Save the shown columns to \"{{name}}\"",
+    "save": "Save",
+    "panelTitle": "Journal view",
+    "helpTooltip": "A view is a saved, named set of visible columns. Only you see your own views; shared ones are visible to everyone who opens this journal.",
+    "defaultColumns": "Default columns",
+    "myViews": "My views",
+    "sharedViews": "Shared",
+    "saveAsNew": "Save the shown columns as a view…",
+    "namePlaceholder": "View name",
+    "sharedLabel": "Shared — everyone can see it",
+    "sharedHint": "Otherwise the view will stay visible only to you",
+    "setAsDefaultLabel": "Open the journal with this view",
+    "cancel": "Cancel",
+    "deleteTitle": "Delete view?",
+    "deleteMessage": "\"{{name}}\" will be removed from the list and can't be undone.",
+    "delete": "Delete",
+    "deleteAriaLabel": "Delete {{name}}",
+    "columnsCount_one": "{{count}} column",
+    "columnsCount_other": "{{count}} columns",
+    "defaultSuffix": "default"
+  },
+  "columns": {
+    "code": "Code",
+    "name": "Name",
+    "type": "Type",
+    "developer": "Developer",
+    "organ": "Approving body",
+    "act": "Actualization",
+    "status": "Last revision status",
+    "statusArchive": "Last revision status",
+    "cancelDate": "Cancellation date",
+    "cancelCode": "Cancellation No.",
+    "archivedDate": "Archive date",
+    "daysInArchive": "In archive",
+    "linkedToMe": "Linked to me",
+    "redactionCount": "Revision count",
+    "responsibleExecutors": "Responsible executors",
+    "adoptionDate": "Adoption date",
+    "adoptionCode": "Adoption No.",
+    "effectiveDate": "Effective date",
+    "requisitesChangedDate": "Requisites changed",
+    "revisionChangedDate": "Revision changed",
+    "dueActualizationDate": "Actualization due date",
+    "lastActualizationDate": "Last actualization date",
+    "lastActualizationStatus": "Last actualization status",
+    "keywords": "Keywords",
+    "rubric": "Rubric",
+    "secrecyLevel": "Secrecy level",
+    "userGroups": "Access groups"
+  },
   "vnd": {
+    "vndTabs": {
+      "editions": "Editions",
+      "editionsFirstDraft": "First edition",
+      "passport": "Details",
+      "links": "Links",
+      "history": "History",
+      "approval": "Approval progress",
+      "actual": "Actualization"
+    },
     "shortLabel": "VND",
     "status": "Status",
     "emptyState": {
@@ -344,6 +450,20 @@
       "approaching": "Deadline approaching",
       "critical": "Critical deadline",
       "overdue": "Overdue"
+    },
+    "linkedToMeRelation": {
+      "groups": {
+        "initiative": "Initiative"
+      },
+      "options": {
+        "currentApprover": "I am currently an approver",
+        "pastApprover": "I was an approver in the past",
+        "currentActualizer": "I am actualizing",
+        "pastActualizer": "I actualized in the past",
+        "currentConsolidator": "I am consolidating",
+        "pastConsolidator": "I consolidated in the past",
+        "initiator": "I am the initiator"
+      }
     }
   },
   "openVndPage": {
@@ -661,12 +781,87 @@
       "searchInGoogle": "Search for \"{{query}}\" on Google"
     }
   },
+  "registry": {
+    "title": "VND Registry",
+    "description": "Centralized registry of active internal regulatory documents · search and filter by all attributes and revision text",
+    "createButton": "Create VND",
+    "tabs": {
+      "all": "All",
+      "active": "Active",
+      "notYetActive": "Not yet active",
+      "arch": "Archived",
+      "draft": "Drafts"
+    },
+    "draftOwnerScope": {
+      "allDraft": "All drafts",
+      "mine": "My drafts",
+      "others": "Other users' drafts"
+    },
+    "loadingData": "Loading data…",
+    "errors": {
+      "loadDataTitle": "Failed to load data",
+      "loadDictionariesTitle": "Failed to load dictionaries",
+      "retry": "Retry"
+    },
+    "filters": {
+      "searchPlaceholder": "Search by code, name, requisites and edition text…",
+      "archiveNotice": "Archived (inactive) VND documents. Cancellation is issued via a memo and is not subject to approval.",
+      "advancedSearch": "Advanced search",
+      "resultOfTotal": "<b>{{result}}</b> of {{total}}",
+      "statusLabel": "Latest edition status",
+      "linkedToMeOnly": "Related to me only",
+      "columns": {
+        "trigger": "Columns",
+        "label": "Column display",
+        "searchPlaceholder": "Search columns…"
+      },
+      "linkedToMe": {
+        "trigger": "Relation type",
+        "header": "My relation type"
+      },
+      "advanced": {
+        "name": "Name",
+        "namePlaceholder": "Search by name…",
+        "codePlaceholder": "Search by code…",
+        "revisionText": "Edition text",
+        "revisionTextPlaceholder": "Search by edition text…",
+        "orgUnitSearchPlaceholder": "Search unit…",
+        "initiatorSearchPlaceholder": "Search by full name…",
+        "collapse": "Collapse",
+        "reset": "Reset",
+        "apply": "Search"
+      }
+    },
+    "table": {
+      "revisionsCountTooltip": "Number of editions (current and outdated)"
+    }
+  },
   "createVnd": {
+    "cannotCreateMessage": "You do not have permission to create a new VND!",
+    "cancel": "Cancel",
+    "codeCard": {
+      "title": "Document code",
+      "example": "Example: 10101",
+      "assignedAfterSave": "The document code is assigned by the system after saving",
+      "note": "After approval, the temporary identifier is transformed into the document's permanent number."
+    },
+    "successModal": {
+      "title": "Draft card was successfully created!",
+      "codeLabel": "VND-{{code}}",
+      "redirecting": "Redirecting to the VND card…"
+    },
     "titlesSection": {
       "title": "Titles",
       "titleRu": "Title (RU)",
       "titleKy": "Title (KY)",
-      "titleEn": "Title (EN)"
+      "titleEn": "Title (EN)",
+      "placeholders": {
+        "ru": "Document title",
+        "ky": "Document title",
+        "en": "Document title"
+      },
+      "requiredField": "Required field",
+      "minLength": "Minimum {{min}} characters"
     },
     "classifiers": {
       "title": "Classifiers",
@@ -700,7 +895,21 @@
       "executorHeads": "Heads: {{names}}"
     },
     "submitting": "Creating…",
-    "submit": "Create draft card"
+    "submit": "Create draft card",
+    "actualizationCard": {
+      "title": "Actualization deadline",
+      "description": "The date by which the internal regulatory document (VND) needs to be actualized. Choose a preset periodicity (calculated from the creation date) — or set the date manually, and the periodicity will be calculated automatically.",
+      "recommendation": "For documents of the «<1>Code</1>» and «<1>Policy</1>» type, it is recommended to set the periodicity to <1>once a year</1>. For all other documents — <1>once every two years</1>. An unscheduled actualization may be introduced in the future.",
+      "modes": {
+        "year": "Once a year",
+        "biennial": "Once every two years",
+        "date": "Enter date"
+      },
+      "dateTooltip": "Deadline for the first actualization. Editable only in \"Enter date\" mode",
+      "modalTitle": "Actualization deadline",
+      "periodicityLabel": "Periodicity:",
+      "nextCycleHint": "The deadline for the first actualization will be until {{date}}, then — every {{interval}} from the date the VND is actually actualized for the first deadline."
+    }
   },
   "dictionaries": {
     "maxDepthTag": "max. depth",
@@ -1175,5 +1384,109 @@
     "signatureCount": "signatures: {{count}}",
     "signaturesRevoked": "signatures revoked",
     "signaturesRevokedTitle": "File was replaced — previous signatures revoked"
+  },
+  "actualizationPage": {
+    "loadingData": "Loading data…",
+    "loadDataErrorTitle": "Failed to load data",
+    "header": {
+      "title": "Actualization planning",
+      "subtitle": "Track VND actualization deadlines and plan upcoming reviews",
+      "mailingSettingsButton": "Plan mailing settings",
+      "exportButton": "Export plan to Excel",
+      "analyticsButton": "Actualization analytics"
+    },
+    "requestsPanel": {
+      "title": "Actualization access requests",
+      "loading": "Loading…",
+      "empty": "No requests",
+      "loadError": "Failed to load requests",
+      "approveSuccess": "Request approved",
+      "approveError": "Failed to approve the request",
+      "rejectSuccess": "Request rejected",
+      "rejectErrorTitle": "Failed to make a decision",
+      "requiresApproval": "with approval",
+      "noApprovalRequired": "without approval",
+      "approveAction": "Approve",
+      "rejectAction": "Reject"
+    },
+    "summaryCards": {
+      "totalActive": "Total active VND",
+      "neverActualized": "Never actualized (single edition)"
+    },
+    "filters": {
+      "searchPlaceholder": "Search by code or name…",
+      "advancedSearch": "Advanced search",
+      "columnsTrigger": "Columns",
+      "columnsLabel": "Column display",
+      "columnsSearchPlaceholder": "Search columns…",
+      "neverActualizedOnly": "Never actualized only",
+      "neverActualizedOnlyHint": "Shows only documents with a single (first) edition — i.e. those that have never been actualized.",
+      "resetFilters": "Reset filters",
+      "foundCount": "Found:",
+      "typeLabel": "Document type",
+      "typeModalTitle": "Document type",
+      "typeSearchPlaceholder": "Search document type…",
+      "developerLabel": "Developer",
+      "developerModalTitle": "Developer (unit)",
+      "developerSearchPlaceholder": "Search unit…",
+      "organLabel": "Approval body",
+      "organModalTitle": "Approval body",
+      "organSearchPlaceholder": "Search approval body…",
+      "dueDate": "Actualization deadline",
+      "collapse": "Collapse",
+      "reset": "Reset",
+      "apply": "Search"
+    },
+    "exportModal": {
+      "title": "Export plan to Excel",
+      "subtitle": "Set up columns and filters — the file will be built from the filtered table",
+      "filtersLabel": "Filters",
+      "neverActualizedOnly": "Never actualized only",
+      "neverActualizedOnlyHint": "Shows only documents with a single (first) edition — i.e. those that have never been actualized.",
+      "typeLabel": "Document type",
+      "typeModalTitle": "Document type",
+      "typeSearchPlaceholder": "Search document type…",
+      "developerLabel": "Developer",
+      "developerModalTitle": "Developer (unit)",
+      "developerSearchPlaceholder": "Search unit…",
+      "organLabel": "Approval body",
+      "organModalTitle": "Approval body",
+      "organSearchPlaceholder": "Search approval body…",
+      "dueDateLabel": "Actualization deadline",
+      "columnsLabel": "Columns",
+      "selectedCount": "Extra selected: {{count}} of {{total}}",
+      "selectAll": "Select all",
+      "deselectAll": "Deselect all",
+      "fixedColumnsHint": "Columns above are always included in the file. Below are optional extras.",
+      "cancel": "Cancel",
+      "exportAction": "Export",
+      "toastLoading": "Building file…",
+      "toastLoadingTitle": "Export plan to Excel",
+      "toastSuccessTitle": "Done",
+      "toastSuccessDescription": "Export file downloaded",
+      "exportErrorGeneric": "Failed to build the file"
+    }
+  },
+  "actualizationColumns": {
+    "code": "Code",
+    "name": "Name",
+    "status": "Last revision status",
+    "dueActualizationDate": "Actualization due date",
+    "lastActualizationDate": "Last actualization",
+    "lastActualizationStatus": "Last actualization status",
+    "actualizationBucket": "Deadline status",
+    "type": "Type",
+    "developer": "Developer",
+    "organ": "Approving body",
+    "responsibleExecutors": "Responsible executors",
+    "adoptionDate": "Adoption date",
+    "adoptionCode": "Adoption No.",
+    "effectiveDate": "Effective date",
+    "requisitesChangedDate": "Requisites changed",
+    "revisionChangedDate": "Revision changed",
+    "keywords": "Keywords",
+    "rubric": "Rubric",
+    "secrecyLevel": "Secrecy level",
+    "userGroups": "Access groups"
   }
 }

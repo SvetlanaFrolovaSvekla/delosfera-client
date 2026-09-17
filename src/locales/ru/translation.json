@@ -17,7 +17,48 @@
     "saving": "Сохранение…",
     "archiving": "Архивация…"
   },
+  "dateFilterGroup": {
+    "exactLabel": "Exact",
+    "rangeLabel": "Range",
+    "or": "or",
+    "numberColumn": "№",
+    "numberPlaceholder": "number"
+  },
+  "datePickerInput": {
+    "dateFormatPlaceholder": "дд.мм.гггг",
+    "modalTitle": "Выбор даты",
+    "weekdays": ["Пн", "Вт", "Ср", "Чт", "Пт", "Сб", "Вс"],
+    "months": [
+      "Январь", "Февраль", "Март", "Апрель", "Май", "Июнь",
+      "Июль", "Август", "Сентябрь", "Октябрь", "Ноябрь", "Декабрь"
+    ],
+    "today": "Сегодня",
+    "manualEntryLabel": "Ввести вручную",
+    "confirmDateAria": "Подтвердить дату",
+    "errors": {
+      "invalidMonth": "Некорректный месяц",
+      "invalidDay": "Некорректный день",
+      "invalidYear": "Некорректный год",
+      "dateNotExist": "Такой даты не существует",
+      "invalidDate": "Некорректная дата"
+    }
+  },
+  "journalViews": {
+    "loadError": "Представления не загрузились",
+    "saveError": "Не удалось сохранить представление",
+    "updateError": "Не удалось изменить представление",
+    "removeError": "Не удалось удалить представление"
+  },
   "time": {
+    "periodicity": {
+      "quarterly": "раз в квартал",
+      "semiannual": "раз в полгода",
+      "annual": "раз в год",
+      "biennial": "раз в два года",
+      "triennial": "раз в три года",
+      "approxMonths": "≈ {{months}} мес.",
+      "daysCount": "{{days}} дн."
+    },
     "days_one": "{{count}} день",
     "days_few": "{{count}} дня",
     "days_many": "{{count}} дней",
@@ -234,6 +275,9 @@
       "prev": "Назад",
       "next": "Вперёд"
     },
+    "emptyState": {
+      "title": "Уведомлений пока нет!"
+    },
     "goToTheTask": "Перейти к задаче",
     "title": "Уведомления",
     "loadingNotification": "Загрузка уведомления…",
@@ -283,7 +327,71 @@
     "footerVersion": "Делосфера СЭД · v8.2",
     "support": "Поддержка"
   },
+  "journalViewPicker": {
+    "performance": "Представление",
+    "activeTooltip": "Представление: «{{name}}»",
+    "rememberTooltip": "Запомнить показанные колонки в «{{name}}»",
+    "save": "Сохранить",
+    "panelTitle": "Представление журнала",
+    "helpTooltip": "Представление — сохранённый набор видимых колонок под именем. Своё видите только вы, общее — все, кто открывает этот журнал.",
+    "defaultColumns": "Колонки по умолчанию",
+    "myViews": "Мои",
+    "sharedViews": "Общие",
+    "saveAsNew": "Сохранить показанные колонки как представление…",
+    "namePlaceholder": "Название представления",
+    "sharedLabel": "Общее — видят все",
+    "sharedHint": "Иначе представление останется только у вас",
+    "setAsDefaultLabel": "Открывать журнал с ним",
+    "cancel": "Отмена",
+    "deleteTitle": "Удалить представление?",
+    "deleteMessage": "«{{name}}» пропадёт из списка без возможности отменить.",
+    "delete": "Удалить",
+    "deleteAriaLabel": "Удалить {{name}}",
+    "columnsCount_one": "{{count}} колонка",
+    "columnsCount_few": "{{count}} колонки",
+    "columnsCount_many": "{{count}} колонок",
+    "columnsCount_other": "{{count}} колонки",
+    "defaultSuffix": "по умолчанию"
+  },
+  "columns": {
+    "code": "Код",
+    "name": "Наименование",
+    "type": "Вид",
+    "developer": "Разработчик",
+    "organ": "Орган утв.",
+    "act": "Актуализация",
+    "status": "Статус посл. редакции",
+    "statusArchive": "Статус последней редакции",
+    "cancelDate": "Дата отмены",
+    "cancelCode": "№ отмены",
+    "archivedDate": "Дата архивации",
+    "daysInArchive": "В архиве",
+    "linkedToMe": "Связь со мной",
+    "redactionCount": "Кол-во редакций",
+    "responsibleExecutors": "Ответственные исполнители",
+    "adoptionDate": "Дата принятия",
+    "adoptionCode": "№ принятия",
+    "effectiveDate": "Дата вступления в силу",
+    "requisitesChangedDate": "Изменение реквизитов",
+    "revisionChangedDate": "Изменение редакции",
+    "dueActualizationDate": "Срок актуализации",
+    "lastActualizationDate": "Дата посл. актуализации",
+    "lastActualizationStatus": "Статус посл. актуализации",
+    "keywords": "Ключевые слова",
+    "rubric": "Рубрика",
+    "secrecyLevel": "Уровень секретности",
+    "userGroups": "Группы доступа"
+  },
   "vnd": {
+    "vndTabs": {
+      "editions": "Редакции",
+      "editionsFirstDraft": "Первая редакция",
+      "passport": "Реквизиты",
+      "links": "Связи",
+      "history": "История",
+      "approval": "Ход согласования",
+      "actual": "Актуализация"
+    },
     "shortLabel": "ВНД",
     "status": "Статус",
     "emptyState": {
@@ -347,6 +455,20 @@
       "approaching": "Срок приближается",
       "critical": "Критичный срок",
       "overdue": "Просрочено"
+    },
+    "linkedToMeRelation": {
+      "groups": {
+        "initiative": "Инициатива"
+      },
+      "options": {
+        "currentApprover": "Я являюсь согласующим сейчас",
+        "pastApprover": "Я когда-то являлся согласующим",
+        "currentActualizer": "Я актуализирую",
+        "pastActualizer": "Я когда-то актуализировал",
+        "currentConsolidator": "Я консолидирую",
+        "pastConsolidator": "Я когда-то консолидировал",
+        "initiator": "Я являюсь инициатором"
+      }
     }
   },
   "openVndPage": {
@@ -664,12 +786,87 @@
       "searchInGoogle": "Найти «{{query}}» в Google"
     }
   },
+  "registry": {
+    "title": "Реестр ВНД",
+    "description": "Централизованный реестр действующих внутренних нормативных документов · поиск и фильтрация по всем реквизитам и по тексту редакций",
+    "createButton": "Создать ВНД",
+    "tabs": {
+      "all": "Все",
+      "active": "Действующие",
+      "notYetActive": "Ещё не действующие",
+      "arch": "Архивированные",
+      "draft": "Черновики"
+    },
+    "draftOwnerScope": {
+      "allDraft": "Все черновики",
+      "mine": "Мои черновики",
+      "others": "Черновики других пользователей"
+    },
+    "loadingData": "Загрузка данных…",
+    "errors": {
+      "loadDataTitle": "Не удалось загрузить данные",
+      "loadDictionariesTitle": "Не удалось загрузить справочники",
+      "retry": "Повторить"
+    },
+    "filters": {
+      "searchPlaceholder": "Поиск по коду, наименованию, реквизитам и тексту редакций…",
+      "archiveNotice": "Архивированные (недействующие) ВНД. Отмена оформляется служебной запиской и не согласуется.",
+      "advancedSearch": "Расширенный поиск",
+      "resultOfTotal": "<b>{{result}}</b> из {{total}}",
+      "statusLabel": "Статус последней редакции",
+      "linkedToMeOnly": "Только связанные со мной",
+      "columns": {
+        "trigger": "Колонки",
+        "label": "Отображение колонок",
+        "searchPlaceholder": "Поиск колонки…"
+      },
+      "linkedToMe": {
+        "trigger": "Тип связи",
+        "header": "Тип связи со мной"
+      },
+      "advanced": {
+        "name": "Наименование",
+        "namePlaceholder": "Поиск по наименованию…",
+        "codePlaceholder": "Поиск по коду…",
+        "revisionText": "Текст редакции",
+        "revisionTextPlaceholder": "Поиск по тексту редакции…",
+        "orgUnitSearchPlaceholder": "Поиск подразделения…",
+        "initiatorSearchPlaceholder": "Поиск по ФИО…",
+        "collapse": "Свернуть",
+        "reset": "Сбросить",
+        "apply": "Найти"
+      }
+    },
+    "table": {
+      "revisionsCountTooltip": "Кол-во редакций (актуальных и нет)"
+    }
+  },
   "createVnd": {
+    "cannotCreateMessage": "У Вас нет прав на создание нового ВНД!",
+    "successModal": {
+      "title": "Черновик-карточка была успешно создана!",
+      "codeLabel": "ВНД-{{code}}",
+      "redirecting": "Переход к карточке ВНД…"
+    },
+    "cancel": "Отмена",
+    "codeCard": {
+      "title": "Код документа",
+      "example": "Пример: 10101",
+      "assignedAfterSave": "Код документа присваивается системой после сохранения",
+      "note": "После утверждения временный идентификатор трансформируется в постоянный номер документа."
+    },
     "titlesSection": {
       "title": "Заголовки",
       "titleRu": "Заголовок (рус)",
       "titleKy": "Заголовок (кырг)",
-      "titleEn": "Заголовок (англ)"
+      "titleEn": "Заголовок (англ)",
+      "placeholders": {
+        "ru": "Наименование документа",
+        "ky": "Документтин аталышы",
+        "en": "Document title"
+      },
+      "requiredField": "Обязательное поле",
+      "minLength": "Минимум {{min}} символа"
     },
     "classifiers": {
       "title": "Классификаторы",
@@ -703,7 +900,31 @@
       "executorHeads": "Начальники: {{names}}"
     },
     "submitting": "Создание…",
-    "submit": "Создать черновик-карточку"
+    "submit": "Создать черновик-карточку",
+    "actualizationCard": {
+      "title": "Срок актуализации",
+      "description": "До какого числа нужно актуализировать ВНД. Выберите готовую периодичность (считается от даты создания) — или задайте дату вручную, тогда периодичность посчитается сама.",
+      "recommendation": "Рекомендуется для документов вида «<1>Кодекс</1>» и «<1>Политика</1>» выставлять периодичность <1>1 раз в год</1>. Для всех остальных документов — <1>1 раз в два года</1>. В будущем возможно проведение внеплановой актуализации.",
+      "modes": {
+        "year": "1 раз в год",
+        "biennial": "1 раз в два года",
+        "date": "Ввод даты"
+      },
+      "dateTooltip": "Срок первой актуализации. Редактирование доступно только в режиме \"Ввод даты\"",
+      "modalTitle": "Срок актуализации",
+      "periodicityLabel": "Периодичность:",
+      "nextCycleHint": "Срок первой актуализации будет до {{date}}, далее — через {{interval}} с даты фактической актуализации ВНД по первому сроку.",
+      "periodicityLabels": {
+        "specifyDate": "укажите дату",
+        "dateMustBeFuture": "дата должна быть в будущем",
+        "daysCount": "{{days}} дн.",
+        "approxMonths": "≈ {{months}} мес."
+      },
+      "cycleWords": {
+        "year": "год",
+        "twoYears": "два года"
+      }
+    }
   },
   "dictionaries": {
     "maxDepthTag": "макс. глубина",
@@ -1178,5 +1399,109 @@
     "signatureCount": "подписей: {{count}}",
     "signaturesRevoked": "подписи аннулированы",
     "signaturesRevokedTitle": "Файл заменялся — прежние подписи аннулированы"
+  },
+  "actualizationPage": {
+    "loadingData": "Загрузка данных…",
+    "loadDataErrorTitle": "Не удалось загрузить данные",
+    "header": {
+      "title": "Планирование актуализации",
+      "subtitle": "Контроль сроков актуализации ВНД и планирование предстоящих пересмотров",
+      "mailingSettingsButton": "Настройки рассылок плана",
+      "exportButton": "Экспорт плана в Excel",
+      "analyticsButton": "Аналитика по актуализации"
+    },
+    "requestsPanel": {
+      "title": "Заявки на доступ к актуализации",
+      "loading": "Загрузка…",
+      "empty": "Заявок нет",
+      "loadError": "Не удалось загрузить заявки",
+      "approveSuccess": "Заявка одобрена",
+      "approveError": "Не удалось одобрить заявку",
+      "rejectSuccess": "Заявка отклонена",
+      "rejectErrorTitle": "Не удалось принять решение",
+      "requiresApproval": "с согласованием",
+      "noApprovalRequired": "без согласования",
+      "approveAction": "Одобрить",
+      "rejectAction": "Отклонить"
+    },
+    "summaryCards": {
+      "totalActive": "Всего действующих ВНД",
+      "neverActualized": "Ни разу не актуализированные (с одной редакцией)"
+    },
+    "filters": {
+      "searchPlaceholder": "Поиск по коду или наименованию…",
+      "advancedSearch": "Расширенный поиск",
+      "columnsTrigger": "Колонки",
+      "columnsLabel": "Отображение колонок",
+      "columnsSearchPlaceholder": "Поиск колонки…",
+      "neverActualizedOnly": "Только ни разу не актуализированные",
+      "neverActualizedOnlyHint": "Показывает документы только с одной (первой) редакцией — т.е. те, которые ещё ни разу не проходили актуализацию.",
+      "resetFilters": "Сбросить фильтры",
+      "foundCount": "Найдено:",
+      "typeLabel": "Вид документа",
+      "typeModalTitle": "Вид документа",
+      "typeSearchPlaceholder": "Поиск вида документа…",
+      "developerLabel": "Разработчик",
+      "developerModalTitle": "Разработчик (СП)",
+      "developerSearchPlaceholder": "Поиск подразделения…",
+      "organLabel": "Орган утверждения",
+      "organModalTitle": "Орган утверждения",
+      "organSearchPlaceholder": "Поиск органа утверждения…",
+      "dueDate": "Срок актуализации",
+      "collapse": "Свернуть",
+      "reset": "Сбросить",
+      "apply": "Найти"
+    },
+    "exportModal": {
+      "title": "Экспорт плана в Excel",
+      "subtitle": "Настройте колонки и фильтры — файл соберётся из отфильтрованной таблицы",
+      "filtersLabel": "Фильтры",
+      "neverActualizedOnly": "Только ни разу не актуализированные",
+      "neverActualizedOnlyHint": "Показывает документы только с одной (первой) редакцией — т.е. те, которые ещё ни разу не проходили актуализацию.",
+      "typeLabel": "Вид документа",
+      "typeModalTitle": "Вид документа",
+      "typeSearchPlaceholder": "Поиск вида документа…",
+      "developerLabel": "Разработчик",
+      "developerModalTitle": "Разработчик (СП)",
+      "developerSearchPlaceholder": "Поиск подразделения…",
+      "organLabel": "Орган утверждения",
+      "organModalTitle": "Орган утверждения",
+      "organSearchPlaceholder": "Поиск органа утверждения…",
+      "dueDateLabel": "Срок актуализации",
+      "columnsLabel": "Колонки",
+      "selectedCount": "Выбрано доп.: {{count}} из {{total}}",
+      "selectAll": "Выбрать все",
+      "deselectAll": "Снять всё",
+      "fixedColumnsHint": "Колонки выше входят в файл всегда. Ниже — дополнительные, на выбор.",
+      "cancel": "Отмена",
+      "exportAction": "Экспортировать",
+      "toastLoading": "Формируется файл…",
+      "toastLoadingTitle": "Экспорт плана в Excel",
+      "toastSuccessTitle": "Готово",
+      "toastSuccessDescription": "Файл экспорта скачан",
+      "exportErrorGeneric": "Не удалось сформировать файл"
+    }
+  },
+  "actualizationColumns": {
+    "code": "Код",
+    "name": "Наименование",
+    "status": "Статус последней редакции",
+    "dueActualizationDate": "Срок актуализации",
+    "lastActualizationDate": "Последняя актуализация",
+    "lastActualizationStatus": "Статус посл. актуализации",
+    "actualizationBucket": "Статус срока",
+    "type": "Вид",
+    "developer": "Разработчик",
+    "organ": "Орган утв.",
+    "responsibleExecutors": "Ответственные исполнители",
+    "adoptionDate": "Дата принятия",
+    "adoptionCode": "№ принятия",
+    "effectiveDate": "Дата вступления в силу",
+    "requisitesChangedDate": "Изменение реквизитов",
+    "revisionChangedDate": "Изменение редакции",
+    "keywords": "Ключевые слова",
+    "rubric": "Рубрика",
+    "secrecyLevel": "Уровень секретности",
+    "userGroups": "Группы доступа"
   }
 }

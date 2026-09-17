@@ -137,7 +137,7 @@ export function RecentNotificationsCard({limit = 15}: RecentNotificationsCardPro
                                         </div>
                                     )}
                                     <div className="mt-0.5 flex items-center justify-between gap-2">
-                                        <span className="text-[11px] text-[#8b97ab]">{timeAgo(n.createdAt)}</span>
+                                        <span className="text-[11px] text-[#8b97ab]">{timeAgo(n.createdAt, t)}</span>
                                         {n.url && (
                                             <button
                                                 onClick={(e) => {

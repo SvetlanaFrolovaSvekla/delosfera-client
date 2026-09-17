@@ -40,7 +40,10 @@ export function ActualizationSummaryCards({
                 style={{borderColor: activeBucket === "all" && !neverActualizedOnly ? "#4e57d6" : "#e9edf3"}}
             >
                 <div className="flex items-center gap-2.5 mb-2">
-                    <span className="text-[12.5px] font-bold text-[#55617a]">Всего действующих ВНД</span>
+                    <span className="text-[12.5px] font-bold text-[#55617a]">
+                        {/* Всего действующих ВНД */}
+                        {t("actualizationPage.summaryCards.totalActive")}
+                    </span>
                 </div>
                 <div className="flex items-baseline gap-2">
                     <span className="text-[28px] font-extrabold leading-none text-[#3a4560]">
@@ -110,7 +113,8 @@ export function ActualizationSummaryCards({
             >
                 <div className="flex items-center gap-2.5 mb-2">
                     <span className="text-[12.5px] font-bold text-[#55617a]">
-                        Ни разу не актуализированные (с одной редакцией)
+                        {/* Ни разу не актуализированные (с одной редакцией) */}
+                        {t("actualizationPage.summaryCards.neverActualized")}
                     </span>
                 </div>
                 <div className="flex items-baseline gap-2">

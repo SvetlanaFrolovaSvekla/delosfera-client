@@ -1,10 +1,11 @@
 import {useRef, useState} from "react";
-import {Check, ChevronDown, Save, Trash2, Users} from "lucide-react";
+import {useTranslation} from "react-i18next";
 import type {JournalView} from "@/service/journalViewService/journalViewService.ts";
 import {useClickOutside} from "@/hooks/useClickOutside.ts";
 import {HelpTooltip} from "@/components/componentsGeneral/knowledgeBaseComponents/HelpTooltip.tsx";
 import {ConfirmActionModal} from "@/components/componentsGeneral/modal/ConfirmActionModal.tsx";
 import {Tooltip} from "@/components/componentsGeneral/Tooltip.tsx";
+import {Check, ChevronDown, Save, Trash2, Users} from "lucide-react";
 
 /**
  * Выбор представления журнала — сохранённого набора колонок.
@@ -34,8 +35,9 @@ interface Props {
 }
 
 export function JournalViewPicker({
-    views, active, isDirty, onApply, onReset, onSaveNew, onUpdate, onRemove, canShare, error,
-}: Props) {
+                                      views, active, isDirty, onApply, onReset, onSaveNew, onUpdate, onRemove, canShare, error,
+                                  }: Props) {
+    const {t} = useTranslation();
     const [open, setOpen] = useState(false);
     const [showForm, setShowForm] = useState(false);
     const [name, setName] = useState("");
@@ -73,12 +75,13 @@ export function JournalViewPicker({
             onClick={() => setOpen((v) => !v)}
             className={`inline-flex h-9 items-center gap-2 rounded-[9px] border px-3 text-[#3a4560]
                         font-semibold text-[12.5px] cursor-pointer hover:bg-[#f6f8fb] ${
-                            open
-                                ? "border-[#4e57d6] bg-[#f6f8fb] ring-[3px] ring-[#ececfc]"
-                                : "border-[#e5e9f0] bg-white"
-                        }`}
+                open
+                    ? "border-[#4e57d6] bg-[#f6f8fb] ring-[3px] ring-[#ececfc]"
+                    : "border-[#e5e9f0] bg-white"
+            }`}
         >
-            Представление
+            {/* Представление */}
+            {t("journalViewPicker.performance")}
             {active?.isShared && <Users className="h-[13px] w-[13px] flex-none text-[#8b97ab]" strokeWidth={2}/>}
             <ChevronDown
                 className={`h-[15px] w-[15px] flex-none text-[#a3adbd] transition-transform ${open ? "rotate-180" : ""}`}
@@ -91,7 +94,8 @@ export function JournalViewPicker({
         <div ref={ref} className="relative flex items-center gap-2">
             <div className="relative">
                 {active ? (
-                    <Tooltip content={`Представление: «${active.name}»`} side="bottom">
+                    // Представление: «{name}»
+                    <Tooltip content={t("journalViewPicker.activeTooltip", {name: active.name})} side="bottom">
                         {trigger}
                     </Tooltip>
                 ) : (
@@ -103,7 +107,8 @@ export function JournalViewPicker({
             </div>
 
             {isDirty && active && active.canEdit && (
-                <Tooltip content={`Запомнить показанные колонки в «${active.name}»`} side="bottom">
+                // Запомнить показанные колонки в «{name}»
+                <Tooltip content={t("journalViewPicker.rememberTooltip", {name: active.name})} side="bottom">
                     <button
                         type="button"
                         onClick={() => onUpdate(active)}
@@ -112,7 +117,8 @@ export function JournalViewPicker({
                                    hover:bg-[#f6f8fb]"
                     >
                         <Save className="h-[14px] w-[14px]" strokeWidth={2}/>
-                        Сохранить
+                        {/* Сохранить */}
+                        {t("journalViewPicker.save")}
                     </button>
                 </Tooltip>
             )}
@@ -131,10 +137,12 @@ export function JournalViewPicker({
 
                     <div className="flex items-center justify-between px-2.5 pt-1.5 pb-1">
                         <span className="text-[10.5px] font-bold uppercase tracking-[.05em] text-[#a3adbd]">
-                            Представление журнала
+                            {/* Представление журнала */}
+                            {t("journalViewPicker.panelTitle")}
                         </span>
                         <HelpTooltip
-                            content="Представление — сохранённый набор видимых колонок под именем. Своё видите только вы, общее — все, кто открывает этот журнал."
+                            // Представление — сохранённый набор видимых колонок под именем. Своё видите только вы, общее — все, кто открывает этот журнал.
+                            content={t("journalViewPicker.helpTooltip")}
                             className="!h-6 !w-6"
                         />
                     </div>
@@ -147,13 +155,18 @@ export function JournalViewPicker({
                                       text-left cursor-pointer hover:bg-[#f6f8fb]"
                         >
                             <Marker active={active === null}/>
-                            <span className="text-[13px] text-[#26324a]">Колонки по умолчанию</span>
+                            <span className="text-[13px] text-[#26324a]">
+                                {/* Колонки по умолчанию */}
+                                {t("journalViewPicker.defaultColumns")}
+                            </span>
                         </button>
 
-                        <Group title="Мои" views={ownViews} active={active}
+                        {/* Мои */}
+                        <Group title={t("journalViewPicker.myViews")} views={ownViews} active={active}
                                onApply={(v) => { onApply(v); close(); }} onRequestRemove={setPendingRemove}/>
 
-                        <Group title="Общие" views={sharedViews} active={active}
+                        {/* Общие */}
+                        <Group title={t("journalViewPicker.sharedViews")} views={sharedViews} active={active}
                                onApply={(v) => { onApply(v); close(); }} onRequestRemove={setPendingRemove}/>
                     </div>
 
@@ -164,7 +177,8 @@ export function JournalViewPicker({
                             className="w-full border-t border-[#eef2f7] px-3 py-2.5 text-left
                                        text-[12.5px] font-semibold text-[#4e57d6] cursor-pointer hover:bg-[#f6f8fb]"
                         >
-                            Сохранить показанные колонки как представление…
+                            {/* Сохранить показанные колонки как представление… */}
+                            {t("journalViewPicker.saveAsNew")}
                         </button>
                     ) : (
                         <div className="border-t border-[#eef2f7] bg-[#fafbfd] px-3 py-3">
@@ -176,7 +190,8 @@ export function JournalViewPicker({
                                     if (e.key === "Enter") handleCreate();
                                     if (e.key === "Escape") setShowForm(false);
                                 }}
-                                placeholder="Название представления"
+                                // Название представления
+                                placeholder={t("journalViewPicker.namePlaceholder")}
                                 className="h-8 w-full rounded-[7px] border border-[#e5e9f0] bg-[#f6f8fb]
                                            px-2.5 text-[12.5px] text-[#1c2740] outline-none
                                            focus:border-[#4e57d6] focus:bg-white"
@@ -191,9 +206,11 @@ export function JournalViewPicker({
                                 >
                                     <Marker active={shared}/>
                                     <span className="text-[12px] text-[#26324a]">
-                                        Общее — видят все
+                                        {/* Общее — видят все */}
+                                        {t("journalViewPicker.sharedLabel")}
                                         <span className="block text-[11px] text-[#8b97ab]">
-                                            Иначе представление останется только у вас
+                                            {/* Иначе представление останется только у вас */}
+                                            {t("journalViewPicker.sharedHint")}
                                         </span>
                                     </span>
                                 </button>
@@ -206,7 +223,10 @@ export function JournalViewPicker({
                                            cursor-pointer hover:bg-[#f6f8fb]"
                             >
                                 <Marker active={asDefault}/>
-                                <span className="text-[12px] text-[#26324a]">Открывать журнал с ним</span>
+                                <span className="text-[12px] text-[#26324a]">
+                                    {/* Открывать журнал с ним */}
+                                    {t("journalViewPicker.setAsDefaultLabel")}
+                                </span>
                             </button>
 
                             <div className="mt-3 flex gap-2">
@@ -218,7 +238,8 @@ export function JournalViewPicker({
                                                text-white cursor-pointer hover:brightness-[1.06]
                                                disabled:cursor-not-allowed disabled:bg-[#c3ccd8]"
                                 >
-                                    Сохранить
+                                    {/* Сохранить */}
+                                    {t("journalViewPicker.save")}
                                 </button>
                                 <button
                                     type="button"
@@ -226,7 +247,8 @@ export function JournalViewPicker({
                                     className="rounded-[7px] px-3 py-1.5 text-[12.5px] font-semibold text-[#8b97ab]
                                                cursor-pointer hover:text-[#26324a]"
                                 >
-                                    Отмена
+                                    {/* Отмена */}
+                                    {t("journalViewPicker.cancel")}
                                 </button>
                             </div>
                         </div>
@@ -241,9 +263,12 @@ export function JournalViewPicker({
                     if (pendingRemove) onRemove(pendingRemove);
                     setPendingRemove(null);
                 }}
-                title="Удалить представление?"
-                message={pendingRemove ? `«${pendingRemove.name}» пропадёт из списка без возможности отменить.` : ""}
-                confirmLabel="Удалить"
+                // Удалить представление?
+                title={t("journalViewPicker.deleteTitle")}
+                // «{name}» пропадёт из списка без возможности отменить.
+                message={pendingRemove ? t("journalViewPicker.deleteMessage", {name: pendingRemove.name}) : ""}
+                // Удалить
+                confirmLabel={t("journalViewPicker.delete")}
                 variant="danger"
                 icon={Trash2}
             />
@@ -273,6 +298,8 @@ function Group({title, views, active, onApply, onRequestRemove}: {
     onApply: (v: JournalView) => void;
     onRequestRemove: (v: JournalView) => void;
 }) {
+    const {t} = useTranslation();
+
     if (views.length === 0) return null;
 
     return (
@@ -293,8 +320,10 @@ function Group({title, views, active, onApply, onRequestRemove}: {
                         <span className="min-w-0">
                             <span className="block truncate text-[13px] text-[#26324a]">{view.name}</span>
                             <span className="block truncate text-[11px] text-[#8b97ab]">
-                                {view.columns.length} колонок
-                                {view.isDefault && " · по умолчанию"}
+                                {/* {count} колонок */}
+                                {t("journalViewPicker.columnsCount", {count: view.columns.length})}
+                                {/* · по умолчанию */}
+                                {view.isDefault && ` · ${t("journalViewPicker.defaultSuffix")}`}
                                 {view.orgUnitTitle && ` · ${view.orgUnitTitle}`}
                             </span>
                         </span>
@@ -304,7 +333,8 @@ function Group({title, views, active, onApply, onRequestRemove}: {
                         <button
                             type="button"
                             onClick={() => onRequestRemove(view)}
-                            aria-label={`Удалить ${view.name}`}
+                            // Удалить {name}
+                            aria-label={t("journalViewPicker.deleteAriaLabel", {name: view.name})}
                             className="mr-1.5 grid h-6 w-6 flex-none cursor-pointer place-items-center rounded-md
                                        text-[#c3ccd8] opacity-0 transition hover:bg-[#fbeae7] hover:text-[#c0392b]
                                        group-hover:opacity-100"

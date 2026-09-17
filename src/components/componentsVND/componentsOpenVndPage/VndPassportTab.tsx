@@ -65,7 +65,7 @@ export function VndPassportTab({
     const isCancelledOrArchived = Boolean(vnd.cancelDate || vnd.archivedDate);
     const isDraft = vnd.status === "draft";
     const periodFrom = vnd.lastActualizationDate || vnd.effectiveDate || vnd.adoptionDate;
-    const periodLabel = describePeriod(periodFrom, vnd.dueActualizationDate);
+    const periodLabel = describePeriod(periodFrom, vnd.dueActualizationDate, t);
 
     const {
         keywordNames,

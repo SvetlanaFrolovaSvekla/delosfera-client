@@ -1,4 +1,5 @@
 // Расширенный поиск для страницы актуализации ВНД
+import {useTranslation} from "react-i18next";
 import {useDictionaries} from "@/context/DictionariesContext.tsx";
 import {
     useVndActualizationFiltersDraft,
@@ -14,7 +15,7 @@ import {CheckBoxOne} from "@/components/componentsGeneral/componentsCheckBox/Che
 
 interface ColDefLike {
     key: string;
-    label: string;
+    labelKey: string;
 }
 
 function isDateFilterActive(v: DateFilterValue): boolean {
@@ -59,6 +60,7 @@ interface ActualizationFiltersProps {
 }
 
 export function ActualizationFilters(props: ActualizationFiltersProps) {
+    const {t} = useTranslation();
     const {
         search, onSearchChange,
         advOpen, onToggleAdv, onCloseAdv,
@@ -103,7 +105,7 @@ export function ActualizationFilters(props: ActualizationFiltersProps) {
                     variant="white"
                     value={search}
                     onChange={onSearchChange}
-                    placeholder="Поиск по коду или наименованию…"
+                    placeholder={t("actualizationPage.filters.searchPlaceholder")}
                     className="min-w-[280px]"
                 />
             </div>
@@ -118,7 +120,8 @@ export function ActualizationFilters(props: ActualizationFiltersProps) {
                     }`}
                 >
                     <SlidersHorizontal className="w-[15px] h-[15px]" strokeWidth={1.8}/>
-                    Расширенный поиск
+                    {/* Расширенный поиск */}
+                    {t("actualizationPage.filters.advancedSearch")}
                     <ChevronDown
                         className={`w-[15px] h-[15px] flex-none text-[#a3adbd] transition-transform ${advOpen ? "rotate-180" : ""}`}
                         strokeWidth={2}
@@ -130,15 +133,15 @@ export function ActualizationFilters(props: ActualizationFiltersProps) {
 
                 <MultiSelectDropdown
                     icon={<Filter className="w-[15px] h-[15px]" strokeWidth={1.8}/>}
-                    triggerLabel="Колонки"
-                    label="Отображение колонок"
-                    options={toggleableColumns.map((c) => ({key: c.key, label: c.label}))}
+                    triggerLabel={t("actualizationPage.filters.columnsTrigger")}
+                    label={t("actualizationPage.filters.columnsLabel")}
+                    options={toggleableColumns.map((c) => ({key: c.key, label: t(c.labelKey)}))}
                     selectedKeys={selectedColumnKeys}
                     onToggle={onToggleColumn}
                     onSelectAll={onSelectAllColumns}
                     onDeselectAll={onDeselectAllColumns}
                     searchThreshold={8}
-                    searchPlaceholder="Поиск колонки…"
+                    searchPlaceholder={t("actualizationPage.filters.columnsSearchPlaceholder")}
                     plain
                 />
 
@@ -146,8 +149,9 @@ export function ActualizationFilters(props: ActualizationFiltersProps) {
                     checked={neverActualizedOnly}
                     onChange={onNeverActualizedOnlyChange}
                 >
-                    Только ни разу не актуализированные
-                    <HelpTooltip content="Показывает документы только с одной (первой) редакцией — т.е. те, которые ещё ни разу не проходили актуализацию."/>
+                    {/* Только ни разу не актуализированные */}
+                    {t("actualizationPage.filters.neverActualizedOnly")}
+                    <HelpTooltip content={t("actualizationPage.filters.neverActualizedOnlyHint")}/>
                 </CheckBoxOne>
 
                 <div className="flex-1"/>
@@ -157,12 +161,14 @@ export function ActualizationFilters(props: ActualizationFiltersProps) {
                         onClick={onResetFilters}
                         className="inline-flex items-center h-9 px-3 rounded-[9px] border border-[#e5e9f0] bg-white text-[#55617a] font-semibold text-[12.5px] cursor-pointer hover:bg-[#f6f8fb]"
                     >
-                        Сбросить фильтры
+                        {/* Сбросить фильтры */}
+                        {t("actualizationPage.filters.resetFilters")}
                     </button>
                 )}
 
                 <div className="text-[12.5px] text-[#8b97ab]">
-                    Найдено: <b className="text-[#3a4560] font-mono">{resultCount}</b>
+                    {/* Найдено: */}
+                    {t("actualizationPage.filters.foundCount")} <b className="text-[#3a4560] font-mono">{resultCount}</b>
                 </div>
             </div>
 
@@ -175,42 +181,43 @@ export function ActualizationFilters(props: ActualizationFiltersProps) {
                     <div className="bg-white border border-[#e9edf3] rounded-2xl px-[22px] py-5">
                         <div className="grid [grid-template-columns:repeat(auto-fit,minmax(240px,1fr))] gap-x-[18px] gap-y-3.5 mb-[18px]">
                             <MultiSelectField
-                                label="Вид документа"
-                                modalTitle="Вид документа"
+                                label={t("actualizationPage.filters.typeLabel")}
+                                modalTitle={t("actualizationPage.filters.typeModalTitle")}
                                 options={typeOptions}
                                 selectedKeys={draft.typeFilters}
                                 onChange={(v) => updateDraft("typeFilters", v)}
-                                searchPlaceholder="Поиск вида документа…"
+                                searchPlaceholder={t("actualizationPage.filters.typeSearchPlaceholder")}
                             />
                             <MultiSelectField
-                                label="Разработчик"
-                                modalTitle="Разработчик (СП)"
+                                label={t("actualizationPage.filters.developerLabel")}
+                                modalTitle={t("actualizationPage.filters.developerModalTitle")}
                                 options={orgUnitOptions}
                                 selectedKeys={draft.developerFilters}
                                 onChange={(v) => updateDraft("developerFilters", v)}
-                                searchPlaceholder="Поиск подразделения…"
+                                searchPlaceholder={t("actualizationPage.filters.developerSearchPlaceholder")}
                                 hierarchical
                             />
                             <MultiSelectField
-                                label="Орган утверждения"
-                                modalTitle="Орган утверждения"
+                                label={t("actualizationPage.filters.organLabel")}
+                                modalTitle={t("actualizationPage.filters.organModalTitle")}
                                 options={organOptions}
                                 selectedKeys={draft.organFilters}
                                 onChange={(v) => updateDraft("organFilters", v)}
-                                searchPlaceholder="Поиск органа утверждения…"
+                                searchPlaceholder={t("actualizationPage.filters.organSearchPlaceholder")}
                                 hierarchical
                             />
                         </div>
 
                         <div className="border border-[#eef2f7] rounded-xl p-3.5 mb-[18px]">
                             <div className="text-[11px] font-bold tracking-[.04em] uppercase text-[#a3adbd] mb-2.5">
-                                Срок актуализации
+                                {/* Срок актуализации */}
+                                {t("actualizationPage.filters.dueDate")}
                             </div>
                             <DateFilterGroup
                                 rows={[
                                     {
                                         key: "dueActualization",
-                                        label: "Срок актуализации",
+                                        label: t("actualizationPage.filters.dueDate"),
                                         value: draft.dueDateFilter,
                                         onChange: (v) => updateDraft("dueDateFilter", v),
                                     },
@@ -224,19 +231,22 @@ export function ActualizationFilters(props: ActualizationFiltersProps) {
                                 className="inline-flex items-center gap-1.5 h-10 px-4 rounded-[10px] border border-[#e5e9f0] bg-white text-[#55617a] font-semibold text-[12.5px] cursor-pointer hover:bg-[#f6f8fb]"
                             >
                                 <ChevronUp className="w-[15px] h-[15px]" strokeWidth={2}/>
-                                Свернуть
+                                {/* Свернуть */}
+                                {t("actualizationPage.filters.collapse")}
                             </button>
                             <button
                                 onClick={handleResetDraft}
                                 className="h-10 px-4 rounded-[10px] border border-[#e5e9f0] bg-white text-[#55617a] font-semibold text-[12.5px] cursor-pointer hover:bg-[#f6f8fb]"
                             >
-                                Сбросить
+                                {/* Сбросить */}
+                                {t("actualizationPage.filters.reset")}
                             </button>
                             <button
                                 onClick={handleApply}
                                 className="h-10 px-5 rounded-[10px] border-none bg-[#4e57d6] text-white font-semibold text-[12.5px] cursor-pointer hover:brightness-[1.06]"
                             >
-                                Найти
+                                {/* Найти */}
+                                {t("actualizationPage.filters.apply")}
                             </button>
                         </div>
                     </div>

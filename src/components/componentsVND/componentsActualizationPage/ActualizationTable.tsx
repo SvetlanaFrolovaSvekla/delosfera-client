@@ -56,7 +56,7 @@ export function ActualizationTable({
                     style={{gridTemplateColumns: gridTemplate}}
                 >
                     {columns.map((c) => (
-                        <div key={c.key} className="leading-tight">{c.label}</div>
+                        <div key={c.key} className="leading-tight">{c.labelKey && t(c.labelKey)}</div>
                     ))}
                 </div>
 

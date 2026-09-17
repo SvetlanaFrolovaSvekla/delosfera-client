@@ -11,12 +11,16 @@ interface HelpTooltipProps {
 export function HelpTooltip({content, side = "bottom", className = ""}: HelpTooltipProps) {
     return (
         <Tooltip content={content} side={side}>
-            <button
-                type="button"
+            {/* span, а не button: HelpTooltip иногда оказывается внутри других
+                интерактивных элементов (например CheckBoxOne), а вложенные
+                <button> внутри <button> невалидны в HTML и ломают гидрацию */}
+            <span
+                role="button"
+                tabIndex={0}
                 className={`w-7 h-7 grid place-items-center rounded-full text-[#a3adbd] hover:bg-[#f2f5f9] hover:text-[#55617a] cursor-pointer ${className}`}
             >
                 <HelpCircle className="w-[16px] h-[16px]" strokeWidth={2}/>
-            </button>
+            </span>
         </Tooltip>
     );
 }

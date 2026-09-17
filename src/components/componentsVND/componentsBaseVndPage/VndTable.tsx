@@ -1,14 +1,17 @@
 import {useTranslation} from "react-i18next";
 import {Link} from "react-router-dom";
-import {useActualizationBucketMeta} from "@/hooks/actualizationHooks/useActualizationBucketMeta.ts";
-import {HighlightText} from "@/utils/highlightText.tsx";
 import type {VndResponse} from "@/service/vndService/vndServiceType.ts";
+import {HighlightText} from "@/utils/highlightText.tsx";
+import {useActualizationBucketMeta} from "@/hooks/actualizationHooks/useActualizationBucketMeta.ts";
+
 import {collapseDocumentStatus, DOCUMENT_STATUS_META, getVndDisplayMeta, STATUS_META} from "@/constants/vndStatus.ts";
 import {LINKED_TO_ME_RELATION_META, type LinkedToMeRelationKey} from "@/constants/linkedToMeRelations.ts";
-import type {ColDef} from "@/constants/columnsFilters/vndColumns.ts";
+import {type ColDef} from "@/constants/columnsFilters/vndColumns.ts";
+
 import {EmptyState} from "@/components/componentsGeneral/EmptyState.tsx";
-import {Clock} from "lucide-react";
 import {Tooltip} from "@/components/componentsGeneral/Tooltip.tsx";
+
+import {Clock} from "lucide-react";
 
 interface VndTableProps {
     columns: ColDef[];
@@ -69,7 +72,7 @@ export function VndTable({
                 >
                     {columns.map((c) => (
                         <div key={c.key} className="whitespace-nowrap">
-                            {c.label}
+                            {c.labelKey && t(c.labelKey)}
                         </div>
                     ))}
                 </div>
@@ -263,7 +266,7 @@ export function VndTable({
                                                             return (
                                                                 <span key={key}>
                                                                     <span style={{color: relMeta.color}} className="font-semibold">
-                                                                        {relMeta.label}
+                                                                        {t(relMeta.label)}
                                                                     </span>
                                                                     {i < sorted.length - 1 && (
                                                                         <span className="text-[#a3adbd]">{"; "}</span>
@@ -384,7 +387,7 @@ export function VndTable({
                                     case "redactionCount":
                                         return (
                                             <div key={c.key} className="min-w-0 flex justify-center">
-                                                <Tooltip content="Кол-во редакций (актуальных и нет)" side="top">
+                                                <Tooltip content={t("registry.table.revisionsCountTooltip")} side="top">
                                                     <span
                                                         className="inline-flex items-center justify-center rounded-full bg-[#f2f5f9] text-[#55617a] text-[11px] font-bold"
                                                         style={{minWidth: 22, height: 22, padding: "0 6px"}}

@@ -1,8 +1,7 @@
-// src/hooks/vndHooks/useVndActualization.ts
 import {useMemo, useState} from "react";
+import {useTranslation} from "react-i18next";
 import {formatDDMMYYYY, formatISO, parseDDMMYYYY} from "@/utils/dateUtils.ts";
 import {
-    ACTUALIZATION_MODE_OPTIONS,
     addMonths,
     type ActualizationMode,
     describeManualPeriod,
@@ -12,10 +11,11 @@ import {
 } from "@/utils/vndProcess/vndActualizationUtils.ts";
 
 export function useVndActualization() {
+    const {t} = useTranslation();
     const today = useMemo(() => new Date(), []);
     const todayISO = useMemo(() => formatISO(today), [today]);
 
-    const [actualizationMode, setActualizationMode] = useState<ActualizationMode>("year");
+    const [actualizationMode, setActualizationMode] = useState<ActualizationMode>("biennial");
     const [manualDueDate, setManualDueDate] = useState(""); // дд.мм.гггг - только в режиме "Ввод даты"
 
     // ISO-версия введённой вручную даты (или "" если ещё не введена / некорректна) - то, что уйдёт на бэк
@@ -39,13 +39,15 @@ export function useVndActualization() {
 
     const periodicityLabel =
         actualizationMode === "date"
-            ? describeManualPeriod(manualDueDateISO, todayISO)
-            : ACTUALIZATION_MODE_OPTIONS.find((o) => o.key === actualizationMode)?.label.toLowerCase() ?? "";
+            // укажите дату / дата должна быть в будущем / 1 раз в год / 1 раз в два года / N дн. / ≈ N мес.
+            ? describeManualPeriod(t, manualDueDateISO, todayISO)
+            // 1 раз в год / 1 раз в два года / ввод даты - берём напрямую из переводов режимов
+            : t(`createVnd.actualizationCard.modes.${actualizationMode}`).toLowerCase();
 
     const isDateModeValid = actualizationMode !== "date" || manualDueDateISO !== "";
 
-    // Интервал до следующего цикла для подсказки под датой ("... далее через год/полгода ...").
-    const nextCycleInterval = describeNextCycleInterval(actualizationMode, manualDueDateISO, todayISO);
+    // Интервал до следующего цикла для подсказки под датой ("... далее через год/два года ...").
+    const nextCycleInterval = describeNextCycleInterval(t, actualizationMode, manualDueDateISO, todayISO);
 
     return {
         actualizationMode, setActualizationMode,

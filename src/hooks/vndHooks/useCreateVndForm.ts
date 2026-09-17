@@ -10,7 +10,7 @@ import {
 import type {OrganizationUnitResponse} from "@/service/dictionariesService/organizationUnitService/organizationUnitServiceType.ts";
 import {useVndDictionaries} from "@/hooks/vndHooks/useVndDictionaries.ts";
 import {useVndActualization} from "@/hooks/vndHooks/useVndActualization.ts";
-import {CANNOT_CREATE_VND_MESSAGE, useCanCreateVnd} from "@/hooks/vndHooks/useCanCreateVnd.ts";
+import {useCanCreateVnd, useCannotCreateVndMessage} from "@/hooks/vndHooks/useCanCreateVnd.ts";
 import {VND_TITLE_MAX_LENGTH, VND_TITLE_MIN_LENGTH} from "@/constants/validation/vndValidation.ts";
 import {toast} from "@/service/toastService.ts";
 
@@ -22,6 +22,7 @@ export function useCreateVndForm() {
     // поэтому право проверяем и здесь: иначе отправка формы дойдёт до бэкенда и упадёт
     // там сырой ошибкой авторизации вместо понятного сообщения.
     const canCreateVnd = useCanCreateVnd();
+    const cannotCreateVndMessage = useCannotCreateVndMessage();
 
     // --- Все справочники разом (виды ВНД, органы утверждения, СП, ключевые слова, рубрики, секретность, группы)
     const dictionaries = useVndDictionaries();
@@ -84,7 +85,7 @@ export function useCreateVndForm() {
         if (!currentUser?.orgUnit) return;
         const autoId = String(currentUser.orgUnit.id);
         if (!developerTouched.current) {
-            // eslint-disable-next-line react-hooks/set-state-in-effect
+
             setDeveloperIdState(autoId);
         }
         if (!executorsTouched.current) {
@@ -129,7 +130,7 @@ export function useCreateVndForm() {
     }, [typeId, organId, titleRu, developerId, responsibleExecutorIds, actualization.isDateModeValid]);
 
     const missingFieldsTooltip = !canCreateVnd
-        ? CANNOT_CREATE_VND_MESSAGE
+        ? cannotCreateVndMessage
         : missingFieldLabels.length > 0
             ? `Заполните ${missingFieldLabels.length === 1 ? "поле" : "поля"}: «${missingFieldLabels.join("», «")}»`
             : "";

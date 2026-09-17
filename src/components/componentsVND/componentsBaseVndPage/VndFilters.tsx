@@ -1,6 +1,6 @@
 // Расширенный поиск для реестра ВНД
 import type {ReactNode} from "react";
-import {useTranslation} from "react-i18next";
+import {Trans, useTranslation} from "react-i18next";
 import {useDictionaries} from "@/context/DictionariesContext.tsx";
 import {useVndAdvancedFiltersDraft, type AdvancedDraft} from "@/hooks/vndHooks/useVndAdvancedFiltersDraft.ts";
 import {useVndHasActiveFilters} from "@/hooks/vndHooks/useVndHasActiveFilters.ts";
@@ -244,7 +244,7 @@ export function VndFilters(props: VndFiltersProps) {
                     variant="white"
                     value={search}
                     onChange={onSearchChange}
-                    placeholder="Поиск по коду, наименованию, реквизитам и тексту редакций…"
+                    placeholder={t("registry.filters.searchPlaceholder")}
                     className="min-w-[280px]"
                 />
             </div>
@@ -254,8 +254,7 @@ export function VndFilters(props: VndFiltersProps) {
                     className="flex items-center gap-[11px] px-4 py-3 bg-[#f6f8fb] border border-[#eef2f7] rounded-xl mb-4">
                     <AlertTriangle className="w-[18px] h-[18px] flex-none text-[#8b97ab]" strokeWidth={1.8}/>
                     <span className="text-[12.5px] text-[#55617a] leading-[1.5]">
-                        Архивированные (недействующие) ВНД. Отмена оформляется служебной запиской
-                        и не согласуется.
+                        {t("registry.filters.archiveNotice")}
                     </span>
                 </div>
             )}
@@ -270,7 +269,7 @@ export function VndFilters(props: VndFiltersProps) {
                     }`}
                 >
                     <SlidersHorizontal className="w-[15px] h-[15px]" strokeWidth={1.8}/>
-                    Расширенный поиск
+                    {t("registry.filters.advancedSearch")}
                     <ChevronDown
                         className={`w-[15px] h-[15px] flex-none text-[#a3adbd] transition-transform ${advOpen ? "rotate-180" : ""}`}
                         strokeWidth={2}
@@ -287,15 +286,15 @@ export function VndFilters(props: VndFiltersProps) {
                         показывается — даже когда часть колонок скрыта. */}
                     <MultiSelectDropdown
                         icon={<Filter className="w-[15px] h-[15px]" strokeWidth={1.8}/>}
-                        triggerLabel="Колонки"
-                        label="Отображение колонок"
-                        options={toggleableColumns.map((c) => ({key: c.key, label: c.label}))}
+                        triggerLabel={t("registry.filters.columns.trigger")}
+                        label={t("registry.filters.columns.label")}
+                        options={toggleableColumns.map((c) => ({key: c.key, label: t(c.labelKey)}))}
                         selectedKeys={selectedColumnKeys}
                         onToggle={onToggleColumn}
                         onSelectAll={onSelectAllColumns}
                         onDeselectAll={onDeselectAllColumns}
                         searchThreshold={8}
-                        searchPlaceholder="Поиск колонки…"
+                        searchPlaceholder={t("registry.filters.columns.searchPlaceholder")}
                         plain
                     />
                 </div>
@@ -303,8 +302,8 @@ export function VndFilters(props: VndFiltersProps) {
                 {(scope === "all" || scope === "active" || scope === "notYetActive") && canViewExtended && (
                     <div className="relative">
                         <MultiSelectDropdown
-                            triggerLabel="Статус последней редакции"
-                            label="Статус последней редакции"
+                            triggerLabel={t("registry.filters.statusLabel")}
+                            label={t("registry.filters.statusLabel")}
                             options={statusOptions}
                             selectedKeys={statusFilters}
                             onToggle={onToggleStatus}
@@ -340,13 +339,13 @@ export function VndFilters(props: VndFiltersProps) {
                                     style={{opacity: linkedToMeOnly ? 1 : 0}}
                                 />
                             </span>
-                            Только связанные со мной
+                            {t("registry.filters.linkedToMeOnly")}
                         </button>
 
                         {linkedToMeOnly && (
                             <div className="relative">
                                 <LinkedToMeRelationDropdown
-                                    triggerLabel="Тип связи"
+                                    triggerLabel={t("registry.filters.linkedToMe.trigger")}
                                     selectedKeys={linkedToMeRelations}
                                     onToggle={onToggleLinkedToMeRelation}
                                     onSelectAll={onSelectAllLinkedToMeRelations}
@@ -368,8 +367,11 @@ export function VndFilters(props: VndFiltersProps) {
                     {hasActiveFilters ? (
                         <>
                             {t(SCOPE_COUNT_LABELS[scope].found)}:{" "}
-                            <b className="text-[#3a4560] font-mono">{resultCount}</b>{" "}из{" "}
-                            {totalCount}
+                            <Trans
+                                i18nKey="registry.filters.resultOfTotal"
+                                values={{result: resultCount, total: totalCount}}
+                                components={{b: <b className="text-[#3a4560] font-mono"/>}}
+                            />
                         </>
                     ) : (
                         <>
@@ -384,7 +386,7 @@ export function VndFilters(props: VndFiltersProps) {
                         onClick={onResetFilters}
                         className="inline-flex items-center h-9 px-3 rounded-[9px] border border-[#e5e9f0] bg-white text-[#55617a] font-semibold text-[12.5px] cursor-pointer hover:bg-[#f6f8fb]"
                     >
-                        Сбросить фильтры
+                        {t("vnd.emptyState.resetFilters")}
                     </button>
                 )}
             </div>
@@ -402,82 +404,82 @@ export function VndFilters(props: VndFiltersProps) {
                                 <div className="flex flex-col gap-3.5">
                                     <label>
                                         <span
-                                            className="block text-[11.5px] text-[#8b97ab] mb-[5px]">Код документа</span>
+                                            className="block text-[11.5px] text-[#8b97ab] mb-[5px]">{t("codeCard.label")}</span>
                                         <SearchBar
                                             variant="white"
                                             value={draft.advSearchCode}
                                             onChange={(v) => updateDraft("advSearchCode", v)}
-                                            placeholder="Поиск по коду…"
+                                            placeholder={t("registry.filters.advanced.codePlaceholder")}
                                         />
                                     </label>
 
                                     <label>
                                         <span
-                                            className="block text-[11.5px] text-[#8b97ab] mb-[5px]">Наименование</span>
+                                            className="block text-[11.5px] text-[#8b97ab] mb-[5px]">{t("registry.filters.advanced.name")}</span>
                                         <SearchBar
                                             variant="white"
                                             value={draft.advSearchName}
                                             onChange={(v) => updateDraft("advSearchName", v)}
-                                            placeholder="Поиск по наименованию…"
+                                            placeholder={t("registry.filters.advanced.namePlaceholder")}
                                         />
                                     </label>
 
                                     <label>
                                         <span
-                                            className="block text-[11.5px] text-[#8b97ab] mb-[5px]">Текст редакции</span>
+                                            className="block text-[11.5px] text-[#8b97ab] mb-[5px]">{t("registry.filters.advanced.revisionText")}</span>
                                         <SearchBar
                                             variant="white"
                                             value={draft.advSearchRevisionText}
                                             onChange={(v) => updateDraft("advSearchRevisionText", v)}
-                                            placeholder="Поиск по тексту редакции…"
+                                            placeholder={t("registry.filters.advanced.revisionTextPlaceholder")}
                                         />
                                     </label>
 
                                     <MultiSelectField
-                                        label="Вид документа"
-                                        modalTitle="Вид документа"
+                                        label={t("createVnd.fields.docType")}
+                                        modalTitle={t("createVnd.fields.docType")}
                                         options={dictionaries.typeOptions}
                                         selectedKeys={draft.docTypeFilters}
                                         onChange={(v) => updateDraft("docTypeFilters", v)}
-                                        searchPlaceholder="Поиск вида документа…"
+                                        searchPlaceholder={t("createVnd.fields.docTypeSearchPlaceholder")}
                                     />
                                 </div>
 
                                 <div className="flex flex-col gap-3.5">
                                     <MultiSelectField
-                                        label="Разработчик"
-                                        modalTitle="Разработчик (СП)"
+                                        label={t("openVndPage.historyTab.developerLabel")}
+                                        modalTitle={t("createVnd.fields.developer")}
                                         options={dictionaries.orgUnitOptions}
                                         selectedKeys={draft.developerFilters}
                                         onChange={(v) => updateDraft("developerFilters", v)}
-                                        searchPlaceholder="Поиск подразделения…"
+                                        searchPlaceholder={t("registry.filters.advanced.orgUnitSearchPlaceholder")}
                                         hierarchical
                                     />
                                     <MultiSelectField
-                                        label="Орган утверждения"
-                                        modalTitle="Орган утверждения"
+                                        label={t("createVnd.fields.approvalBody")}
+                                        modalTitle={t("createVnd.fields.approvalBody")}
                                         options={dictionaries.organOptions}
                                         selectedKeys={draft.organFilters}
                                         onChange={(v) => updateDraft("organFilters", v)}
-                                        searchPlaceholder="Поиск органа утверждения…"
+                                        searchPlaceholder={t("createVnd.fields.approvalBodySearchPlaceholder")}
                                         hierarchical
                                     />
                                     <MultiSelectField
-                                        label="Ответственные исполнители"
-                                        modalTitle="Ответственные исполнители"
+                                        label={t("createVnd.fields.responsibleExecutors")}
+                                        modalTitle={t("createVnd.fields.responsibleExecutors")}
                                         options={dictionaries.orgUnitOptions}
                                         selectedKeys={draft.responsibleExecutorFilters}
                                         onChange={(v) => updateDraft("responsibleExecutorFilters", v)}
-                                        searchPlaceholder="Поиск подразделения…"
+                                        searchPlaceholder={t("registry.filters.advanced.orgUnitSearchPlaceholder")}
                                         hierarchical
                                     />
                                     <MultiSelectField
-                                        label="Инициатор"
-                                        modalTitle="Инициатор"
+                                        label={t("openVndPage.passportTab.initiatorLabel")}
+                                        modalTitle={t("openVndPage.passportTab.initiatorLabel")}
                                         options={initiatorOptions.options}
                                         selectedKeys={draft.initiatorFilters}
                                         onChange={(v) => updateDraft("initiatorFilters", v)}
-                                        searchPlaceholder="Поиск по ФИО…"
+                                        searchPlaceholder={t("registry.filters.advanced.initiatorSearchPlaceholder")}
                                     />
                                 </div>
                             </div>
@@ -486,22 +488,22 @@ export function VndFilters(props: VndFiltersProps) {
                                 <div className="border border-[#eef2f7] rounded-xl p-3.5">
                                     <div
                                         className="text-[11px] font-bold tracking-[.04em] uppercase text-[#a3adbd] mb-2.5">
-                                        Принятие и вступление в силу
+                                        {t("openVndPage.passportTab.sections.adoption")}
                                     </div>
                                     <DateFilterGroup
                                         rows={[
                                             {
                                                 key: "adoption",
-                                                label: "Дата принятия",
+                                                label: t("openVndPage.passportTab.adoptionDateLabel"),
                                                 value: draft.adoptionDateFilter,
                                                 onChange: (v) => updateDraft("adoptionDateFilter", v),
-                                                codeLabel: "№ принятия",
+                                                codeLabel: t("openVndPage.passportTab.adoptionCodeLabel"),
                                                 codeValue: draft.adoptionCodeFilter,
                                                 onCodeChange: (v) => updateDraft("adoptionCodeFilter", v),
                                             },
                                             {
                                                 key: "effective",
-                                                label: "Дата вступления в силу",
+                                                label: t("openVndPage.passportTab.effectiveDateLabel"),
                                                 value: draft.effectiveDateFilter,
                                                 onChange: (v) => updateDraft("effectiveDateFilter", v),
                                             },
@@ -513,19 +515,19 @@ export function VndFilters(props: VndFiltersProps) {
                                     <div className="border border-[#eef2f7] rounded-xl p-3.5 min-w-0">
                                         <div
                                             className="text-[11px] font-bold tracking-[.04em] uppercase text-[#a3adbd] mb-2.5">
-                                            Изменения
+                                            {t("openVndPage.passportTab.sections.changes")}
                                         </div>
                                         <DateFilterGroup
                                             rows={[
                                                 {
                                                     key: "requisitesChanged",
-                                                    label: "Изменение реквизитов",
+                                                    label: t("openVndPage.passportTab.requisitesChangedLabel"),
                                                     value: draft.requisitesChangedDateFilter,
                                                     onChange: (v) => updateDraft("requisitesChangedDateFilter", v),
                                                 },
                                                 {
                                                     key: "revisionChanged",
-                                                    label: "Изменение редакции",
+                                                    label: t("openVndPage.passportTab.revisionChangedLabel"),
                                                     value: draft.revisionChangedDateFilter,
                                                     onChange: (v) => updateDraft("revisionChangedDateFilter", v),
                                                 },
@@ -537,19 +539,19 @@ export function VndFilters(props: VndFiltersProps) {
                                         <div className="border border-[#eef2f7] rounded-xl p-3.5 min-w-0">
                                             <div
                                                 className="text-[11px] font-bold tracking-[.04em] uppercase text-[#a3adbd] mb-2.5">
-                                                Актуализация
+                                                {t("openVndPage.passportTab.sections.actualization")}
                                             </div>
                                             <DateFilterGroup
                                                 rows={[
                                                     {
                                                         key: "dueActualization",
-                                                        label: "Срок актуализации",
+                                                        label: t("openVndPage.passportTab.dueActualizationDateLabel"),
                                                         value: draft.dueActualizationDateFilter,
                                                         onChange: (v) => updateDraft("dueActualizationDateFilter", v),
                                                     },
                                                     {
                                                         key: "lastActualization",
-                                                        label: "Дата посл. актуализации",
+                                                        label: t("openVndPage.passportTab.lastActualizationDateLabel"),
                                                         value: draft.lastActualizationDateFilter,
                                                         onChange: (v) => updateDraft("lastActualizationDateFilter", v),
                                                     },
@@ -563,22 +565,22 @@ export function VndFilters(props: VndFiltersProps) {
                                     <div className="border border-[#eef2f7] rounded-xl p-3.5">
                                         <div
                                             className="text-[11px] font-bold tracking-[.04em] uppercase text-[#a3adbd] mb-2.5">
-                                            Отмена и архивация
+                                            {t("openVndPage.passportTab.sections.cancelArchive")}
                                         </div>
                                         <DateFilterGroup
                                             rows={[
                                                 {
                                                     key: "cancel",
-                                                    label: "Дата отмены",
+                                                    label: t("openVndPage.passportTab.cancelDateLabel"),
                                                     value: draft.cancelDateFilter,
                                                     onChange: (v) => updateDraft("cancelDateFilter", v),
-                                                    codeLabel: "№ отмены",
+                                                    codeLabel: t("openVndPage.passportTab.cancelCodeLabel"),
                                                     codeValue: draft.cancelCodeFilter,
                                                     onCodeChange: (v) => updateDraft("cancelCodeFilter", v),
                                                 },
                                                 {
                                                     key: "archived",
-                                                    label: "Дата архивации",
+                                                    label: t("openVndPage.passportTab.archivedDateLabel"),
                                                     value: draft.archivedDateFilter,
                                                     onChange: (v) => updateDraft("archivedDateFilter", v),
                                                 },
@@ -591,12 +593,12 @@ export function VndFilters(props: VndFiltersProps) {
                             <div
                                 className="grid [grid-template-columns:repeat(auto-fit,minmax(200px,1fr))] gap-x-[18px] gap-y-3.5">
                                 <MultiSelectField
-                                    label="Ключевые слова"
-                                    modalTitle="Ключевые слова"
+                                    label={t("createVnd.classifiers.keywords")}
+                                    modalTitle={t("createVnd.classifiers.keywords")}
                                     options={dictionaries.keywordOptions}
                                     selectedKeys={draft.keywordFilters}
                                     onChange={(v) => updateDraft("keywordFilters", v)}
-                                    searchPlaceholder="Поиск ключевых слов…"
+                                    searchPlaceholder={t("createVnd.classifiers.keywordsSearchPlaceholder")}
                                     hierarchical
                                 />
                             </div>
@@ -604,28 +606,28 @@ export function VndFilters(props: VndFiltersProps) {
                             <div
                                 className="grid [grid-template-columns:repeat(auto-fit,minmax(200px,1fr))] gap-x-[18px] gap-y-3.5">
                                 <MultiSelectField
-                                    label="Уровень секретности"
-                                    modalTitle="Уровень секретности"
+                                    label={t("createVnd.classifiers.secrecyLevel")}
+                                    modalTitle={t("createVnd.classifiers.secrecyLevel")}
                                     options={dictionaries.secrecyOptions}
                                     selectedKeys={draft.secrecyLevelFilters}
                                     onChange={(v) => updateDraft("secrecyLevelFilters", v)}
-                                    searchPlaceholder="Поиск уровня…"
+                                    searchPlaceholder={t("createVnd.classifiers.secrecyLevelSearchPlaceholder")}
                                 />
                                 <MultiSelectField
-                                    label="Группы доступа"
-                                    modalTitle="Группы доступа"
+                                    label={t("createVnd.classifiers.userGroups")}
+                                    modalTitle={t("createVnd.classifiers.userGroups")}
                                     options={dictionaries.userGroupOptions}
                                     selectedKeys={draft.userGroupFilters}
                                     onChange={(v) => updateDraft("userGroupFilters", v)}
-                                    searchPlaceholder="Поиск группы…"
+                                    searchPlaceholder={t("createVnd.classifiers.userGroupsSearchPlaceholder")}
                                 />
                                 <MultiSelectField
-                                    label="Рубрикатор"
-                                    modalTitle="Рубрикатор"
+                                    label={t("createVnd.classifiers.rubric")}
+                                    modalTitle={t("createVnd.classifiers.rubric")}
                                     options={dictionaries.rubricOptions}
                                     selectedKeys={draft.rubricFilters}
                                     onChange={(v) => updateDraft("rubricFilters", v)}
-                                    searchPlaceholder="Поиск рубрики…"
+                                    searchPlaceholder={t("createVnd.classifiers.rubricSearchPlaceholder")}
                                     hierarchical
                                 />
                             </div>
@@ -637,19 +639,19 @@ export function VndFilters(props: VndFiltersProps) {
                                 className="inline-flex items-center gap-1.5 h-10 px-4 rounded-[10px] border border-[#e5e9f0] bg-white text-[#55617a] font-semibold text-[12.5px] cursor-pointer hover:bg-[#f6f8fb]"
                             >
                                 <ChevronUp className="w-[15px] h-[15px]" strokeWidth={2}/>
-                                Свернуть
+                                {t("registry.filters.advanced.collapse")}
                             </button>
                             <button
                                 onClick={handleResetDraft}
                                 className="h-10 px-4 rounded-[10px] border border-[#e5e9f0] bg-white text-[#55617a] font-semibold text-[12.5px] cursor-pointer hover:bg-[#f6f8fb]"
                             >
-                                Сбросить
+                                {t("registry.filters.advanced.reset")}
                             </button>
                             <button
                                 onClick={handleApply}
                                 className="h-10 px-5 rounded-[10px] border-none bg-[#4e57d6] text-white font-semibold text-[12.5px] cursor-pointer hover:brightness-[1.06]"
                             >
-                                Найти
+                                {t("registry.filters.advanced.apply")}
                             </button>
                         </div>
                     </div>

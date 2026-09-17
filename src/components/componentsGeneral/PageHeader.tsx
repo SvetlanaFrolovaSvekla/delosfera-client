@@ -1,3 +1,4 @@
+// Компонент-обертка для header-ов страниц
 import type {ReactNode} from "react";
 
 interface PageHeaderProps {

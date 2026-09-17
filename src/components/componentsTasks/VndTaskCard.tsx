@@ -174,7 +174,7 @@ export function VndTaskCard({task, searchQuery = "", square = false, noTopBorder
             {task.isCompleted ? (
                 <span className="flex flex-none items-center gap-1.5 text-[11.5px] font-semibold text-[#1c7a4d]">
                     <CheckCircle2 size={14}/>
-                    {task.completedAt ? timeAgo(task.completedAt) : t("tasks.vnd.completedFallback")}
+                    {task.completedAt ? timeAgo(task.completedAt, t) : t("tasks.vnd.completedFallback")}
                 </span>
             ) : due.label !== "—" ? (
                 <span className="flex flex-none items-center gap-1.5 text-[11.5px] font-semibold"

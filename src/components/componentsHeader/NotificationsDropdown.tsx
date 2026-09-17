@@ -139,7 +139,7 @@ export function NotificationsDropdown() {
                                             {n.body}
                                         </div>
                                         <div className="mt-[3px] text-[11px] text-[#8b97ab]">
-                                            {formatRelativeTime(n.createdAt)}
+                                            {formatRelativeTime(n.createdAt, t)}
                                         </div>
                                     </div>
                                     {!n.isRead && (

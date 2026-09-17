@@ -2,17 +2,20 @@
 import {useState} from "react";
 import {useTranslation} from "react-i18next";
 import {useNavigate} from "react-router-dom";
+import {useAuth} from "@/context/AuthContext.ts";
 import {useDictionaries} from "@/context/DictionariesContext.tsx";
 import {daysUntil} from "@/utils/dateUtils.ts";
 import {useVndFilters} from "@/hooks/vndHooks/useVndFilters.tsx";
+import {useCanCreateVnd} from "@/hooks/vndHooks/useCanCreateVnd.ts";
+import {useIsVndEditor} from "@/hooks/vndHooks/useIsVndEditor.ts";
 import {useRubricsFromUrl} from "@/hooks/vndHooks/useRubricsFromUrl.ts";
 import {useVndColumnVisibility} from "@/hooks/vndHooks/useVndColumnVisibility.tsx";
 import {useVndScopeCounts} from "@/hooks/vndHooks/useVndScopeCounts.tsx";
 import {useVndFilteredRows} from "@/hooks/vndHooks/useVndFilteredRows.tsx";
 import {useVndDictionaryResolvers} from "@/hooks/vndHooks/useVndDictionaryResolvers.ts";
 import {useJournalViews} from "@/hooks/useJournalViews.ts";
+import {PermissionCode} from "@/constants/permissions/permissions.ts";
 import {JOURNAL} from "@/service/journalViewService/journalViewService.ts";
-import {JournalViewPicker} from "@/components/componentsGeneral/JournalViewPicker.tsx";
 
 import {type VndScope, type VndStatusKey} from '@/constants/vndTabs.ts';
 import {STATUS_META, STATUS_OPTIONS_BY_SCOPE} from "@/constants/vndStatus.ts";
@@ -24,10 +27,8 @@ import {VndTable} from "@/components/componentsVND/componentsBaseVndPage/VndTabl
 import {Tabs} from "@/components/componentsGeneral/Tabs.tsx";
 import {Loader} from "@/components/componentsGeneral/Loader";
 import {EmptyState} from "@/components/componentsGeneral/EmptyState.tsx";
-import {useAuth} from "@/context/AuthContext.ts";
-import {PermissionCode} from "@/constants/permissions/permissions.ts";
-import {useCanCreateVnd} from "@/hooks/vndHooks/useCanCreateVnd.ts";
-import {useIsVndEditor} from "@/hooks/vndHooks/useIsVndEditor.ts";
+import {JournalViewPicker} from "@/components/componentsGeneral/JournalViewPicker.tsx";
+
 import {FileEdit} from "lucide-react";
 
 type DraftOwnerScope = "mine" | "others" | "allDraft";
@@ -94,14 +95,19 @@ export function BaseVndPage() {
     // Вкладка "Черновики" видна только при праве создавать ВНД — и идёт последней, в общей
     // группе табов (не отделяется вправо)
     const scopeTabs = [
-        {id: "all" as VndScope, label: "Все", n: counts.all},
-        {id: "active" as VndScope, label: "Действующие", n: counts.active},
+        // Все
+        {id: "all" as VndScope, label: t("registry.tabs.all"), n: counts.all},
+        // Действующие
+        {id: "active" as VndScope, label: t("registry.tabs.active"), n: counts.active},
         ...(canViewVndRegistryExtended
-            ? [{id: "notYetActive" as VndScope, label: "Ещё не действующие", n: counts.notYetActive}]
+            // Ещё не действующие
+            ? [{id: "notYetActive" as VndScope, label: t("registry.tabs.notYetActive"), n: counts.notYetActive}]
             : []),
-        {id: "arch" as VndScope, label: "Архивированные", n: counts.arch},
+        // Архивированные
+        {id: "arch" as VndScope, label: t("registry.tabs.arch"), n: counts.arch},
         ...(canCreateVnd
-            ? [{id: "draft" as VndScope, label: "Черновики", n: counts.draft, icon: <FileEdit size={14}/>}]
+            // Черновики
+            ? [{id: "draft" as VndScope, label: t("registry.tabs.draft"), n: counts.draft, icon: <FileEdit size={14}/>}]
             : []),
     ];
 
@@ -114,22 +120,25 @@ export function BaseVndPage() {
             {scope === "draft" && canViewOtherUsersDrafts && (
                 <div className="flex items-center gap-2 mb-3.5">
                     {([
-                        {key: "allDraft" as const, label: "Все черновики"},
-                        {key: "mine" as const, label: "Мои черновики"},
-                        {key: "others" as const, label: "Черновики других пользователей"},
-                    ]).map((t) => {
-                        const active = draftOwnerScope === t.key;
+                        // Все черновики
+                        {key: "allDraft" as const, label: t("registry.draftOwnerScope.allDraft")},
+                        // Мои черновики
+                        {key: "mine" as const, label: t("registry.draftOwnerScope.mine")},
+                        // Черновики других пользователей
+                        {key: "others" as const, label: t("registry.draftOwnerScope.others")},
+                    ]).map((opt) => {
+                        const active = draftOwnerScope === opt.key;
                         return (
                             <button
-                                key={t.key}
-                                onClick={() => setDraftOwnerScope(t.key)}
+                                key={opt.key}
+                                onClick={() => setDraftOwnerScope(opt.key)}
                                 className={`inline-flex items-center h-8 px-3 rounded-lg border font-semibold text-[12.5px] cursor-pointer ${
                                     active
                                         ? "border-[#4e57d6] bg-[#f6f8fb] text-[#4e57d6]"
                                         : "border-[#e5e9f0] bg-white text-[#55617a] hover:bg-[#f6f8fb]"
                                 }`}
                             >
-                                {t.label}
+                                {opt.label}
                             </button>
                         );
                     })}
@@ -233,19 +242,23 @@ export function BaseVndPage() {
             />
 
             {loading || dictionaries.loading ? (
-                <Loader label="Загрузка данных…"/>
+                // Загрузка данных…
+                <Loader label={t("registry.loadingData")}/>
             ) : error ? (
                 <EmptyState
                     variant="error"
-                    title="Не удалось загрузить данные"
+                    // Не удалось загрузить данные
+                    title={t("registry.errors.loadDataTitle")}
                     description={error}
                 />
             ) : dictionaries.error ? (
                 <EmptyState
                     variant="error"
-                    title="Не удалось загрузить справочники"
+                    // Не удалось загрузить справочники
+                    title={t("registry.errors.loadDictionariesTitle")}
                     description={dictionaries.error}
-                    actionLabel="Повторить"
+                    // Повторить
+                    actionLabel={t("registry.errors.retry")}
                     onAction={dictionaries.refetch}
                 />
             ) : (

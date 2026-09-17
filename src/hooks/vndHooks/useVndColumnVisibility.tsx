@@ -43,6 +43,7 @@ export function useVndColumnVisibility(scope: VndScope, canViewExtended: boolean
         const toggleable = getToggleableColumns(scope, canViewExtended, linkedToMeOnly);
         const defaultVisible = defaultVisibleForScope(scope);
 
+        // eslint-disable-next-line react-hooks/set-state-in-effect
         setVisibleColsByScope((prev) => {
             const current = prev[scope];
             const missing = toggleable.filter((c) => !(c.key in current));
@@ -56,7 +57,7 @@ export function useVndColumnVisibility(scope: VndScope, canViewExtended: boolean
                 },
             };
         });
-        // eslint-disable-next-line react-hooks/exhaustive-deps
+
     }, [scope, canViewExtended, linkedToMeOnly]);
 
     const visibleCols = visibleColsByScope[scope];

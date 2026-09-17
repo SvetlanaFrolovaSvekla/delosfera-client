@@ -1,5 +1,6 @@
 // Страница "Планирование актуализации"
 import {useMemo, useState} from "react";
+import {useTranslation} from "react-i18next";
 
 import type {VndSearchRequest} from "@/service/vndService/vndServiceType.ts";
 import {EMPTY_DATE_FILTER, type DateFilterValue} from "@/components/componentsGeneral/datePickers/DateFilterGroup.tsx";
@@ -37,6 +38,7 @@ import {
 } from "@/utils/vndProcess/actualizationSearchRequest.ts";
 
 export function ActualizationPage() {
+    const {t} = useTranslation();
     const {hasPermission} = useAuth();
     const isChiefEditor =
         hasPermission(PermissionCode.ActualizeAnyVndWithApproval) ||
@@ -181,9 +183,9 @@ export function ActualizationPage() {
             />
 
             {(loading || dictLoading) ? (
-                <Loader label="Загрузка данных…"/>
+                <Loader label={t("actualizationPage.loadingData")}/>
             ) : error ? (
-                <EmptyState variant="error" title="Не удалось загрузить данные" description={error}/>
+                <EmptyState variant="error" title={t("actualizationPage.loadDataErrorTitle")} description={error}/>
             ) : (
                 <ActualizationTable
                     columns={columns}

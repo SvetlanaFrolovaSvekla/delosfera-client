@@ -4,6 +4,7 @@ import {Navigate, useNavigate} from "react-router-dom";
 import {useTranslation} from "react-i18next";
 import {useAuth} from "@/context/AuthContext.ts";
 import {AuthHero} from "@/components/componentsAuth/AuthHero.tsx";
+import {AuthLanguageSwitcher} from "@/components/componentsAuth/AuthLanguageSwitcher.tsx";
 import {DemoAccountsPanel} from "@/components/componentsAuth/DemoAccountsPanel.tsx";
 import {Loader} from "@/components/componentsGeneral/Loader.tsx";
 
@@ -101,6 +102,10 @@ export function AuthorizationPage() {
             {/* Панель формы */}
             <div className="flex flex-1 items-center justify-center p-8 lg:min-w-[420px]">
                 <div className="w-full max-w-[400px]">
+                    <div className="mb-[14px] flex justify-end">
+                        <AuthLanguageSwitcher/>
+                    </div>
+
                     <div className="mb-[22px]">
                         <div className="text-[20px] font-bold tracking-[-0.01em]">{t("auth.title")}</div>
                         <div className="mt-[5px] text-[13.5px] text-[#6b7690]">{t("auth.subtitle")}</div>

@@ -299,6 +299,7 @@
     "clerk": "Registry Office"
   },
   "auth": {
+    "languageSwitcherAria": "Switch interface language",
     "brandName": "Delosfera",
     "brandSub": "BANK EDMS",
     "heroTitle": "Electronic document management for the bank",

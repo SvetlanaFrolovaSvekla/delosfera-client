@@ -7,6 +7,7 @@ import {CertificateAuthoritiesForm} from "@/components/system/CertificateAuthori
 import {SigningSettingsForm} from "@/components/system/SigningSettingsForm.tsx";
 import {OrgStructureIntegrationForm} from "@/components/system/OrgStructureIntegrationForm.tsx";
 import {MailSettingsForm} from "@/components/system/MailSettingsForm.tsx";
+import {SubstitutionNumberingForm} from "@/components/system/SubstitutionNumberingForm.tsx";
 
 type IntegrationState = { enabled: boolean; hasError: boolean } | null;
 
@@ -60,6 +61,13 @@ const INTEGRATIONS: Integration[] = [
         subtitle: "Пороги Положения и Матрицы полномочий",
         group: "integration",
         render: () => <ProcurementParametersForm/>,
+    },
+    {
+        id: "substitution-numbering",
+        title: "Нумерация замещений",
+        subtitle: "Формат номера заявки и счётчик (HR-1, HR-2, …)",
+        group: "integration",
+        render: () => <SubstitutionNumberingForm/>,
     },
     {
         id: "mail",

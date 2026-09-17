@@ -44,7 +44,7 @@ export function SubstitutionRequestsPage() {
                 description="Оформление замещения на время отсутствия работника: комиссия приёма-передачи, приказ УЧР"
                 actions={(
                     <Link to="/substitutions/new"
-                          className="flex items-center gap-2 rounded-[10px] bg-[#2f68f5] px-4 py-2 text-[14px] font-medium text-white transition hover:bg-[#2554cc] no-underline">
+                          className="flex items-center gap-2 rounded-[10px] bg-[#2f68f5] px-4 py-2 text-[14px] font-medium !text-white transition hover:bg-[#2554cc] no-underline">
                         <Plus size={17}/> Создать заявку
                     </Link>
                 )}

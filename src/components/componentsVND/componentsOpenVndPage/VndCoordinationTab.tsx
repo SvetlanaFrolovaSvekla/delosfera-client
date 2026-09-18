@@ -26,6 +26,9 @@ import {
     VndStartApprovalModal
 } from "@/components/componentsCoordination/CoordinationRouteConstructor/functionalComponents/VndStartApprovalModal.tsx";
 import {
+    VndSelectApproverModal, type ApproverOption
+} from "@/components/componentsCoordination/CoordinationRouteConstructor/functionalComponents/VndSelectApproverModal.tsx";
+import {
     VndApproverResolutionPanel,
     type ResolutionChoice,
     type VndApproverResolutionPanelHandle,
@@ -108,6 +111,16 @@ export function VndCoordinationTab({vnd, onVndChanged}: VndCoordinationTabProps)
         hasPermission(PermissionCode.ActualizeAnyVndWithoutApproval);
     // Право на отзыв чужого согласования (роль главного редактора).
     const canCancelAnyApproval = hasPermission(PermissionCode.CancelAnyVndApproval);
+    // Право редактировать маршрут уже запущенного согласования - добавлять/убирать
+    // согласующих (роль главного редактора, см. VndApprovalService.AddApproverAsync/
+    // RemoveApproverAsync на бэке).
+    const canEditApprovalRoute = hasPermission(PermissionCode.EditAnyVndApprovalRoute);
+
+    const [addApproverModalOpen, setAddApproverModalOpen] = useState(false); // Модалка "Добавить согласующего"
+    // Этап, который сейчас предлагается убрать (открывает модалку подтверждения) - null, если
+    // модалка закрыта.
+    const [removingStage, setRemovingStage] = useState<ApprovalStageResponse | null>(null);
+    const [removingApprover, setRemovingApprover] = useState(false);
 
     const [submitting, setSubmitting] = useState(false); // Идёт ли отправка резолюции
     const [decisionError, setDecisionError] = useState<string | null>(null); // Ошибка отправки резолюции
@@ -322,6 +335,49 @@ export function VndCoordinationTab({vnd, onVndChanged}: VndCoordinationTabProps)
         }
     };
 
+    // Действующие (не убранные) согласующие уже на маршруте - показываем недоступными в модалке
+    // выбора нового согласующего (см. VndSelectApproverModal.excludedUserIds).
+    const activeApproverUserIds = new Set(
+        process.stages.filter((s) => !s.isRemovedByEditor).map((s) => s.approverUserId),
+    );
+
+    // Главный редактор добавляет согласующего в уже запущенный процесс согласования. Модалка
+    // выбора (VndSelectApproverModal) закрывается сама сразу после выбора - не ждёт ответа
+    // сервера, поэтому здесь нет отдельного состояния загрузки.
+    const handleAddApprover = async (approver: ApproverOption) => {
+        try {
+            await coordinationService.addApprover(vnd.id, {approverUserId: approver.id});
+            await reload();
+            toast.success("Согласующий добавлен", `${approver.fullName} добавлен в маршрут согласования`);
+        } catch (err) {
+            toast.error("Не удалось добавить согласующего", err instanceof Error ? err.message : undefined);
+        }
+    };
+
+    // Клик по кнопке "Убрать" на карточке этапа - открывает модалку подтверждения
+    // (см. StageCardView.onRemoveApprover/VndApprovalRouteView.onRemoveApprover).
+    const handleRequestRemoveApprover = (stageId: number) => {
+        const stage = process.stages.find((s) => s.id === stageId);
+        if (stage) setRemovingStage(stage);
+    };
+
+    // Главный редактор убирает согласующего из уже запущенного процесса согласования - этап
+    // помечается недействующим, задача с него снимается (см. VndApprovalService.RemoveApproverAsync).
+    const handleConfirmRemoveApprover = async () => {
+        if (!removingStage) return;
+        setRemovingApprover(true);
+        try {
+            await coordinationService.removeApprover(vnd.id, removingStage.id, {});
+            await reload();
+            toast.success("Согласующий убран", `${removingStage.approverName} убран из маршрута согласования`);
+            setRemovingStage(null);
+        } catch (err) {
+            toast.error("Не удалось убрать согласующего", err instanceof Error ? err.message : undefined);
+        } finally {
+            setRemovingApprover(false);
+        }
+    };
+
     // Конфиг шапки над установленным маршрутом
     const routeHeaderConfig = isApproved
         ? {
@@ -465,7 +521,10 @@ export function VndCoordinationTab({vnd, onVndChanged}: VndCoordinationTabProps)
                     )}
                     <VndApprovalRouteView process={process} highlightStageId={myStage?.id}
                                           frameless={!!routeHeaderConfig}
-                                          onShowQuoteInText={handleShowQuoteInText}/>
+                                          onShowQuoteInText={handleShowQuoteInText}
+                                          canEditRoute={canEditApprovalRoute}
+                                          onAddApprover={() => setAddApproverModalOpen(true)}
+                                          onRemoveApprover={handleRequestRemoveApprover}/>
                 </div>
 
                 {isPendingForMe && (
@@ -531,6 +590,26 @@ export function VndCoordinationTab({vnd, onVndChanged}: VndCoordinationTabProps)
                     confirmLabel={t("openVndPage.coordinationTab.cancelButton")}
                     loadingLabel={t("openVndPage.coordinationTab.cancelLoadingLabel")}
                     loading={cancelling}
+                    variant="danger"
+                    icon={AlertTriangle}
+                />
+
+                {addApproverModalOpen && (
+                    <VndSelectApproverModal
+                        excludedUserIds={activeApproverUserIds}
+                        onClose={() => setAddApproverModalOpen(false)}
+                        onSelect={handleAddApprover}
+                    />
+                )}
+                <ConfirmActionModal
+                    open={!!removingStage}
+                    onClose={() => setRemovingStage(null)}
+                    onConfirm={handleConfirmRemoveApprover}
+                    title="Убрать согласующего?"
+                    message={removingStage ? `${removingStage.approverName} будет убран из маршрута согласования, его задача снимется. Действие необратимо.` : ""}
+                    confirmLabel="Убрать"
+                    loadingLabel="Убираем…"
+                    loading={removingApprover}
                     variant="danger"
                     icon={AlertTriangle}
                 />
@@ -658,7 +737,10 @@ export function VndCoordinationTab({vnd, onVndChanged}: VndCoordinationTabProps)
                     </div>
                 )}
                 <VndApprovalRouteView process={process} frameless={!!routeHeaderConfig}
-                                      onShowQuoteInText={handleShowQuoteInText}/>
+                                      onShowQuoteInText={handleShowQuoteInText}
+                                      canEditRoute={canEditApprovalRoute}
+                                      onAddApprover={() => setAddApproverModalOpen(true)}
+                                      onRemoveApprover={handleRequestRemoveApprover}/>
             </div>
 
             {/* Панель с замечаниями (если они есть) на этапе исправления замечаний для инициатора */}
@@ -709,6 +791,26 @@ export function VndCoordinationTab({vnd, onVndChanged}: VndCoordinationTabProps)
                 confirmLabel={t("openVndPage.coordinationTab.cancelButton")}
                 loadingLabel={t("openVndPage.coordinationTab.cancelLoadingLabel")}
                 loading={cancelling}
+                variant="danger"
+                icon={AlertTriangle}
+            />
+
+            {addApproverModalOpen && (
+                <VndSelectApproverModal
+                    excludedUserIds={activeApproverUserIds}
+                    onClose={() => setAddApproverModalOpen(false)}
+                    onSelect={handleAddApprover}
+                />
+            )}
+            <ConfirmActionModal
+                open={!!removingStage}
+                onClose={() => setRemovingStage(null)}
+                onConfirm={handleConfirmRemoveApprover}
+                title="Убрать согласующего?"
+                message={removingStage ? `${removingStage.approverName} будет убран из маршрута согласования, его задача снимется. Действие необратимо.` : ""}
+                confirmLabel="Убрать"
+                loadingLabel="Убираем…"
+                loading={removingApprover}
                 variant="danger"
                 icon={AlertTriangle}
             />

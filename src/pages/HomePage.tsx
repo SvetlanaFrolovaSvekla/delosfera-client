@@ -1,13 +1,13 @@
-import {useEffect, useMemo, useState} from "react";
+import {useMemo, useState} from "react";
 import {useTranslation} from "react-i18next";
 import {useAuth} from "@/context/AuthContext";
 
-import {taskInboxService, type InboxTask} from "@/service/workflowService/taskInboxService.ts";
 import {useActualizationSummary} from "@/hooks/vndHooks/useActualizationSummary.ts";
 import {useTimeGreeting} from "@/hooks/generalHooks/useTimeGreeting.ts";
 import {useFormattedDate} from "@/hooks/generalHooks/useFormattedDate.ts";
 import {useVndHomeSummary} from "@/hooks/analyticsHooks/useVndHomeSummary.ts";
 import {useVndTasks} from "@/hooks/tasksVndHooks/useVndTasks.ts";
+import {useTaskInbox} from "@/hooks/workflowHooks/useTaskInbox.ts";
 import {getFirstLastName} from "@/utils/namingUsers/userNaming.ts";
 import {transliterate} from "@/utils/translations/transliterate.ts";
 import {HOME_TASKS_LIMIT} from "@/constants/validation/HomeTasksLimit.ts";
@@ -50,72 +50,14 @@ export function HomePage() {
     const {summary: actualizationSummary, isLoading: actualizationLoading} = useActualizationSummary();
     const {summary: homeSummary} = useVndHomeSummary();
 
-    // Задачи по служебным запискам живут в сводном реестре
-    const [szTasks, setSzTasks] = useState<InboxTask[]>([]);
-    const [szTasksLoading, setSzTasksLoading] = useState(true);
-    useEffect(() => {
-        let cancelled = false;
-        // eslint-disable-next-line react-hooks/set-state-in-effect
-        setSzTasksLoading(true);
-        taskInboxService.get("Sz")
-            .then((inbox) => {
-                if (!cancelled) setSzTasks(inbox.tasks);
-            })
-            .catch(() => {
-                if (!cancelled) setSzTasks([]);
-            })
-            .finally(() => {
-                if (!cancelled) setSzTasksLoading(false);
-            });
-        return () => {
-            cancelled = true;
-        };
-    }, []);
-
-    // Задачи по закупкам
-    const [prcTasks, setPrcTasks] = useState<InboxTask[]>([]);
-    const [prcTasksLoading, setPrcTasksLoading] = useState(true);
-    useEffect(() => {
-        let cancelled = false;
-        // eslint-disable-next-line react-hooks/set-state-in-effect
-        setPrcTasksLoading(true);
-        taskInboxService.get("Procurement")
-            .then((inbox) => {
-                if (!cancelled) setPrcTasks(inbox.tasks);
-            })
-            .catch(() => {
-                if (!cancelled) setPrcTasks([]);
-            })
-            .finally(() => {
-                if (!cancelled) setPrcTasksLoading(false);
-            });
-        return () => {
-            cancelled = true;
-        };
-    }, []);
-
-    // Задачи по ознакомлению с документами — тоже из сводного реестра, вне контура ВНД
-    // (листы ознакомления живут отдельной таблицей без маршрута, см. TaskInboxService).
-    const [ackTasks, setAckTasks] = useState<InboxTask[]>([]);
-    const [ackTasksLoading, setAckTasksLoading] = useState(true);
-    useEffect(() => {
-        let cancelled = false;
-        // eslint-disable-next-line react-hooks/set-state-in-effect
-        setAckTasksLoading(true);
-        taskInboxService.get("Acknowledgement")
-            .then((inbox) => {
-                if (!cancelled) setAckTasks(inbox.tasks);
-            })
-            .catch(() => {
-                if (!cancelled) setAckTasks([]);
-            })
-            .finally(() => {
-                if (!cancelled) setAckTasksLoading(false);
-            });
-        return () => {
-            cancelled = true;
-        };
-    }, []);
+    // Задачи по служебным запискам, закупкам и ознакомлению — тоже из сводного реестра,
+    // вне контура ВНД (листы ознакомления живут отдельной таблицей без маршрута, см.
+    // TaskInboxService). useTaskInbox сам обновляет список при приходе нового
+    // уведомления (см. notificationsRefreshBus) - раньше эти три блока были
+    // одинаковыми useEffect с ручной загрузкой один раз при монтировании.
+    const szInbox = useTaskInbox("Sz");
+    const prcInbox = useTaskInbox("Procurement");
+    const ackInbox = useTaskInbox("Acknowledgement");
 
     // "Последние задачи"
     const homeTasks = useMemo(() => {
@@ -140,11 +82,11 @@ export function HomePage() {
     const vndTasksCount = coordination.tasks.length + myVndApproval.tasks.length
         + actualization.tasks.length + consolidation.tasks.length + rejected.tasks.length
         + actualizationRequest.tasks.length + actualizationApproved.tasks.length;
-    const tasksTotalCount = vndTasksCount + szTasks.length + prcTasks.length + ackTasks.length;
+    const tasksTotalCount = vndTasksCount + szInbox.tasks.length + prcInbox.tasks.length + ackInbox.tasks.length;
     const tasksLoading = coordination.isLoading || myVndApproval.isLoading
         || actualization.isLoading || consolidation.isLoading || rejected.isLoading
         || actualizationRequest.isLoading || actualizationApproved.isLoading
-        || szTasksLoading || prcTasksLoading || ackTasksLoading;
+        || szInbox.isLoading || prcInbox.isLoading || ackInbox.isLoading;
 
     // Текущая дата - локализуется под текущий язык
     const formattedDate = useFormattedDate();
@@ -179,11 +121,16 @@ export function HomePage() {
             <div className="grid grid-cols-1 items-start gap-[18px] xl:grid-cols-[1.65fr_1fr]">
                 <MyTasksCard
                     tasks={homeTasks}
-                    szTasks={szTasks}
-                    prcTasks={prcTasks}
-                    ackTasks={ackTasks}
+                    szTasks={szInbox.tasks}
+                    prcTasks={prcInbox.tasks}
+                    ackTasks={ackInbox.tasks}
                     isLoading={tasksLoading}
-                    counts={{vnd: vndTasksCount, sz: szTasks.length, prc: prcTasks.length, ack: ackTasks.length}}
+                    counts={{
+                        vnd: vndTasksCount,
+                        sz: szInbox.tasks.length,
+                        prc: prcInbox.tasks.length,
+                        ack: ackInbox.tasks.length,
+                    }}
                 />
                 <ActualizationPlanCard summary={actualizationSummary} isLoading={actualizationLoading}/>
             </div>

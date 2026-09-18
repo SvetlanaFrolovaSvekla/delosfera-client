@@ -1,6 +1,7 @@
 // Read-only карточка этапа уже построенного маршрута согласования
 import {useLayoutEffect, useRef, useState} from "react";
 import {Link} from "react-router-dom";
+import {X} from "lucide-react";
 import {useAuth} from "@/context/AuthContext.ts";
 import type {
     ApprovalPhaseRoundResponse,
@@ -165,9 +166,19 @@ interface StageCardViewProps {
      * круга. Без этого пропа история кругов не восстанавливается (используется как раньше -
      * только живые поля стейджа). */
     phaseRounds?: ApprovalPhaseRoundResponse[];
+    /** true, если у текущего пользователя есть право редактировать маршрут этого процесса
+     * (главный редактор, см. PermissionCode.EditAnyVndApprovalRoute) — показывает кнопку "Убрать"
+     * на карточке. Без onRemoveApprover кнопка не рисуется, даже если этот флаг true. */
+    canEditRoute?: boolean;
+    /** Убрать этого согласующего из маршрута (см. VndCoordinationTab) — вызывается по кнопке
+     * "Убрать", саму карточку это не меняет, решение и подтверждение — на стороне вызывающего. */
+    onRemoveApprover?: (stageId: number) => void;
 }
 
-export function StageCardView({stage, cardRef, isCurrentUserStage, isProcessEnded, onShowQuoteInText, phaseRounds}: StageCardViewProps) {
+export function StageCardView({
+    stage, cardRef, isCurrentUserStage, isProcessEnded, onShowQuoteInText, phaseRounds,
+    canEditRoute, onRemoveApprover,
+}: StageCardViewProps) {
     const {user} = useAuth();
 
     const isCustom = isCustomStageKind(stage.kind);
@@ -230,17 +241,35 @@ export function StageCardView({stage, cardRef, isCurrentUserStage, isProcessEnde
             ? "bg-[#f1f2f5] text-[#7c8494]"
             : decisionMeta.badgeClass;
 
-    const containerClass = isPendingForCurrentUser
-        ? "border border-[#e3b23c] bg-gradient-to-b from-[#fffdf7] to-white shadow-[0_2px_5px_-2px_rgba(179,115,10,0.28)]"
-        : isCustom
-            ? "border border-slate-200 bg-white shadow-[0_3px_12px_-6px_rgba(15,27,45,0.14)]"
-            : "border border-[#c9b6f5] bg-gradient-to-b from-[#faf8ff] to-white shadow-[0_2px_5px_-2px_rgba(122,92,224,0.28)]";
+    const containerClass = stage.isRemovedByEditor
+        ? "border border-dashed border-[#c7cad1] bg-[#f7f8fa] opacity-70"
+        : isPendingForCurrentUser
+            ? "border border-[#e3b23c] bg-gradient-to-b from-[#fffdf7] to-white shadow-[0_2px_5px_-2px_rgba(179,115,10,0.28)]"
+            : isCustom
+                ? "border border-slate-200 bg-white shadow-[0_3px_12px_-6px_rgba(15,27,45,0.14)]"
+                : "border border-[#c9b6f5] bg-gradient-to-b from-[#faf8ff] to-white shadow-[0_2px_5px_-2px_rgba(122,92,224,0.28)]";
+
+    // Кнопка "Убрать" видна только действующему главному редактору, только для действующего
+    // (ещё не убранного) этапа и только пока процесс согласования не завершён - убрать
+    // согласующего из уже прекращённого/согласованного маршрута смысла нет (см. те же проверки
+    // на бэке в VndApprovalService.RemoveApproverAsync).
+    const canRemove = canEditRoute && !!onRemoveApprover && !stage.isRemovedByEditor && !isProcessEnded;
 
     return (
         <div
             ref={cardRef}
             className={`relative flex w-[220px] flex-none flex-col gap-3 rounded-2xl p-4 ${containerClass}`}
         >
+            {canRemove && (
+                <button
+                    type="button"
+                    onClick={() => onRemoveApprover!(stage.id)}
+                    title="Убрать согласующего из маршрута"
+                    className="absolute right-2 top-2 flex h-6 w-6 cursor-pointer items-center justify-center rounded-full text-[#a3adbd] hover:bg-[#fdecec] hover:text-[#c0392b]"
+                >
+                    <X size={14}/>
+                </button>
+            )}
             <div className="flex items-center gap-2">
                 <div
                     className={`flex h-8 w-8 flex-none items-center justify-center rounded-[9px] ${

@@ -3,11 +3,20 @@ import {useTranslation} from "react-i18next";
 import {useNavigate, Link} from "react-router-dom";
 import {notificationsService} from "@/service/notificationsService/notificationsService.ts";
 import type {Notification} from "@/service/notificationsService/notificationsServiceType.ts";
-import {PREVIEW_COUNT, SEVERITY_DOT} from "@/constants/notificationConst.ts";
+import {PREVIEW_COUNT, SEVERITY_DOT, SEVERITY_TOAST_VARIANT} from "@/constants/notificationConst.ts";
+import {toast} from "@/service/toastService.ts";
+import {notificationPopupPreference} from "@/service/notificationPopupPreference.ts";
+import {notificationsRefreshBus} from "@/service/notificationsRefreshBus.ts";
 import {formatRelativeTime} from "@/utils/dateUtils.ts";
 import {Icon} from "@/assets/icons/Icon";
 import {Loader} from "@/components/componentsGeneral/Loader.tsx";
 import {EmptyState} from "@/components/componentsGeneral/EmptyState.tsx";
+
+// Как часто спрашиваем сервер о новых уведомлениях, чтобы обновить счётчик,
+// тряхнуть колокольчик и показать тост (см. pollForNew ниже). Опрос дополнительно
+// приостанавливается, пока вкладка свёрнута/неактивна (см. visibilitychange ниже) -
+// не тратим запросы впустую, пока на неё никто не смотрит.
+const POLL_INTERVAL_MS = 45_000;
 
 export function NotificationsDropdown() {
     const {t} = useTranslation();
@@ -17,21 +26,96 @@ export function NotificationsDropdown() {
     const [items, setItems] = useState<Notification[]>([]);
     const [unreadCount, setUnreadCount] = useState(0);
     const [loading, setLoading] = useState(false);
+    // Меняется на каждое новое уведомление, а не просто true/false: React не
+    // перерисовывает компонент, если setState вызвали с тем же значением (true -> true
+    // ничего не даёт), из-за чего при двух срабатываниях подряд анимация не
+    // перезапускалась бы. Плюс key={shakeToken} ниже гарантированно пересоздаёт узел
+    // иконки, так что CSS-анимация проигрывается заново при каждом срабатывании.
+    const [shakeToken, setShakeToken] = useState(0);
 
     const rootRef = useRef<HTMLDivElement>(null);
 
-    const loadCounts = useCallback(() => {
-        notificationsService
-            .getCounts()
-            .then((c) => setUnreadCount(c.totalUnread))
-            .catch(() => {
-                // счётчик непрочитанных не критичен
+    // Наибольший id уведомления, который уже видели - "новое" это всё, что пришло
+    // позже него. Именно число, а не набор id из последнего опроса: /search отдаёт
+    // скользящее окно "топ-10 по дате", и если у нескольких уведомлений одинаковый
+    // createdAt (например, разосланы одним пакетом), Postgres не гарантирует
+    // стабильный порядок на границе этого окна - два подряд идущих одинаковых запроса
+    // (в т.ч. из-за двойного вызова эффектов React.StrictMode в dev) могут вернуть
+    // чуть разный срез и породить тост "из ниоткуда" на обычном обновлении страницы.
+    // Id монотонно растёт при создании, так что сравнение по нему такой пробле не боится.
+    const lastSeenIdRef = useRef<number | null>(null);
+    // Не даёт двум опросам выполняться параллельно (в т.ч. тому самому двойному
+    // вызову эффекта в StrictMode/dev) - второй, пока первый не закончился, просто
+    // ничего не делает вместо того, чтобы гоняться с ним за lastSeenIdRef.
+    const isPollingRef = useRef(false);
+
+    const pollForNew = useCallback(async () => {
+        if (isPollingRef.current) return;
+        isPollingRef.current = true;
+
+        try {
+            const [counts, recent] = await Promise.all([
+                notificationsService.getCounts(),
+                notificationsService.search({page: 1, pageSize: 10}),
+            ]);
+            setUnreadCount(counts.totalUnread);
+
+            const maxId = recent.items.reduce((max, n) => Math.max(max, n.id), 0);
+
+            if (lastSeenIdRef.current === null) {
+                // Первый опрос после захода/обновления страницы - просто запоминаем
+                // текущий максимум, чтобы не тостить по уже существующим уведомлениям.
+                lastSeenIdRef.current = maxId;
+                return;
+            }
+
+            const freshItems = recent.items.filter(
+                (n) => !n.isRead && n.id > lastSeenIdRef.current!
+            );
+            if (maxId > lastSeenIdRef.current) lastSeenIdRef.current = maxId;
+
+            if (freshItems.length === 0) return;
+
+            setShakeToken((v) => v + 1);
+            // Панели на главной (Последняя активность/Последние уведомления/Мои задачи)
+            // сами решают, стоит ли им перезапросить данные - независимо от настройки
+            // тостов: это не всплывающее окно, а просто "не устаревай молча".
+            notificationsRefreshBus.notify();
+
+            if (!notificationPopupPreference.isEnabled()) return;
+
+            // Порядок появления тостов - от старого к новому, чтобы самое свежее
+            // уведомление оказалось сверху стопки (ToastContainer рендерит в flex-col-reverse).
+            [...freshItems].reverse().forEach((n) => {
+                const variant = SEVERITY_TOAST_VARIANT[n.severity];
+                toast[variant](n.title, n.body, undefined, () => navigate(`/notifications/${n.id}`));
             });
-    }, []);
+        } catch {
+            // сеть моргнула - подождём следующего опроса, счётчик не критичен
+        } finally {
+            isPollingRef.current = false;
+        }
+    }, [navigate]);
 
     useEffect(() => {
-        loadCounts();
-    }, [loadCounts]);
+        pollForNew();
+
+        const intervalId = window.setInterval(() => {
+            if (document.hidden) return; // вкладка свёрнута/неактивна - не тратим запрос
+            pollForNew();
+        }, POLL_INTERVAL_MS);
+
+        // Вернулись на вкладку - сразу проверим, что пропустили, а не ждём до 45с
+        const handleVisibility = () => {
+            if (!document.hidden) pollForNew();
+        };
+        document.addEventListener("visibilitychange", handleVisibility);
+
+        return () => {
+            window.clearInterval(intervalId);
+            document.removeEventListener("visibilitychange", handleVisibility);
+        };
+    }, [pollForNew]);
 
     const loadPreview = useCallback(() => {
         setLoading(true);
@@ -88,7 +172,17 @@ export function NotificationsDropdown() {
                     onClick={() => setOpen((v) => !v)}
                     className="cursor-pointer relative grid h-[38px] w-[38px] place-items-center rounded-[10px] border border-[#e5e9f0] bg-white text-[#55617a] hover:bg-[#f6f8fb]"
                 >
-                    <Icon name="bell" width={19} height={19}/>
+                    {/* Анимация - на обёртке-span, а не на самом svg: у transform-origin
+                        на корневом SVG-элементе браузеры по-разному трактуют систему
+                        координат, из-за чего точка вращения может уехать мимо иконки
+                        и "тряска" будет почти незаметна. На обычном HTML-элементе
+                        такой неоднозначности нет. */}
+                    <span
+                        key={shakeToken}
+                        className={`inline-flex ${shakeToken > 0 ? "bell-shake" : ""}`}
+                    >
+                        <Icon name="bell" width={19} height={19}/>
+                    </span>
                     {unreadCount > 0 && (
                         <span
                             className="absolute right-2 top-[7px] h-[7px] w-[7px] rounded-full border-[1.5px] border-white bg-[#e0483d]"/>

@@ -4,6 +4,7 @@ import type {TaskScope, VndTaskResponse} from "@/service/tasksVndService/tasksSe
 import {tasksService} from "@/service/tasksVndService/tasksService.ts";
 import type {TasksScope} from "@/constants/tasksConst.ts";
 import {TASK_SCOPE_META} from "@/constants/vndStatus.ts";
+import {notificationsRefreshBus} from "@/service/notificationsRefreshBus.ts";
 
 // Порядок слияния для вкладки "Все": сначала то, что реально ждёт решения
 // (согласование, мои ВНД на согласовании, отклонено, заявки на актуализацию — свои и
@@ -86,6 +87,11 @@ export function useVndTasks(scope: TasksScope, enabled: boolean = true) {
     useEffect(() => {
         void refetch();
     }, [refetch]);
+
+    // Обновляем список, когда где-то обнаружено новое уведомление (см.
+    // NotificationsDropdown) - refetch сам ничего не делает, если enabled=false
+    // (например, сейчас показана вкладка "Выполненные", а не активный список).
+    useEffect(() => notificationsRefreshBus.subscribe(() => void refetch()), [refetch]);
 
     return { tasks, isLoading, error, refetch };
 }

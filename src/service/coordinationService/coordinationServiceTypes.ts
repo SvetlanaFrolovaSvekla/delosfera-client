@@ -20,7 +20,8 @@ export type ApprovalStageDecisionResponse =
     | "approved" // согласовано
     | "approved_with_comment" // отправлено на устранение замечаний
     | "rejected" // отклонено
-    | "auto_approved_timeout"; // просрочка - засчитано как согласование
+    | "auto_approved_timeout" // просрочка - засчитано как согласование
+    | "removed_by_editor"; // согласующий убран из маршрута главным редактором (см. isRemovedByEditor)
 
 export const ApprovalDecisionType = {
     Approve: "Approve",
@@ -125,6 +126,19 @@ export interface UpdateDisagreementMatrixRowRequest {
     developerJustification?: string;
 }
 
+/** Главный редактор добавляет согласующего в уже запущенный процесс согласования — см.
+ * coordinationService.addApprover. */
+export interface AddApprovalStageRequest {
+    approverUserId: number;
+}
+
+/** Главный редактор убирает согласующего из уже запущенного процесса согласования — см.
+ * coordinationService.removeApprover. */
+export interface RemoveApprovalStageRequest {
+    /** Необязательная причина — попадает в журнал активности рядом с самим фактом удаления. */
+    reason?: string;
+}
+
 // ===== Response DTOs =====
 
 export interface DisagreementMatrixRowResponse {
@@ -167,6 +181,11 @@ export interface ApprovalStageResponse {
     orgUnitName: string;
     approverUserId: number;
     approverName: string;
+    /** Убран главным редактором из уже запущенного процесса согласования — этап остаётся в
+     * маршруте (история согласования не теряется), но недействующий: задача с него снята.
+     * Показываем такой этап как "Недействующий (убран главным редактором)" независимо от
+     * значения полей *Decision ниже. */
+    isRemovedByEditor: boolean;
     primaryDecision: ApprovalStageDecisionResponse;
     primaryComment: string | null;
     primaryDecidedAt: string | null;

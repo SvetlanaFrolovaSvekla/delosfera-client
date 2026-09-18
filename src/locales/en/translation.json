@@ -17,6 +17,164 @@
     "saving": "Saving…",
     "archiving": "Archiving…"
   },
+  "reportVndActualizationPage": {
+    "accessDenied": {
+      "title": "Access denied",
+      "description": "You don't have access to the regulatory documents reporting page"
+    },
+    "loading": "Generating statistics…",
+    "loadingSection": "Loading…",
+    "loadError": {
+      "title": "Failed to load update statistics"
+    },
+    "kpi": {
+      "trackedTotal": "Under deadline tracking",
+      "overdue": "Overdue",
+      "critical": "Critical",
+      "approaching": "Deadline approaching",
+      "openCycles": "Open cycles",
+      "pendingRequests": "Pending requests",
+      "avgCycleDuration": "Average cycle duration",
+      "avgCycleDurationValue": "{{days}} days",
+      "avgCycleDurationHint": "median: {{days}} days",
+      "withRealChanges": "With actual changes",
+      "withRealChangesValue": "{{percent}}%",
+      "withRealChangesHint": "share of completed cycles"
+    },
+    "buckets": {
+      "normal": "Normal",
+      "approaching": "Deadline approaching",
+      "critical": "Critical",
+      "overdue": "Overdue"
+    },
+    "charts": {
+      "documentsUnit": "documents",
+      "deadlines": {
+        "title": "Update deadlines",
+        "subtitle": "Distribution of active documents by proximity to deadline"
+      },
+      "topOverdueDevelopers": {
+        "title": "Departments with the most overdue items",
+        "subtitle": "Critical + overdue, by authoring department"
+      },
+      "durationSectionTitle": "Update cycle duration by period",
+      "duration": {
+        "title": "Average cycle duration",
+        "subtitle": "From update start to publication, in days",
+        "seriesName": "Average days"
+      }
+    },
+    "requests": {
+      "sectionTitle": "Update access requests",
+      "pending": "Awaiting decision",
+      "approved": "Approved",
+      "rejected": "Rejected"
+    }
+  },
+  "reportVndPage": {
+    "accessDenied": {
+      "title": "Access denied",
+      "description": "You don't have access to the regulatory documents reporting page"
+    },
+    "loading": "Generating report…",
+    "loadingSection": "Loading…",
+    "loadError": {
+      "title": "Failed to load report data"
+    },
+    "header": {
+      "title": "Regulatory Documents Reporting",
+      "description": "Summary analytics on documents, approvals, and updates"
+    },
+    "export": {
+      "xlsx": "Download Excel",
+      "xlsxLoading": "Generating…",
+      "csv": "Download CSV",
+      "error": {
+        "title": "Failed to download report",
+        "description": "Please try again shortly"
+      }
+    },
+    "kpi": {
+      "total": "Total documents",
+      "active": "Active",
+      "onActualization": "Under update",
+      "onReview": "Under approval",
+      "onConsolidation": "Under consolidation",
+      "requiresAttention": "Needs attention",
+      "requiresAttentionHint": "of which overdue: {{count}}",
+      "draft": "Drafts",
+      "archived": "Archived",
+      "approvalsInProgress": "Active approvals",
+      "avgApprovalDuration": "Average approval time",
+      "avgApprovalDurationValue": "{{days}} days",
+      "avgApprovalDurationHint": "timed-out decisions: {{percent}}%"
+    },
+    "charts": {
+      "documentsUnit": "documents",
+      "statusDistribution": {
+        "title": "Document statuses",
+        "subtitle": "Distribution of documents by lifecycle stage"
+      },
+      "typeDistribution": {
+        "title": "Document types",
+        "subtitle": "Distribution by document type"
+      },
+      "topDevelopers": {
+        "title": "Top authoring departments",
+        "subtitle": "By number of documents"
+      },
+      "securityLevels": {
+        "title": "Security levels",
+        "subtitle": "Document distribution"
+      },
+      "topRubrics": {
+        "title": "Top classifier categories",
+        "subtitle": "By number of linked documents"
+      },
+      "keywordCloud": {
+        "title": "Keyword cloud",
+        "subtitle": "Most frequently used keywords"
+      },
+      "dynamicsSectionTitle": "Trends over time",
+      "lifecycle": {
+        "title": "Document lifecycle",
+        "subtitle": "Created / sent for approval / published / archived",
+        "created": "Created",
+        "sentToApproval": "Sent for approval",
+        "published": "Published",
+        "archived": "Archived"
+      },
+      "actualization": {
+        "title": "Update cycles",
+        "subtitle": "Started / published by period",
+        "started": "Started",
+        "published": "Published",
+        "publishedWithChanges": "With changes"
+      },
+      "workload": {
+        "title": "Departments × statuses",
+        "subtitle": "Heatmap: number of documents by status for each authoring department"
+      }
+    }
+  },
+  "analyticsPage": {
+    "title": "Analytics",
+    "description": "Reporting across all system domains: regulatory documents, memos, procurement, meetings, HR, and office administration.",
+    "tabs": {
+      "vnd": "Regulatory Documents",
+      "sla": "Deadlines & SLA",
+      "sz": "Memos",
+      "prc": "Requests & Procurement",
+      "meetings": "Meetings",
+      "hr": "HR Document Flow",
+      "office": "Office Administration"
+    },
+    "vndSubTabs": {
+      "all": "All",
+      "actualization": "Updates",
+      "approvals": "Approvals"
+    }
+  },
   "createDocumentModal": {
     "title": "Create document",
     "description": "Select the type of document you want to create.",

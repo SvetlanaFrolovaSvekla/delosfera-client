@@ -5,6 +5,7 @@ import {useAuth} from "@/context/AuthContext.ts";
 import {PermissionCode} from "@/constants/permissions/permissions.ts";
 import {UserPicker, type PickableUser} from "@/components/componentsGeneral/UserPicker.tsx";
 import {userService} from "@/service/userService/userService.ts";
+import {organizationUnitService} from "@/service/dictionariesService/organizationUnitService/organizationUnitService.ts";
 import {
     substitutionService, REASON_LABEL, HANDOVER_LABEL, APPROVAL_STATE_LABEL,
     type SubstitutionSaveRequest, type SubstitutionReason, type HandoverMoment,
@@ -23,6 +24,7 @@ export function SubstitutionCardPage() {
     const {hasPermission, user} = useAuth();
 
     const [users, setUsers] = useState<PickableUser[]>([]);
+    const [filials, setFilials] = useState<{id: number; titleRu: string}[]>([]);
     const [form, setForm] = useState<SubstitutionSaveRequest>(empty);
     const [details, setDetails] = useState<SubstitutionDetails | null>(null);
     const [busy, setBusy] = useState(false);
@@ -37,6 +39,15 @@ export function SubstitutionCardPage() {
         })))).catch(() => {});
     }, []);
 
+    // Справочник подразделений для выбора: филиалы (сберкассы) из оргструктуры.
+    useEffect(() => {
+        organizationUnitService.getAll()
+            .then((list) => setFilials(list
+                .filter((u) => /филиал/i.test(u.titleRu))
+                .map((u) => ({id: u.id, titleRu: u.titleRu}))))
+            .catch(() => {});
+    }, []);
+
     useEffect(() => {
         if (isNew) return;
         substitutionService.get(Number(id))
@@ -45,7 +56,12 @@ export function SubstitutionCardPage() {
             .finally(() => setLoading(false));
     }, [id, isNew]);
 
-    const editable = isNew || details?.status === "Draft" || details?.status === "Rejected";
+    // УЧР (ViewAllSz) правит заявку после согласования Операционным управлением.
+    const opsApproved = details?.approvals?.some(
+        (a) => a.roleLabel === "Операционное управление" && a.state === "Approved") ?? false;
+    const hrCanEdit = hasPermission(PermissionCode.ViewAllSz) && opsApproved
+        && (details?.status === "OnApproval" || details?.status === "OnExecution");
+    const editable = isNew || details?.status === "Draft" || details?.status === "Rejected" || hrCanEdit;
     const set = <K extends keyof SubstitutionSaveRequest>(k: K, v: SubstitutionSaveRequest[K]) =>
         setForm((f) => ({...f, [k]: v}));
 
@@ -145,8 +161,17 @@ export function SubstitutionCardPage() {
                         <Field label="Должность">
                             <Input value={form.absentPosition ?? ""} disabled={!editable} onChange={(v) => set("absentPosition", v)}/>
                         </Field>
-                        <Field label="Филиал">
-                            <Input value={form.absentBranch ?? ""} disabled={!editable} onChange={(v) => set("absentBranch", v)}/>
+                        <Field label="Подразделение">
+                            <select className="w-full h-10 px-3 rounded-[9px] border border-[#e5e9f0] text-[14px] bg-white outline-none focus:border-[#2f68f5] disabled:bg-[#f4f6fa]"
+                                    disabled={!editable} value={form.absentUnitId ?? ""}
+                                    onChange={(e) => {
+                                        const uid = e.target.value ? Number(e.target.value) : null;
+                                        const f = filials.find((x) => x.id === uid);
+                                        setForm((s) => ({...s, absentUnitId: uid, absentBranch: f?.titleRu ?? null}));
+                                    }}>
+                                <option value="">— выберите подразделение —</option>
+                                {filials.map((f) => <option key={f.id} value={f.id}>{f.titleRu}</option>)}
+                            </select>
                         </Field>
                     </Grid>
                 </Section>
@@ -166,8 +191,17 @@ export function SubstitutionCardPage() {
                         <Field label="Должность">
                             <Input value={form.substitutePosition ?? ""} disabled={!editable} onChange={(v) => set("substitutePosition", v)}/>
                         </Field>
-                        <Field label="Филиал">
-                            <Input value={form.substituteBranch ?? ""} disabled={!editable} onChange={(v) => set("substituteBranch", v)}/>
+                        <Field label="Подразделение">
+                            <select className="w-full h-10 px-3 rounded-[9px] border border-[#e5e9f0] text-[14px] bg-white outline-none focus:border-[#2f68f5] disabled:bg-[#f4f6fa]"
+                                    disabled={!editable} value={form.substituteUnitId ?? ""}
+                                    onChange={(e) => {
+                                        const uid = e.target.value ? Number(e.target.value) : null;
+                                        const f = filials.find((x) => x.id === uid);
+                                        setForm((s) => ({...s, substituteUnitId: uid, substituteBranch: f?.titleRu ?? null}));
+                                    }}>
+                                <option value="">— выберите подразделение —</option>
+                                {filials.map((f) => <option key={f.id} value={f.id}>{f.titleRu}</option>)}
+                            </select>
                         </Field>
                         <Field label="Серия и номер паспорта">
                             <Input value={form.passportSeriesNumber ?? ""} disabled={!editable} onChange={(v) => set("passportSeriesNumber", v)}/>
@@ -295,17 +329,23 @@ export function SubstitutionCardPage() {
 
                 {/* Действия */}
                 <div className="flex items-center gap-2.5 flex-wrap">
-                    {editable && (
+                    {(isNew || details?.status === "Draft" || details?.status === "Rejected") && (
                         <>
                             <button type="button" onClick={() => void saveDraft()} disabled={busy}
                                     className="h-10 px-4 rounded-[10px] border border-[#d5dbe6] bg-white text-[14px] font-medium text-[#374253] cursor-pointer hover:bg-[#f4f6fa] disabled:opacity-50">
                                 Сохранить черновик
                             </button>
                             <button type="button" onClick={() => void submit()} disabled={busy}
-                                    className="h-10 px-5 rounded-[10px] bg-[#2f68f5] text-white text-[14px] font-semibold cursor-pointer hover:bg-[#2554cc] disabled:opacity-50">
-                                Отправить в УЧР
+                                    className="h-10 px-5 rounded-[10px] bg-[#2f68f5] !text-white text-[14px] font-semibold cursor-pointer hover:bg-[#2554cc] disabled:opacity-50">
+                                Отправить на согласование
                             </button>
                         </>
+                    )}
+                    {hrCanEdit && (
+                        <button type="button" onClick={() => void saveDraft()} disabled={busy}
+                                className="h-10 px-5 rounded-[10px] bg-[#2f68f5] !text-white text-[14px] font-semibold cursor-pointer hover:bg-[#2554cc] disabled:opacity-50">
+                            Сохранить изменения (УЧР)
+                        </button>
                     )}
                     {details && (
                         <>
@@ -316,6 +356,10 @@ export function SubstitutionCardPage() {
                             <button type="button" onClick={() => void substitutionService.print(details.id, "liability", `Договор МО ${details.regNumber ?? details.id}.docx`)}
                                     className="h-10 px-4 rounded-[10px] border border-[#d5dbe6] bg-white text-[14px] font-medium text-[#374253] cursor-pointer hover:bg-[#f4f6fa] flex items-center gap-2">
                                 <Printer size={16}/> Договор МО
+                            </button>
+                            <button type="button" onClick={() => void substitutionService.print(details.id, "card", `Заявка на замещение ${details.regNumber ?? details.id}.docx`)}
+                                    className="h-10 px-4 rounded-[10px] border border-[#d5dbe6] bg-white text-[14px] font-medium text-[#374253] cursor-pointer hover:bg-[#f4f6fa] flex items-center gap-2">
+                                <Printer size={16}/> Выгрузить (все поля)
                             </button>
                         </>
                     )}

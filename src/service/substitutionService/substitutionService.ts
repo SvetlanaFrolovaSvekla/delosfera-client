@@ -171,7 +171,7 @@ export const substitutionService = {
     },
 
     /** Скачать печатную форму: form = "order" (приказ) или "liability" (договор МО). */
-    async print(id: number, form: "order" | "liability", fileName: string) {
+    async print(id: number, form: "order" | "liability" | "card", fileName: string) {
         const response = await apiClient.get(`${BASE}/${id}/print/${form}`, {responseType: "blob"});
         const url = URL.createObjectURL(response.data as Blob);
         const link = document.createElement("a");

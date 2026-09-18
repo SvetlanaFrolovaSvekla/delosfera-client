@@ -68,6 +68,11 @@ export const STAGE_DECISION_META: Record<ApprovalStageDecisionResponse, Decision
         borderClass: "border-[#7c8fe0]",
         badgeClass: "bg-[#eef0fd] text-[#4e57d6]",
     },
+    removed_by_editor: {
+        label: "Недействующий (убран главным редактором)",
+        borderClass: "border-[#c7cad1]",
+        badgeClass: "bg-[#f1f2f6] text-[#8a8f9c]",
+    },
 };
 
 interface ProcessStatusMeta {

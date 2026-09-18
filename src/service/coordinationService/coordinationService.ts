@@ -4,6 +4,8 @@ import type {
     ResubmitAfterRevisionRequest,
     AddDisagreementMatrixRowRequest,
     UpdateDisagreementMatrixRowRequest,
+    AddApprovalStageRequest,
+    RemoveApprovalStageRequest,
     ApprovalProcessResponse,
     DisagreementMatrixRowResponse,
 } from "./coordinationServiceTypes";
@@ -142,6 +144,32 @@ class CoordinationService {
     /** Инициатор отзывает согласование — редакция и документ возвращаются в черновик */
     async cancel(vndId: number): Promise<ApprovalProcessResponse> {
         const { data } = await axiosInstance.post<ApprovalProcessResponse>(`${this.basePath(vndId)}/cancel`);
+        return data;
+    }
+
+    /** Главный редактор добавляет согласующего в уже запущенный процесс согласования */
+    async addApprover(
+        vndId: number,
+        request: AddApprovalStageRequest,
+    ): Promise<ApprovalProcessResponse> {
+        const { data } = await axiosInstance.post<ApprovalProcessResponse>(
+            `${this.basePath(vndId)}/stages`,
+            request,
+        );
+        return data;
+    }
+
+    /** Главный редактор убирает согласующего из уже запущенного процесса согласования —
+     * этап помечается недействующим (isRemovedByEditor), задача с него снимается */
+    async removeApprover(
+        vndId: number,
+        stageId: number,
+        request: RemoveApprovalStageRequest,
+    ): Promise<ApprovalProcessResponse> {
+        const { data } = await axiosInstance.post<ApprovalProcessResponse>(
+            `${this.basePath(vndId)}/stages/${stageId}/remove`,
+            request,
+        );
         return data;
     }
 }

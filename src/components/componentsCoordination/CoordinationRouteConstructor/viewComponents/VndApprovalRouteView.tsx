@@ -6,7 +6,7 @@ import {useApprovalRouteLines} from "@/hooks/coordinationHooks/useApprovalRouteL
 import {StageCardView} from "./StageCardView";
 import type {FormattedCommentQuoteRef} from "./FormattedResolutionComment.tsx";
 import {NormBlockView, type NormPhaseStatus} from "./NormBlockView";
-import {ArrowDown, ArrowLeft, MessageSquareText} from "lucide-react";
+import {ArrowDown, ArrowLeft, MessageSquareText, UserPlus} from "lucide-react";
 import {getElapsedLabel, getRemainingLabel} from "@/utils/dateUtils.ts";
 import {getInitials} from "@/utils/namingUsers/getInitials.ts";
 import {COMMENT_TRUNCATE_LENGTH} from "@/constants/coordinationParams.ts";
@@ -24,6 +24,15 @@ interface VndApprovalRouteViewProps {
     /** Клик по кнопке-лупе "Показать в тексте" рядом с цитатой в резолюции любого этапа - см.
      * StageCardView.onShowQuoteInText. Без этого пропа кнопки-лупы нигде на маршруте не рисуются. */
     onShowQuoteInText?: (quote: FormattedCommentQuoteRef) => void;
+    /** true, если у текущего пользователя есть право редактировать маршрут этого процесса
+     * (главный редактор, см. PermissionCode.EditAnyVndApprovalRoute) — включает кнопки
+     * "Убрать" на карточках этапов и "+ Добавить согласующего" в конце маршрута. */
+    canEditRoute?: boolean;
+    /** Убрать согласующего из маршрута — см. StageCardView.onRemoveApprover. */
+    onRemoveApprover?: (stageId: number) => void;
+    /** Добавить нового согласующего в маршрут — открывает модалку выбора пользователя
+     * (см. VndCoordinationTab). Без этого пропа кнопка "+ Добавить" не рисуется. */
+    onAddApprover?: () => void;
 }
 
 // Статус фазы «Первичное согласование»
@@ -76,7 +85,10 @@ function CurrentPhaseHint({startedAt, deadlineAt}: CurrentPhaseHintProps) {
     );
 }
 
-export function VndApprovalRouteView({process, highlightStageId, frameless, onShowQuoteInText}: VndApprovalRouteViewProps) {
+export function VndApprovalRouteView({
+    process, highlightStageId, frameless, onShowQuoteInText,
+    canEditRoute, onRemoveApprover, onAddApprover,
+}: VndApprovalRouteViewProps) {
     const [initiatorCommentOpen, setInitiatorCommentOpen] = useState(false);
 
     const stagesWithLocalId = useMemo(
@@ -91,6 +103,11 @@ export function VndApprovalRouteView({process, highlightStageId, frameless, onSh
     // Процесс завершён без результата (отклонён/отозван) - этапы, на которых решение так и не
     // было принято, больше не "В ожидании": ждать уже нечего, весь процесс прекращён.
     const isProcessEnded = process.status === "rejected" || process.status === "cancelled";
+
+    // Маршрут можно редактировать, пока согласование ещё идёт - см. те же проверки статуса
+    // в VndApprovalService.AddApproverAsync/RemoveApproverAsync на бэке.
+    const canEditRouteNow = !!canEditRoute && process.status !== "approved" && !isProcessEnded;
+    const canAddApprover = canEditRouteNow && !!onAddApprover;
 
     const {funnelWrapperRef, targetRef, cardsScrollRef, paths, recomputePaths, registerStageRef} =
         useApprovalRouteLines(stagesWithLocalId);
@@ -175,8 +192,21 @@ export function VndApprovalRouteView({process, highlightStageId, frameless, onSh
                         isProcessEnded={isProcessEnded}
                         onShowQuoteInText={onShowQuoteInText}
                         phaseRounds={process.phaseRounds}
+                        canEditRoute={canEditRouteNow}
+                        onRemoveApprover={onRemoveApprover}
                     />
                 ))}
+
+                {canAddApprover && (
+                    <button
+                        type="button"
+                        onClick={onAddApprover}
+                        className="flex h-[fit-content] w-[220px] flex-none flex-col items-center justify-center gap-2 self-stretch rounded-2xl border border-dashed border-[#c9cee0] bg-white/60 p-4 text-[#4e57d6] hover:border-[#4e57d6]/60 hover:bg-white"
+                    >
+                        <UserPlus size={18}/>
+                        <span className="text-[12.5px] font-semibold">Добавить согласующего</span>
+                    </button>
+                )}
             </div>
 
             <svg className="pointer-events-none absolute inset-0 h-full w-full overflow-visible">

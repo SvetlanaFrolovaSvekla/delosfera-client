@@ -14,6 +14,8 @@ import {
     AttachmentRow
 } from "@/components/componentsCoordination/CoordinationRouteConstructor/functionalComponents/AttachmentRow.tsx";
 import {CommentViewModal} from "./CommentViewModal.tsx";
+import {AttachmentDocxPreviewModal} from "@/components/componentsGeneral/modal/AttachmentDocxPreviewModal.tsx";
+import {downloadWithToast} from "@/utils/downloadFiles/downloadFile.ts";
 
 interface VndApprovalRouteViewProps {
     process: ApprovalProcessResponse;
@@ -112,6 +114,18 @@ export function VndApprovalRouteView({
     const {funnelWrapperRef, targetRef, cardsScrollRef, paths, recomputePaths, registerStageRef} =
         useApprovalRouteLines(stagesWithLocalId);
 
+    const [previewAttachment, setPreviewAttachment] = useState<{fileId: number; fileName: string} | null>(null);
+    const [downloadingId, setDownloadingId] = useState<number | null>(null);
+
+    const handleDownload = async (fileId: number, fileName: string) => {
+        setDownloadingId(fileId);
+        try {
+            await downloadWithToast(fileId, fileName);
+        } finally {
+            setDownloadingId(null);
+        }
+    };
+
     return (
         <div
             ref={funnelWrapperRef}
@@ -149,7 +163,12 @@ export function VndApprovalRouteView({
                     {process.repeatInitiatorCommentAttachments.length > 0 && (
                         <div className="flex flex-col gap-1">
                             {process.repeatInitiatorCommentAttachments.map((a) => (
-                                <AttachmentRow key={a.id} fileId={a.fileId} fileName={a.fileName}/>
+                                <AttachmentRow
+                                    key={a.id}
+                                    fileId={a.fileId}
+                                    fileName={a.fileName}
+                                    onView={() => setPreviewAttachment({fileId: a.fileId, fileName: a.fileName})}
+                                />
                             ))}
                         </div>
                     )}
@@ -175,6 +194,16 @@ export function VndApprovalRouteView({
                     comment={process.repeatInitiatorComment ?? ""}
                     attachments={process.repeatInitiatorCommentAttachments}
                     onClose={() => setInitiatorCommentOpen(false)}
+                />
+            )}
+
+            {previewAttachment && (
+                <AttachmentDocxPreviewModal
+                    fileId={previewAttachment.fileId}
+                    fileName={previewAttachment.fileName}
+                    downloadingId={downloadingId}
+                    onDownload={handleDownload}
+                    onClose={() => setPreviewAttachment(null)}
                 />
             )}
 

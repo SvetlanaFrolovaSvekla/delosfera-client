@@ -1,7 +1,7 @@
 import {useCallback, useEffect, useMemo, useState} from "react";
 import {Link, useNavigate, useParams} from "react-router-dom";
 import {ArrowLeft} from "lucide-react";
-import {colors} from "@/design/tokens";
+import {colors} from "@/design/tokens.ts";
 import {useDictionaries} from "@/context/DictionariesContext.tsx";
 import {useAuth} from "@/context/AuthContext.ts";
 import {PermissionCode} from "@/constants/permissions/permissions.ts";
@@ -48,6 +48,8 @@ import {
     type SzSaveRequest,
     type SzStatusCode,
 } from "@/service/szService/szService.ts";
+import {SelectDropdown} from "@/components/componentsGeneral/selects/SingleSelects/SelectDropdown.tsx";
+import {CheckBoxOne} from "@/components/componentsGeneral/componentsCheckBox/CheckBoxOne.tsx";
 
 const STATUS_TONE: Partial<Record<SzStatusCode, { fg: string; bg: string }>> = {
     Draft: colors.status.draft,
@@ -649,12 +651,18 @@ export function SzCardPage() {
                         <input className={inputClass} value={form.title} disabled={!editable}
                                onChange={(e) => set("title", e.target.value)}/>
                     </Field>
-                    <Field label="Вид записки">
-                        <select className={inputClass} value={form.kindId} disabled={!editable}
-                                onChange={(e) => void applyKind(Number(e.target.value))}>
-                            {kinds.map((k) => <option key={k.id} value={k.id}>{k.titleRu}</option>)}
-                        </select>
-                    </Field>
+                    <div>
+                        <label className="block text-[12px] font-semibold text-[#3a4560] mb-2">
+                            Вид записки <span className="text-[#c0392b]">*</span>
+                        </label>
+                        <SelectDropdown
+                            value={String(form.kindId)}
+                            onChange={(v) => void applyKind(Number(v))}
+                            options={kinds.map((k) => ({value: String(k.id), label: k.titleRu}))}
+                            minWidth="100%"
+                            className="w-full"
+                        />
+                    </div>
                     <Field label="Кому">
                         <UserPicker
                             users={userList}
@@ -684,12 +692,13 @@ export function SzCardPage() {
                             onChange={(unitId) => set("correspondentUnitId", unitId)}
                         />
                     </Field>
-                    <label className="flex items-end gap-2 pb-2.5 text-[13px] text-[#55617a]">
-                        <input type="checkbox" checked={form.isPaperCarrier ?? kind?.isPaperByDefault ?? false}
-                               disabled={!editable}
-                               onChange={(e) => set("isPaperCarrier", e.target.checked)}/>
+                    <CheckBoxOne
+                        checked={form.isPaperCarrier ?? kind?.isPaperByDefault ?? false}
+                        onChange={(checked) => set("isPaperCarrier", checked)}
+                        disabled={!editable}
+                    >
                         Бумажный носитель
-                    </label>
+                    </CheckBoxOne>
                 </div>
 
                 <div className="mt-4">

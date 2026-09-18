@@ -49,10 +49,10 @@ const AnalyticsPage = lazy(() => import("@/pages/AnalyticsPage.tsx").then(m => (
 const UsersPage = lazy(() => import("@/pages/UsersPages/UsersPage.tsx").then(m => ({default: m.UsersPage})));
 
 // Контур служебных записок (контур 4 ТЗ)
-const SzRegistryPage = lazy(() => import("@/pages/SzRegistryPage.tsx").then(m => ({default: m.SzRegistryPage})));
-const SzTrackerPage = lazy(() => import("@/pages/SzTrackerPage.tsx").then(m => ({default: m.SzTrackerPage})));
-const SzCardPage = lazy(() => import("@/pages/SzCardPage.tsx").then(m => ({default: m.SzCardPage})));
-const SzPrintPage = lazy(() => import("@/pages/SzPrintPage.tsx").then(m => ({default: m.SzPrintPage})));
+const SzRegistryPage = lazy(() => import("@/pages/SZPages/SzRegistryPage.tsx").then(m => ({default: m.SzRegistryPage})));
+const SzTrackerPage = lazy(() => import("@/pages/SZPages/SzTrackerPage.tsx").then(m => ({default: m.SzTrackerPage})));
+const SzCardPage = lazy(() => import("@/pages/SZPages/SzCardPage.tsx").then(m => ({default: m.SzCardPage})));
+const SzPrintPage = lazy(() => import("@/pages/SZPages/SzPrintPage.tsx").then(m => ({default: m.SzPrintPage})));
 
 // Контур закупок (контур 6 ТЗ)
 const AuthorityMatrixPage = lazy(() => import("@/pages/ProcurementPages/AuthorityMatrixPage.tsx").then(m => ({default: m.AuthorityMatrixPage})));
@@ -101,7 +101,7 @@ const NotificationMailingSettingsPage = lazy(() => import("@/pages/NotificationM
 const DocumentTypesPage = lazy(() => import("@/pages/DocumentTypesPage.tsx").then(m => ({default: m.DocumentTypesPage})));
 const SettingsChangesPage = lazy(() => import("@/pages/SettingsChangesPage.tsx").then(m => ({default: m.SettingsChangesPage})));
 const HrOrdersPage = lazy(() => import("@/pages/HrOrdersPage.tsx").then(m => ({default: m.HrOrdersPage})));
-const SzStatisticsPage = lazy(() => import("@/pages/SzStatisticsPage.tsx").then(m => ({default: m.SzStatisticsPage})));
+const SzStatisticsPage = lazy(() => import("@/pages/SZPages/SzStatisticsPage.tsx").then(m => ({default: m.SzStatisticsPage})));
 const SubstitutionsPage = lazy(() => import("@/pages/UsersPages/SubstitutionsPage.tsx").then(m => ({default: m.SubstitutionsPage})));
 const SupplierRegistryPage = lazy(() => import("@/pages/ProcurementPages/SupplierRegistryPage.tsx").then(m => ({default: m.SupplierRegistryPage})));
 const ProcurementPlanPage = lazy(() => import("@/pages/ProcurementPages/ProcurementPlanPage.tsx").then(m => ({default: m.ProcurementPlanPage})));

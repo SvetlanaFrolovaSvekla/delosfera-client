@@ -25,6 +25,10 @@ import {
     AttachmentRow
 } from "@/components/componentsCoordination/CoordinationRouteConstructor/functionalComponents/AttachmentRow.tsx";
 import {getInitials} from "@/utils/namingUsers/getInitials.ts";
+import {
+    AttachmentDocxPreviewModal
+} from "@/components/componentsGeneral/modal/AttachmentDocxPreviewModal.tsx";
+import {downloadWithToast} from "@/utils/downloadFiles/downloadFile.ts";
 
 const COMMENT_TRUNCATE_LENGTH = 500; // Лимит обрезки комментария/замечания в карточке
 
@@ -229,6 +233,7 @@ export function StageCardView({
     const isStalePending = decision === "pending" && isProcessEnded;
 
     const [openCommentEntry, setOpenCommentEntry] = useState<PhaseCommentEntry | null>(null);
+    const [previewAttachment, setPreviewAttachment] = useState<{fileId: number; fileName: string} | null>(null);
 
     const badgeLabel = isPendingForCurrentUser
         ? "В рассмотрении (мой этап)"
@@ -261,15 +266,21 @@ export function StageCardView({
             className={`relative flex w-[220px] flex-none flex-col gap-3 rounded-2xl p-4 ${containerClass}`}
         >
             {canRemove && (
-                <button
-                    type="button"
-                    onClick={() => onRemoveApprover!(stage.id)}
-                    title="Убрать согласующего из маршрута"
-                    className="absolute right-2 top-2 flex h-6 w-6 cursor-pointer items-center justify-center rounded-full text-[#a3adbd] hover:bg-[#fdecec] hover:text-[#c0392b]"
+                <Tooltip
+                    content="Убрать согласующего из маршрута"
+                    side="top"
+                    className="!absolute right-2 top-2"
                 >
-                    <X size={14}/>
-                </button>
+                    <button
+                        type="button"
+                        onClick={() => onRemoveApprover!(stage.id)}
+                        className="flex h-6 w-6 cursor-pointer items-center justify-center rounded-full text-[#a3adbd] hover:bg-[#fdecec] hover:text-[#c0392b]"
+                    >
+                        <X size={14}/>
+                    </button>
+                </Tooltip>
             )}
+
             <div className="flex items-center gap-2">
                 <div
                     className={`flex h-8 w-8 flex-none items-center justify-center rounded-[9px] ${
@@ -362,7 +373,12 @@ export function StageCardView({
                                         </div>
                                         <div className="flex flex-col gap-1.5">
                                             {entry.attachments.map((a) => (
-                                                <AttachmentRow key={a.id} fileId={a.fileId} fileName={a.fileName}/>
+                                                <AttachmentRow
+                                                    key={a.id}
+                                                    fileId={a.fileId}
+                                                    fileName={a.fileName}
+                                                    onView={() => setPreviewAttachment({fileId: a.fileId, fileName: a.fileName})}
+                                                />
                                             ))}
                                         </div>
                                     </div>
@@ -380,6 +396,16 @@ export function StageCardView({
                         );
                     })}
                 </div>
+            )}
+
+            {previewAttachment && (
+                <AttachmentDocxPreviewModal
+                    fileId={previewAttachment.fileId}
+                    fileName={previewAttachment.fileName}
+                    downloadingId={null}
+                    onDownload={downloadWithToast}
+                    onClose={() => setPreviewAttachment(null)}
+                />
             )}
 
             {openCommentEntry && (

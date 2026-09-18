@@ -17,11 +17,12 @@ import {Tooltip} from "@/components/componentsGeneral/Tooltip.tsx";
 import {SearchBar} from "@/components/componentsGeneral/SearchBar.tsx";
 import {Download, Eye, EyeOff, FileText, Highlighter, ListTree, Loader2, MessageSquareText, Quote, X} from "lucide-react";
 import {
-    collectAllStageComments, collectQuoteMarks, quoteMarkModalProps, type QuoteMarkInfo
+    collectAllStageCommentsForRevision, collectQuoteMarksForRevision, quoteMarkModalProps, type QuoteMarkInfo
 } from "@/utils/vndProcess/redactionQuoteMarks.ts";
 import {CommentViewModal} from "./CommentViewModal.tsx";
 import {getInitials} from "@/utils/namingUsers/getInitials.ts";
 import {getApproverColor} from "@/utils/docxWork/approverColors.ts";
+import {buildRevisionRedaction, getLiveRevisionIndex, listRevisions} from "@/utils/vndProcess/redactionRevisions.ts";
 
 interface RedactionViewModalProps {
     vnd: VndResponse;
@@ -50,6 +51,12 @@ interface RedactionViewModalProps {
      * месту в тексте" по цитате - как из ещё не отправленной резолюции (VndApproverResolutionPanel),
      * так и из списка маркеров панели "Комментарии" ниже. */
     initialSearchQuery?: string;
+    /** Открыть модалку сразу на этой версии документа редакции (0 - самая первая "Р1", 1 -
+     * "Р1.1" и т.д. - см. utils/vndProcess/redactionRevisions.ts) - используется переходом
+     * "Показать в тексте" по цитате из СТАРОЙ версии (см. VndCoordinationTab.handleShowQuoteInText),
+     * чтобы открыть именно ту версию, к которой относится цитата, а не текущую живую. Без этого
+     * пропа (или без approvalProcess) модалка всегда открывается на живой/текущей версии. */
+    initialRevisionIndex?: number;
 }
 
 /** Позиция плавающей кнопки "Сослаться на выделенное" в координатах viewport - модалка сама
@@ -80,15 +87,40 @@ const LANG_FILE_KEYS: Record<RedactionLanguage, "docFileRuId" | "docFileKgId" | 
 export function RedactionViewModal({
                                        vnd, redaction, initialLanguage, downloadingId, onDownload, onClose,
                                        onInsertQuote, approvalProcess, quoteMarksClickable, initialSearchQuery,
+                                       initialRevisionIndex,
                                    }: RedactionViewModalProps) {
-    const availableLanguages = getAvailableLanguages(redaction);
+    // Версии документа этой редакции ("Р1", "Р1.1", "Р1.2"... - см. listRevisions) - доступны
+    // только вместе с approvalProcess (сами данные о версиях приходят внутри него) и никогда в
+    // режиме цитирования (onInsertQuote) - процитировать имеет смысл только живой/текущий
+    // документ, на который согласующие ещё среагируют.
+    const revisions = approvalProcess && !onInsertQuote ? listRevisions(approvalProcess, redaction) : [];
+    const [revisionIndex, setRevisionIndex] = useState<number>(
+        () => initialRevisionIndex ?? (approvalProcess ? getLiveRevisionIndex(approvalProcess) : 0)
+    );
+    // Подстраховка на случай переиспользования того же экземпляра модалки под новый вызов
+    // "Показать в тексте" (тот же приём, что и для initialSearchQuery выше).
+    const prevInitialRevisionIndexRef = useRef(initialRevisionIndex);
+    useEffect(() => {
+        if (initialRevisionIndex !== prevInitialRevisionIndexRef.current) {
+            prevInitialRevisionIndexRef.current = initialRevisionIndex;
+            // eslint-disable-next-line react-hooks/set-state-in-effect
+            if (initialRevisionIndex !== undefined) setRevisionIndex(initialRevisionIndex);
+        }
+    }, [initialRevisionIndex]);
+    // "Эффективная" редакция для отображения - с файлами выбранной версии вместо живых (см.
+    // buildRevisionRedaction) - используется везде ниже вместо redaction напрямую.
+    const effectiveRedaction = approvalProcess
+        ? buildRevisionRedaction(approvalProcess, redaction, revisionIndex)
+        : redaction;
+    const isPastRevision = revisions.length > 1 && revisionIndex < getLiveRevisionIndex(approvalProcess!);
+    const availableLanguages = getAvailableLanguages(effectiveRedaction);
     // ТИД и Лист согласования доступны как отдельные "вкладки" просмотра наравне с языками,
-    // только если у редакции вообще есть соответствующий файл.
+    // только если у выбранной версии редакции вообще есть соответствующий файл.
     const availableViews: RedactionViewTarget[] = [
         ...availableLanguages,
-        ...(redaction.tidFileId !== null ? (["tid"] as const) : []),
-        ...(redaction.approvalSheetFileId !== null ? (["approvalSheet"] as const) : []),
-        ...(redaction.disagreementMatrixFileId !== null ? (["disagreementMatrix"] as const) : []),
+        ...(effectiveRedaction.tidFileId !== null ? (["tid"] as const) : []),
+        ...(effectiveRedaction.approvalSheetFileId !== null ? (["approvalSheet"] as const) : []),
+        ...(effectiveRedaction.disagreementMatrixFileId !== null ? (["disagreementMatrix"] as const) : []),
     ];
     const [activeLanguage, setActiveLanguage] = useState<RedactionViewTarget>(
         initialLanguage && availableViews.includes(initialLanguage)
@@ -126,7 +158,7 @@ export function RedactionViewModal({
             return;
         }
         setSearchQuery("");
-    }, [activeLanguage, redaction.id]);
+    }, [activeLanguage, redaction.id, revisionIndex]);
 
     // Подстраховка: если проп initialSearchQuery изменился, а вкладка при этом НЕ переключилась
     // (тот случай выше это уже покрывает через pendingJumpQueryRef) - например, родитель когда-
@@ -197,9 +229,14 @@ export function RedactionViewModal({
         onClose();
     };
 
+    // Цитаты/комментарии ТОЛЬКО выбранной версии документа (revisionIndex) - при просмотре
+    // живой версии совпадает с тем, что раньше давали collectQuoteMarks/collectAllStageComments
+    // (сервер уже фильтрует "живые" поля по текущей версии), а при просмотре прошлой версии
+    // ("Р1.1" и т.п.) показывает именно её собственные замечания, не смешивая с более поздними -
+    // см. utils/vndProcess/redactionQuoteMarks.ts.
     const quoteMarks = useMemo(
-        () => (approvalProcess ? collectQuoteMarks(approvalProcess, activeLanguage) : []),
-        [approvalProcess, activeLanguage],
+        () => (approvalProcess ? collectQuoteMarksForRevision(approvalProcess, activeLanguage, revisionIndex) : []),
+        [approvalProcess, activeLanguage, revisionIndex],
     );
 
 // Какого этапа комментарии сейчас подсвечиваются поверх текста документа - null означает
@@ -208,12 +245,18 @@ export function RedactionViewModal({
 // иначе useMemo ниже обращался бы к highlightedPhase до её инициализации (TDZ).
     const [highlightedPhase, setHighlightedPhase] = useState<string | null>(() => {
         if (!approvalProcess) return null;
-        const comments = collectAllStageComments(approvalProcess);
+        const comments = collectAllStageCommentsForRevision(approvalProcess, revisionIndex);
         for (let i = PHASE_ORDER.length - 1; i >= 0; i--) {
             if (comments.some((c) => c.phaseLabel === PHASE_ORDER[i])) return PHASE_ORDER[i];
         }
         return null;
     });
+    // Сброс ограничения подсветки при смене версии - "этап" прошлой версии не обязательно
+    // существует у новой выбранной.
+    useEffect(() => {
+        // eslint-disable-next-line react-hooks/set-state-in-effect
+        setHighlightedPhase(null);
+    }, [revisionIndex]);
 
     const displayedQuoteMarks = useMemo(
         () => (highlightedPhase ? quoteMarks.filter((m) => m.phaseLabel === highlightedPhase) : quoteMarks),
@@ -221,8 +264,8 @@ export function RedactionViewModal({
     );
 
     const allComments = useMemo(
-        () => (approvalProcess ? collectAllStageComments(approvalProcess) : []),
-        [approvalProcess],
+        () => (approvalProcess ? collectAllStageCommentsForRevision(approvalProcess, revisionIndex) : []),
+        [approvalProcess, revisionIndex],
     );
 
     const commentsByPhase = useMemo(() => {
@@ -318,22 +361,22 @@ export function RedactionViewModal({
     };
 
     const activeFileId = activeLanguage === "tid"
-        ? redaction.tidFileId
+        ? effectiveRedaction.tidFileId
         : activeLanguage === "approvalSheet"
-            ? redaction.approvalSheetFileId
+            ? effectiveRedaction.approvalSheetFileId
             : activeLanguage === "disagreementMatrix"
-                ? redaction.disagreementMatrixFileId
-                : redaction[LANG_FILE_KEYS[activeLanguage]] as number | null;
+                ? effectiveRedaction.disagreementMatrixFileId
+                : effectiveRedaction[LANG_FILE_KEYS[activeLanguage]] as number | null;
 
     const handleDownloadActive = () => {
         if (activeFileId === null) return;
         const name = activeLanguage === "tid"
-            ? `${redaction.code}_ТИД.docx`
+            ? `${effectiveRedaction.code}_ТИД.docx`
             : activeLanguage === "approvalSheet"
-                ? `${redaction.code}_Лист_согласования.docx`
+                ? `${effectiveRedaction.code}_Лист_согласования.docx`
                 : activeLanguage === "disagreementMatrix"
-                    ? `${redaction.code}_Матрица_разногласий.docx`
-                    : buildRedactionFileName(redaction.code, vnd.name, activeLanguage);
+                    ? `${effectiveRedaction.code}_Матрица_разногласий.docx`
+                    : buildRedactionFileName(effectiveRedaction.code, vnd.name, activeLanguage);
         onDownload(activeFileId, name);
     };
 
@@ -350,15 +393,44 @@ export function RedactionViewModal({
                         </span>
                         <div className="min-w-0">
                             <h2 className="truncate text-[16px] font-bold text-[#1c2740]">
-                                {redaction.code}
+                                {effectiveRedaction.code}
                             </h2>
                             <div className="mt-[2px] text-[11px] font-medium text-[#8b97ab]">
                                 {onInsertQuote
                                     ? "Выделите текст — появится кнопка «Сослаться на выделенное»"
-                                    : "Просмотр редакции"}
+                                    : isPastRevision
+                                        ? "Прошлая версия документа"
+                                        : "Просмотр редакции"}
                             </div>
                         </div>
                     </div>
+
+                    {/* Переключатель версий документа этой редакции ("Р1"/"Р1.1"/"Р1.2"...) -
+                        только если версий больше одной (были повторные отправки после замечаний)
+                        и это не режим цитирования (см. revisions выше). Позволяет просматривать
+                        и версии, уже вытесненные исправлениями, во время активного согласования -
+                        каждая со своими собственными замечаниями (см. quoteMarks/allComments
+                        выше). */}
+                    {revisions.length > 1 && (
+                        <div className="flex flex-none flex-wrap items-center gap-1 rounded-[8px] bg-[#f2f5f9] p-[3px]">
+                            {revisions.map((r) => (
+                                <Tooltip key={r.revisionIndex} content={r.isLive ? "Текущая версия" : "Прошлая версия"} side="bottom">
+                                    <button
+                                        type="button"
+                                        onClick={() => setRevisionIndex(r.revisionIndex)}
+                                        className="h-7 cursor-pointer whitespace-nowrap rounded-[6px] px-2.5 text-[11.5px] font-semibold transition-colors"
+                                        style={
+                                            revisionIndex === r.revisionIndex
+                                                ? {background: "#fff", color: "#4e57d6", boxShadow: "0 1px 2px rgba(15,27,45,.08)"}
+                                                : {color: "#5d616c"}
+                                        }
+                                    >
+                                        {r.label}
+                                    </button>
+                                </Tooltip>
+                            ))}
+                        </div>
+                    )}
 
                     {/* растягивается и занимает всё свободное место между заголовком и кнопками */}
                     <div className="min-w-0 flex-1">
@@ -504,7 +576,7 @@ export function RedactionViewModal({
                         <RedactionTextView
                             ref={textViewRef}
                             vnd={vnd}
-                            selected={redaction}
+                            selected={effectiveRedaction}
                             activeLanguage={activeLanguage}
                             downloadingId={downloadingId}
                             onDownload={onDownload}
@@ -664,7 +736,7 @@ export function RedactionViewModal({
                     ))}
                     {quoteMarksClickable && (
                         <span className="text-[#a3adbd]">
-                            {hoverMark.marks.length > 1 ? "клик — по очереди посмотреть каждого" : "клик — посмотреть"}
+                            {hoverMark.marks.length > 1 ? "Клик по очереди — посмотреть каждого  " : "Клик — посмотреть"}
                         </span>
                     )}
                 </div>

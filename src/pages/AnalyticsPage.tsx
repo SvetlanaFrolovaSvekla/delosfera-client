@@ -14,7 +14,7 @@ import {contourReportsService} from "@/service/analyticsService/contourReportsSe
 import {ReportVndPage} from "@/pages/ReportPages/ReportVndPages/ReportVndPage.tsx";
 import {ReportVndActualizationPage} from "@/pages/ReportPages/ReportVndPages/ReportVndActualizationPage.tsx";
 import {ReportVndApprovalsPage} from "@/pages/ReportPages/ReportVndPages/ReportVndApprovalsPage.tsx";
-import {SzStatisticsPage} from "@/pages/SzStatisticsPage.tsx";
+import {SzStatisticsPage} from "@/pages/SZPages/SzStatisticsPage.tsx";
 import {ProcurementStatisticsPage} from "@/pages/ProcurementPages/ProcurementStatisticsPage.tsx";
 import {SlaDashboardPage} from "@/pages/SlaDashboardPage.tsx";
 

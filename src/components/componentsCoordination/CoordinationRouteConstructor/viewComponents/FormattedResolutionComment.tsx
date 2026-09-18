@@ -1,50 +1,100 @@
-// Рендерит текст резолюции/комментария согласующего, выделяя жирным строки вида
-// 'Цитата: «...»' - вставленные через "+ Сослаться на текст редакции" (см. formatQuote в
-// VndApproverResolutionPanel). В самом поле "Комментарий" при наборе текста это plain
-// <textarea> (жирным быть не может по определению textarea) - выделение цветом/жирным
-// применяется только здесь, при ЧТЕНИИ уже отправленной резолюции (CommentViewModal,
-// StageCardView и т.п.).
+// Рендерит текст резолюции/комментария согласующего, выделяя жирным цитаты
 import {Fragment} from "react";
 import {Search} from "lucide-react";
 import {Tooltip} from "@/components/componentsGeneral/Tooltip.tsx";
+import {escapeRegExp} from "@/utils/highlightText.tsx";
 
-// Строка целиком - "Цитата: «...»" (formatQuote всегда кладёт цитату на отдельную строку).
-const QUOTE_LINE_RE = /^Цитата: «.*»$/;
+const QUOTE_LINE_RE = /^Цитата: «/;
 
 export interface FormattedCommentQuoteRef {
     documentTarget: string;
     text: string;
+    revisionIndex?: number;
 }
 
-export function FormattedResolutionComment({text, quotes, onShowInText}: {
+// Считаем количество вхождений запроса в тексте - используется снаружи (в CommentViewModal),
+// чтобы показать счётчик "N из M" и не зависеть от порядка рендера самих <mark>.
+export function countTextMatches(text: string, query: string): number {
+    const trimmed = query.trim();
+    if (!trimmed) return 0;
+    const regex = new RegExp(escapeRegExp(trimmed), "gi");
+    return text.match(regex)?.length ?? 0;
+}
+
+// Разбивает строку на части по запросу поиска, оборачивая совпадения в <mark>.
+// matchCounter - общий (сквозной по всему тексту резолюции) счётчик найденных
+// совпадений: строк несколько, а нумерация "N из M" и активный матч - на весь текст.
+function renderWithSearch(
+    text: string,
+    keyPrefix: string,
+    query: string,
+    activeMatchIndex: number,
+    matchCounter: { value: number },
+    registerMatchRef?: (index: number, el: HTMLElement | null) => void,
+) {
+    const trimmed = query.trim();
+    if (!trimmed) return text;
+
+    const regex = new RegExp(`(${escapeRegExp(trimmed)})`, "gi");
+    const parts = text.split(regex);
+    const lowerQuery = trimmed.toLowerCase();
+
+    return parts.map((part, i) => {
+        if (part === "" || part.toLowerCase() !== lowerQuery) {
+            return <Fragment key={`${keyPrefix}-${i}`}>{part}</Fragment>;
+        }
+
+        const matchIndex = matchCounter.value++;
+        const isActive = matchIndex === activeMatchIndex;
+
+        return (
+            <mark
+                key={`${keyPrefix}-${i}`}
+                ref={(el) => registerMatchRef?.(matchIndex, el)}
+                className={
+                    isActive
+                        ? "rounded-[3px] bg-[#f5a623] px-[1px] text-white"
+                        : "rounded-[3px] bg-[#fde3c4] px-[1px] text-[#8a4b00]"
+                }
+            >
+                {part}
+            </mark>
+        );
+    });
+}
+
+export function FormattedResolutionComment({
+                                                text,
+                                                quotes,
+                                                onShowInText,
+                                                searchQuery,
+                                                activeMatchIndex = -1,
+                                                onRegisterMatchRef,
+                                            }: {
     text: string;
-    /** Цитаты этой же резолюции (см. ApprovalStageResponse.primaryQuotes/repeatQuotes/
-     * finalHoldQuotes) - В ТОМ ЖЕ ПОРЯДКЕ, в котором они вставлялись в комментарий (порядок
-     * вставки = порядок появления строк "Цитата: «...»" в тексте). Нужны, чтобы рядом с КАЖДОЙ
-     * такой строкой нарисовать кнопку-лупу "Показать в тексте" именно для этой цитаты - одной
-     * резолюции может быть вставлено несколько цитат, и раньше кнопка была только одна общая на
-     * всю модалку (переходила всегда к первой цитате). */
     quotes?: FormattedCommentQuoteRef[];
-    /** См. quotes выше - вызывается с конкретной цитатой, рядом с которой нажали на лупу. Без
-     * этого пропа (или без quotes) кнопки не рисуются - только жирное/цветное выделение строки. */
     onShowInText?: (quote: FormattedCommentQuoteRef) => void;
+    /** Текст поиска по резолюции/комментарию - подсвечивает все вхождения в тексте ниже. */
+    searchQuery?: string;
+    /** Сквозной (по всему тексту, не по одной строке) индекс совпадения, которое сейчас
+     * "активно" - оно выделяется отдельным цветом и на него ссылается счётчик "N из M". */
+    activeMatchIndex?: number;
+    /** Коллбэк для доступа к DOM-узлам найденных совпадений (используется, чтобы прокрутить
+     * к активному совпадению кнопками "вверх/вниз" в CommentViewModal). */
+    onRegisterMatchRef?: (index: number, el: HTMLElement | null) => void;
 }) {
-    // Разбиваем по ЛЮБОМУ виду переноса строки (\n, \r\n, \r) - если комментарий содержит
-    // Windows-переносы (\r\n), split("\n") оставлял хвостовой "\r" на конце каждой строки,
-    // кроме последней. Из-за этого регулярка QUOTE_LINE_RE (заканчивающаяся на "$") переставала
-    // совпадать с ЛЮБОЙ цитатой, кроме последней в комментарии - баг "выделяется синим только
-    // последняя цитата" при нескольких вставленных цитатах.
     const lines = text.split(/\r\n|\r|\n/);
     let quoteIndex = 0;
+    const query = searchQuery ?? "";
+    // Мутируемый счётчик, общий на весь проход по строкам - индексы совпадений должны идти
+    // сквозным порядком сверху вниз по тексту, а не начинаться заново в каждой строке.
+    const matchCounter = {value: 0};
+
     return (
         <>
             {lines.map((line, i) => {
                 const isQuoteLine = QUOTE_LINE_RE.test(line);
-                // Цитаты в тексте идут строго в порядке вставки (см. insertQuote в
-                // VndApproverResolutionPanel - каждая новая цитата дописывается ниже предыдущей),
-                // а массив quotes с бэка сохраняет тот же порядок (см. AttachDecisionQuotes на
-                // бэке - добавляются в порядке QuotesJson, как их отправил фронт) - поэтому
-                // N-я по счёту строка-цитата в тексте соответствует N-му элементу массива quotes.
+
                 const quote = isQuoteLine ? quotes?.[quoteIndex] : undefined;
                 if (isQuoteLine) quoteIndex++;
 
@@ -53,7 +103,10 @@ export function FormattedResolutionComment({text, quotes, onShowInText}: {
                         {i > 0 && "\n"}
                         {isQuoteLine ? (
                             <>
-                                <span className="font-bold text-[#4e57d6]">{line}</span>
+                                {/*СМОТРЕТЬ В ТЕКСТЕ*/}
+                                <span className="font-bold text-[#4e57d6]">
+                                    {renderWithSearch(line, `q-${i}`, query, activeMatchIndex, matchCounter, onRegisterMatchRef)}
+                                </span>
                                 {quote && onShowInText && (
                                     <Tooltip content="Показать в тексте" side="top">
                                         <button
@@ -66,7 +119,9 @@ export function FormattedResolutionComment({text, quotes, onShowInText}: {
                                     </Tooltip>
                                 )}
                             </>
-                        ) : line}
+                        ) : (
+                            renderWithSearch(line, `l-${i}`, query, activeMatchIndex, matchCounter, onRegisterMatchRef)
+                        )}
                     </Fragment>
                 );
             })}

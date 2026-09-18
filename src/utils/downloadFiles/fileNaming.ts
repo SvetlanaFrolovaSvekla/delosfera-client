@@ -26,9 +26,33 @@ export function resolveVndDocTitle(
     return `${vnd.titleRu}_${lang}`; // нет перевода - берём русское название с суффиксом языка (en, kg)
 }
 
-// Есть ли у произвольного вложения предпросмотр (AttachmentDocxPreviewModal через
-// useDocxPreview) - только для .docx. Общий хелпер для RedactionAttachmentsModal и
-// VndEditLastRevisionModal, чтобы не дублировать проверку расширения в двух местах.
+/** Форматы, для которых AttachmentDocxPreviewModal умеет показать хоть какое-то содержимое
+ * прямо в браузере (без скачивания) - "докс" в имени модалки остался историческим, сейчас она
+ * рендерит все три. .doc/.xls/.ppt (старый бинарный формат Office, не ZIP) сюда не входят -
+ * ни docx-preview, ни SheetJS, ни наш разбор презентаций через JSZip их не читают. */
+export type PreviewableFileKind = "docx" | "xlsx" | "pptx";
+
+const PREVIEWABLE_EXTENSIONS: Record<PreviewableFileKind, string> = {
+    docx: ".docx",
+    xlsx: ".xlsx",
+    pptx: ".pptx",
+};
+
+export function getPreviewableFileKind(fileName: string): PreviewableFileKind | null {
+    const lower = fileName.toLowerCase();
+    return (Object.keys(PREVIEWABLE_EXTENSIONS) as PreviewableFileKind[])
+        .find((kind) => lower.endsWith(PREVIEWABLE_EXTENSIONS[kind])) ?? null;
+}
+
+// Есть ли у произвольного вложения предпросмотр (AttachmentDocxPreviewModal). Общий хелпер для
+// RedactionAttachmentsModal, VndEditLastRevisionModal и AttachmentRow, чтобы не дублировать
+// проверку расширения в нескольких местах.
+export function isPreviewableFile(fileName: string): boolean {
+    return getPreviewableFileKind(fileName) !== null;
+}
+
+/** @deprecated используйте isPreviewableFile - оставлено на случай, если .docx где-то нужно
+ * отличить от .xlsx/.pptx отдельно (например, для текста подсказки). */
 export function isDocxFile(fileName: string): boolean {
-    return fileName.toLowerCase().endsWith(".docx");
+    return getPreviewableFileKind(fileName) === "docx";
 }

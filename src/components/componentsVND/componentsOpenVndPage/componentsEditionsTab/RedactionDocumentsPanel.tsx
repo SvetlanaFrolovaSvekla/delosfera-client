@@ -7,7 +7,7 @@ import {formatDate} from "@/utils/dateUtils.ts";
 import {Download, FileText, Loader2} from "lucide-react";
 import {
     AttachmentDocxPreviewModal
-} from "@/components/componentsVND/componentsOpenVndPage/componentsEditionsTab/AttachmentDocxPreviewModal.tsx";
+} from "@/components/componentsGeneral/modal/AttachmentDocxPreviewModal.tsx";
 
 function isDocxFile(fileName: string): boolean {
     return fileName.toLowerCase().endsWith(".docx");

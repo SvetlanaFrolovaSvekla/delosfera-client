@@ -13,9 +13,10 @@
 import {useState} from "react";
 import {useTranslation} from "react-i18next";
 import type {TFunction} from "i18next";
-import {ChevronLeft, ChevronRight} from "lucide-react";
+import {ChevronLeft, ChevronRight, Download} from "lucide-react";
 import {formatDateTime} from "@/utils/dateUtils.ts";
 import {getInitials} from "@/utils/namingUsers/getInitials.ts";
+import {downloadWithToast} from "@/utils/downloadFiles/downloadFile.ts";
 import {
     FormattedResolutionComment
 } from "@/components/componentsCoordination/CoordinationRouteConstructor/viewComponents/FormattedResolutionComment.tsx";
@@ -23,6 +24,7 @@ import type {
     ApprovalPhaseRoundResponse,
     ApprovalProcessResponse,
     ApprovalStageDecisionResponse,
+    VndRedactionRevisionSnapshotResponse,
 } from "@/service/coordinationService/coordinationServiceTypes.ts";
 
 const DECISION_COLORS: Record<ApprovalStageDecisionResponse, { color: string; bg: string }> = {
@@ -49,6 +51,20 @@ interface SchemaPage {
     completedAt: string | null;
     initiatorComment: string | null;
     decisions: SchemaStageDecision[];
+    /** Снимок файлов редакции, к которому относятся комментарии этой страницы (см.
+     * VndRedactionRevisionSnapshotResponse) — null, если снимка нет (страница "Текущий этап":
+     * это ещё живая, не архивная версия документа) или процесс ни разу не отправляли повторно. */
+    snapshot: VndRedactionRevisionSnapshotResponse | null;
+}
+
+/** Ключ снимка в формате, совпадающем с SchemaPage.key ("primary"/"repeat-1"/"finalHold-2" и
+ * т.д.) — так снимок находится для нужной страницы карусели одним поиском по массиву. */
+function snapshotPageKey(s: VndRedactionRevisionSnapshotResponse): string {
+    return s.phase === "primary" ? "primary" : `${s.phase}-${s.roundNumber}`;
+}
+
+function findSnapshotForKey(process: ApprovalProcessResponse, key: string): VndRedactionRevisionSnapshotResponse | null {
+    return process.redactionSnapshots.find((s) => snapshotPageKey(s) === key) ?? null;
 }
 
 function buildPrimaryPage(t: TFunction, process: ApprovalProcessResponse): SchemaPage {
@@ -63,18 +79,21 @@ function buildPrimaryPage(t: TFunction, process: ApprovalProcessResponse): Schem
         decisions: process.stages.map((s) => ({
             stageId: s.id, decision: s.primaryDecision, comment: s.primaryComment, decidedAt: s.primaryDecidedAt,
         })),
+        snapshot: findSnapshotForKey(process, "primary"),
     };
 }
 
-function roundToPage(round: ApprovalPhaseRoundResponse, phaseLabel: string, roundLabel: string | null): SchemaPage {
+function roundToPage(process: ApprovalProcessResponse, round: ApprovalPhaseRoundResponse, phaseLabel: string, roundLabel: string | null): SchemaPage {
+    const key = `${round.phase}-${round.roundNumber}`;
     return {
-        key: `${round.phase}-${round.roundNumber}`,
+        key,
         phaseLabel,
         roundLabel,
         isCurrent: false,
         completedAt: round.completedAt,
         initiatorComment: round.initiatorComment,
         decisions: round.stageDecisions,
+        snapshot: findSnapshotForKey(process, key),
     };
 }
 
@@ -93,6 +112,10 @@ function buildCurrentRepeatPage(t: TFunction, process: ApprovalProcessResponse, 
             .map((s) => ({
                 stageId: s.id, decision: s.repeatDecision ?? "pending", comment: s.repeatComment, decidedAt: s.repeatDecidedAt,
             })),
+        // Текущий/ещё не завершённый круг показывает живую версию документа (см. таб
+        // "Документ") — архивный снимок для него не создаётся, он появится только когда этот
+        // круг завершится следующей повторной отправкой.
+        snapshot: null,
     };
 }
 
@@ -109,6 +132,7 @@ function buildCurrentFinalHoldPage(t: TFunction, process: ApprovalProcessRespons
         decisions: process.stages.map((s) => ({
             stageId: s.id, decision: s.finalHoldDecision ?? "pending", comment: s.finalHoldComment, decidedAt: s.finalHoldDecidedAt,
         })),
+        snapshot: null,
     };
 }
 
@@ -126,19 +150,38 @@ function buildSchemaPages(t: TFunction, process: ApprovalProcessResponse): Schem
     // когда доработка была только одна.
     const repeatTotal = repeatRounds.length + (process.repeatStartedAt ? 1 : 0);
     repeatRounds.forEach((r) => pages.push(
-        roundToPage(r, t("openVndPage.historyTab.carousel.repeatPhaseLabel"), repeatTotal > 1 ? t("openVndPage.historyTab.carousel.roundLabel", {number: r.roundNumber}) : null),
+        roundToPage(process, r, t("openVndPage.historyTab.carousel.repeatPhaseLabel"), repeatTotal > 1 ? t("openVndPage.historyTab.carousel.roundLabel", {number: r.roundNumber}) : null),
     ));
     const currentRepeat = buildCurrentRepeatPage(t, process, repeatTotal > 1 ? t("openVndPage.historyTab.carousel.roundLabel", {number: repeatTotal}) : null);
     if (currentRepeat) pages.push(currentRepeat);
 
     const finalHoldTotal = finalHoldRounds.length + (process.finalHoldStartedAt ? 1 : 0);
     finalHoldRounds.forEach((r) => pages.push(
-        roundToPage(r, t("openVndPage.historyTab.processStatuses.final_hold"), finalHoldTotal > 1 ? t("openVndPage.historyTab.carousel.roundLabel", {number: r.roundNumber}) : null),
+        roundToPage(process, r, t("openVndPage.historyTab.processStatuses.final_hold"), finalHoldTotal > 1 ? t("openVndPage.historyTab.carousel.roundLabel", {number: r.roundNumber}) : null),
     ));
     const currentFinalHold = buildCurrentFinalHoldPage(t, process, finalHoldTotal > 1 ? t("openVndPage.historyTab.carousel.roundLabel", {number: finalHoldTotal}) : null);
     if (currentFinalHold) pages.push(currentFinalHold);
 
     return pages;
+}
+
+/** Файлы снимка, у которых реально есть значение — в порядке ru/kg/en/tid/матрица
+ * разногласий. Название файла на бэке может отсутствовать (FileAttachment не найден) — тогда
+ * подписываем меткой типа файла, чтобы кнопка не осталась пустой. */
+function snapshotFiles(t: TFunction, snapshot: VndRedactionRevisionSnapshotResponse): {fileId: number; label: string}[] {
+    const entries: {fileId: number | null; name: string | null; labelKey: string}[] = [
+        {fileId: snapshot.docFileRuId, name: snapshot.docFileRuName, labelKey: "ru"},
+        {fileId: snapshot.docFileKgId, name: snapshot.docFileKgName, labelKey: "kg"},
+        {fileId: snapshot.docFileEnId, name: snapshot.docFileEnName, labelKey: "en"},
+        {fileId: snapshot.tidFileId, name: snapshot.tidFileName, labelKey: "tid"},
+        {fileId: snapshot.disagreementMatrixFileId, name: snapshot.disagreementMatrixFileName, labelKey: "disagreementMatrix"},
+    ];
+    return entries
+        .filter((e): e is {fileId: number; name: string | null; labelKey: string} => e.fileId !== null)
+        .map((e) => ({
+            fileId: e.fileId,
+            label: e.name ?? t(`openVndPage.historyTab.carousel.downloadVersionFileLabels.${e.labelKey}`),
+        }));
 }
 
 interface ApprovalRouteHistoryCarouselProps {
@@ -208,6 +251,25 @@ export function ApprovalRouteHistoryCarousel({process}: ApprovalRouteHistoryCaro
                 <div className="whitespace-pre-wrap break-words rounded-[10px] border border-[#d4d6f8] bg-[#f5f6fd] px-3 py-2 text-[11.5px] text-[#3c424a]">
                     <span className="font-semibold text-[#4e57d6]">{t("openVndPage.historyTab.carousel.correctionsCommentLabel")}</span>
                     <FormattedResolutionComment text={page.initiatorComment}/>
+                </div>
+            )}
+
+            {page.snapshot && (
+                <div className="flex flex-wrap items-center gap-2 rounded-[10px] border border-[#e5e9f0] bg-[#fbfcfe] px-3 py-2">
+                    <span className="text-[11px] font-semibold text-[#6b7488]">
+                        {t("openVndPage.historyTab.carousel.downloadVersionLabel")}
+                    </span>
+                    {snapshotFiles(t, page.snapshot).map((f) => (
+                        <button
+                            key={f.fileId}
+                            type="button"
+                            onClick={() => downloadWithToast(f.fileId, f.label)}
+                            className="flex cursor-pointer items-center gap-1 rounded-full border border-[#d4d6f8] bg-white px-2 py-0.5 text-[10.5px] font-semibold text-[#4e57d6] hover:bg-[#f5f6fd]"
+                        >
+                            <Download size={11}/>
+                            {f.label}
+                        </button>
+                    ))}
                 </div>
             )}
 

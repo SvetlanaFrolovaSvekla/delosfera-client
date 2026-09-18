@@ -201,7 +201,7 @@ export function VndApprovalRouteView({
                     <button
                         type="button"
                         onClick={onAddApprover}
-                        className="flex h-[fit-content] w-[220px] flex-none flex-col items-center justify-center gap-2 self-stretch rounded-2xl border border-dashed border-[#c9cee0] bg-white/60 p-4 text-[#4e57d6] hover:border-[#4e57d6]/60 hover:bg-white"
+                        className="cursor-pointer flex h-[fit-content] w-[220px] flex-none flex-col items-center justify-center gap-2 self-stretch rounded-2xl border border-dashed border-[#c9cee0] bg-white/60 p-4 text-[#4e57d6] hover:border-[#4e57d6]/60 hover:bg-white"
                     >
                         <UserPlus size={18}/>
                         <span className="text-[12.5px] font-semibold">Добавить согласующего</span>

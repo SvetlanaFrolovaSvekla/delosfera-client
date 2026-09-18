@@ -4,7 +4,7 @@ import {Archive, Download} from "lucide-react";
 import {toast} from "@/service/toastService.ts";
 import {SzBulkArchiveModal} from "@/components/componentsSz/SzBulkArchiveModal.tsx";
 import {SavedFiltersBar} from "@/components/componentsGeneral/SavedFiltersBar.tsx";
-import {colors} from "@/design/tokens";
+import {colors} from "@/design/tokens.ts";
 import {
     SZ_STATUS_LABEL,
     szService,
@@ -22,7 +22,7 @@ import {szPaperService, type SzOriginal} from "@/service/szService/szPaperServic
 import {SelectDropdown} from "@/components/componentsGeneral/selects/SingleSelects/SelectDropdown.tsx";
 import {CheckBoxOne} from "@/components/componentsGeneral/componentsCheckBox/CheckBoxOne.tsx";
 import {SearchBar} from "@/components/componentsGeneral/SearchBar.tsx";
-import {Icon} from "@/assets/icons/Icon";
+import {Icon} from "@/assets/icons/Icon.tsx";
 
 type ScopeId = "all" | "inbox" | "assignments" | "originals" | "mine" | "drafts"
     | "approval" | "pending" | "signing" | "archive";

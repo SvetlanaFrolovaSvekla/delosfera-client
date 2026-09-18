@@ -6,7 +6,7 @@ interface HighlightTextProps {
 }
 
 // Экранируем спецсимволы regex
-function escapeRegExp(str: string): string {
+export function escapeRegExp(str: string): string {
     return str.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 }
 

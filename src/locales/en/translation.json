@@ -890,6 +890,14 @@
         "completedLabel": "Completed",
         "correctionsCommentLabel": "Comment on the corrections: ",
         "noDataForStage": "No data for this stage",
+        "downloadVersionLabel": "Download the version these remarks refer to:",
+        "downloadVersionFileLabels": {
+          "ru": "RU",
+          "kg": "KG",
+          "en": "EN",
+          "tid": "TID",
+          "disagreementMatrix": "Disagreement matrix"
+        },
         "decisionLabels": {
           "pending": "Pending",
           "approved": "Approved",

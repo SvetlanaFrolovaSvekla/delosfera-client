@@ -12,6 +12,9 @@ import {
 import {
     CommentViewModal
 } from "@/components/componentsCoordination/CoordinationRouteConstructor/viewComponents/CommentViewModal.tsx";
+import {AttachmentDocxPreviewModal} from "@/components/componentsGeneral/modal/AttachmentDocxPreviewModal.tsx";
+import {downloadWithToast} from "@/utils/downloadFiles/downloadFile.ts";
+
 
 interface VndApprovalSummaryProps {
     process: ApprovalProcessResponse;
@@ -80,6 +83,7 @@ export function VndApprovalSummary({process}: VndApprovalSummaryProps) {
     const navigate = useNavigate();
     const isMeInitiator = process.initiatorUserId === user?.id;
     const [initiatorCommentOpen, setInitiatorCommentOpen] = useState(false);
+    const [previewAttachment, setPreviewAttachment] = useState<{fileId: number; fileName: string} | null>(null);
 
     const handleInitiatorClick = () => {
         if (isMeInitiator) {
@@ -112,6 +116,7 @@ export function VndApprovalSummary({process}: VndApprovalSummaryProps) {
             : relevantPhase === "repeat"
                 ? process.repeatDeadlineAt
                 : process.finalHoldDeadlineAt;
+
 
     return (
         <div className="mx-auto mb-5 w-fit max-w-full rounded-[14px] border border-[#e5e9f0] bg-white px-5 py-4">
@@ -236,7 +241,12 @@ export function VndApprovalSummary({process}: VndApprovalSummaryProps) {
                         {process.repeatInitiatorCommentAttachments.length > 0 && (
                             <div className="mt-2 flex flex-col gap-1">
                                 {process.repeatInitiatorCommentAttachments.map((a) => (
-                                    <AttachmentRow key={a.id} fileId={a.fileId} fileName={a.fileName}/>
+                                    <AttachmentRow
+                                        key={a.id}
+                                        fileId={a.fileId}
+                                        fileName={a.fileName}
+                                        onView={() => setPreviewAttachment({fileId: a.fileId, fileName: a.fileName})}
+                                    />
                                 ))}
                             </div>
                         )}
@@ -263,6 +273,27 @@ export function VndApprovalSummary({process}: VndApprovalSummaryProps) {
                     comment={process.repeatInitiatorComment ?? ""}
                     attachments={process.repeatInitiatorCommentAttachments}
                     onClose={() => setInitiatorCommentOpen(false)}
+                />
+            )}
+
+            {initiatorCommentOpen && (
+                <CommentViewModal
+                    title="См. комментарий полностью"
+                    approverName={process.initiatorName}
+                    approverUserId={process.initiatorUserId}
+                    comment={process.repeatInitiatorComment ?? ""}
+                    attachments={process.repeatInitiatorCommentAttachments}
+                    onClose={() => setInitiatorCommentOpen(false)}
+                />
+            )}
+
+            {previewAttachment && (
+                <AttachmentDocxPreviewModal
+                    fileId={previewAttachment.fileId}
+                    fileName={previewAttachment.fileName}
+                    downloadingId={null}
+                    onDownload={downloadWithToast}
+                    onClose={() => setPreviewAttachment(null)}
                 />
             )}
         </div>

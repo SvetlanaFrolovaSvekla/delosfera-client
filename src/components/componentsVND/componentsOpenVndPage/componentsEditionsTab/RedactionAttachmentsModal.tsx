@@ -3,17 +3,18 @@ import {useState} from "react";
 import {createPortal} from "react-dom";
 import {Download, Eye, FileText, Loader2, Paperclip, X} from "lucide-react";
 import type {VndRedactionResponse} from "@/service/vndService/vndServiceType.ts";
-import {isDocxFile} from "@/utils/downloadFiles/fileNaming.ts";
+import {isPreviewableFile} from "@/utils/downloadFiles/fileNaming.ts";
 import {Tooltip} from "@/components/componentsGeneral/Tooltip.tsx";
 import {TruncatedTooltip} from "@/components/componentsGeneral/TruncatedTooltip.tsx";
 import {
     AttachmentDocxPreviewModal
-} from "@/components/componentsVND/componentsOpenVndPage/componentsEditionsTab/AttachmentDocxPreviewModal.tsx";
+} from "@/components/componentsGeneral/modal/AttachmentDocxPreviewModal.tsx";
 
 /** Специальные вложения открываются просмотрщиком (RedactionTidModal/RedactionApprovalSheetModal
  * из VndEditionsTab), а не просто скачиваются. Обычные вложения произвольного формата (см. ниже,
- * redaction.attachments) в общем случае тоже не имеют предпросмотра — кроме файлов .docx, для
- * которых он доступен через AttachmentDocxPreviewModal (см. isDocxFile в utils/fileNaming.ts). */
+ * redaction.attachments) в общем случае тоже не имеют предпросмотра — кроме .docx/.xlsx/.pptx,
+ * для которых он доступен через AttachmentDocxPreviewModal (см. isPreviewableFile в
+ * utils/fileNaming.ts). */
 export type SpecialAttachmentTarget = "tid" | "approvalSheet" | "disagreementMatrix";
 
 interface RedactionAttachmentsModalProps {
@@ -190,8 +191,8 @@ export function RedactionAttachmentsModal({
                                         )}
                                     </button>
 
-                                    {isDocxFile(attachment.fileName) && (
-                                        <Tooltip content="Просмотреть документ (DOCX)" side="top">
+                                    {isPreviewableFile(attachment.fileName) && (
+                                        <Tooltip content="Просмотреть вложение" side="top">
                                             <button
                                                 type="button"
                                                 onClick={() => setPreviewAttachment({fileId: attachment.fileId, fileName: attachment.fileName})}

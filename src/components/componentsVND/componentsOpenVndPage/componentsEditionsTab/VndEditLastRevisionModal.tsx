@@ -8,7 +8,7 @@ import {vndService} from "@/service/vndService/vndService.ts";
 import type {VndRedactionResponse, VndResponse} from "@/service/vndService/vndServiceType.ts";
 import {CharCounter} from "@/components/componentsGeneral/CharCounter.tsx";
 import {VND_REDACTION_DESCRIPTION_MAX_LENGTH, VND_REDACTION_MAX_ATTACHMENTS} from "@/constants/validation/vndValidation.ts";
-import {resolveVndDocTitle, buildRedactionFileName, isDocxFile} from "@/utils/downloadFiles/fileNaming.ts";
+import {resolveVndDocTitle, buildRedactionFileName, isPreviewableFile} from "@/utils/downloadFiles/fileNaming.ts";
 import {formatFileSize} from "@/service/documentService/attachmentService.ts";
 import {downloadWithToast} from "@/utils/downloadFiles/downloadFile.ts";
 import {useAsyncAction} from "@/hooks/useAsyncAction.ts";
@@ -18,7 +18,7 @@ import {
 } from "@/components/componentsCoordination/CoordinationRouteConstructor/viewComponents/RedactionViewModal.tsx";
 import {
     AttachmentDocxPreviewModal
-} from "@/components/componentsVND/componentsOpenVndPage/componentsEditionsTab/AttachmentDocxPreviewModal.tsx";
+} from "@/components/componentsGeneral/modal/AttachmentDocxPreviewModal.tsx";
 import {MAX_FILE_SIZE} from "@/constants/validation/totalValidatuon.ts";
 import {HelpTooltip} from "@/components/componentsGeneral/knowledgeBaseComponents/HelpTooltip.tsx";
 import { Tooltip } from "@/components/componentsGeneral/Tooltip";
@@ -580,8 +580,8 @@ export function VndEditLastRevisionModal({vndId, vnd, redaction, roleNames, onCl
                                                         willBeRemoved ? "text-[#c0392b] line-through" : "text-[#26324a]"
                                                     }`}
                                                 />
-                                                {!willBeRemoved && isDocxFile(attachment.fileName) && (
-                                                    <Tooltip content="Просмотреть документ (DOCX)" side="top">
+                                                {!willBeRemoved && isPreviewableFile(attachment.fileName) && (
+                                                    <Tooltip content="Просмотреть вложение" side="top">
                                                         <button
                                                             type="button"
                                                             onClick={() => setPreviewAttachment({fileId: attachment.fileId, fileName: attachment.fileName})}

@@ -166,9 +166,20 @@ export interface ApprovalStageAttachmentResponse {
  * цитата попадает. */
 export interface ApprovalStageQuoteResponse {
     id: number;
+    /** Id этапа (ApprovalStageResponse.id), к которому относится цитата — заполнен и когда
+     * цитата приходит внутри списка конкретного этапа/фазы, и в ApprovalProcessResponse.allQuotes. */
+    stageId: number;
+    /** "primary"/"repeat"/"finalHold" — фаза решения, к которой относится цитата. */
+    phase: ApprovalPhase | "primary";
     /** "ru"/"kg"/"en"/"tid"/"approvalSheet"/"disagreementMatrix" — см. RedactionViewTarget. */
     documentTarget: string;
     text: string;
+    /** Версия документа редакции, к которой относится цитата — 0 для самой первой поданной
+     * версии ("Р1"), 1 для "Р1.1" и т.д. Primary/Repeat/FinalHoldQuotes на ApprovalStageResponse
+     * содержат только цитаты ТЕКУЩЕЙ/живой версии (сервер уже отфильтровал) — чтобы показать
+     * цитаты произвольной прошлой версии, используйте ApprovalProcessResponse.allQuotes,
+     * отфильтровав по этому полю (см. utils/vndProcess/redactionRevisions.ts). */
+    revisionIndex: number;
 }
 
 export interface ApprovalStageResponse {
@@ -237,6 +248,38 @@ export interface ApprovalPhaseRoundResponse {
     stageDecisions: ApprovalPhaseRoundStageDecisionResponse[];
 }
 
+/** "primary"/"repeat"/"finalHold" — фаза, чья версия документа сохранена в снимке (см.
+ * VndRedactionRevisionSnapshotResponse.phase на бэке). В отличие от ApprovalPhase выше,
+ * включает и "primary" — снимок может относиться и к самой первой поданной версии, до начала
+ * согласования. */
+export type RedactionSnapshotPhase = "primary" | "repeat" | "finalHold";
+
+/** Снимок файлов редакции, сохранённый перед тем, как инициатор перезаписал их очередной
+ * повторной отправкой после замечаний — см. VndRedactionRevisionSnapshot на бэке. Позволяет
+ * проверяющим скачать и сравнить версию документа, к которой относились их замечания, с
+ * исправленной. Номеруется последовательно в рамках редакции: "10296-Р1.1", "10296-Р1.2" и
+ * т.д. Файловые поля null, если в этой редакции соответствующий файл на момент снимка
+ * отсутствовал вовсе. */
+export interface VndRedactionRevisionSnapshotResponse {
+    id: number;
+    /** Порядковый номер снимка в рамках редакции, начиная с 1. */
+    snapshotNumber: number;
+    phase: RedactionSnapshotPhase;
+    /** Номер круга внутри фазы — null для phase === "primary". */
+    roundNumber: number | null;
+    docFileRuId: number | null;
+    docFileRuName: string | null;
+    docFileKgId: number | null;
+    docFileKgName: string | null;
+    docFileEnId: number | null;
+    docFileEnName: string | null;
+    tidFileId: number | null;
+    tidFileName: string | null;
+    disagreementMatrixFileId: number | null;
+    disagreementMatrixFileName: string | null;
+    createdAt: string;
+}
+
 export interface ApprovalProcessResponse {
     id: number;
     vndId: number;
@@ -264,6 +307,16 @@ export interface ApprovalProcessResponse {
     disagreementMatrixRows: DisagreementMatrixRowResponse[];
     stages: ApprovalStageResponse[];
     phaseRounds: ApprovalPhaseRoundResponse[];
+    /** Снимки файлов редакции по кругам согласования — см. VndRedactionRevisionSnapshotResponse.
+     * Нужно для кнопок "Скачать версию" в "Истории маршрута согласования" (см.
+     * ApprovalRouteHistoryCarousel.tsx). */
+    redactionSnapshots: VndRedactionRevisionSnapshotResponse[];
+    /** ВСЕ цитаты процесса, по всем этапам/фазам и ВСЕМ версиям документа редакции (включая уже
+     * вытесненные последующими повторными отправками) — в отличие от полей *Quotes на
+     * ApprovalStageResponse (только текущая/живая версия), нужен для просмотра/сравнения
+     * прошлых версий ("Р1.1", "Р1.2" и т.д.) во время активного согласования — см.
+     * utils/vndProcess/redactionRevisions.ts. */
+    allQuotes: ApprovalStageQuoteResponse[];
     createdAt: string;
     updatedAt: string;
 }

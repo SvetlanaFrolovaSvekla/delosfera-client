@@ -87,6 +87,11 @@ type CoordinationModal =
     /* Передаётся только когда модалка открыта, чтобы сразу проскроллить к месту одной из
      уже вставленных цитат (см. handleJumpToQuote/RedactionViewModal.initialSearchQuery). */
     initialSearchQuery?: string;
+    /* Версия документа редакции, к которой относится цитата (см.
+     FormattedCommentQuoteRef.revisionIndex) - передаётся вместе с initialSearchQuery, чтобы
+     "Показать в тексте" открывало именно ту версию, к которой относится цитата, а не текущую
+     живую (см. handleShowQuoteInText/RedactionViewModal.initialRevisionIndex). */
+    initialRevisionIndex?: number;
 };
 
 export function VndCoordinationTab({vnd, onVndChanged}: VndCoordinationTabProps) {
@@ -311,13 +316,14 @@ export function VndCoordinationTab({vnd, onVndChanged}: VndCoordinationTabProps)
     // же приём, что и handleJumpToQuote выше (там - для ещё не отправленной резолюции текущего
     // пользователя), просто с другим источником цитаты (quote: {documentTarget, text} вместо
     // ApprovalQuoteItem, форма та же).
-    const handleShowQuoteInText = (quote: { documentTarget: string; text: string }) => {
+    const handleShowQuoteInText = (quote: { documentTarget: string; text: string; revisionIndex?: number }) => {
         if (!redaction) return;
         setModal({
             kind: "view",
             redaction,
             language: quote.documentTarget as RedactionViewTarget,
             initialSearchQuery: quote.text,
+            initialRevisionIndex: quote.revisionIndex,
         });
     };
 
@@ -492,6 +498,7 @@ export function VndCoordinationTab({vnd, onVndChanged}: VndCoordinationTabProps)
                         redaction={modal.redaction}
                         initialLanguage={modal.language}
                         initialSearchQuery={modal.initialSearchQuery}
+                        initialRevisionIndex={modal.initialRevisionIndex}
                         downloadingId={download.activeId}
                         onDownload={handleDownload}
                         onClose={() => setModal(null)}
@@ -709,6 +716,7 @@ export function VndCoordinationTab({vnd, onVndChanged}: VndCoordinationTabProps)
                     redaction={modal.redaction}
                     initialLanguage={modal.language}
                     initialSearchQuery={modal.initialSearchQuery}
+                    initialRevisionIndex={modal.initialRevisionIndex}
                     downloadingId={download.activeId}
                     onDownload={handleDownload}
                     onClose={() => setModal(null)}
@@ -753,6 +761,7 @@ export function VndCoordinationTab({vnd, onVndChanged}: VndCoordinationTabProps)
                     requiresTid={!!redaction && redaction.number > 1}
                     onChanged={reload}
                     onResubmitted={handleResubmitted}
+                    onShowQuoteInText={redaction ? handleShowQuoteInText : undefined}
                 />
             )}
 

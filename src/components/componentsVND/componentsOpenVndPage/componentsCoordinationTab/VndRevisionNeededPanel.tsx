@@ -1,10 +1,14 @@
-import {useRef, useState} from "react";
+import React, {useRef, useState} from "react";
+
 import {coordinationService} from "@/service/coordinationService/coordinationService.ts";
 import {RemarksAgreement} from "@/service/coordinationService/coordinationServiceTypes.ts";
 import type {
     ApprovalProcessResponse,
     ApprovalStageAttachmentResponse,
 } from "@/service/coordinationService/coordinationServiceTypes.ts";
+import type {VndRedactionResponse, VndResponse} from "@/service/vndService/vndServiceType.ts";
+import {formatFileSize} from "@/service/documentService/attachmentService.ts"
+
 import {
     COMMENT_TRUNCATE_LENGTH,
     MAX_RESOLUTION_ATTACHMENTS,
@@ -13,14 +17,31 @@ import {
     STAGE_DECISION_META,
 } from "@/constants/coordinationParams.ts";
 import {VND_REDACTION_MAX_ATTACHMENTS} from "@/constants/validation/vndValidation.ts";
-import type {VndRedactionResponse, VndResponse} from "@/service/vndService/vndServiceType.ts";
+
+
 import {resolveVndDocTitle} from "@/utils/downloadFiles/fileNaming.ts";
-import {formatFileSize} from "@/service/documentService/attachmentService.ts";
 import {downloadWithToast} from "@/utils/downloadFiles/downloadFile.ts";
+
 import {Tooltip} from "@/components/componentsGeneral/Tooltip.tsx";
 import {HelpTooltip} from "@/components/componentsGeneral/knowledgeBaseComponents/HelpTooltip.tsx";
 import {ConfirmActionModal} from "@/components/componentsGeneral/modal/ConfirmActionModal.tsx";
 import {CharCounter} from "@/components/componentsGeneral/CharCounter.tsx";
+
+import {
+    VndDisagreementMatrixSection, type DisagreementMatrixMode
+} from "./VndDisagreementMatrixSection.tsx";
+import {generateDisagreementMatrixDocx} from "@/utils/docxWork/docxDisagreementMatrixExport.ts";
+import {
+    AttachmentRow
+} from "@/components/componentsCoordination/CoordinationRouteConstructor/functionalComponents/AttachmentRow.tsx";
+import {
+    CommentViewModal
+} from "@/components/componentsCoordination/CoordinationRouteConstructor/viewComponents/CommentViewModal.tsx";
+import type {FormattedCommentQuoteRef} from "@/components/componentsCoordination/CoordinationRouteConstructor/viewComponents/FormattedResolutionComment.tsx";
+import {
+    AttachmentDocxPreviewModal
+} from "@/components/componentsGeneral/modal/AttachmentDocxPreviewModal.tsx";
+
 import {
     AlertCircle,
     Check,
@@ -32,17 +53,6 @@ import {
     RefreshCcw,
     Trash2,
 } from "lucide-react";
-import {
-    VndDisagreementMatrixSection, type DisagreementMatrixMode
-} from "./VndDisagreementMatrixSection.tsx";
-import {generateDisagreementMatrixDocx} from "@/utils/docxWork/docxDisagreementMatrixExport.ts";
-import {
-    AttachmentRow
-} from "@/components/componentsCoordination/CoordinationRouteConstructor/functionalComponents/AttachmentRow.tsx";
-import {
-    CommentViewModal
-} from "@/components/componentsCoordination/CoordinationRouteConstructor/viewComponents/CommentViewModal.tsx";
-
 
 interface VndRevisionNeededPanelProps {
     vndId: number;
@@ -62,6 +72,13 @@ interface VndRevisionNeededPanelProps {
      * процесса/редакций (метка "Обновлено, дата" берётся из персистентных полей редакции,
      * которые придут со свежими данными) и всплывающее уведомление. */
     onResubmitted: () => Promise<void>;
+    /** Кнопка-лупа "Показать в тексте" рядом с цитатой внутри модалки "См. замечания/комментарий
+     * полностью" (см. CommentViewModal/FormattedResolutionComment) - открывает просмотр редакции
+     * на нужной вкладке с прокруткой к месту цитаты (тот же приём, что и StageCardView/
+     * VndApprovalRouteView.onShowQuoteInText - см. VndCoordinationTab.handleShowQuoteInText).
+     * Без этого пропа лупы рядом с цитатами в блоках "Необходимо исправить"/"Также посмотрите
+     * пришедшие комментарии" не рисуются - только жирное/цветное выделение самой цитаты. */
+    onShowQuoteInText?: (quote: FormattedCommentQuoteRef) => void;
 }
 
 interface RemarkItem {
@@ -72,6 +89,13 @@ interface RemarkItem {
     comment: string;
     decidedAt: string | null;
     attachments: ApprovalStageAttachmentResponse[];
+    /** Цитаты, вставленные в этот комментарий/замечание (см. "+ Сослаться на текст редакции" у
+     * согласующего) - в том же порядке, что и строки "Цитата: «...»" в тексте. Нужны, чтобы в
+     * модалке "См. замечания/комментарий полностью" (CommentViewModal) рядом с КАЖДОЙ такой
+     * строкой нарисовать свою кнопку-лупу "Показать в тексте" (см. FormattedResolutionComment) -
+     * раньше эти карточки вообще не передавали цитаты в модалку, из-за чего цитаты там
+     * подсвечивались (сама подсветка не требует quotes), но без луп рядом. */
+    quotes: FormattedCommentQuoteRef[];
 }
 
 type RevisionPhaseKey = "primary" | "repeat" | "finalHold";
@@ -118,6 +142,7 @@ function collectRemarks(process: ApprovalProcessResponse): RemarkItem[] {
                 comment: stage.primaryComment,
                 decidedAt: stage.primaryDecidedAt,
                 attachments: stage.primaryAttachments,
+                quotes: stage.primaryQuotes,
             });
         }
         if (stage.repeatComment && stage.repeatDecision === "approved_with_comment") {
@@ -129,6 +154,7 @@ function collectRemarks(process: ApprovalProcessResponse): RemarkItem[] {
                 comment: stage.repeatComment,
                 decidedAt: stage.repeatDecidedAt,
                 attachments: stage.repeatAttachments,
+                quotes: stage.repeatQuotes,
             });
         }
         if (stage.finalHoldComment && stage.finalHoldDecision === "approved_with_comment") {
@@ -140,6 +166,7 @@ function collectRemarks(process: ApprovalProcessResponse): RemarkItem[] {
                 comment: stage.finalHoldComment,
                 decidedAt: stage.finalHoldDecidedAt,
                 attachments: stage.finalHoldAttachments,
+                quotes: stage.finalHoldQuotes,
             });
         }
         return remarks;
@@ -175,6 +202,7 @@ function collectApprovalComments(process: ApprovalProcessResponse): RemarkItem[]
                 comment: stage.primaryComment,
                 decidedAt: stage.primaryDecidedAt,
                 attachments: stage.primaryAttachments,
+                quotes: stage.primaryQuotes,
             });
         }
         if (
@@ -190,6 +218,7 @@ function collectApprovalComments(process: ApprovalProcessResponse): RemarkItem[]
                 comment: stage.repeatComment,
                 decidedAt: stage.repeatDecidedAt,
                 attachments: stage.repeatAttachments,
+                quotes: stage.repeatQuotes,
             });
         }
         if (
@@ -205,6 +234,7 @@ function collectApprovalComments(process: ApprovalProcessResponse): RemarkItem[]
                 comment: stage.finalHoldComment,
                 decidedAt: stage.finalHoldDecidedAt,
                 attachments: stage.finalHoldAttachments,
+                quotes: stage.finalHoldQuotes,
             });
         }
         return comments;
@@ -230,11 +260,13 @@ function RemarkCard({
                         isRemark,
                         resolved,
                         onOpenFull,
+                        onOpenAttachment,
                     }: {
     item: RemarkItem;
     isRemark: boolean;
     resolved?: boolean;
     onOpenFull: () => void;
+    onOpenAttachment: (fileId: number, fileName: string) => void;
 }) {
     const isLong = item.comment.length > COMMENT_TRUNCATE_LENGTH;
     const displayedComment = isLong
@@ -268,7 +300,7 @@ function RemarkCard({
                     </div>
                     <div className="flex flex-col gap-1">
                         {item.attachments.map((a) => (
-                            <AttachmentRow key={a.id} fileId={a.fileId} fileName={a.fileName}/>
+                            <AttachmentRow key={a.id} fileId={a.fileId} fileName={a.fileName} onView={() => onOpenAttachment(a.fileId, a.fileName)}/>
                         ))}
                     </div>
                 </div>
@@ -493,6 +525,7 @@ function DocReplaceRow({slot, state, onToggleReplace, onToggleRemove, onFileSele
 
 export function VndRevisionNeededPanel({
                                             vndId, vnd, process, redaction, requiresTid, onChanged, onResubmitted,
+                                            onShowQuoteInText,
                                         }: VndRevisionNeededPanelProps) {
     const [docState, setDocState] = useState<Record<DocLang, DocSlotState>>({
         ru: EMPTY_DOC_STATE,
@@ -522,6 +555,7 @@ export function VndRevisionNeededPanel({
     const [submitting, setSubmitting] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const [openRemark, setOpenRemark] = useState<{item: RemarkItem; isRemark: boolean} | null>(null);
+    const [previewAttachment, setPreviewAttachment] = useState<{fileId: number; fileName: string} | null>(null);
 
     // Подтверждение удаления существующего (уже сохранённого) документа/вложения редакции —
     // только для случая "пометить на удаление", отмена пометки ("Отменить удаление") идёт
@@ -794,6 +828,7 @@ export function VndRevisionNeededPanel({
                                 item={r}
                                 isRemark
                                 onOpenFull={() => setOpenRemark({item: r, isRemark: true})}
+                                onOpenAttachment={(fileId, fileName) => setPreviewAttachment({fileId, fileName})}
                             />
                         ))}
                     </div>
@@ -819,6 +854,7 @@ export function VndRevisionNeededPanel({
                                 isRemark
                                 resolved
                                 onOpenFull={() => setOpenRemark({item: r, isRemark: true})}
+                                onOpenAttachment={(fileId, fileName) => setPreviewAttachment({fileId, fileName})}
                             />
                         ))}
                     </div>
@@ -840,6 +876,7 @@ export function VndRevisionNeededPanel({
                                 item={c}
                                 isRemark={false}
                                 onOpenFull={() => setOpenRemark({item: c, isRemark: false})}
+                                onOpenAttachment={(fileId, fileName) => setPreviewAttachment({fileId, fileName})}
                             />
                         ))}
                     </div>
@@ -865,6 +902,8 @@ export function VndRevisionNeededPanel({
                             : STAGE_DECISION_META.approved.badgeClass
                     }
                     onClose={() => setOpenRemark(null)}
+                    quotes={openRemark.item.quotes}
+                    onShowInText={onShowQuoteInText}
                 />
             )}
 
@@ -1292,6 +1331,16 @@ export function VndRevisionNeededPanel({
                 }
                 confirmLabel="Удалить"
             />
+
+            {previewAttachment && (
+                <AttachmentDocxPreviewModal
+                    fileId={previewAttachment.fileId}
+                    fileName={previewAttachment.fileName}
+                    downloadingId={null}
+                    onDownload={downloadWithToast}
+                    onClose={() => setPreviewAttachment(null)}
+                />
+            )}
         </div>
     );
 }

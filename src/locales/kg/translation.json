@@ -885,6 +885,14 @@
         "completedLabel": "Аяктады",
         "correctionsCommentLabel": "Түзөтүүлөргө комментарий: ",
         "noDataForStage": "Бул этап боюнча маалымат жок",
+        "downloadVersionLabel": "Эскертүүлөр тиешелүү версияны жүктөп алуу:",
+        "downloadVersionFileLabels": {
+          "ru": "RU",
+          "kg": "KG",
+          "en": "EN",
+          "tid": "ТИД",
+          "disagreementMatrix": "Пикир келишпестиктер матрицасы"
+        },
         "decisionLabels": {
           "pending": "Күтүүдө",
           "approved": "Макулдашылды",

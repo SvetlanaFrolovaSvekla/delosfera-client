@@ -31,6 +31,7 @@ const DECISION_COLORS: Record<ApprovalStageDecisionResponse, { color: string; bg
     approved_with_comment: {color: "#c9820a", bg: "#fdf3e2"},
     rejected: {color: "#d1453b", bg: "#fdeceb"},
     auto_approved_timeout: {color: "#5c6b8a", bg: "#eef1f6"},
+    removed_by_editor: {color: "#9aa1ac", bg: "#f4f5f7"},
 };
 
 interface SchemaStageDecision {

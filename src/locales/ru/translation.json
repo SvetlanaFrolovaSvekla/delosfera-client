@@ -17,6 +17,39 @@
     "saving": "Сохранение…",
     "archiving": "Архивация…"
   },
+  "calendar": {
+    "title": "Календарь сроков",
+    "description": "Просроченные сроки выделены красным. Клик по событию открывает документ.",
+    "loadError": "Не удалось загрузить календарь",
+    "more": "ещё",
+    "today": "Сегодня",
+    "legendOverdue": "Просрочено",
+    "legendUpcoming": "В срок",
+    "weekdays": ["Пн", "Вт", "Ср", "Чт", "Пт", "Сб", "Вс"],
+    "months": [
+      "январь", "февраль", "март", "апрель", "май", "июнь",
+      "июль", "август", "сентябрь", "октябрь", "ноябрь", "декабрь"
+    ]
+  },
+  "digest": {
+    "title": "Мой дайджест",
+    "openAllTasks": "Открыть все задачи",
+    "loadError": "Не удалось загрузить дайджест",
+    "loading": "Загрузка…",
+    "totalTasks": "Задач всего",
+    "overdue": "Просрочено",
+    "dueSoon": "В ближайшие 48 ч",
+    "delegated": "По замещению",
+    "overduePrefix": "просрочено ·",
+    "duePrefix": "до",
+    "noDueDate": "без срока",
+    "noRegNumber": "без номера",
+    "onBehalfOf": "· за {{name}}",
+    "burningNow": "Что горит",
+    "upcoming": "На подходе",
+    "noUpcoming": "Ближайших сроков нет",
+    "overdueShort": "просроч."
+  },
   "reportVndActualizationPage": {
     "accessDenied": {
       "title": "Недостаточно прав",
@@ -457,7 +490,47 @@
     "addToFavorites": "В избранное",
     "delete": "Удалить",
     "attachment": "Вложение",
-    "defaultFileName": "файл.xlsx"
+    "defaultFileName": "файл.xlsx",
+    "pageTitle": "Мои уведомления",
+    "unreadCountLabel": "Непрочитанных:",
+    "markAllRead": "Прочитать все",
+    "searchPlaceholder": "Поиск по уведомлениям…",
+    "categories": {
+      "all": "Все категории",
+      "System": "Системные",
+      "Vnd": "ВНД",
+      "Sz": "СЗ",
+      "Procurement": "Закупки",
+      "Acknowledgement": "Ознакомление",
+      "Other": "Другое",
+      "Approval": "Согласование",
+      "Task": "Задача"
+    },
+    "severity": {
+      "info": "Информация",
+      "success": "Успех",
+      "warning": "Предупреждение",
+      "urgent": "Срочно"
+    },
+    "severityFilter": {
+      "label": "Тип уведомления",
+      "resetFilter": "Сбросить фильтр"
+    },
+    "list": {
+      "emptyTitle": "Здесь пока пусто!",
+      "emptyDescription": "В этой категории нет уведомлений — попробуйте изменить фильтры или поиск",
+      "resetFilters": "Сбросить фильтры"
+    },
+    "row": {
+      "hasAttachment": "Есть вложение",
+      "goTo": "Перейти",
+      "deleteConfirmTitle": "Удалить уведомление?",
+      "deleteConfirmMessage": "Это действие нельзя отменить. Уведомление будет удалено безвозвратно.",
+      "deletedToast": "Уведомление удалено!",
+      "deleteErrorTitle": "Ошибка",
+      "deleteErrorMessage": "Не удалось удалить уведомление"
+    },
+    "loadRowsError": "Не удалось загрузить уведомления"
   },
   "notificationsTime": {
     "n1": "5 мин назад",

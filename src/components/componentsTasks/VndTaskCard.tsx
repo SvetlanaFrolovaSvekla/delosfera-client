@@ -1,14 +1,14 @@
 import type {MouseEvent} from "react";
 import {Link} from "react-router-dom";
 import {useTranslation} from "react-i18next";
-import {CheckCircle2} from "lucide-react";
 import type {VndTaskResponse} from "@/service/tasksVndService/tasksServiceTypes.ts";
 import {COORDINATION_STAGE_META, REVISION_NEEDED_META, TASK_SCOPE_META} from "@/constants/vndStatus.ts";
 import {getActionTitle, getDeadlineTone, getMetaText} from "@/utils/tasksUtils.ts";
 import {timeAgo} from "@/utils/dateUtils.ts";
-import {Icon} from "@/assets/icons/Icon.tsx";
 import {HighlightText} from "@/utils/highlightText.tsx";
 
+import {Icon} from "@/assets/icons/Icon.tsx";
+import {CheckCircle2} from "lucide-react";
 
 interface VndTaskCardProps {
     task: VndTaskResponse;

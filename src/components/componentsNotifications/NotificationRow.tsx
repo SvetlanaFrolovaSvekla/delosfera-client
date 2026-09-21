@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import type { Notification } from "@/service/notificationsService/notificationsServiceType.ts";
 import { HighlightText } from "@/utils/highlightText.tsx";
 import { NOTIFICATION_CATEGORY_META, DEFAULT_CATEGORY_META } from "@/constants/notificationCategory.ts";
@@ -18,14 +19,13 @@ interface NotificationRowProps {
     onDelete: (id: number) => Promise<void>;
 }
 
-function formatTime(iso: string) {
-    const date = new Date(iso);
-    const now = new Date();
-    const isToday = date.toDateString() === now.toDateString();
-    return isToday
-        ? date.toLocaleTimeString("ru-RU", { hour: "2-digit", minute: "2-digit" })
-        : date.toLocaleDateString("ru-RU", { day: "2-digit", month: "2-digit", year: "2-digit" });
-}
+// Локаль для форматирования даты/времени — следует за текущим языком интерфейса
+// (i18next хранит "ru" / "ky" / "en", а Intl ждёт полноценный языковой тег).
+const DATE_LOCALE: Record<string, string> = {
+    ru: "ru-RU",
+    ky: "ky-KG",
+    en: "en-US",
+};
 
 export function NotificationRow({
                                     notification: n,
@@ -36,26 +36,36 @@ export function NotificationRow({
                                     onDelete,
                                 }: NotificationRowProps) {
     const navigate = useNavigate();
+    const { t, i18n } = useTranslation();
     const meta = NOTIFICATION_CATEGORY_META[n.category] ?? DEFAULT_CATEGORY_META;
     const Icon = meta.icon;
 
     const [confirmOpen, setConfirmOpen] = useState(false);
+    const [deleting, setDeleting] = useState(false);
+
+    function formatTime(iso: string) {
+        const locale = DATE_LOCALE[i18n.language] ?? "ru-RU";
+        const date = new Date(iso);
+        const now = new Date();
+        const isToday = date.toDateString() === now.toDateString();
+        return isToday
+            ? date.toLocaleTimeString(locale, { hour: "2-digit", minute: "2-digit" })
+            : date.toLocaleDateString(locale, { day: "2-digit", month: "2-digit", year: "2-digit" });
+    }
 
     const handleClick = () => {
         if (!n.isRead) onRead(n.id);
         navigate(`/notifications/${n.id}`);
     };
 
-    const [deleting, setDeleting] = useState(false);
-
     const handleConfirmDelete = async () => {
         setDeleting(true);
         try {
             await onDelete(n.id);
             setConfirmOpen(false);
-            toast.success("Уведомление удалено!");
+            toast.success(t("notifications.row.deletedToast"));
         } catch {
-            toast.error("Ошибка", "Не удалось удалить уведомление");
+            toast.error(t("notifications.row.deleteErrorTitle"), t("notifications.row.deleteErrorMessage"));
         } finally {
             setDeleting(false);
         }
@@ -101,7 +111,7 @@ export function NotificationRow({
                             </span>
                         )}
                         {n.attachmentFileId && (
-                            <Tooltip content={n.attachmentFileName ?? "Есть вложение"} side="top">
+                            <Tooltip content={n.attachmentFileName ?? t("notifications.row.hasAttachment")} side="top">
                                 <Paperclip className="h-3.5 w-3.5 flex-none text-slate-400" />
                             </Tooltip>
                         )}
@@ -119,7 +129,7 @@ export function NotificationRow({
                                 className="inline-flex items-center gap-1 font-mono text-[11.5px] font-semibold"
                                 style={{ color: meta.color }}
                             >
-                                Перейти
+                                {t("notifications.row.goTo")}
                                 <ChevronRight className="h-3 w-3" />
                             </span>
                         )}
@@ -127,26 +137,29 @@ export function NotificationRow({
                 </div>
 
                 <div className="flex flex-none items-start gap-1">
-                    <Tooltip content={n.isFavorite ? "Убрать из избранного" : "В избранное"} side="top">
+                    <Tooltip
+                        content={n.isFavorite ? t("notifications.removeFromFavorites") : t("notifications.addToFavorites")}
+                        side="top"
+                    >
                         <button
                             onClick={(e) => {
                                 e.stopPropagation();
                                 onToggleFavorite(n.id);
                             }}
                             className="cursor-pointer rounded-md p-1.5 text-slate-300 transition hover:bg-slate-100 hover:text-amber-400"
-                            aria-label={n.isFavorite ? "Убрать из избранного" : "В избранное"}
+                            aria-label={n.isFavorite ? t("notifications.removeFromFavorites") : t("notifications.addToFavorites")}
                         >
                             <Star className={"h-4 w-4 " + (n.isFavorite ? "fill-amber-400 text-amber-400" : "")} />
                         </button>
                     </Tooltip>
-                    <Tooltip content="Удалить" side="top">
+                    <Tooltip content={t("notifications.delete")} side="top">
                         <button
                             onClick={(e) => {
                                 e.stopPropagation();
                                 setConfirmOpen(true);
                             }}
                             className="cursor-pointer rounded-md p-1.5 text-slate-300 opacity-0 transition group-hover:opacity-100 hover:bg-slate-100 hover:text-rose-500"
-                            aria-label="Удалить"
+                            aria-label={t("notifications.delete")}
                         >
                             <Trash2 className="h-4 w-4" />
                         </button>
@@ -158,8 +171,8 @@ export function NotificationRow({
                 open={confirmOpen}
                 onClose={() => setConfirmOpen(false)}
                 onConfirm={handleConfirmDelete}
-                title="Удалить уведомление?"
-                message="Это действие нельзя отменить. Уведомление будет удалено безвозвратно."
+                title={t("notifications.row.deleteConfirmTitle")}
+                message={t("notifications.row.deleteConfirmMessage")}
                 loading={deleting}
             />
         </>

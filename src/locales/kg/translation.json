@@ -17,6 +17,39 @@
     "saving": "Сакталууда…",
     "archiving": "Архивдөө…"
   },
+  "calendar": {
+    "title": "Мөөнөттөр календары",
+    "description": "Мөөнөтү өткөн тапшырмалар кызыл түс менен белгиленген. Окуяны басканда документ ачылат.",
+    "loadError": "Календарды жүктөө мүмкүн болгон жок",
+    "more": "дагы",
+    "today": "Бүгүн",
+    "legendOverdue": "Мөөнөтү өткөн",
+    "legendUpcoming": "Мөөнөтүндө",
+    "weekdays": ["Дүй", "Шей", "Шар", "Бей", "Жум", "Ише", "Жек"],
+    "months": [
+      "январь", "февраль", "март", "апрель", "май", "июнь",
+      "июль", "август", "сентябрь", "октябрь", "ноябрь", "декабрь"
+    ]
+  },
+  "digest": {
+    "title": "Менин дайджестим",
+    "openAllTasks": "Бардык тапшырмаларды ачуу",
+    "loadError": "Дайджестти жүктөө мүмкүн болгон жок",
+    "loading": "Жүктөлүүдө…",
+    "totalTasks": "Тапшырмалар баары",
+    "overdue": "Мөөнөтү өткөн",
+    "dueSoon": "48 сааттын ичинде",
+    "delegated": "Алмаштыруу боюнча",
+    "overduePrefix": "мөөнөтү өткөн ·",
+    "duePrefix": "мөөнөтү",
+    "noDueDate": "мөөнөтсүз",
+    "noRegNumber": "номерсиз",
+    "onBehalfOf": "· {{name}} үчүн",
+    "burningNow": "Шашылыш",
+    "upcoming": "Жакындап калгандар",
+    "noUpcoming": "Жакын мөөнөттөр жок",
+    "overdueShort": "мөөнөтү өткөн"
+  },
   "reportVndActualizationPage": {
     "accessDenied": {
       "title": "Укуктар жетишсиз",
@@ -450,7 +483,47 @@
     "addToFavorites": "Тандалмаларга кошуу",
     "delete": "Өчүрүү",
     "attachment": "Тиркеме",
-    "defaultFileName": "файл.xlsx"
+    "defaultFileName": "файл.xlsx",
+    "pageTitle": "Менин билдирүүлөрүм",
+    "unreadCountLabel": "Окулбагандар:",
+    "markAllRead": "Баарын окулду деп белгилөө",
+    "searchPlaceholder": "Билдирүүлөрдөн издөө…",
+    "categories": {
+      "all": "Бардык категориялар",
+      "System": "Системалык",
+      "Vnd": "ИНД",
+      "Sz": "Кызматтык каттар",
+      "Procurement": "Сатып алуулар",
+      "Acknowledgement": "Таанышуу",
+      "Other": "Башка",
+      "Approval": "Макулдашуу",
+      "Task": "Тапшырма"
+    },
+    "severity": {
+      "info": "Маалымат",
+      "success": "Ийгилик",
+      "warning": "Эскертүү",
+      "urgent": "Шашылыш"
+    },
+    "severityFilter": {
+      "label": "Билдирүүнүн түрү",
+      "resetFilter": "Чыпканы тазалоо"
+    },
+    "list": {
+      "emptyTitle": "Бул жерде азырынча бош!",
+      "emptyDescription": "Бул категорияда билдирүүлөр жок — чыпкаларды же издөөнү өзгөртүп көрүңүз",
+      "resetFilters": "Чыпкаларды тазалоо"
+    },
+    "row": {
+      "hasAttachment": "Тиркеме бар",
+      "goTo": "Өтүү",
+      "deleteConfirmTitle": "Билдирүүнү өчүрөсүзбү?",
+      "deleteConfirmMessage": "Бул аракетти артка кайтарууга болбойт. Билдирүү биротоло өчүрүлөт.",
+      "deletedToast": "Билдирүү өчүрүлдү!",
+      "deleteErrorTitle": "Ката",
+      "deleteErrorMessage": "Билдирүүнү өчүрүү мүмкүн болгон жок"
+    },
+    "loadRowsError": "Билдирүүлөрдү жүктөө мүмкүн болгон жок"
   },
   "notificationsTime": {
     "n1": "5 мүнөт мурун",

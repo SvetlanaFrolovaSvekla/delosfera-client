@@ -1,4 +1,5 @@
 import {Info, CheckCircle2, AlertTriangle, AlertCircle, RotateCcw} from "lucide-react";
+import {useTranslation} from "react-i18next";
 import {NOTIFICATION_SEVERITY_META} from "@/constants/notificationSeverity.ts";
 import type {NotificationSeverity} from "@/service/notificationsService/notificationsServiceType.ts";
 
@@ -22,6 +23,8 @@ export function NotificationSeverityFilter({
                                                onChange,
                                                countBySeverity,
                                            }: NotificationSeverityFilterProps) {
+    const {t} = useTranslation();
+
     const toggle = (severity: NotificationSeverity) => {
         if (value.includes(severity)) {
             onChange(value.filter((s) => s !== severity));
@@ -34,7 +37,7 @@ export function NotificationSeverityFilter({
         <div
             className="mb-5 flex flex-wrap items-center gap-2.5 rounded-2xl border border-slate-200 bg-white px-3.5 py-3">
             <span className="mr-0.5 flex-none text-[11px] font-bold uppercase tracking-wider text-slate-400">
-                Тип уведомления
+                {t("notifications.severityFilter.label")}
             </span>
 
             <span className="hidden h-5 w-px flex-none bg-slate-300 sm:block"/>
@@ -45,6 +48,7 @@ export function NotificationSeverityFilter({
                     const Icon = SEVERITY_ICONS[severity];
                     const active = value.includes(severity);
                     const count = countBySeverity?.[severity];
+                    const label = t(meta.labelKey);
 
                     return (
                         <button
@@ -71,7 +75,7 @@ export function NotificationSeverityFilter({
                                 style={{color: meta.dot}}
                                 strokeWidth={2.3}
                             />
-                            {meta.label}
+                            {label}
                             {!!count && (
                                 <span
                                     className="ml-0.5 rounded-full px-1.5 py-px font-mono text-[10px] font-bold"
@@ -97,7 +101,7 @@ export function NotificationSeverityFilter({
                       disabled:opacity-40"
                 >
                     <RotateCcw className="h-4 w-4"/>
-                    Сбросить фильтр
+                    {t("notifications.severityFilter.resetFilter")}
                 </button>
             )}
         </div>

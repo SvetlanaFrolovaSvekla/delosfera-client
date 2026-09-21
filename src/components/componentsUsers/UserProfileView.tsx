@@ -4,8 +4,6 @@ import { Tabs } from "@/components/componentsGeneral/Tabs";
 import { userService } from "@/service/userService/userService.ts";
 import type { UserActivityResponse, UserResponse } from "@/service/userService/userServiceType.ts";
 
-// TODO: фото цвет, приоритет ролей цвет, главная панель с историей действий, начальник СП, куратор СП;
-
 const ALL_TAB = "all";
 
 function getInitials(fullName: string) {
@@ -49,11 +47,13 @@ export function UserProfileView({ user, isOwnProfile }: UserProfileViewProps) {
     // Срабатывает и при переходе с одного профиля сразу на другой (id меняется без размонтирования).
     useEffect(() => {
         document.getElementById("main-scroll-container")?.scrollTo({ top: 0, left: 0 });
+        // eslint-disable-next-line react-hooks/set-state-in-effect
         setActiveTab(ALL_TAB);
     }, [user.id]);
 
     useEffect(() => {
         let cancelled = false;
+        // eslint-disable-next-line react-hooks/set-state-in-effect
         setActivityLoading(true);
         userService
             .getActivity(user.id)

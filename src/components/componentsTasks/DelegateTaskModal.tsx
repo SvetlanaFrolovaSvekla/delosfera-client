@@ -1,13 +1,13 @@
+/**
+ * Делегирование задачи коллеге (СК-3): разовая передача одной задачи, в отличие от
+ * замещения. Список людей — тот же плоский /users/lookup, что и в подборе участников.
+ */
 import {useEffect, useState} from "react";
 import {useTranslation} from "react-i18next";
 import {axiosInstance} from "@/service/axiosInstance.ts";
 import {UserPicker, type PickableUser} from "@/components/componentsGeneral/UserPicker.tsx";
 import {taskInboxService, type InboxTask} from "@/service/workflowService/taskInboxService.ts";
 
-/**
- * Делегирование задачи коллеге (СК-3): разовая передача одной задачи, в отличие от
- * замещения. Список людей — тот же плоский /users/lookup, что и в подборе участников.
- */
 interface Props {
     task: InboxTask;
     onClose: () => void;

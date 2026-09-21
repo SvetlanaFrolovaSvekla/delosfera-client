@@ -43,12 +43,26 @@ export function AttachmentDocxPreviewModal({
     const kind = getPreviewableFileKind(fileName) ?? "docx";
     const HeaderIcon = KIND_ICON[kind];
 
-    const docx = useDocxPreview(kind === "docx" ? fileId : null);
-    const sheet = useSheetPreview(kind === "xlsx" ? fileId : null);
-    const pptx = usePptxPreview(kind === "pptx" ? fileId : null);
+    const {
+        containerRef: docxContainerRef,
+        loading: docxLoading,
+        error: docxError,
+    } = useDocxPreview(kind === "docx" ? fileId : null);
 
-    const loading = kind === "docx" ? docx.loading : kind === "xlsx" ? sheet.loading : pptx.loading;
-    const error = kind === "docx" ? docx.error : kind === "xlsx" ? sheet.error : pptx.error;
+    const {
+        containerRef: sheetContainerRef,
+        loading: sheetLoading,
+        error: sheetError,
+    } = useSheetPreview(kind === "xlsx" ? fileId : null);
+
+    const {
+        slides: pptxSlides,
+        loading: pptxLoading,
+        error: pptxError,
+    } = usePptxPreview(kind === "pptx" ? fileId : null);
+
+    const loading = kind === "docx" ? docxLoading : kind === "xlsx" ? sheetLoading : pptxLoading;
+    const error = kind === "docx" ? docxError : kind === "xlsx" ? sheetError : pptxError;
 
     // .docx рендерится через docx-preview довольно близко к оригиналу - предупреждение там
     // не нужно. .xlsx/.pptx - приближённые превью, поэтому здесь явно просим не считать их
@@ -119,16 +133,16 @@ export function AttachmentDocxPreviewModal({
                     )}
 
                     {kind === "docx" && (
-                        <div ref={docx.containerRef} className={loading || error ? "hidden" : ""}/>
+                        <div ref={docxContainerRef} className={loading || error ? "hidden" : ""}/>
                     )}
 
                     {kind === "xlsx" && (
-                        <div ref={sheet.containerRef} className={loading || error ? "hidden" : ""}/>
+                        <div ref={sheetContainerRef} className={loading || error ? "hidden" : ""}/>
                     )}
 
                     {kind === "pptx" && !loading && !error && (
                         <div className="flex flex-col gap-3">
-                            {pptx.slides.map((slide) => (
+                            {pptxSlides.map((slide) => (
                                 <div
                                     key={slide.index}
                                     className="rounded-[10px] border border-[#e9edf3] bg-[#fbfcfe] p-4"

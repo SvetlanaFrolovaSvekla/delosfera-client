@@ -14,18 +14,27 @@ import {EmptyState} from "@/components/componentsGeneral/EmptyState.tsx";
 import {Bell, ChevronRight, ArrowLeft, Star, Trash2, Paperclip, Download} from "lucide-react";
 
 
-function formatFullDate(iso: string) {
-    return new Date(iso).toLocaleString("ru-RU", {
-        day: "2-digit",
-        month: "long",
-        year: "numeric",
-        hour: "2-digit",
-        minute: "2-digit",
-    });
-}
+// Локаль для форматирования даты — следует за текущим языком интерфейса
+// (i18next хранит "ru" / "ky" / "en", а Intl ждёт полноценный языковой тег).
+const DATE_LOCALE: Record<string, string> = {
+    ru: "ru-RU",
+    ky: "ky-KG",
+    en: "en-US",
+};
 
 export function OpenNotificationPage() {
-    const {t} = useTranslation();
+    const {t, i18n} = useTranslation();
+
+    function formatFullDate(iso: string) {
+        return new Date(iso).toLocaleString(DATE_LOCALE[i18n.language] ?? "ru-RU", {
+            day: "2-digit",
+            month: "long",
+            year: "numeric",
+            hour: "2-digit",
+            minute: "2-digit",
+        });
+    }
+
     const {id} = useParams<{ id: string }>();
     const navigate = useNavigate();
     const notificationId = id ? Number(id) : undefined;
@@ -84,7 +93,12 @@ export function OpenNotificationPage() {
 
     const meta = NOTIFICATION_CATEGORY_META[notification.category] ?? DEFAULT_CATEGORY_META;
     const Icon = meta.icon;
-    const categoryName = categories.find((c) => c.key === notification.category)?.name ?? notification.category;
+    // Название категории берём из локального перевода по ключу, а не с бэка — так оно
+    // переключается вместе с языком интерфейса (см. NotificationCategoryPanel).
+    const categoryOption = categories.find((c) => c.key === notification.category);
+    const categoryName = t(`notifications.categories.${notification.category}`, {
+        defaultValue: categoryOption?.name ?? notification.category,
+    });
 
     const handleDelete = async () => {
         // Удалить это уведомление?

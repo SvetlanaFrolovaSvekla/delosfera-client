@@ -24,10 +24,10 @@ export const INBOX_FILTER_LABEL_KEYS: Record<InboxFilterId, string> = {
 // Вид карточек-вкладок (кроме "Все контуры" — та стилизована отдельно, см.
 // TaskInboxFilterTabs).
 export const INBOX_CONTOUR_META: Record<Exclude<InboxFilterId, "all">, { icon: LucideIcon; color: string; bg: string; ring: string }> = {
-    vnd: {icon: FileText, color: "#0e8091", bg: "#dbf2f5", ring: "#b4e6ec"},
-    sz: {icon: StickyNote, color: "#b3730a", bg: "#fbeecf", ring: "#f0d9ad"},
+    vnd: {icon: FileText, color: "#55abb1", bg: "#e3f7f8", ring: "#c3edf0"},
+    sz: {icon: StickyNote, color: "#d1a154", bg: "#fdf3e2", ring: "#f6e2bb"},
     prc: {icon: ShoppingCart, color: "#7a5ce0", bg: "#efeafe", ring: "#ddd0fa"},
-    ack: {icon: FileText, color: "#1c7a4d", bg: "#e2f4ea", ring: "#c7e9d6"},
+    ack: {icon: FileText, color: "#499c72", bg: "#e5f7ee", ring: "#c8ecd9"},
 };
 
 export const INBOX_ALL_TAB_ICON: LucideIcon = Layers;

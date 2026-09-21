@@ -1,4 +1,5 @@
 import { useEffect, useState, type SetStateAction} from "react";
+import { useTranslation } from "react-i18next";
 import {notificationsService} from "@/service/notificationsService/notificationsService.ts";
 import type {Notification, NotificationFilter, NotificationSeverity} from "@/service/notificationsService/notificationsServiceType.ts";
 import type {NotificationMainTab, NotificationCategoryTab} from "./useNotificationTabs.ts";
@@ -34,6 +35,7 @@ export function useNotificationRows(
     page: number,
     reloadKey: number
 ) {
+    const { t } = useTranslation();
     const [rows, setRows] = useState<Notification[]>([]);
     const [totalCount, setTotalCount] = useState(0);
     const [loading, setLoading] = useState(true);
@@ -53,7 +55,7 @@ export function useNotificationRows(
                 setTotalCount(res.totalCount);
             })
             .catch(() => {
-                if (!cancelled) setError("Не удалось загрузить уведомления");
+                if (!cancelled) setError(t("notifications.loadRowsError"));
             })
             .finally(() => {
                 if (!cancelled) setLoading(false);
@@ -62,6 +64,7 @@ export function useNotificationRows(
         return () => {
             cancelled = true;
         };
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [mainTab, categoryTab, severities, search, page, reloadKey]);
 
     const totalPages = Math.max(1, Math.ceil(totalCount / PAGE_SIZE));

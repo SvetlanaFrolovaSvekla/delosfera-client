@@ -96,7 +96,11 @@ export const TaskInboxPage = () => {
         <div className="flex flex-col gap-4 px-[26px] py-[22px]">
             <div className="flex flex-wrap items-end justify-between gap-5">
                 <div>
+
+                    {/* Мои задачи */}
                     <h1 className="m-0 text-[19px] font-bold text-[#0f1b2d]">{t("tasks.inbox.title")}</h1>
+
+                    {/* Описание если ВНД, кол-во если другие вкладки */}
                     <div className="mt-1 text-[12.5px] text-[#8b97ab]">
                         {isVndTab ? (
                             t("tasks.inbox.vndDescription")
@@ -105,10 +109,12 @@ export const TaskInboxPage = () => {
                                 {t("tasks.inbox.totalLabel")} <b className="text-[#4e57d6]">
                                 {inbox.total + (isAllTab ? vndAllTasks.length : 0)}
                             </b>
+                                {/* Просрочено, по замещению */}
                                 {inbox.overdue > 0 && ` · ${t("tasks.inbox.overdueSuffix", {count: inbox.overdue})}`}
                                 {inbox.delegated > 0 && ` · ${t("tasks.inbox.delegatedSuffix", {count: inbox.delegated})}`}
                             </>
                         ) : (
+                            /* Согласования по всем контурам */
                             t("tasks.inbox.allContoursDescription")
                         )}
                     </div>
@@ -119,12 +125,15 @@ export const TaskInboxPage = () => {
                     className="inline-flex h-10 cursor-pointer items-center gap-2 rounded-[10px] border-none bg-[#4e57d6] px-[15px] text-[13px] font-semibold !text-white shadow-[0_6px_16px_-6px_#4e57d6] hover:brightness-[1.06]"
                 >
                     <StatsLinkIcon className="h-[18px] w-[18px]" strokeWidth={2}/>
+                    {/* Статистика по моим задачам */}
                     {t("tasks.common.statsTitle")}
                 </Link>
             </div>
 
+            {/* Ряд вкладок-карточек над реестром задач: "Все контуры" + один пункт на контур. */}
             <TaskInboxFilterTabs value={filter} onChange={setFilter}/>
 
+            {/* Вкладки таба ВНД */}
             {isVndTab && <VndTasksPanel/>}
 
             {!isVndTab && (

@@ -1,25 +1,23 @@
+/**
+ * Задачи нормотворчества: согласование, актуализация, консолидация.
+ */
 import {useEffect, useMemo, useState} from "react";
 import {useSearchParams} from "react-router-dom";
 import {useTranslation} from "react-i18next";
-import {CheckCircle2} from "lucide-react";
+
+import type {TaskScope, TaskStagePhase} from "@/service/tasksVndService/tasksServiceTypes.ts";
 import {useVndTasks} from "@/hooks/tasksVndHooks/useVndTasks.ts";
 import {useVndTasksDone} from "@/hooks/tasksVndHooks/useVndTasksDone.ts";
 import {useVndTaskCounts} from "@/hooks/tasksVndHooks/useVndTaskCounts.ts";
+import {matchesTaskSearch} from "@/utils/tasksUtils.ts";
+
 import {Tabs} from "@/components/componentsGeneral/Tabs.tsx";
 import {SelectDropdown} from "@/components/componentsGeneral/selects/SingleSelects/SelectDropdown.tsx";
 import {SearchBar} from "@/components/componentsGeneral/SearchBar.tsx";
 import {VndTaskList} from "@/components/componentsTasks/VndTaskList.tsx";
 import {emptyTextByScope, emptyDescriptionByScope, emptyIconByScope, type TasksScope} from "@/constants/tasksConst.ts";
-import {matchesTaskSearch} from "@/utils/tasksUtils.ts";
-import type {TaskScope, TaskStagePhase} from "@/service/tasksVndService/tasksServiceTypes.ts";
 
-/**
- * Задачи нормотворчества: согласование, актуализация, консолидация.
- *
- * Вынесено из отдельной страницы в компонент, потому что тот же перечень нужен
- * вкладкой в сводных задачах. Держать два списка с одними правилами — значит
- * однажды поправить один и забыть другой.
- */
+import {CheckCircle2} from "lucide-react";
 
 // "all" — сводная вкладка "Все": пять разделов одним списком (карточки уже различаются
 // бейджем раздела — см. VndTaskCard), без вложенных вкладок и без переключателя
@@ -131,6 +129,7 @@ export function VndTasksPanel() {
     );
     const { counts } = useVndTaskCounts();
 
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     const rawTasks = isDoneView ? donePageData?.items ?? [] : activeTasks;
     const isLoading = isDoneView ? isDoneLoading : isActiveLoading;
 
@@ -289,6 +288,7 @@ export function VndTasksPanel() {
     // "битой" страницы (напр. открыли 3-ю страницу "Согласования", переключились на этап,
     // где всего одна страница).
     useEffect(() => {
+        // eslint-disable-next-line react-hooks/set-state-in-effect
         setDonePage(1);
     }, [scope]);
 

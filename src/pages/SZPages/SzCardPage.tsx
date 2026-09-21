@@ -9,7 +9,6 @@ import {UserPicker, type PickableUser} from "@/components/componentsGeneral/User
 import {SzTemplateBar} from "@/components/componentsSz/SzTemplateBar.tsx";
 import {SzTracePanel} from "@/components/componentsSz/SzTracePanel.tsx";
 import {SzDuplicateWarning} from "@/components/componentsSz/SzDuplicateWarning.tsx";
-import {OrgUnitPicker} from "@/components/procurement/OrgUnitPicker.tsx";
 import {userService} from "@/service/userService/userService.ts";
 import {SzExecutionPanel} from "@/components/sz/SzExecutionPanel.tsx";
 import {SzSubmitToBodyPanel} from "@/components/sz/SzSubmitToBodyPanel.tsx";
@@ -50,6 +49,8 @@ import {
 } from "@/service/szService/szService.ts";
 import {SelectDropdown} from "@/components/componentsGeneral/selects/SingleSelects/SelectDropdown.tsx";
 import {CheckBoxOne} from "@/components/componentsGeneral/componentsCheckBox/CheckBoxOne.tsx";
+import {SingleSelectListField} from "@/components/componentsGeneral/selects/SingleSelects/SingleSelectListField.tsx";
+import {PlainCheckbox} from "@/components/componentsGeneral/componentsCheckBox/PlainCheckbox.tsx";
 
 const STATUS_TONE: Partial<Record<SzStatusCode, { fg: string; bg: string }>> = {
     Draft: colors.status.draft,
@@ -200,6 +201,7 @@ export function SzCardPage() {
 
     useEffect(() => {
         if (isNew) return;
+        // eslint-disable-next-line react-hooks/set-state-in-effect
         setLoading(true);
         szService.get(Number(id))
             .then(applyDetails)
@@ -455,6 +457,15 @@ export function SzCardPage() {
         }
     };
 
+    const orgUnitTreeOptions = useMemo(
+        () => ORG_UNITS.map((u) => ({
+            key: String(u.id),
+            label: u.name,
+            parentId: u.parentId != null ? String(u.parentId) : undefined, // если есть иерархия
+        })),
+        [ORG_UNITS]
+    );
+
     if (loading) return <div className="py-10 text-center text-[13px] text-[#8b97ab]">Загрузка…</div>;
 
     const tone = sz ? STATUS_TONE[sz.statusCode] ?? colors.status.draft : colors.status.draft;
@@ -685,20 +696,23 @@ export function SzCardPage() {
                             }}
                         />
                     </Field>
-                    <Field label="Адресат — структурное подразделение">
-                        <OrgUnitPicker
-                            units={ORG_UNITS.map((u) => ({...u, id: Number(u.id), titleRu: u.name}))}
-                            value={form.correspondentUnitId ?? null}
-                            onChange={(unitId) => set("correspondentUnitId", unitId)}
-                        />
-                    </Field>
-                    <CheckBoxOne
+                    <SingleSelectListField
+                        label="Адресат — структурное подразделение"
+                        required
+                        modalTitle="Адресат — структурное подразделение"
+                        options={orgUnitTreeOptions}
+                        selectedKey={form.correspondentUnitId != null ? String(form.correspondentUnitId) : null}
+                        onChange={(key) => set("correspondentUnitId", key ? Number(key) : null)}
+                        searchPlaceholder="Поиск СП…"
+                        boldLabel={false}
+                    />
+                    <PlainCheckbox
                         checked={form.isPaperCarrier ?? kind?.isPaperByDefault ?? false}
                         onChange={(checked) => set("isPaperCarrier", checked)}
                         disabled={!editable}
                     >
                         Бумажный носитель
-                    </CheckBoxOne>
+                    </PlainCheckbox>
                 </div>
 
                 <div className="mt-4">

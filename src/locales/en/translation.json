@@ -17,6 +17,39 @@
     "saving": "Saving…",
     "archiving": "Archiving…"
   },
+  "calendar": {
+    "title": "Deadline calendar",
+    "description": "Overdue deadlines are highlighted in red. Click an event to open the document.",
+    "loadError": "Failed to load calendar",
+    "more": "more",
+    "today": "Today",
+    "legendOverdue": "Overdue",
+    "legendUpcoming": "On track",
+    "weekdays": ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"],
+    "months": [
+      "January", "February", "March", "April", "May", "June",
+      "July", "August", "September", "October", "November", "December"
+    ]
+  },
+  "digest": {
+    "title": "My digest",
+    "openAllTasks": "View all tasks",
+    "loadError": "Failed to load digest",
+    "loading": "Loading…",
+    "totalTasks": "Total tasks",
+    "overdue": "Overdue",
+    "dueSoon": "Due in 48 hrs",
+    "delegated": "Delegated",
+    "overduePrefix": "overdue ·",
+    "duePrefix": "due",
+    "noDueDate": "no deadline",
+    "noRegNumber": "no number",
+    "onBehalfOf": "· on behalf of {{name}}",
+    "burningNow": "Urgent",
+    "upcoming": "Upcoming",
+    "noUpcoming": "No upcoming deadlines",
+    "overdueShort": "overdue"
+  },
   "reportVndActualizationPage": {
     "accessDenied": {
       "title": "Access denied",
@@ -454,7 +487,47 @@
     "addToFavorites": "Add to favorites",
     "delete": "Delete",
     "attachment": "Attachment",
-    "defaultFileName": "file.xlsx"
+    "defaultFileName": "file.xlsx",
+    "pageTitle": "My Notifications",
+    "unreadCountLabel": "Unread:",
+    "markAllRead": "Mark all as read",
+    "searchPlaceholder": "Search notifications…",
+    "categories": {
+      "all": "All categories",
+      "System": "System",
+      "Vnd": "VND",
+      "Sz": "Memos",
+      "Procurement": "Procurement",
+      "Acknowledgement": "Acknowledgment",
+      "Other": "Other",
+      "Approval": "Approval",
+      "Task": "Task"
+    },
+    "severity": {
+      "info": "Information",
+      "success": "Success",
+      "warning": "Warning",
+      "urgent": "Urgent"
+    },
+    "severityFilter": {
+      "label": "Notification type",
+      "resetFilter": "Reset filter"
+    },
+    "list": {
+      "emptyTitle": "Nothing here yet!",
+      "emptyDescription": "There are no notifications in this category — try changing the filters or search",
+      "resetFilters": "Reset filters"
+    },
+    "row": {
+      "hasAttachment": "Has attachment",
+      "goTo": "Go",
+      "deleteConfirmTitle": "Delete this notification?",
+      "deleteConfirmMessage": "This action cannot be undone. The notification will be permanently deleted.",
+      "deletedToast": "Notification deleted!",
+      "deleteErrorTitle": "Error",
+      "deleteErrorMessage": "Failed to delete the notification"
+    },
+    "loadRowsError": "Failed to load notifications"
   },
   "notificationsTime": {
     "n1": "5 minutes ago",

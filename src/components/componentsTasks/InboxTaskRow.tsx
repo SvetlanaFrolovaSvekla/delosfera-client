@@ -1,7 +1,9 @@
+/** Одна строка сводного реестра задач (записки/закупки/ознакомление) — ссылка на документ,
+ * бейдж типа, метаданные и, если применимо, кнопка делегирования. */
 import {Link} from "react-router-dom";
 import {useTranslation} from "react-i18next";
-import {Share2} from "lucide-react";
 import {taskLink, type InboxTask} from "@/service/workflowService/taskInboxService.ts";
+import {Share2} from "lucide-react";
 
 // toLocaleString не подхватывает язык интерфейса сам — берём его из i18n.language, иначе
 // дата на "Мои задачи" оставалась бы русской при переключении на en/ky.
@@ -22,8 +24,6 @@ interface InboxTaskRowProps {
     onDelegate: (task: InboxTask) => void;
 }
 
-/** Одна строка сводного реестра задач (записки/закупки/ознакомление) — ссылка на документ,
- * бейдж типа, метаданные и, если применимо, кнопка делегирования. */
 export function InboxTaskRow({task, onDelegate}: InboxTaskRowProps) {
     const {t, i18n} = useTranslation();
 

@@ -1,6 +1,6 @@
 // Модалка "Просмотр документа" для произвольного вложения ВНД - .docx рендерится через
 // docx-preview (useDocxPreview) почти как в Word, .xlsx через SheetJS как обычная HTML-таблица,
-// .pptx - как текст слайдов (у нас нет полноценного рендерера презентаций, см. usePptxPreview).
+// .pptx - слайд в слайд через @office-kit/pptx-preview (см. usePptxPreview) в виде SVG.
 // Имя компонента осталось от тех времён, когда он умел только docx - сейчас показывает все три
 // формата (см. getPreviewableFileKind в utils/fileNaming.ts).
 import {createPortal} from "react-dom";
@@ -25,12 +25,13 @@ const KIND_ICON = {
     pptx: Presentation,
 };
 
-// У .xlsx и .pptx принципиально разная неполнота превью (таблица без стилей/формул - это не
-// то же самое, что "только текст без единой картинки"), поэтому и предупреждения разные, а не
-// одна общая фраза на оба формата.
+// У .xlsx и .pptx принципиально разная неполнота превью, поэтому и предупреждения разные,
+// а не одна общая фраза на оба формата.
 const ACCURACY_WARNING = {
     xlsx: "Упрощённый предпросмотр таблицы: форматирование, формулы и объединённые ячейки не воспроизводятся.",
-    pptx: "Показан только текст слайдов: изображения, диаграммы, оформление и расположение элементов не воспроизводятся.",
+    // Картинки, таблицы, диаграммы и текст теперь рендерятся по-настоящему (см. usePptxPreview) -
+    // не воспроизводятся только SmartArt, 3D-объекты, анимации и часть векторной графики (WMF/EMF).
+    pptx: "Приближённый рендер слайдов: SmartArt, 3D-объекты, анимации и часть эффектов оформления не воспроизводятся.",
 };
 
 export function AttachmentDocxPreviewModal({
@@ -141,26 +142,21 @@ export function AttachmentDocxPreviewModal({
                     )}
 
                     {kind === "pptx" && !loading && !error && (
-                        <div className="flex flex-col gap-3">
+                        <div className="flex flex-col gap-4">
                             {pptxSlides.map((slide) => (
                                 <div
                                     key={slide.index}
-                                    className="rounded-[10px] border border-[#e9edf3] bg-[#fbfcfe] p-4"
+                                    className="overflow-hidden rounded-[10px] border border-[#e9edf3] bg-[#fbfcfe]"
                                 >
-                                    <div className="mb-2 text-[11px] font-bold uppercase tracking-[0.04em] text-[#a3adbd]">
+                                    <div className="border-b border-[#e9edf3] bg-white px-4 py-1.5 text-[11px] font-bold uppercase tracking-[0.04em] text-[#a3adbd]">
                                         Слайд {slide.index}
                                     </div>
-                                    {slide.paragraphs.length > 0 ? (
-                                        <div className="flex flex-col gap-1.5 text-[13px] leading-relaxed text-[#3c4356]">
-                                            {slide.paragraphs.map((line, i) => (
-                                                <div key={i}>{line}</div>
-                                            ))}
-                                        </div>
-                                    ) : (
-                                        <div className="text-[12.5px] italic text-[#a3adbd]">
-                                            Текста на слайде нет (изображение, диаграмма или пустой макет)
-                                        </div>
-                                    )}
+                                    {/* svg приходит уже готовой строкой разметки от renderSlideToSvg
+                                        (@office-kit/pptx-preview) - вставляем как есть, без парсинга */}
+                                    <div
+                                        className="p-3 [&>svg]:block [&>svg]:h-auto [&>svg]:w-full"
+                                        dangerouslySetInnerHTML={{__html: slide.svg}}
+                                    />
                                 </div>
                             ))}
                         </div>

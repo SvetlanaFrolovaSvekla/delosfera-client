@@ -1,7 +1,5 @@
 import {useEffect, useState} from "react";
 import {useTranslation} from "react-i18next";
-import {Eye, FileStack, Loader2, Shield} from "lucide-react";
-import {EmptyState} from "@/components/componentsGeneral/EmptyState.tsx";
 import {activityLogService} from "@/service/activityLogService/activityLogService.ts";
 import type {ActivityLogEntryResponse} from "@/service/activityLogService/activityLogServiceType.ts";
 import {coordinationService} from "@/service/coordinationService/coordinationService.ts";
@@ -18,6 +16,8 @@ import {
 import {
     FormattedResolutionComment
 } from "@/components/componentsCoordination/CoordinationRouteConstructor/viewComponents/FormattedResolutionComment.tsx";
+import {EmptyState} from "@/components/componentsGeneral/EmptyState.tsx";
+import {Eye, FileStack, Loader2, Shield} from "lucide-react";
 
 interface VndHistoryTabProps {
     vnd: VndResponse;
@@ -69,6 +69,7 @@ export function VndHistoryTab({vnd, redactions}: VndHistoryTabProps) {
 
     useEffect(() => {
         let cancelled = false;
+        // eslint-disable-next-line react-hooks/set-state-in-effect
         setLoading(true);
         setError(null);
 
@@ -96,6 +97,7 @@ export function VndHistoryTab({vnd, redactions}: VndHistoryTabProps) {
     // Открытая по кнопке "Смотреть подробно" редакция относится к конкретному ВНД — при
     // переключении на другой документ (без размонтирования таба) детальный лог нужно закрыть.
     useEffect(() => {
+        // eslint-disable-next-line react-hooks/set-state-in-effect
         setDetailRedactionId(null);
     }, [vnd.id]);
 
@@ -151,11 +153,13 @@ export function VndHistoryTab({vnd, redactions}: VndHistoryTabProps) {
                     <div className="px-5 pt-4 pb-3 border-b border-[#eef2f7] flex items-center gap-[9px]">
                         <Shield size={17} strokeWidth={1.8} className="text-[#8b97ab]"/>
                         <h2 className="m-0 text-sm font-semibold">{t("openVndPage.historyTab.auditLogTitle")}</h2>
-                        <span className="ml-auto text-[11px] text-[#a3adbd]">{t("openVndPage.historyTab.auditLogSubtitle")}</span>
+                        <span
+                            className="ml-auto text-[11px] text-[#a3adbd]">{t("openVndPage.historyTab.auditLogSubtitle")}</span>
                     </div>
                     <div className="px-5 pt-1.5 pb-3.5">
                         {(auditEntries?.length ?? 0) === 0 ? (
-                            <div className="py-4 text-[12.5px] text-[#a3adbd]">{t("openVndPage.historyTab.auditLogEmpty")}</div>
+                            <div
+                                className="py-4 text-[12.5px] text-[#a3adbd]">{t("openVndPage.historyTab.auditLogEmpty")}</div>
                         ) : (
                             auditEntries!.map((a) => (
                                 <div key={a.id}
@@ -166,8 +170,10 @@ export function VndHistoryTab({vnd, redactions}: VndHistoryTabProps) {
                                     <div className="min-w-0">
                                         {/* whitespace-pre-line — сервер разносит длинный список изменённых
                                             реквизитов по строкам через \n (см. VndService.BuildChangedFieldsList) */}
-                                        <div className="whitespace-pre-line text-[12.5px] text-[#26324a] leading-[1.4]">{a.text}</div>
-                                        <div className="text-[11px] text-[#8b97ab] mt-0.5">{formatDateTime(a.createdAt)}</div>
+                                        <div
+                                            className="whitespace-pre-line text-[12.5px] text-[#26324a] leading-[1.4]">{a.text}</div>
+                                        <div
+                                            className="text-[11px] text-[#8b97ab] mt-0.5">{formatDateTime(a.createdAt)}</div>
                                     </div>
                                 </div>
                             ))
@@ -200,7 +206,8 @@ export function VndHistoryTab({vnd, redactions}: VndHistoryTabProps) {
                             const process = approvalHistory?.find((p) => p.redactionId === r.id) ?? null;
 
                             return (
-                                <div key={r.id} className="flex items-start gap-[13px] py-3 border-b border-[#f3f6f9] last:border-b-0">
+                                <div key={r.id}
+                                     className="flex items-start gap-[13px] py-3 border-b border-[#f3f6f9] last:border-b-0">
                                     <div className="flex-none text-center">
                                         <div className="font-mono text-[13px] font-bold text-[#1c2740]">{r.code}</div>
                                         <span
@@ -234,10 +241,13 @@ export function VndHistoryTab({vnd, redactions}: VndHistoryTabProps) {
                                                         {process.stages.map((s) => {
                                                             const decision = stageFinalDecision(s);
                                                             return (
-                                                                <div key={s.id} className="text-[11.5px] text-[#26324a]">
-                                                                    <span className="text-[#8b97ab]">{s.approverName}</span>
+                                                                <div key={s.id}
+                                                                     className="text-[11.5px] text-[#26324a]">
+                                                                    <span
+                                                                        className="text-[#8b97ab]">{s.approverName}</span>
                                                                     {s.orgUnitName ? (
-                                                                        <span className="text-[#a3adbd]"> ({s.orgUnitName})</span>
+                                                                        <span
+                                                                            className="text-[#a3adbd]"> ({s.orgUnitName})</span>
                                                                     ) : null}
                                                                     {" — "}
                                                                     <span>{t(`openVndPage.historyTab.decisionLabels.${decision.decisionKey}`)}</span>
@@ -247,8 +257,10 @@ export function VndHistoryTab({vnd, redactions}: VndHistoryTabProps) {
                                                                         </span>
                                                                     ) : null}
                                                                     {decision.comment && (
-                                                                        <div className="mt-1 whitespace-pre-wrap break-words text-[11px] leading-[1.4] text-[#6b7488]">
-                                                                            <FormattedResolutionComment text={decision.comment}/>
+                                                                        <div
+                                                                            className="mt-1 whitespace-pre-wrap break-words text-[11px] leading-[1.4] text-[#6b7488]">
+                                                                            <FormattedResolutionComment
+                                                                                text={decision.comment}/>
                                                                         </div>
                                                                     )}
                                                                 </div>

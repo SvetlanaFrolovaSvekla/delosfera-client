@@ -1,15 +1,16 @@
 import {useEffect, useMemo, useState} from "react";
 import {useTranslation} from "react-i18next";
-import {Archive, CalendarCheck, FileText, History, Pencil, RotateCw, Tags, Type, X, Loader2} from "lucide-react";
 import {useAuth} from "@/context/AuthContext";
 import type {VndRedactionResponse, VndResponse} from "@/service/vndService/vndServiceType.ts";
 import {vndService} from "@/service/vndService/vndService.ts";
-import {Section} from "@/components/componentsGeneral/Section.tsx";
-import {ReadOnlyField} from "@/components/componentsGeneral/readOnlySelects/ReadOnlyField.tsx";
-import {ReadOnlyChipsField} from "@/components/componentsGeneral/readOnlySelects/ReadOnlyChipsField.tsx";
 import {describePeriod, formatDate} from "@/utils/dateUtils.ts";
 import { useVndDictionaryResolvers } from "@/hooks/vndHooks/useVndDictionaryResolvers.ts";
 import {useVndRequisitesForm} from "@/hooks/useVndRequisitesForm.ts";
+import {ACTUALIZATION_MODE_OPTIONS} from "@/hooks/useVndRequisitesForm.ts";
+
+import {Section} from "@/components/componentsGeneral/Section.tsx";
+import {ReadOnlyField} from "@/components/componentsGeneral/readOnlySelects/ReadOnlyField.tsx";
+import {ReadOnlyChipsField} from "@/components/componentsGeneral/readOnlySelects/ReadOnlyChipsField.tsx";
 import {SingleSelectListField} from "@/components/componentsGeneral/selects/SingleSelects/SingleSelectListField.tsx";
 import {MultiSelectField} from "@/components/componentsGeneral/selects/MultiSelects/MultiSelectField.tsx";
 import {
@@ -20,9 +21,10 @@ import {
     EditableDateField, EditableTextAreaField,
     EditableTextField
 } from "@/components/componentsGeneral/RequisitesEditFields.tsx";
-import {ACTUALIZATION_MODE_OPTIONS} from "@/hooks/useVndRequisitesForm.ts";
 import {DatePickerInput} from "@/components/componentsGeneral/datePickers/DatePickerInput.tsx";
 import {Clue} from "@/components/componentsGeneral/knowledgeBaseComponents/Clue.tsx";
+
+import {Archive, CalendarCheck, FileText, History, Pencil, RotateCw, Tags, Type, X, Loader2} from "lucide-react";
 
 interface DictOption {
     key: string;

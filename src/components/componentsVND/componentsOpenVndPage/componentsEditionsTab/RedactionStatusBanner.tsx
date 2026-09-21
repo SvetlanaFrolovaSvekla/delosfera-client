@@ -1,8 +1,9 @@
 // Компонента с header панели для скачивания ВНД
+import {useTranslation} from "react-i18next";
 import type {RedactionDisplayStatus} from "@/utils/vndProcess/redactionStatus.ts";
-import {Loader2} from "lucide-react";
-import {Tooltip} from "@/components/componentsGeneral/Tooltip.tsx";
 import {formatDate} from "@/utils/dateUtils.ts";
+import {Tooltip} from "@/components/componentsGeneral/Tooltip.tsx";
+import {Loader2} from "lucide-react";
 
 interface BannerConfig {
     border: string;
@@ -84,6 +85,7 @@ export function RedactionStatusBanner({
                                           tidMissing,
                                           onUploadTid,
                                       }: RedactionStatusBannerProps) {
+    const {t} = useTranslation();
     const config = BANNER_STYLES[status];
     if (!config) return null;
 
@@ -98,12 +100,14 @@ export function RedactionStatusBanner({
     const showTidMissing = (status === "draft" || status === "consolidation") && tidMissing;
     const message = showTidMissing
         ? status === "consolidation"
-            ? "Прежде чем консолидировать документ — необходимо приложить ТИД:"
+            // "Прежде чем консолидировать документ — необходимо приложить ТИД:"
+            ? t("redactionStatusBanner.tidMissingConsolidation")
             // Формулировка нарочно не про "согласование" - этот черновик может как ждать
             // отправки на согласование, так и (при актуализации без согласования) просто
             // ждать приложения ТИД, чтобы стать текущей редакцией напрямую.
-            : "Чтобы продолжить — необходимо приложить ТИД:"
-        : getBannerMessage(status, currentNumber, effectiveDate);
+            // "Чтобы продолжить — необходимо приложить ТИД:"
+            : t("redactionStatusBanner.tidMissingDraft")
+        : getBannerMessage(t, status, currentNumber, effectiveDate);
 
     return (
         <div
@@ -122,13 +126,16 @@ export function RedactionStatusBanner({
                         className="cursor-pointer flex h-[30px] items-center gap-2 rounded-[8px] bg-[#4e57d6] px-3 text-[12px] font-semibold text-white hover:bg-[#3f47bd] disabled:opacity-60"
                     >
                         {isSubmitting && <Loader2 size={13} className="animate-spin"/>}
-                        Отправить на согласование
+                        {/* Отправить на согласование */}
+                        {t("redactionStatusBanner.submitForApproval")}
                     </button>
                 )}
 
                 {status === "draft" && !tidMissing && onPublishWithoutApproval && (
                     <Tooltip
-                        content="Редакция станет действующей сразу, минуя процесс согласования полностью. Это решение фиксируется как выполненное главным редактором."
+                        // "Редакция станет действующей сразу, минуя процесс согласования полностью.
+                        // Это решение фиксируется как выполненное главным редактором."
+                        content={t("redactionStatusBanner.makeCurrentWithoutApprovalTooltip")}
                         side="top"
                     >
                         <button
@@ -138,7 +145,8 @@ export function RedactionStatusBanner({
                             className="cursor-pointer flex h-[30px] items-center gap-2 rounded-[8px] border border-[#d7dee8] bg-white px-3 text-[12px] font-semibold text-[#3a4560] hover:bg-[#f6f8fb] disabled:opacity-60"
                         >
                             {isPublishingWithoutApproval && <Loader2 size={13} className="animate-spin"/>}
-                            Сделать актуальной редакцией без согласования
+                            {/* Сделать актуальной редакцией без согласования */}
+                            {t("redactionStatusBanner.makeCurrentWithoutApproval")}
                         </button>
                     </Tooltip>
                 )}
@@ -149,7 +157,8 @@ export function RedactionStatusBanner({
                         onClick={onUploadTid}
                         className="cursor-pointer flex h-[30px] items-center gap-2 rounded-[8px] bg-[#4e57d6] px-3 text-[12px] font-semibold text-white hover:bg-[#3f47bd]"
                     >
-                        Сформировать или загрузить ТИД
+                        {/* Сформировать или загрузить ТИД */}
+                        {t("redactionStatusBanner.generateOrUploadTid")}
                     </button>
                 )}
 
@@ -159,7 +168,8 @@ export function RedactionStatusBanner({
                         onClick={onGoToApproval}
                         className="cursor-pointer flex h-[30px] items-center gap-2 rounded-[8px] bg-[#4e57d6] px-3 text-[12px] font-semibold text-white hover:bg-[#3f47bd]"
                     >
-                        Перейти к согласованию (Вы согласующий)
+                        {/* Перейти к согласованию (Вы согласующий) */}
+                        {t("redactionStatusBanner.goToApproval")}
                     </button>
                 )}
             </div>
@@ -167,26 +177,50 @@ export function RedactionStatusBanner({
     );
 }
 
-function getBannerMessage(status: RedactionDisplayStatus, currentNumber?: number, effectiveDate?: string | null): string {
+function getBannerMessage(
+    t: (key: string, options?: Record<string, unknown>) => string,
+    status: RedactionDisplayStatus,
+    currentNumber?: number,
+    effectiveDate?: string | null,
+): string {
     switch (status) {
         case "pendingEffective":
-            return `Дата вступления в силу — ${formatDate(effectiveDate)}, дата, с которой редакция ` +
-                "становится действующей; до этого момента документ находится в статусе «Ожидание вступления в силу».";
+            // "Дата вступления в силу — {{date}}, дата, с которой редакция становится
+            // действующей; до этого момента документ находится в статусе «Ожидание
+            // вступления в силу»."
+            return t("redactionStatusBanner.statusMessage.pendingEffective", {
+                date: formatDate(effectiveDate),
+            });
         case "draft":
-            return "Черновик редакции. Пока редакция не отправлена на согласование — она доступна для Ваших правок (сейчас данный черновик видите только Вы и главный редактор ВНД)...";
+            // "Черновик редакции. Пока редакция не отправлена на согласование — она доступна
+            // для Ваших правок (сейчас данный черновик видите только Вы и главный редактор ВНД)..."
+            return t("redactionStatusBanner.statusMessage.draft");
         case "pending":
-            return "Редакция ожидает решения по согласованию (сейчас данная версия редакции доступна для просмотра только редакторам ВНД)...";
+            // "Редакция ожидает решения по согласованию (сейчас данная версия редакции
+            // доступна для просмотра только редакторам ВНД)..."
+            return t("redactionStatusBanner.statusMessage.pending");
         case "rejected":
-            return "Эта редакция была отклонена при согласовании и не стала действующей (сейчас данная версия редакции доступна для просмотра только редакторам ВНД)...";
+            // "Эта редакция была отклонена при согласовании и не стала действующей (сейчас
+            // данная версия редакции доступна для просмотра только редакторам ВНД)..."
+            return t("redactionStatusBanner.statusMessage.rejected");
         case "consolidation":
-            return "Документ находится на этапе консолидации после актуализации. По завершении этого этапа отображаемая редакция станет действующей (сейчас данная версия редакции доступна для просмотра только редакторам ВНД).";
+            // "Документ находится на этапе консолидации после актуализации. По завершении
+            // этого этапа отображаемая редакция станет действующей (сейчас данная версия
+            // редакции доступна для просмотра только редакторам ВНД)."
+            return t("redactionStatusBanner.statusMessage.consolidation");
         case "outdated":
-            return `Внимание! Вы просматриваете текст устаревшей редакции документа. Использование текста этой редакции может привести к ошибкам при принятии решений.
-            ${
-                currentNumber
-                    ? `Действующая редакция — Р${currentNumber}`
-                    : "Актуальной редакции на данный момент нет!"
-            }`;
+            // "Внимание! Вы просматриваете текст устаревшей редакции документа. Использование
+            // текста этой редакции может привести к ошибкам при принятии решений."
+            return currentNumber
+                // "Действующая редакция — Р{{number}}"
+                ? `${t("redactionStatusBanner.statusMessage.outdated")}\n${t(
+                    "redactionStatusBanner.statusMessage.outdatedCurrentNumber",
+                    {number: currentNumber},
+                )}`
+                // "Актуальной редакции на данный момент нет!"
+                : `${t("redactionStatusBanner.statusMessage.outdated")}\n${t(
+                    "redactionStatusBanner.statusMessage.outdatedNoCurrent",
+                )}`;
         default:
             return "";
     }

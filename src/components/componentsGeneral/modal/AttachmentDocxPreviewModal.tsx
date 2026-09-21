@@ -17,6 +17,14 @@ interface AttachmentDocxPreviewModalProps {
     downloadingId: number | null;
     onDownload: (fileId: number, name: string) => void;
     onClose: () => void;
+
+    /** См. fetchFileBlob: путь на бэке, если файл выдаёт не общий /api/files/{id}
+     * (например, "documents/attachments" для вложений СЗ/закупок, см. DocumentsController). */
+    endpoint?: string;
+
+    /** См. fetchFileBlob: хвост URL после {fileId}, если конечная точка не сам /{id}
+     * (например, "/download" для вложений документа, см. DocumentsController). */
+    pathSuffix?: string;
 }
 
 const KIND_ICON = {
@@ -36,6 +44,7 @@ const ACCURACY_WARNING = {
 
 export function AttachmentDocxPreviewModal({
                                                 fileId, fileName, downloadingId, onDownload, onClose,
+                                                endpoint, pathSuffix,
                                             }: AttachmentDocxPreviewModalProps) {
     // Модалку открывают только по кнопке "Просмотр" у уже отфильтрованных isPreviewableFile
     // вложений (см. AttachmentRow/RedactionAttachmentsModal/VndEditLastRevisionModal) - но на
@@ -48,22 +57,29 @@ export function AttachmentDocxPreviewModal({
         containerRef: docxContainerRef,
         loading: docxLoading,
         error: docxError,
-    } = useDocxPreview(kind === "docx" ? fileId : null);
+    } = useDocxPreview(kind === "docx" ? fileId : null, {endpoint, pathSuffix});
 
     const {
         containerRef: sheetContainerRef,
         loading: sheetLoading,
         error: sheetError,
-    } = useSheetPreview(kind === "xlsx" ? fileId : null);
+    } = useSheetPreview(kind === "xlsx" ? fileId : null, {endpoint, pathSuffix});
 
     const {
         slides: pptxSlides,
         loading: pptxLoading,
+        totalSlides: pptxTotalSlides,
         error: pptxError,
-    } = usePptxPreview(kind === "pptx" ? fileId : null);
+    } = usePptxPreview(kind === "pptx" ? fileId : null, {endpoint, pathSuffix});
 
     const loading = kind === "docx" ? docxLoading : kind === "xlsx" ? sheetLoading : pptxLoading;
     const error = kind === "docx" ? docxError : kind === "xlsx" ? sheetError : pptxError;
+
+    // .pptx после разбора файла дорисовывает слайды по одному (см. usePptxPreview) - "loading"
+    // здесь перестаёт быть true, как только известно число слайдов, но сами они ещё могут
+    // дорендериваться. Отдельный флаг - чтобы показать под уже готовыми слайдами компактную
+    // строку прогресса, а не гнать пользователя обратно в полноэкранный спиннер.
+    const pptxStillRendering = kind === "pptx" && !loading && !error && pptxSlides.length < pptxTotalSlides;
 
     // .docx рендерится через docx-preview довольно близко к оригиналу - предупреждение там
     // не нужно. .xlsx/.pptx - приближённые превью, поэтому здесь явно просим не считать их
@@ -151,14 +167,35 @@ export function AttachmentDocxPreviewModal({
                                     <div className="border-b border-[#e9edf3] bg-white px-4 py-1.5 text-[11px] font-bold uppercase tracking-[0.04em] text-[#a3adbd]">
                                         Слайд {slide.index}
                                     </div>
-                                    {/* svg приходит уже готовой строкой разметки от renderSlideToSvg
-                                        (@office-kit/pptx-preview) - вставляем как есть, без парсинга */}
-                                    <div
-                                        className="p-3 [&>svg]:block [&>svg]:h-auto [&>svg]:w-full"
-                                        dangerouslySetInnerHTML={{__html: slide.svg}}
-                                    />
+                                    {slide.svg !== null ? (
+                                        // svg приходит уже готовой строкой разметки от renderSlideToSvg
+                                        // (@office-kit/pptx-preview) - вставляем как есть, без парсинга
+                                        <div
+                                            className="p-3 [&>svg]:block [&>svg]:h-auto [&>svg]:w-full"
+                                            dangerouslySetInnerHTML={{__html: slide.svg}}
+                                        />
+                                    ) : (
+                                        // renderSlideToSvg упал именно на этом слайде (см. usePptxPreview) -
+                                        // остальные слайды это не должно касаться, показываем заглушку
+                                        // только тут.
+                                        <div className="p-6 text-center text-[12px] text-[#8b97ab]">
+                                            Не удалось отобразить этот слайд
+                                        </div>
+                                    )}
                                 </div>
                             ))}
+
+                            {/* Пока остальные слайды ещё дорендериваются (см. usePptxPreview -
+                                рендер идёт по одному с отдачей браузеру, а не всей пачкой разом),
+                                показываем компактный прогресс под уже готовыми слайдами - вместо
+                                того, чтобы держать пользователя перед полноэкранным спиннером до
+                                самого конца. */}
+                            {pptxStillRendering && (
+                                <div className="flex items-center justify-center gap-2 py-3 text-[12px] text-[#8b97ab]">
+                                    <Loader2 size={14} className="animate-spin"/>
+                                    Рендерим слайд {pptxSlides.length + 1} из {pptxTotalSlides}…
+                                </div>
+                            )}
                         </div>
                     )}
                 </div>

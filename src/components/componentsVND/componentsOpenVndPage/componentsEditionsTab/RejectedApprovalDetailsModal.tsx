@@ -17,6 +17,7 @@ import {
 import {
     RedactionViewModal
 } from "@/components/componentsCoordination/CoordinationRouteConstructor/viewComponents/RedactionViewModal.tsx";
+import {useTranslation} from "react-i18next";
 
 interface RejectedApprovalDetailsModalProps {
     vnd: VndResponse;
@@ -35,6 +36,7 @@ interface QuoteViewState {
 }
 
 export function RejectedApprovalDetailsModal({vnd, redaction, process, onClose}: RejectedApprovalDetailsModalProps) {
+    const {t} = useTranslation();
     const [quoteView, setQuoteView] = useState<QuoteViewState | null>(null);
 
     const handleShowQuoteInText = (quote: {documentTarget: string; text: string}) => {
@@ -50,12 +52,16 @@ export function RejectedApprovalDetailsModal({vnd, redaction, process, onClose}:
                     </span>
                     <div className="min-w-0 flex-1">
                         <h2 className="truncate text-[16px] font-bold text-[#1c2740]">
-                            Отклонённое согласование
+                            {/* Отклонённое согласование */}
+                            {t("rejectedApproval.title")}
                         </h2>
                         <div className="mt-[2px] text-[11px] font-medium text-[#8b97ab]">
-                            Инициатор: {process.initiatorName}
+                            {/* Инициатор: */}
+                            {t("rejectedApproval.initiator")}
+                            {process.initiatorName}
                             {process.initiatorPosition ? ` (${process.initiatorPosition})` : ""}
-                            {process.completedAt ? ` · отклонено ${formatDateTime(process.completedAt)}` : ""}
+                            {/* отклонено: */}
+                            {process.completedAt ? ` · ${t("rejectedApproval.rejectedAt")} ${formatDateTime(process.completedAt)}` : ""}
                         </div>
                     </div>
                     <button

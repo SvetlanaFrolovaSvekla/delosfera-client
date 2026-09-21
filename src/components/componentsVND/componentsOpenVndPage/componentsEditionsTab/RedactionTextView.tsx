@@ -1,14 +1,14 @@
 import {forwardRef, useImperativeHandle} from "react";
 import {useTranslation} from "react-i18next";
 import type {VndRedactionResponse, VndResponse} from "@/service/vndService/vndServiceType.ts";
-import {buildRedactionFileName} from "@/utils/downloadFiles/fileNaming.ts";
-import type {RedactionLanguage, RedactionViewTarget} from "@/utils/vndProcess/redactionLanguagePanelUtils.ts";
-import {FileText, Loader2, ChevronUp, ChevronDown, X} from "lucide-react";
 import {useDocxPreview} from "@/hooks/vndHooks/useDocxPreview.ts";
 import {useDocxTextSearch} from "@/hooks/vndHooks/useDocxTextSearch.ts";
 import {useDocxQuoteMarks} from "@/hooks/vndHooks/useDocxQuoteMarks.ts";
 import {useDocxLegacyLinks} from "@/hooks/vndHooks/useDocxLegacyLinks.ts";
 import type {QuoteMarkInfo} from "@/utils/vndProcess/redactionQuoteMarks.ts";
+import {buildRedactionFileName} from "@/utils/downloadFiles/fileNaming.ts";
+import type {RedactionLanguage, RedactionViewTarget} from "@/utils/vndProcess/redactionLanguagePanelUtils.ts";
+import {FileText, Loader2, ChevronUp, ChevronDown, X} from "lucide-react";
 
 interface RedactionTextViewProps {
     vnd: VndResponse;
@@ -110,6 +110,7 @@ export const RedactionTextView = forwardRef<RedactionTextViewHandle, RedactionTe
                 <div
                     className="flex flex-col items-center justify-center gap-2 p-[48px] text-center text-[13px] text-[#8b97ab]">
                     <FileText size={22} className="text-[#c3ccd8]"/>
+                    {/* Текст на этом языке отсутствует */}
                     {t("openVndPage.redactionTextView.noTextInLanguage")}
                 </div>
             );
@@ -127,7 +128,10 @@ export const RedactionTextView = forwardRef<RedactionTextViewHandle, RedactionTe
                 <div
                     className="flex h-full flex-col items-center justify-center gap-2 p-[48px] text-center text-[13px] text-[#c0392b]">
                     <FileText size={22} className="text-[#e3a5a5]"/>
-                    <span>Не удалось загрузить предпросмотр документа</span>
+                    <span>
+                        {/* Не удалось загрузить предпросмотр документа */}
+                        {t("openVndPage.redactionTextView.previewLoadFailed")}
+                    </span>
                     <span className="text-[#8b97ab]">{fileName}</span>
                 </div>
             );
@@ -148,7 +152,10 @@ export const RedactionTextView = forwardRef<RedactionTextViewHandle, RedactionTe
                                             <span className="text-[#a3adbd]"> / {matchCount}</span>
                                         </>
                                     ) : (
-                                        <span className="text-[#a3adbd]">Совпадений нет</span>
+                                        <span className="text-[#a3adbd]">
+                                            {/* Совпадений нет */}
+                                            {t("openVndPage.redactionTextView.noMatches")}
+                                        </span>
                                     )}
                                 </span>
 

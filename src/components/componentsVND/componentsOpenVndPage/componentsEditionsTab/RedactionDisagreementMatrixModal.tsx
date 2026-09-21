@@ -1,5 +1,6 @@
 // Модалка "Просмотр матрицы разногласий" — устроена так же, как RedactionTidModal/
 // RedactionApprovalSheetModal (одиночный специальный документ редакции без языковых вкладок).
+import {useTranslation} from "react-i18next";
 import type {VndRedactionResponse, VndResponse} from "@/service/vndService/vndServiceType.ts";
 import {RedactionTextView} from "@/components/componentsVND/componentsOpenVndPage/componentsEditionsTab/RedactionTextView.tsx";
 import {createPortal} from "react-dom";
@@ -15,8 +16,9 @@ interface RedactionDisagreementMatrixModalProps {
 }
 
 export function RedactionDisagreementMatrixModal({
-                                                       vnd, redaction, downloadingId, onDownload, onClose,
-                                                   }: RedactionDisagreementMatrixModalProps) {
+                                                     vnd, redaction, downloadingId, onDownload, onClose,
+                                                 }: RedactionDisagreementMatrixModalProps) {
+    const {t} = useTranslation();
     const matrixFileId = redaction.disagreementMatrixFileId;
     const matrixFileName = `${redaction.code}_Матрица_разногласий.docx`;
 
@@ -33,13 +35,15 @@ export function RedactionDisagreementMatrixModal({
                                 {redaction.code}
                             </h2>
                             <div className="mt-[2px] text-[11px] font-medium text-[#8b97ab]">
-                                Просмотр матрицы разногласий
+                                {/* Просмотр матрицы разногласий */}
+                                {t("redactionDisagreementMatrixModal.viewTitle")}
                             </div>
                         </div>
                     </div>
 
                     <div className="flex items-center gap-4">
-                        <Tooltip content="Скачать документ" side="bottom">
+                        {/* Скачать документ */}
+                        <Tooltip content={t("redactionDisagreementMatrixModal.downloadDocument")} side="bottom">
                             <button
                                 type="button"
                                 disabled={matrixFileId === null || downloadingId === matrixFileId}
@@ -67,7 +71,8 @@ export function RedactionDisagreementMatrixModal({
                     {matrixFileId === null ? (
                         <div className="flex flex-1 flex-col items-center justify-center gap-2 p-[48px] text-center text-[13px] text-[#8b97ab]">
                             <Scale size={22} className="text-[#c3ccd8]"/>
-                            Для этой редакции матрица разногласий не формировалась.
+                            {/* Для этой редакции матрица разногласий не формировалась. */}
+                            {t("redactionDisagreementMatrixModal.noMatrixYet")}
                         </div>
                     ) : (
                         <RedactionTextView

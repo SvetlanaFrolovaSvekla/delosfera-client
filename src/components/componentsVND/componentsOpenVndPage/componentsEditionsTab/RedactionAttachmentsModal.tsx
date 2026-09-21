@@ -1,7 +1,7 @@
 // Модалка со списком вложений выбранной редакции
 import {useState} from "react";
 import {createPortal} from "react-dom";
-import {Download, Eye, FileText, Loader2, Paperclip, X} from "lucide-react";
+import {useTranslation} from "react-i18next";
 import type {VndRedactionResponse} from "@/service/vndService/vndServiceType.ts";
 import {isPreviewableFile} from "@/utils/downloadFiles/fileNaming.ts";
 import {Tooltip} from "@/components/componentsGeneral/Tooltip.tsx";
@@ -9,6 +9,7 @@ import {TruncatedTooltip} from "@/components/componentsGeneral/TruncatedTooltip.
 import {
     AttachmentDocxPreviewModal
 } from "@/components/componentsGeneral/modal/AttachmentDocxPreviewModal.tsx";
+import {Download, Eye, FileText, Loader2, Paperclip, X} from "lucide-react";
 
 /** Специальные вложения открываются просмотрщиком (RedactionTidModal/RedactionApprovalSheetModal
  * из VndEditionsTab), а не просто скачиваются. Обычные вложения произвольного формата (см. ниже,
@@ -44,6 +45,7 @@ export function RedactionAttachmentsModal({
                                               onView,
                                               onClose,
                                           }: RedactionAttachmentsModalProps) {
+    const {t} = useTranslation();
     const [previewAttachment, setPreviewAttachment] = useState<{ fileId: number; fileName: string } | null>(null);
 
     // "Специальные вложения" - служебные документы редакции, которые формируются автоматически
@@ -58,7 +60,7 @@ export function RedactionAttachmentsModal({
                 key: "tid",
                 target: "tid" as const,
                 fileId: redaction.tidFileId,
-                label: "ТИД (таблица изменений и дополнений)",
+                label: t("redactionAttachmentsModal.tidLabel"),
                 fileName: `${redaction.code}_ТИД.docx`,
             }]
             : []),
@@ -67,7 +69,7 @@ export function RedactionAttachmentsModal({
                 key: "approvalSheet",
                 target: "approvalSheet" as const,
                 fileId: redaction.approvalSheetFileId,
-                label: "Лист согласования",
+                label: t("redactionAttachmentsModal.approvalSheetLabel"),
                 fileName: `${redaction.code}_Лист_согласования.docx`,
             }]
             : []),
@@ -76,7 +78,7 @@ export function RedactionAttachmentsModal({
                 key: "disagreementMatrix",
                 target: "disagreementMatrix" as const,
                 fileId: redaction.disagreementMatrixFileId,
-                label: "Матрица разногласий",
+                label: t("redactionAttachmentsModal.disagreementMatrixLabel"),
                 fileName: `${redaction.code}_Матрица_разногласий.docx`,
             }]
             : []),
@@ -109,7 +111,8 @@ export function RedactionAttachmentsModal({
                             <Paperclip size={19} strokeWidth={1.8}/>
                         </span>
                         <h2 className="text-[16px] font-bold text-[#1c2740]">
-                            Вложения редакции {redaction.code}
+                            {/* Вложения редакции */}
+                            {t("redactionAttachmentsModal.title", {code: redaction.code})}
                         </h2>
                     </div>
                     <button
@@ -122,97 +125,102 @@ export function RedactionAttachmentsModal({
 
                 <div className="flex-1 overflow-y-auto px-6 pb-2">
 
-                {specialAttachments.length > 0 && (
-                    <div className="mb-4">
-                        <div className="mb-2 text-[11px] font-bold uppercase tracking-[0.04em] text-[#a3adbd]">
-                            Специальные вложения
-                        </div>
-                        <div className="flex flex-col gap-2">
-                            {specialAttachments.map((item) => (
-                                <div
-                                    key={item.key}
-                                    className="flex items-center gap-2 rounded-[10px] border border-[#e5e9f0] pr-2 hover:border-[#4e57d6]/40 hover:bg-[#f6f8fb]"
-                                >
-                                    <button
-                                        type="button"
-                                        disabled={downloadingId === item.fileId}
-                                        onClick={() => onDownload(item.fileId, item.fileName)}
-                                        className="cursor-pointer flex min-w-0 flex-1 items-center gap-2 px-3 py-[10px] text-left text-[13px] text-[#3a4560] disabled:opacity-60"
+                    {specialAttachments.length > 0 && (
+                        <div className="mb-4">
+                            <div className="mb-2 text-[11px] font-bold uppercase tracking-[0.04em] text-[#a3adbd]">
+                                {/* Специальные вложения */}
+                                {t("redactionAttachmentsModal.specialAttachments")}
+                            </div>
+                            <div className="flex flex-col gap-2">
+                                {specialAttachments.map((item) => (
+                                    <div
+                                        key={item.key}
+                                        className="flex items-center gap-2 rounded-[10px] border border-[#e5e9f0] pr-2 hover:border-[#4e57d6]/40 hover:bg-[#f6f8fb]"
                                     >
-                                        <FileText size={16} className="flex-none text-[#4e57d6]"/>
-                                        <TruncatedTooltip text={item.label} className="flex-1"/>
-                                        {downloadingId === item.fileId ? (
-                                            <Loader2 size={14} className="flex-none animate-spin text-[#8b97ab]"/>
-                                        ) : (
-                                            <Download size={14} className="flex-none text-[#8b97ab]"/>
-                                        )}
-                                    </button>
-
-                                    {onView && (
                                         <button
                                             type="button"
-                                            onClick={() => onView(item.target)}
-                                            className="cursor-pointer flex-none rounded-[7px] border border-[#d7dee8] bg-white px-2.5 py-[6px] text-[11.5px] font-semibold text-[#4e57d6] hover:bg-[#ececfc]"
+                                            disabled={downloadingId === item.fileId}
+                                            onClick={() => onDownload(item.fileId, item.fileName)}
+                                            className="cursor-pointer flex min-w-0 flex-1 items-center gap-2 px-3 py-[10px] text-left text-[13px] text-[#3a4560] disabled:opacity-60"
                                         >
-                                            Просмотр
+                                            <FileText size={16} className="flex-none text-[#4e57d6]"/>
+                                            <TruncatedTooltip text={item.label} className="flex-1"/>
+                                            {downloadingId === item.fileId ? (
+                                                <Loader2 size={14} className="flex-none animate-spin text-[#8b97ab]"/>
+                                            ) : (
+                                                <Download size={14} className="flex-none text-[#8b97ab]"/>
+                                            )}
                                         </button>
-                                    )}
-                                </div>
-                            ))}
-                        </div>
-                    </div>
-                )}
 
-                {redaction.attachments.length > 0 && (
-                    <div>
-                        {specialAttachments.length > 0 && (
-                            <div className="mb-2 text-[11px] font-bold uppercase tracking-[0.04em] text-[#a3adbd]">
-                                Вложения ({redaction.attachments.length})
-                            </div>
-                        )}
-                        <div className="flex flex-col gap-2">
-                            {redaction.attachments.map((attachment) => (
-                                <div
-                                    key={attachment.fileId}
-                                    className="flex items-center gap-2 rounded-[10px] border border-[#e5e9f0] pr-2 hover:border-[#4e57d6]/40 hover:bg-[#f6f8fb]"
-                                >
-                                    <button
-                                        type="button"
-                                        disabled={downloadingId === attachment.fileId}
-                                        onClick={() => onDownload(attachment.fileId, attachment.fileName)}
-                                        className="cursor-pointer flex min-w-0 flex-1 items-center gap-2 px-3 py-[10px] text-left text-[13px] text-[#3a4560] disabled:opacity-60"
-                                    >
-                                        <Paperclip size={16} className="flex-none text-[#8b97ab]"/>
-                                        <TruncatedTooltip text={attachment.fileName} className="flex-1"/>
-                                        {downloadingId === attachment.fileId ? (
-                                            <Loader2 size={14} className="flex-none animate-spin text-[#8b97ab]"/>
-                                        ) : (
-                                            <Download size={14} className="flex-none text-[#8b97ab]"/>
-                                        )}
-                                    </button>
-
-                                    {isPreviewableFile(attachment.fileName) && (
-                                        <Tooltip content="Просмотреть вложение" side="top">
+                                        {onView && (
                                             <button
                                                 type="button"
-                                                onClick={() => setPreviewAttachment({fileId: attachment.fileId, fileName: attachment.fileName})}
-                                                className="cursor-pointer flex-none rounded-[7px] border border-[#d7dee8] bg-white p-[6px] text-[#4e57d6] hover:bg-[#ececfc]"
+                                                onClick={() => onView(item.target)}
+                                                className="cursor-pointer flex-none rounded-[7px] border border-[#d7dee8] bg-white px-2.5 py-[6px] text-[11.5px] font-semibold text-[#4e57d6] hover:bg-[#ececfc]"
                                             >
-                                                <Eye size={14}/>
+                                                {/* Просмотр */}
+                                                {t("redactionAttachmentsModal.view")}
                                             </button>
-                                        </Tooltip>
-                                    )}
-                                </div>
-                            ))}
+                                        )}
+                                    </div>
+                                ))}
+                            </div>
                         </div>
-                    </div>
-                )}
+                    )}
 
-                {!hasAnyAttachments && (
-                    <div className="rounded-[10px] border border-dashed border-[#e5e9f0] px-3 py-[18px] text-center text-[12.5px] text-[#a3adbd]">
-                        У этой редакции пока нет вложений
-                    </div>
-                )}
+                    {redaction.attachments.length > 0 && (
+                        <div>
+                            {specialAttachments.length > 0 && (
+                                <div className="mb-2 text-[11px] font-bold uppercase tracking-[0.04em] text-[#a3adbd]">
+                                    {/* Вложения */}
+                                    {t("redactionAttachmentsModal.attachmentsCount", {count: redaction.attachments.length})}
+                                </div>
+                            )}
+                            <div className="flex flex-col gap-2">
+                                {redaction.attachments.map((attachment) => (
+                                    <div
+                                        key={attachment.fileId}
+                                        className="flex items-center gap-2 rounded-[10px] border border-[#e5e9f0] pr-2 hover:border-[#4e57d6]/40 hover:bg-[#f6f8fb]"
+                                    >
+                                        <button
+                                            type="button"
+                                            disabled={downloadingId === attachment.fileId}
+                                            onClick={() => onDownload(attachment.fileId, attachment.fileName)}
+                                            className="cursor-pointer flex min-w-0 flex-1 items-center gap-2 px-3 py-[10px] text-left text-[13px] text-[#3a4560] disabled:opacity-60"
+                                        >
+                                            <Paperclip size={16} className="flex-none text-[#8b97ab]"/>
+                                            <TruncatedTooltip text={attachment.fileName} className="flex-1"/>
+                                            {downloadingId === attachment.fileId ? (
+                                                <Loader2 size={14} className="flex-none animate-spin text-[#8b97ab]"/>
+                                            ) : (
+                                                <Download size={14} className="flex-none text-[#8b97ab]"/>
+                                            )}
+                                        </button>
+
+                                        {isPreviewableFile(attachment.fileName) && (
+                                            /* Просмотреть вложение */
+                                            <Tooltip content={t("redactionAttachmentsModal.previewAttachment")} side="top">
+                                                <button
+                                                    type="button"
+                                                    onClick={() => setPreviewAttachment({fileId: attachment.fileId, fileName: attachment.fileName})}
+                                                    className="cursor-pointer flex-none rounded-[7px] border border-[#d7dee8] bg-white p-[6px] text-[#4e57d6] hover:bg-[#ececfc]"
+                                                >
+                                                    <Eye size={14}/>
+                                                </button>
+                                            </Tooltip>
+                                        )}
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+                    )}
+
+                    {!hasAnyAttachments && (
+                        <div className="rounded-[10px] border border-dashed border-[#e5e9f0] px-3 py-[18px] text-center text-[12.5px] text-[#a3adbd]">
+                            {/* У этой редакции пока нет вложений */}
+                            {t("redactionAttachmentsModal.noAttachments")}
+                        </div>
+                    )}
 
                 </div>
 
@@ -221,7 +229,8 @@ export function RedactionAttachmentsModal({
                         onClick={onClose}
                         className="cursor-pointer h-[38px] rounded-[10px] border border-[#e5e9f0] px-4 text-[13px] font-semibold text-[#3a4560] hover:bg-[#f6f8fb]"
                     >
-                        Закрыть
+                        {/* Закрыть */}
+                        {t("redactionAttachmentsModal.close")}
                     </button>
                 </div>
             </div>

@@ -5,7 +5,12 @@ import {
     formatFileSize,
     type Attachment,
 } from "@/service/documentService/attachmentService.ts";
-import {Paperclip, Trash2, Download} from "lucide-react";
+import {Paperclip, Trash2, Download, Eye, Loader2} from "lucide-react";
+import {Tooltip} from "@/components/componentsGeneral/Tooltip.tsx";
+import {isPreviewableFile} from "@/utils/downloadFiles/fileNaming.ts";
+import {
+    AttachmentDocxPreviewModal
+} from "@/components/componentsGeneral/modal/AttachmentDocxPreviewModal.tsx";
 
 interface Props {
     /** Карточка, к которой цепляются файлы. null — карточка ещё не создана. */
@@ -59,6 +64,12 @@ export function AttachmentsPanel({
     const [busy, setBusy] = useState(false);
     const [dragOver, setDragOver] = useState(false);
     const [error, setError] = useState<string | null>(null);
+    const [downloadingId, setDownloadingId] = useState<number | null>(null);
+    // Просмотр .docx/.xlsx/.pptx прямо в браузере (см. AttachmentDocxPreviewModal) - вложения
+    // этой панели (СЗ, закупки) лежат не за общим /api/files/{id}, как у вложений редакции ВНД,
+    // а за /api/documents/attachments/{id}/download (см. attachmentService.download выше),
+    // поэтому модалке передаём endpoint/pathSuffix явно.
+    const [previewAttachment, setPreviewAttachment] = useState<{ fileId: number; fileName: string } | null>(null);
     const fileInput = useRef<HTMLInputElement>(null);
     const zone = useRef<HTMLDivElement>(null);
 
@@ -147,6 +158,20 @@ export function AttachmentsPanel({
         document.addEventListener("paste", onPaste);
         return () => document.removeEventListener("paste", onPaste);
     }, [editable, documentId, deferred, upload, t]);
+
+    // fileId/name вместо целого Attachment - такая же сигнатура, как у onDownload в
+    // RedactionAttachmentsModal/AttachmentDocxPreviewModal, чтобы модалка просмотра могла
+    // дёргать скачивание, не зная о типе Attachment этой панели.
+    const handleDownload = useCallback(async (fileId: number, _name: string) => {
+        const attachment = items.find((a) => a.id === fileId);
+        if (!attachment) return;
+        setDownloadingId(fileId);
+        try {
+            await attachmentService.download(attachment);
+        } finally {
+            setDownloadingId(null);
+        }
+    }, [items]);
 
     const remove = async (attachment: Attachment) => {
         // Удаление подписанного файла аннулирует подписи под ним. Это решение
@@ -277,10 +302,25 @@ export function AttachmentsPanel({
                                 </span>
                             )}
 
-                            <button type="button" onClick={() => void attachmentService.download(a)}
+                            {isPreviewableFile(a.fileName) && (
+                                <Tooltip content={t("attachments.preview")} side="top">
+                                    <button type="button"
+                                            onClick={() => setPreviewAttachment({fileId: a.id, fileName: a.fileName})}
+                                            className="border-none bg-transparent p-1 text-[#55617a] cursor-pointer hover:text-[#2f68f5]">
+                                        <Eye size={14}/>
+                                    </button>
+                                </Tooltip>
+                            )}
+
+                            <button type="button" onClick={() => void handleDownload(a.id, a.fileName)}
+                                    disabled={downloadingId === a.id}
                                     title={t("attachments.download")}
-                                    className="border-none bg-transparent p-1 text-[#55617a] cursor-pointer hover:text-[#2f68f5]">
-                                <Download size={14}/>
+                                    className="border-none bg-transparent p-1 text-[#55617a] cursor-pointer hover:text-[#2f68f5] disabled:opacity-50">
+                                {downloadingId === a.id ? (
+                                    <Loader2 size={14} className="animate-spin"/>
+                                ) : (
+                                    <Download size={14}/>
+                                )}
                             </button>
                             {editable && (
                                 <button type="button" onClick={() => void remove(a)} disabled={busy}
@@ -292,6 +332,18 @@ export function AttachmentsPanel({
                         </div>
                     ))}
                 </div>
+            )}
+
+            {previewAttachment && (
+                <AttachmentDocxPreviewModal
+                    fileId={previewAttachment.fileId}
+                    fileName={previewAttachment.fileName}
+                    downloadingId={downloadingId}
+                    onDownload={(fileId, name) => void handleDownload(fileId, name)}
+                    onClose={() => setPreviewAttachment(null)}
+                    endpoint="documents/attachments"
+                    pathSuffix="/download"
+                />
             )}
         </div>
     );

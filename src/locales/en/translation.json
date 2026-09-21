@@ -17,6 +17,336 @@
     "saving": "Saving…",
     "archiving": "Archiving…"
   },
+  "downloadFile": {
+    "defaultFileName": "file",
+    "loadErrorPrefix": "Couldn't load the file:",
+    "loadingToastTitle": "Downloading…",
+    "downloadedToastTitle": "Downloaded!",
+    "downloadErrorToastTitle": "Couldn't download the file"
+  },
+  "selectResponsibleModal": {
+    "title": "Select actualization responsible",
+    "searchPlaceholder": "Search by name…"
+  },
+  "selectApproverModal": {
+    "loadUsersError": "Couldn't load the user list",
+    "title": "Select approver",
+    "searchPlaceholder": "Search by name or email…",
+    "lockedOrgUnitPrefix": "Fixed department:",
+    "orgUnitFilterLabel": "Departments",
+    "orgUnitFilterModalTitle": "Filter by department",
+    "orgUnitSearchPlaceholder": "Search departments…",
+    "orgUnitSelectedCountLabel": "Departments selected",
+    "loadDataErrorTitle": "Couldn't load the data!",
+    "noResults": "Nobody found",
+    "inactiveBadge": "inactive",
+    "selfBadgeAutoApproved": "this is you · auto-approved",
+    "selfBadge": "this is you",
+    "alreadySelectedBadge": "already selected"
+  },
+  "cancelVndModal": {
+    "title": "Archive document",
+    "description": "The document and all its editions will stop being active and will get the \"Archived\" status. This action cannot be undone.",
+    "fieldsSectionTitle": "Cancellation details (memo):",
+    "cancelCodeLabel": "Cancellation No.",
+    "cancelDateLabel": "Cancellation date",
+    "cancelReasonLabel": "Cancellation reason",
+    "cancelReasonPlaceholder": "Optional",
+    "confirmButton": "Archive",
+    "confirmDisabledTooltip": "Fill in the cancellation number and date",
+    "descriptionPrefix": "The document and all its editions will stop being active and will get the status",
+    "archivedStatusLabel": "\"Archived\"",
+    "descriptionSuffix": "This action cannot be undone.",
+    "activeApprovalWarning": "The ongoing approval will be automatically withdrawn."
+  },
+  "consolidateVndModal": {
+    "title": "Consolidate approved version",
+    "firstRedactionDescription": "This is the document's first edition. After consolidation, the document will get the \"Active\" status.",
+    "actualizationResultPrefix": "The actualization was completed",
+    "hadChangesLabel": "with document changes",
+    "noChangesLabel": "without document changes",
+    "actualizationResultSuffix": "— determined automatically from the \"Perform actualization\" step. After consolidation, the document will get the \"Active\" status.",
+    "requisitesTooltip": "The adoption number and date are given in the extract from the approving body's meeting minutes. The number looks like \"46(6)\", where 46 is the minutes number and (6) is the agenda item number. The effective date is when the edition becomes active; until then the document is in \"Awaiting effective date\" status.",
+    "requisitesFillPrompt": "Please fill in the details:",
+    "adoptionDateLabel": "Adoption date",
+    "adoptionCodeLabel": "Adoption No.",
+    "adoptionCodePlaceholder": "46(6)",
+    "effectiveDateLabel": "Effective date",
+    "confirmButton": "Consolidate approved version",
+    "confirmDisabledTooltip": "Fill in the adoption date, adoption number and effective date"
+  },
+  "rejectedApproval": {
+    "title": "Rejected approval",
+    "initiator": "Initiator:",
+    "rejectedAt": "rejected"
+  },
+  "docxContentsPanel": {
+    "title": "Contents",
+    "loading": "Loading contents…",
+    "noHeadingsFound": "No headings styled with Word's built-in heading styles (\"Heading 1\", \"Heading 2\", etc.) were found in the document — the table of contents is built from them."
+  },
+  "vndEditLastRevisionModal": {
+    "optionalSuffix": "(optional)",
+    "documentNotLoaded": "Document not uploaded",
+    "fileNotLoaded": "File not uploaded",
+    "willBeRemoved": "Will be removed",
+    "updated": "Updated",
+    "added": "Added",
+    "viewDocxTooltip": "Preview document (DOCX)",
+    "viewDocumentTooltip": "Preview document",
+    "downloadCurrentFileTooltip": "Download current file",
+    "revert": "Revert",
+    "replace": "Replace",
+    "addDocument": "Add document",
+    "upload": "Upload",
+    "cancelDeletion": "Cancel removal",
+    "delete": "Delete",
+    "title": "Edit revision {{code}}",
+    "subtitle": "Changes will be applied directly — without starting an approval, without creating a new revision, and without changing the actualization date.",
+    "allowedFormatNote": "Allowed format: DOCX. Maximum file size — {{size}}.",
+    "attachmentsLabel": "Attachments",
+    "attachmentsAddedCount": "Added {{count}} of {{max}} files maximum",
+    "attachmentsLimitTooltip": "The number of attachments per revision is limited — no more than {{max}}, each file no larger than 50 MB.",
+    "previewAttachmentTooltip": "Preview attachment",
+    "downloadTooltip": "Download",
+    "attachmentsLimitReached": "Attachment limit for this revision reached",
+    "addFiles": "Add files",
+    "descriptionLabel": "Revision description",
+    "saveFailed": "Failed to save changes",
+    "downloadFailed": "Failed to download document",
+    "cancel": "Cancel",
+    "save": "Save",
+    "rolesGrantAccess_one": "This role grants you the right to make this edit:",
+    "rolesGrantAccess_other": "These roles grant you the right to make this edit:",
+    "langRu": "Russian",
+    "langKg": "Kyrgyz",
+    "langEn": "English",
+    "tidLabel": "Changes table",
+    "approvalSheetLabel": "Approval sheet",
+    "disagreementMatrixLabel": "Disagreement matrix"
+  },
+  "vndStartApprovalModal": {
+    "routeHintConfigureRoute": "Please configure the route: add approvers and set the timing norms for each stage!",
+    "routeHintFixedStages": "Fixed departments, highlighted in purple, must take part in the approval — they cannot be removed, only the default approver can be changed.",
+    "routeHintMaxDays": "The maximum value for the norm of each stage is 90 days!",
+    "routeHintAutoApproval": "If an approver does not make a decision within the allotted norm, the stage is considered automatically approved.",
+    "submitButton": "Start approval",
+    "title": "Start approval",
+    "subtitle": "Configure the route for the approval process of this document revision",
+    "initiatorQuestion": "Who will be listed as the approval initiator?",
+    "initiatorSelf": "Become the approval initiator",
+    "initiatorOwner": "Keep {{ownerName}} as the approval initiator",
+    "defaultOwnerName": "the draft's author",
+    "routeConstructorTitle": "Route constructor",
+    "stagesAddedCount": "Added {{count}} of {{max}} approvers maximum",
+    "maxStagesTooltip": "The number of approvers is limited so the process doesn't stretch out too long (fixed departments are also counted).",
+    "loadingRequiredStages": "Loading required stages…",
+    "addApprover": "Add approver",
+    "primaryApprovalLabel": "Initial approval",
+    "primaryApprovalHelp": "The time each approver has to make a decision at this stage. All approvers added to the route take part.",
+    "repeatApprovalLabel": "Approval after changes",
+    "repeatApprovalHelp": "The time an approver has to review the corrected version after leaving comments at the previous stage. Only approvers who left comments take part.",
+    "finalHoldLabel": "Final hold",
+    "finalHoldHelp": "The time approvers have to review the final version of the revision. This stage is optional — no response is not considered a delay. If no new comments arrive within this time, the revision automatically becomes effective. If comments do appear, after they are addressed, the approval returns to the \"Approval after changes\" stage.",
+    "cancel": "Cancel",
+    "cannotSubmitTooltip": "To start the approval, please fill in all approvers and set the timing norms for all stages!"
+  },
+  "redactionCompareModal": {
+    "title": "View and compare revisions",
+    "searchingDiff": "Finding differences…",
+    "diffUnavailable": "The documents are too large or differ too much — diff highlighting is unavailable!",
+    "newRedactionLabel": "New revision",
+    "previousRedactionLabel": "Previous revision",
+    "needsApprovalEmphasis": " (approval required)",
+    "contents": "Contents",
+    "tid": "Changes table",
+    "tidHeader": "Changes table — {{code}}",
+    "noDescription": "No description"
+  },
+  "redactionDisagreementMatrixModal": {
+    "viewTitle": "Disagreement matrix preview",
+    "downloadDocument": "Download document",
+    "noMatrixYet": "No disagreement matrix has been generated for this revision."
+  },
+  "redactionApprovalSheetModal": {
+    "viewTitle": "Approval sheet preview",
+    "downloadDocument": "Download document",
+    "noApprovalSheetYet": "The approval sheet for this revision has not been generated yet."
+  },
+  "redactionAttachmentsModal": {
+    "tidLabel": "Changes table (TID)",
+    "approvalSheetLabel": "Approval sheet",
+    "disagreementMatrixLabel": "Disagreement matrix",
+    "title": "Attachments of revision {{code}}",
+    "specialAttachments": "Special attachments",
+    "view": "Preview",
+    "attachmentsCount": "Attachments ({{count}})",
+    "previewAttachment": "Preview attachment",
+    "noAttachments": "This revision has no attachments yet",
+    "close": "Close"
+  },
+  "redactionTidModal": {
+    "viewTitle": "Changes table (TID) preview",
+    "downloadDocument": "Download document",
+    "noTidRequired": "No changes table (TID) was required for this revision."
+  },
+  "performActualizationModal": {
+    "titleDefault": "Perform actualization",
+    "confirmLabelDefault": "OK",
+
+    "shiftDecidedAtRequest": "The shift of the next actualization deadline has already been decided when the request was approved:",
+    "shiftWillBeApplied": "the deadline will be shifted",
+    "shiftWillNotBeApplied": "the deadline will not be shifted",
+
+    "shiftNextPeriodLabel": "Shift the next actualization deadline after the new redaction is published",
+    "shiftNextPeriodTooltip": "If enabled, the next scheduled actualization deadline will be recalculated from the date the new redaction is published.",
+
+    "plannedNoChangesLabel": "Actualization without changes",
+    "plannedNoChangesTooltip": "Check this if the document doesn't need any changes — a new redaction won't be needed, and the current redaction will be submitted for approval as is.",
+    "plannedNoChangesHint": "It has been declared that the actualization will proceed without changes to the document — a new redaction will not be required. Submit the existing current redaction for approval on the \"Approval\" tab as is, without uploading a new file. A new redaction will only appear if the approvers request revisions.",
+
+    "cancel": "Cancel"
+  },
+  "requestActualizationAccessModal": {
+    "title": "Request actualization access",
+    "infoText": "The request will go to the IRD's chief editor. Once approved, you'll be able to confirm the start of actualization.",
+
+    "withApprovalOption": "With subsequent approval",
+    "withoutApprovalOption": "Without approval",
+
+    "shiftNextPeriodLabel": "Shift the next actualization deadline after the new redaction is published",
+    "shiftNextPeriodHint": "This is your preference — the chief editor will see it when reviewing the request and can change it.",
+
+    "cancel": "Cancel",
+    "submitButton": "Submit request"
+  },
+  "startActualizationModal": {
+    "title": "Start actualization",
+    "infoText": "At this stage, you're taking the IRD into actualization. You'll be able to configure additional actualization parameters later, right after starting. All users other than IRD editors will see the latest redaction as the current one.",
+
+    "responsibleLabel": "Actualization responsible",
+    "responsibleMeSuffix": " (me)",
+    "responsiblePlaceholder": "Select a responsible person…",
+
+    "orderLabel": "Actualization order",
+    "withApprovalOption": "With approval",
+    "withoutApprovalOption": "Without approval",
+
+    "skipApprovalClueRoleSingular": "You can start actualization without approval — this right is granted by the role:",
+    "skipApprovalCluePlural": "You can start actualization without approval — this right is granted by the roles:",
+
+    "cancel": "Cancel",
+    "confirmButton": "Start actualization"
+  },
+  "vndUploadTidModal": {
+    "title": "Upload CAT — {{redactionCode}}",
+
+    "templateDownloadError": "Failed to download the CAT template",
+    "templateFileName": "CAT_template.docx",
+    "uploadError": "Failed to upload the CAT",
+
+    "introRequiredForApproval": "CAT (Change and Amendment Table) is a document required to submit this redaction for approval",
+    "introOrPublishWithoutApproval": " or to publish it without approval",
+    "introAutoTableExplanation": ". Below is an automatically generated table of changes between the current and new redactions: use it as a basis when preparing and filling out the actual CAT file (please check that the generated text is correct, add justification for the changes, and edit any necessary parts).",
+    "introDeveloperFieldRight": " You also have the right to change the \"Developer\" field.",
+    "introDownloadCheckUpload": " After that, you can download the generated CAT, verify that it matches the template, and upload it to the system.",
+
+    "uploadTidLabel": "Upload the CAT (Change and Amendment Table) for this redaction:",
+    "downloadTemplateButton": "Download CAT template (DOCX)",
+    "chooseFile": "Choose file (DOCX)",
+
+    "fileTooLarge": "File \"{{fileName}}\" exceeds the maximum allowed size ({{maxSize}})",
+
+    "cancel": "Cancel",
+    "upload": "Upload",
+
+    "sizeUnitBytes": "B",
+    "sizeUnitKb": "KB",
+    "sizeUnitMb": "MB"
+  },
+  "vndStatusBanner": {
+    "consolTitle": "Document is in \"Consolidation\" status",
+    "consolText": "Approval is complete. Wait for management's decision and confirm consolidation — the IRD will then become effective.",
+    "consolSecondaryLabel": "Consolidate the approved version",
+
+    "draftTitle": "Document is in \"Draft\" status",
+    "draftText": "Add the first redaction of the document to make the IRD effective!",
+
+    "consolReadonlyText": "Approval is complete. Wait for management's decision on consolidation.",
+    "consolTidMissingText": "Before consolidating the document, attach the CAT (Change and Amendment Table) file in the \"Redactions\" tab.",
+
+    "pendingEffectiveTitle": "Document is awaiting entry into force",
+    "pendingEffectiveText": "Effective date — {{date}}. Until then, the document is in \"Awaiting entry into force\" status."
+  },
+  "vndUploadRedactionModal": {
+    "titleDefault": "Upload new redaction",
+    "titleActualization": "IRD actualization — upload new redaction",
+
+    "formatHint": "Allowed format: DOCX. Maximum file size — {{maxSize}}.",
+    "actualizationTidHint": "You'll be able to upload the CAT (Change and Amendment Table) for this redaction later, as a separate step after uploading it.",
+
+    "docLabelRu": "Russian",
+    "docLabelKg": "Kyrgyz",
+    "docLabelEn": "English",
+    "optional": "(optional)",
+    "chooseFile": "Choose file (DOCX)",
+
+    "attachmentsLabel": "Attachments",
+    "attachmentsOptionalHint": "(optional, multiple allowed)",
+    "attachmentsAddedCount": "Added {{count}} of {{max}} files maximum",
+    "attachmentsLimitTooltip": "The number of attachments per redaction is limited — no more than {{max}}, each file up to 100 MB.",
+
+    "previousAttachmentsClue": "Attachments carried over from the previous redaction. Any changes, additions, or removals here will only affect the new redaction — the previous one will remain unchanged.",
+    "fromPreviousRedaction": "from previous redaction",
+    "download": "Download",
+    "remove": "Remove",
+    "cancelRemove": "Undo removal",
+
+    "attachmentsMaxReachedTooltip": "Maximum reached — {{max}} attachments per redaction",
+    "addFiles": "Add files",
+    "attachmentsPartiallyAdded": "Some of the selected files were not added — maximum {{max}} attachments per redaction.",
+
+    "descriptionLabel": "Redaction description",
+    "descriptionPlaceholder": "What changed in this redaction…",
+
+    "approvalStatusLabel": "Approval:",
+    "approvalRequired": "required",
+    "approvalNotRequired": "not required",
+    "approvalLockedHint": "— set when actualization started",
+    "requiresApprovalCheckbox": "Approval required",
+
+    "skipApprovalClueRoleSingular": "You can upload a redaction without approval — this right is granted by the role:",
+    "skipApprovalCluePlural": "You can upload a redaction without approval — this right is granted by the roles:",
+
+    "uploadError": "Failed to upload the redaction",
+    "fileTooLarge": "File \"{{fileName}}\" exceeds the maximum allowed size ({{maxSize}})",
+
+    "cancel": "Cancel",
+    "upload": "Upload",
+
+    "sizeUnitBytes": "B",
+    "sizeUnitKb": "KB",
+    "sizeUnitMb": "MB"
+  },
+  "redactionStatusBanner": {
+    "submitForApproval": "Submit for approval",
+    "makeCurrentWithoutApproval": "Make current revision without approval",
+    "makeCurrentWithoutApprovalTooltip": "The revision will become effective immediately, bypassing the approval process entirely. This decision is recorded as an action taken by the chief editor.",
+    "generateOrUploadTid": "Generate or upload TID",
+    "goToApproval": "Go to approval (you are an approver)",
+    "tidRequiredBeforeConsolidation": "Before you can consolidate the document — you need to attach a TID:",
+    "tidRequiredToContinue": "To continue — you need to attach a TID:",
+    "statusMessage": {
+      "pendingEffective": "Effective date — {date}, the date from which the revision becomes effective; until then, the document is in the \"Awaiting effective date\" status.",
+      "draft": "Draft revision. Until the revision is submitted for approval, it remains editable by you (this draft is currently visible only to you and the document's chief editor)...",
+      "pending": "The revision is awaiting an approval decision (this version of the revision is currently visible only to the document's editors)...",
+      "rejected": "This revision was rejected during approval and did not become effective (this version of the revision is currently visible only to the document's editors)...",
+      "consolidation": "The document is at the consolidation stage following an update. Once this stage is complete, the displayed revision will become effective (this version of the revision is currently visible only to the document's editors).",
+      "outdated": "Warning! You are viewing the text of an outdated document revision. Using this revision's text may lead to errors in decision-making.",
+      "outdatedCurrentRevision": "The current revision is R{currentNumber}",
+      "outdatedNoCurrentRevision": "There is no current revision at this time!"
+    }
+  },
   "calendar": {
     "title": "Deadline calendar",
     "description": "Overdue deadlines are highlighted in red. Click an event to open the document.",
@@ -25,10 +355,28 @@
     "today": "Today",
     "legendOverdue": "Overdue",
     "legendUpcoming": "On track",
-    "weekdays": ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"],
+    "weekdays": [
+      "Mon",
+      "Tue",
+      "Wed",
+      "Thu",
+      "Fri",
+      "Sat",
+      "Sun"
+    ],
     "months": [
-      "January", "February", "March", "April", "May", "June",
-      "July", "August", "September", "October", "November", "December"
+      "January",
+      "February",
+      "March",
+      "April",
+      "May",
+      "June",
+      "July",
+      "August",
+      "September",
+      "October",
+      "November",
+      "December"
     ]
   },
   "digest": {
@@ -228,10 +576,28 @@
   "datePickerInput": {
     "dateFormatPlaceholder": "DD.MM.YYYY",
     "modalTitle": "Select date",
-    "weekdays": ["Mo", "Tu", "We", "Th", "Fr", "Sa", "Su"],
+    "weekdays": [
+      "Mo",
+      "Tu",
+      "We",
+      "Th",
+      "Fr",
+      "Sa",
+      "Su"
+    ],
     "months": [
-      "January", "February", "March", "April", "May", "June",
-      "July", "August", "September", "October", "November", "December"
+      "January",
+      "February",
+      "March",
+      "April",
+      "May",
+      "June",
+      "July",
+      "August",
+      "September",
+      "October",
+      "November",
+      "December"
     ],
     "today": "Today",
     "manualEntryLabel": "Enter manually",
@@ -709,9 +1075,12 @@
     }
   },
   "openVndPage": {
+    "vndCodeLabel": "IRD code:",
+    "lastRedactionStatusLabel": "Latest redaction status:",
+    "documentStatusLabel": "Document status:",
     "loadError": "Failed to load document: {{error}}",
     "dictionariesErrorTitle": "Failed to load data!",
-    "createdAtLabel": "Created VND: {{date}}",
+    "createdAtLabel": "Created VND:",
     "deleteDraftButton": "Delete draft",
     "deleteConfirmTitle": "Delete draft?",
     "deleteConfirmMessage": "Delete VND draft «{{name}}»? This action cannot be undone.",
@@ -728,6 +1097,23 @@
     "archiveError": "Failed to archive document",
     "viewRedactionTooltip": "Full-screen view of the revision",
     "editionsTab": {
+      "confirmNoChangesSuccessTitle": "No changes confirmed",
+      "confirmNoChangesSuccessDescription": "Document moved to consolidation",
+      "confirmNoChangesErrorTitle": "Couldn't confirm",
+      "tidUploadedTitle": "TID uploaded",
+      "tidUploadedDescription": "TID file attached to edition {{code}}",
+      "redactionNotAvailableTitle": "Edition not yet available for viewing",
+      "redactionNotAvailableDescription": "The document hasn't completed approval yet. The text will appear here once the edition is officially adopted.",
+      "publishWithoutApprovalSuccessTitle": "Edition is now current",
+      "publishWithoutApprovalSuccessDescription": "Approval was skipped by the chief editor's decision",
+      "publishWithoutApprovalErrorDefault": "Couldn't make the edition current without approval",
+      "searchPlaceholder": "Search edition text…",
+      "publishWithoutApprovalConfirmTitle": "Make this edition current without approval?",
+      "publishWithoutApprovalConfirmMessage": "The edition will become current immediately, bypassing the approval process entirely. This decision is logged as performed by the chief editor.",
+      "publishWithoutApprovalConfirmLabel": "Make current",
+      "publishWithoutApprovalLoadingLabel": "Applying…",
+      "roleGrantLabelSingular": "This permission is granted by the role:",
+      "roleGrantLabelPlural": "This permission is granted by the roles:",
       "loadingRedactions": "Loading revisions…",
       "loadErrorTitle": "Failed to load revisions",
       "retry": "Retry",
@@ -743,6 +1129,12 @@
       "redactionUpdatedDescription": "Changes to revision {{code}} have been saved."
     },
     "redactionsSidebar": {
+      "compareTooltipDisabled": "Comparison is available once the document has at least two redactions",
+      "redactionNumberPrefix": "R{{number}}",
+      "firstRedactionLabel": "First redaction",
+      "actualizationLabel": "Actualization",
+      "rejectedHint": "This redaction was rejected during approval. Edit it to resubmit for approval.",
+      "moreDetailsButton": "Details",
       "title": "Document revisions",
       "newRedactionButton": "New revision",
       "actualRedactionButton": "Start actualization",
@@ -776,8 +1168,13 @@
       "unavailableHint": "Text in this language hasn't been uploaded yet"
     },
     "redactionTextView": {
-      "noTextInLanguage": "Text in this language is not available",
-      "loadingPreview": "Loading document..."
+      "noTextInLanguage": "No text available in this language",
+      "loadingPreview": "Loading document...",
+      "previewLoadFailed": "Failed to load document preview",
+      "noMatches": "No matches",
+      "fileNameTid": "{{code}}_Changes_Table.docx",
+      "fileNameApprovalSheet": "{{code}}_Approval_Sheet.docx",
+      "fileNameDisagreementMatrix": "{{code}}_Disagreement_Matrix.docx"
     },
     "passportTab": {
       "subtitle": "Requisites by edition",
@@ -1631,6 +2028,7 @@
     "remove": "Remove",
     "delete": "Delete",
     "download": "Download",
+    "preview": "Preview attachment",
     "signatureCount": "signatures: {{count}}",
     "signaturesRevoked": "signatures revoked",
     "signaturesRevokedTitle": "File was replaced — previous signatures revoked"

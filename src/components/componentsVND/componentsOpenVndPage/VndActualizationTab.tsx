@@ -2,10 +2,18 @@
 // действующего документа (напрямую или по запросу к главному редактору),
 // шаг "Выполнить актуализацию", статус самого цикла, пока он идёт, и история
 // всех прошлых актуализаций (кто и когда брал в актуализацию, кто выдавал доступ по заявке).
+import {useState} from "react";
 import {useTranslation} from "react-i18next";
-import {CheckCircle2, ClipboardList, Clock, History, Inbox, Loader2, RefreshCw, Send, XCircle} from "lucide-react";
+import {useAuth} from "@/context/AuthContext.ts";
+import {actualizationService} from "@/service/actualizationService/actualizationService.ts";
+import {toast} from "@/service/toastService.ts";
+import type {VndActualizationRecordResponse} from "@/service/vndService/vndServiceType.ts";
+import type {VndActualizationRequestResponse} from "@/service/actualizationService/actualizationServiceTypes.ts";
 import type {VndResponse} from "@/service/vndService/vndServiceType.ts";
 import {formatDate, formatDateTime} from "@/utils/dateUtils.ts";
+import {useVndActualizationFlow} from "@/hooks/vndHooks/useVndActualizationFlow.ts";
+import {useVndActualizationHistory} from "@/hooks/vndHooks/useVndActualizationHistory.ts";
+
 import {StartActualizationModal} from "./componentsActualizationTab/StartActualizationModal.tsx";
 import {
     RequestActualizationAccessModal,
@@ -14,14 +22,8 @@ import {
     ApproveActualizationRequestModal,
 } from "./componentsActualizationTab/ApproveActualizationRequestModal.tsx";
 import {Loader} from "@/components/componentsGeneral/Loader.tsx";
-import {useAuth} from "@/context/AuthContext.ts";
-import {useVndActualizationFlow} from "@/hooks/vndHooks/useVndActualizationFlow.ts";
-import {useVndActualizationHistory} from "@/hooks/vndHooks/useVndActualizationHistory.ts";
-import {actualizationService} from "@/service/actualizationService/actualizationService.ts";
-import {toast} from "@/service/toastService.ts";
-import {useState} from "react";
-import type {VndActualizationRecordResponse} from "@/service/vndService/vndServiceType.ts";
-import type {VndActualizationRequestResponse} from "@/service/actualizationService/actualizationServiceTypes.ts";
+
+import {CheckCircle2, ClipboardList, Clock, History, Inbox, Loader2, RefreshCw, Send, XCircle} from "lucide-react";
 
 interface VndActualizationTabProps {
     vnd: VndResponse;

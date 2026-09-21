@@ -5,6 +5,7 @@
 
 import {toast} from "@/service/toastService.ts";
 import {getAccessToken} from "@/service/tokenStore.ts";
+import i18n from "i18next";
 
 const API_BASE = `${import.meta.env.VITE_API_BASE_URL ?? ""}/api`;
 
@@ -46,20 +47,26 @@ export function saveBlob(blob: Blob, fileName: string): void {
 
 export async function fetchFileBlob(
     fileId: number,
-    fallbackName = "файл",
+    // "файл"
+    fallbackName = i18n.t("downloadFile.defaultFileName"),
     signal?: AbortSignal,
     /** Путь на бэке, без ведущего/конечного слэша — по умолчанию общий /api/files/{id}.
      * Передайте, например, "help/files", если файл выдаёт не общий FilesController,
      * а модуль со своей проверкой доступа (см. HelpController.GetFile). */
     endpoint = "files",
+    /** Хвост URL после {fileId} — по умолчанию пусто. Нужен, когда файл отдаётся не самим
+     * /{endpoint}/{id}, а вложенным действием, например "/download" у DocumentsController
+     * (см. DownloadAttachment: /api/documents/attachments/{id}/download). */
+    pathSuffix = "",
 ): Promise<{ blob: Blob; fileName: string }> {
-    const response = await fetch(`${API_BASE}/${endpoint}/${fileId}`, {
+    const response = await fetch(`${API_BASE}/${endpoint}/${fileId}${pathSuffix}`, {
         headers: authHeaders(),
         signal,
     });
 
     if (!response.ok) {
-        throw new Error(`Не удалось загрузить файл: ${response.status}`);
+        // Не удалось загрузить файл: {status}
+        throw new Error(`${i18n.t("downloadFile.loadErrorPrefix")} ${response.status}`);
     }
 
     const fileName = parseContentDispositionFileName(
@@ -74,26 +81,33 @@ export async function fetchFileBlob(
  * Скачивает файл с бэка через fetch (с Bearer-токеном) и триггерит сохранение в браузере.
  * Обычный <a href> тут не работает, т.к. эндпоинт защищён [Authorize] и не получает заголовок.
  */
-export async function downloadFile(fileId: number, fallbackName = "файл"): Promise<void> {
+export async function downloadFile(
+    fileId: number,
+    // "файл"
+    fallbackName = i18n.t("downloadFile.defaultFileName"),
+): Promise<void> {
     const {blob, fileName} = await fetchFileBlob(fileId, fallbackName);
     saveBlob(blob, fileName);
 }
 
 export async function downloadWithToast(fileId: number, name: string) {
-    const toastId = toast.loading("Загрузка…", name);
+    // "Загрузка…"
+    const toastId = toast.loading(i18n.t("downloadFile.loadingToastTitle"), name);
     try {
         await downloadFile(fileId, name);
         toast.update(toastId, {
             variant: "success",
-            title: "Скачано!",
+            // "Скачано!"
+            title: i18n.t("downloadFile.downloadedToastTitle"),
             description: name,
             duration: 4500,
         });
     } catch (e) {
-        const message = e instanceof Error ? e.message : "Не удалось скачать файл";
+        // "Не удалось скачать файл"
+        const message = e instanceof Error ? e.message : i18n.t("downloadFile.downloadErrorToastTitle");
         toast.update(toastId, {
             variant: "error",
-            title: "Не удалось скачать файл",
+            title: i18n.t("downloadFile.downloadErrorToastTitle"),
             description: message,
             duration: 5500,
         });

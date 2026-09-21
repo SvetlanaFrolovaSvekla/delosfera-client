@@ -1,6 +1,7 @@
 // Компонента прямого редактирования последней редакции (замена файлов/описания, без согласования)
 import React, {useState} from "react";
 import {createPortal} from "react-dom";
+import {useTranslation} from "react-i18next";
 import {
     CheckCircle2, Download, Eye, FileText, Loader2, Paperclip, RefreshCcw, RotateCcw, Trash2, X,
 } from "lucide-react";
@@ -78,6 +79,7 @@ function DocReplaceSlot({def, file, removed, onFileSelected, onRevert, onDownloa
     onView: () => void;
     onToggleRemove?: () => void;
 }) {
+    const {t} = useTranslation();
     const isUpdated = file !== null;
     // Пересоздаём сам <input type="file"> после каждого выбора (через key), а не чистим
     // .value - на части машин (Windows, некоторые сборки Chrome/Edge) простая очистка .value
@@ -114,27 +116,41 @@ function DocReplaceSlot({def, file, removed, onFileSelected, onRevert, onDownloa
                 <span className="text-[9.5px] font-bold uppercase tracking-[0.04em] text-[#a3adbd]">
                     {def.label} {def.required
                     ? <span className="text-[#c0392b]">*</span>
-                    : <span className="normal-case font-normal">(необязательно)</span>}
+                    : <span className="normal-case font-normal">
+                        {/* (необязательно) */}
+                        {t("vndEditLastRevisionModal.optionalSuffix")}
+                    </span>}
                 </span>
-                <Tooltip content={isUpdated ? file!.name : def.title ?? "Документ не загружен"} side="top" className="w-full min-w-0">
+                <Tooltip
+                    // Документ не загружен
+                    content={isUpdated ? file!.name : def.title ?? t("vndEditLastRevisionModal.documentNotLoaded")}
+                    side="top"
+                    className="w-full min-w-0"
+                >
                     <span className={`block truncate text-[13px] ${removed ? "text-[#c0392b] line-through" : "text-[#26324a]"}`}>
-                        {isUpdated ? file!.name : def.title ?? "Документ не загружен"}
+                        {/* Документ не загружен */}
+                        {isUpdated ? file!.name : def.title ?? t("vndEditLastRevisionModal.documentNotLoaded")}
                     </span>
                 </Tooltip>
             </span>
 
             {removed ? (
-                <span className="flex-none text-[11px] font-semibold text-[#c0392b]">Будет удалено</span>
+                <span className="flex-none text-[11px] font-semibold text-[#c0392b]">
+                    {/* Будет удалено */}
+                    {t("vndEditLastRevisionModal.willBeRemoved")}
+                </span>
             ) : isUpdated && (
                 <span className="flex-none inline-flex items-center gap-1 text-[11px] font-semibold text-[#1e8e3e]">
                     <CheckCircle2 size={12} className="flex-none"/>
-                    {def.exists ? "Обновлено" : "Добавлено"}
+                    {/* Обновлено / Добавлено */}
+                    {def.exists ? t("vndEditLastRevisionModal.updated") : t("vndEditLastRevisionModal.added")}
                 </span>
             )}
 
             {def.exists && !removed && (
                 <>
-                    <Tooltip content="Просмотреть документ (DOCX)" side="top">
+                    {/* Просмотреть документ (DOCX) */}
+                    <Tooltip content={t("vndEditLastRevisionModal.viewDocxTooltip")} side="top">
                         <button
                             type="button"
                             onClick={onView}
@@ -143,7 +159,8 @@ function DocReplaceSlot({def, file, removed, onFileSelected, onRevert, onDownloa
                             <Eye size={14}/>
                         </button>
                     </Tooltip>
-                    <Tooltip content="Скачать текущий файл" side="top">
+                    {/* Скачать текущий файл */}
+                    <Tooltip content={t("vndEditLastRevisionModal.downloadCurrentFileTooltip")} side="top">
                         <button
                             type="button"
                             onClick={onDownload}
@@ -163,7 +180,8 @@ function DocReplaceSlot({def, file, removed, onFileSelected, onRevert, onDownloa
                         className="cursor-pointer flex-none inline-flex items-center gap-1.5 rounded-[7px] border border-[#e5e9f0] bg-white px-2.5 py-[6px] text-[11.5px] font-semibold text-[#8b97ab] hover:border-[#c0392b]/40 hover:text-[#c0392b]"
                     >
                         <RotateCcw size={13}/>
-                        Вернуть
+                        {/* Вернуть */}
+                        {t("vndEditLastRevisionModal.revert")}
                     </button>
                 ) : (
                     <label
@@ -171,7 +189,8 @@ function DocReplaceSlot({def, file, removed, onFileSelected, onRevert, onDownloa
                     >
                         <input key={inputKey} type="file" accept={DOC_ACCEPT} className="hidden" onChange={handlePick}/>
                         {def.exists ? <RefreshCcw size={13}/> : <Paperclip size={13}/>}
-                        {def.exists ? "Заменить" : "Добавить документ"}
+                        {/* Заменить / Добавить документ */}
+                        {def.exists ? t("vndEditLastRevisionModal.replace") : t("vndEditLastRevisionModal.addDocument")}
                     </label>
                 )
             )}
@@ -186,7 +205,8 @@ function DocReplaceSlot({def, file, removed, onFileSelected, onRevert, onDownloa
                             : "border-[#e5e9f0] bg-white text-[#8b97ab] hover:border-[#e0473e]/50 hover:text-[#c0392b]"
                     }`}
                 >
-                    {removed ? "Отменить удаление" : "Удалить"}
+                    {/* Отменить удаление / Удалить */}
+                    {removed ? t("vndEditLastRevisionModal.cancelDeletion") : t("vndEditLastRevisionModal.delete")}
                 </button>
             )}
         </div>
@@ -217,6 +237,7 @@ function SpecialFileSlot({def, file, removed, onFileSelected, onRevert, onDownlo
     onView: () => void;
     onToggleRemove: () => void;
 }) {
+    const {t} = useTranslation();
     const isUpdated = file !== null;
     const [inputKey, setInputKey] = useState(0);
 
@@ -245,27 +266,41 @@ function SpecialFileSlot({def, file, removed, onFileSelected, onRevert, onDownlo
 
             <span className="flex min-w-0 flex-1 flex-col">
                 <span className="text-[9.5px] font-bold uppercase tracking-[0.04em] text-[#a3adbd]">
-                    {def.label} <span className="normal-case font-normal">(необязательно)</span>
+                    {def.label} <span className="normal-case font-normal">
+                        {/* (необязательно) */}
+                    {t("vndEditLastRevisionModal.optionalSuffix")}
+                    </span>
                 </span>
-                <Tooltip content={isUpdated ? file!.name : def.exists ? def.fileName : "Файл не загружен"} side="top" className="w-full min-w-0">
+                <Tooltip
+                    // Файл не загружен
+                    content={isUpdated ? file!.name : def.exists ? def.fileName : t("vndEditLastRevisionModal.fileNotLoaded")}
+                    side="top"
+                    className="w-full min-w-0"
+                >
                     <span className={`block truncate text-[13px] ${removed ? "text-[#c0392b] line-through" : "text-[#26324a]"}`}>
-                        {isUpdated ? file!.name : def.exists ? def.fileName : "Файл не загружен"}
+                        {/* Файл не загружен */}
+                        {isUpdated ? file!.name : def.exists ? def.fileName : t("vndEditLastRevisionModal.fileNotLoaded")}
                     </span>
                 </Tooltip>
             </span>
 
             {removed ? (
-                <span className="flex-none text-[11px] font-semibold text-[#c0392b]">Будет удалено</span>
+                <span className="flex-none text-[11px] font-semibold text-[#c0392b]">
+                    {/* Будет удалено */}
+                    {t("vndEditLastRevisionModal.willBeRemoved")}
+                </span>
             ) : isUpdated && (
                 <span className="flex-none inline-flex items-center gap-1 text-[11px] font-semibold text-[#1e8e3e]">
                     <CheckCircle2 size={12} className="flex-none"/>
-                    {def.exists ? "Обновлено" : "Добавлено"}
+                    {/* Обновлено / Добавлено */}
+                    {def.exists ? t("vndEditLastRevisionModal.updated") : t("vndEditLastRevisionModal.added")}
                 </span>
             )}
 
             {def.exists && !removed && (
                 <>
-                    <Tooltip content="Просмотреть документ" side="top">
+                    {/* Просмотреть документ */}
+                    <Tooltip content={t("vndEditLastRevisionModal.viewDocumentTooltip")} side="top">
                         <button
                             type="button"
                             onClick={onView}
@@ -274,7 +309,8 @@ function SpecialFileSlot({def, file, removed, onFileSelected, onRevert, onDownlo
                             <Eye size={14}/>
                         </button>
                     </Tooltip>
-                    <Tooltip content="Скачать текущий файл" side="top">
+                    {/* Скачать текущий файл */}
+                    <Tooltip content={t("vndEditLastRevisionModal.downloadCurrentFileTooltip")} side="top">
                         <button
                             type="button"
                             onClick={onDownload}
@@ -294,7 +330,8 @@ function SpecialFileSlot({def, file, removed, onFileSelected, onRevert, onDownlo
                         className="cursor-pointer flex-none inline-flex items-center gap-1.5 rounded-[7px] border border-[#e5e9f0] bg-white px-2.5 py-[6px] text-[11.5px] font-semibold text-[#8b97ab] hover:border-[#c0392b]/40 hover:text-[#c0392b]"
                     >
                         <RotateCcw size={13}/>
-                        Вернуть
+                        {/* Вернуть */}
+                        {t("vndEditLastRevisionModal.revert")}
                     </button>
                 ) : (
                     <label
@@ -302,7 +339,8 @@ function SpecialFileSlot({def, file, removed, onFileSelected, onRevert, onDownlo
                     >
                         <input key={inputKey} type="file" accept={DOC_ACCEPT} className="hidden" onChange={handlePick}/>
                         {def.exists ? <RefreshCcw size={13}/> : <Paperclip size={13}/>}
-                        {def.exists ? "Заменить" : "Загрузить"}
+                        {/* Заменить / Загрузить */}
+                        {def.exists ? t("vndEditLastRevisionModal.replace") : t("vndEditLastRevisionModal.upload")}
                     </label>
                 )
             )}
@@ -317,7 +355,8 @@ function SpecialFileSlot({def, file, removed, onFileSelected, onRevert, onDownlo
                             : "border-[#e5e9f0] bg-white text-[#8b97ab] hover:border-[#e0473e]/50 hover:text-[#c0392b]"
                     }`}
                 >
-                    {removed ? "Отменить удаление" : "Удалить"}
+                    {/* Отменить удаление / Удалить */}
+                    {removed ? t("vndEditLastRevisionModal.cancelDeletion") : t("vndEditLastRevisionModal.delete")}
                 </button>
             )}
         </div>
@@ -325,6 +364,7 @@ function SpecialFileSlot({def, file, removed, onFileSelected, onRevert, onDownlo
 }
 
 export function VndEditLastRevisionModal({vndId, vnd, redaction, roleNames, onClose, onSaved}: VndEditLastRevisionModalProps) {
+    const {t} = useTranslation();
     const [docRu, setDocRu] = useState<File | null>(null);
     const [docKg, setDocKg] = useState<File | null>(null);
     const [docEn, setDocEn] = useState<File | null>(null);
@@ -359,12 +399,14 @@ export function VndEditLastRevisionModal({vndId, vnd, redaction, roleNames, onCl
     const [viewLang, setViewLang] = useState<RedactionViewTarget | null>(null);
     const viewDownload = useAsyncAction<number>();
     const handleViewDownload = (fileId: number, name: string) =>
-        viewDownload.run(fileId, () => downloadWithToast(fileId, name), "Не удалось скачать документ");
+        // Не удалось скачать документ
+        viewDownload.run(fileId, () => downloadWithToast(fileId, name), t("vndEditLastRevisionModal.downloadFailed"));
 
     const docSlots: {def: DocSlotDef; file: File | null; setFile: (file: File | null) => void}[] = [
         {
             def: {
-                lang: "ru", label: "Русский", exists: true, fileId: redaction.docFileRuId,
+                // Русский
+                lang: "ru", label: t("vndEditLastRevisionModal.langRu"), exists: true, fileId: redaction.docFileRuId,
                 required: true, deletable: false, title: resolveVndDocTitle(vnd, "ru"),
             },
             file: docRu,
@@ -372,7 +414,8 @@ export function VndEditLastRevisionModal({vndId, vnd, redaction, roleNames, onCl
         },
         {
             def: {
-                lang: "kg", label: "Кыргызча", exists: redaction.docFileKgId !== null, fileId: redaction.docFileKgId,
+                // Кыргызча
+                lang: "kg", label: t("vndEditLastRevisionModal.langKg"), exists: redaction.docFileKgId !== null, fileId: redaction.docFileKgId,
                 required: false, deletable: true,
                 title: redaction.docFileKgId !== null ? resolveVndDocTitle(vnd, "kg") : null,
             },
@@ -381,7 +424,8 @@ export function VndEditLastRevisionModal({vndId, vnd, redaction, roleNames, onCl
         },
         {
             def: {
-                lang: "en", label: "English", exists: redaction.docFileEnId !== null, fileId: redaction.docFileEnId,
+                // English
+                lang: "en", label: t("vndEditLastRevisionModal.langEn"), exists: redaction.docFileEnId !== null, fileId: redaction.docFileEnId,
                 required: false, deletable: true,
                 title: redaction.docFileEnId !== null ? resolveVndDocTitle(vnd, "en") : null,
             },
@@ -401,15 +445,18 @@ export function VndEditLastRevisionModal({vndId, vnd, redaction, roleNames, onCl
 
     const specialSlots: SpecialSlotDef[] = [
         {
-            key: "tid", label: "ТИД", exists: redaction.tidFileId !== null,
+            // ТИД
+            key: "tid", label: t("vndEditLastRevisionModal.tidLabel"), exists: redaction.tidFileId !== null,
             fileId: redaction.tidFileId, fileName: `${redaction.code}_ТИД.docx`,
         },
         {
-            key: "approvalSheet", label: "Лист согласования", exists: redaction.approvalSheetFileId !== null,
+            // Лист согласования
+            key: "approvalSheet", label: t("vndEditLastRevisionModal.approvalSheetLabel"), exists: redaction.approvalSheetFileId !== null,
             fileId: redaction.approvalSheetFileId, fileName: `${redaction.code}_Лист_согласования.docx`,
         },
         {
-            key: "disagreementMatrix", label: "Матрица разногласий", exists: redaction.disagreementMatrixFileId !== null,
+            // Матрица разногласий
+            key: "disagreementMatrix", label: t("vndEditLastRevisionModal.disagreementMatrixLabel"), exists: redaction.disagreementMatrixFileId !== null,
             fileId: redaction.disagreementMatrixFileId, fileName: `${redaction.code}_Матрица_разногласий.docx`,
         },
     ];
@@ -477,7 +524,8 @@ export function VndEditLastRevisionModal({vndId, vnd, redaction, roleNames, onCl
             });
             onSaved(result);
         } catch (e) {
-            setError(e instanceof Error ? e.message : "Не удалось сохранить изменения");
+            // Не удалось сохранить изменения
+            setError(e instanceof Error ? e.message : t("vndEditLastRevisionModal.saveFailed"));
         } finally {
             setSubmitting(false);
         }
@@ -489,19 +537,22 @@ export function VndEditLastRevisionModal({vndId, vnd, redaction, roleNames, onCl
                 <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 p-4">
                     <div className="max-h-[90vh] w-full max-w-[560px] overflow-y-auto rounded-[16px] bg-white p-6 shadow-xl">
                         <div className="mb-2 flex items-center justify-between">
-                            <h2 className="text-[16px] font-bold text-[#1c2740]">Редактировать редакцию {redaction.code}</h2>
+                            <h2 className="text-[16px] font-bold text-[#1c2740]">
+                                {/* Редактировать редакцию {код редакции} */}
+                                {t("vndEditLastRevisionModal.title", {code: redaction.code})}
+                            </h2>
                             <button onClick={onClose} className="cursor-pointer text-[#8b97ab] hover:text-[#3a4560]">
                                 <X size={20}/>
                             </button>
                         </div>
                         <p className="mb-4 text-[12px] text-[#8b97ab]">
-                            Изменения применятся напрямую — без запуска согласования, без создания новой редакции
-                            и без изменения даты актуализации.
+                            {/* Изменения применятся напрямую — без запуска согласования, без создания новой редакции и без изменения даты актуализации. */}
+                            {t("vndEditLastRevisionModal.subtitle")}
                         </p>
 
                         <div className="mb-4 rounded-[10px] border border-[#e5e9f0] bg-[#f9fafc] px-3 py-[10px] text-[11.5px] leading-[1.5] text-[#8b97ab]">
-                            Допустимый формат: DOCX. Максимальный
-                            размер каждого файла — {formatFileSize(MAX_FILE_SIZE)}.
+                            {/* Допустимый формат: DOCX. Максимальный размер каждого файла — {размер}. */}
+                            {t("vndEditLastRevisionModal.allowedFormatNote", {size: formatFileSize(MAX_FILE_SIZE)})}
                         </div>
 
                         <div className="flex flex-col gap-4">
@@ -515,7 +566,7 @@ export function VndEditLastRevisionModal({vndId, vnd, redaction, roleNames, onCl
                                     onRevert={() => setFile(null)}
                                     onDownload={() => {
                                         if (def.fileId === null) return;
-                                        handleViewDownload(def.fileId, buildRedactionFileName(redaction.code, vnd.name, def.lang));
+                                        void handleViewDownload(def.fileId, buildRedactionFileName(redaction.code, vnd.name, def.lang));
                                     }}
                                     onView={() => setViewLang(def.lang)}
                                     onToggleRemove={def.lang !== "ru" ? () => toggleRemoveDoc(def.lang as "kg" | "en") : undefined}
@@ -537,7 +588,7 @@ export function VndEditLastRevisionModal({vndId, vnd, redaction, roleNames, onCl
                                     onRevert={() => setSpecialFiles((prev) => ({...prev, [def.key]: null}))}
                                     onDownload={() => {
                                         if (def.fileId === null) return;
-                                        handleViewDownload(def.fileId, def.fileName);
+                                        void handleViewDownload(def.fileId, def.fileName);
                                     }}
                                     onView={() => setViewLang(def.key)}
                                     onToggleRemove={() => toggleRemoveSpecial(def.key)}
@@ -547,19 +598,28 @@ export function VndEditLastRevisionModal({vndId, vnd, redaction, roleNames, onCl
                             <div>
                                 <div className="mb-[6px] flex items-center justify-between gap-2">
                                     <span className="text-[12.5px] font-semibold text-[#26324a]">
-                                Вложения <span
-                                        className="text-[#8b97ab] font-normal">(необязательно)</span>
-                            </span>
-
+                                        {/* Вложения */}
+                                        {t("vndEditLastRevisionModal.attachmentsLabel")}{" "}
+                                        <span className="text-[#8b97ab] font-normal">
+                                            {/* (необязательно) */}
+                                            {t("vndEditLastRevisionModal.optionalSuffix")}
+                                        </span>
+                                    </span>
 
                                     <span className="flex items-center gap-0.5 text-[11.5px] text-[#8b97ab]">
-                                    Добавлено {totalAttachmentCount} из {VND_REDACTION_MAX_ATTACHMENTS} файлов максимум
-                                    <HelpTooltip
-                                        content={`Количество вложений к редакции ограничено — не более ${VND_REDACTION_MAX_ATTACHMENTS}, каждый файл не больше 50 МБ.`}
-                                        side="top"
-                                        className="h-5 w-5"
-                                    />
-                                </span>
+                                        {/* Добавлено {n} из {max} файлов максимум */}
+                                        {t("vndEditLastRevisionModal.attachmentsAddedCount", {
+                                            count: totalAttachmentCount, max: VND_REDACTION_MAX_ATTACHMENTS,
+                                        })}
+                                        <HelpTooltip
+                                            // Количество вложений к редакции ограничено — не более {max}, каждый файл не больше 50 МБ.
+                                            content={t("vndEditLastRevisionModal.attachmentsLimitTooltip", {
+                                                max: VND_REDACTION_MAX_ATTACHMENTS,
+                                            })}
+                                            side="top"
+                                            className="h-5 w-5"
+                                        />
+                                    </span>
                                 </div>
 
                                 <div className="flex flex-col gap-[6px]">
@@ -581,7 +641,8 @@ export function VndEditLastRevisionModal({vndId, vnd, redaction, roleNames, onCl
                                                     }`}
                                                 />
                                                 {!willBeRemoved && isPreviewableFile(attachment.fileName) && (
-                                                    <Tooltip content="Просмотреть вложение" side="top">
+                                                    // Просмотреть вложение
+                                                    <Tooltip content={t("vndEditLastRevisionModal.previewAttachmentTooltip")} side="top">
                                                         <button
                                                             type="button"
                                                             onClick={() => setPreviewAttachment({fileId: attachment.fileId, fileName: attachment.fileName})}
@@ -592,7 +653,8 @@ export function VndEditLastRevisionModal({vndId, vnd, redaction, roleNames, onCl
                                                     </Tooltip>
                                                 )}
                                                 {!willBeRemoved && (
-                                                    <Tooltip content="Скачать" side="top">
+                                                    // Скачать
+                                                    <Tooltip content={t("vndEditLastRevisionModal.downloadTooltip")} side="top">
                                                         <button
                                                             type="button"
                                                             onClick={() => downloadWithToast(attachment.fileId, attachment.fileName)}
@@ -611,7 +673,10 @@ export function VndEditLastRevisionModal({vndId, vnd, redaction, roleNames, onCl
                                                             : "border-[#e5e9f0] bg-white text-[#8b97ab] hover:border-[#e0473e]/50 hover:text-[#c0392b]"
                                                     }`}
                                                 >
-                                                    {willBeRemoved ? "Отменить удаление" : "Удалить"}
+                                                    {/* Отменить удаление / Удалить */}
+                                                    {willBeRemoved
+                                                        ? t("vndEditLastRevisionModal.cancelDeletion")
+                                                        : t("vndEditLastRevisionModal.delete")}
                                                 </button>
                                             </div>
                                         );
@@ -629,7 +694,8 @@ export function VndEditLastRevisionModal({vndId, vnd, redaction, roleNames, onCl
                                             </span>
                                             <span className="flex-none inline-flex items-center gap-1 text-[11px] font-semibold text-[#1e8e3e]">
                                                 <CheckCircle2 size={12} className="flex-none"/>
-                                                Добавлено
+                                                {/* Добавлено */}
+                                                {t("vndEditLastRevisionModal.added")}
                                             </span>
                                             <button
                                                 type="button"
@@ -651,7 +717,8 @@ export function VndEditLastRevisionModal({vndId, vnd, redaction, roleNames, onCl
                                         className="mt-[6px] flex h-[38px] w-full cursor-not-allowed items-center justify-center gap-1.5 rounded-[9px] border border-dashed border-[#e5e9f0] bg-[#f6f8fb] text-[11.5px] text-[#b7bfcc]"
                                     >
                                         <Paperclip size={14}/>
-                                        Достигнут лимит вложений к редакции
+                                        {/* Достигнут лимит вложений к редакции */}
+                                        {t("vndEditLastRevisionModal.attachmentsLimitReached")}
                                     </span>
                                 ) : (
                                     <label
@@ -666,7 +733,8 @@ export function VndEditLastRevisionModal({vndId, vnd, redaction, roleNames, onCl
                                             onChange={(e) => handleAttachmentsPicked(e.target.files)}
                                         />
                                         <Paperclip size={14}/>
-                                        Добавить файлы
+                                        {/* Добавить файлы */}
+                                        {t("vndEditLastRevisionModal.addFiles")}
                                     </label>
                                 )}
                             </div>
@@ -674,7 +742,12 @@ export function VndEditLastRevisionModal({vndId, vnd, redaction, roleNames, onCl
                             <div>
                                 <div className="mb-[6px] flex items-center justify-between">
                                     <span className="text-[12.5px] font-semibold text-[#26324a]">
-                                        Описание редакции <span className="text-[#8b97ab] font-normal">(необязательно)</span>
+                                        {/* Описание редакции */}
+                                        {t("vndEditLastRevisionModal.descriptionLabel")}{" "}
+                                        <span className="text-[#8b97ab] font-normal">
+                                            {/* (необязательно) */}
+                                            {t("vndEditLastRevisionModal.optionalSuffix")}
+                                        </span>
                                     </span>
                                     <CharCounter length={description.length} max={VND_REDACTION_DESCRIPTION_MAX_LENGTH}/>
                                 </div>
@@ -700,7 +773,8 @@ export function VndEditLastRevisionModal({vndId, vnd, redaction, roleNames, onCl
                                 disabled={submitting}
                                 className="cursor-pointer h-[38px] rounded-[10px] border border-[#e5e9f0] px-4 text-[13px] font-semibold text-[#3a4560] hover:bg-[#f6f8fb] disabled:opacity-60"
                             >
-                                Отмена
+                                {/* Отмена */}
+                                {t("vndEditLastRevisionModal.cancel")}
                             </button>
                             <button
                                 onClick={handleSubmit}
@@ -708,7 +782,8 @@ export function VndEditLastRevisionModal({vndId, vnd, redaction, roleNames, onCl
                                 className="cursor-pointer flex h-[38px] items-center gap-2 rounded-[10px] bg-[#4e57d6] px-4 text-[13px] font-semibold text-white hover:bg-[#3f47bd] disabled:cursor-not-allowed disabled:opacity-50"
                             >
                                 {submitting && <Loader2 size={15} className="animate-spin"/>}
-                                Сохранить
+                                {/* Сохранить */}
+                                {t("vndEditLastRevisionModal.save")}
                             </button>
                         </div>
 
@@ -716,8 +791,8 @@ export function VndEditLastRevisionModal({vndId, vnd, redaction, roleNames, onCl
                             <Clue className="mt-4">
                                 <span className="flex flex-wrap items-center gap-x-1.5 gap-y-1.5">
                                     <span>
-                                        Право на данное редактирование Вам дают роли:
-                                        {roleNames.length === 1 ? " роль:" : " роли:"}
+                                        {/* Право на данное редактирование Вам дают роль:/роли: */}
+                                        {t("vndEditLastRevisionModal.rolesGrantAccess", {count: roleNames.length})}
                                     </span>
                                     {roleNames.map((name) => (
                                         <span

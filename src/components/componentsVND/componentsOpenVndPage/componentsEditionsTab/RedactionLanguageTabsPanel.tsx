@@ -69,6 +69,7 @@ export function RedactionLanguageTabsPanel({
                                 {available ? (
                                     button
                                 ) : (
+                                    /* Текст на этом языке ещё не загружен */
                                     <Tooltip content={t("openVndPage.languageTabsPanel.unavailableHint")} side="right">
                                         {button}
                                     </Tooltip>

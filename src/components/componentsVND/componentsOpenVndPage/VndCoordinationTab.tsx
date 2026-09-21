@@ -13,6 +13,8 @@ import {toast} from "@/service/toastService.ts";
 import {PermissionCode} from "@/constants/permissions/permissions.ts";
 import {useVndRedactions} from "@/hooks/vndHooks/useVndRedactions.ts";
 import {useAsyncAction} from "@/hooks/useAsyncAction.ts";
+import {useApprovalProcess} from "@/hooks/coordinationHooks/useApprovalProcess.ts";
+import type {RedactionViewTarget} from "@/utils/vndProcess/redactionLanguagePanelUtils.ts";
 import {downloadWithToast} from "@/utils/downloadFiles/downloadFile.ts";
 
 ///
@@ -47,9 +49,6 @@ import {
 } from "@/components/componentsCoordination/CoordinationRouteConstructor/viewComponents/RedactionViewModal.tsx";
 import {ConfirmActionModal} from "@/components/componentsGeneral/modal/ConfirmActionModal.tsx";
 import {AlertTriangle, CheckCircle2, Clock3, Columns2, FileCheck2, Info, XCircle} from "lucide-react";
-import type {RedactionViewTarget} from "@/utils/vndProcess/redactionLanguagePanelUtils.ts";
-import {useApprovalProcess} from "@/hooks/coordinationHooks/useApprovalProcess.ts";
-
 ///
 
 interface VndCoordinationTabProps {
@@ -152,7 +151,8 @@ export function VndCoordinationTab({vnd, onVndChanged}: VndCoordinationTabProps)
     // redaction.docRuUpdatedAt/docKgUpdatedAt/docEnUpdatedAt (см. RedactionDocumentsPanel),
     // которые уже придут в свежих данных с бэка, отдельного состояния для этого не нужно.
     const handleResubmitted = async () => {
-        await Promise.all([reload(), refetchRedactions()]);
+        await reload();
+        refetchRedactions();
         toast.success(t("openVndPage.coordinationTab.resubmittedToastTitle"), t("openVndPage.coordinationTab.resubmittedToastDescription"));
     };
 

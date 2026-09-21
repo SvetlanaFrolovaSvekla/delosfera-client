@@ -3,24 +3,26 @@ import {useState} from "react";
 import {createPortal} from "react-dom";
 import type {ApprovalProcessResponse} from "@/service/coordinationService/coordinationServiceTypes.ts";
 import {MAX_STAGES} from "@/constants/coordinationParams.ts";
+import {useStageDrafts} from "@/hooks/coordinationHooks/useStageDrafts.ts";
+import {useApprovalNorms} from "@/hooks/coordinationHooks/useApprovalNorms.ts";
+import {useStartApproval} from "@/hooks/coordinationHooks/useStartApproval.ts";
+import {useStageRouting} from "@/hooks/coordinationHooks/useStageRouting.ts";
+import {VndSelectApproverModal} from "./VndSelectApproverModal.tsx";
 import {
     StageCard
 } from "@/components/componentsCoordination/CoordinationRouteConstructor/functionalComponents/StageCard.tsx";
-import {VndSelectApproverModal} from "./VndSelectApproverModal.tsx";
-import {ArrowDown, Clock, Loader2, Route, Lock, Plus, X, BadgeCheck} from "lucide-react";
-import {Loader} from "@/components/componentsGeneral/Loader.tsx";
 import {
     NormBlock
 } from "@/components/componentsCoordination/CoordinationRouteConstructor/functionalComponents/NormBlock.tsx";
 import {
     RouteHintsPanel, type RouteHint
 } from "@/components/componentsCoordination/CoordinationRouteConstructor/functionalComponents/RouteHintsPanel.tsx";
-import {useStageDrafts} from "@/hooks/coordinationHooks/useStageDrafts.ts";
-import {useApprovalNorms} from "@/hooks/coordinationHooks/useApprovalNorms.ts";
-import {useStartApproval} from "@/hooks/coordinationHooks/useStartApproval.ts";
-import {useStageRouting} from "@/hooks/coordinationHooks/useStageRouting.ts";
 import {HelpTooltip} from "@/components/componentsGeneral/knowledgeBaseComponents/HelpTooltip.tsx";
 import {Tooltip} from "@/components/componentsGeneral/Tooltip.tsx";
+import {Loader} from "@/components/componentsGeneral/Loader.tsx";
+
+import {ArrowDown, Clock, Loader2, Route, Lock, Plus, X, BadgeCheck} from "lucide-react";
+import {useTranslation} from "react-i18next";
 
 interface VndStartApprovalModalProps {
     vndId: number;
@@ -35,32 +37,40 @@ interface VndStartApprovalModalProps {
     currentUserId?: number;
 }
 
-const ROUTE_HINTS: RouteHint[] = [
-    {
-        icon: Route,
-        iconColor: "#7a5ce0",
-        text: "Пожалуйста, настройте маршрут: добавьте согласующих и задайте нормативы сроков согласования на каждом этапе!",
-    },
-    {
-        icon: Lock,
-        iconColor: "#1d8374",
-        text: "Фиолетовым выделены фиксированные СП, которые обязательно должны принять участие в согласовании — их нельзя открепить, можно только изменить установленного согласующего по умолчанию.",
-    },
-    {
-        icon: Clock,
-        iconColor: "#b3730a",
-        text: "Максимальное значение для норматива каждого из этапов — 90 дней!",
-    },
-    {
-        icon: BadgeCheck,
-        iconColor: "#4b831d",
-        text: "Если согласующий не примет решение за отведённый норматив срока — этап считается автоматически согласованным.",
-    },
-];
-
 export function VndStartApprovalModal({
-    vndId, onClose, onStarted, draftOwnerUserId, draftOwnerUserName, currentUserId,
-}: VndStartApprovalModalProps) {
+                                          vndId, onClose, onStarted, draftOwnerUserId, draftOwnerUserName, currentUserId,
+                                      }: VndStartApprovalModalProps) {
+    const {t} = useTranslation();
+
+    // Подсказки по работе с конструктором маршрута - вынесены внутрь компонента, т.к. текст
+    // теперь берётся из t() и должен пересчитываться при смене языка.
+    const ROUTE_HINTS: RouteHint[] = [
+        {
+            icon: Route,
+            iconColor: "#7a5ce0",
+            // Пожалуйста, настройте маршрут: добавьте согласующих и задайте нормативы сроков согласования на каждом этапе!
+            text: t("vndStartApprovalModal.routeHintConfigureRoute"),
+        },
+        {
+            icon: Lock,
+            iconColor: "#1d8374",
+            // Фиолетовым выделены фиксированные СП, которые обязательно должны принять участие в согласовании — их нельзя открепить, можно только изменить установленного согласующего по умолчанию.
+            text: t("vndStartApprovalModal.routeHintFixedStages"),
+        },
+        {
+            icon: Clock,
+            iconColor: "#b3730a",
+            // Максимальное значение для норматива каждого из этапов — 90 дней!
+            text: t("vndStartApprovalModal.routeHintMaxDays"),
+        },
+        {
+            icon: BadgeCheck,
+            iconColor: "#4b831d",
+            // Если согласующий не примет решение за отведённый норматив срока — этап считается автоматически согласованным.
+            text: t("vndStartApprovalModal.routeHintAutoApproval"),
+        },
+    ];
+
     // Запускающий - не автор черновика (например, главный редактор действует за него) - тогда
     // даём выбор, кто станет инициатором согласования: сам запускающий или автор черновика.
     // См. VndApprovalService.StartAsync/actingOnSomeoneElsesDraft на бэке.
@@ -119,7 +129,8 @@ export function VndStartApprovalModal({
             className="cursor-pointer flex h-[40px] items-center gap-2 rounded-[10px] bg-[#4e57d6] px-5 text-[13px] font-semibold text-white hover:bg-[#3f47bd] disabled:cursor-not-allowed disabled:opacity-50"
         >
             {submitting && <Loader2 size={15} className="animate-spin"/>}
-            Запустить согласование
+            {/* Запустить согласование */}
+            {t("vndStartApprovalModal.submitButton")}
         </button>
     );
 
@@ -130,9 +141,13 @@ export function VndStartApprovalModal({
                 {/* Header */}
                 <div className="flex flex-none items-center justify-between border-b border-[#eef0f5] px-7 py-5">
                     <div>
-                        <h2 className="text-[17px] font-bold text-[#1c2740]">Запуск согласования</h2>
+                        <h2 className="text-[17px] font-bold text-[#1c2740]">
+                            {/* Запуск согласования */}
+                            {t("vndStartApprovalModal.title")}
+                        </h2>
                         <p className="mt-[2px] text-[12.5px] text-[#8b97ab]">
-                            Настройте маршрут для процесса согласования этой редакции ВНД
+                            {/* Настройте маршрут для процесса согласования этой редакции ВНД */}
+                            {t("vndStartApprovalModal.subtitle")}
                         </p>
                     </div>
                     <button onClick={onClose} className="cursor-pointer text-[#8b97ab] hover:text-[#3a4560]">
@@ -147,16 +162,21 @@ export function VndStartApprovalModal({
                 {actingOnSomeoneElsesDraft && (
                     <div className="flex flex-none flex-col gap-2 border-b border-[#eef0f5] px-7 py-4">
                         <span className="text-[12.5px] font-semibold text-[#1c2740]">
-                            Кто будет указан инициатором согласования?
+                            {/* Кто будет указан инициатором согласования? */}
+                            {t("vndStartApprovalModal.initiatorQuestion")}
                         </span>
                         <div className="flex flex-wrap gap-2.5">
                             <InitiatorRadioRow
-                                label="Стать инициатором согласования"
+                                // Стать инициатором согласования
+                                label={t("vndStartApprovalModal.initiatorSelf")}
                                 checked={initiator === "self"}
                                 onSelect={() => setInitiator("self")}
                             />
                             <InitiatorRadioRow
-                                label={`Оставить инициатором согласования ${draftOwnerUserName ?? "автора черновика"}`}
+                                // Оставить инициатором согласования {ФИО автора черновика}
+                                label={t("vndStartApprovalModal.initiatorOwner", {
+                                    ownerName: draftOwnerUserName ?? t("vndStartApprovalModal.defaultOwnerName"),
+                                })}
                                 checked={initiator === "owner"}
                                 onSelect={() => setInitiator("owner")}
                             />
@@ -167,11 +187,16 @@ export function VndStartApprovalModal({
                 {/* Контент */}
                 <div className="flex-1 overflow-y-auto px-12 py-4">
                     <div className="mb-4 flex items-center justify-between">
-                        <h3 className="text-[13.5px] font-bold text-[#1c2740]">Конструктор маршрута</h3>
+                        <h3 className="text-[13.5px] font-bold text-[#1c2740]">
+                            {/* Конструктор маршрута */}
+                            {t("vndStartApprovalModal.routeConstructorTitle")}
+                        </h3>
                         <span className="flex items-center gap-0.5 text-[11.5px] text-[#8b97ab]">
-                            Добавлено {stages.length} из {MAX_STAGES} согласующих максимум
+                            {/* Добавлено {stages.length} из {MAX_STAGES} согласующих максимум */}
+                            {t("vndStartApprovalModal.stagesAddedCount", {count: stages.length, max: MAX_STAGES})}
                             <HelpTooltip
-                                content="Максимальное количество согласующих ограничено, чтобы процесс не растягивался на слишком долгий срок (фиксированные СП также учитываются)."
+                                // Максимальное количество согласующих ограничено, чтобы процесс не растягивался на слишком долгий срок (фиксированные СП также учитываются).
+                                content={t("vndStartApprovalModal.maxStagesTooltip")}
                                 side="bottom"
                                 className="h-5 w-5"
                             />
@@ -190,7 +215,8 @@ export function VndStartApprovalModal({
                         {/* Ряд карточек этапов - всегда в одну строку (скролл по горизонтали при 5+ этапах) */}
                         {catalogLoading ? (
                             <div className="flex h-[140px] items-center justify-center">
-                                <Loader label="Загрузка обязательных этапов…"/>
+                                {/* Загрузка обязательных этапов… */}
+                                <Loader label={t("vndStartApprovalModal.loadingRequiredStages")}/>
                             </div>
                         ) : (
                             <div ref={cardsScrollRef} onScroll={recomputePaths} className="py-5 flex gap-6 overflow-x-auto">
@@ -215,7 +241,10 @@ export function VndStartApprovalModal({
                                         className="flex h-[110px] w-[210px] flex-none cursor-pointer flex-col items-center justify-center gap-2 rounded-[14px] border border-dashed border-[#d5dae3] bg-white text-[#8b97ab] transition-colors hover:border-[#4e57d6]/50 hover:bg-[#f6f8fb]"
                                     >
                                         <Plus size={18}/>
-                                        <span className="text-[12px] font-medium">Добавить согласующего</span>
+                                        <span className="text-[12px] font-medium">
+                                            {/* Добавить согласующего */}
+                                            {t("vndStartApprovalModal.addApprover")}
+                                        </span>
                                     </button>
                                 )}
                             </div>
@@ -231,25 +260,31 @@ export function VndStartApprovalModal({
                         {/* Нормативы согласования — колонкой */}
                         <div className="mx-auto mt-10 flex w-[280px] flex-col items-center gap-4">
                             <NormBlock
-                                label="Первичное согласование"
+                                // Первичное согласование
+                                label={t("vndStartApprovalModal.primaryApprovalLabel")}
                                 value={primaryMinutes}
                                 onChange={setPrimaryMinutes}
                                 blockRef={targetRef}
-                                helpText="Время, за которое каждый согласующий должен принять решение на этом этапе. Участвуют все согласующие, добавленные в маршрут."
+                                // Время, за которое каждый согласующий должен принять решение на этом этапе. Участвуют все согласующие, добавленные в маршрут.
+                                helpText={t("vndStartApprovalModal.primaryApprovalHelp")}
                             />
                             <ArrowDown size={16} className="flex-none text-[#c3c9d4]"/>
                             <NormBlock
-                                label="Согласование после внесённых изменений"
+                                // Согласование после внесённых изменений
+                                label={t("vndStartApprovalModal.repeatApprovalLabel")}
                                 value={repeatMinutes}
                                 onChange={setRepeatMinutes}
-                                helpText="Время, за которое согласующий должен проверить исправленную версию после того, как оставил замечания на предыдущем этапе. Участвуют только те согласующие, которые оставляли замечания."
+                                // Время, за которое согласующий должен проверить исправленную версию после того, как оставил замечания на предыдущем этапе. Участвуют только те согласующие, которые оставляли замечания.
+                                helpText={t("vndStartApprovalModal.repeatApprovalHelp")}
                             />
                             <ArrowDown size={16} className="flex-none text-[#c3c9d4]"/>
                             <NormBlock
-                                label="Финальная выдержка"
+                                // Финальная выдержка
+                                label={t("vndStartApprovalModal.finalHoldLabel")}
                                 value={finalHoldMinutes}
                                 onChange={setFinalHoldMinutes}
-                                helpText="Время, за которое согласующие могут ознакомиться с финальной версией редакции. Этап необязательный — отсутствие реакции не считается просрочкой. Если за это время не поступит новых замечаний, редакция автоматически становится действующей. Если замечания появятся, после их исправления, согласование вернётся на этап «Согласование после внесённых изменений»."
+                                // Время, за которое согласующие могут ознакомиться с финальной версией редакции. Этап необязательный — отсутствие реакции не считается просрочкой. Если за это время не поступит новых замечаний, редакция автоматически становится действующей. Если замечания появятся, после их исправления, согласование вернётся на этап «Согласование после внесённых изменений».
+                                helpText={t("vndStartApprovalModal.finalHoldHelp")}
                             />
                         </div>
                     </div>
@@ -269,13 +304,15 @@ export function VndStartApprovalModal({
                         disabled={submitting}
                         className="cursor-pointer h-[40px] rounded-[10px] border border-[#e5e9f0] px-5 text-[13px] font-semibold text-[#3a4560] hover:bg-[#f6f8fb] disabled:opacity-60"
                     >
-                        Отмена
+                        {/* Отмена */}
+                        {t("vndStartApprovalModal.cancel")}
                     </button>
                     {canSubmit ? (
                         submitButton
                     ) : (
                         <Tooltip
-                            content="Чтобы запустить согласование, пожалуйста, заполните всех согласующих и укажите нормативы сроков по всем этапам!"
+                            // Чтобы запустить согласование, пожалуйста, заполните всех согласующих и укажите нормативы сроков по всем этапам!
+                            content={t("vndStartApprovalModal.cannotSubmitTooltip")}
                             side="top"
                         >
                             <span className="inline-block">{submitButton}</span>
@@ -304,10 +341,10 @@ export function VndStartApprovalModal({
 // Та же радио-кнопка-строка, что и в CreateDocumentModal.tsx (DocTypeRadioRow) - здесь без
 // disabled/"Скоро": оба варианта инициатора всегда доступны для выбора.
 function InitiatorRadioRow({
-                                label,
-                                checked,
-                                onSelect,
-                            }: {
+                               label,
+                               checked,
+                               onSelect,
+                           }: {
     label: string;
     checked: boolean;
     onSelect: () => void;

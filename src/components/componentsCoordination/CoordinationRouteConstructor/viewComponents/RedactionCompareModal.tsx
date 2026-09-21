@@ -7,18 +7,19 @@
 // сравнить и две более старые редакции между собой.
 import React, {useEffect, useRef, useState} from "react";
 import {createPortal} from "react-dom";
-import {ChevronDown, Columns2, Download, ListTree, Loader2, Table2, X, ZoomIn, ZoomOut} from "lucide-react";
+import {useTranslation} from "react-i18next";
 import type {VndRedactionResponse, VndResponse} from "@/service/vndService/vndServiceType.ts";
+import {useDocxDiffHighlight} from "@/hooks/vndHooks/useDocxDiffHighlight.ts";
+import {
+    getAvailableLanguages, getRedactionFileId, type RedactionLanguage
+} from "@/utils/vndProcess/redactionLanguagePanelUtils.ts";
 import {
     RedactionTextView, type RedactionTextViewHandle
 } from "@/components/componentsVND/componentsOpenVndPage/componentsEditionsTab/RedactionTextView.tsx";
 import {
     RedactionContentsPanel
 } from "@/components/componentsVND/componentsOpenVndPage/componentsEditionsTab/RedactionContentsPanel.tsx";
-import {
-    getAvailableLanguages, getRedactionFileId, type RedactionLanguage
-} from "@/utils/vndProcess/redactionLanguagePanelUtils.ts";
-import {useDocxDiffHighlight} from "@/hooks/vndHooks/useDocxDiffHighlight.ts";
+import {ChevronDown, Columns2, Download, ListTree, Loader2, Table2, X, ZoomIn, ZoomOut} from "lucide-react";
 
 interface RedactionCompareModalProps {
     vnd: VndResponse;
@@ -63,7 +64,6 @@ function useTextViewReady(
         const check = () => {
             if (cancelled) return;
             const handle = handleRef.current;
-            // @ts-ignore
             if (handle?.isReady()) {
                 setState({ready: true, container: handle.getContainer()});
             } else {
@@ -92,11 +92,18 @@ function columnLabel(
     selected: VndRedactionResponse,
     other: VndRedactionResponse,
     reviewedId: number | undefined,
+    t: (key: string) => string,
 ): { label: string; labelEmphasis?: string } {
-    const label = selected.number > other.number ? "Новая редакция" : "Предыдущая редакция";
+    // "Новая редакция" / "Предыдущая редакция"
+    const label = selected.number > other.number
+        ? t("redactionCompareModal.newRedactionLabel")
+        : t("redactionCompareModal.previousRedactionLabel");
     return {
         label,
-        labelEmphasis: reviewedId !== undefined && selected.id === reviewedId ? " (необходимо согласовать)" : undefined,
+        // " (необходимо согласовать)"
+        labelEmphasis: reviewedId !== undefined && selected.id === reviewedId
+            ? t("redactionCompareModal.needsApprovalEmphasis")
+            : undefined,
     };
 }
 
@@ -104,6 +111,8 @@ export function RedactionCompareModal({
                                           vnd, redactions, initialLeft, initialRight, reviewedRedactionId,
                                           downloadingId, onDownload, onClose,
                                       }: RedactionCompareModalProps) {
+    const {t} = useTranslation();
+
     // Какая редакция сейчас выбрана слева/справа - по умолчанию initialLeft/initialRight, но
     // можно поменять на любую другую через выпадающий список.
     const [leftId, setLeftId] = useState(initialLeft.id);
@@ -121,10 +130,12 @@ export function RedactionCompareModal({
     // При смене редакции с какой-либо стороны - сбрасываем язык на первый доступный у новой
     // редакции (старый выбранный язык может там отсутствовать).
     useEffect(() => {
+        // eslint-disable-next-line react-hooks/set-state-in-effect
         setLeftLanguage(getAvailableLanguages(left)[0] ?? "ru");
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [leftId]);
     useEffect(() => {
+        // eslint-disable-next-line react-hooks/set-state-in-effect
         setRightLanguage(getAvailableLanguages(right)[0] ?? "ru");
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [rightId]);
@@ -143,19 +154,23 @@ export function RedactionCompareModal({
         `${right.id}-${rightLanguage}::${left.id}-${leftLanguage}`,
     );
 
-    const leftMeta = columnLabel(left, right, reviewedRedactionId);
-    const rightMeta = columnLabel(right, left, reviewedRedactionId);
+    const leftMeta = columnLabel(left, right, reviewedRedactionId, t);
+    const rightMeta = columnLabel(right, left, reviewedRedactionId, t);
 
     return createPortal(
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-3">
-            <div className="flex h-full max-h-[calc(100vh-24px)] w-full max-w-[calc(100vw-24px)] flex-col overflow-hidden rounded-[16px] bg-white shadow-xl">
-                <div className="flex flex-none flex-wrap items-center justify-between gap-3 border-b border-[#eef2f7] px-6 py-4">
+            <div
+                className="flex h-full max-h-[calc(100vh-24px)] w-full max-w-[calc(100vw-24px)] flex-col overflow-hidden rounded-[16px] bg-white shadow-xl">
+                <div
+                    className="flex flex-none flex-wrap items-center justify-between gap-3 border-b border-[#eef2f7] px-6 py-4">
                     <div className="flex items-center gap-3">
-                        <span className="grid h-10 w-10 flex-none place-items-center rounded-[11px] bg-[#ececfc] text-[#4e57d6]">
+                        <span
+                            className="grid h-10 w-10 flex-none place-items-center rounded-[11px] bg-[#ececfc] text-[#4e57d6]">
                             <Columns2 size={19} strokeWidth={1.8}/>
                         </span>
                         <h2 className="text-[16px] font-bold text-[#1c2740]">
-                            Просмотр и сравнение редакций
+                            {/* Просмотр и сравнение редакций */}
+                            {t("redactionCompareModal.title")}
                         </h2>
                     </div>
 
@@ -163,12 +178,14 @@ export function RedactionCompareModal({
                         {diffStatus === "computing" && (
                             <div className="flex items-center gap-1.5 text-[12px] text-[#8b97ab]">
                                 <Loader2 size={14} className="animate-spin"/>
-                                Ищем различия…
+                                {/* Ищем различия… */}
+                                {t("redactionCompareModal.searchingDiff")}
                             </div>
                         )}
                         {diffStatus === "unavailable" && (
                             <div className="text-[12px] text-[#a3adbd]">
-                                Документы слишком велики или сильно различаются — подсветка различий недоступна!
+                                {/* Документы слишком велики или сильно различаются — подсветка различий недоступна! */}
+                                {t("redactionCompareModal.diffUnavailable")}
                             </div>
                         )}
 
@@ -245,6 +262,8 @@ function CompareColumn({
     excludeId: number;
     onRedactionChange: (id: number) => void;
 }) {
+    const {t} = useTranslation();
+
     // ТИД этой редакции - у каждой из двух колонок своя кнопка "ТИД" и своё состояние (можно
     // открыть с обеих сторон одновременно, независимо друг от друга). Не отдельное окно поверх
     // панели, а делит саму эту колонку на две части: сверху ТИД (1/3 высоты, со своим скроллом
@@ -263,7 +282,8 @@ function CompareColumn({
 
     return (
         <div className="relative flex min-h-0 flex-col overflow-hidden">
-            <div className="flex flex-none flex-wrap items-center justify-between gap-3 border-b border-[#eef2f7] bg-[#fbfcfe] px-5 py-3">
+            <div
+                className="flex flex-none flex-wrap items-center justify-between gap-3 border-b border-[#eef2f7] bg-[#fbfcfe] px-5 py-3">
                 <div className="min-w-0">
                     <RedactionPicker
                         redactions={redactions}
@@ -290,7 +310,11 @@ function CompareColumn({
                                     className="h-7 cursor-pointer rounded-[6px] px-2.5 text-[11.5px] font-semibold transition-colors"
                                     style={
                                         activeLanguage === lang
-                                            ? {background: "#fff", color: "#4e57d6", boxShadow: "0 1px 2px rgba(15,27,45,.08)"}
+                                            ? {
+                                                background: "#fff",
+                                                color: "#4e57d6",
+                                                boxShadow: "0 1px 2px rgba(15,27,45,.08)"
+                                            }
                                             : {color: "#5d616c"}
                                     }
                                 >
@@ -312,7 +336,8 @@ function CompareColumn({
                         }
                     >
                         <ListTree size={12} strokeWidth={2} className="flex-none"/>
-                        Содержание
+                        {/* Содержание */}
+                        {t("redactionCompareModal.contents")}
                     </button>
 
                     <button
@@ -327,13 +352,15 @@ function CompareColumn({
                         }
                     >
                         <Table2 size={12} strokeWidth={2} className="flex-none"/>
-                        ТИД
+                        {/* ТИД */}
+                        {t("redactionCompareModal.tid")}
                     </button>
                 </div>
             </div>
 
             {contentsOpen && (
-                <div className="absolute right-3 top-[64px] z-30 max-h-[calc(100%-80px)] w-[280px] overflow-hidden rounded-[14px] shadow-[0_14px_38px_rgba(20,25,40,0.22)]">
+                <div
+                    className="absolute right-3 top-[64px] z-30 max-h-[calc(100%-80px)] w-[280px] overflow-hidden rounded-[14px] shadow-[0_14px_38px_rgba(20,25,40,0.22)]">
                     <RedactionContentsPanel
                         fileId={activeFileId}
                         getContainer={() => textViewRef.current?.getContainer() ?? null}
@@ -348,10 +375,14 @@ function CompareColumn({
                     <div className="flex flex-none items-center justify-between gap-3 bg-[#fbfcfe] px-4 py-2">
                         <div className="flex min-w-0 items-center gap-2 text-[12px] font-bold text-[#1c2740]">
                             <Table2 size={14} className="flex-none text-[#4e57d6]"/>
-                            <span className="truncate">ТИД — {redaction.code}</span>
+                            <span className="truncate">
+                                {/* ТИД — {код редакции} */}
+                                {t("redactionCompareModal.tidHeader", {code: redaction.code})}
+                            </span>
                         </div>
                         <div className="flex flex-none items-center gap-2">
-                            <div className="flex items-center gap-1 rounded-[7px] border border-[#e5e9f0] bg-white px-1 py-[3px]">
+                            <div
+                                className="flex items-center gap-1 rounded-[7px] border border-[#e5e9f0] bg-white px-1 py-[3px]">
                                 <button
                                     type="button"
                                     onClick={() => setTidZoom((z) => Math.max(TID_ZOOM_MIN, z - TID_ZOOM_STEP))}
@@ -438,6 +469,7 @@ function RedactionPicker({
     excludeId: number;
     onChange: (id: number) => void;
 }) {
+    const {t} = useTranslation();
     const [open, setOpen] = useState(false);
     const rootRef = useRef<HTMLDivElement>(null);
 
@@ -465,7 +497,8 @@ function RedactionPicker({
             </button>
 
             {open && (
-                <div className="absolute left-0 top-full z-20 mt-1 max-h-[320px] w-[300px] overflow-y-auto rounded-[10px] border border-[#e5e9f0] bg-white py-1 shadow-[0_10px_30px_rgba(20,25,40,0.15)]">
+                <div
+                    className="absolute left-0 top-full z-20 mt-1 max-h-[320px] w-[300px] overflow-y-auto rounded-[10px] border border-[#e5e9f0] bg-white py-1 shadow-[0_10px_30px_rgba(20,25,40,0.15)]">
                     {sorted.map((r) => {
                         const disabled = r.id === excludeId;
                         return (
@@ -482,7 +515,8 @@ function RedactionPicker({
                             >
                                 <span className="text-[12.5px] font-bold text-[#1c2740]">{r.code}</span>
                                 <span className="line-clamp-1 text-[11px] text-[#8b97ab]">
-                                    {r.description || "Без описания"}
+                                    {/* Без описания */}
+                                    {r.description || t("redactionCompareModal.noDescription")}
                                 </span>
                             </button>
                         );

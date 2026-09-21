@@ -1,18 +1,12 @@
 // Панель с перечнем редакций документа
-import {Fragment} from "react";
 import {useTranslation} from "react-i18next";
+import {Fragment} from "react";
 import type {VndRedactionResponse} from "@/service/vndService/vndServiceType.ts";
 import {formatDate} from "@/utils/dateUtils.ts";
 import {getRedactionDisplayStatus, REDACTION_STATUS_META} from "@/utils/vndProcess/redactionStatus.ts";
-
-/** Компактный формат для строки "Актуализация {дата} №{код}" / "Первая редакция {дата} №{код}" —
- * ДД.ММ.ГГг. (двузначный год), как на макете. Отдельно от formatDate (там полный год) — это
- * не дата загрузки файла, а дата ПРИНЯТИЯ конкретной редакции (реквизит редакции). */
-function formatShortYearDate(iso: string): string {
-    const [y, m, d] = iso.slice(0, 10).split("-");
-    if (!y || !m || !d) return "";
-    return `${d}.${m}.${y.slice(-2)}г.`;
-}
+import type {VndStatusKey} from "@/constants/vndTabs.ts";
+import {HelpTooltip} from "@/components/componentsGeneral/knowledgeBaseComponents/HelpTooltip.tsx";
+import {Tooltip} from "@/components/componentsGeneral/Tooltip.tsx";
 import {
     Calendar,
     CheckCircle2,
@@ -28,9 +22,18 @@ import {
     Table2,
     Upload
 } from "lucide-react";
-import type {VndStatusKey} from "@/constants/vndTabs.ts";
-import {HelpTooltip} from "@/components/componentsGeneral/knowledgeBaseComponents/HelpTooltip.tsx";
-import {Tooltip} from "@/components/componentsGeneral/Tooltip.tsx";
+
+/** Компактный формат для строки "Актуализация {дата} №{код}" / "Первая редакция {дата} №{код}" —
+ * ДД.ММ.ГГг. (двузначный год), как на макете. Отдельно от formatDate (там полный год) — это
+ * не дата загрузки файла, а дата ПРИНЯТИЯ конкретной редакции (реквизит редакции).
+ * Суффикс "г." — русскоязычный, оставлен как есть (формат даты сам по себе не переведён на
+ * en/ky; если понадобится локализовать и его, эту функцию тоже нужно будет параметризовать
+ * через t/locale). */
+function formatShortYearDate(iso: string): string {
+    const [y, m, d] = iso.slice(0, 10).split("-");
+    if (!y || !m || !d) return "";
+    return `${d}.${m}.${y.slice(-2)}г.`;
+}
 
 /** Какое действие выполняет главная кнопка сайдбара:
  * - "new" — добавить редакцию напрямую (у ВНД ещё нет действующей редакции)
@@ -267,7 +270,8 @@ export function RedactionsSidebar({
             </button>
 
             <Tooltip
-                content="Сравнение доступно, если у документа есть хотя бы две редакции"
+                // Сравнение доступно, если у документа есть хотя бы две редакции
+                content={t("openVndPage.redactionsSidebar.compareTooltipDisabled")}
                 disabled={!compareDisabled}
                 side="top"
             >
@@ -333,7 +337,7 @@ function RedactionListItem({
         (redaction.tidFileId !== null ? 1 : 0)
         + (redaction.approvalSheetFileId !== null ? 1 : 0)
         + (redaction.disagreementMatrixFileId !== null ? 1 : 0);
-    const totalAttachmentsCount = redaction.attachmentFileIds.length + specialAttachmentsCount;
+    const totalAttachmentsCount = redaction.attachments.length + specialAttachmentsCount;
     const hasAttachments = totalAttachmentsCount > 0;
     const hasTid = redaction.tidFileId !== null;
 
@@ -356,7 +360,8 @@ function RedactionListItem({
         >
             <div className="flex items-start gap-2">
                 <span className="w-[38px] flex-none font-mono text-[13px] font-bold text-[#1c2740]">
-                    Р{redaction.number}
+                    {/* Р{redaction.number} */}
+                    {t("openVndPage.redactionsSidebar.redactionNumberPrefix", {number: redaction.number})}
                 </span>
                 <span className="min-w-0 flex-1">
                     <span className="flex items-center gap-[7px]">
@@ -399,7 +404,10 @@ function RedactionListItem({
                         реквизитов у неё ещё нет (adoptionDate пуст до PublishAsync). */}
                     {redaction.adoptionDate && (
                         <span className="mt-[4px] block text-[11px] leading-[1.4] text-[#55617a]">
-                            {redaction.number === 1 ? "Первая редакция" : "Актуализация"}{" "}
+                            {/* Первая редакция / Актуализация */}
+                            {redaction.number === 1
+                                ? t("openVndPage.redactionsSidebar.firstRedactionLabel")
+                                : t("openVndPage.redactionsSidebar.actualizationLabel")}{" "}
                             {formatShortYearDate(redaction.adoptionDate)}
                             {redaction.adoptionCode && ` №${redaction.adoptionCode}`}
                         </span>
@@ -413,7 +421,9 @@ function RedactionListItem({
 
                     {wasRejected && (
                         <span className="mt-[5px] block text-[11px] leading-[1.4] text-[#c0392b]">
-                            Эта редакция была отклонена при согласовании. Отредактируйте её, чтобы отправить на согласование вновь.
+                            {/* Эта редакция была отклонена при согласовании. Отредактируйте её,
+                            чтобы отправить на согласование вновь. */}
+                            {t("openVndPage.redactionsSidebar.rejectedHint")}
                             {onShowRejectedDetails && (
                                 <>
                                     {" "}
@@ -425,7 +435,8 @@ function RedactionListItem({
                                         }}
                                         className="cursor-pointer font-semibold underline decoration-dotted hover:text-[#a53023]"
                                     >
-                                        Подробнее
+                                        {/* Подробнее */}
+                                        {t("openVndPage.redactionsSidebar.moreDetailsButton")}
                                     </button>
                                 </>
                             )}

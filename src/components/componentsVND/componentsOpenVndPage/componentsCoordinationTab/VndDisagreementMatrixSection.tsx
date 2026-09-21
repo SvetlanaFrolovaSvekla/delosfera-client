@@ -9,16 +9,10 @@ import {DisagreementMatrixTable} from "@/components/componentsVND/componentsOpen
 import {Clue} from "@/components/componentsGeneral/knowledgeBaseComponents/Clue.tsx";
 import {downloadBlob} from "@/utils/docxWork/docxDisagreementMatrixExport.ts";
 import disagreementMatrixTemplateBlankUrl from "@/assets/disagreementMatrix/disagreementMatrixTemplateBlank.docx?url";
+import {MAX_FILE_SIZE} from "@/constants/validation/totalValidatuon.ts";
+import {formatBytes} from "@/utils/formatBytes.ts";
 
 export type DisagreementMatrixMode = "generate" | "upload";
-
-const MAX_FILE_SIZE = 100 * 1024 * 1024; // 100 МБ
-
-function formatBytes(bytes: number): string {
-    if (bytes < 1024) return `${bytes} Б`;
-    if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} КБ`;
-    return `${(bytes / (1024 * 1024)).toFixed(1)} МБ`;
-}
 
 interface VndDisagreementMatrixSectionProps {
     mode: DisagreementMatrixMode;
@@ -84,7 +78,10 @@ export function VndDisagreementMatrixSection({
     const handleDownloadTemplate = async () => {
         try {
             const response = await fetch(disagreementMatrixTemplateBlankUrl);
-            if (!response.ok) throw new Error("Не удалось скачать шаблон матрицы разногласий");
+            if (!response.ok) {
+                onFileError("Не удалось скачать шаблон матрицы разногласий");
+                return;
+            }
             const blob = await response.blob();
             downloadBlob(blob, "Матрица разногласий_шаблон.docx");
         } catch (e) {

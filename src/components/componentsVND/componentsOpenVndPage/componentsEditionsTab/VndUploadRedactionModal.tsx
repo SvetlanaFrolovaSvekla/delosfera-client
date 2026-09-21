@@ -4,17 +4,19 @@ import {createPortal} from "react-dom";
 import {vndService} from "@/service/vndService/vndService.ts";
 import type {VndRedactionAttachmentResponse, VndRedactionResponse} from "@/service/vndService/vndServiceType.ts";
 import {useAuth} from "@/context/AuthContext.ts";
+import {downloadWithToast} from "@/utils/downloadFiles/downloadFile.ts";
+import {
+    VND_REDACTION_DESCRIPTION_MAX_LENGTH,
+    VND_REDACTION_MAX_ATTACHMENTS,
+} from "@/constants/validation/vndValidation.ts";
 import {PermissionCode} from "@/constants/permissions/permissions.ts";
 import {Clue} from "@/components/componentsGeneral/knowledgeBaseComponents/Clue.tsx";
 import {HelpTooltip} from "@/components/componentsGeneral/knowledgeBaseComponents/HelpTooltip.tsx";
 import {Tooltip} from "@/components/componentsGeneral/Tooltip.tsx";
 import {Download, FileUp, Loader2, Paperclip, Trash2, X, Check} from "lucide-react";
 import {CharCounter} from "@/components/componentsGeneral/CharCounter.tsx";
-import {downloadWithToast} from "@/utils/downloadFiles/downloadFile.ts";
-import {
-    VND_REDACTION_DESCRIPTION_MAX_LENGTH,
-    VND_REDACTION_MAX_ATTACHMENTS,
-} from "@/constants/validation/vndValidation.ts";
+import {useTranslation} from "react-i18next";
+import type {TFunction} from "i18next";
 
 interface VndUploadRedactionModalProps {
     vndId: number;
@@ -58,11 +60,18 @@ function FileSlot({
                       onChange,
                       onError,
                   }: FileSlotProps) {
+    const {t} = useTranslation();
     const inputId = `redaction-file-${label}`;
 
     const handlePick = (picked: File | null) => {
         if (picked && picked.size > MAX_FILE_SIZE) {
-            onError?.(`Файл «${picked.name}» превышает допустимый размер (${formatBytes(MAX_FILE_SIZE)})`);
+            // Файл «${picked.name}» превышает допустимый размер (${formatBytes(MAX_FILE_SIZE, t)})
+            onError?.(
+                t("vndUploadRedactionModal.fileTooLarge", {
+                    fileName: picked.name,
+                    maxSize: formatBytes(MAX_FILE_SIZE, t),
+                })
+            );
             return;
         }
         onError?.(null);
@@ -74,7 +83,10 @@ function FileSlot({
             <div className="mb-[6px] text-[12.5px] font-semibold text-[#26324a]">
                 {label} {required
                 ? <span className="text-[#c0392b]">*</span>
-                : <span className="text-[#8b97ab] font-normal">(необязательно)</span>}
+                : <span className="text-[#8b97ab] font-normal">
+                    {/* (необязательно) */}
+                    {t("vndUploadRedactionModal.optional")}
+                </span>}
             </div>
             {hint && <div className="mb-[6px] text-[11.5px] text-[#8b97ab]">{hint}</div>}
             {!file ? (
@@ -85,7 +97,10 @@ function FileSlot({
                     }`}
                 >
                     <FileUp size={18}/>
-                    <span className="text-[11.5px]">Выбрать файл (DOCX)</span>
+                    <span className="text-[11.5px]">
+                        {/* Выбрать файл (DOCX) */}
+                        {t("vndUploadRedactionModal.chooseFile")}
+                    </span>
                     <input
                         id={inputId}
                         type="file"
@@ -115,10 +130,12 @@ function FileSlot({
     );
 }
 
-function formatBytes(bytes: number): string {
-    if (bytes < 1024) return `${bytes} Б`;
-    if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} КБ`;
-    return `${(bytes / (1024 * 1024)).toFixed(1)} МБ`;
+// Раньше зависела только от bytes и возвращала жёстко русские "Б"/"КБ"/"МБ" — теперь
+// принимает t, чтобы единицы измерения тоже переводились.
+function formatBytes(bytes: number, t: TFunction): string {
+    if (bytes < 1024) return `${bytes} ${t("vndUploadRedactionModal.sizeUnitBytes")}`;
+    if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} ${t("vndUploadRedactionModal.sizeUnitKb")}`;
+    return `${(bytes / (1024 * 1024)).toFixed(1)} ${t("vndUploadRedactionModal.sizeUnitMb")}`;
 }
 
 const MAX_FILE_SIZE = 100 * 1024 * 1024; // 100 МБ
@@ -127,6 +144,7 @@ export function VndUploadRedactionModal({
                                             vndId, mode = "default", lockedRequiresApproval, previousAttachments,
                                             onClose, onUploaded,
                                         }: VndUploadRedactionModalProps) {
+    const {t} = useTranslation();
     const {user, hasPermission} = useAuth();
     const isActualization = mode === "actualization";
     // Право обойтись без согласования — не имеет значения в mode="actualization", там решение
@@ -180,7 +198,13 @@ export function VndUploadRedactionModal({
 
         const oversized = incoming.find((f) => f.size > MAX_FILE_SIZE);
         if (oversized) {
-            setError(`Файл «${oversized.name}» превышает допустимый размер (100 МБ)`);
+            // Файл «${oversized.name}» превышает допустимый размер (100 МБ)
+            setError(
+                t("vndUploadRedactionModal.fileTooLarge", {
+                    fileName: oversized.name,
+                    maxSize: formatBytes(MAX_FILE_SIZE, t),
+                })
+            );
             return;
         }
 
@@ -217,7 +241,8 @@ export function VndUploadRedactionModal({
             });
             onUploaded(result);
         } catch (e) {
-            setError(e instanceof Error ? e.message : "Не удалось загрузить редакцию");
+            // Не удалось загрузить редакцию
+            setError(e instanceof Error ? e.message : t("vndUploadRedactionModal.uploadError"));
         } finally {
             setSubmitting(false);
         }
@@ -235,9 +260,10 @@ export function VndUploadRedactionModal({
                 className="flex max-h-[90vh] w-full max-w-[520px] flex-col overflow-hidden rounded-[16px] bg-white shadow-xl">
                 <div className="flex flex-none items-center justify-between px-6 pt-6 pb-5">
                     <h2 className="text-[16px] font-bold text-[#1c2740]">
+                        {/* Загрузка новой редакции / Актуализация ВНД — загрузка новой редакции */}
                         {mode === "actualization"
-                            ? "Актуализация ВНД — загрузка новой редакции"
-                            : "Загрузка новой редакции"}
+                            ? t("vndUploadRedactionModal.titleActualization")
+                            : t("vndUploadRedactionModal.titleDefault")}
                     </h2>
                     <button onClick={onClose} className="cursor-pointer text-[#8b97ab] hover:text-[#3a4560]">
                         <X size={20}/>
@@ -247,30 +273,49 @@ export function VndUploadRedactionModal({
                 <div className="flex-1 overflow-y-auto px-6">
                     <div
                         className="mb-2 rounded-[10px] border border-[#e5e9f0] bg-[#f9fafc] px-3 py-[10px] text-[11.5px] leading-[1.5] text-[#8b97ab]">
-                        Допустимый формат: DOCX. Максимальный
-                        размер каждого файла — {formatBytes(MAX_FILE_SIZE)}.
+                        {/* Допустимый формат: DOCX. Максимальный размер каждого файла — {formatBytes(MAX_FILE_SIZE)}. */}
+                        {t("vndUploadRedactionModal.formatHint", {maxSize: formatBytes(MAX_FILE_SIZE, t)})}
                         {isActualization && (
                             <>
-                                {" "}ТИД (Таблицу изменений и дополнений) для этой редакции вы
-                                сможете загрузить позже — после её загрузки, отдельным шагом.
+                                {" "}
+                                {/* ТИД (Таблицу изменений и дополнений) для этой редакции вы
+                                сможете загрузить позже — после её загрузки, отдельным шагом. */}
+                                {t("vndUploadRedactionModal.actualizationTidHint")}
                             </>
                         )}
                     </div>
                     <div className="flex flex-col gap-4">
-                        <FileSlot label="Русский" required file={docRu} onChange={setDocRu} onError={setError}/>
-                        <FileSlot label="Кыргызча" file={docKg} onChange={setDocKg} onError={setError}/>
-                        <FileSlot label="English" file={docEn} onChange={setDocEn} onError={setError}/>
+                        {/* Русский */}
+                        <FileSlot label={t("vndUploadRedactionModal.docLabelRu")} required file={docRu}
+                                  onChange={setDocRu} onError={setError}/>
+                        {/* Кыргызча */}
+                        <FileSlot label={t("vndUploadRedactionModal.docLabelKg")} file={docKg} onChange={setDocKg}
+                                  onError={setError}/>
+                        {/* English */}
+                        <FileSlot label={t("vndUploadRedactionModal.docLabelEn")} file={docEn} onChange={setDocEn}
+                                  onError={setError}/>
 
                         <div>
                             <div className="mb-[6px] flex flex-col gap-1">
                             <span className="text-[12.5px] font-semibold text-[#26324a]">
-                                Вложения <span
-                                className="text-[#8b97ab] font-normal">(необязательно, можно несколько)</span>
+                                {/* Вложения */}
+                                {t("vndUploadRedactionModal.attachmentsLabel")}{" "}
+                                <span className="text-[#8b97ab] font-normal">
+                                    {/* (необязательно, можно несколько) */}
+                                    {t("vndUploadRedactionModal.attachmentsOptionalHint")}
+                                </span>
                             </span>
                                 <span className="flex items-center gap-0.5 text-[11.5px] text-[#8b97ab]">
-                                    Добавлено {totalAttachmentCount} из {VND_REDACTION_MAX_ATTACHMENTS} файлов максимум
+                                    {/* Добавлено {totalAttachmentCount} из {VND_REDACTION_MAX_ATTACHMENTS} файлов максимум */}
+                                    {t("vndUploadRedactionModal.attachmentsAddedCount", {
+                                        count: totalAttachmentCount,
+                                        max: VND_REDACTION_MAX_ATTACHMENTS,
+                                    })}
                                     <HelpTooltip
-                                        content={`Количество вложений к редакции ограничено — не более ${VND_REDACTION_MAX_ATTACHMENTS}, каждый файл не больше 100 МБ.`}
+                                        // Количество вложений к редакции ограничено — не более ${VND_REDACTION_MAX_ATTACHMENTS}, каждый файл не больше 100 МБ.
+                                        content={t("vndUploadRedactionModal.attachmentsLimitTooltip", {
+                                            max: VND_REDACTION_MAX_ATTACHMENTS,
+                                        })}
                                         side="top"
                                         className="h-5 w-5"
                                     />
@@ -282,9 +327,10 @@ export function VndUploadRedactionModal({
                                 загрузки файла) исключает дублирование в БД и хранилище. */}
                             {previousAttachments && previousAttachments.length > 0 && (
                                 <Clue className="mb-[6px]">
-                                    Вложения перенесены из предыдущей редакции. Если что-то здесь
+                                    {/* Вложения перенесены из предыдущей редакции. Если что-то здесь
                                     изменить, добавить или удалить — это затронет только новую
-                                    редакцию, предыдущая останется без изменений.
+                                    редакцию, предыдущая останется без изменений. */}
+                                    {t("vndUploadRedactionModal.previousAttachmentsClue")}
                                 </Clue>
                             )}
 
@@ -311,11 +357,12 @@ export function VndUploadRedactionModal({
                                                 </Tooltip>
                                                 {!willBeRemoved && (
                                                     <span className="flex-none text-[10.5px] font-semibold text-[#8b97ab]">
-                                                        из предыдущей редакции
+                                                        {/* из предыдущей редакции */}
+                                                        {t("vndUploadRedactionModal.fromPreviousRedaction")}
                                                     </span>
                                                 )}
                                                 {!willBeRemoved && (
-                                                    <Tooltip content="Скачать" side="top">
+                                                    <Tooltip content={t("vndUploadRedactionModal.download")} side="top">
                                                         <button
                                                             type="button"
                                                             onClick={() => downloadWithToast(attachment.fileId, attachment.fileName)}
@@ -334,7 +381,10 @@ export function VndUploadRedactionModal({
                                                             : "border-[#e5e9f0] bg-white text-[#8b97ab] hover:border-[#e0473e]/50 hover:text-[#c0392b]"
                                                     }`}
                                                 >
-                                                    {willBeRemoved ? "Отменить удаление" : "Удалить"}
+                                                    {/* Отменить удаление / Удалить */}
+                                                    {willBeRemoved
+                                                        ? t("vndUploadRedactionModal.cancelRemove")
+                                                        : t("vndUploadRedactionModal.remove")}
                                                 </button>
                                             </div>
                                         );
@@ -344,7 +394,10 @@ export function VndUploadRedactionModal({
 
                             {attachmentLimitReached ? (
                                 <Tooltip
-                                    content={`Достигнут максимум — ${VND_REDACTION_MAX_ATTACHMENTS} вложений на редакцию`}
+                                    // Достигнут максимум — ${VND_REDACTION_MAX_ATTACHMENTS} вложений на редакцию
+                                    content={t("vndUploadRedactionModal.attachmentsMaxReachedTooltip", {
+                                        max: VND_REDACTION_MAX_ATTACHMENTS,
+                                    })}
                                     side="top"
                                     className="w-full"
                                 >
@@ -353,7 +406,8 @@ export function VndUploadRedactionModal({
                                 >
                                     <span className="flex items-center gap-2 text-[11.5px]">
                                         <Paperclip size={15}/>
-                                        Добавить файлы
+                                        {/* Добавить файлы */}
+                                        {t("vndUploadRedactionModal.addFiles")}
                                     </span>
                                 </span>
                                 </Tooltip>
@@ -364,7 +418,8 @@ export function VndUploadRedactionModal({
                                 >
                                 <span className="flex items-center gap-2 text-[11.5px]">
                                     <Paperclip size={15}/>
-                                    Добавить файлы
+                                    {/* Добавить файлы */}
+                                    {t("vndUploadRedactionModal.addFiles")}
                                 </span>
                                     <input
                                         id="redaction-attachments"
@@ -383,7 +438,10 @@ export function VndUploadRedactionModal({
                             {attachmentCountLimitHit && (
                                 <div className="mt-2 flex items-start gap-1.5 text-[11.5px] text-[#d62815]">
                                 <span>
-                                    Часть выбранных файлов не добавлена — максимум {VND_REDACTION_MAX_ATTACHMENTS} вложений на редакцию.
+                                    {/* Часть выбранных файлов не добавлена — максимум {VND_REDACTION_MAX_ATTACHMENTS} вложений на редакцию. */}
+                                    {t("vndUploadRedactionModal.attachmentsPartiallyAdded", {
+                                        max: VND_REDACTION_MAX_ATTACHMENTS,
+                                    })}
                                 </span>
                                 </div>
                             )}
@@ -401,7 +459,7 @@ export function VndUploadRedactionModal({
                                                     className="block truncate text-[12px] text-[#26324a]">{file.name}</span>
                                             </Tooltip>
                                             <span className="flex-none text-[11px] text-[#a3adbd]">
-                                            {formatBytes(file.size)}
+                                            {formatBytes(file.size, t)}
                                         </span>
                                             <button
                                                 type="button"
@@ -419,14 +477,20 @@ export function VndUploadRedactionModal({
                         <div>
                             <div className="mb-[6px] flex items-center justify-between">
                             <span className="text-[12.5px] font-semibold text-[#26324a]">
-                                Описание редакции <span className="text-[#8b97ab] font-normal">(необязательно)</span>
+                                {/* Описание редакции */}
+                                {t("vndUploadRedactionModal.descriptionLabel")}{" "}
+                                <span className="text-[#8b97ab] font-normal">
+                                    {/* (необязательно) */}
+                                    {t("vndUploadRedactionModal.optional")}
+                                </span>
                             </span>
                                 <CharCounter length={description.length} max={VND_REDACTION_DESCRIPTION_MAX_LENGTH}/>
                             </div>
                             <textarea
                                 value={description}
                                 onChange={(e) => setDescription(e.target.value)}
-                                placeholder="Что изменилось в этой редакции…"
+                                // Что изменилось в этой редакции…
+                                placeholder={t("vndUploadRedactionModal.descriptionPlaceholder")}
                                 rows={3}
                                 maxLength={VND_REDACTION_DESCRIPTION_MAX_LENGTH}
                                 className="w-full resize-none rounded-[10px] border border-[#e5e9f0] bg-[#f9fafc] p-3 text-[13px] text-[#26324a] outline-none focus:border-[#4e57d6] focus:bg-white"
@@ -438,9 +502,16 @@ export function VndUploadRedactionModal({
                         {isActualization && (
                             <div
                                 className="rounded-[10px] border border-[#e5e9f0] bg-[#f9fafc] px-3 py-[10px] text-[12.5px] text-[#55617a]">
-                                Согласование: <span className="font-semibold text-[#26324a]">
-                                {effectiveRequiresApproval ? "требуется" : "не требуется"}
-                            </span> — определено при старте актуализации
+                                {/* Согласование: */}
+                                {t("vndUploadRedactionModal.approvalStatusLabel")}{" "}
+                                <span className="font-semibold text-[#26324a]">
+                                {/* требуется / не требуется */}
+                                    {effectiveRequiresApproval
+                                        ? t("vndUploadRedactionModal.approvalRequired")
+                                        : t("vndUploadRedactionModal.approvalNotRequired")}
+                            </span>{" "}
+                                {/* — определено при старте актуализации */}
+                                {t("vndUploadRedactionModal.approvalLockedHint")}
                             </div>
                         )}
 
@@ -465,14 +536,17 @@ export function VndUploadRedactionModal({
                                         style={{opacity: requiresApproval ? 1 : 0}}
                                     />
                                 </span>
-                                    Требуется согласование
+                                    {/* Требуется согласование */}
+                                    {t("vndUploadRedactionModal.requiresApprovalCheckbox")}
                                 </button>
 
                                 <Clue>
                                 <span className="flex flex-wrap items-center gap-x-1.5 gap-y-1.5">
                                     <span>
-                                        Вы можете загрузить редакцию без согласования — это право Вам дают
-                                        {grantingRoleNames.length === 1 ? " роль:" : " роли:"}
+                                        {/* Вы можете загрузить редакцию без согласования — это право Вам даёт роль: / дают роли: */}
+                                        {grantingRoleNames.length === 1
+                                            ? t("vndUploadRedactionModal.skipApprovalClueRoleSingular")
+                                            : t("vndUploadRedactionModal.skipApprovalCluePlural")}
                                     </span>
                                     {grantingRoleNames.map((name) => (
                                         <span
@@ -503,7 +577,8 @@ export function VndUploadRedactionModal({
                         disabled={submitting}
                         className="cursor-pointer h-[38px] rounded-[10px] border border-[#e5e9f0] px-4 text-[13px] font-semibold text-[#3a4560] hover:bg-[#f6f8fb] disabled:opacity-60"
                     >
-                        Отмена
+                        {/* Отмена */}
+                        {t("vndUploadRedactionModal.cancel")}
                     </button>
                     <button
                         onClick={handleSubmit}
@@ -511,7 +586,8 @@ export function VndUploadRedactionModal({
                         className="cursor-pointer flex h-[38px] items-center gap-2 rounded-[10px] bg-[#4e57d6] px-4 text-[13px] font-semibold text-white hover:bg-[#3f47bd] disabled:cursor-not-allowed disabled:opacity-50"
                     >
                         {submitting && <Loader2 size={15} className="animate-spin"/>}
-                        Загрузить
+                        {/* Загрузить */}
+                        {t("vndUploadRedactionModal.upload")}
                     </button>
                 </div>
             </div>

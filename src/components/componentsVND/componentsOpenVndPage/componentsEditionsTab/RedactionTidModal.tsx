@@ -1,10 +1,11 @@
 // Модалка "Просмотр ТИД" — похожа на одиночную модалку просмотра редакции
 // (RedactionViewModal), но без языковых вкладок — один файл ТИД на редакцию.
+import {useTranslation} from "react-i18next";
+import {createPortal} from "react-dom";
 import type {VndRedactionResponse, VndResponse} from "@/service/vndService/vndServiceType.ts";
 import {RedactionTextView} from "@/components/componentsVND/componentsOpenVndPage/componentsEditionsTab/RedactionTextView.tsx";
-import {createPortal} from "react-dom";
-import {Download, Loader2, Table2, X} from "lucide-react";
 import {Tooltip} from "@/components/componentsGeneral/Tooltip.tsx";
+import {Download, Loader2, Table2, X} from "lucide-react";
 
 interface RedactionTidModalProps {
     vnd: VndResponse;
@@ -15,6 +16,7 @@ interface RedactionTidModalProps {
 }
 
 export function RedactionTidModal({vnd, redaction, downloadingId, onDownload, onClose}: RedactionTidModalProps) {
+    const {t} = useTranslation();
     const tidFileId = redaction.tidFileId;
     const tidFileName = `${redaction.code}_ТИД.docx`;
 
@@ -31,13 +33,15 @@ export function RedactionTidModal({vnd, redaction, downloadingId, onDownload, on
                                 {redaction.code}
                             </h2>
                             <div className="mt-[2px] text-[11px] font-medium text-[#8b97ab]">
-                                Просмотр ТИД (Таблица изменений и дополнений)
+                                {/* Просмотр ТИД (Таблица изменений и дополнений) */}
+                                {t("redactionTidModal.viewTitle")}
                             </div>
                         </div>
                     </div>
 
                     <div className="flex items-center gap-4">
-                        <Tooltip content="Скачать документ" side="bottom">
+                        {/* Скачать документ */}
+                        <Tooltip content={t("redactionTidModal.downloadDocument")} side="bottom">
                             <button
                                 type="button"
                                 disabled={tidFileId === null || downloadingId === tidFileId}
@@ -65,7 +69,8 @@ export function RedactionTidModal({vnd, redaction, downloadingId, onDownload, on
                     {tidFileId === null ? (
                         <div className="flex flex-1 flex-col items-center justify-center gap-2 p-[48px] text-center text-[13px] text-[#8b97ab]">
                             <Table2 size={22} className="text-[#c3ccd8]"/>
-                            Для этой редакции ТИД не требовался.
+                            {/* Для этой редакции ТИД не требовался. */}
+                            {t("redactionTidModal.noTidRequired")}
                         </div>
                     ) : (
                         <RedactionTextView

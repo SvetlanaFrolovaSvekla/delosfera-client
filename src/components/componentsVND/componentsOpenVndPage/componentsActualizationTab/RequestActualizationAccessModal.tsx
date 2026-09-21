@@ -2,6 +2,7 @@
 // права брать ВНД в актуализацию напрямую, только "по запросу" у главного редактора.
 import {useState} from "react";
 import {createPortal} from "react-dom";
+import {useTranslation} from "react-i18next";
 import {Loader2, Send, X} from "lucide-react";
 
 interface RequestActualizationAccessModalProps {
@@ -14,13 +15,14 @@ interface RequestActualizationAccessModalProps {
 }
 
 export function RequestActualizationAccessModal({
-                                                      canWithoutApproval,
-                                                      canWithApproval,
-                                                      submitting,
-                                                      error,
-                                                      onClose,
-                                                      onConfirm,
-                                                  }: RequestActualizationAccessModalProps) {
+                                                    canWithoutApproval,
+                                                    canWithApproval,
+                                                    submitting,
+                                                    error,
+                                                    onClose,
+                                                    onConfirm,
+                                                }: RequestActualizationAccessModalProps) {
+    const {t} = useTranslation();
     const [requiresApproval, setRequiresApproval] = useState<boolean>(!canWithoutApproval);
     const [shiftNextPeriod, setShiftNextPeriod] = useState(true);
     const canChoose = canWithoutApproval && canWithApproval;
@@ -34,7 +36,8 @@ export function RequestActualizationAccessModal({
                             <Send size={18} strokeWidth={1.8}/>
                         </span>
                         <h2 className="text-[16px] font-bold text-[#1c2740]">
-                            Запросить доступ к актуализации
+                            {/* Запросить доступ к актуализации */}
+                            {t("requestActualizationAccessModal.title")}
                         </h2>
                     </div>
                     <button
@@ -47,18 +50,22 @@ export function RequestActualizationAccessModal({
                 </div>
 
                 <p className="mb-3 text-[13px] leading-[1.6] text-[#55617a]">
-                    Заявка уйдёт главному редактору ВНД. После одобрения вы сможете подтвердить старт актуализации.
+                    {/* Заявка уйдёт главному редактору ВНД. После одобрения вы сможете подтвердить
+                    старт актуализации. */}
+                    {t("requestActualizationAccessModal.infoText")}
                 </p>
 
                 {canChoose && (
                     <div className="flex flex-col gap-2">
                         <RadioRow
-                            label="С последующим согласованием"
+                            // С последующим согласованием
+                            label={t("requestActualizationAccessModal.withApprovalOption")}
                             checked={requiresApproval}
                             onSelect={() => setRequiresApproval(true)}
                         />
                         <RadioRow
-                            label="Без согласования"
+                            // Без согласования
+                            label={t("requestActualizationAccessModal.withoutApprovalOption")}
                             checked={!requiresApproval}
                             onSelect={() => setRequiresApproval(false)}
                         />
@@ -72,11 +79,13 @@ export function RequestActualizationAccessModal({
                         onChange={(e) => setShiftNextPeriod(e.target.checked)}
                         className="h-4 w-4 accent-[#4e57d6]"
                     />
-                    Сдвинуть срок следующей актуализации после публикации новой редакции
+                    {/* Сдвинуть срок следующей актуализации после публикации новой редакции */}
+                    {t("requestActualizationAccessModal.shiftNextPeriodLabel")}
                 </label>
                 <p className="mt-1 px-1 text-[11px] leading-[1.5] text-[#8b97ab]">
-                    Это ваше пожелание — главный редактор увидит его при рассмотрении заявки и
-                    сможет изменить.
+                    {/* Это ваше пожелание — главный редактор увидит его при рассмотрении заявки и
+                    сможет изменить. */}
+                    {t("requestActualizationAccessModal.shiftNextPeriodHint")}
                 </p>
 
                 {error && (
@@ -91,7 +100,8 @@ export function RequestActualizationAccessModal({
                         disabled={submitting}
                         className="cursor-pointer h-[38px] rounded-[10px] border border-[#e5e9f0] px-4 text-[13px] font-semibold text-[#3a4560] hover:bg-[#f6f8fb] disabled:opacity-50"
                     >
-                        Отмена
+                        {/* Отмена */}
+                        {t("requestActualizationAccessModal.cancel")}
                     </button>
                     <button
                         onClick={() => onConfirm({requiresApproval, shiftNextPeriod})}
@@ -99,7 +109,8 @@ export function RequestActualizationAccessModal({
                         className="cursor-pointer inline-flex h-[38px] items-center gap-2 rounded-[10px] bg-[#4e57d6] px-4 text-[13px] font-semibold text-white hover:bg-[#3f47bd] disabled:cursor-not-allowed disabled:opacity-50"
                     >
                         {submitting && <Loader2 size={14} className="animate-spin"/>}
-                        Отправить заявку
+                        {/* Отправить заявку */}
+                        {t("requestActualizationAccessModal.submitButton")}
                     </button>
                 </div>
             </div>

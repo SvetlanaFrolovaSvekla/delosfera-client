@@ -77,8 +77,8 @@ export function CreateVndPage() {
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
                         <div>
                             <label className="block text-[12px] font-semibold text-[#3a4560] mb-2">
-                                {/*Вид документа*/}
-                                {t("createVnd.fields.docType")} <span className="text-[#c0392b]">*</span>
+                            {/* Вид документа */}
+                            {t("createVnd.fields.docType")} <span className="text-[#c0392b]">*</span>
                             </label>
                             <SelectDropdown
                                 value={form.typeId}
@@ -121,7 +121,6 @@ export function CreateVndPage() {
                                 onChange={(key) => form.setDeveloperId(key ?? "")}
                                 /*Поиск СП…*/
                                 searchPlaceholder={t("createVnd.fields.executorSearchPlaceholder")}
-                                boldLabel={false}
                             />
                             {form.developerHeadName && (
                                 <p className="mt-1 text-[11px] text-[#8b97ab]">

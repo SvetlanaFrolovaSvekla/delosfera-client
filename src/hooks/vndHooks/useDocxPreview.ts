@@ -19,13 +19,17 @@ interface UseDocxPreviewOptions {
     /** См. fetchFileBlob: путь на бэке, если файл выдаёт не общий /api/files/{id}
      * (например, "help/files" для вложений статьи инструкции). */
     endpoint?: string;
+
+    /** См. fetchFileBlob: хвост URL после {fileId}, если конечная точка не сам /{id}
+     * (например, "/download" для вложений документа, см. DocumentsController). */
+    pathSuffix?: string;
 }
 
 export function useDocxPreview(
     fileId: number | null,
     options: UseDocxPreviewOptions = {},
 ): UseDocxPreviewResult {
-    const {ignoreWidth = true, endpoint} = options;
+    const {ignoreWidth = true, endpoint, pathSuffix} = options;
     const containerRef = useRef<HTMLDivElement>(null);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
@@ -52,7 +56,7 @@ export function useDocxPreview(
             setError(null);
 
             try {
-                const {blob} = await fetchFileBlob(fileId, undefined, controller.signal, endpoint);
+                const {blob} = await fetchFileBlob(fileId, undefined, controller.signal, endpoint, pathSuffix);
 
                 if (cancelled || !containerRef.current) return;
 
@@ -85,7 +89,7 @@ export function useDocxPreview(
             cancelled = true;
             controller.abort();
         };
-    }, [fileId, ignoreWidth, endpoint]);
+    }, [fileId, ignoreWidth, endpoint, pathSuffix]);
 
     return {containerRef, loading, error};
 }

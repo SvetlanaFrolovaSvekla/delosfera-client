@@ -11,8 +11,9 @@
 //   actualizationService.confirmStart.
 import {useState} from "react";
 import {createPortal} from "react-dom";
-import {Check, Loader2, RefreshCw, X} from "lucide-react";
+import {useTranslation} from "react-i18next";
 import {HelpTooltip} from "@/components/componentsGeneral/knowledgeBaseComponents/HelpTooltip.tsx";
+import {Check, Loader2, RefreshCw, X} from "lucide-react";
 
 interface PerformActualizationModalProps {
     mode: "direct" | "afterRequest";
@@ -45,6 +46,7 @@ export function PerformActualizationModal({
                                               onClose,
                                               onConfirm,
                                           }: PerformActualizationModalProps) {
+    const {t} = useTranslation();
     const [shiftNextPeriod, setShiftNextPeriod] = useState(initialShiftNextPeriod ?? true);
     const [plannedNoChanges, setPlannedNoChanges] = useState(initialPlannedNoChanges ?? false);
 
@@ -60,7 +62,10 @@ export function PerformActualizationModal({
                             className="grid h-10 w-10 flex-none place-items-center rounded-[11px] bg-[#ececfc] text-[#4e57d6]">
                             <RefreshCw size={19} strokeWidth={1.8}/>
                         </span>
-                        <h2 className="text-[16px] font-bold text-[#1c2740]">{title ?? "Выполнить актуализацию"}</h2>
+                        <h2 className="text-[16px] font-bold text-[#1c2740]">
+                            {/* title ?? "Выполнить актуализацию" */}
+                            {title ?? t("performActualizationModal.titleDefault")}
+                        </h2>
                     </div>
                     <button onClick={onClose} disabled={submitting}
                             className="cursor-pointer flex-none text-[#8b97ab] hover:text-[#3a4560] disabled:opacity-50">
@@ -71,9 +76,13 @@ export function PerformActualizationModal({
                 {mode === "afterRequest" ? (
                     <div
                         className="mb-4 rounded-[10px] border border-[#e5e9f0] bg-[#f6f8fb] px-3 py-[10px] text-[13px] text-[#3a4560]">
-                        Сдвиг срока следующей актуализации уже решён при одобрении заявки:{" "}
+                        {/* Сдвиг срока следующей актуализации уже решён при одобрении заявки: */}
+                        {t("performActualizationModal.shiftDecidedAtRequest")}{" "}
                         <span className="font-semibold">
-                            {effectiveShift ? "срок будет сдвинут" : "срок сдвигаться не будет"}
+                            {/* срок будет сдвинут / срок сдвигаться не будет */}
+                            {effectiveShift
+                                ? t("performActualizationModal.shiftWillBeApplied")
+                                : t("performActualizationModal.shiftWillNotBeApplied")}
                         </span>.
                     </div>
                 ) : (
@@ -98,10 +107,14 @@ export function PerformActualizationModal({
                                 onChange={(e) => setShiftNextPeriod(e.target.checked)}
                                 className="hidden"
                             />
-                            Сдвинуть срок следующей актуализации после публикации новой редакции
+                            {/* Сдвинуть срок следующей актуализации после публикации новой редакции */}
+                            {t("performActualizationModal.shiftNextPeriodLabel")}
                         </label>
                         <HelpTooltip
-                            content="Если включено, срок следующей плановой актуализации будет отсчитан заново от даты публикации новой редакции."/>
+                            // Если включено, срок следующей плановой актуализации будет отсчитан
+                            // заново от даты публикации новой редакции.
+                            content={t("performActualizationModal.shiftNextPeriodTooltip")}
+                        />
                     </div>
                 )}
                 {/* Поле "Актуализация без изменений" */}
@@ -126,17 +139,22 @@ export function PerformActualizationModal({
                             onChange={(e) => setPlannedNoChanges(e.target.checked)}
                             className="hidden"
                         />
-                        Актуализация без изменений
+                        {/* Актуализация без изменений */}
+                        {t("performActualizationModal.plannedNoChangesLabel")}
                     </label>
                     <HelpTooltip
-                        content="Отметьте, если документ не требует изменений — новая редакция не понадобится, действующая редакция отправляется на согласование как есть."/>
+                        // Отметьте, если документ не требует изменений — новая редакция не
+                        // понадобится, действующая редакция отправляется на согласование как есть.
+                        content={t("performActualizationModal.plannedNoChangesTooltip")}
+                    />
                 </div>
                 {plannedNoChanges && (
                     <p className="mt-4 px-1 text-[11.5px] leading-[1.5] text-[#8b97ab]">
-                        Заявлено, что актуализация пройдёт без изменений документа — новая редакция
-                        не потребуется. Отправьте существующую действующую редакцию на согласование
-                        во вкладке «Согласование», как есть, без загрузки нового файла. Новая
-                        редакция появится, только если согласующие попросят доработку.
+                        {/* Заявлено, что актуализация пройдёт без изменений документа — новая
+                        редакция не потребуется. Отправьте существующую действующую редакцию на
+                        согласование во вкладке «Согласование», как есть, без загрузки нового
+                        файла. Новая редакция появится, только если согласующие попросят доработку. */}
+                        {t("performActualizationModal.plannedNoChangesHint")}
                     </p>
                 )}
 
@@ -150,7 +168,8 @@ export function PerformActualizationModal({
                 <div className="mt-4 flex justify-end gap-2">
                     <button onClick={onClose} disabled={submitting}
                             className="cursor-pointer h-[38px] rounded-[10px] border border-[#e5e9f0] px-4 text-[13px] font-semibold text-[#3a4560] hover:bg-[#f6f8fb] disabled:opacity-50">
-                        Отмена
+                        {/* Отмена */}
+                        {t("performActualizationModal.cancel")}
                     </button>
                     <button
                         onClick={() => onConfirm({shiftNextPeriod: effectiveShift, plannedNoChanges})}
@@ -158,7 +177,8 @@ export function PerformActualizationModal({
                         className="cursor-pointer inline-flex h-[38px] items-center gap-2 rounded-[10px] bg-[#4e57d6] px-4 text-[13px] font-semibold text-white hover:bg-[#3f47bd] disabled:cursor-not-allowed disabled:opacity-50"
                     >
                         {submitting && <Loader2 size={14} className="animate-spin"/>}
-                        {confirmLabel ?? "ОК"}
+                        {/* confirmLabel ?? "ОК" */}
+                        {confirmLabel ?? t("performActualizationModal.confirmLabelDefault")}
                     </button>
                 </div>
             </div>

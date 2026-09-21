@@ -3,6 +3,7 @@ import {useMemo, useRef} from "react";
 import {useEffect, useState} from "react";
 import {useAuth} from "@/context/AuthContext.ts";
 import {useTranslation} from "react-i18next";
+import {vndService} from "@/service/vndService/vndService.ts";
 import type {VndRedactionResponse, VndResponse} from "@/service/vndService/vndServiceType.ts";
 import {toast} from "@/service/toastService.ts";
 
@@ -86,11 +87,9 @@ import {
 import {EmptyState} from "@/components/componentsGeneral/EmptyState.tsx";
 import {Loader} from "@/components/componentsGeneral/Loader";
 import {Clue} from "@/components/componentsGeneral/knowledgeBaseComponents/Clue.tsx";
-import {Upload} from "lucide-react";
 import {SearchBar} from "@/components/componentsGeneral/SearchBar.tsx";
 import {ConfirmActionModal} from "@/components/componentsGeneral/modal/ConfirmActionModal.tsx";
-import {vndService} from "@/service/vndService/vndService.ts";
-
+import {Upload} from "lucide-react";
 
 interface VndEditionsTabProps {
     vnd: VndResponse;
@@ -271,11 +270,13 @@ export function VndEditionsTab({vnd, onVndChanged, onGoToApproval}: VndEditionsT
         setConfirmingNoChanges(true);
         try {
             await actualizationService.confirmNoChanges(vnd.id);
-            toast.success("Отсутствие изменений подтверждено", "Документ переведён в консолидацию");
+            toast.success(
+                t("openVndPage.editionsTab.confirmNoChangesSuccessTitle"),
+                t("openVndPage.editionsTab.confirmNoChangesSuccessDescription")
+            );
             onVndChanged?.();
         } catch (err) {
-            toast.error("Не удалось подтвердить", err instanceof Error ? err.message : undefined);
-        } finally {
+            toast.error(t("openVndPage.editionsTab.confirmNoChangesErrorTitle"), err instanceof Error ? err.message : undefined);        } finally {
             setConfirmingNoChanges(false);
         }
     };
@@ -339,7 +340,10 @@ export function VndEditionsTab({vnd, onVndChanged, onGoToApproval}: VndEditionsT
         setUploadTidOpen(false);
         refetch();
         onVndChanged?.();
-        toast.success("ТИД загружен", `Файл ТИД приложен к редакции ${redaction.code}`);
+        toast.success(
+            t("openVndPage.editionsTab.tidUploadedTitle"),
+            t("openVndPage.editionsTab.tidUploadedDescription", {code: redaction.code})
+        );
     };
 
     const handleEditRedaction = (redactionId: number) => {
@@ -394,8 +398,8 @@ export function VndEditionsTab({vnd, onVndChanged, onGoToApproval}: VndEditionsT
         return (
             <div className="mx-auto mt-30 max-w-[420px]">
                 <EmptyState
-                    title="Редакция пока недоступна для просмотра"
-                    description="Документ ещё не прошёл согласование. Текст появится здесь, как только редакция будет официально принята."
+                    title={t("openVndPage.editionsTab.redactionNotAvailableTitle")}
+                    description={t("openVndPage.editionsTab.redactionNotAvailableDescription")}
                 />
             </div>
         );
@@ -433,12 +437,15 @@ export function VndEditionsTab({vnd, onVndChanged, onGoToApproval}: VndEditionsT
         try {
             await vndService.publishRedactionWithoutApproval(vnd.id, selected.id);
             setPublishWithoutApprovalConfirmOpen(false);
-            toast.success("Редакция стала действующей", "Согласование пропущено решением главного редактора");
+            toast.success(
+                t("openVndPage.editionsTab.publishWithoutApprovalSuccessTitle"),
+                t("openVndPage.editionsTab.publishWithoutApprovalSuccessDescription")
+            );
             refetch();
             onVndChanged?.();
         } catch (err) {
             setPublishWithoutApprovalError(
-                err instanceof Error ? err.message : "Не удалось сделать редакцию действующей без согласования");
+                err instanceof Error ? err.message : t("openVndPage.editionsTab.publishWithoutApprovalErrorDefault"));
         } finally {
             setPublishingWithoutApproval(false);
         }
@@ -617,7 +624,7 @@ export function VndEditionsTab({vnd, onVndChanged, onGoToApproval}: VndEditionsT
 
                 <SearchBar
                     variant="white"
-                    placeholder="Поиск по тексту редакции…"
+                    placeholder={t("openVndPage.editionsTab.searchPlaceholder")}
                     value={searchQuery}
                     onChange={setSearchQuery}
                     onSubmit={() => textViewRef.current?.goNext()}
@@ -855,10 +862,10 @@ export function VndEditionsTab({vnd, onVndChanged, onGoToApproval}: VndEditionsT
                     setPublishWithoutApprovalError(null);
                 }}
                 onConfirm={handlePublishWithoutApproval}
-                title="Сделать редакцию действующей без согласования?"
-                message="Редакция станет действующей сразу, минуя процесс согласования полностью. Это решение фиксируется как выполненное главным редактором."
-                confirmLabel="Сделать действующей"
-                loadingLabel="Применяю…"
+                title={t("openVndPage.editionsTab.publishWithoutApprovalConfirmTitle")}
+                message={t("openVndPage.editionsTab.publishWithoutApprovalConfirmMessage")}
+                confirmLabel={t("openVndPage.editionsTab.publishWithoutApprovalConfirmLabel")}
+                loadingLabel={t("openVndPage.editionsTab.publishWithoutApprovalLoadingLabel")}
                 loading={publishingWithoutApproval}
                 error={publishWithoutApprovalError}
                 variant="primary"
@@ -867,8 +874,9 @@ export function VndEditionsTab({vnd, onVndChanged, onGoToApproval}: VndEditionsT
                     <Clue>
                         <span className="flex flex-wrap items-center gap-x-1.5 gap-y-1.5">
                             <span>
-                                Это право Вам дают
-                                {publishWithoutApprovalRoleNames.length === 1 ? " роль:" : " роли:"}
+                              {publishWithoutApprovalRoleNames.length === 1
+                                  ? t("openVndPage.editionsTab.roleGrantLabelSingular")
+                                  : t("openVndPage.editionsTab.roleGrantLabelPlural")}
                             </span>
                             {publishWithoutApprovalRoleNames.map((name) => (
                                 <span

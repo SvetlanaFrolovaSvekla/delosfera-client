@@ -1,12 +1,16 @@
 // Модал выбора согласующего: список пользователей с иерархическим фильтром по СП и поиском
 import {useEffect, useMemo, useState} from "react";
-import {createPortal} from "react-dom";
-import {Loader2, Search, ShieldCheck, User as UserIcon, X} from "lucide-react";
-import {axiosInstance} from "@/service/axiosInstance.ts";
-import {MultiSelectField} from "@/components/componentsGeneral/selects/MultiSelects/MultiSelectField.tsx";
-import type {TreeSelectOption} from "@/components/componentsGeneral/selects/MultiSelects/TreeMultiSelectModal.tsx";
-import {EmptyState} from "@/components/componentsGeneral/EmptyState.tsx";
+import {useTranslation} from "react-i18next"
 import {useAuth} from "@/context/AuthContext.ts";
+import {axiosInstance} from "@/service/axiosInstance.ts";
+import {useOrgUnitFilter} from "@/hooks/vndHooks/useOrgUnitFilter.ts";
+import {OrgUnitMultiSelectFilter} from "@/components/componentsGeneral/selects/OrgUnitMultiSelectFilter.tsx";
+import {
+    UserPickerModalShell,
+    UserPickerSearchInput,
+    UserPickerListStatus,
+} from "@/components/componentsGeneral/userPicker/UserPickerModalShell.tsx";
+import {ShieldCheck, User as UserIcon} from "lucide-react";
 
 export interface ApproverOption {
     id: number;
@@ -18,12 +22,6 @@ export interface ApproverOption {
     isActive: boolean;
 }
 
-interface OrgUnitOption {
-    id: number;
-    name: string;
-    parentId: number | null;
-}
-
 // Отдаётся GET /api/users/approvers - уже отфильтрован по праву ActAsApprover,
 // активности и отсутствию блокировки (см. UserController.Approvers на бэкенде).
 interface RawApproverResponse {
@@ -33,12 +31,6 @@ interface RawApproverResponse {
     orgUnitId: number | null;
     orgUnitName: string | null;
     positionName: string | null;
-}
-
-interface RawOrgUnitResponse {
-    id: number;
-    name: string;
-    parentId: number | null;
 }
 
 async function fetchAllUsers(): Promise<ApproverOption[]> {
@@ -55,11 +47,6 @@ async function fetchAllUsers(): Promise<ApproverOption[]> {
         // Эндпоинт уже отдаёт только активных пользователей.
         isActive: true,
     }));
-}
-
-async function fetchOrgUnits(): Promise<OrgUnitOption[]> {
-    const {data} = await axiosInstance.get<RawOrgUnitResponse[]>("/dictionaries/organization-unit");
-    return data.map((o) => ({id: o.id, name: o.name, parentId: o.parentId}));
 }
 
 interface VndSelectApproverModalProps {
@@ -91,49 +78,39 @@ export function VndSelectApproverModal({
                                            onClose,
                                            onSelect,
                                        }: VndSelectApproverModalProps) {
+    const {t} = useTranslation();
     const {user: currentUser} = useAuth();
 
     const [users, setUsers] = useState<ApproverOption[]>([]);
-    const [orgUnits, setOrgUnits] = useState<OrgUnitOption[]>([]);
-    const [loading, setLoading] = useState(true);
-    const [error, setError] = useState<string | null>(null);
+    const [usersLoading, setUsersLoading] = useState(true);
+    const [usersError, setUsersError] = useState(false);
     const [search, setSearch] = useState("");
-    // множественный выбор СП — ключи в виде строк, как того требует MultiSelectField/TreeMultiSelectModal
-    const [selectedOrgUnitKeys, setSelectedOrgUnitKeys] = useState<string[]>([]);
+
+    // Фильтр по СП не нужен, если этап фиксированный (lockedOrgUnitId) - тогда справочник
+    // всё равно не показываем, но хук всё равно безопасно грузится в фоне без побочных эффектов.
+    const {treeOptions, selectedKeys, setSelectedKeys, selectedIds, loading: orgLoading, error: orgError} =
+        useOrgUnitFilter();
 
     useEffect(() => {
         let cancelled = false;
-        Promise.all([fetchAllUsers(), fetchOrgUnits()])
-            .then(([userData, orgUnitData]) => {
-                if (cancelled) return;
-                setUsers(userData);
-                setOrgUnits(orgUnitData);
+        fetchAllUsers()
+            .then((data) => {
+                if (!cancelled) setUsers(data);
             })
             .catch(() => {
-                if (!cancelled) setError("Не удалось загрузить список пользователей");
+                if (!cancelled) setUsersError(true);
             })
             .finally(() => {
-                if (!cancelled) setLoading(false);
+                if (!cancelled) setUsersLoading(false);
             });
         return () => {
             cancelled = true;
         };
     }, []);
 
-    const orgUnitTreeOptions: TreeSelectOption[] = useMemo(
-        () =>
-            orgUnits.map((ou) => ({
-                key: String(ou.id),
-                label: ou.name,
-                parentId: ou.parentId !== null ? String(ou.parentId) : undefined,
-            })),
-        [orgUnits],
-    );
-
-    const selectedOrgUnitIds = useMemo(
-        () => new Set(selectedOrgUnitKeys.map((k) => Number(k))),
-        [selectedOrgUnitKeys],
-    );
+    const loading = usersLoading || (!lockedOrgUnitId && orgLoading);
+    // Не удалось загрузить список пользователей
+    const error = usersError || (!lockedOrgUnitId && orgError) ? t("selectApproverModal.loadUsersError") : null;
 
     const filteredUsers = useMemo(() => {
         const term = search.trim().toLowerCase();
@@ -141,8 +118,8 @@ export function VndSelectApproverModal({
         return users
             .filter((u) => {
                 if (lockedOrgUnitId) return u.orgUnitId === lockedOrgUnitId;
-                if (selectedOrgUnitIds.size === 0) return true;
-                return u.orgUnitId !== null && selectedOrgUnitIds.has(u.orgUnitId);
+                if (selectedIds.size === 0) return true;
+                return u.orgUnitId !== null && selectedIds.has(u.orgUnitId);
             })
             .filter((u) =>
                 term === ""
@@ -150,7 +127,7 @@ export function VndSelectApproverModal({
                     : u.fullName.toLowerCase().includes(term) || u.email.toLowerCase().includes(term),
             )
             .sort((a, b) => a.fullName.localeCompare(b.fullName, "ru"));
-    }, [users, search, selectedOrgUnitIds, lockedOrgUnitId]);
+    }, [users, search, selectedIds, lockedOrgUnitId]);
 
     const handlePick = (user: ApproverOption) => {
         if (excludedUserIds.has(user.id)) return;
@@ -164,133 +141,109 @@ export function VndSelectApproverModal({
         onClose();
     };
 
-    return createPortal(
-        <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/30 p-4">
-            <div
-                className="flex h-[80vh] w-full max-w-[560px] flex-col overflow-hidden rounded-[16px] bg-white shadow-2xl">
-                {/* Header */}
-                <div className="flex flex-none items-center justify-between border-b border-[#eef0f5] px-6 py-4">
-                    <h2 className="text-[15px] font-bold text-[#1c2740]">Выбор согласующего</h2>
-                    <button onClick={onClose} className="cursor-pointer text-[#8b97ab] hover:text-[#3a4560]">
-                        <X size={20}/>
-                    </button>
-                </div>
-
-                {/* Filters */}
-                <div className="flex flex-none flex-col gap-2 border-b border-[#eef0f5] px-6 py-4">
-                    <div className="relative">
-                        <Search size={15}
-                                className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-[#8b97ab]"/>
-                        <input
-                            autoFocus
-                            value={search}
-                            onChange={(e) => setSearch(e.target.value)}
-                            placeholder="Поиск по ФИО или email…"
-                            className="h-[38px] w-full rounded-[10px] border border-[#e5e9f0] bg-[#fbfcfe] pl-9 pr-3 text-[13px] text-[#26324a] outline-none focus:border-[#4e57d6]"
-                        />
-                    </div>
+    return (
+        <UserPickerModalShell
+            // Выбор согласующего
+            title={t("selectApproverModal.title")}
+            onClose={onClose}
+            filters={
+                <>
+                    <UserPickerSearchInput
+                        value={search}
+                        onChange={setSearch}
+                        placeholder={t("selectApproverModal.searchPlaceholder")}
+                    />
 
                     {lockedOrgUnitId ? (
                         <div
                             className="flex items-center gap-2 rounded-[10px] border border-[#d9ecdf] bg-[#f2faf5] px-3 py-2 text-[12px] text-[#2c7a4b]">
                             <ShieldCheck size={14} className="flex-none"/>
-                            Фиксированное СП: <span className="font-semibold">{lockedOrgUnitLabel}</span>
+                            {/* Фиксированное СП: */}
+                            {t("selectApproverModal.lockedOrgUnitPrefix")}
+                            <span className="font-semibold">{lockedOrgUnitLabel}</span>
                         </div>
                     ) : (
-                        <MultiSelectField
-                            label="Структурные подразделения"
-                            modalTitle="Фильтр по СП"
-                            options={orgUnitTreeOptions}
-                            selectedKeys={selectedOrgUnitKeys}
-                            onChange={setSelectedOrgUnitKeys}
-                            hierarchical
-                            searchPlaceholder="Поиск СП…"
-                            selectedCountLabel="Выбрано СП"
-                            boldLabel={false}
+                        <OrgUnitMultiSelectFilter
+                            options={treeOptions}
+                            selectedKeys={selectedKeys}
+                            onChange={setSelectedKeys}
                         />
                     )}
-                </div>
+                </>
+            }
+        >
+            <UserPickerListStatus loading={loading} error={error} isEmpty={filteredUsers.length === 0}/>
 
-                {/* List */}
-                <div className="flex-1 overflow-y-auto px-3 py-2">
-                    {loading ? (
-                        <div className="flex h-full items-center justify-center text-[#8b97ab]">
-                            <Loader2 size={20} className="animate-spin"/>
-                        </div>
-                    ) : error ? (
-                        <EmptyState variant="error" title="Не удалось загрузить данные!" description={error}/>
-                    ) : filteredUsers.length === 0 ? (
-                        <div className="flex h-full items-center justify-center text-[12.5px] text-[#8b97ab]">
-                            Никого не нашлось
-                        </div>
-                    ) : (
-                        <div className="flex flex-col gap-1">
-                            {filteredUsers.map((u) => {
-                                const isSelf = currentUser?.id === u.id;
-                                const selfAllowed = Boolean(lockedOrgUnitId) && isSelf;
-                                // Автосогласование засчитывается только когда сам себе выбранный
-                                // согласующий (selfAllowed) ещё и окажется инициатором этого
-                                // запуска - см. comment у currentUserIsInitiator выше.
-                                const selfAutoApproved = selfAllowed && currentUserIsInitiator;
-                                const isExcluded = excludedUserIds.has(u.id) || (isSelf && !selfAllowed);
+            {!loading && !error && filteredUsers.length > 0 && (
+                <div className="flex flex-col gap-1">
+                    {filteredUsers.map((u) => {
+                        const isSelf = currentUser?.id === u.id;
+                        const selfAllowed = Boolean(lockedOrgUnitId) && isSelf;
+                        // Автосогласование засчитывается только когда сам себе выбранный
+                        // согласующий (selfAllowed) ещё и окажется инициатором этого
+                        // запуска - см. comment у currentUserIsInitiator выше.
+                        const selfAutoApproved = selfAllowed && currentUserIsInitiator;
+                        const isExcluded = excludedUserIds.has(u.id) || (isSelf && !selfAllowed);
 
-                                return (
-                                    <button
-                                        key={u.id}
-                                        type="button"
-                                        disabled={isExcluded}
-                                        onClick={() => handlePick(u)}
-                                        className={`flex items-center gap-3 rounded-[10px] px-3 py-[10px] text-left transition-colors ${
-                                            isExcluded
-                                                ? "cursor-not-allowed opacity-45"
-                                                : "cursor-pointer hover:bg-[#f6f8fb]"
-                                        }`}
-                                    >
-                                        <div
-                                            className="flex h-9 w-9 flex-none items-center justify-center rounded-full bg-[#f0f1fb] text-[#4e57d6]">
-                                            <UserIcon size={16}/>
-                                        </div>
-                                        <div className="min-w-0 flex-1">
-                                            <div className="flex items-center gap-2">
-                    <span className="truncate text-[13px] font-semibold text-[#26324a]">
-                        {u.fullName}
-                    </span>
-                                                {!u.isActive && (
-                                                    <span
-                                                        className="flex-none rounded-full bg-[#fdf1f1] px-2 py-[1px] text-[10px] font-medium text-[#c0392b]">
-                            неактивен
-                        </span>
-                                                )}
-                                                {isSelf ? (
-                                                    <span
-                                                        className={`flex-none rounded-full px-2 py-[1px] text-[10px] font-medium ${
-                                                            selfAllowed
-                                                                ? "bg-[#f2faf5] text-[#2c7a4b]"
-                                                                : "bg-[#fdf3ea] text-[#b3701e]"
-                                                        }`}
-                                                    >
-                            {selfAutoApproved ? "это вы · авто-согласование" : "это вы"}
-                        </span>
-                                                ) : excludedUserIds.has(u.id) && (
-                                                    <span
-                                                        className="flex-none rounded-full bg-[#f0f1f5] px-2 py-[1px] text-[10px] font-medium text-[#8b97ab]">
-                            уже выбран
-                        </span>
-                                                )}
-                                            </div>
-                                            <div className="truncate text-[11.5px] text-[#8b97ab]">{u.email}</div>
-                                            <div className="truncate text-[11px] text-[#a3adbd]">
-                                                {[u.positionName, u.orgUnitName].filter(Boolean).join(" · ")}
-                                            </div>
-                                        </div>
-                                    </button>
-                                );
-                            })}
-                        </div>
-                    )}
+                        return (
+                            <button
+                                key={u.id}
+                                type="button"
+                                disabled={isExcluded}
+                                onClick={() => handlePick(u)}
+                                className={`flex items-center gap-3 rounded-[10px] px-3 py-[10px] text-left transition-colors ${
+                                    isExcluded
+                                        ? "cursor-not-allowed opacity-45"
+                                        : "cursor-pointer hover:bg-[#f6f8fb]"
+                                }`}
+                            >
+                                <div
+                                    className="flex h-9 w-9 flex-none items-center justify-center rounded-full bg-[#f0f1fb] text-[#4e57d6]">
+                                    <UserIcon size={16}/>
+                                </div>
+                                <div className="min-w-0 flex-1">
+                                    <div className="flex items-center gap-2">
+                                        <span className="truncate text-[13px] font-semibold text-[#26324a]">
+                                            {u.fullName}
+                                        </span>
+                                        {!u.isActive && (
+                                            <span
+                                                className="flex-none rounded-full bg-[#fdf1f1] px-2 py-[1px] text-[10px] font-medium text-[#c0392b]">
+                                                {/* неактивен */}
+                                                {t("selectApproverModal.inactiveBadge")}
+                                            </span>
+                                        )}
+                                        {isSelf ? (
+                                            <span
+                                                className={`flex-none rounded-full px-2 py-[1px] text-[10px] font-medium ${
+                                                    selfAllowed
+                                                        ? "bg-[#f2faf5] text-[#2c7a4b]"
+                                                        : "bg-[#fdf3ea] text-[#b3701e]"
+                                                }`}
+                                            >
+                                                {/* "это вы · авто-согласование" / "это вы" */}
+                                                {selfAutoApproved
+                                                    ? t("selectApproverModal.selfBadgeAutoApproved")
+                                                    : t("selectApproverModal.selfBadge")}
+                                            </span>
+                                        ) : excludedUserIds.has(u.id) && (
+                                            <span
+                                                className="flex-none rounded-full bg-[#f0f1f5] px-2 py-[1px] text-[10px] font-medium text-[#8b97ab]">
+                                                {/* уже выбран */}
+                                                {t("selectApproverModal.alreadySelectedBadge")}
+                                            </span>
+                                        )}
+                                    </div>
+                                    <div className="truncate text-[11.5px] text-[#8b97ab]">{u.email}</div>
+                                    <div className="truncate text-[11px] text-[#a3adbd]">
+                                        {[u.positionName, u.orgUnitName].filter(Boolean).join(" · ")}
+                                    </div>
+                                </div>
+                            </button>
+                        );
+                    })}
                 </div>
-            </div>
-        </div>,
-        document.body,
+            )}
+        </UserPickerModalShell>
     );
 }

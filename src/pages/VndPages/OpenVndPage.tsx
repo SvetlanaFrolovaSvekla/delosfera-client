@@ -297,7 +297,7 @@ export function OpenVndPage() {
                 <div className="flex items-center gap-2 flex-none pb-3 text-[12px] font-mono font-semibold">
                     {/* Блок 1: Код */}
                     <div className="flex items-center gap-1.5">
-                        <span className="text-[#8b97ab]">Код ВНД:</span>
+                        <span className="text-[#8b97ab]">{/*Код ВНД:*/}{t("openVndPage.vndCodeLabel")}</span>
                         <span className="text-[12px] text-[#4e57d6] bg-[#ececfc] px-2.5 py-0.5 rounded-[7px]">
             {vnd.code}
         </span>
@@ -316,7 +316,7 @@ export function OpenVndPage() {
                     {/* Блок 3: Статус последней редакции (детальный, как и раньше — виден всем,
                         без изменений) */}
                     <div className="flex items-center gap-1.5">
-                        <span className="text-[#8b97ab]">Статус последней редакции ВНД:</span>
+                        <span className="text-[#8b97ab]">{/*Статус последней редакции ВНД:*/}{t("openVndPage.lastRedactionStatusLabel")}</span>
                         <span
                             className="px-2.5 py-0.5 rounded-full text-[12px]"
                             style={{ color: meta.color, background: meta.bg }}
@@ -333,7 +333,7 @@ export function OpenVndPage() {
                         всё же попал сюда как редактор ВНД (см. documentStatusMeta). */}
                     {canSeeDocumentStatus && (
                         <div className="flex items-center gap-1.5">
-                            <span className="text-[#8b97ab]">Статус ВНД:</span>
+                            <span className="text-[#8b97ab]">{/*Статус ВНД:*/}{t("openVndPage.documentStatusLabel")}</span>
                             <span
                                 className="px-2.5 py-0.5 rounded-full text-[12px]"
                                 style={{ color: documentStatusMeta.color, background: documentStatusMeta.bg }}

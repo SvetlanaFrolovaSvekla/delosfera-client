@@ -9,9 +9,10 @@
 // (VndDocument.ActualizationPlannedNoChanges) — здесь только отображается итог.
 import {useState} from "react";
 import {createPortal} from "react-dom";
-import {Layers, Loader2, X} from "lucide-react";
 import {EditableDateField, EditableTextField} from "@/components/componentsGeneral/RequisitesEditFields.tsx";
 import {HelpTooltip} from "@/components/componentsGeneral/knowledgeBaseComponents/HelpTooltip.tsx";
+import {Layers, Loader2, X} from "lucide-react";
+import {useTranslation} from "react-i18next";
 
 export interface ConsolidateRequisites {
     adoptionCode: string;
@@ -36,14 +37,15 @@ interface ConsolidateVndModalProps {
 }
 
 export function ConsolidateVndModal({
-                                         isFirstRedaction,
-                                         plannedNoChanges,
-                                         initialRequisites,
-                                         submitting,
-                                         error,
-                                         onClose,
-                                         onConfirm,
-                                     }: ConsolidateVndModalProps) {
+                                        isFirstRedaction,
+                                        plannedNoChanges,
+                                        initialRequisites,
+                                        submitting,
+                                        error,
+                                        onClose,
+                                        onConfirm,
+                                    }: ConsolidateVndModalProps) {
+    const {t} = useTranslation();
     const hadChanges = isFirstRedaction ? true : !plannedNoChanges;
 
     const [requisites, setRequisites] = useState<ConsolidateRequisites>(initialRequisites);
@@ -63,11 +65,13 @@ export function ConsolidateVndModal({
             <div className="w-full max-w-[520px] rounded-[16px] bg-white p-6 shadow-xl">
                 <div className="mb-4 flex items-start justify-between gap-3">
                     <div className="flex items-center gap-3">
-                        <span className="grid h-10 w-10 flex-none place-items-center rounded-[11px] bg-[#efeafe] text-[#7a5ce0]">
+                        <span
+                            className="grid h-10 w-10 flex-none place-items-center rounded-[11px] bg-[#efeafe] text-[#7a5ce0]">
                             <Layers size={19} strokeWidth={1.8}/>
                         </span>
                         <h2 className="text-[16px] font-bold text-[#1c2740]">
-                            Консолидировать согласованную версию
+                            {/* Консолидировать согласованную версию */}
+                            {t("consolidateVndModal.title")}
                         </h2>
                     </div>
                     <button
@@ -81,16 +85,19 @@ export function ConsolidateVndModal({
 
                 {isFirstRedaction ? (
                     <p className="text-[13px] leading-[1.6] text-[#55617a]">
-                        Это первая редакция документа. После консолидации ВНД приобретёт статус «Действующий».
+                        {/* Это первая редакция документа. После консолидации ВНД приобретёт статус «Действующий».*/}
+                        {t("consolidateVndModal.firstRedactionDescription")}
                     </p>
                 ) : (
                     <p className="text-[13px] leading-[1.6] text-[#55617a]">
-                        Актуализация прошла{" "}
+                        {/* Актуализация прошла*/} {t("consolidateVndModal.actualizationResultPrefix")}{" "}
                         <span className="font-semibold text-[#2a2352]">
-                            {hadChanges ? "с изменениями документа" : "без изменений документа"}
+                            {/* с изменениями документа / без изменений документа */}
+                            {hadChanges ? t("consolidateVndModal.hadChangesLabel") : t("consolidateVndModal.noChangesLabel")}
                         </span>
-                        {" "}— определено автоматически по шагу «Выполнить актуализацию». После консолидации
-                        ВНД приобретёт статус «Действующий».
+                        {" "}{/*— определено автоматически по шагу «Выполнить актуализацию». После консолидации
+                        ВНД приобретёт статус «Действующий».*/}
+                        {t("consolidateVndModal.actualizationResultSuffix")}
                     </p>
                 )}
 
@@ -98,33 +105,32 @@ export function ConsolidateVndModal({
                 <div className="mt-5 rounded-[12px] border border-[#e7ecf3] bg-[#fafbfd] p-4">
                     <div className="mb-3 flex items-center gap-1">
                         <HelpTooltip
-                            content={
-                                "№ и дата принятия указаны в выписке из протокола заседания органа утверждения. " +
-                                "Номер имеет вид «46(6)», где 46 — номер протокола, а (6) — номер вопроса повестки дня. " +
-                                "Дата вступления в силу — дата, с которой редакция становится действующей; " +
-                                "до этого момента документ находится в статусе «Ожидание вступления в силу»."
-                            }
+                            content={t("consolidateVndModal.requisitesTooltip")}
                         />
                         <div className="text-[13px] font-medium leading-snug text-[#3a4560]">
-                            Пожалуйста, заполните реквизиты:
+                            {/* Пожалуйста, заполните реквизиты: */}
+                            {t("consolidateVndModal.requisitesFillPrompt")}
                         </div>
                     </div>
                     <div className="grid grid-cols-2 gap-3">
+                        {/* Дата принятия */}
                         <EditableDateField
-                            label="Дата принятия"
+                            label={t("consolidateVndModal.adoptionDateLabel")}
                             value={requisites.adoptionDate}
                             onChange={(v) => updateRequisites("adoptionDate", v)}
                             required
                         />
+                        {/* № принятия */}
                         <EditableTextField
-                            label="№ принятия"
+                            label={t("consolidateVndModal.adoptionCodeLabel")}
                             value={requisites.adoptionCode}
                             onChange={(v) => updateRequisites("adoptionCode", v)}
                             placeholder="46(6)"
                             required
                         />
+                        {/* Дата вступления в силу */}
                         <EditableDateField
-                            label="Дата вступления в силу"
+                            label={t("consolidateVndModal.adoptionCodePlaceholder")}
                             value={requisites.effectiveDate}
                             onChange={(v) => updateRequisites("effectiveDate", v)}
                             required
@@ -133,7 +139,8 @@ export function ConsolidateVndModal({
                 </div>
 
                 {error && (
-                    <div className="mt-4 rounded-[10px] border border-[#f2c2c2] bg-[#fdf1f1] px-3 py-[10px] text-[12.5px] text-[#c0392b]">
+                    <div
+                        className="mt-4 rounded-[10px] border border-[#f2c2c2] bg-[#fdf1f1] px-3 py-[10px] text-[12.5px] text-[#c0392b]">
                         {error}
                     </div>
                 )}
@@ -144,16 +151,19 @@ export function ConsolidateVndModal({
                         disabled={submitting}
                         className="cursor-pointer h-[38px] rounded-[10px] border border-[#e5e9f0] px-4 text-[13px] font-semibold text-[#3a4560] hover:bg-[#f6f8fb] disabled:opacity-50"
                     >
-                        Отмена
+                        {/* Отмена */}
+                        {t("general.chanel")}
                     </button>
+                    {/* Заполните дату принятия, № принятия и дату вступления в силу */}
                     <button
                         onClick={handleConfirm}
                         disabled={submitting || !requisitesValid}
-                        title={!requisitesValid ? "Заполните дату принятия, № принятия и дату вступления в силу" : undefined}
+                        title={!requisitesValid ? t("consolidateVndModal.confirmDisabledTooltip") : undefined}
                         className="cursor-pointer inline-flex h-[38px] items-center gap-2 rounded-[10px] bg-[#7a5ce0] px-4 text-[13px] font-semibold text-white hover:brightness-[1.06] disabled:cursor-not-allowed disabled:opacity-50"
                     >
                         {submitting && <Loader2 size={14} className="animate-spin"/>}
-                        Консолидировать согласованную версию
+                        {/* Консолидировать согласованную версию */}
+                        {t("consolidateVndModal.confirmButton")}
                     </button>
                 </div>
             </div>

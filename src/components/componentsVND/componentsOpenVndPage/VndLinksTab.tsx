@@ -1,10 +1,10 @@
 import {useState} from "react";
 import {useTranslation} from "react-i18next";
-import {ChevronRight, FileText, Link2, Loader2, Plus, Sparkles, X} from "lucide-react";
 import type {VndAttachmentLinkItem, VndLinkItem, VndResponse} from "@/service/vndService/vndServiceType.ts";
 import {useVndLinks} from "@/hooks/vndHooks/useVndLinks.ts";
-import {VndLinkPicker} from "@/components/componentsVND/componentsOpenVndPage/componentsLinks/VndLinkPicker.tsx";
 import {downloadWithToast} from "@/utils/downloadFiles/downloadFile.ts";
+import {VndLinkPicker} from "@/components/componentsVND/componentsOpenVndPage/componentsLinks/VndLinkPicker.tsx";
+import {ChevronRight, FileText, Link2, Loader2, Plus, Sparkles, X} from "lucide-react";
 
 interface VndLinksTabProps {
     vndId: number;
@@ -139,14 +139,14 @@ function LinkRow({
               className={`text-[10px] font-semibold px-1.5 py-0.5 rounded ${STATUS_STYLES[item.status] ?? "text-slate-500 bg-slate-100"}`}>
             {t(`openVndPage.linksTab.statuses.${item.status}`, {defaultValue: item.status})}
           </span>
-                    {item.isAutoDetected && (
-                        <span
-                            title={t("openVndPage.linksTab.autoDetectedTooltip")}
-                            className="flex items-center gap-1 text-[10px] font-medium px-1.5 py-0.5 rounded bg-violet-50 text-violet-600"
-                        >
+            {item.isAutoDetected && (
+                <span
+                    title={t("openVndPage.linksTab.autoDetectedTooltip")}
+                    className="flex items-center gap-1 text-[10px] font-medium px-1.5 py-0.5 rounded bg-violet-50 text-violet-600"
+                >
               <Sparkles size={10} strokeWidth={2}/> {t("openVndPage.linksTab.autoDetectedBadge")}
             </span>
-                    )}
+            )}
         </span>
                 <span className="block text-[12.5px] text-[#55617a] mt-0.5 truncate">{item.title}</span>
             </a>

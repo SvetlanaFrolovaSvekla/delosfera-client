@@ -1,4 +1,5 @@
 import type {ReactNode} from "react";
+import {useTranslation} from "react-i18next";
 import {CalendarClock, FilePlus2, Layers} from "lucide-react";
 import type {VndStatusKey} from "@/service/vndService/vndServiceType.ts";
 import {isVndPendingEffective} from "@/constants/vndStatus.ts";
@@ -34,9 +35,12 @@ interface BannerConfig {
     gradientFrom: string;
     gradientTo: string;
     titleColor: string;
-    title: string;
+    // Раньше здесь лежала готовая строка (title/text) — теперь ключ перевода, сама строка
+    // резолвится через t() внутри компонента (BANNER_CONFIG - модульная константа, useTranslation
+    // там вызвать нельзя).
+    titleKey: string;
     textColor: string;
-    text: ReactNode;
+    textKey: string;
     primaryLabel?: string;
     primaryIcon?: ReactNode;
     secondaryLabel?: string;
@@ -52,10 +56,14 @@ const BANNER_CONFIG: Partial<Record<VndStatusKey, BannerConfig>> = {
         gradientFrom: "#f4f0ff",
         gradientTo: "#faf8ff",
         titleColor: "#2a2352",
-        title: "Документ в статусе «Консолидация»",
+        // Документ в статусе «Консолидация»
+        titleKey: "vndStatusBanner.consolTitle",
         textColor: "#6b6494",
-        text: "Согласование завершено. Дождитесь решения руководства и подтвердите консолидацию — после этого ВНД станет действующим.",
-        secondaryLabel: "Консолидировать согласованную версию",
+        // Согласование завершено. Дождитесь решения руководства и подтвердите консолидацию —
+        // после этого ВНД станет действующим.
+        textKey: "vndStatusBanner.consolText",
+        // Консолидировать согласованную версию
+        secondaryLabel: "vndStatusBanner.consolSecondaryLabel",
         accentColor: "#7a5ce0",
     },
     draft: {
@@ -66,30 +74,21 @@ const BANNER_CONFIG: Partial<Record<VndStatusKey, BannerConfig>> = {
         gradientFrom: "#f6f8fb",
         gradientTo: "#fbfcfe",
         titleColor: "#26324a",
-        title: "Документ в статусе «Черновик»",
+        // Документ в статусе «Черновик»
+        titleKey: "vndStatusBanner.draftTitle",
         textColor: "#55617a",
-        text: "Добавьте первую редакцию документа, чтобы ВНД стал действующим! ",
+        // Добавьте первую редакцию документа, чтобы ВНД стал действующим!
+        textKey: "vndStatusBanner.draftText",
         // Кнопок для черновика намеренно нет — primaryLabel/secondaryLabel не заданы,
         // поэтому оба блока с кнопками ниже просто не отрендерятся.
         accentColor: "#5b6472",
     },
 };
 
-// Текст для тех, кто видит статус "Консолидация", но не имеет права её подтвердить
-// (согласующие, рядовые пользователи и т.д.)
-const CONSOL_READONLY_TEXT =
-    "Согласование завершено. Дождитесь решения руководства по консолидации.";
-
-// Текст для статуса "Консолидация", когда у актуализационной редакции ещё нет файла ТИД -
-// консолидировать нельзя, пока он не приложен (см. tidMissing выше)
-const CONSOL_TID_MISSING_TEXT =
-    "Прежде чем консолидировать документ, приложите файл ТИД (Таблица изменений и дополнений) " +
-    "во вкладке «Редакции».";
-
 // "Ожидание вступления в силу" — не заведён в BANNER_CONFIG (там ключ — реальный VndStatusKey,
 // а этот статус вычисляемый, см. isVndPendingEffective), только базовые цвета/иконка; текст
 // собирается ниже с подстановкой самой даты.
-const PENDING_EFFECTIVE_CONFIG_BASE: Omit<BannerConfig, "text"> = {
+const PENDING_EFFECTIVE_CONFIG_BASE: Omit<BannerConfig, "textKey"> = {
     icon: <CalendarClock className="w-[21px] h-[21px]" strokeWidth={1.8}/>,
     iconColor: "#c2410c",
     iconBg: "#ffedd5",
@@ -97,19 +96,22 @@ const PENDING_EFFECTIVE_CONFIG_BASE: Omit<BannerConfig, "text"> = {
     gradientFrom: "#fff7ed",
     gradientTo: "#fffbf5",
     titleColor: "#7c2d12",
-    title: "Документ ожидает вступления в силу",
+    // Документ ожидает вступления в силу
+    titleKey: "vndStatusBanner.pendingEffectiveTitle",
     textColor: "#9a5b2e",
     accentColor: "#c2410c",
 };
 
 export function VndStatusBanner({status, effectiveDate, onPrimaryAction, onSecondaryAction, compact, canConsolidate, tidMissing}: VndStatusBannerProps) {
+    const {t} = useTranslation();
     const pendingEffective = isVndPendingEffective(status, effectiveDate);
 
     const config: BannerConfig | undefined = pendingEffective
         ? {
             ...PENDING_EFFECTIVE_CONFIG_BASE,
-            text: `Дата вступления в силу — ${formatDate(effectiveDate)}. До этого момента документ ` +
-                "находится в статусе «Ожидание вступления в силу».",
+            // Дата вступления в силу — ${formatDate(effectiveDate)}. До этого момента документ
+            // находится в статусе «Ожидание вступления в силу».
+            textKey: "vndStatusBanner.pendingEffectiveText",
         }
         : BANNER_CONFIG[status];
     if (!config) return null;
@@ -121,11 +123,18 @@ export function VndStatusBanner({status, effectiveDate, onPrimaryAction, onSecon
     const isConsolTidMissing = status === "consol" && !isConsolWithoutRights && tidMissing === true;
 
     const displayText = isConsolWithoutRights
-        ? CONSOL_READONLY_TEXT
+        // Согласование завершено. Дождитесь решения руководства по консолидации.
+        ? t("vndStatusBanner.consolReadonlyText")
         : isConsolTidMissing
-            ? CONSOL_TID_MISSING_TEXT
-            : config.text;
-    const secondaryLabel = (isConsolWithoutRights || isConsolTidMissing) ? undefined : config.secondaryLabel;
+            // Прежде чем консолидировать документ, приложите файл ТИД (Таблица изменений и
+            // дополнений) во вкладке «Редакции».
+            ? t("vndStatusBanner.consolTidMissingText")
+            : pendingEffective
+                ? t(config.textKey, {date: formatDate(effectiveDate)})
+                : t(config.textKey);
+    const secondaryLabel = (isConsolWithoutRights || isConsolTidMissing || !config.secondaryLabel)
+        ? undefined
+        : t(config.secondaryLabel);
 
     const hasActions = config.primaryLabel || secondaryLabel;
 
@@ -147,7 +156,7 @@ export function VndStatusBanner({status, effectiveDate, onPrimaryAction, onSecon
 
                 <div className="flex-1 min-w-0">
                     <div className="font-semibold text-[14px]" style={{color: config.titleColor}}>
-                        {config.title}
+                        {t(config.titleKey)}
                     </div>
                     <div className="text-[12.5px] mt-0.5" style={{color: config.textColor}}>
                         {displayText}

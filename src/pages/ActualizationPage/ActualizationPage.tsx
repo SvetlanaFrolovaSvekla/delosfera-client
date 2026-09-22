@@ -40,7 +40,12 @@ import {
 export function ActualizationPage() {
     const {t} = useTranslation();
     const {hasPermission} = useAuth();
-    const isChiefEditor =
+    // Видеть панель "Заявки на актуализацию" (ActualizationRequestsPanel) - узкое право
+    // ApproveVndActualizationRequests, плюс по историческим причинам ещё и широкий набор
+    // "главного редактора" (ActualizeAnyVndWith(out)Approval) - см. комментарий у
+    // PermissionCode.ApproveVndActualizationRequests на сервере.
+    const canReviewActualizationRequests =
+        hasPermission(PermissionCode.ApproveVndActualizationRequests) ||
         hasPermission(PermissionCode.ActualizeAnyVndWithApproval) ||
         hasPermission(PermissionCode.ActualizeAnyVndWithoutApproval);
 
@@ -135,7 +140,7 @@ export function ActualizationPage() {
         <div className="w-full max-w-[1700px] mx-auto px-4 sm:px-6 lg:px-8 xl:px-10 pt-5 sm:pt-[26px] pb-10 sm:pb-[60px]">
             <ActualizationPageHeader onExportClick={() => setExportOpen(true)}/>
 
-            {isChiefEditor && <ActualizationRequestsPanel/>}
+            {canReviewActualizationRequests && <ActualizationRequestsPanel/>}
 
             <ActualizationSummaryCards
                 summary={summary}

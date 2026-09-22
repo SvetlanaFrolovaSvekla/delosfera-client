@@ -104,8 +104,6 @@ interface VndEditionsTabProps {
 // CreateVndWithApproval/ActualizeAnyVndWithApproval позволяют создавать/актуализировать ВНД,
 // но по итогу всё равно требуют согласования - наличие только этих прав (например, у роли
 // "Редактор ВНД") не должно давать кнопку "Сделать актуальной редакцией без согласования"
-// (см. isChiefEditor ниже - тот шире и используется для доступа к документам в целом, а не
-// для этого конкретного действия).
 const PUBLISH_WITHOUT_APPROVAL_PERMISSIONS: number[] = [
     PermissionCode.CreateVndWithoutApproval,
     PermissionCode.ActualizeAnyVndWithoutApproval,
@@ -126,9 +124,8 @@ export function VndEditionsTab({vnd, onVndChanged, onGoToApproval}: VndEditionsT
         useRedactionSelection(redactions, selectedId);
 
     // "Рядовой" пользователь (не редактор ВНД) не должен видеть редакции, которые ещё не стали
-    // официальным текстом документа - черновик/на согласовании/отклонена/на консолидации (см.
-    // isRedactionVisibleToRegularUser). Действующую и прошлые официально принятые (outdated)
-    // редакции показываем всем, как и раньше. isVndEditor решает, применять ли фильтр вовсе.
+    // официальным текстом документа - черновик/на согласовании/отклонена/на консолидации.
+    // isVndEditor решает, применять ли фильтр вовсе.
     const isVndEditor = useIsVndEditor();
     const visibleRedactions = useMemo(
         () => isVndEditor
@@ -222,7 +219,7 @@ export function VndEditionsTab({vnd, onVndChanged, onGoToApproval}: VndEditionsT
             .map((role) => role.name);
     }, [user]);
 
-    // Процесс согласования - нужен только чтобы решить, кому показать кнопку "Перейти к
+    // Процесс согласования - нужен, только чтобы решить, кому показать кнопку "Перейти к
     // согласованию" в статус-баннере редакции ("pending"): участвующему согласующему,
     // инициатору согласования и инициатору самой ВНД. Грузим один раз при открытии вкладки -
     // отсутствие процесса (ВНД ещё не отправлялась) не ошибка, просто кнопка не покажется.

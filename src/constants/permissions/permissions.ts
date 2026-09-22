@@ -200,4 +200,13 @@ export const PermissionCode = {
      * обязан совпадать с сервером.
      */
     EditAnyVndApprovalRoute: 59,
+
+    /**
+     * Видеть вкладку "Заявки на актуализацию" (ActualizationRequestsPanel) и решать по заявкам —
+     * тот же круг лиц получает и уведомления о новых заявках. Узкое право, отдельное от
+     * широкого набора "главного редактора" (ActualizeAnyVndWith(out)Approval) по той же причине,
+     * что и EditAnyVndApprovalRoute — широкий набор есть и у ролей без отношения к рассмотрению
+     * заявок (например, у администраторов). Номер обязан совпадать с сервером.
+     */
+    ApproveVndActualizationRequests: 60,
 } as const;

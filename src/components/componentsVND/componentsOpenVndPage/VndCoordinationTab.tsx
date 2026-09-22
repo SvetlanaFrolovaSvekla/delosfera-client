@@ -2,25 +2,23 @@
 import {useRef, useState} from "react";
 import {useTranslation} from "react-i18next";
 import {useAuth} from "@/context/AuthContext.ts";
-import {coordinationService} from "@/service/coordinationService/coordinationService.ts";
-import {
-    ApprovalDecisionType,
-    type ApprovalQuoteItem,
-    type ApprovalStageResponse
-} from "@/service/coordinationService/coordinationServiceTypes.ts";
+import type {ApprovalQuoteItem} from "@/service/coordinationService/coordinationServiceTypes.ts";
 import type {VndRedactionResponse, VndResponse} from "@/service/vndService/vndServiceType.ts";
 import {toast} from "@/service/toastService.ts";
 import {PermissionCode} from "@/constants/permissions/permissions.ts";
 import {useVndRedactions} from "@/hooks/vndHooks/useVndRedactions.ts";
 import {useAsyncAction} from "@/hooks/useAsyncAction.ts";
 import {useApprovalProcess} from "@/hooks/coordinationHooks/useApprovalProcess.ts";
+import {useCancelApproval} from "@/hooks/coordinationHooks/useCancelApproval.ts";
+import {useApprovalRouteEditing} from "@/hooks/coordinationHooks/useApprovalRouteEditing.ts";
+import {useResolutionDecision} from "@/hooks/coordinationHooks/useResolutionDecision.ts";
 import type {RedactionViewTarget} from "@/utils/vndProcess/redactionLanguagePanelUtils.ts";
 import {downloadWithToast} from "@/utils/downloadFiles/downloadFile.ts";
+import type {
+    FormattedCommentQuoteRef
+} from "@/components/componentsCoordination/CoordinationRouteConstructor/viewComponents/FormattedResolutionComment.tsx";
 
 ///
-import {
-    VndApprovalRouteView
-} from "@/components/componentsCoordination/CoordinationRouteConstructor/viewComponents/VndApprovalRouteView.tsx";
 import {
     VndApprovalSummary
 } from "@/components/componentsCoordination/CoordinationRouteConstructor/viewComponents/VndApprovalSummary.tsx";
@@ -28,27 +26,22 @@ import {
     VndStartApprovalModal
 } from "@/components/componentsCoordination/CoordinationRouteConstructor/functionalComponents/VndStartApprovalModal.tsx";
 import {
-    VndSelectApproverModal, type ApproverOption
-} from "@/components/componentsCoordination/CoordinationRouteConstructor/functionalComponents/VndSelectApproverModal.tsx";
-import {
     VndApproverResolutionPanel,
     type ResolutionChoice,
     type VndApproverResolutionPanelHandle,
 } from "./componentsCoordinationTab/VndApproverResolutionPanel.tsx";
 import {VndRevisionNeededPanel} from "./componentsCoordinationTab/VndRevisionNeededPanel.tsx";
+import {VndNoChangesHintBanner} from "./componentsCoordinationTab/VndNoChangesHintBanner.tsx";
+import {VndCurrentRedactionSection} from "./componentsCoordinationTab/VndCurrentRedactionSection.tsx";
+import {VndRedactionModals} from "./componentsCoordinationTab/VndRedactionModals.tsx";
+import {VndCoordinationRouteSection} from "./componentsCoordinationTab/VndCoordinationRouteSection.tsx";
+import {VndCoordinationDangerZone} from "./componentsCoordinationTab/VndCoordinationDangerZone.tsx";
+import {VndCoordinationSharedModals} from "./componentsCoordinationTab/VndCoordinationSharedModals.tsx";
+import {getCoordinationRoleState, getRouteHeaderConfig} from "./componentsCoordinationTab/coordinationRoleState.ts";
+import type {CoordinationModal} from "./componentsCoordinationTab/coordinationModalTypes.ts";
 import {Loader} from "@/components/componentsGeneral/Loader.tsx";
 import {EmptyState} from "@/components/componentsGeneral/EmptyState.tsx";
-import {
-    RedactionSummaryCard
-} from "@/components/componentsCoordination/CoordinationRouteConstructor/viewComponents/RedactionSummaryCard.tsx";
-import {
-    RedactionCompareModal
-} from "@/components/componentsCoordination/CoordinationRouteConstructor/viewComponents/RedactionCompareModal.tsx";
-import {
-    RedactionViewModal
-} from "@/components/componentsCoordination/CoordinationRouteConstructor/viewComponents/RedactionViewModal.tsx";
-import {ConfirmActionModal} from "@/components/componentsGeneral/modal/ConfirmActionModal.tsx";
-import {AlertTriangle, CheckCircle2, Clock3, Columns2, FileCheck2, Info, XCircle} from "lucide-react";
+import {AlertTriangle, Clock3, Info} from "lucide-react";
 ///
 
 interface VndCoordinationTabProps {
@@ -60,38 +53,6 @@ interface VndCoordinationTabProps {
 // Первичное согласование, Согласование после внесённых изменений, Согласование после внесённых изменений, Доработка документа после правок
 // * approved - согласовано, rejected - отклонено;
 const CANCELLABLE_PHASE = ["primary", "repeated", "final_hold", "revision_needed"];
-// Резолюции
-const DECISION_MAP: Record<ResolutionChoice, ApprovalDecisionType> = {
-    approve: ApprovalDecisionType.Approve,
-    approveWithComment: ApprovalDecisionType.ApproveWithComment,
-    reject: ApprovalDecisionType.Reject,
-};
-
-// Какая из модалок сейчас открыта: стартовая модалка согласования,
-// сравнение редакций или просмотр одной редакции.
-type CoordinationModal =
-    | { kind: "startApproval" }
-    | { kind: "compare" }
-    | {
-    kind: "view";
-    redaction: VndRedactionResponse;
-    /* Не указывается для режима "сослаться на текст" (см. handleCiteRequest) - там нет
-     конкретной вкладки, с которой имело бы смысл начинать, открываем как есть (первый
-     доступный язык), и пользователь сам переключается, если нужно). Для "перейти к цитате"
-     (см. handleJumpToQuote) - вкладка, к которой относится сама цитата. */
-    language?: RedactionViewTarget;
-    /* Передаётся только когда модалка открыта через "+ Сослаться на текст редакции" -
-     превращает обычный просмотр в режим цитирования (см. RedactionViewModal.onInsertQuote). */
-    onInsertQuote?: (selectedText: string, documentTarget: RedactionViewTarget) => void;
-    /* Передаётся только когда модалка открыта, чтобы сразу проскроллить к месту одной из
-     уже вставленных цитат (см. handleJumpToQuote/RedactionViewModal.initialSearchQuery). */
-    initialSearchQuery?: string;
-    /* Версия документа редакции, к которой относится цитата (см.
-     FormattedCommentQuoteRef.revisionIndex) - передаётся вместе с initialSearchQuery, чтобы
-     "Показать в тексте" открывало именно ту версию, к которой относится цитата, а не текущую
-     живую (см. handleShowQuoteInText/RedactionViewModal.initialRevisionIndex). */
-    initialRevisionIndex?: number;
-};
 
 export function VndCoordinationTab({vnd, onVndChanged}: VndCoordinationTabProps) {
     const {t} = useTranslation();
@@ -104,9 +65,6 @@ export function VndCoordinationTab({vnd, onVndChanged}: VndCoordinationTabProps)
     const openView = (redaction: VndRedactionResponse, language: RedactionViewTarget) =>
         setModal({kind: "view", redaction, language});
 
-    const [cancelling, setCancelling] = useState(false); // Отзыв согласования
-    const [cancelModalOpen, setCancelModalOpen] = useState(false); // Модалка отзыва согласования
-
     // Набор прав на создание/актуализацию ВНД без запроса права.
     const isChiefEditor =
         hasPermission(PermissionCode.CreateVndWithApproval) ||
@@ -116,29 +74,10 @@ export function VndCoordinationTab({vnd, onVndChanged}: VndCoordinationTabProps)
     // Право на отзыв чужого согласования (роль главного редактора).
     const canCancelAnyApproval = hasPermission(PermissionCode.CancelAnyVndApproval);
     // Право редактировать маршрут уже запущенного согласования - добавлять/убирать
-    // согласующих (роль главного редактора, см. VndApprovalService.AddApproverAsync/
-    // RemoveApproverAsync на бэке).
+    // согласующих (роль главного редактора)
     const canEditApprovalRoute = hasPermission(PermissionCode.EditAnyVndApprovalRoute);
 
-    const [addApproverModalOpen, setAddApproverModalOpen] = useState(false); // Модалка "Добавить согласующего"
-    // Этап, который сейчас предлагается убрать (открывает модалку подтверждения) - null, если
-    // модалка закрыта.
-    const [removingStage, setRemovingStage] = useState<ApprovalStageResponse | null>(null);
-    const [removingApprover, setRemovingApprover] = useState(false);
-
-    const [submitting, setSubmitting] = useState(false); // Идёт ли отправка резолюции
-    const [decisionError, setDecisionError] = useState<string | null>(null); // Ошибка отправки резолюции
-    // Синхронный лок поверх стейта submitting — на случай двойного клика/повторного вызова
-    // раньше, чем успеет прийти обновлённый проп submitting (см. подробный комментарий
-    // у submitLockRef в VndApproverResolutionPanel). Хук должен стоять здесь, ДО всех
-    // условных return ниже (loading/error/!process) — иначе порядок хуков между рендерами
-    // не совпадает, и React падает с "Rendered more hooks than during the previous render".
-    const decisionInFlightRef = useRef(false);
-
-    // "+ Сослаться на текст редакции" в "Ваша резолюция" - ref должен стоять здесь же, ДО
-    // условных return ниже (см. комментарий у decisionInFlightRef чуть выше) - иначе он не
-    // вызывается при early return и React падает с "Rendered more hooks than during the
-    // previous render". Сам handleCiteRequest (не хук) определён ниже, рядом с redaction.
+    // "+ Сослаться на текст редакции" в "Ваша резолюция"
     const resolutionPanelRef = useRef<VndApproverResolutionPanelHandle>(null);
 
     // Редакции ВНД грузим, чтобы достать ту, что связана с process.redactionId
@@ -159,6 +98,16 @@ export function VndCoordinationTab({vnd, onVndChanged}: VndCoordinationTabProps)
     const download = useAsyncAction<number>();
     const handleDownload = (fileId: number, name: string) =>
         download.run(fileId, () => downloadWithToast(fileId, name), t("openVndPage.coordinationTab.downloadError"));
+
+    // Отзыв согласования, добавление/убор согласующего и отправка резолюции - вынесены в
+    // отдельные хуки (см. hooks/coordinationHooks), но вызываются здесь безусловно, ДО ранних
+    // return'ов ниже (loading/error/!process) - иначе нарушили бы Rules of Hooks условным
+    // вызовом хука. То, что этим хукам нужно от process (myStage/stages), они принимают уже
+    // готовым аргументом прямо в момент вызова конкретного обработчика - см. комментарии внутри
+    // самих хуков.
+    const cancelApproval = useCancelApproval(vnd.id, onVndChanged);
+    const routeEditing = useApprovalRouteEditing(vnd.id, reload);
+    const resolutionDecision = useResolutionDecision(vnd.id, reload);
 
     if (loading || redactionsLoading) {
         return <Loader label={t("openVndPage.coordinationTab.loadingLabel")} fullHeight={false}/>;
@@ -185,25 +134,26 @@ export function VndCoordinationTab({vnd, onVndChanged}: VndCoordinationTabProps)
                     <EmptyState
                         embedded
                         icon={Clock3}
-                        title={t("openVndPage.coordinationTab.notStartedTitle")}
+                        title={t("openVndPage.coordinationTab.notStartedTitle")} /* Согласование ещё не запущено! */
                         description={t("openVndPage.coordinationTab.notStartedDescription")}
                     />
                 </div>
                 {canStartNoChangesReview && (
                     <div className="mt-4 flex flex-col items-start gap-2">
                         <p className="text-[12.5px] leading-[1.6] text-[#55617a]">
-                            {t("openVndPage.coordinationTab.noChangesReviewHint")}
+                            {t("openVndPage.coordinationTab.noChangesReviewHint")} {/* Заявлена актуализация без изменений — можно отправить существующую действующую редакцию на согласование как есть, без загрузки нового файла. */}
                         </p>
                         <button
                             type="button"
                             onClick={() => setModal({kind: "startApproval"})}
                             className="cursor-pointer inline-flex h-9 items-center gap-2 rounded-[9px] bg-[#4e57d6] px-3.5 text-[12.5px] font-semibold text-white hover:bg-[#3f47bd]"
                         >
-                            {t("openVndPage.coordinationTab.startNoChangesButton")}
+                            {t("openVndPage.coordinationTab.startNoChangesButton")} {/* Начать согласование (без изменений) */}
                         </button>
                     </div>
                 )}
 
+                {/* Модалка запуска согласования */}
                 {modal?.kind === "startApproval" && (
                     <VndStartApprovalModal
                         vndId={vnd.id}
@@ -221,6 +171,13 @@ export function VndCoordinationTab({vnd, onVndChanged}: VndCoordinationTabProps)
         );
     }
 
+    // С этой строки process точно не null - можно безопасно доставать из него производные
+    // роль/фазу (см. getCoordinationRoleState) и текущую редакцию.
+    const {
+        isFinalHoldPhase, isRepeatedPhase, isRevisionNeeded, isProcessActive,
+        myStage, isInitiator, isApprover, isPendingForMe,
+    } = getCoordinationRoleState(process, currentUserId);
+
     const redaction = redactions?.find((r) => r.id === process.redactionId);
 
     // Если у редакции, вынесенной на согласование, номер 1 — это первая редакция ВНД,
@@ -230,59 +187,6 @@ export function VndCoordinationTab({vnd, onVndChanged}: VndCoordinationTabProps)
     const previousRedaction = redaction
         ? redactions?.find((r) => r.number === redaction.number - 1)
         : undefined;
-
-    const isPrimaryPhase = process.status === "primary";
-    const isRepeatedPhase = process.status === "repeated";
-    const isFinalHoldPhase = process.status === "final_hold";
-    const isRevisionNeeded = process.status === "revision_needed";
-    const isApproved = process.status === "approved";
-    const isRejected = process.status === "rejected";
-    // Согласование ещё идёт - маркеры цитат в тексте редакции кликабельны (открывают резолюцию
-    // целиком) только пока это так; после завершения (согласовано/отклонено) маркеры остаются
-    // видны, но клик по ним больше ничего не открывает - см. RedactionViewModal.quoteMarksClickable.
-    const isProcessActive = !isApproved && !isRejected;
-
-    // На финальной выдержке решение может принять ЛЮБОЙ согласующий маршрута
-    const myStage = process.stages.find((s: ApprovalStageResponse) => {
-        if (isPrimaryPhase) return s.approverUserId === currentUserId;
-        if (isRepeatedPhase) return s.approverUserId === currentUserId && s.participatesInRepeat;
-        if (isFinalHoldPhase) return s.approverUserId === currentUserId;
-        return false;
-    });
-
-    const isInitiator = process.initiatorUserId === currentUserId;
-    const isApprover = !isInitiator && !!myStage;
-
-    // На финальной выдержке участие добровольное
-    const isPendingForMe =
-        !!myStage &&
-        ((isPrimaryPhase && myStage.primaryDecision === "pending") ||
-            (isRepeatedPhase && (myStage.repeatDecision === null || myStage.repeatDecision === "pending")) ||
-            (isFinalHoldPhase && (myStage.finalHoldDecision === null || myStage.finalHoldDecision === "pending")));
-
-    const handleResolutionSubmit = async (
-        choice: ResolutionChoice, comment: string, files: File[], quotes: ApprovalQuoteItem[],
-    ) => {
-        if (!myStage || decisionInFlightRef.current) return;
-        decisionInFlightRef.current = true;
-        setSubmitting(true);
-        setDecisionError(null);
-        try {
-            await coordinationService.decide(vnd.id, myStage.id, {
-                decision: DECISION_MAP[choice],
-                comment: comment || undefined,
-                files: files.length > 0 ? files : undefined,
-                quotes: quotes.length > 0 ? quotes : undefined,
-            });
-            await reload();
-            toast.success(t("openVndPage.coordinationTab.decisionSubmittedToastTitle"), t("openVndPage.coordinationTab.decisionSubmittedToastDescription"));
-        } catch (err) {
-            setDecisionError(err instanceof Error ? err.message : t("openVndPage.coordinationTab.decisionErrorDefault"));
-        } finally {
-            decisionInFlightRef.current = false;
-            setSubmitting(false);
-        }
-    };
 
     // "+ Сослаться на текст редакции" в "Ваша резолюция" - открывает просмотр проверяемой
     // редакции в режиме цитирования, а вставка выделенного текста в комментарий делегируется
@@ -314,9 +218,8 @@ export function VndCoordinationTab({vnd, onVndChanged}: VndCoordinationTabProps)
     // Кнопка-лупа "Показать в тексте" рядом с цитатой в уже ОТПРАВЛЕННОЙ резолюции любого
     // согласующего на маршруте (см. StageCardView/VndApprovalRouteView.onShowQuoteInText) - тот
     // же приём, что и handleJumpToQuote выше (там - для ещё не отправленной резолюции текущего
-    // пользователя), просто с другим источником цитаты (quote: {documentTarget, text} вместо
-    // ApprovalQuoteItem, форма та же).
-    const handleShowQuoteInText = (quote: { documentTarget: string; text: string; revisionIndex?: number }) => {
+    // пользователя), просто с другим источником цитаты (тот же по форме FormattedCommentQuoteRef).
+    const handleShowQuoteInText = (quote: FormattedCommentQuoteRef) => {
         if (!redaction) return;
         setModal({
             kind: "view",
@@ -327,108 +230,52 @@ export function VndCoordinationTab({vnd, onVndChanged}: VndCoordinationTabProps)
         });
     };
 
-    const handleCancel = async () => {
-        setCancelling(true);
-        try {
-            await coordinationService.cancel(vnd.id);
-            toast.success(t("openVndPage.coordinationTab.cancelledToastTitle"), t("openVndPage.coordinationTab.cancelledToastDescription"));
-            setCancelModalOpen(false);
-            onVndChanged?.();
-        } catch (err) {
-            toast.error(t("openVndPage.coordinationTab.cancelErrorTitle"), err instanceof Error ? err.message : undefined);
-        } finally {
-            setCancelling(false);
-        }
-    };
-
     // Действующие (не убранные) согласующие уже на маршруте - показываем недоступными в модалке
-    // выбора нового согласующего (см. VndSelectApproverModal.excludedUserIds).
+    // выбора нового согласующего
     const activeApproverUserIds = new Set(
         process.stages.filter((s) => !s.isRemovedByEditor).map((s) => s.approverUserId),
     );
 
-    // Главный редактор добавляет согласующего в уже запущенный процесс согласования. Модалка
-    // выбора (VndSelectApproverModal) закрывается сама сразу после выбора - не ждёт ответа
-    // сервера, поэтому здесь нет отдельного состояния загрузки.
-    const handleAddApprover = async (approver: ApproverOption) => {
-        try {
-            await coordinationService.addApprover(vnd.id, {approverUserId: approver.id});
-            await reload();
-            toast.success("Согласующий добавлен", `${approver.fullName} добавлен в маршрут согласования`);
-        } catch (err) {
-            toast.error("Не удалось добавить согласующего", err instanceof Error ? err.message : undefined);
-        }
-    };
+    const handleRequestRemoveApprover = (stageId: number) =>
+        routeEditing.handleRequestRemoveApprover(stageId, process.stages);
 
-    // Клик по кнопке "Убрать" на карточке этапа - открывает модалку подтверждения
-    // (см. StageCardView.onRemoveApprover/VndApprovalRouteView.onRemoveApprover).
-    const handleRequestRemoveApprover = (stageId: number) => {
-        const stage = process.stages.find((s) => s.id === stageId);
-        if (stage) setRemovingStage(stage);
-    };
-
-    // Главный редактор убирает согласующего из уже запущенного процесса согласования - этап
-    // помечается недействующим, задача с него снимается (см. VndApprovalService.RemoveApproverAsync).
-    const handleConfirmRemoveApprover = async () => {
-        if (!removingStage) return;
-        setRemovingApprover(true);
-        try {
-            await coordinationService.removeApprover(vnd.id, removingStage.id, {});
-            await reload();
-            toast.success("Согласующий убран", `${removingStage.approverName} убран из маршрута согласования`);
-            setRemovingStage(null);
-        } catch (err) {
-            toast.error("Не удалось убрать согласующего", err instanceof Error ? err.message : undefined);
-        } finally {
-            setRemovingApprover(false);
-        }
-    };
+    const handleResolutionSubmit = (
+        choice: ResolutionChoice, comment: string, files: File[], quotes: ApprovalQuoteItem[],
+    ) => resolutionDecision.submit(myStage, choice, comment, files, quotes);
 
     // Конфиг шапки над установленным маршрутом
-    const routeHeaderConfig = isApproved
-        ? {
-            border: "border-[#bfe3cc]", bg: "bg-[#eef9f2]",
-            icon: CheckCircle2, iconColor: "text-[#1f7a4c]",
-            titleColor: "text-[#1c5e37]", textColor: "text-[#2f6b47]",
-            title: t("openVndPage.coordinationTab.approvedTitle"),
-            description: t("openVndPage.coordinationTab.approvedDescription"),
-        }
-        : isRejected
-            ? {
-                border: "border-[#f2c2c2]", bg: "bg-[#fdf1f1]",
-                icon: XCircle, iconColor: "text-[#c0392b]",
-                titleColor: "text-[#8f2a1f]", textColor: "text-[#a63a2c]",
-                title: t("openVndPage.coordinationTab.rejectedTitle"),
-                description: t("openVndPage.coordinationTab.rejectedDescription"),
-            }
-            : (isRevisionNeeded && !isInitiator)
-                ? {
-                    border: "border-[#f0dcae]", bg: "bg-[#fdf6e8]",
-                    icon: Clock3, iconColor: "text-[#9a6408]",
-                    titleColor: "text-[#7a5006]", textColor: "text-[#8a6a1f]",
-                    title: t("openVndPage.coordinationTab.revisionInProgressTitle"),
-                    description: t("openVndPage.coordinationTab.revisionInProgressDescription"),
-                }
-                : null;
+    const routeHeaderConfig = getRouteHeaderConfig(process.status, isInitiator, t);
+
+    // Три модалки, общие для обоих видов ниже (см. комментарий в самом компоненте).
+    const sharedModals = (
+        <VndCoordinationSharedModals
+            cancelModalOpen={cancelApproval.cancelModalOpen}
+            onCancelModalClose={cancelApproval.closeCancelModal}
+            onConfirmCancel={cancelApproval.handleCancel}
+            cancelling={cancelApproval.cancelling}
+            addApproverModalOpen={routeEditing.addApproverModalOpen}
+            activeApproverUserIds={activeApproverUserIds}
+            onAddApproverModalClose={routeEditing.closeAddApproverModal}
+            onSelectApprover={routeEditing.handleAddApprover}
+            removingStage={routeEditing.removingStage}
+            onRemovingStageClose={routeEditing.closeRemoveApproverModal}
+            onConfirmRemoveApprover={routeEditing.handleConfirmRemoveApprover}
+            removingApprover={routeEditing.removingApprover}
+        />
+    );
 
     // --- Вид для согласующего ---
     if (isApprover) {
         return (
             <div className="py-4 px-4 sm:px-6">
                 {vnd.actualizationPlannedNoChanges && (
-                    <div
-                        className="mb-3 inline-flex items-start gap-2.5 rounded-[12px] border border-[#dde0fa] bg-[#f4f5fd] px-3.5 py-3 max-w-full">
-                        <FileCheck2 size={16} strokeWidth={2} className="mt-[1px] flex-none text-[#4e57d6]"/>
-                        <p className="text-[12.5px] leading-[1.55] text-[#3a4560]">
-                            {t("openVndPage.coordinationTab.noChangesApproverHint")}
-                        </p>
-                    </div>
+                    <VndNoChangesHintBanner message={t("openVndPage.coordinationTab.noChangesApproverHint")}/>
                 )}
 
                 {/* Плашка для согласующего на этапе "Согласование после внесённых изменений" —
                     только для тех, чей этап участвует в повторном круге (participatesInRepeat,
                     т.е. кто оставлял замечания/не согласовал чисто на первичном этапе - см.
-                    myStage выше), именно им нужно перепроверить обновлённые файлы. */}
+                    myStage в getCoordinationRoleState), именно им нужно перепроверить обновлённые файлы. */}
                 {isRepeatedPhase && (
                     <div
                         className="mb-3 flex items-start gap-2.5 rounded-[12px] border border-[#bcd6f5] bg-[#eef5fd] px-3.5 py-3 max-w-full">
@@ -443,96 +290,48 @@ export function VndCoordinationTab({vnd, onVndChanged}: VndCoordinationTabProps)
                 <VndApprovalSummary process={process}/>
 
                 {redactionsError && (
-                    <div>
-                        <EmptyState
-                            variant="error"
-                            title={t("openVndPage.coordinationTab.redactionsLoadErrorTitle")}
-                            description={redactionsError}
-                        />
-                    </div>
-                )}
-
-                <div className="mb-2 flex items-center justify-between gap-3">
-                    <div className="text-[13.5px] font-bold text-[#1c2740]">
-                        {isFirstRedaction
-                            ? t("openVndPage.coordinationTab.firstRedactionLabel")
-                            : t("openVndPage.coordinationTab.newRedactionLabel")}
-                    </div>
-                    {!isFirstRedaction && redaction && previousRedaction && (
-                        <button
-                            type="button"
-                            onClick={() => setModal({kind: "compare"})}
-                            className="cursor-pointer flex h-[35px] shrink-0 items-center justify-center gap-2 rounded-[10px] bg-[#4e57d6] px-4 text-[12.5px] font-semibold text-white hover:bg-[#3f47bd] disabled:cursor-not-allowed disabled:bg-[#c7cbe6]"
-                        >
-                            <Columns2 size={15} strokeWidth={2}/>
-                            {t("openVndPage.coordinationTab.compareButton")}
-                        </button>
-                    )}
-                </div>
-                {redaction && (
-                    <RedactionSummaryCard
-                        vnd={vnd}
-                        redaction={redaction}
-                        previousRedaction={!isFirstRedaction ? previousRedaction : undefined}
-                        downloadingId={download.activeId}
-                        downloadError={download.error}
-                        onDownload={handleDownload}
-                        onView={openView}
-                    />
-                )}
-                {modal?.kind === "compare" && redaction && previousRedaction && (
-                    <RedactionCompareModal
-                        vnd={vnd}
-                        redactions={redactions ?? []}
-                        initialLeft={redaction}
-                        initialRight={previousRedaction}
-                        reviewedRedactionId={redaction.id}
-                        downloadingId={download.activeId}
-                        onDownload={handleDownload}
-                        onClose={() => setModal(null)}
-                    />
-                )}
-                {modal?.kind === "view" && (
-                    <RedactionViewModal
-                        vnd={vnd}
-                        redaction={modal.redaction}
-                        initialLanguage={modal.language}
-                        initialSearchQuery={modal.initialSearchQuery}
-                        initialRevisionIndex={modal.initialRevisionIndex}
-                        downloadingId={download.activeId}
-                        onDownload={handleDownload}
-                        onClose={() => setModal(null)}
-                        onInsertQuote={modal.onInsertQuote}
-                        approvalProcess={process}
-                        quoteMarksClickable={isProcessActive}
+                    <EmptyState
+                        variant="error"
+                        title={t("openVndPage.coordinationTab.redactionsLoadErrorTitle")}
+                        description={redactionsError}
                     />
                 )}
 
-                <div className="mb-2 text-[13.5px] font-bold text-[#1c2740]">{t("openVndPage.coordinationTab.establishedRouteLabel")}</div>
-                <div
-                    className={`rounded-[16px] border overflow-hidden ${routeHeaderConfig ? routeHeaderConfig.border : "border-[#e5e9f0]"}`}>
-                    {routeHeaderConfig && (
-                        <div
-                            className={`flex items-start gap-3 border-b px-5 py-3 ${routeHeaderConfig.border} ${routeHeaderConfig.bg}`}>
-                            <routeHeaderConfig.icon size={18}
-                                                    className={`mt-[1px] flex-none ${routeHeaderConfig.iconColor}`}/>
-                            <div>
-                                <div className={`text-[13px] font-semibold ${routeHeaderConfig.titleColor}`}>
-                                    {routeHeaderConfig.title}
-                                </div>
-                                <div className={`mt-0.5 text-[12.5px] leading-[1.5] ${routeHeaderConfig.textColor}`}>
-                                    {routeHeaderConfig.description}
-                                </div>
-                            </div>
-                        </div>
-                    )}
-                    <VndApprovalRouteView process={process} highlightStageId={myStage?.id}
-                                          frameless={!!routeHeaderConfig}
-                                          onShowQuoteInText={handleShowQuoteInText}
-                                          canEditRoute={canEditApprovalRoute}
-                                          onAddApprover={() => setAddApproverModalOpen(true)}
-                                          onRemoveApprover={handleRequestRemoveApprover}/>
-                </div>
+                <VndCurrentRedactionSection
+                    vnd={vnd}
+                    isFirstRedaction={!!isFirstRedaction}
+                    redaction={redaction}
+                    previousRedaction={previousRedaction}
+                    downloadingId={download.activeId}
+                    downloadError={download.error}
+                    onDownload={handleDownload}
+                    onView={openView}
+                    onCompareClick={() => setModal({kind: "compare"})}
+                    headerClassName="mb-2"
+                />
+
+                <VndRedactionModals
+                    vnd={vnd}
+                    redactions={redactions}
+                    redaction={redaction}
+                    previousRedaction={previousRedaction}
+                    modal={modal}
+                    onClose={() => setModal(null)}
+                    downloadingId={download.activeId}
+                    onDownload={handleDownload}
+                    process={process}
+                    isProcessActive={isProcessActive}
+                />
+
+                <VndCoordinationRouteSection
+                    process={process}
+                    routeHeaderConfig={routeHeaderConfig}
+                    highlightStageId={myStage?.id}
+                    onShowQuoteInText={handleShowQuoteInText}
+                    canEditRoute={canEditApprovalRoute}
+                    onAddApprover={routeEditing.openAddApproverModal}
+                    onRemoveApprover={handleRequestRemoveApprover}
+                />
 
                 {isPendingForMe && (
                     <div className="mt-6">
@@ -545,8 +344,8 @@ export function VndCoordinationTab({vnd, onVndChanged}: VndCoordinationTabProps)
                         <VndApproverResolutionPanel
                             ref={resolutionPanelRef}
                             onSubmit={handleResolutionSubmit}
-                            submitting={submitting}
-                            error={decisionError}
+                            submitting={resolutionDecision.submitting}
+                            error={resolutionDecision.decisionError}
                             phase={isFinalHoldPhase ? "finalHold" : isRepeatedPhase ? "repeated" : "primary"}
                             onCiteRequest={redaction ? handleCiteRequest : undefined}
                             onJumpToQuote={redaction ? handleJumpToQuote : undefined}
@@ -564,62 +363,10 @@ export function VndCoordinationTab({vnd, onVndChanged}: VndCoordinationTabProps)
                     авторизация, уведомление инициатору и запись в историю там общие для обоих
                     случаев отзыва). */}
                 {canCancelAnyApproval && CANCELLABLE_PHASE.includes(process.status) && (
-                    <div className="mt-8 rounded-[14px] border border-[#f0dede] overflow-hidden">
-                        <div className="bg-[#fdf6f5] px-4 py-2.5 border-b border-[#f0dede]">
-                            <span className="text-[11px] font-bold uppercase tracking-wide text-[#c0392b]">
-                                {t("openVndPage.coordinationTab.dangerZoneLabel")}
-                            </span>
-                        </div>
-                        <div className="flex items-center justify-between gap-3 px-4 py-3.5 bg-white">
-                            <div>
-                                <div className="text-[13px] font-semibold text-[#1c2740]">
-                                    {t("openVndPage.coordinationTab.cancelApprovalTitle")}
-                                </div>
-                                <span className="text-[12.5px] text-[#8b97ab]">
-                                    {t("openVndPage.coordinationTab.cancelApprovalHint")}
-                                </span>
-                            </div>
-                            <button
-                                onClick={() => setCancelModalOpen(true)}
-                                className="shrink-0 rounded-[9px] border border-[#e0b4ae] bg-white px-[14px] py-[8px] text-[12.5px] font-semibold text-[#c0392b] cursor-pointer hover:bg-[#fbecea] transition-colors"
-                            >
-                                {t("openVndPage.coordinationTab.cancelButton")}
-                            </button>
-                        </div>
-                    </div>
+                    <VndCoordinationDangerZone onCancelClick={cancelApproval.openCancelModal}/>
                 )}
-                <ConfirmActionModal
-                    open={cancelModalOpen}
-                    onClose={() => setCancelModalOpen(false)}
-                    onConfirm={handleCancel}
-                    title={t("openVndPage.coordinationTab.cancelConfirmTitle")}
-                    message={t("openVndPage.coordinationTab.cancelConfirmMessage")}
-                    confirmLabel={t("openVndPage.coordinationTab.cancelButton")}
-                    loadingLabel={t("openVndPage.coordinationTab.cancelLoadingLabel")}
-                    loading={cancelling}
-                    variant="danger"
-                    icon={AlertTriangle}
-                />
 
-                {addApproverModalOpen && (
-                    <VndSelectApproverModal
-                        excludedUserIds={activeApproverUserIds}
-                        onClose={() => setAddApproverModalOpen(false)}
-                        onSelect={handleAddApprover}
-                    />
-                )}
-                <ConfirmActionModal
-                    open={!!removingStage}
-                    onClose={() => setRemovingStage(null)}
-                    onConfirm={handleConfirmRemoveApprover}
-                    title="Убрать согласующего?"
-                    message={removingStage ? `${removingStage.approverName} будет убран из маршрута согласования, его задача снимется. Действие необратимо.` : ""}
-                    confirmLabel="Убрать"
-                    loadingLabel="Убираем…"
-                    loading={removingApprover}
-                    variant="danger"
-                    icon={AlertTriangle}
-                />
+                {sharedModals}
             </div>
         );
     }
@@ -629,13 +376,7 @@ export function VndCoordinationTab({vnd, onVndChanged}: VndCoordinationTabProps)
         <div className="py-4 px-6">
             {/* Если актуализация без изменений */}
             {vnd.actualizationPlannedNoChanges && (
-                <div
-                    className="mb-3 inline-flex items-start gap-2.5 rounded-[12px] border border-[#dde0fa] bg-[#f4f5fd] px-3.5 py-3 max-w-full">
-                    <FileCheck2 size={16} strokeWidth={2} className="mt-[1px] flex-none text-[#4e57d6]"/>
-                    <p className="text-[12.5px] leading-[1.55] text-[#3a4560]">
-                        {t("openVndPage.coordinationTab.noChangesInitiatorHint")}
-                    </p>
-                </div>
+                <VndNoChangesHintBanner message={t("openVndPage.coordinationTab.noChangesInitiatorHint")}/>
             )}
 
             {/* Плашка для инициатора: редакцию отправили на доработку, есть замечания.
@@ -656,100 +397,49 @@ export function VndCoordinationTab({vnd, onVndChanged}: VndCoordinationTabProps)
             <VndApprovalSummary process={process}/>
 
             {redactionsError && (
-                <div>
-                    <EmptyState
-                        variant="error"
-                        title={t("openVndPage.coordinationTab.redactionsLoadErrorTitle")}
-                        description={redactionsError}
-                    />
-                </div>
+                <EmptyState
+                    variant="error"
+                    title={t("openVndPage.coordinationTab.redactionsLoadErrorTitle")}
+                    description={redactionsError}
+                />
             )}
 
             {/* Блок ознакомления с редакцией ("Данная редакция:") (+ кнопка сравнения) */}
-            <div className="mb-4 flex items-center justify-between gap-3">
-                <div className="text-[13.5px] font-bold text-[#1c2740]">
-                    {isFirstRedaction
-                        ? t("openVndPage.coordinationTab.firstRedactionLabel")
-                        : t("openVndPage.coordinationTab.newRedactionLabel")}
-                </div>
-                {!isFirstRedaction && redaction && previousRedaction && (
-                    <button
-                        type="button"
-                        onClick={() => setModal({kind: "compare"})}
-                        className="cursor-pointer flex h-[35px] shrink-0 items-center justify-center gap-2 rounded-[10px] bg-[#4e57d6] px-4 text-[12.5px] font-semibold text-white hover:bg-[#3f47bd] disabled:cursor-not-allowed disabled:bg-[#c7cbe6]"
-                    >
-                        <Columns2 size={15} strokeWidth={2}/>
-                        {t("openVndPage.coordinationTab.compareButton")}
-                    </button>
-                )}
-            </div>
+            <VndCurrentRedactionSection
+                vnd={vnd}
+                isFirstRedaction={!!isFirstRedaction}
+                redaction={redaction}
+                previousRedaction={previousRedaction}
+                downloadingId={download.activeId}
+                downloadError={download.error}
+                onDownload={handleDownload}
+                onView={openView}
+                onCompareClick={() => setModal({kind: "compare"})}
+                headerClassName="mb-4"
+            />
 
-            {/* Панель с редакциями */}
-            {redaction && (
-                <RedactionSummaryCard
-                    vnd={vnd}
-                    redaction={redaction}
-                    previousRedaction={!isFirstRedaction ? previousRedaction : undefined}
-                    downloadingId={download.activeId}
-                    downloadError={download.error}
-                    onDownload={handleDownload}
-                    onView={openView}
-                />
-            )}
-            {/* Сравнение двух редакций */}
-            {modal?.kind === "compare" && redaction && previousRedaction && (
-                <RedactionCompareModal
-                    vnd={vnd}
-                    redactions={redactions ?? []}
-                    initialLeft={redaction}
-                    initialRight={previousRedaction}
-                    reviewedRedactionId={redaction.id}
-                    downloadingId={download.activeId}
-                    onDownload={handleDownload}
-                    onClose={() => setModal(null)}
-                />
-            )}
-            {/* Открытие одной редакции */}
-            {modal?.kind === "view" && (
-                <RedactionViewModal
-                    vnd={vnd}
-                    redaction={modal.redaction}
-                    initialLanguage={modal.language}
-                    initialSearchQuery={modal.initialSearchQuery}
-                    initialRevisionIndex={modal.initialRevisionIndex}
-                    downloadingId={download.activeId}
-                    onDownload={handleDownload}
-                    onClose={() => setModal(null)}
-                    approvalProcess={process}
-                    quoteMarksClickable={isProcessActive}
-                />
-            )}
+            <VndRedactionModals
+                vnd={vnd}
+                redactions={redactions}
+                redaction={redaction}
+                previousRedaction={previousRedaction}
+                modal={modal}
+                onClose={() => setModal(null)}
+                downloadingId={download.activeId}
+                onDownload={handleDownload}
+                process={process}
+                isProcessActive={isProcessActive}
+            />
 
             {/* Установленный маршрут согласования — с цветной шапкой-статусом, если применимо */}
-            <div className="mb-2 text-[13.5px] font-bold text-[#1c2740]">{t("openVndPage.coordinationTab.establishedRouteLabel")}</div>
-            <div
-                className={`rounded-[16px] border overflow-hidden ${routeHeaderConfig ? routeHeaderConfig.border : "border-[#e5e9f0]"}`}>
-                {routeHeaderConfig && (
-                    <div
-                        className={`flex items-start gap-3 border-b px-5 py-3 ${routeHeaderConfig.border} ${routeHeaderConfig.bg}`}>
-                        <routeHeaderConfig.icon size={18}
-                                                className={`mt-[1px] flex-none ${routeHeaderConfig.iconColor}`}/>
-                        <div>
-                            <div className={`text-[13px] font-semibold ${routeHeaderConfig.titleColor}`}>
-                                {routeHeaderConfig.title}
-                            </div>
-                            <div className={`mt-0.5 text-[12.5px] leading-[1.5] ${routeHeaderConfig.textColor}`}>
-                                {routeHeaderConfig.description}
-                            </div>
-                        </div>
-                    </div>
-                )}
-                <VndApprovalRouteView process={process} frameless={!!routeHeaderConfig}
-                                      onShowQuoteInText={handleShowQuoteInText}
-                                      canEditRoute={canEditApprovalRoute}
-                                      onAddApprover={() => setAddApproverModalOpen(true)}
-                                      onRemoveApprover={handleRequestRemoveApprover}/>
-            </div>
+            <VndCoordinationRouteSection
+                process={process}
+                routeHeaderConfig={routeHeaderConfig}
+                onShowQuoteInText={handleShowQuoteInText}
+                canEditRoute={canEditApprovalRoute}
+                onAddApprover={routeEditing.openAddApproverModal}
+                onRemoveApprover={handleRequestRemoveApprover}
+            />
 
             {/* Панель с замечаниями (если они есть) на этапе исправления замечаний для инициатора */}
             {isRevisionNeeded && isInitiator && (
@@ -767,62 +457,10 @@ export function VndCoordinationTab({vnd, onVndChanged}: VndCoordinationTabProps)
 
             {/* Отзыв редакции с согласования */}
             {(isInitiator || canCancelAnyApproval) && CANCELLABLE_PHASE.includes(process.status) && (
-                <div className="mt-8 rounded-[14px] border border-[#f0dede] overflow-hidden">
-                    <div className="bg-[#fdf6f5] px-4 py-2.5 border-b border-[#f0dede]">
-                        <span className="text-[11px] font-bold uppercase tracking-wide text-[#c0392b]">
-                            {t("openVndPage.coordinationTab.dangerZoneLabel")}
-                        </span>
-                    </div>
-                    <div className="flex items-center justify-between gap-3 px-4 py-3.5 bg-white">
-                        <div>
-                            <div className="text-[13px] font-semibold text-[#1c2740]">
-                                {t("openVndPage.coordinationTab.cancelApprovalTitle")}
-                            </div>
-                            <span className="text-[12.5px] text-[#8b97ab]">
-                                {t("openVndPage.coordinationTab.cancelApprovalHint")}
-                            </span>
-                        </div>
-                        <button
-                            onClick={() => setCancelModalOpen(true)}
-                            className="shrink-0 rounded-[9px] border border-[#e0b4ae] bg-white px-[14px] py-[8px] text-[12.5px] font-semibold text-[#c0392b] cursor-pointer hover:bg-[#fbecea] transition-colors"
-                        >
-                            {t("openVndPage.coordinationTab.cancelButton")}
-                        </button>
-                    </div>
-                </div>
+                <VndCoordinationDangerZone onCancelClick={cancelApproval.openCancelModal}/>
             )}
-            <ConfirmActionModal
-                open={cancelModalOpen}
-                onClose={() => setCancelModalOpen(false)}
-                onConfirm={handleCancel}
-                title={t("openVndPage.coordinationTab.cancelConfirmTitle")}
-                message={t("openVndPage.coordinationTab.cancelConfirmMessage")}
-                confirmLabel={t("openVndPage.coordinationTab.cancelButton")}
-                loadingLabel={t("openVndPage.coordinationTab.cancelLoadingLabel")}
-                loading={cancelling}
-                variant="danger"
-                icon={AlertTriangle}
-            />
 
-            {addApproverModalOpen && (
-                <VndSelectApproverModal
-                    excludedUserIds={activeApproverUserIds}
-                    onClose={() => setAddApproverModalOpen(false)}
-                    onSelect={handleAddApprover}
-                />
-            )}
-            <ConfirmActionModal
-                open={!!removingStage}
-                onClose={() => setRemovingStage(null)}
-                onConfirm={handleConfirmRemoveApprover}
-                title="Убрать согласующего?"
-                message={removingStage ? `${removingStage.approverName} будет убран из маршрута согласования, его задача снимется. Действие необратимо.` : ""}
-                confirmLabel="Убрать"
-                loadingLabel="Убираем…"
-                loading={removingApprover}
-                variant="danger"
-                icon={AlertTriangle}
-            />
+            {sharedModals}
         </div>
     );
 }

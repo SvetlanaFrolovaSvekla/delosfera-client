@@ -1,12 +1,6 @@
-// Модалка «Консолидировать согласованную версию» — завершающий шаг после согласования.
+// Модалка "Консолидировать согласованную версию" -
 // Реальная публикация (когда именно можно публиковать редакцию) в жизни определяется
-// руководством после дополнительных процессов — здесь просто фиксируется решение.
-//
-// "С изменениями" / "без изменений" здесь больше не спрашивается вручную: не-первая редакция
-// в статусе "Консолидация" может появиться только через цикл актуализации (см.
-// VndService.AddRedactionAsync — добавить редакцию действующему ВНД можно только в рамках
-// актуализации), а цикл уже зафиксировал это на шаге "Выполнить актуализацию"
-// (VndDocument.ActualizationPlannedNoChanges) — здесь только отображается итог.
+// руководством после дополнительных процессов — здесь просто фиксируется решение (органа утверждения)
 import {useState} from "react";
 import {createPortal} from "react-dom";
 import {EditableDateField, EditableTextField} from "@/components/componentsGeneral/RequisitesEditFields.tsx";
@@ -15,20 +9,18 @@ import {Layers, Loader2, X} from "lucide-react";
 import {useTranslation} from "react-i18next";
 
 export interface ConsolidateRequisites {
-    adoptionCode: string;
-    adoptionDate: string; // ISO "YYYY-MM-DD"
-    effectiveDate: string; // ISO "YYYY-MM-DD"
+    adoptionCode: string; // Код принятия
+    adoptionDate: string; // ISO "YYYY-MM-DD" Дата принятия
+    effectiveDate: string; // ISO "YYYY-MM-DD" Дата вступления в силу
 }
 
 interface ConsolidateVndModalProps {
-    /** Первая редакция нового ВНД — тогда вопрос об изменениях не нужен, просто консолидация */
+    /** Первая редакция нового ВНД - вопрос об изменениях не нужен, просто консолидация */
     isFirstRedaction: boolean;
     /** Заявлено ли для этого цикла актуализации "без изменений" (шаг "Выполнить актуализацию") —
-     * определяет hadChanges автоматически. Не используется при isFirstRedaction. */
+     * определяет hadChanges автоматически. */
     plannedNoChanges: boolean;
-    /** Текущие значения реквизитов ВНД — предзаполняют поля, но подтвердить/обновить их
-     * нужно обязательно здесь же, перед публикацией (см. VndActualizationService.PublishAsync
-     * на бэке — без непустого № принятия консолидация отклоняется). */
+    /** Текущие значения реквизитов ВНД */
     initialRequisites: ConsolidateRequisites;
     submitting: boolean;
     error: string | null;
@@ -46,7 +38,7 @@ export function ConsolidateVndModal({
                                         onConfirm,
                                     }: ConsolidateVndModalProps) {
     const {t} = useTranslation();
-    const hadChanges = isFirstRedaction ? true : !plannedNoChanges;
+    const hadChanges = isFirstRedaction ? true : !plannedNoChanges; // были ли изменения
 
     const [requisites, setRequisites] = useState<ConsolidateRequisites>(initialRequisites);
     const updateRequisites = <K extends keyof ConsolidateRequisites>(key: K, value: ConsolidateRequisites[K]) =>

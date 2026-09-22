@@ -12,14 +12,14 @@ import {
 import {useTranslation} from "react-i18next";
 
 export interface CancelVndFields {
-    cancelCode: string;
-    cancelDate: string; // ISO "YYYY-MM-DD"
-    cancelReason: string;
+    cancelCode: string; // Код отмены
+    cancelDate: string; // ISO "YYYY-MM-DD" дата отмены
+    cancelReason: string; // Причина отмены
 }
 
 interface CancelVndModalProps {
-    /** Идёт ли сейчас согласование этой ВНД (статус "На согласовании") — тогда архивация
-     * автоматически отзовёт его на бэке, о чём нужно предупредить прямо в модалке. */
+    /** Идёт ли сейчас согласование этой ВНД (статус "На согласовании") - тогда архивация
+     * автоматически отзовёт его на бэке */
     hasActiveApproval: boolean;
     submitting: boolean;
     error: string | null;
@@ -29,12 +29,17 @@ interface CancelVndModalProps {
 
 export function CancelVndModal({hasActiveApproval, submitting, error, onClose, onConfirm}: CancelVndModalProps) {
     const {t} = useTranslation();
+    // Поля формы
     const [fields, setFields] = useState<CancelVndFields>({cancelCode: "", cancelDate: "", cancelReason: ""});
+
+    // Обновление поля формы
     const updateField = <K extends keyof CancelVndFields>(key: K, value: CancelVndFields[K]) =>
         setFields((prev) => ({...prev, [key]: value}));
 
+    // Проверка валидности формы
     const valid = fields.cancelCode.trim() !== "" && fields.cancelDate !== "";
 
+    // Обработчик кнопки "Архивировать"
     const handleConfirm = () => {
         if (submitting || !valid) return;
         onConfirm(fields);
@@ -45,7 +50,8 @@ export function CancelVndModal({hasActiveApproval, submitting, error, onClose, o
             <div className="w-full max-w-[520px] rounded-[16px] bg-white p-6 shadow-xl">
                 <div className="mb-4 flex items-start justify-between gap-3">
                     <div className="flex items-center gap-3">
-                        <span className="grid h-10 w-10 flex-none place-items-center rounded-[11px] bg-[#fdecea] text-[#c0392b]">
+                        <span
+                            className="grid h-10 w-10 flex-none place-items-center rounded-[11px] bg-[#fdecea] text-[#c0392b]">
                             <Archive size={19} strokeWidth={1.8}/>
                         </span>
                         <h2 className="text-[16px] font-bold text-[#1c2740]">
@@ -111,7 +117,8 @@ export function CancelVndModal({hasActiveApproval, submitting, error, onClose, o
                 </div>
 
                 {error && (
-                    <div className="mt-4 rounded-[10px] border border-[#f2c2c2] bg-[#fdf1f1] px-3 py-[10px] text-[12.5px] text-[#c0392b]">
+                    <div
+                        className="mt-4 rounded-[10px] border border-[#f2c2c2] bg-[#fdf1f1] px-3 py-[10px] text-[12.5px] text-[#c0392b]">
                         {error}
                     </div>
                 )}

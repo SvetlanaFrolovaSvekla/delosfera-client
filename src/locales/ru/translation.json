@@ -18,19 +18,19 @@
     "archiving": "Архивация…"
   },
   "stageCard": {
-    "removeApproverTooltip": "Удалить согласующего из маршрута",
+    "removeApproverTooltip": "Убрать согласующего из маршрута",
     "replaceApproverTooltip": "Заменить согласующего на этом этапе",
     "meBadge": "я",
-    "pendingCurrentUserBadge": "На рассмотрении (мой этап)",
+    "pendingCurrentUserBadge": "В рассмотрении (мой этап)",
     "processEndedBadge": "Согласование прекращено",
-    "autoTimeoutNote": "Автоматически {{date}} — согласующий не отреагировал вовремя",
+    "autoTimeoutNote": "Автоматически {{date}} — согласующий не отреагировал в срок",
     "phasePrimary": "Первичное согласование",
     "phaseRepeat": "Повторное согласование",
-    "phaseRepeatRound": "Повторное согласование (раунд {{round}})",
-    "phaseFinalHold": "Финальная задержка",
-    "phaseFinalHoldRound": "Финальная задержка (раунд {{round}})",
-    "viewFullComment": "Посмотреть комментарий полностью",
-    "viewFullRemarks": "Посмотреть замечания полностью",
+    "phaseRepeatRound": "Повторное согласование (круг {{round}})",
+    "phaseFinalHold": "Финальная выдержка",
+    "phaseFinalHoldRound": "Финальная выдержка (круг {{round}})",
+    "viewFullComment": "См. комментарий полностью",
+    "viewFullRemarks": "См. замечания полностью",
     "attachedFiles": "Прикреплённые файлы:"
   },
   "demoAccounts": {

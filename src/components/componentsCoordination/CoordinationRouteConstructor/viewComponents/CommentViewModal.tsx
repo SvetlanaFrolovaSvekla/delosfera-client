@@ -16,12 +16,13 @@ import {
 import {
     AttachmentRow
 } from "@/components/componentsCoordination/CoordinationRouteConstructor/functionalComponents/AttachmentRow.tsx";
-import {Tooltip} from "@/components/componentsGeneral/Tooltip.tsx";
-import {SearchBar} from "@/components/componentsGeneral/SearchBar.tsx";
-import {ChevronDown, ChevronUp, MessageSquareText, X} from "lucide-react";
 import {
     AttachmentDocxPreviewModal
 } from "@/components/componentsGeneral/modal/AttachmentDocxPreviewModal.tsx";
+import {Tooltip} from "@/components/componentsGeneral/Tooltip.tsx";
+import {SearchBar} from "@/components/componentsGeneral/SearchBar.tsx";
+import {ChevronDown, ChevronUp, MessageSquareText, X} from "lucide-react";
+import {useTranslation} from "react-i18next";
 
 
 export function CommentViewModal({
@@ -49,14 +50,21 @@ export function CommentViewModal({
     quotes?: FormattedCommentQuoteRef[];
     onShowInText?: (quote: FormattedCommentQuoteRef) => void;
 }) {
+    const {t} = useTranslation();
     const {user} = useAuth();
     const isMeApprover = approverUserId !== undefined && approverUserId === user?.id;
     const profileUrl = isMeApprover ? "/profile" : `/users/${approverUserId}`;
 
     // Заголовок сюда приходит в виде "См. комментарий полностью" / "См. замечания полностью" —
     const isComment = title.toLowerCase().includes("коммент");
-    const authorLabel = isComment ? "Автор комментария:" : "Автор замечания:";
-    const dateTooltip = isComment ? "Дата создания комментария" : "Дата создания замечания";
+
+    const authorLabel = isComment
+        ? t("commentViewModal.authorComment") // Автор комментария:
+        : t("commentViewModal.authorRemark"); // Автор замечания:
+
+    const dateTooltip = isComment
+        ? t("commentViewModal.commentCreatedAt") // Дата создания комментария
+        : t("commentViewModal.remarkCreatedAt"); // Дата создания замечания
 
     const [previewAttachment, setPreviewAttachment] = useState<{ fileId: number; fileName: string } | null>(null);
 
@@ -161,7 +169,8 @@ export function CommentViewModal({
                                         className="flex-none rounded-full px-[7px] py-[1px] text-[10px] font-semibold"
                                         style={{color: "#2f68f5", backgroundColor: "#e9f0ff"}}
                                     >
-                                        я
+                                        {/* я */}
+                                        {t("commentViewModal.me")}
                                     </span>
                                 )}
                             </Link>
@@ -170,7 +179,8 @@ export function CommentViewModal({
                         {decisionLabel && (
                             <div className="flex flex-none items-center gap-2.5">
                                 <span className="truncate text-[11px] text-[#8b97ab]">
-                                    Резолюция данного согласующего:
+                                    {/* Резолюция данного согласующего: */}
+                                    {t("commentViewModal.resolutionByApprover")}
                                 </span>
                                 <span
                                     className={`inline-flex w-fit flex-none items-center rounded-full px-[9px] py-0.5 text-[11px] font-semibold ${decisionBadgeClass}`}>
@@ -185,7 +195,11 @@ export function CommentViewModal({
                     <div className="flex items-center gap-2">
                         <div className="min-w-0 flex-1">
                             <SearchBar
-                                placeholder={isComment ? "Поиск по тексту комментария…" : "Поиск по тексту замечания…"}
+                                placeholder={
+                                    isComment
+                                        ? t("commentViewModal.searchComment") // Поиск по тексту комментария…
+                                        : t("commentViewModal.searchRemark") // Поиск по тексту замечания…
+                                }
                                 value={searchQuery}
                                 onChange={setSearchQuery}
                                 onSubmit={() => moveToMatch(1)}
@@ -194,7 +208,10 @@ export function CommentViewModal({
                         {trimmedQuery && (
                             <div className="flex flex-none items-center gap-1">
                                 <span className="whitespace-nowrap px-1 text-[11px] font-medium text-[#8b97ab]">
-                                    {matchCount > 0 ? `${safeActiveMatchIndex + 1} из ${matchCount}` : "Не найдено"}
+                                  {matchCount > 0
+                                      ? `${safeActiveMatchIndex + 1} из ${matchCount}`
+                                      : t("commentViewModal.notFound") // Не найдено
+                                  }
                                 </span>
                                 <button
                                     type="button"
@@ -222,7 +239,8 @@ export function CommentViewModal({
                     {attachments.length > 0 && (
                         <div className="mb-4 rounded-[10px] border border-[#e9edf3] bg-[#fbfcfe] p-3">
                             <div className="mb-1.5 text-[11.5px] font-semibold text-[#8b97ab]">
-                                Прикреплённые файлы:
+                                {/* Прикреплённые файлы: */}
+                                {t("commentViewModal.attachments")}
                             </div>
                             <div className="flex flex-col gap-1.5">
                                 {attachments.map((a) => (

@@ -6,7 +6,7 @@ import {useApprovalRouteLines} from "@/hooks/coordinationHooks/useApprovalRouteL
 import {StageCardView} from "./StageCardView";
 import type {FormattedCommentQuoteRef} from "./FormattedResolutionComment.tsx";
 import {NormBlockView, type NormPhaseStatus} from "./NormBlockView";
-import {ArrowDown, ArrowLeft, MessageSquareText, UserPlus} from "lucide-react";
+import {ArrowDown, ArrowLeft, ChevronDown, MessageSquareText, UserPlus} from "lucide-react";
 import {getElapsedLabel, getRemainingLabel} from "@/utils/dateUtils.ts";
 import {getInitials} from "@/utils/namingUsers/getInitials.ts";
 import {COMMENT_TRUNCATE_LENGTH} from "@/constants/coordinationParams.ts";
@@ -96,10 +96,44 @@ export function VndApprovalRouteView({
     canEditRoute, onRemoveApprover, onReplaceApprover, onAddApprover,
 }: VndApprovalRouteViewProps) {
     const [initiatorCommentOpen, setInitiatorCommentOpen] = useState(false);
+    // Свёрнут ли по умолчанию блок "Убранные согласующие" ниже основного ряда карточек -
+    // см. пояснение у activeStages/removedStages ниже.
+    const [showRemovedHistory, setShowRemovedHistory] = useState(false);
 
     const stagesWithLocalId = useMemo(
         () => process.stages.map((s) => ({...s, localId: String(s.id)})),
         [process.stages],
+    );
+
+    // Главный редактор может сколько угодно раз убирать и заново добавлять согласующего на один
+    // и тот же custom-этап (каждый раз - новый, отдельный этап в БД, старый остаётся в истории
+    // как IsRemovedByEditor - см. пояснение в VndApprovalService.AddApproverAsync на бэке: это
+    // сделано намеренно, чтобы не терять историю решений - аудит фиксирует каждое добавление и
+    // каждое удаление отдельной записью, это верно и не трогается). Раньше все такие "убранные"
+    // этапы рисовались наравне с действующими прямо в основном ряду - после нескольких циклов
+    // убрать/добавить одного и того же человека ряд забивался кучей одинаковых неактивных
+    // карточек. Теперь в основном ряду (и в линиях-коннекторах к воронке фаз) участвуют только
+    // действующие этапы, а все убранные выносятся отдельным блоком над схемой маршрута (см.
+    // return ниже) - свёрнутым по умолчанию.
+    const activeStages = useMemo(
+        () => stagesWithLocalId.filter((s) => !s.isRemovedByEditor),
+        [stagesWithLocalId],
+    );
+    // Кого показываем в истории "Убранные согласующие": только записи с IsRemovedByEditor - и
+    // только если у этого же человека сейчас нет ДЕЙСТВУЮЩЕГО этапа в маршруте. Без второго
+    // условия один и тот же человек мог бы висеть одновременно и в основном ряду (как активный
+    // на новом этапе), и в истории (как убранный со старого) - лишнее задвоение на экране для
+    // того, кто прямо сейчас реально согласует. Сама история при этом не худеет - старая запись
+    // остаётся в БД и в audit log, просто не выводится в этот список, пока человек активен.
+    const activeApproverUserIds = useMemo(
+        () => new Set(activeStages.map((s) => s.approverUserId)),
+        [activeStages],
+    );
+    const removedStages = useMemo(
+        () => stagesWithLocalId.filter(
+            (s) => s.isRemovedByEditor && !activeApproverUserIds.has(s.approverUserId),
+        ),
+        [stagesWithLocalId, activeApproverUserIds],
     );
 
     const primaryPhaseStatus = useMemo(() => getPrimaryPhaseStatus(process), [process]);
@@ -115,8 +149,16 @@ export function VndApprovalRouteView({
     const canEditRouteNow = !!canEditRoute && process.status !== "approved" && !isProcessEnded;
     const canAddApprover = canEditRouteNow && !!onAddApprover;
 
-    const {funnelWrapperRef, targetRef, cardsScrollRef, paths, recomputePaths, registerStageRef} =
-        useApprovalRouteLines(stagesWithLocalId);
+    const {funnelWrapperRef, targetRef, cardsScrollRef, paths, edgeFade, recomputePaths, registerStageRef} =
+        useApprovalRouteLines(activeStages);
+
+    // Мягкое затухание по краям скроллящегося ряда карточек - только с той стороны, где ещё
+    // есть что проскроллить (см. edgeFade в useApprovalRouteLines), чтобы карточка у края не
+    // выглядела грубо обрезанной ровно по границе блока.
+    const FADE_WIDTH = 20;
+    const cardsScrollMaskImage =
+        `linear-gradient(to right, ${edgeFade.start ? "transparent" : "black"} 0, black ${FADE_WIDTH}px, ` +
+        `black calc(100% - ${FADE_WIDTH}px), ${edgeFade.end ? "transparent" : "black"} 100%)`;
 
     const [previewAttachment, setPreviewAttachment] = useState<{fileId: number; fileName: string} | null>(null);
     const [downloadingId, setDownloadingId] = useState<number | null>(null);
@@ -131,14 +173,52 @@ export function VndApprovalRouteView({
     };
 
     return (
-        <div
-            ref={funnelWrapperRef}
-            className={
-                frameless
-                    ? "relative bg-[#fbfcfe] bg-[radial-gradient(#e4e9f1_1px,transparent_1px)] bg-[length:18px_18px] p-6"
-                    : "relative rounded-[16px] border border-[#e5e9f0] bg-[#fbfcfe] bg-[radial-gradient(#e4e9f1_1px,transparent_1px)] bg-[length:18px_18px] p-6"
-            }
-        >
+        <>
+            {/* Убранные (IsRemovedByEditor) этапы, чей согласующий сейчас не активен в маршруте
+                (см. removedStages выше) - отдельная панель НАД схемой маршрута, а не внутри неё:
+                это чистая история, к текущему "дереву" отношения не имеет и не должна визуально
+                сливаться с ним. Свёрнуто по умолчанию - разворачивается по клику. */}
+            {removedStages.length > 0 && (
+                <div className="mb-3 rounded-[14px] border border-[#e5e9f0] bg-white px-4 py-3">
+                    <button
+                        type="button"
+                        onClick={() => setShowRemovedHistory((v) => !v)}
+                        className="flex w-full cursor-pointer items-center gap-1.5 border-none bg-transparent p-0 text-left text-[12.5px] font-semibold text-[#5b6474] hover:text-[#4e57d6]"
+                    >
+                        <ChevronDown
+                            size={14}
+                            className={`flex-none transition-transform ${showRemovedHistory ? "rotate-180" : ""}`}
+                        />
+                        {showRemovedHistory
+                            ? "Скрыть убранных согласующих"
+                            : `Убранные согласующие (${removedStages.length})`}
+                    </button>
+
+                    {showRemovedHistory && (
+                        <div className="mt-3 flex flex-wrap gap-4 border-t border-[#eef0f4] pt-3">
+                            {removedStages.map((stage) => (
+                                <StageCardView
+                                    key={stage.localId}
+                                    stage={stage}
+                                    cardRef={() => {}}
+                                    isProcessEnded={isProcessEnded}
+                                    onShowQuoteInText={onShowQuoteInText}
+                                    phaseRounds={process.phaseRounds}
+                                />
+                            ))}
+                        </div>
+                    )}
+                </div>
+            )}
+
+            <div
+                ref={funnelWrapperRef}
+                className={
+                    frameless
+                        ? "relative bg-[#fbfcfe] bg-[radial-gradient(#e4e9f1_1px,transparent_1px)] bg-[length:18px_18px] p-6"
+                        : "relative rounded-[16px] border border-[#e5e9f0] bg-[#fbfcfe] bg-[radial-gradient(#e4e9f1_1px,transparent_1px)] bg-[length:18px_18px] p-6"
+                }
+            >
             {/* Комментарий инициатора о внесённых исправлениях (см. "Комментарий о внесённых
                 исправлениях" в VndRevisionNeededPanel - отправляется вместе с повторной подачей
                 редакции после устранения замечаний). Раньше приходил с бэка, но нигде не
@@ -214,9 +294,16 @@ export function VndApprovalRouteView({
             <div
                 ref={cardsScrollRef}
                 onScroll={recomputePaths}
-                className="flex justify-center gap-6 overflow-x-auto"
+                style={{maskImage: cardsScrollMaskImage, WebkitMaskImage: cardsScrollMaskImage}}
+                className={`flex gap-12 overflow-x-auto px-1 pb-3 ${(edgeFade.start || edgeFade.end) ? "justify-start" : "justify-center"}
+                    [scrollbar-width:thin] [scrollbar-color:#c9cee0_transparent]
+                    [&::-webkit-scrollbar]:h-[7px]
+                    [&::-webkit-scrollbar-track]:bg-transparent
+                    [&::-webkit-scrollbar-thumb]:rounded-full
+                    [&::-webkit-scrollbar-thumb]:bg-[#c9cee0]
+                    [&::-webkit-scrollbar-thumb:hover]:bg-[#a9b2c8]`}
             >
-                {stagesWithLocalId.map((stage) => (
+                {activeStages.map((stage) => (
                     <StageCardView
                         key={stage.localId}
                         stage={stage}
@@ -245,7 +332,15 @@ export function VndApprovalRouteView({
 
             <svg className="pointer-events-none absolute inset-0 h-full w-full overflow-visible">
                 {paths.map((d, i) => (
-                    <path key={i} d={d} stroke="#d5dae3" strokeWidth={1.5} fill="none"/>
+                    <path
+                        key={i}
+                        d={d}
+                        stroke="#d5dae3"
+                        strokeWidth={1.5}
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        fill="none"
+                    />
                 ))}
             </svg>
 
@@ -300,6 +395,7 @@ export function VndApprovalRouteView({
                     )}
                 </div>
             </div>
-        </div>
+            </div>
+        </>
     );
 }

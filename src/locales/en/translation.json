@@ -17,6 +17,39 @@
     "saving": "Saving…",
     "archiving": "Archiving…"
   },
+  "stageCard": {
+    "removeApproverTooltip": "Remove approver from the route",
+    "replaceApproverTooltip": "Replace approver at this stage",
+    "meBadge": "me",
+    "pendingCurrentUserBadge": "Under review (my stage)",
+    "processEndedBadge": "Approval terminated",
+    "autoTimeoutNote": "Automatically {{date}} — approver did not respond in time",
+    "phasePrimary": "Initial approval",
+    "phaseRepeat": "Repeat approval",
+    "phaseRepeatRound": "Repeat approval (round {{round}})",
+    "phaseFinalHold": "Final hold",
+    "phaseFinalHoldRound": "Final hold (round {{round}})",
+    "viewFullComment": "View full comment",
+    "viewFullRemarks": "View full remarks",
+    "attachedFiles": "Attached files:"
+  },
+  "commentViewModal": {
+    "authorComment": "Comment author:",
+    "authorRemark": "Remark author:",
+    "commentCreatedAt": "Comment creation date",
+    "remarkCreatedAt": "Remark creation date",
+    "resolutionByApprover": "Resolution of this approver:",
+    "searchComment": "Search in comment text…",
+    "searchRemark": "Search in remark text…",
+    "notFound": "Not found",
+    "attachments": "Attached files:",
+    "me": "me"
+  },
+  "demoAccounts": {
+    "title": "Testing: Sign in with different roles",
+    "description": "Click a role to fill in the login and password automatically. To go through the entire memo process, different roles are required: the initiator submits it, the clerk registers it, and the manager approves it.",
+    "standDescription": "This section is visible only in the testing environment. The setting is disabled in the production environment, and no account credentials are available there."
+  },
   "downloadFile": {
     "defaultFileName": "file",
     "loadErrorPrefix": "Couldn't load the file:",
@@ -180,6 +213,7 @@
     "title": "Attachments of revision {{code}}",
     "specialAttachments": "Special attachments",
     "view": "Preview",
+    "viewDocumentTooltip": "Preview document",
     "attachmentsCount": "Attachments ({{count}})",
     "previewAttachment": "Preview attachment",
     "noAttachments": "This revision has no attachments yet",
@@ -193,73 +227,52 @@
   "performActualizationModal": {
     "titleDefault": "Perform actualization",
     "confirmLabelDefault": "OK",
-
     "shiftDecidedAtRequest": "The shift of the next actualization deadline has already been decided when the request was approved:",
     "shiftWillBeApplied": "the deadline will be shifted",
     "shiftWillNotBeApplied": "the deadline will not be shifted",
-
     "shiftNextPeriodLabel": "Shift the next actualization deadline after the new redaction is published",
     "shiftNextPeriodTooltip": "If enabled, the next scheduled actualization deadline will be recalculated from the date the new redaction is published.",
-
     "plannedNoChangesLabel": "Actualization without changes",
     "plannedNoChangesTooltip": "Check this if the document doesn't need any changes — a new redaction won't be needed, and the current redaction will be submitted for approval as is.",
     "plannedNoChangesHint": "It has been declared that the actualization will proceed without changes to the document — a new redaction will not be required. Submit the existing current redaction for approval on the \"Approval\" tab as is, without uploading a new file. A new redaction will only appear if the approvers request revisions.",
-
     "cancel": "Cancel"
   },
   "requestActualizationAccessModal": {
     "title": "Request actualization access",
-    "infoText": "The request will go to the IRD's chief editor. Once approved, you'll be able to confirm the start of actualization.",
-
-    "withApprovalOption": "With subsequent approval",
-    "withoutApprovalOption": "Without approval",
-
-    "shiftNextPeriodLabel": "Shift the next actualization deadline after the new redaction is published",
-    "shiftNextPeriodHint": "This is your preference — the chief editor will see it when reviewing the request and can change it.",
-
+    "infoText": "The request will go to the IRD's chief editor. Once approved, you'll be able to work on the actualization.",
     "cancel": "Cancel",
     "submitButton": "Submit request"
   },
   "startActualizationModal": {
     "title": "Start actualization",
     "infoText": "At this stage, you're taking the IRD into actualization. You'll be able to configure additional actualization parameters later, right after starting. All users other than IRD editors will see the latest redaction as the current one.",
-
     "responsibleLabel": "Actualization responsible",
     "responsibleMeSuffix": " (me)",
     "responsiblePlaceholder": "Select a responsible person…",
-
     "orderLabel": "Actualization order",
     "withApprovalOption": "With approval",
     "withoutApprovalOption": "Without approval",
-
     "skipApprovalClueRoleSingular": "You can start actualization without approval — this right is granted by the role:",
     "skipApprovalCluePlural": "You can start actualization without approval — this right is granted by the roles:",
-
     "cancel": "Cancel",
     "confirmButton": "Start actualization"
   },
   "vndUploadTidModal": {
     "title": "Upload CAT — {{redactionCode}}",
-
     "templateDownloadError": "Failed to download the CAT template",
     "templateFileName": "CAT_template.docx",
     "uploadError": "Failed to upload the CAT",
-
     "introRequiredForApproval": "CAT (Change and Amendment Table) is a document required to submit this redaction for approval",
     "introOrPublishWithoutApproval": " or to publish it without approval",
     "introAutoTableExplanation": ". Below is an automatically generated table of changes between the current and new redactions: use it as a basis when preparing and filling out the actual CAT file (please check that the generated text is correct, add justification for the changes, and edit any necessary parts).",
     "introDeveloperFieldRight": " You also have the right to change the \"Developer\" field.",
     "introDownloadCheckUpload": " After that, you can download the generated CAT, verify that it matches the template, and upload it to the system.",
-
     "uploadTidLabel": "Upload the CAT (Change and Amendment Table) for this redaction:",
     "downloadTemplateButton": "Download CAT template (DOCX)",
     "chooseFile": "Choose file (DOCX)",
-
     "fileTooLarge": "File \"{{fileName}}\" exceeds the maximum allowed size ({{maxSize}})",
-
     "cancel": "Cancel",
     "upload": "Upload",
-
     "sizeUnitBytes": "B",
     "sizeUnitKb": "KB",
     "sizeUnitMb": "MB"
@@ -268,62 +281,48 @@
     "consolTitle": "Document is in \"Consolidation\" status",
     "consolText": "Approval is complete. Wait for management's decision and confirm consolidation — the IRD will then become effective.",
     "consolSecondaryLabel": "Consolidate the approved version",
-
     "draftTitle": "Document is in \"Draft\" status",
     "draftText": "Add the first redaction of the document to make the IRD effective!",
-
     "consolReadonlyText": "Approval is complete. Wait for management's decision on consolidation.",
     "consolTidMissingText": "Before consolidating the document, attach the CAT (Change and Amendment Table) file in the \"Redactions\" tab.",
-
     "pendingEffectiveTitle": "Document is awaiting entry into force",
     "pendingEffectiveText": "Effective date — {{date}}. Until then, the document is in \"Awaiting entry into force\" status."
   },
   "vndUploadRedactionModal": {
     "titleDefault": "Upload new redaction",
     "titleActualization": "IRD actualization — upload new redaction",
-
     "formatHint": "Allowed format: DOCX. Maximum file size — {{maxSize}}.",
     "actualizationTidHint": "You'll be able to upload the CAT (Change and Amendment Table) for this redaction later, as a separate step after uploading it.",
-
     "docLabelRu": "Russian",
     "docLabelKg": "Kyrgyz",
     "docLabelEn": "English",
     "optional": "(optional)",
     "chooseFile": "Choose file (DOCX)",
-
     "attachmentsLabel": "Attachments",
     "attachmentsOptionalHint": "(optional, multiple allowed)",
     "attachmentsAddedCount": "Added {{count}} of {{max}} files maximum",
     "attachmentsLimitTooltip": "The number of attachments per redaction is limited — no more than {{max}}, each file up to 100 MB.",
-
     "previousAttachmentsClue": "Attachments carried over from the previous redaction. Any changes, additions, or removals here will only affect the new redaction — the previous one will remain unchanged.",
     "fromPreviousRedaction": "from previous redaction",
     "download": "Download",
     "remove": "Remove",
     "cancelRemove": "Undo removal",
-
     "attachmentsMaxReachedTooltip": "Maximum reached — {{max}} attachments per redaction",
     "addFiles": "Add files",
     "attachmentsPartiallyAdded": "Some of the selected files were not added — maximum {{max}} attachments per redaction.",
-
     "descriptionLabel": "Redaction description",
     "descriptionPlaceholder": "What changed in this redaction…",
-
     "approvalStatusLabel": "Approval:",
     "approvalRequired": "required",
     "approvalNotRequired": "not required",
     "approvalLockedHint": "— set when actualization started",
     "requiresApprovalCheckbox": "Approval required",
-
     "skipApprovalClueRoleSingular": "You can upload a redaction without approval — this right is granted by the role:",
     "skipApprovalCluePlural": "You can upload a redaction without approval — this right is granted by the roles:",
-
     "uploadError": "Failed to upload the redaction",
     "fileTooLarge": "File \"{{fileName}}\" exceeds the maximum allowed size ({{maxSize}})",
-
     "cancel": "Cancel",
     "upload": "Upload",
-
     "sizeUnitBytes": "B",
     "sizeUnitKb": "KB",
     "sizeUnitMb": "MB"
@@ -1126,7 +1125,14 @@
       "redactionAddedToDraftTitle": "Revision added as draft!",
       "redactionAddedToDraftDescription": "For {{vndCode}} to become active, please submit revision {{redactionCode}} for approval.",
       "redactionUpdatedTitle": "Revision updated",
-      "redactionUpdatedDescription": "Changes to revision {{code}} have been saved."
+      "redactionUpdatedDescription": "Changes to revision {{code}} have been saved.",
+      "discardDraftSuccessTitle": "Draft discarded",
+      "discardDraftSuccessDescription": "The uploaded redaction and files were removed, actualization without changes is now on",
+      "discardDraftErrorDefault": "Couldn't discard the uploaded redaction",
+      "discardDraftConfirmTitle": "Discard the uploaded redaction?",
+      "discardDraftConfirmMessage": "The uploaded redaction, its files and the change sheet will be deleted permanently. The document will revert to the last published redaction, which can then be sent for approval without changes right away.",
+      "discardDraftConfirmLabel": "Discard and continue",
+      "discardDraftLoadingLabel": "Deleting…"
     },
     "redactionsSidebar": {
       "compareTooltipDisabled": "Comparison is available once the document has at least two redactions",
@@ -1139,7 +1145,7 @@
       "newRedactionButton": "New revision",
       "actualRedactionButton": "Start actualization",
       "performActualizationButton": "Perform actualization",
-      "uploadActualizedButton": "Upload actualized version",
+      "uploadActualizedButton": "Upload new redaction",
       "startApprovalButton": "Submit for approval",
       "confirmNoChangesButton": "Confirm no changes",
       "uploadBlockedHint": "R{{number}} is not finished yet — submit it first and wait for a decision.",
@@ -1149,19 +1155,24 @@
       "waitingPerformHint": "The responsible person hasn't completed the \"Perform actualization\" step yet — please wait.",
       "noChangesApprovalHint": "Declared as \"no changes\" — the current revision is submitted for approval as is, without uploading a new file.",
       "changesUploadHint": "Declared as actualization with changes — first upload the new revision of the document, then it can be submitted for approval.",
-      "changesUploadHintTooltip": "The document can't be submitted for approval until the new revision is uploaded. If no changes turned out to be needed after all, you can switch the settings back to \"no changes\" using the link above.",
+      "changesUploadHintTooltip": "The document can't be sent for approval until a new redaction is uploaded. If no changes turned out to be needed, turn on \"Actualization without changes\" in the settings below.",
       "noChangesConfirmHint": "Declared as \"no changes\", no approval required — confirm and the document will move to consolidation.",
       "noPermissionHint": "You don't have permission to actualize this document.",
       "consolidationHint": "Consolidate the approved revision first! After that it can be actualized, or edited by the chief editor.",
       "archivedHint": "This document is archived — archiving is irreversible, no revision actions are available anymore.",
-      "editActualizationSettingsLink": "Change actualization settings",
-      "editActualizationSettingsTitle": "Change actualization settings",
-      "editActualizationSettingsTooltip": "Lets you re-decide whether the actualization will go through without document changes, and whether to shift the next scheduled actualization date.",
       "downloadButton": "Download revision",
       "contentsButton": "Revision contents",
       "compareButton": "Compare revisions",
       "editButton": "Edit",
-      "tidButton": "TID"
+      "tidButton": "TID",
+      "autoStartingActualizationHint": "Request approved — starting actualization…",
+      "actualizationSettings": {
+        "introHint": "If you think the actualization needs changes — first upload a new redaction of the document, after which it can be sent for approval. If the redaction can be actualized without changes (no updates needed) — turn this on in the settings and send the current redaction for approval without changes.",
+        "introHintTooltip": "The document can't be sent for approval until a new redaction is uploaded.",
+        "title": "Actualization settings",
+        "plannedNoChangesLabel": "Actualization without changes",
+        "shiftDecidedByChiefEditor": "Whether the next actualization deadline shifts is decided by the IRD's chief editor:"
+      }
     },
     "languageTabsPanel": {
       "title": "Document language",

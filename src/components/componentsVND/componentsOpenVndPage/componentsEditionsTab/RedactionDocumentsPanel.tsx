@@ -1,25 +1,24 @@
 // Компонента с карточкой панели для скачивания ВНД (Документы редакции) в RedactionColumn, RedactionSummaryCard
 import React, {useState} from "react";
 import type {VndRedactionResponse, VndResponse} from "@/service/vndService/vndServiceType.ts";
-import {buildRedactionFileName, resolveVndDocTitle} from "@/utils/downloadFiles/fileNaming.ts";
+import {buildRedactionFileName, isPreviewableFile, resolveVndDocTitle} from "@/utils/downloadFiles/fileNaming.ts";
 import type {RedactionLanguage, RedactionViewTarget} from "@/utils/vndProcess/redactionLanguagePanelUtils.ts";
 import {formatDate} from "@/utils/dateUtils.ts";
-import {Download, FileText, Loader2} from "lucide-react";
+import {Download, Eye, FileText, Loader2} from "lucide-react";
 import {
     AttachmentDocxPreviewModal
 } from "@/components/componentsGeneral/modal/AttachmentDocxPreviewModal.tsx";
-
-function isDocxFile(fileName: string): boolean {
-    return fileName.toLowerCase().endsWith(".docx");
-}
+import {Tooltip} from "@/components/componentsGeneral/Tooltip.tsx";
 
 interface RedactionDocumentsPanelProps {
     vnd: VndResponse;
     selected: VndRedactionResponse;
     downloadingId: number | null;
     onDownload: (fileId: number, name: string) => void;
-    /* Открыть просмотр документа этой редакции на указанном языке, либо ТИД (без сравнения). */
-    /* Кнопка "Просмотр" показывается у языковых документов и у ТИД — не у вложений. */
+    /* Открыть просмотр документа этой редакции на указанном языке, либо ТИД/специальных вложений
+     * (без сравнения, через RedactionViewModal) - кнопка-глазик показывается у языковых
+     * документов, ТИД и специальных вложений. У обычных вложений (см. attachments ниже) своя,
+     * отдельная кнопка-глазик - открывает AttachmentDocxPreviewModal для .docx/.xlsx/.pptx. */
     onView?: (target: RedactionViewTarget) => void;
 }
 
@@ -41,9 +40,9 @@ export function RedactionDocumentsPanel({
                                             onDownload,
                                             onView,
                                         }: RedactionDocumentsPanelProps) {
-    // Просмотр вложения .docx прямо в браузере (см. AttachmentDocxPreviewModal) — по клику на
-    // отдельную кнопку "Просмотреть документ (DOCX)" рядом со скачиванием, только для вложений
-    // этого формата (остальные форматы просмотра не поддерживают).
+    // Просмотр вложения прямо в браузере (см. AttachmentDocxPreviewModal) — по клику на
+    // отдельную кнопку-глазик рядом со скачиванием, только для форматов, которые эта модалка
+    // умеет показать: .docx/.xlsx/.pptx (см. isPreviewableFile).
     const [previewAttachment, setPreviewAttachment] = useState<{ fileId: number; fileName: string } | null>(null);
 
     // Метка "Обновлено, дата" актуальна только пока редакция ещё в процессе согласования
@@ -188,10 +187,10 @@ export function RedactionDocumentsPanel({
                                 icon={<FileText size={16} className="text-[#8b97ab]"/>}
                                 isDownloading={downloadingId === attachment.fileId}
                                 onClick={() => onDownload(attachment.fileId, attachment.fileName)}
-                                onView={isDocxFile(attachment.fileName)
+                                onView={isPreviewableFile(attachment.fileName)
                                     ? () => setPreviewAttachment({fileId: attachment.fileId, fileName: attachment.fileName})
                                     : undefined}
-                                viewLabel="Просмотреть документ (DOCX)"
+                                viewTooltip="Просмотреть вложение"
                             >
                                 <span className="flex-1 truncate">{attachment.fileName}</span>
                             </DownloadRow>
@@ -228,14 +227,17 @@ function DownloadRow({
                          isDownloading,
                          onClick,
                          onView,
-                         viewLabel = "Просмотр",
+                         viewTooltip = "Просмотреть документ",
                      }: {
     icon: React.ReactNode;
     children: React.ReactNode;
     isDownloading: boolean;
     onClick: () => void;
     onView?: () => void;
-    viewLabel?: string;
+    /** Подсказка кнопки-глазика (см. onView) — по умолчанию для документов/ТИД/специальных
+     * вложений, для обычных вложений вызывающая сторона передаёт более точный текст ("Просмотреть
+     * вложение"). */
+    viewTooltip?: string;
 }) {
     return (
         <div className="flex items-center gap-2 rounded-[9px] border border-[#e5e9f0] pr-2 hover:border-[#4e57d6]/40 hover:bg-[#f6f8fb]">
@@ -255,13 +257,15 @@ function DownloadRow({
             </button>
 
             {onView && (
-                <button
-                    type="button"
-                    onClick={onView}
-                    className="cursor-pointer flex-none whitespace-nowrap rounded-[7px] border border-[#d7dee8] bg-white px-2.5 py-[6px] text-[11.5px] font-semibold text-[#4e57d6] hover:bg-[#ececfc]"
-                >
-                    {viewLabel}
-                </button>
+                <Tooltip content={viewTooltip} side="top">
+                    <button
+                        type="button"
+                        onClick={onView}
+                        className="cursor-pointer flex-none rounded-[7px] border border-[#d7dee8] bg-white p-[6px] text-[#4e57d6] hover:bg-[#ececfc]"
+                    >
+                        <Eye size={14}/>
+                    </button>
+                </Tooltip>
             )}
         </div>
     );

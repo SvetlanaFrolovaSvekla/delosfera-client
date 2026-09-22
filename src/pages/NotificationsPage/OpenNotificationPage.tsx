@@ -224,13 +224,24 @@ export function OpenNotificationPage() {
                 {notification.url && (
                     <div className="border-t border-slate-100 px-6 py-4">
                         <button
-                            onClick={() =>
-                                navigate(notification.url!, {
-                                    state: notification.url!.startsWith("/base-vnd/")
+                            onClick={() => {
+                                const url = notification.url!;
+                                // Если сервер уже указал таб явно (?tab=...) в самой ссылке -
+                                // используем его и не форсим state, иначе OpenVndPage.tsx
+                                // (сначала смотрит location.state.tab, потом ?tab=) проигнорирует
+                                // то, что прислал бэк. Раньше здесь стоял безусловный
+                                // state: {tab: "approval"} для любой /base-vnd/... ссылки - из-за
+                                // этого уведомление "Заявка на доступ к актуализации" (шлёт
+                                // /base-vnd/{id}?tab=actual) вело не на «Актуализация», а на
+                                // «Реквизиты» ("approval" не входит в список табов для статуса
+                                // "active", и OpenVndPage.tsx откатывался на "passport").
+                                const hasExplicitTab = url.includes("?tab=");
+                                navigate(url, {
+                                    state: !hasExplicitTab && url.startsWith("/base-vnd/")
                                         ? {tab: "approval"}
                                         : undefined,
-                                })
-                            }
+                                });
+                            }}
                             className="cursor-pointer inline-flex items-center gap-1.5 rounded-lg bg-[#4e57d6] px-4 py-2 text-sm font-semibold text-white transition hover:bg-[#3d45c0]"
                         >
                             {/* Перейти к задаче */}

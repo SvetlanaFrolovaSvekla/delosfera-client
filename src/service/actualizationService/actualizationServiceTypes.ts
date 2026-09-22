@@ -56,13 +56,12 @@ export interface PerformActualizationRequest {
     plannedNoChanges: boolean;
 }
 
-/** Запросить доступ к актуализации у главного редактора (по запросу права) */
-export interface RequestActualizationAccessRequest {
-    requiresApproval: boolean;
-    /** Личное пожелание заявителя насчёт сдвига срока следующей актуализации — главный
-     * редактор увидит его при рассмотрении заявки и сможет скорректировать. */
-    shiftNextPeriod: boolean;
-}
+/** Запросить доступ к актуализации у главного редактора (по запросу права). Заявка всегда
+ * уходит "с последующим согласованием" - без согласования актуализацию может начать только
+ * главный редактор напрямую (см. StartActualizationRequest). Сдвиг срока следующей
+ * актуализации заявителем больше не выбирается - это решает исключительно главный редактор
+ * при одобрении (см. ActualizationRequestDecisionRequest), поэтому тело запроса пустое. */
+export type RequestActualizationAccessRequest = Record<string, never>;
 
 /** Подтвердить старт актуализации после одобренной заявки — совмещает старт цикла и шаг
  * "Выполнить актуализацию" (единственная кнопка для пути "по заявке"). Сдвиг срока сюда уже не
@@ -83,9 +82,12 @@ export interface VndActualizationRequestResponse {
     requestedByUserId: number;
     requestedByName: string;
 
+    /** Всегда true - заявка "по запросу" всегда требует последующего согласования главным
+     * редактором ВНД. */
     requiresApproval: boolean;
-    /** Пожелание заявителя о сдвиге срока — после одобрения может быть заменено на финальное
-     * значение, скорректированное главным редактором. */
+    /** До решения по заявке (status === "pending") значение не задано заявителем и не несёт
+     * смысла - финальное значение проставляется главным редактором при одобрении, см.
+     * ActualizationRequestDecisionRequest.shiftNextPeriod. */
     shiftNextPeriod: boolean;
     status: ActualizationAccessStatus;
 
@@ -102,7 +104,7 @@ export interface VndActualizationRequestResponse {
 
 export interface ActualizationRequestDecisionRequest {
     approve: boolean;
-    /** Финальное значение сдвига срока — обязательно при approve === true. По умолчанию на
-     * фронте предзаполняется тем, что выбрал сам заявитель, но главный редактор может изменить. */
+    /** Финальное значение сдвига срока — обязательно при approve === true. Решает
+     * исключительно главный редактор при одобрении, заявитель это значение не выбирает. */
     shiftNextPeriod?: boolean | null;
 }

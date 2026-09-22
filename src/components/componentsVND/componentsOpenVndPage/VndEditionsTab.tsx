@@ -39,6 +39,9 @@ import {
     RedactionsSidebar, type RedactionsPrimaryActionVariant
 } from "@/components/componentsVND/componentsOpenVndPage/componentsEditionsTab/RedactionsSidebar.tsx";
 import {
+    ActualizationSettingsModal
+} from "@/components/componentsVND/componentsOpenVndPage/componentsEditionsTab/ActualizationSettingsModal.tsx";
+import {
     StartActualizationModal
 } from "@/components/componentsVND/componentsOpenVndPage/componentsActualizationTab/StartActualizationModal.tsx";
 import {
@@ -249,14 +252,28 @@ export function VndEditionsTab({vnd, onVndChanged, onGoToApproval}: VndEditionsT
         startOpen: actualizeStartOpen, setStartOpen: setActualizeStartOpen,
         requestOpen: actualizeRequestOpen, setRequestOpen: setActualizeRequestOpen,
         performOpen: actualizePerformOpen, setPerformOpen: setActualizePerformOpen, performMode: actualizePerformMode,
-        editSettingsOpen: actualizeEditSettingsOpen, setEditSettingsOpen: setActualizeEditSettingsOpen,
         submitting: actualizeSubmitting, error: actualizeError, setError: setActualizeError,
         handleStart: handleActualizeStart, handleRequestAccess: handleActualizeRequestAccess,
         handlePerformConfirm: handleActualizePerformConfirm,
         handleUpdatePerformedSettings: handleActualizeUpdatePerformedSettings,
         canWithoutApproval, canWithApproval,
-        canRequestWithoutApproval, canRequestWithApproval,
     } = useVndActualizationFlow(vnd, () => onVndChanged?.());
+
+    // Заявка одобрена (needsConfirmStartAfterRequest) - раньше здесь открывался отдельный
+    // модальный шаг "Выполнить актуализацию" (PerformActualizationModal, mode="afterRequest"),
+    // где редактор подтверждал старт. Убрано по просьбе - редактор просто открывает вкладку
+    // «Редакции» и сразу видит рабочее состояние: цикл стартует автоматически, "с изменениями"
+    // по умолчанию (plannedNoChanges: false) - см. модалку «Настройки актуализации» ниже, где
+    // это значение можно переключить. Ref - чтобы не вызвать confirmStart повторно, пока
+    // первый запрос ещё не отработал (needsConfirmStartAfterRequest остаётся true до ответа
+    // сервера, а не только на один рендер).
+    const autoConfirmStartFiredRef = useRef(false);
+    useEffect(() => {
+        if (needsConfirmStartAfterRequest && !autoConfirmStartFiredRef.current) {
+            autoConfirmStartFiredRef.current = true;
+            void handleActualizePerformConfirm({shiftNextPeriod: false, plannedNoChanges: false});
+        }
+    }, [needsConfirmStartAfterRequest, handleActualizePerformConfirm]);
 
     // "Без изменений" без согласования — подтвердить прямо здесь (кнопка сайдбара
     // "confirmNoChanges"), без захода на вкладку «Актуализация» (см. handleConfirmNoChanges
@@ -275,6 +292,51 @@ export function VndEditionsTab({vnd, onVndChanged, onGoToApproval}: VndEditionsT
         } catch (err) {
             toast.error(t("openVndPage.editionsTab.confirmNoChangesErrorTitle"), err instanceof Error ? err.message : undefined);        } finally {
             setConfirmingNoChanges(false);
+        }
+    };
+
+    // Переключение чекбокса "Актуализация без изменений" ОБРАТНО на включено, когда в рамках
+    // текущего цикла уже загружена редакция-черновик (и, возможно, файлы/ТИД к ней) - это
+    // необратимо удалит черновик, поэтому сначала спрашиваем подтверждение (см.
+    // handleTogglePlannedNoChanges ниже). Если черновика ещё нет -
+    // переключаем сразу, без вопросов (нечего терять).
+    const [discardConfirmOpen, setDiscardConfirmOpen] = useState(false);
+    const [discarding, setDiscarding] = useState(false);
+    const [discardError, setDiscardError] = useState<string | null>(null);
+
+    // Модалка «Настройки актуализации» — открывается ссылкой под основной кнопкой сайдбара
+    // (см. primarySecondaryLabel/Action в ветках ниже), пока цикл актуализации идёт.
+    const [actualizeSettingsOpen, setActualizeSettingsOpen] = useState(false);
+
+    const handleTogglePlannedNoChanges = (next: boolean) => {
+        const hasDraft = lastByNumber?.approvalStatus === "Draft" && lastByNumber.number > 1;
+        if (next && hasDraft) {
+            setDiscardError(null);
+            setDiscardConfirmOpen(true);
+            return;
+        }
+        void handleActualizeUpdatePerformedSettings({
+            shiftNextPeriod: vnd.actualizationShiftNextPeriod,
+            plannedNoChanges: next,
+        });
+    };
+
+    const handleConfirmDiscard = async () => {
+        setDiscarding(true);
+        setDiscardError(null);
+        try {
+            await actualizationService.discardDraft(vnd.id);
+            setDiscardConfirmOpen(false);
+            refetch();
+            onVndChanged?.();
+            toast.success(
+                t("openVndPage.editionsTab.discardDraftSuccessTitle"),
+                t("openVndPage.editionsTab.discardDraftSuccessDescription")
+            );
+        } catch (err) {
+            setDiscardError(err instanceof Error ? err.message : t("openVndPage.editionsTab.discardDraftErrorDefault"));
+        } finally {
+            setDiscarding(false);
         }
     };
 
@@ -511,11 +573,10 @@ export function VndEditionsTab({vnd, onVndChanged, onGoToApproval}: VndEditionsT
                     primaryAction = () => setApprovalModalOpen(true);
                     // Перед отправкой на согласование ответственный/главный редактор может ещё раз
                     // изменить настройки, зафиксированные на шаге "Выполнить актуализацию"
-                    // (сдвиг срока/"без изменений") - открывает то же окно PerformActualizationModal.
+                    // (сдвиг срока/"без изменений") - ссылка открывает модалку "Настройки актуализации".
                     if (vnd.actualizationResponsibleUserId === user?.id || isChiefEditor) {
-                        primarySecondaryLabel = t("openVndPage.redactionsSidebar.editActualizationSettingsLink");
-                        primarySecondaryAction = () => setActualizeEditSettingsOpen(true);
-                        primarySecondaryTooltip = t("openVndPage.redactionsSidebar.editActualizationSettingsTooltip");
+                        primarySecondaryLabel = t("openVndPage.redactionsSidebar.actualizationSettings.title");
+                        primarySecondaryAction = () => setActualizeSettingsOpen(true);
                     }
                 } else {
                     // Согласование не требуется - подтверждаем отсутствие изменений напрямую,
@@ -542,10 +603,11 @@ export function VndEditionsTab({vnd, onVndChanged, onGoToApproval}: VndEditionsT
                 primaryAction = () => setUploadOpen(true);
                 // Тот же путь, что и в ветке "без изменений" выше - настройки, зафиксированные на
                 // шаге "Выполнить актуализацию", можно поменять и здесь, до загрузки новой версии
-                // (например, снова отметить "без изменений", если галочку сняли по ошибке).
+                // (например, снова отметить "без изменений", если галочку сняли по ошибке - тогда
+                // сработает подтверждение удаления черновика, см. handleTogglePlannedNoChanges).
                 if (vnd.actualizationResponsibleUserId === user?.id || isChiefEditor) {
-                    primarySecondaryLabel = t("openVndPage.redactionsSidebar.editActualizationSettingsLink");
-                    primarySecondaryAction = () => setActualizeEditSettingsOpen(true);
+                    primarySecondaryLabel = t("openVndPage.redactionsSidebar.actualizationSettings.title");
+                    primarySecondaryAction = () => setActualizeSettingsOpen(true);
                 }
             }
         } else if (needsPerform) {
@@ -573,12 +635,13 @@ export function VndEditionsTab({vnd, onVndChanged, onGoToApproval}: VndEditionsT
             primaryAction = () => {
             };
         } else if (needsConfirmStartAfterRequest) {
-            // Заявка одобрена - остаётся выполнить актуализацию (совмещает старт цикла и сам
-            // шаг для этого пути), тоже прямо здесь, без перехода на вкладку «Актуализация».
+            // Заявка одобрена - цикл стартует автоматически, без модалки (см. useEffect с
+            // autoConfirmStartFiredRef выше). Пока запрос не отработал - кнопка неактивна.
             primaryVariant = "performActualization";
-            primaryDisabled = false;
-            primaryHint = undefined;
-            primaryAction = () => setActualizePerformOpen(true);
+            primaryDisabled = true;
+            primaryHint = t("openVndPage.redactionsSidebar.autoStartingActualizationHint");
+            primaryAction = () => {
+            };
         } else if (!canDirectly && !canByRequest) {
             primaryVariant = "actualize";
             primaryDisabled = true;
@@ -785,8 +848,6 @@ export function VndEditionsTab({vnd, onVndChanged, onGoToApproval}: VndEditionsT
             {/* Запросить доступ к актуализации (для прав ActualizeVnd...ByRequest) */}
             {actualizeRequestOpen && (
                 <RequestActualizationAccessModal
-                    canWithoutApproval={canRequestWithoutApproval}
-                    canWithApproval={canRequestWithApproval}
                     submitting={actualizeSubmitting}
                     error={actualizeError}
                     onClose={() => {
@@ -798,8 +859,10 @@ export function VndEditionsTab({vnd, onVndChanged, onGoToApproval}: VndEditionsT
                 />
             )}
 
-            {/* Выполнить актуализацию (прямо во вкладке «Редакции», без перехода на «Актуализация») */}
-            {actualizePerformOpen && (needsPerform || needsConfirmStartAfterRequest) && (
+            {/* Выполнить актуализацию (прямо во вкладке «Редакции», без перехода на «Актуализация»).
+                Только для пути "напрямую" (needsPerform) - путь "по заявке" стартует автоматически,
+                без модалки, см. useEffect с autoConfirmStartFiredRef выше. */}
+            {actualizePerformOpen && needsPerform && (
                 <PerformActualizationModal
                     mode={actualizePerformMode}
                     decidedShiftNextPeriod={myAccessState.kind === "approved" ? myAccessState.shiftNextPeriod : undefined}
@@ -814,23 +877,35 @@ export function VndEditionsTab({vnd, onVndChanged, onGoToApproval}: VndEditionsT
                 />
             )}
 
-            {/* Изменить настройки актуализации (сдвиг срока/"без изменений") перед отправкой на
-                согласование - то же окно, что и "Выполнить актуализацию", но уже с текущими
-                значениями и без повторного прохождения самого шага ActualizationPerformed. */}
-            {actualizeEditSettingsOpen && (
-                <PerformActualizationModal
-                    mode="direct"
-                    title={t("openVndPage.redactionsSidebar.editActualizationSettingsTitle")}
-                    initialShiftNextPeriod={vnd.actualizationShiftNextPeriod}
-                    initialPlannedNoChanges={vnd.actualizationPlannedNoChanges}
+            {/* Подтверждение удаления черновика редакции при возврате "Актуализации без изменений"
+                обратно на включено, когда в рамках текущего цикла уже загружена редакция (и,
+                возможно, файлы/ТИД к ней) - см. handleTogglePlannedNoChanges выше. */}
+            <ConfirmActionModal
+                open={discardConfirmOpen}
+                onClose={() => {
+                    if (discarding) return;
+                    setDiscardConfirmOpen(false);
+                    setDiscardError(null);
+                }}
+                onConfirm={handleConfirmDiscard}
+                title={t("openVndPage.editionsTab.discardDraftConfirmTitle")}
+                message={t("openVndPage.editionsTab.discardDraftConfirmMessage")}
+                confirmLabel={t("openVndPage.editionsTab.discardDraftConfirmLabel")}
+                loadingLabel={t("openVndPage.editionsTab.discardDraftLoadingLabel")}
+                loading={discarding}
+                error={discardError}
+                variant="danger"
+            />
+
+            {/* Настройки актуализации (сдвиг срока/"без изменений") — модалка, открывается
+                ссылкой под основной кнопкой сайдбара (см. primarySecondaryLabel/Action выше). */}
+            {actualizeSettingsOpen && (
+                <ActualizationSettingsModal
+                    plannedNoChanges={vnd.actualizationPlannedNoChanges}
+                    shiftNextPeriod={vnd.actualizationShiftNextPeriod}
                     submitting={actualizeSubmitting}
-                    error={actualizeError}
-                    onClose={() => {
-                        if (actualizeSubmitting) return;
-                        setActualizeEditSettingsOpen(false);
-                        setActualizeError(null);
-                    }}
-                    onConfirm={handleActualizeUpdatePerformedSettings}
+                    onTogglePlannedNoChanges={handleTogglePlannedNoChanges}
+                    onClose={() => setActualizeSettingsOpen(false)}
                 />
             )}
 

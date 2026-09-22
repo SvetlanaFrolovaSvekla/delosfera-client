@@ -12,7 +12,7 @@ interface NormBlockViewProps {
     phaseStatus: NormPhaseStatus;
     blockRef?: React.Ref<HTMLDivElement>;
     /** Дата и время начала этой фазы - показывается только у уже начавшихся фаз (passed/current),
-     * для "upcoming" фаза ещё не наступила и даты начала попросту нет. */
+     * для "upcoming" фаза ещё не наступила ни даты начала попросту нет. */
     startedAt?: string | null;
 }
 

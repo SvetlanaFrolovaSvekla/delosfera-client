@@ -1,31 +1,29 @@
 // Модалка «Запросить доступ к актуализации» — для пользователей, у которых нет
 // права брать ВНД в актуализацию напрямую, только "по запросу" у главного редактора.
-import {useState} from "react";
+//
+// Упрощено: заявка всегда уходит "с последующим согласованием" (без согласования может
+// начать актуализацию только главный редактор, напрямую - см. StartActualizationModal) и
+// без "пожелания" по сдвигу срока следующей актуализации - это решает исключительно
+// главный редактор при одобрении заявки (см. ApproveActualizationRequestModal). Поэтому
+// здесь больше нет выбора - только подтверждение отправки заявки.
 import {createPortal} from "react-dom";
 import {useTranslation} from "react-i18next";
 import {Loader2, Send, X} from "lucide-react";
 
 interface RequestActualizationAccessModalProps {
-    canWithoutApproval: boolean;
-    canWithApproval: boolean;
     submitting: boolean;
     error: string | null;
     onClose: () => void;
-    onConfirm: (data: {requiresApproval: boolean; shiftNextPeriod: boolean}) => void;
+    onConfirm: () => void;
 }
 
 export function RequestActualizationAccessModal({
-                                                    canWithoutApproval,
-                                                    canWithApproval,
                                                     submitting,
                                                     error,
                                                     onClose,
                                                     onConfirm,
                                                 }: RequestActualizationAccessModalProps) {
     const {t} = useTranslation();
-    const [requiresApproval, setRequiresApproval] = useState<boolean>(!canWithoutApproval);
-    const [shiftNextPeriod, setShiftNextPeriod] = useState(true);
-    const canChoose = canWithoutApproval && canWithApproval;
 
     return createPortal(
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 p-4">
@@ -49,43 +47,10 @@ export function RequestActualizationAccessModal({
                     </button>
                 </div>
 
-                <p className="mb-3 text-[13px] leading-[1.6] text-[#55617a]">
-                    {/* Заявка уйдёт главному редактору ВНД. После одобрения вы сможете подтвердить
-                    старт актуализации. */}
+                <p className="text-[13px] leading-[1.6] text-[#55617a]">
+                    {/* Заявка уйдёт главному редактору ВНД. После одобрения вы сможете
+                    заняться актуализацией. */}
                     {t("requestActualizationAccessModal.infoText")}
-                </p>
-
-                {canChoose && (
-                    <div className="flex flex-col gap-2">
-                        <RadioRow
-                            // С последующим согласованием
-                            label={t("requestActualizationAccessModal.withApprovalOption")}
-                            checked={requiresApproval}
-                            onSelect={() => setRequiresApproval(true)}
-                        />
-                        <RadioRow
-                            // Без согласования
-                            label={t("requestActualizationAccessModal.withoutApprovalOption")}
-                            checked={!requiresApproval}
-                            onSelect={() => setRequiresApproval(false)}
-                        />
-                    </div>
-                )}
-
-                <label className="mt-3 flex cursor-pointer items-center gap-[10px] rounded-[10px] border border-[#e5e9f0] px-3 py-[10px] text-[13px] text-[#3a4560] hover:bg-[#f6f8fb]">
-                    <input
-                        type="checkbox"
-                        checked={shiftNextPeriod}
-                        onChange={(e) => setShiftNextPeriod(e.target.checked)}
-                        className="h-4 w-4 accent-[#4e57d6]"
-                    />
-                    {/* Сдвинуть срок следующей актуализации после публикации новой редакции */}
-                    {t("requestActualizationAccessModal.shiftNextPeriodLabel")}
-                </label>
-                <p className="mt-1 px-1 text-[11px] leading-[1.5] text-[#8b97ab]">
-                    {/* Это ваше пожелание — главный редактор увидит его при рассмотрении заявки и
-                    сможет изменить. */}
-                    {t("requestActualizationAccessModal.shiftNextPeriodHint")}
                 </p>
 
                 {error && (
@@ -94,7 +59,7 @@ export function RequestActualizationAccessModal({
                     </div>
                 )}
 
-                <div className="mt-6 flex justify-end gap-2">
+                <div className="mt-6 flex justify-center gap-2">
                     <button
                         onClick={onClose}
                         disabled={submitting}
@@ -104,7 +69,7 @@ export function RequestActualizationAccessModal({
                         {t("requestActualizationAccessModal.cancel")}
                     </button>
                     <button
-                        onClick={() => onConfirm({requiresApproval, shiftNextPeriod})}
+                        onClick={onConfirm}
                         disabled={submitting}
                         className="cursor-pointer inline-flex h-[38px] items-center gap-2 rounded-[10px] bg-[#4e57d6] px-4 text-[13px] font-semibold text-white hover:bg-[#3f47bd] disabled:cursor-not-allowed disabled:opacity-50"
                     >
@@ -116,28 +81,5 @@ export function RequestActualizationAccessModal({
             </div>
         </div>,
         document.body
-    );
-}
-
-function RadioRow({label, checked, onSelect}: {label: string; checked: boolean; onSelect: () => void}) {
-    return (
-        <button
-            type="button"
-            onClick={onSelect}
-            className={`flex cursor-pointer items-center gap-[10px] rounded-[10px] border px-3 py-[10px] text-left text-[13px] transition-colors ${
-                checked
-                    ? "border-[#4e57d6] bg-[#ececfc] text-[#1c2740]"
-                    : "border-[#e5e9f0] text-[#3a4560] hover:bg-[#f6f8fb]"
-            }`}
-        >
-            <span
-                className={`grid h-[16px] w-[16px] flex-none place-items-center rounded-full border-2 ${
-                    checked ? "border-[#4e57d6]" : "border-[#c7cedb]"
-                }`}
-            >
-                {checked && <span className="h-[8px] w-[8px] rounded-full bg-[#4e57d6]"/>}
-            </span>
-            {label}
-        </button>
     );
 }

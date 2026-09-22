@@ -67,7 +67,6 @@ export function useVndActualizationFlow(vnd: VndResponse, onVndChanged: () => vo
     const [startOpen, setStartOpen] = useState(false);
     const [requestOpen, setRequestOpen] = useState(false);
     const [performOpen, setPerformOpen] = useState(false);
-    const [editSettingsOpen, setEditSettingsOpen] = useState(false);
     const [approveTarget, setApproveTarget] = useState<VndActualizationRequestResponse | null>(null);
     const [submitting, setSubmitting] = useState(false);
     const [error, setError] = useState<string | null>(null);
@@ -90,14 +89,13 @@ export function useVndActualizationFlow(vnd: VndResponse, onVndChanged: () => vo
         }
     };
 
-    const handleRequestAccess = async (data: { requiresApproval: boolean; shiftNextPeriod: boolean }) => {
+    // Заявка всегда "с последующим согласованием", без выбора и без пожелания по сдвигу
+    // срока - см. RequestActualizationAccessModal.
+    const handleRequestAccess = async () => {
         setSubmitting(true);
         setError(null);
         try {
-            await actualizationService.requestAccess(vnd.id, {
-                requiresApproval: data.requiresApproval,
-                shiftNextPeriod: data.shiftNextPeriod,
-            });
+            await actualizationService.requestAccess(vnd.id);
             setRequestOpen(false);
             refetchRequests();
         } catch (err) {
@@ -147,7 +145,6 @@ export function useVndActualizationFlow(vnd: VndResponse, onVndChanged: () => vo
                 shiftNextPeriod: data.shiftNextPeriod,
                 plannedNoChanges: data.plannedNoChanges,
             });
-            setEditSettingsOpen(false);
             toast.success("Настройки актуализации изменены", "Новые значения сохранены!");
             onVndChanged();
             refetchRequests();
@@ -204,7 +201,6 @@ export function useVndActualizationFlow(vnd: VndResponse, onVndChanged: () => vo
         canRequestWithApproval, canRequestWithoutApproval, canByRequest,
         startOpen, setStartOpen, requestOpen, setRequestOpen,
         performOpen, setPerformOpen, performMode,
-        editSettingsOpen, setEditSettingsOpen,
         approveTarget, setApproveTarget,
         submitting, error, setError,
         handleStart, handleRequestAccess, handlePerformConfirm, handleUpdatePerformedSettings,

@@ -1,6 +1,7 @@
 import {useEffect, useState} from "react";
-import {UserCheck} from "lucide-react";
+import {useTranslation} from "react-i18next";
 import {apiClient} from "@/service/apiClient.ts";
+import {UserCheck} from "lucide-react";
 
 /**
  * Учётные записи для обкатки бизнес-подразделениями.
@@ -29,6 +30,7 @@ interface Props {
 }
 
 export function DemoAccountsPanel({onPick}: Props) {
+    const {t} = useTranslation();
     const [accounts, setAccounts] = useState<DemoAccount[]>([]);
 
     useEffect(() => {
@@ -57,12 +59,14 @@ export function DemoAccountsPanel({onPick}: Props) {
                 <UserCheck size={17} className="mt-0.5 shrink-0 text-[#b3730a]"/>
                 <div>
                     <p className="text-[13px] font-semibold text-[#7a5407]">
-                        Обкатка: вход под разными ролями
+                        {/* Обкатка: вход под разными ролями */}
+                        {t("demoAccounts.title")}
                     </p>
                     <p className="mt-0.5 text-[12px] leading-[1.5] text-[#8a7350]">
-                        Нажмите на роль — логин и пароль подставятся в форму. Чтобы пройти
+                        {/* Нажмите на роль — логин и пароль подставятся в форму. Чтобы пройти
                         записку целиком, нужны разные роли: инициатор подаёт, делопроизводитель
-                        регистрирует, руководитель согласовывает.
+                        регистрирует, руководитель согласовывает. */}
+                        {t("demoAccounts.description")}
                     </p>
                 </div>
             </div>
@@ -95,8 +99,9 @@ export function DemoAccountsPanel({onPick}: Props) {
             </div>
 
             <p className="mt-3 text-[11.5px] leading-[1.5] text-[#a08a5e]">
-                Этот блок виден только на стенде обкатки. На рабочем контуре настройка
-                выключена, и учётных данных здесь нет.
+                {/* Этот блок виден только на стенде обкатки. На рабочем контуре настройка
+                выключена, и учётных данных здесь нет. */}
+                {t("demoAccounts.standDescription")}
             </p>
         </div>
     );

@@ -1,13 +1,6 @@
 import {useTranslation} from "react-i18next";
+import {type Lang, LANGS} from "@/constants/langs.ts";
 import {Tooltip} from "@/components/componentsGeneral/Tooltip.tsx";
-
-type Lang = "ru" | "ky" | "en";
-
-const LANGS: { code: Lang; label: string; tooltipKey: string }[] = [
-    {code: "ru", label: "RU", tooltipKey: "header.langRu"},
-    {code: "ky", label: "KY", tooltipKey: "header.langKy"},
-    {code: "en", label: "EN", tooltipKey: "header.langEN"},
-];
 
 export function AuthLanguageSwitcher() {
     const {t, i18n} = useTranslation();

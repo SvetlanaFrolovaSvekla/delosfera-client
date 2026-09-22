@@ -1,22 +1,15 @@
 // Переключатель языков
 import {useTranslation} from "react-i18next";
-
-type Lang = "ru" | "ky" | "en";
+import {type Lang, LANGS} from "@/constants/langs.ts";
 
 export function LanguageSwitcher() {
     const {i18n} = useTranslation();
     const lang = i18n.language as Lang;
     const setLang = (l: Lang) => i18n.changeLanguage(l);
 
-    const langs: {code: Lang; label: string; tooltipKey: string}[] = [
-        {code: "ru", label: "RU", tooltipKey: "header.langRu"},
-        {code: "ky", label: "KY", tooltipKey: "header.langKy"},
-        {code: "en", label: "EN", tooltipKey: "header.langEN"},
-    ];
-
     return (
         <div className="flex items-center gap-0.5 rounded-[9px] bg-[#f2f5f9] p-[3px]">
-            {langs.map(({code, label}) => (
+            {LANGS.map(({code, label}) => (
                 <button
                     key={code}
                     onClick={() => setLang(code)}

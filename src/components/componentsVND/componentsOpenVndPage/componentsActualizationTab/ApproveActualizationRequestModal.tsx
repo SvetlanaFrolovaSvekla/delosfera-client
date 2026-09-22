@@ -1,14 +1,14 @@
 // Модалка «Одобрить заявку на актуализацию» — открывается у главного редактора при клике
-// «Одобрить» по заявке обычного редактора. Предзаполнена пожеланием заявителя насчёт сдвига
-// срока следующей актуализации, но позволяет его скорректировать — если значение меняется,
-// заявитель получит отдельное уведомление об этом (см. VndActualizationService.DecideRequestAsync).
+// «Одобрить» по заявке обычного редактора. Сдвигать ли срок следующей актуализации решает
+// исключительно главный редактор здесь - заявитель это больше не выбирает и никакого
+// "пожелания" на этот счёт нет (см. RequestActualizationAccessModal), поэтому чекбокс ничем
+// не предзаполняется и без пояснения "пожелание заявителя" под ним.
 import {useState} from "react";
 import {createPortal} from "react-dom";
 import {CheckCircle2, Loader2, X} from "lucide-react";
 
 interface ApproveActualizationRequestModalProps {
     requestedByName: string;
-    requestedShiftNextPeriod: boolean;
     submitting: boolean;
     error: string | null;
     onClose: () => void;
@@ -17,14 +17,12 @@ interface ApproveActualizationRequestModalProps {
 
 export function ApproveActualizationRequestModal({
                                                        requestedByName,
-                                                       requestedShiftNextPeriod,
                                                        submitting,
                                                        error,
                                                        onClose,
                                                        onConfirm,
                                                    }: ApproveActualizationRequestModalProps) {
-    const [shiftNextPeriod, setShiftNextPeriod] = useState(requestedShiftNextPeriod);
-    const overridden = shiftNextPeriod !== requestedShiftNextPeriod;
+    const [shiftNextPeriod, setShiftNextPeriod] = useState(true);
 
     return createPortal(
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 p-4">
@@ -56,10 +54,6 @@ export function ApproveActualizationRequestModal({
                     />
                     Сдвинуть срок следующей актуализации после публикации
                 </label>
-                <p className="mt-1 px-1 text-[11.5px] leading-[1.5] text-[#8b97ab]">
-                    Пожелание заявителя: {requestedShiftNextPeriod ? "сдвинуть срок" : "не сдвигать срок"}.
-                    {overridden && " Вы меняете это значение — заявитель получит отдельное уведомление."}
-                </p>
 
                 {error && (
                     <div className="mt-4 rounded-[10px] border border-[#f2c2c2] bg-[#fdf1f1] px-3 py-[10px] text-[12.5px] text-[#c0392b]">
@@ -67,7 +61,7 @@ export function ApproveActualizationRequestModal({
                     </div>
                 )}
 
-                <div className="mt-6 flex justify-end gap-2">
+                <div className="mt-6 flex justify-center gap-2">
                     <button onClick={onClose} disabled={submitting}
                             className="cursor-pointer h-[38px] rounded-[10px] border border-[#e5e9f0] px-4 text-[13px] font-semibold text-[#3a4560] hover:bg-[#f6f8fb] disabled:opacity-50">
                         Отмена

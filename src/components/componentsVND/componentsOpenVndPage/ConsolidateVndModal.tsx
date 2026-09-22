@@ -122,7 +122,7 @@ export function ConsolidateVndModal({
                         />
                         {/* Дата вступления в силу */}
                         <EditableDateField
-                            label={t("consolidateVndModal.adoptionCodePlaceholder")}
+                            label={t("consolidateVndModal.effectiveDateLabel")}
                             value={requisites.effectiveDate}
                             onChange={(v) => updateRequisites("effectiveDate", v)}
                             required
@@ -144,7 +144,7 @@ export function ConsolidateVndModal({
                         className="cursor-pointer h-[38px] rounded-[10px] border border-[#e5e9f0] px-4 text-[13px] font-semibold text-[#3a4560] hover:bg-[#f6f8fb] disabled:opacity-50"
                     >
                         {/* Отмена */}
-                        {t("general.chanel")}
+                        {t("general.cancel")}
                     </button>
                     {/* Заполните дату принятия, № принятия и дату вступления в силу */}
                     <button

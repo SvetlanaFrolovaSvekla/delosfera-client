@@ -28,14 +28,13 @@ class ActualizationService {
         return data;
     }
 
-    /** Запросить доступ к актуализации у главного редактора (по запросу права) */
-    async requestAccess(
-        vndId: number,
-        request: RequestActualizationAccessRequest,
-    ): Promise<VndActualizationRequestResponse> {
+    /** Запросить доступ к актуализации у главного редактора (по запросу права) — всегда
+     * "с последующим согласованием", без выбора и без пожелания по сдвигу срока (решает
+     * главный редактор при одобрении), поэтому тело запроса пустое. */
+    async requestAccess(vndId: number): Promise<VndActualizationRequestResponse> {
         const {data} = await axiosInstance.post<VndActualizationRequestResponse>(
             `${this.basePath(vndId)}/request-access`,
-            request,
+            {} satisfies RequestActualizationAccessRequest,
         );
         return data;
     }
@@ -87,6 +86,17 @@ class ActualizationService {
     async confirmNoChanges(vndId: number): Promise<VndActualizationStateResponse> {
         const {data} = await axiosInstance.post<VndActualizationStateResponse>(
             `${this.basePath(vndId)}/confirm-no-changes`,
+        );
+        return data;
+    }
+
+    /** Отменить черновик редакции, уже загруженный в рамках текущего цикла актуализации (со
+     * всеми файлами и ТИД), и вернуть план цикла на "без изменений" — для переключения
+     * "Актуализация без изменений" обратно на включено уже после загрузки редакции. Необратимо -
+     * вызывается только после подтверждения пользователем (см. ActualizationSettingsPanel). */
+    async discardDraft(vndId: number): Promise<VndActualizationStateResponse> {
+        const {data} = await axiosInstance.post<VndActualizationStateResponse>(
+            `${this.basePath(vndId)}/discard-draft`,
         );
         return data;
     }

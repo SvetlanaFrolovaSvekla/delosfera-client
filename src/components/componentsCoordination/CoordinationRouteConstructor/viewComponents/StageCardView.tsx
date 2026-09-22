@@ -1,7 +1,8 @@
 // Read-only карточка этапа уже построенного маршрута согласования
 import {useLayoutEffect, useRef, useState} from "react";
 import {Link} from "react-router-dom";
-import {RefreshCw, X} from "lucide-react";
+import {useTranslation} from "react-i18next";
+import type {TFunction} from "i18next";
 import {useAuth} from "@/context/AuthContext.ts";
 import type {
     ApprovalPhaseRoundResponse,
@@ -16,7 +17,9 @@ import {
     isCustomStageKind,
 } from "@/constants/coordinationParams.ts";
 import {formatDateTime} from "@/utils/dateUtils.ts";
-import {Tooltip} from "@/components/componentsGeneral/Tooltip.tsx";
+import {getInitials} from "@/utils/namingUsers/getInitials.ts";
+import {downloadWithToast} from "@/utils/downloadFiles/downloadFile.ts";
+
 import {
     CommentViewModal
 } from "@/components/componentsCoordination/CoordinationRouteConstructor/viewComponents/CommentViewModal.tsx";
@@ -24,11 +27,12 @@ import {FormattedResolutionComment, type FormattedCommentQuoteRef} from "./Forma
 import {
     AttachmentRow
 } from "@/components/componentsCoordination/CoordinationRouteConstructor/functionalComponents/AttachmentRow.tsx";
-import {getInitials} from "@/utils/namingUsers/getInitials.ts";
 import {
     AttachmentDocxPreviewModal
 } from "@/components/componentsGeneral/modal/AttachmentDocxPreviewModal.tsx";
-import {downloadWithToast} from "@/utils/downloadFiles/downloadFile.ts";
+import {Tooltip} from "@/components/componentsGeneral/Tooltip.tsx";
+
+import {RefreshCw, X} from "lucide-react";
 
 const COMMENT_TRUNCATE_LENGTH = 500; // Лимит обрезки комментария/замечания в карточке
 
@@ -67,12 +71,12 @@ interface PhaseCommentEntry {
  * ЗАВЕРШЁННЫХ (уже перезаписанных) кругов, специально заведённый на бэке для этого случая, но
  * карточка его до сих пор не читала. Теперь собираем полную историю: все круги из phaseRounds
  * (кроме текущего/последнего — он ещё не архивирован и лежит в живых полях) + сам живой круг. */
-function collectPhaseComments(stage: ApprovalStageResponse, phaseRounds: ApprovalPhaseRoundResponse[]): PhaseCommentEntry[] {
+function collectPhaseComments(stage: ApprovalStageResponse, phaseRounds: ApprovalPhaseRoundResponse[], t: TFunction): PhaseCommentEntry[] {
     const entries: PhaseCommentEntry[] = [];
 
     if (stage.primaryComment && !AUTO_GENERATED_COMMENT_TEXTS.has(stage.primaryComment)) {
         entries.push({
-            phaseLabel: "Первичное согласование",
+            phaseLabel: t("stageCard.phasePrimary"), // Первичное согласование
             decision: stage.primaryDecision,
             comment: stage.primaryComment,
             decidedAt: stage.primaryDecidedAt,
@@ -95,7 +99,9 @@ function collectPhaseComments(stage: ApprovalStageResponse, phaseRounds: Approva
         const sd = round.stageDecisions.find((s) => s.stageId === stage.id);
         if (!sd || !sd.comment || AUTO_GENERATED_COMMENT_TEXTS.has(sd.comment)) continue;
         entries.push({
-            phaseLabel: repeatTotalRounds > 1 ? `Повторное согласование (круг ${round.roundNumber})` : "Повторное согласование",
+            phaseLabel: repeatTotalRounds > 1
+                ? t("stageCard.phaseRepeatRound", {round: round.roundNumber})
+                : t("stageCard.phaseRepeat"),
             decision: sd.decision,
             comment: sd.comment,
             decidedAt: sd.decidedAt,
@@ -108,7 +114,9 @@ function collectPhaseComments(stage: ApprovalStageResponse, phaseRounds: Approva
     }
     if (hasLiveRepeat) {
         entries.push({
-            phaseLabel: repeatTotalRounds > 1 ? `Повторное согласование (круг ${repeatTotalRounds})` : "Повторное согласование",
+            phaseLabel: repeatTotalRounds > 1
+                ? t("stageCard.phaseRepeatRound", {round: repeatTotalRounds})
+                : t("stageCard.phaseRepeat"),
             decision: stage.repeatDecision as ApprovalStageDecisionResponse,
             comment: stage.repeatComment as string,
             decidedAt: stage.repeatDecidedAt,
@@ -127,7 +135,9 @@ function collectPhaseComments(stage: ApprovalStageResponse, phaseRounds: Approva
         const sd = round.stageDecisions.find((s) => s.stageId === stage.id);
         if (!sd || !sd.comment || AUTO_GENERATED_COMMENT_TEXTS.has(sd.comment)) continue;
         entries.push({
-            phaseLabel: finalHoldTotalRounds > 1 ? `Финальная выдержка (круг ${round.roundNumber})` : "Финальная выдержка",
+            phaseLabel: finalHoldTotalRounds > 1
+                ? t("stageCard.phaseFinalHoldRound", {round: round.roundNumber})
+                : t("stageCard.phaseFinalHold"),
             decision: sd.decision,
             comment: sd.comment,
             decidedAt: sd.decidedAt,
@@ -137,7 +147,9 @@ function collectPhaseComments(stage: ApprovalStageResponse, phaseRounds: Approva
     }
     if (hasLiveFinalHold) {
         entries.push({
-            phaseLabel: finalHoldTotalRounds > 1 ? `Финальная выдержка (круг ${finalHoldTotalRounds})` : "Финальная выдержка",
+            phaseLabel: finalHoldTotalRounds > 1
+                ? t("stageCard.phaseFinalHoldRound", {round: finalHoldTotalRounds})
+                : t("stageCard.phaseFinalHold"),
             decision: stage.finalHoldDecision as ApprovalStageDecisionResponse,
             comment: stage.finalHoldComment as string,
             decidedAt: stage.finalHoldDecidedAt,
@@ -187,9 +199,10 @@ interface StageCardViewProps {
 }
 
 export function StageCardView({
-    stage, cardRef, isCurrentUserStage, isProcessEnded, onShowQuoteInText, phaseRounds,
-    canEditRoute, onRemoveApprover, onReplaceApprover,
-}: StageCardViewProps) {
+                                  stage, cardRef, isCurrentUserStage, isProcessEnded, onShowQuoteInText, phaseRounds,
+                                  canEditRoute, onRemoveApprover, onReplaceApprover,
+                              }: StageCardViewProps) {
+    const {t} = useTranslation();
     const {user} = useAuth();
 
     const isCustom = isCustomStageKind(stage.kind);
@@ -230,7 +243,7 @@ export function StageCardView({
     // История резолюций/комментариев этого согласующего по ВСЕМ пройденным фазам - не только
     // самой последней (см. collectPhaseComments) - чтобы более ранние замечания/комментарии не
     // пропадали из вида для остальных согласующих, решающих позже.
-    const phaseComments = collectPhaseComments(stage, phaseRounds ?? []);
+    const phaseComments = collectPhaseComments(stage, phaseRounds ?? [], t);
 
     // Пока решение не принято, а это этап текущего пользователя — показываем отдельный жёлтый статус
     const isPendingForCurrentUser = isCurrentUserStage && decision === "pending" && !isProcessEnded;
@@ -240,12 +253,12 @@ export function StageCardView({
     const isStalePending = decision === "pending" && isProcessEnded;
 
     const [openCommentEntry, setOpenCommentEntry] = useState<PhaseCommentEntry | null>(null);
-    const [previewAttachment, setPreviewAttachment] = useState<{fileId: number; fileName: string} | null>(null);
+    const [previewAttachment, setPreviewAttachment] = useState<{ fileId: number; fileName: string } | null>(null);
 
     const badgeLabel = isPendingForCurrentUser
-        ? "В рассмотрении (мой этап)"
+        ? t("stageCard.pendingCurrentUserBadge")
         : isStalePending
-            ? "Согласование прекращено"
+            ? t("stageCard.processEndedBadge")
             : decisionMeta.label;
     const badgeClass = isPendingForCurrentUser
         ? "bg-[#fdf3dc] text-[#a97313]"
@@ -279,7 +292,7 @@ export function StageCardView({
         >
             {canRemove && (
                 <Tooltip
-                    content="Убрать согласующего из маршрута"
+                    content={t("stageCard.removeApproverTooltip")} // Убрать согласующего из маршрута
                     side="top"
                     className="!absolute right-2 top-2"
                 >
@@ -295,7 +308,7 @@ export function StageCardView({
 
             {canReplace && (
                 <Tooltip
-                    content="Заменить согласующего на этом этапе"
+                    content={t("stageCard.replaceApproverTooltip")} // Заменить согласующего на этом этапе
                     side="top"
                     className="!absolute right-2 top-2"
                 >
@@ -327,10 +340,12 @@ export function StageCardView({
                 className="flex h-[36px] w-full items-center gap-2 rounded-[9px] border border-[#e5e9f0] bg-[#fbfcfe] px-2 text-[12px] outline-none hover:border-[#4e57d6]/50 hover:bg-white"
             >
                 <span className="flex min-w-0 flex-1 items-center gap-1.5">
-                    <span className="flex h-6 w-6 flex-none items-center justify-center rounded-md bg-[#ececfc] text-[9px] font-bold text-[#4e57d6]">
+                    <span
+                        className="flex h-6 w-6 flex-none items-center justify-center rounded-md bg-[#ececfc] text-[9px] font-bold text-[#4e57d6]">
                         {getInitials(stage.approverName)}
                     </span>
-                    <Tooltip content={stage.approverName} disabled={!isNameTruncated} side="top" className="min-w-0 flex-1">
+                    <Tooltip content={stage.approverName} disabled={!isNameTruncated} side="top"
+                             className="min-w-0 flex-1">
                         <span ref={nameRef} className="block w-full truncate text-[#26324a]">
                             {stage.approverName}
                         </span>
@@ -341,18 +356,21 @@ export function StageCardView({
                         className="flex-none rounded-full px-[7px] py-[1px] text-[10px] font-semibold"
                         style={{color: "#2f68f5", backgroundColor: "#e9f0ff"}}
                     >
-                        я
+                        {/* я */}
+                        {t("stageCard.meBadge")}
                     </span>
                 )}
             </Link>
 
-            <span className={`inline-flex w-fit items-center rounded-full px-[9px] py-0.5 text-[11px] font-semibold ${badgeClass}`}>
+            <span
+                className={`inline-flex w-fit items-center rounded-full px-[9px] py-0.5 text-[11px] font-semibold ${badgeClass}`}>
                 {badgeLabel}
             </span>
 
             {isAutoTimeout && latestDecidedAt && (
                 <div className="text-[11px] text-[#8b97ab]">
-                    Автоматически {formatDateTime(latestDecidedAt)} — согласующий не отреагировал в срок
+                    {/* Автоматически {formatDateTime(latestDecidedAt)} — согласующий не отреагировал в срок */}
+                    {t("stageCard.autoTimeoutNote", {date: formatDateTime(latestDecidedAt)})}
                 </div>
             )}
 
@@ -371,23 +389,27 @@ export function StageCardView({
                             : entry.comment;
                         // "Комментарий" — при согласовании, "Замечания" — во всех остальных
                         // решениях (отклонено/возвращено/на доработку и т.п.)
-                        const sectionTitle = entryMeta.label === "Согласовано"
-                            ? "См. комментарий полностью"
-                            : "См. замечания полностью";
+                        const sectionTitle = entry.decision === "approved"
+                            ? t("stageCard.viewFullComment")
+                            : t("stageCard.viewFullRemarks");
 
                         return (
-                            <div key={i} className="flex flex-col gap-1 border-t border-[#eef1f6] pt-2 first:border-t-0 first:pt-0">
+                            <div key={i}
+                                 className="flex flex-col gap-1 border-t border-[#eef1f6] pt-2 first:border-t-0 first:pt-0">
                                 {phaseComments.length > 1 && (
                                     <div className="flex flex-wrap items-center justify-between gap-1">
-                                        <span className="text-[10px] font-semibold uppercase tracking-[0.03em] text-[#a3adbd]">
+                                        <span
+                                            className="text-[10px] font-semibold uppercase tracking-[0.03em] text-[#a3adbd]">
                                             {entry.phaseLabel}
                                         </span>
-                                        <span className={`inline-flex w-fit flex-none items-center rounded-full px-[7px] py-0.5 text-[10px] font-semibold ${entryMeta.badgeClass}`}>
+                                        <span
+                                            className={`inline-flex w-fit flex-none items-center rounded-full px-[7px] py-0.5 text-[10px] font-semibold ${entryMeta.badgeClass}`}>
                                             {entryMeta.label}
                                         </span>
                                     </div>
                                 )}
-                                <div className="text-[11.5px] leading-snug text-[#6b7488] whitespace-pre-wrap break-words">
+                                <div
+                                    className="text-[11.5px] leading-snug text-[#6b7488] whitespace-pre-wrap break-words">
                                     <FormattedResolutionComment
                                         text={displayedComment}
                                         quotes={entry.quotes}
@@ -397,7 +419,8 @@ export function StageCardView({
                                 {entry.attachments.length > 0 && (
                                     <div className="rounded-[10px] border border-[#e9edf3] bg-[#fbfcfe] p-2.5">
                                         <div className="mb-1.5 text-[10.5px] font-semibold text-[#8b97ab]">
-                                            Прикреплённые файлы:
+                                            {/* Прикреплённые файлы: */}
+                                            {t("stageCard.attachedFiles")}
                                         </div>
                                         <div className="flex flex-col gap-1.5">
                                             {entry.attachments.map((a) => (
@@ -405,7 +428,10 @@ export function StageCardView({
                                                     key={a.id}
                                                     fileId={a.fileId}
                                                     fileName={a.fileName}
-                                                    onView={() => setPreviewAttachment({fileId: a.fileId, fileName: a.fileName})}
+                                                    onView={() => setPreviewAttachment({
+                                                        fileId: a.fileId,
+                                                        fileName: a.fileName
+                                                    })}
                                                 />
                                             ))}
                                         </div>
@@ -439,9 +465,9 @@ export function StageCardView({
             {openCommentEntry && (
                 <CommentViewModal
                     title={
-                        STAGE_DECISION_META[openCommentEntry.decision].label === "Согласовано"
-                            ? "См. комментарий полностью"
-                            : "См. замечания полностью"
+                        openCommentEntry.decision === "approved"
+                            ? t("stageCard.viewFullComment")
+                            : t("stageCard.viewFullRemarks")
                     }
                     approverName={stage.approverName}
                     approverUserId={stage.approverUserId}

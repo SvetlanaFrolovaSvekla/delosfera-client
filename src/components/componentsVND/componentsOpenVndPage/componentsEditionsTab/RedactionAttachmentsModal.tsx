@@ -153,14 +153,16 @@ export function RedactionAttachmentsModal({
                                         </button>
 
                                         {onView && (
-                                            <button
-                                                type="button"
-                                                onClick={() => onView(item.target)}
-                                                className="cursor-pointer flex-none rounded-[7px] border border-[#d7dee8] bg-white px-2.5 py-[6px] text-[11.5px] font-semibold text-[#4e57d6] hover:bg-[#ececfc]"
-                                            >
-                                                {/* Просмотр */}
-                                                {t("redactionAttachmentsModal.view")}
-                                            </button>
+                                            /* Просмотреть документ */
+                                            <Tooltip content={t("redactionAttachmentsModal.viewDocumentTooltip")} side="top">
+                                                <button
+                                                    type="button"
+                                                    onClick={() => onView(item.target)}
+                                                    className="cursor-pointer flex-none rounded-[7px] border border-[#d7dee8] bg-white p-[6px] text-[#4e57d6] hover:bg-[#ececfc]"
+                                                >
+                                                    <Eye size={14}/>
+                                                </button>
+                                            </Tooltip>
                                         )}
                                     </div>
                                 ))}

@@ -133,9 +133,18 @@ export interface AddApprovalStageRequest {
 }
 
 /** Главный редактор убирает согласующего из уже запущенного процесса согласования — см.
- * coordinationService.removeApprover. */
+ * coordinationService.removeApprover. Только для custom-этапов — обязательные (не custom)
+ * этапы этим способом не убираются, см. ReplaceApprovalStageRequest ниже. */
 export interface RemoveApprovalStageRequest {
     /** Необязательная причина — попадает в журнал активности рядом с самим фактом удаления. */
+    reason?: string;
+}
+
+/** Главный редактор заменяет согласующего на обязательном этапе маршрута, не убирая сам этап —
+ * см. coordinationService.replaceApprover. */
+export interface ReplaceApprovalStageRequest {
+    newApproverUserId: number;
+    /** Необязательная причина — попадает в журнал активности. */
     reason?: string;
 }
 

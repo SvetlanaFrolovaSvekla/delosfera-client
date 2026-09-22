@@ -28,10 +28,14 @@ interface VndApprovalRouteViewProps {
     onShowQuoteInText?: (quote: FormattedCommentQuoteRef) => void;
     /** true, если у текущего пользователя есть право редактировать маршрут этого процесса
      * (главный редактор, см. PermissionCode.EditAnyVndApprovalRoute) — включает кнопки
-     * "Убрать" на карточках этапов и "+ Добавить согласующего" в конце маршрута. */
+     * "Убрать"/"Заменить" на карточках этапов и "+ Добавить согласующего" в конце маршрута. */
     canEditRoute?: boolean;
-    /** Убрать согласующего из маршрута — см. StageCardView.onRemoveApprover. */
+    /** Убрать согласующего из маршрута — только для custom-этапов, см.
+     * StageCardView.onRemoveApprover. */
     onRemoveApprover?: (stageId: number) => void;
+    /** Заменить согласующего на обязательном (не custom) этапе, не убирая сам этап — см.
+     * StageCardView.onReplaceApprover. */
+    onReplaceApprover?: (stageId: number) => void;
     /** Добавить нового согласующего в маршрут — открывает модалку выбора пользователя
      * (см. VndCoordinationTab). Без этого пропа кнопка "+ Добавить" не рисуется. */
     onAddApprover?: () => void;
@@ -89,7 +93,7 @@ function CurrentPhaseHint({startedAt, deadlineAt}: CurrentPhaseHintProps) {
 
 export function VndApprovalRouteView({
     process, highlightStageId, frameless, onShowQuoteInText,
-    canEditRoute, onRemoveApprover, onAddApprover,
+    canEditRoute, onRemoveApprover, onReplaceApprover, onAddApprover,
 }: VndApprovalRouteViewProps) {
     const [initiatorCommentOpen, setInitiatorCommentOpen] = useState(false);
 
@@ -223,6 +227,7 @@ export function VndApprovalRouteView({
                         phaseRounds={process.phaseRounds}
                         canEditRoute={canEditRouteNow}
                         onRemoveApprover={onRemoveApprover}
+                        onReplaceApprover={onReplaceApprover}
                     />
                 ))}
 

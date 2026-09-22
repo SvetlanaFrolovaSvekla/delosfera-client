@@ -6,6 +6,7 @@ import type {
     UpdateDisagreementMatrixRowRequest,
     AddApprovalStageRequest,
     RemoveApprovalStageRequest,
+    ReplaceApprovalStageRequest,
     ApprovalProcessResponse,
     DisagreementMatrixRowResponse,
 } from "./coordinationServiceTypes";
@@ -160,7 +161,8 @@ class CoordinationService {
     }
 
     /** Главный редактор убирает согласующего из уже запущенного процесса согласования —
-     * этап помечается недействующим (isRemovedByEditor), задача с него снимается */
+     * этап помечается недействующим (isRemovedByEditor), задача с него снимается. Только для
+     * custom-этапов — обязательные этапы сервер этим способом убрать не даст, см. replaceApprover. */
     async removeApprover(
         vndId: number,
         stageId: number,
@@ -168,6 +170,20 @@ class CoordinationService {
     ): Promise<ApprovalProcessResponse> {
         const { data } = await axiosInstance.post<ApprovalProcessResponse>(
             `${this.basePath(vndId)}/stages/${stageId}/remove`,
+            request,
+        );
+        return data;
+    }
+
+    /** Главный редактор заменяет согласующего на обязательном этапе маршрута — сам этап
+     * остаётся на своём месте, меняется только исполнитель */
+    async replaceApprover(
+        vndId: number,
+        stageId: number,
+        request: ReplaceApprovalStageRequest,
+    ): Promise<ApprovalProcessResponse> {
+        const { data } = await axiosInstance.post<ApprovalProcessResponse>(
+            `${this.basePath(vndId)}/stages/${stageId}/replace`,
             request,
         );
         return data;

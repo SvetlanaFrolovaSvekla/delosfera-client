@@ -238,6 +238,8 @@ export function VndCoordinationTab({vnd, onVndChanged}: VndCoordinationTabProps)
 
     const handleRequestRemoveApprover = (stageId: number) =>
         routeEditing.handleRequestRemoveApprover(stageId, process.stages);
+    const handleRequestReplaceApprover = (stageId: number) =>
+        routeEditing.handleRequestReplaceApprover(stageId, process.stages);
 
     const handleResolutionSubmit = (
         choice: ResolutionChoice, comment: string, files: File[], quotes: ApprovalQuoteItem[],
@@ -261,6 +263,9 @@ export function VndCoordinationTab({vnd, onVndChanged}: VndCoordinationTabProps)
             onRemovingStageClose={routeEditing.closeRemoveApproverModal}
             onConfirmRemoveApprover={routeEditing.handleConfirmRemoveApprover}
             removingApprover={routeEditing.removingApprover}
+            replacingStage={routeEditing.replacingStage}
+            onReplacingStageClose={routeEditing.closeReplaceApproverModal}
+            onSelectReplaceApprover={routeEditing.handleReplaceApprover}
         />
     );
 
@@ -331,6 +336,7 @@ export function VndCoordinationTab({vnd, onVndChanged}: VndCoordinationTabProps)
                     canEditRoute={canEditApprovalRoute}
                     onAddApprover={routeEditing.openAddApproverModal}
                     onRemoveApprover={handleRequestRemoveApprover}
+                    onReplaceApprover={handleRequestReplaceApprover}
                 />
 
                 {isPendingForMe && (
@@ -439,6 +445,7 @@ export function VndCoordinationTab({vnd, onVndChanged}: VndCoordinationTabProps)
                 canEditRoute={canEditApprovalRoute}
                 onAddApprover={routeEditing.openAddApproverModal}
                 onRemoveApprover={handleRequestRemoveApprover}
+                onReplaceApprover={handleRequestReplaceApprover}
             />
 
             {/* Панель с замечаниями (если они есть) на этапе исправления замечаний для инициатора */}

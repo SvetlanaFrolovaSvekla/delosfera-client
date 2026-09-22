@@ -1,7 +1,7 @@
 // Read-only карточка этапа уже построенного маршрута согласования
 import {useLayoutEffect, useRef, useState} from "react";
 import {Link} from "react-router-dom";
-import {X} from "lucide-react";
+import {RefreshCw, X} from "lucide-react";
 import {useAuth} from "@/context/AuthContext.ts";
 import type {
     ApprovalPhaseRoundResponse,
@@ -175,13 +175,20 @@ interface StageCardViewProps {
      * на карточке. Без onRemoveApprover кнопка не рисуется, даже если этот флаг true. */
     canEditRoute?: boolean;
     /** Убрать этого согласующего из маршрута (см. VndCoordinationTab) — вызывается по кнопке
-     * "Убрать", саму карточку это не меняет, решение и подтверждение — на стороне вызывающего. */
+     * "Убрать", саму карточку это не меняет, решение и подтверждение — на стороне вызывающего.
+     * Кнопка "Убрать" рисуется только для custom-этапов (см. canRemove ниже) — для обязательных
+     * этапов вместо неё используется onReplaceApprover. */
     onRemoveApprover?: (stageId: number) => void;
+    /** Заменить согласующего на этом (обязательном) этапе, не убирая сам этап (см.
+     * VndCoordinationTab) — вызывается по кнопке "Заменить", открывает выбор нового согласующего
+     * на стороне вызывающего. Кнопка рисуется только для НЕ custom-этапов (см. canReplace ниже) —
+     * для custom-этапов используется onRemoveApprover. */
+    onReplaceApprover?: (stageId: number) => void;
 }
 
 export function StageCardView({
     stage, cardRef, isCurrentUserStage, isProcessEnded, onShowQuoteInText, phaseRounds,
-    canEditRoute, onRemoveApprover,
+    canEditRoute, onRemoveApprover, onReplaceApprover,
 }: StageCardViewProps) {
     const {user} = useAuth();
 
@@ -255,10 +262,15 @@ export function StageCardView({
                 : "border border-[#c9b6f5] bg-gradient-to-b from-[#faf8ff] to-white shadow-[0_2px_5px_-2px_rgba(122,92,224,0.28)]";
 
     // Кнопка "Убрать" видна только действующему главному редактору, только для действующего
-    // (ещё не убранного) этапа и только пока процесс согласования не завершён - убрать
+    // (ещё не убранного) этапа, только пока процесс согласования не завершён - убрать
     // согласующего из уже прекращённого/согласованного маршрута смысла нет (см. те же проверки
-    // на бэке в VndApprovalService.RemoveApproverAsync).
-    const canRemove = canEditRoute && !!onRemoveApprover && !stage.isRemovedByEditor && !isProcessEnded;
+    // на бэке в VndApprovalService.RemoveApproverAsync) - и только для custom-этапов: обязательные
+    // этапы убрать целиком нельзя, для них вместо этого есть "Заменить" (canReplace ниже).
+    const canRemove = canEditRoute && !!onRemoveApprover && isCustom && !stage.isRemovedByEditor && !isProcessEnded;
+    // "Заменить" - тот же набор условий, что и у "Убрать" выше, но для обязательных
+    // (не custom) этапов: сам этап остаётся в маршруте, меняется только исполнитель (см.
+    // VndApprovalService.ReplaceApproverAsync).
+    const canReplace = canEditRoute && !!onReplaceApprover && !isCustom && !stage.isRemovedByEditor && !isProcessEnded;
 
     return (
         <div
@@ -277,6 +289,22 @@ export function StageCardView({
                         className="flex h-6 w-6 cursor-pointer items-center justify-center rounded-full text-[#a3adbd] hover:bg-[#fdecec] hover:text-[#c0392b]"
                     >
                         <X size={14}/>
+                    </button>
+                </Tooltip>
+            )}
+
+            {canReplace && (
+                <Tooltip
+                    content="Заменить согласующего на этом этапе"
+                    side="top"
+                    className="!absolute right-2 top-2"
+                >
+                    <button
+                        type="button"
+                        onClick={() => onReplaceApprover!(stage.id)}
+                        className="flex h-6 w-6 cursor-pointer items-center justify-center rounded-full text-[#a3adbd] hover:bg-[#eef0fd] hover:text-[#4e57d6]"
+                    >
+                        <RefreshCw size={13}/>
                     </button>
                 </Tooltip>
             )}

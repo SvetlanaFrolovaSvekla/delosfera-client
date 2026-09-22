@@ -15,6 +15,11 @@ export function useApprovalRouteEditing(vndId: number, reload: () => Promise<voi
     const [removingStage, setRemovingStage] = useState<ApprovalStageResponse | null>(null);
     const [removingApprover, setRemovingApprover] = useState(false);
 
+    // Обязательный (не custom) этап, для которого сейчас открыта модалка выбора нового
+    // согласующего (замена вместо удаления - см. StageCardView.onReplaceApprover) - null, если
+    // модалка закрыта.
+    const [replacingStage, setReplacingStage] = useState<ApprovalStageResponse | null>(null);
+
     // Модалка выбора (VndSelectApproverModal) закрывается сама сразу после выбора - не ждёт
     // ответа сервера, поэтому здесь нет отдельного состояния загрузки.
     const handleAddApprover = async (approver: ApproverOption) => {
@@ -53,6 +58,27 @@ export function useApprovalRouteEditing(vndId: number, reload: () => Promise<voi
         }
     };
 
+    // Клик по кнопке "Заменить" на карточке обязательного этапа - открывает модалку выбора
+    // нового согласующего (тот же приём, что и handleRequestRemoveApprover выше).
+    const handleRequestReplaceApprover = (stageId: number, stages: ApprovalStageResponse[]) => {
+        const stage = stages.find((s) => s.id === stageId);
+        if (stage) setReplacingStage(stage);
+    };
+
+    // Модалка выбора закрывается сама сразу после выбора - см. комментарий у handleAddApprover.
+    const handleReplaceApprover = async (approver: ApproverOption) => {
+        if (!replacingStage) return;
+        try {
+            await coordinationService.replaceApprover(vndId, replacingStage.id, {newApproverUserId: approver.id});
+            await reload();
+            toast.success("Согласующий заменён", `${approver.fullName} назначен(а) на этап «${replacingStage.title}»`);
+        } catch (err) {
+            toast.error("Не удалось заменить согласующего", err instanceof Error ? err.message : undefined);
+        } finally {
+            setReplacingStage(null);
+        }
+    };
+
     return {
         addApproverModalOpen,
         openAddApproverModal: () => setAddApproverModalOpen(true),
@@ -63,6 +89,10 @@ export function useApprovalRouteEditing(vndId: number, reload: () => Promise<voi
         handleRequestRemoveApprover,
         handleConfirmRemoveApprover,
         closeRemoveApproverModal: () => setRemovingStage(null),
+        replacingStage,
+        handleRequestReplaceApprover,
+        handleReplaceApprover,
+        closeReplaceApproverModal: () => setReplacingStage(null),
     };
 }
 

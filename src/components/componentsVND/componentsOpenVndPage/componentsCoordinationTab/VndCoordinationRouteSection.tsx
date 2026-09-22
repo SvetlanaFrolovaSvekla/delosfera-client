@@ -21,10 +21,12 @@ interface VndCoordinationRouteSectionProps {
     canEditRoute: boolean;
     onAddApprover: () => void;
     onRemoveApprover: (stageId: number) => void;
+    onReplaceApprover: (stageId: number) => void;
 }
 
 export function VndCoordinationRouteSection({
     process, routeHeaderConfig, highlightStageId, onShowQuoteInText, canEditRoute, onAddApprover, onRemoveApprover,
+    onReplaceApprover,
 }: VndCoordinationRouteSectionProps) {
     const {t} = useTranslation();
 
@@ -58,6 +60,7 @@ export function VndCoordinationRouteSection({
                     canEditRoute={canEditRoute}
                     onAddApprover={onAddApprover}
                     onRemoveApprover={onRemoveApprover}
+                    onReplaceApprover={onReplaceApprover}
                 />
             </div>
         </>

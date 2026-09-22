@@ -24,12 +24,19 @@ interface VndCoordinationSharedModalsProps {
     onRemovingStageClose: () => void;
     onConfirmRemoveApprover: () => void;
     removingApprover: boolean;
+
+    // Замена согласующего на обязательном этапе (см. VndCoordinationTab.handleRequestReplaceApprover) -
+    // открывает ту же модалку выбора, что и добавление, просто с другим обработчиком выбора.
+    replacingStage: ApprovalStageResponse | null;
+    onReplacingStageClose: () => void;
+    onSelectReplaceApprover: (approver: ApproverOption) => void;
 }
 
 export function VndCoordinationSharedModals({
     cancelModalOpen, onCancelModalClose, onConfirmCancel, cancelling,
     addApproverModalOpen, activeApproverUserIds, onAddApproverModalClose, onSelectApprover,
     removingStage, onRemovingStageClose, onConfirmRemoveApprover, removingApprover,
+    replacingStage, onReplacingStageClose, onSelectReplaceApprover,
 }: VndCoordinationSharedModalsProps) {
     const {t} = useTranslation();
 
@@ -67,6 +74,17 @@ export function VndCoordinationSharedModals({
                 variant="danger"
                 icon={AlertTriangle}
             />
+
+            {/* Замена согласующего на обязательном этапе - тот же выбор пользователя, что и
+                добавление, но с исключённым текущим составом активных согласующих (в т.ч. того,
+                кого меняем - выбирать его же самого смысла нет). */}
+            {replacingStage && (
+                <VndSelectApproverModal
+                    excludedUserIds={activeApproverUserIds}
+                    onClose={onReplacingStageClose}
+                    onSelect={onSelectReplaceApprover}
+                />
+            )}
         </>
     );
 }

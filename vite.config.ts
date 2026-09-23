@@ -74,6 +74,17 @@ export default defineConfig({
   build: {
     rollupOptions: {
       output: {
+        // Воркер pdf.js (pdfjs-dist/.../pdf.worker.min.mjs, см. usePdfPreview.ts) по умолчанию
+        // попадает в сборку с расширением .mjs. nginx:alpine (см. Dockerfile/nginx.conf) не знает
+        // такого расширения и отдаёт его как application/octet-stream - браузер отказывается
+        // запускать модуль с таким типом ("Failed to fetch dynamically imported module ...
+        // pdf.worker.min-XXXX.mjs"), а vite preview/dev отдают .mjs правильно, поэтому локально
+        // всё работало. Содержимое файла от расширения не зависит - кладём такие файлы как .js,
+        // который любой веб-сервер/прокси отдаёт как JavaScript.
+        assetFileNames(assetInfo) {
+          const name = assetInfo.names?.[0] ?? ''
+          return name.endsWith('.mjs') ? 'assets/[name]-[hash].js' : 'assets/[name]-[hash][extname]'
+        },
         // Крупные вендоры — в отдельные, стабильно кешируемые чанки,
         // чтобы entry-бандл не тянул всё сразу и не рос при каждом изменении кода.
         manualChunks(id) {

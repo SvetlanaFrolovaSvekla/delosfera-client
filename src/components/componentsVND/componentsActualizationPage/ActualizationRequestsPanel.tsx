@@ -153,7 +153,6 @@ export function ActualizationRequestsPanel() {
             {approveTarget && (
                 <ApproveActualizationRequestModal
                     requestedByName={approveTarget.requestedByName}
-                    requestedShiftNextPeriod={approveTarget.shiftNextPeriod}
                     submitting={decidingId === approveTarget.id}
                     error={approveError}
                     onClose={() => { if (decidingId) return; setApproveTarget(null); setApproveError(null); }}

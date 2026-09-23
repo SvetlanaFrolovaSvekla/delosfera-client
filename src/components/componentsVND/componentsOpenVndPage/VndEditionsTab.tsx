@@ -14,6 +14,9 @@ import {useAvailableHeight} from "@/hooks/vndHooks/useAvailableHeight.ts";
 import {useVndActualizationFlow} from "@/hooks/vndHooks/useVndActualizationFlow.ts";
 import {actualizationService} from "@/service/actualizationService/actualizationService.ts";
 import {coordinationService} from "@/service/coordinationService/coordinationService.ts";
+import {
+    expandRedactionsWithRevisions, findPreviousRevisionOption,
+} from "@/utils/vndProcess/redactionRevisions.ts";
 import type {ApprovalProcessResponse} from "@/service/coordinationService/coordinationServiceTypes.ts";
 
 import {downloadWithToast} from "@/utils/downloadFiles/downloadFile.ts";
@@ -240,6 +243,46 @@ export function VndEditionsTab({vnd, onVndChanged, onGoToApproval}: VndEditionsT
             cancelled = true;
         };
     }, [vnd.id]);
+
+    // История всех процессов согласования ВНД - нужна только для окна "Сравнение редакций":
+    // промежуточные версии редакций ("Р2", "Р2.1", "Р2.2"...), появившиеся при согласовании с
+    // замечаниями, лежат снимками внутри процессов (см. expandRedactionsWithRevisions). Рядовому
+    // пользователю промежуточные версии не показываем (как и черновики) - не грузим вовсе.
+    const [approvalHistory, setApprovalHistory] = useState<ApprovalProcessResponse[]>([]);
+    const redactionsCount = redactions?.length ?? 0;
+    useEffect(() => {
+        if (!isVndEditor) {
+            // eslint-disable-next-line react-hooks/set-state-in-effect
+            setApprovalHistory([]);
+            return;
+        }
+        let cancelled = false;
+        coordinationService.getHistory(vnd.id)
+            .then((data) => {
+                if (!cancelled) setApprovalHistory(data);
+            })
+            .catch(() => {
+                if (!cancelled) setApprovalHistory([]);
+            });
+        return () => {
+            cancelled = true;
+        };
+    }, [vnd.id, isVndEditor, redactionsCount]);
+
+    // Список для окна сравнения - редакции + их промежуточные версии.
+    const compareRedactions = useMemo(
+        () => isVndEditor ? expandRedactionsWithRevisions(sortedDesc, approvalHistory) : visibleRedactions,
+        [isVndEditor, sortedDesc, approvalHistory, visibleRedactions],
+    );
+    // Левая сторона сравнения - выбранная редакция (в списке сравнения она может быть
+    // переподписана как живая версия "Р2.2"), правая по умолчанию - её предыдущая промежуточная
+    // версия, если такие были (что исправили в ответ на замечания), иначе - соседняя редакция.
+    const compareLeft = selected
+        ? compareRedactions.find((r) => r.id === selected.id) ?? selected
+        : undefined;
+    const compareRight = selected
+        ? findPreviousRevisionOption(compareRedactions, selected.id) ?? compareTarget
+        : undefined;
 
     // Модалка "Подробнее" по ссылке из подсказки об отклонённой редакции (см.
     // RedactionsSidebar/RedactionListItem.wasRejected) - показывает approvalProcess как есть,
@@ -643,9 +686,12 @@ export function VndEditionsTab({vnd, onVndChanged, onGoToApproval}: VndEditionsT
             primaryAction = () => {
             };
         } else if (!canDirectly && !canByRequest) {
+            // Нет никаких прав на актуализацию (рядовой пользователь) - кнопку "Взять в
+            // актуализацию" и подсказку "У вас нет прав..." не показываем вовсе (см.
+            // primaryHidden ниже), а не держим неактивной.
             primaryVariant = "actualize";
             primaryDisabled = true;
-            primaryHint = t("openVndPage.redactionsSidebar.noPermissionHint");
+            primaryHint = undefined;
             primaryAction = () => {
             };
         } else {
@@ -666,6 +712,11 @@ export function VndEditionsTab({vnd, onVndChanged, onGoToApproval}: VndEditionsT
         primaryAction = () => {
         };
     }
+
+    // Неактивная кнопка "Взять в актуализацию" без каких-либо прав на актуализацию (ни прямых, ни
+    // по заявке) ничего не даёт пользователю - прячем её целиком (вместе с подсказкой). Подсказки
+    // про архив/консолидацию для таких пользователей тоже не нужны - они про действия редактора.
+    const primaryHidden = primaryVariant === "actualize" && primaryDisabled && !canDirectly && !canByRequest;
 
     return (
         <div
@@ -704,6 +755,7 @@ export function VndEditionsTab({vnd, onVndChanged, onGoToApproval}: VndEditionsT
                             : undefined
                     }
                     onSelect={setSelectedId}
+                    primaryActionHidden={primaryHidden}
                     primaryActionVariant={primaryVariant}
                     primaryActionDisabled={primaryDisabled}
                     primaryActionHint={primaryHint}
@@ -713,10 +765,11 @@ export function VndEditionsTab({vnd, onVndChanged, onGoToApproval}: VndEditionsT
                     onSecondaryAction={primarySecondaryAction}
                     secondaryActionTooltip={primarySecondaryTooltip}
                     compareMode={compareMode}
+                    compareAvailable={compareRedactions.length >= 2}
                     onToggleCompare={() => {
                         // Модалка сравнения требует обе стороны - если у выбранной редакции нет
-                        // соседней (единственная редакция ВНД), сравнивать пока не с чем.
-                        if (compareTarget) setCompareMode(true);
+                        // ни соседней редакции, ни промежуточных версий, сравнивать не с чем.
+                        if (compareRight) setCompareMode(true);
                     }}
                     contentsOpen={contentsOpen}
                     onToggleContents={() => setContentsOpen((v) => !v)}
@@ -1059,12 +1112,12 @@ export function VndEditionsTab({vnd, onVndChanged, onGoToApproval}: VndEditionsT
                 соседняя по номеру; обе стороны можно переключить на любую другую редакцию
                 прямо в модалке. Вне контекста согласования - без пометки "необходимо
                 согласовать". */}
-            {compareMode && compareTarget && (
+            {compareMode && compareLeft && compareRight && (
                 <RedactionCompareModal
                     vnd={vnd}
-                    redactions={sortedDesc}
-                    initialLeft={selected}
-                    initialRight={compareTarget}
+                    redactions={compareRedactions}
+                    initialLeft={compareLeft}
+                    initialRight={compareRight}
                     downloadingId={download.activeId}
                     onDownload={handleDownload}
                     onClose={() => setCompareMode(false)}

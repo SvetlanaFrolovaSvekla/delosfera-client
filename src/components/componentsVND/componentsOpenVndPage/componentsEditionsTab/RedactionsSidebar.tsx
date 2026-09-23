@@ -82,6 +82,9 @@ interface RedactionsSidebarProps {
      * об отклонении (см. rejectedRedactionId выше), если передан этот колбэк. */
     onShowRejectedDetails?: () => void;
     onSelect: (id: number) => void;
+    /** Спрятать основную кнопку (и её подсказку) целиком - например, "Взять в актуализацию"
+     * у пользователя без каких-либо прав на актуализацию (см. VndEditionsTab.primaryHidden). */
+    primaryActionHidden?: boolean;
     primaryActionVariant: RedactionsPrimaryActionVariant;
     primaryActionDisabled: boolean;
     primaryActionHint?: string;
@@ -94,6 +97,10 @@ interface RedactionsSidebarProps {
     onSecondaryAction?: () => void;
     secondaryActionTooltip?: string;
     compareMode: boolean;
+    /** Есть ли с чем сравнивать - хотя бы две редакции ИЛИ промежуточные версии редакции
+     * ("Р1", "Р1.1"... после согласования с замечаниями). Если не передано - как раньше, по
+     * количеству редакций. */
+    compareAvailable?: boolean;
     onToggleCompare: () => void;
     contentsOpen: boolean;
     onToggleContents: () => void;
@@ -127,6 +134,7 @@ export function RedactionsSidebar({
                                       rejectedRedactionId,
                                       onShowRejectedDetails,
                                       onSelect,
+                                      primaryActionHidden = false,
                                       primaryActionVariant,
                                       primaryActionDisabled,
                                       primaryActionHint,
@@ -136,6 +144,7 @@ export function RedactionsSidebar({
                                       onSecondaryAction,
                                       secondaryActionTooltip,
                                       compareMode,
+                                      compareAvailable,
                                       onToggleCompare,
                                       contentsOpen,
                                       onToggleContents,
@@ -152,7 +161,7 @@ export function RedactionsSidebar({
     const firstRedactionId = redactions[redactions.length - 1]?.id;
     const primaryMeta = PRIMARY_ACTION_META[primaryActionVariant];
     const PrimaryIcon = primaryMeta.icon;
-    const compareDisabled = redactions.length < 2;
+    const compareDisabled = compareAvailable !== undefined ? !compareAvailable : redactions.length < 2;
 
     return (
         <div className="flex max-h-[500px] flex-col rounded-[14px] border border-[#e9edf3] bg-white p-[14px]">
@@ -210,6 +219,7 @@ export function RedactionsSidebar({
                 </div>
             </div>
 
+            {!primaryActionHidden && (
             <div className="mt-[11px] flex flex-none flex-col gap-1">
                 <button
                     onClick={onPrimaryAction}
@@ -243,6 +253,7 @@ export function RedactionsSidebar({
                     </div>
                 )}
             </div>
+            )}
 
             <button
                 onClick={onDownloadSelected}

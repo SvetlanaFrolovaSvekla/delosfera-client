@@ -27,6 +27,10 @@ interface VndUploadTidModalProps {
     previousFileId: number | null;
     /** RU-файл черновика редакции, к которому прикладывается ТИД. */
     draftFileId: number | null;
+    /** Локальный (ещё не отправленный) RU-файл новой редакции - если задан, автосравнение идёт
+     * с ним вместо draftFileId. Используется на доработке после замечаний (VndRevisionNeededPanel),
+     * когда инициатор уже выбрал исправленный документ на замену, но ещё не отправил его. */
+    draftFile?: File | null;
     /** Тот, кто сейчас формирует ТИД (обычно - текущий пользователь, будущий инициатор
      * согласования) - предзаполняет строку "Разработчик:" под таблицей. См. canSelectResponsible
      * ниже: не-главный редактор это значение изменить не может, поэтому оно и должно быть именно
@@ -40,17 +44,27 @@ interface VndUploadTidModalProps {
      * формулировку вводного текста модалки (см. ниже). */
     canUploadWithoutApproval: boolean;
     onClose: () => void;
-    onUploaded: (redaction: VndRedactionResponse) => void;
+    /** Обычный режим - ТИД сразу загружается на сервер к последней редакции
+     * (vndService.uploadTidForLastRedaction). Не нужен в режиме прикрепления (onAttach). */
+    onUploaded?: (redaction: VndRedactionResponse) => void;
+    /** Режим "прикрепить к отправке" (доработка после замечаний, см. VndRevisionNeededPanel):
+     * файл ТИД на сервер НЕ загружается - модалка просто отдаёт выбранный файл вызывающей
+     * стороне, а та отправит его вместе с исправленной редакцией (coordinationService.resubmit). */
+    onAttach?: (file: File) => void;
+    /** Уже прикреплённый ранее файл ТИД (режим onAttach) - чтобы при повторном открытии модалки
+     * было видно, что выбрано, и можно было заменить. */
+    initialFile?: File | null;
 }
 
 export function VndUploadTidModal({
-                                      vndId, redactionCode, vndTitle, previousFileId, draftFileId,
+                                      vndId, redactionCode, vndTitle, previousFileId, draftFileId, draftFile,
                                       defaultResponsibleUserId, defaultResponsibleUserName, canSelectResponsible,
                                       canUploadWithoutApproval,
-                                      onClose, onUploaded,
+                                      onClose, onUploaded, onAttach, initialFile,
                                   }: VndUploadTidModalProps) {
     const {t} = useTranslation();
-    const [tid, setTid] = useState<File | null>(null);
+    const isAttachMode = !!onAttach;
+    const [tid, setTid] = useState<File | null>(initialFile ?? null);
     const [submitting, setSubmitting] = useState(false);
     const [error, setError] = useState<string | null>(null);
     // Пока таблица изменений не сформирована по кнопке "Сформировать ТИД" (см. TidChangesTable),
@@ -79,7 +93,7 @@ export function VndUploadTidModal({
     // только про отправку на согласование.
     const canPublishWithoutApproval = canUploadWithoutApproval && canSelectResponsible;
 
-    const {rows, status} = useTidDiffRows(previousFileId, draftFileId);
+    const {rows, status} = useTidDiffRows(previousFileId, draftFile ?? draftFileId);
 
     const handlePick = (picked: File | null) => {
         if (picked && picked.size > MAX_FILE_SIZE) {
@@ -98,11 +112,15 @@ export function VndUploadTidModal({
 
     const handleSubmit = async () => {
         if (!tid) return;
+        if (onAttach) {
+            onAttach(tid);
+            return;
+        }
         setSubmitting(true);
         setError(null);
         try {
             const result = await vndService.uploadTidForLastRedaction(vndId, tid);
-            onUploaded(result);
+            onUploaded?.(result);
         } catch (e) {
             // Не удалось загрузить ТИД
             setError(e instanceof Error ? e.message : t("vndUploadTidModal.uploadError"));
@@ -118,8 +136,10 @@ export function VndUploadTidModal({
 
                 <div className="flex flex-none items-center justify-between border-b border-[#eef2f7] px-6 py-4">
                     <h2 className="text-[16px] font-bold text-[#1c2740]">
-                        {/* Загрузка ТИД — {redactionCode} */}
-                        {t("vndUploadTidModal.title", {redactionCode})}
+                        {/* Загрузка ТИД — {redactionCode} / ТИД к исправленной редакции — {redactionCode} */}
+                        {isAttachMode
+                            ? t("vndUploadTidModal.revisionTitle", {redactionCode})
+                            : t("vndUploadTidModal.title", {redactionCode})}
                     </h2>
                     <button onClick={onClose} className="cursor-pointer text-[#8b97ab] hover:text-[#3a4560]">
                         <X size={20}/>
@@ -127,6 +147,11 @@ export function VndUploadTidModal({
                 </div>
 
                 <div className="min-h-0 flex-1 overflow-y-auto px-6 py-4">
+                    {isAttachMode ? (
+                    <Clue className="mb-4">
+                        {t("vndUploadTidModal.introRevisionRound")}
+                    </Clue>
+                    ) : (
                     <Clue className="mb-4">
                         {/* ТИД (Таблица изменений и дополнений) — документ, необходимый для отправки этой
                         редакции на согласование{canPublishWithoutApproval ? " или публикации без согласования" : ""}. */}
@@ -144,6 +169,7 @@ export function VndUploadTidModal({
                         по шаблону ТИД и загрузить его в систему. */}
                         {t("vndUploadTidModal.introDownloadCheckUpload")}
                     </Clue>
+                    )}
 
                     <div
                         className="mb-6 flex flex-col gap-3 rounded-[14px] border border-[#e5e9f0] bg-[#f9fafc] p-4 sm:flex-row sm:items-center">
@@ -236,8 +262,8 @@ export function VndUploadTidModal({
                         className="cursor-pointer flex h-[38px] items-center gap-2 rounded-[10px] bg-[#4e57d6] px-4 text-[13px] font-semibold text-white hover:bg-[#3f47bd] disabled:cursor-not-allowed disabled:opacity-50"
                     >
                         {submitting && <Loader2 size={15} className="animate-spin"/>}
-                        {/* Загрузить */}
-                        {t("vndUploadTidModal.upload")}
+                        {/* Загрузить / Прикрепить ТИД */}
+                        {isAttachMode ? t("vndUploadTidModal.attach") : t("vndUploadTidModal.upload")}
                     </button>
                 </div>
             </div>

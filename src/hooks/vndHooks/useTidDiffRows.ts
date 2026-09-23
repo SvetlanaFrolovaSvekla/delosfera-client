@@ -71,12 +71,21 @@ function buildRows(oldParagraphs: string[], newParagraphs: string[]): TidAutoRow
     return rows;
 }
 
+/** Источник docx для сравнения - id уже сохранённого на сервере файла или локальный файл
+ * (например, выбранный, но ещё не отправленный исправленный документ на доработке). */
+export type TidDiffSource = number | Blob | null;
+
+async function loadSourceBlob(source: number | Blob): Promise<Blob> {
+    return typeof source === "number" ? (await fetchFileBlob(source)).blob : source;
+}
+
 /**
  * Скачивает docx действующей и новой (черновой) редакции, извлекает тексты абзацев и строит
  * diff - изменённые/добавленные/удалённые куски помечаются hl:true (подсветка - красным в
- * старой, зелёным в новой колонке).
+ * старой, зелёным в новой колонке). Любая из сторон может быть и локальным файлом (Blob/File) -
+ * тогда он не скачивается, а читается как есть.
  */
-export function useTidDiffRows(oldFileId: number | null, newFileId: number | null): {
+export function useTidDiffRows(oldFileId: TidDiffSource, newFileId: TidDiffSource): {
     rows: TidAutoRow[];
     status: TidDiffStatus;
 } {
@@ -97,8 +106,8 @@ export function useTidDiffRows(oldFileId: number | null, newFileId: number | nul
         (async () => {
             try {
                 const [oldBlob, newBlob] = await Promise.all([
-                    fetchFileBlob(oldFileId).then((r) => r.blob),
-                    fetchFileBlob(newFileId).then((r) => r.blob),
+                    loadSourceBlob(oldFileId),
+                    loadSourceBlob(newFileId),
                 ]);
                 const [oldParagraphs, newParagraphs] = await Promise.all([
                     extractDocxParagraphs(oldBlob),

@@ -43,6 +43,8 @@ export const navGroups: NavGroup[] = [
         items: [
             { id: "vnd", icon: "vnd", labelKey: "sidebar.items.vnd", path: "/base-vnd" },
             { id: "pln", icon: "pln", labelKey: "sidebar.items.pln", badge: 3, path: "/actualization", permission: PermissionCode.ViewVndActualizationPage },
+            // Предложения сотрудников по ВНД — получает главный редактор ВНД (бейдж — непрочитанные)
+            { id: "vnd-proposals", icon: "idea", labelKey: "sidebar.items.vndProposals", path: "/vnd-proposals", permission: PermissionCode.ManageVndProposals },
           /*  // Годовой план актуализации: светофор сроков, импорт из Excel, отчёт (PLN-01..07)
             { id: "pln-plan", icon: "pln", labelKey: "План актуализации", path: "/actualization/plan", permission: PermissionCode.ViewVndActualizationPage },*/
         ],

@@ -41,6 +41,9 @@ import type {FormattedCommentQuoteRef} from "@/components/componentsCoordination
 import {
     AttachmentDocxPreviewModal
 } from "@/components/componentsGeneral/modal/AttachmentDocxPreviewModal.tsx";
+import {
+    VndUploadTidModal
+} from "@/components/componentsVND/componentsOpenVndPage/componentsEditionsTab/VndUploadTidModal.tsx";
 
 import {
     AlertCircle,
@@ -49,6 +52,7 @@ import {
     FileCheck2,
     FileText,
     MessageSquareText,
+    FileSpreadsheet,
     Paperclip,
     RefreshCcw,
     Trash2,
@@ -65,6 +69,15 @@ interface VndRevisionNeededPanelProps {
      * у ВНД уже была предыдущая редакция (см. VndRedactionResponse.number > 1 на родительской
      * странице). Для первой редакции нового ВНД ТИД не нужен. */
     requiresTid: boolean;
+    /** RU-файл действующей (актуальной) редакции ВНД - с ним автоматически сравнивается
+     * исправленная редакция в окне формирования ТИД (VndUploadTidModal в режиме onAttach).
+     * null - сравнивать не с чем (тогда таблица автосравнения просто недоступна). */
+    tidPreviousFileId: number | null;
+    /** "Разработчик" по умолчанию в сформированном ТИД и право его менять - те же правила, что и
+     * при загрузке ТИД на вкладке "Редакции" (см. VndEditionsTab.canChangeTidDeveloper). */
+    tidDefaultResponsibleUserId: number | null;
+    tidDefaultResponsibleUserName: string | null;
+    tidCanSelectResponsible: boolean;
     /** Вызывается после изменения матрицы разногласий (добавление/удаление строки),
      * чтобы перезагрузить процесс. */
     onChanged: () => Promise<void>;
@@ -526,6 +539,8 @@ function DocReplaceRow({slot, state, onToggleReplace, onToggleRemove, onFileSele
 export function VndRevisionNeededPanel({
                                             vndId, vnd, process, redaction, requiresTid, onChanged, onResubmitted,
                                             onShowQuoteInText,
+                                            tidPreviousFileId, tidDefaultResponsibleUserId,
+                                            tidDefaultResponsibleUserName, tidCanSelectResponsible,
                                         }: VndRevisionNeededPanelProps) {
     const [docState, setDocState] = useState<Record<DocLang, DocSlotState>>({
         ru: EMPTY_DOC_STATE,
@@ -533,6 +548,9 @@ export function VndRevisionNeededPanel({
         en: EMPTY_DOC_STATE,
     });
     const [tid, setTid] = useState<File | null>(null);
+    // Окно "Сформировать или загрузить ТИД" (то же, что при загрузке новой редакции на вкладке
+    // "Редакции") - с автосравнением исправленной редакции с действующей.
+    const [tidModalOpen, setTidModalOpen] = useState(false);
     const [comment, setComment] = useState("");
     const [remarksAgreement, setRemarksAgreement] = useState<RemarksAgreement | null>(null);
 
@@ -666,12 +684,6 @@ export function VndRevisionNeededPanel({
     const handleDeleteRow = async (rowId: number) => {
         await coordinationService.deleteDisagreementRow(vndId, rowId);
         await onChanged();
-    };
-
-    const handleTidChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-        const file = e.target.files?.[0] ?? null;
-        setTid(file);
-        e.target.value = "";
     };
 
     const toggleDocReplace = (lang: DocLang) => {
@@ -1239,26 +1251,29 @@ export function VndRevisionNeededPanel({
                         </p>
 
                         {!tid ? (
-                            <label
+                            <button
+                                type="button"
+                                onClick={() => setTidModalOpen(true)}
                                 className={`flex h-10 w-fit cursor-pointer items-center gap-2 rounded-[10px] border px-[15px] text-[13px] font-semibold transition-colors ${
                                     tidMissing
                                         ? "border-[#e8b4b4] bg-[#fdf1f1] text-[#c0392b] hover:bg-[#fbe4e4]"
                                         : "border-[#e5e9f0] bg-white text-[#3a4560] hover:bg-[#f6f8fb]"
                                 }`}
                             >
-                                <Paperclip size={14}/>
-                                Загрузить ТИД
-                                <input
-                                    type="file"
-                                    accept=".doc,.docx"
-                                    className="hidden"
-                                    onChange={handleTidChange}
-                                />
-                            </label>
+                                <FileSpreadsheet size={14}/>
+                                Сформировать или загрузить ТИД
+                            </button>
                         ) : (
                             <div className="flex items-center gap-2 rounded-[9px] border border-[#e5e9f0] bg-[#fbfcfe] px-3 py-[8px]">
                                 <FileCheck2 size={14} className="flex-none text-[#2f9e5c]"/>
                                 <span className="flex-1 truncate text-[12.5px] text-[#26324a]">{tid.name}</span>
+                                <button
+                                    type="button"
+                                    onClick={() => setTidModalOpen(true)}
+                                    className="cursor-pointer flex-none text-[11.5px] font-semibold text-[#4e57d6] hover:underline"
+                                >
+                                    Изменить
+                                </button>
                                 <button
                                     type="button"
                                     onClick={() => setTid(null)}
@@ -1331,6 +1346,32 @@ export function VndRevisionNeededPanel({
                 }
                 confirmLabel="Удалить"
             />
+
+            {/* Сформировать или загрузить ТИД - то же окно, что и при загрузке новой редакции на
+                вкладке "Редакции", с автосравнением с действующей редакцией. Исправленная сторона -
+                выбранный на замену RU-файл (если он уже выбран), иначе текущий RU-файл редакции.
+                Файл ТИД здесь на сервер не грузится - он уходит вместе с исправленной редакцией
+                при отправке (coordinationService.resubmit). */}
+            {tidModalOpen && (
+                <VndUploadTidModal
+                    vndId={vndId}
+                    redactionCode={redaction?.code ?? String(vndId)}
+                    vndTitle={vnd.titleRu}
+                    previousFileId={tidPreviousFileId}
+                    draftFileId={redaction?.docFileRuId ?? null}
+                    draftFile={docState.ru.file}
+                    defaultResponsibleUserId={tidDefaultResponsibleUserId}
+                    defaultResponsibleUserName={tidDefaultResponsibleUserName}
+                    canSelectResponsible={tidCanSelectResponsible}
+                    canUploadWithoutApproval={false}
+                    initialFile={tid}
+                    onClose={() => setTidModalOpen(false)}
+                    onAttach={(file) => {
+                        setTid(file);
+                        setTidModalOpen(false);
+                    }}
+                />
+            )}
 
             {previewAttachment && (
                 <AttachmentDocxPreviewModal

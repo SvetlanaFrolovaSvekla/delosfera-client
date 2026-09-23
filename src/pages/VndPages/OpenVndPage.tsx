@@ -41,7 +41,8 @@ import {EmptyState} from "@/components/componentsGeneral/EmptyState.tsx";
 import {VndStatusBanner} from "@/components/componentsGeneral/knowledgeBaseComponents/VndStatusBanner.tsx";
 import {ConfirmActionModal} from "@/components/componentsGeneral/modal/ConfirmActionModal.tsx";
 import {Tooltip} from "@/components/componentsGeneral/Tooltip.tsx";
-import {Archive, Eye, Trash2} from "lucide-react";
+import {VndProposalModal} from "@/components/componentsVND/componentsOpenVndPage/VndProposalModal.tsx";
+import {Archive, Eye, Lightbulb, Trash2} from "lucide-react";
 
 export function OpenVndPage() {
     const {t} = useTranslation();
@@ -93,6 +94,8 @@ export function OpenVndPage() {
     // вкладка «Редакции», если явно не выбрать другую (см. useRedactionSelection: selected по
     // умолчанию совпадает с lastByNumber).
     const [viewRedactionOpen, setViewRedactionOpen] = useState(false);
+    // Окно "+ Предложения по ВНД" (VndProposalModal)
+    const [proposalOpen, setProposalOpen] = useState(false);
     const viewRedactionDownload = useAsyncAction<number>();
     const handleViewRedactionDownload = (fileId: number, name: string) =>
         viewRedactionDownload.run(fileId, () => downloadWithToast(fileId, name), t("openVndPage.editionsTab.downloadError"));
@@ -176,6 +179,11 @@ export function OpenVndPage() {
     // VndStatusBanner прячем, пока ТИД не приложен (во вкладке «Редакции»).
     const latestRedaction = redactions.find((r) => r.number === lastRedactionNumber);
     const consolidateTidMissing = !isFirstRedaction && !!latestRedaction && latestRedaction.tidFileId === null;
+
+    // "+ Предложения по ВНД" - по опубликованным документам (не черновик и не архив). Предложение
+    // пишется к действующей редакции (из неё же берутся цитаты), если её нет - к последней.
+    const proposalRedaction = redactions.find((r) => r.isCurrent) ?? latestRedaction;
+    const canSendProposal = !!vnd && vnd.status !== "draft" && vnd.status !== "arch" && !!proposalRedaction;
 
     // Зеркалит право публикации из VndActualizationService.PublishAsync на бэке:
     // - если есть открытый цикл актуализации - только назначенный ответственный или главный методолог;
@@ -359,6 +367,20 @@ export function OpenVndPage() {
                             </Tooltip>
                         )}
 
+                        {/* + Предложения по ВНД - любой сотрудник может предложить изменения/дополнения,
+                            предложение получает главный редактор ВНД (см. VndProposalModal) */}
+                        {activeTab === "editions" && canSendProposal && (
+                            <Tooltip content={t("vndProposals.buttonTooltip")} side="bottom">
+                                <button
+                                    onClick={() => setProposalOpen(true)}
+                                    className="shrink-0 flex h-7 items-center gap-1.5 rounded-[9px] border border-[#f0dcae] bg-[#fffaf0] px-2.5 text-[12px] font-semibold text-[#9a6408] cursor-pointer hover:border-[#e0b95c] hover:bg-[#fff3d6] transition-colors"
+                                >
+                                    <Lightbulb className="w-3.5 h-3.5" strokeWidth={2}/>
+                                    + {t("vndProposals.button")}
+                                </button>
+                            </Tooltip>
+                        )}
+
                         {/* Кнопка удаления (только черновик) */}
                         {vnd.status === "draft" && hasPermission(PermissionCode.DeleteVnd) && (
                             <button
@@ -485,6 +507,17 @@ export function OpenVndPage() {
                     downloadingId={viewRedactionDownload.activeId}
                     onDownload={handleViewRedactionDownload}
                     onClose={() => setViewRedactionOpen(false)}
+                />
+            )}
+
+            {/* + Предложения по ВНД */}
+            {proposalOpen && proposalRedaction && (
+                <VndProposalModal
+                    vnd={vnd}
+                    redaction={proposalRedaction}
+                    downloadingId={viewRedactionDownload.activeId}
+                    onDownload={handleViewRedactionDownload}
+                    onClose={() => setProposalOpen(false)}
                 />
             )}
         </div>

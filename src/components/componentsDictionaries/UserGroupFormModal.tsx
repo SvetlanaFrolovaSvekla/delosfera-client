@@ -2,11 +2,10 @@
 import {useEffect, useState} from "react";
 import {useTranslation} from "react-i18next";
 import {useModalShake} from "@/hooks/useModalShake.ts";
-import {UserMultiSelectField} from "@/components/componentsDictionaries/UserMultiSelectField.tsx";
-import type {UserGroupFormValues} from "@/hooks/dictionariesHooks/useUserGroupList.ts";
-
-import {X} from "lucide-react";
 import {useUserOptions} from "@/hooks/useUserOptions.ts";
+import type {UserGroupFormValues} from "@/hooks/dictionariesHooks/useUserGroupList.ts";
+import {UserMultiSelectField} from "@/components/componentsDictionaries/UserMultiSelectField.tsx";
+import {X} from "lucide-react";
 
 interface UserGroupFormModalProps {
     open: boolean;
@@ -63,6 +62,7 @@ export function UserGroupFormModal({
             >
                 <div className="flex items-center justify-between px-5 py-4 border-b border-[#eef2f7]">
                     <h3 className="m-0 text-[15px] font-semibold text-[#1c2740]">
+                        {/* Новая группа пользователей / Изменить группу пользователей */}
                         {mode === "create" ? t("userGroupPage.formTitleCreate") : t("userGroupPage.formTitleEdit")}
                     </h3>
                     <button
@@ -76,6 +76,7 @@ export function UserGroupFormModal({
                 <div className="p-5 flex flex-col gap-3.5 max-h-[70vh] overflow-y-auto">
                     <div>
                         <span className="block text-[12px] font-semibold text-[#3a4560] mb-2">
+                            {/* Название (рус.) */}
                             {t("dictionaries.fieldTitleRu")} <span className="text-[#c0392b]">*</span>
                         </span>
                         <input
@@ -88,6 +89,7 @@ export function UserGroupFormModal({
 
                     <div>
                         <span className="block text-[12px] font-semibold text-[#3a4560] mb-2">
+                            {/* Название (en.) */}
                             {t("dictionaries.fieldTitleEn")}
                         </span>
                         <input
@@ -99,6 +101,7 @@ export function UserGroupFormModal({
 
                     <div>
                         <span className="block text-[12px] font-semibold text-[#3a4560] mb-2">
+                            {/* Название (kg.) */}
                             {t("dictionaries.fieldTitleKg")}
                         </span>
                         <input
@@ -108,9 +111,8 @@ export function UserGroupFormModal({
                         />
                     </div>
 
-
                     <UserMultiSelectField
-                        label={t("userGroupPage.fieldUsers")}
+                        label={t("userGroupPage.fieldUsers")} // Участники группы
                         options={userOptions}
                         optionsLoading={usersLoading}
                         selectedKeys={values.userKeys}
@@ -130,6 +132,7 @@ export function UserGroupFormModal({
                         disabled={submitting}
                         className="h-9 px-4 rounded-[9px] border border-[#e5e9f0] bg-white text-[#55617a] font-semibold text-[12.5px] cursor-pointer hover:bg-[#f6f8fb] disabled:opacity-60 disabled:cursor-not-allowed"
                     >
+                        {/* Отмена */}
                         {t("general.cancel")}
                     </button>
                     <button

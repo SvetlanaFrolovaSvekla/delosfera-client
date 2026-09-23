@@ -5,6 +5,7 @@
 // используется для цитат/замечаний (см. ApprovalStageQuoteResponse.revisionIndex).
 import type {
     ApprovalProcessResponse,
+    ApprovalProcessStatus,
     ApprovalStageQuoteResponse,
     VndRedactionRevisionSnapshotResponse,
 } from "@/service/coordinationService/coordinationServiceTypes.ts";
@@ -137,4 +138,69 @@ export function buildRevisionCompareOptions(
             description,
         };
     });
+}
+
+/** Процессы согласования, в которых у редакции появлялись промежуточные версии ("Р2", "Р2.1",
+ * ...) - по одному (самому свежему) процессу на редакцию. */
+function pickRevisionProcessByRedaction(
+    processes: (ApprovalProcessResponse | null | undefined)[],
+): Map<number, ApprovalProcessResponse> {
+    const byRedaction = new Map<number, ApprovalProcessResponse>();
+    for (const p of processes) {
+        if (!p || !p.redactionSnapshots || p.redactionSnapshots.length === 0) continue;
+        const prev = byRedaction.get(p.redactionId);
+        if (!prev || p.id > prev.id) byRedaction.set(p.redactionId, p);
+    }
+    return byRedaction;
+}
+
+/** Статусы процесса, при которых он ещё идёт (живая версия - "текущая", а не "итоговая"). */
+const ACTIVE_PROCESS_STATUSES: ApprovalProcessStatus[] = ["primary", "repeated", "final_hold", "revision_needed"];
+
+/** Список редакций для окна сравнения (RedactionCompareModal), дополненный промежуточными
+ * версиями документа, которые появлялись при согласовании с замечаниями: у редакции Р2 вместо
+ * одной строки - "Р2" (исходная), "Р2.1", "Р2.2"... Живая/последняя версия остаётся САМОЙ
+ * редакцией (тот же id - чтобы initialLeft/initialRight и выбор по id продолжали работать),
+ * только с подписью версии ("Р2.2") и пояснением; прошлые версии - синтетические "редакции"
+ * со снимками файлов (см. buildRevisionCompareOptions). Порядок - как у входного списка,
+ * версии внутри редакции - от новой к старой. Редакции без промежуточных версий не меняются. */
+export function expandRedactionsWithRevisions(
+    redactions: VndRedactionResponse[],
+    processes: (ApprovalProcessResponse | null | undefined)[],
+): VndRedactionResponse[] {
+    const byRedaction = pickRevisionProcessByRedaction(processes);
+    if (byRedaction.size === 0) return redactions;
+
+    return redactions.flatMap((redaction) => {
+        const process = byRedaction.get(redaction.id);
+        if (!process) return [redaction];
+
+        const live = getLiveRevisionIndex(process);
+        const liveOptionId = revisionOptionId(redaction.id, live);
+        const isActive = ACTIVE_PROCESS_STATUSES.includes(process.status);
+        return buildRevisionCompareOptions(process, redaction)
+            .map((option) => option.id === liveOptionId
+                ? {
+                    ...redaction,
+                    code: option.code,
+                    number: option.number,
+                    description: isActive
+                        ? "Текущая версия"
+                        : `Итоговая версия редакции ${redaction.code}`,
+                }
+                : option)
+            .reverse();
+    });
+}
+
+/** Самая свежая промежуточная (прошлая) версия редакции - для правой стороны окна сравнения по
+ * умолчанию ("что исправили в ответ на последние замечания"). undefined, если версий не было. */
+export function findPreviousRevisionOption(
+    expanded: VndRedactionResponse[], redactionId: number,
+): VndRedactionResponse | undefined {
+    // Прошлые версии идут сразу за живой (см. порядок в expandRedactionsWithRevisions), их id -
+    // revisionOptionId(redactionId, i) - отрицательные.
+    const candidates = expanded.filter((r) =>
+        r.id < 0 && Math.floor((-r.id - 1) / 1000) === redactionId);
+    return candidates[0];
 }

@@ -89,6 +89,7 @@ const AuditLogPage = lazy(() => import("@/pages/AuditLogPage.tsx").then(m => ({d
 const SigningWorkplacePage = lazy(() => import("@/pages/SigningWorkplacePage.tsx").then(m => ({default: m.SigningWorkplacePage})));
 const AcknowledgementPage = lazy(() => import("@/pages/AcknowledgementPage.tsx").then(m => ({default: m.AcknowledgementPage})));
 const HelpPage = lazy(() => import("@/pages/HelpPage.tsx").then(m => ({default: m.HelpPage})));
+const VndProposalsPage = lazy(() => import("@/pages/VndPages/VndProposalsPage.tsx").then(m => ({default: m.VndProposalsPage})));
 const FeedbackInboxPage = lazy(() => import("@/pages/FeedbackInboxPage.tsx").then(m => ({default: m.FeedbackInboxPage})));
 const UsageAnalyticsPage = lazy(() => import("@/pages/UsageAnalyticsPage.tsx").then(m => ({default: m.UsageAnalyticsPage})));
 const PoaRegistryPage = lazy(() => import("@/pages/PoaRegistryPage.tsx").then(m => ({default: m.PoaRegistryPage})));
@@ -158,6 +159,11 @@ function App() {
                                 <Route path="/base-vnd/:id" element={<OpenVndPage/>}/>
 
                                 <Route path="/tasks" element={<TaskInboxPage/>}/>
+
+                                {/* Предложения сотрудников по ВНД — для главного редактора ВНД */}
+                                <Route element={<RequirePermission code={PermissionCode.ManageVndProposals}/>}>
+                                    <Route path="/vnd-proposals" element={<VndProposalsPage/>}/>
+                                </Route>
 
                                 <Route element={<RequirePermission code={PermissionCode.ViewVndActualizationPage}/>}>
                                     <Route path="/actualization" element={<ActualizationPage/>}/>

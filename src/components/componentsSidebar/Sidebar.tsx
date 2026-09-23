@@ -9,6 +9,10 @@ import {useVndTaskCounts} from "@/hooks/tasksVndHooks/useVndTaskCounts.ts";
 import {navGroups} from "@/constants/sidebarData.tsx";
 import {PermissionCode} from "@/constants/permissions/permissions.ts";
 import {CountBadge} from "@/components/componentsSidebar/CountBadge.tsx";
+import {
+    VND_PROPOSALS_CHANGED_EVENT,
+    vndProposalService,
+} from "@/service/vndProposalService/vndProposalService.ts";
 import {RubricTreeModal} from "@/components/componentsGeneral/rubricator/RubricTreeModal.tsx";
 
 import {Icon} from "@/assets/icons/Icon";
@@ -77,13 +81,41 @@ export function Sidebar() {
             });
     }, []);
 
+    // Предложения по ВНД: непрочитанные - только у получателей (право ManageVndProposals).
+    // Перечитываются по событию со страницы "Предложения по ВНД"/после отправки и раз в 2 минуты.
+    const canSeeProposals = hasPermission(PermissionCode.ManageVndProposals);
+    const [proposalsUnread, setProposalsUnread] = useState(0);
+    useEffect(() => {
+        if (!canSeeProposals) return;
+        let cancelled = false;
+        const refresh = () => {
+            vndProposalService.counts()
+                .then((c) => {
+                    if (!cancelled) setProposalsUnread(c.unread);
+                })
+                .catch(() => {
+                    // счётчик не критичен
+                });
+        };
+        refresh();
+        const timer = setInterval(refresh, 120_000);
+        window.addEventListener(VND_PROPOSALS_CHANGED_EVENT, refresh);
+        return () => {
+            cancelled = true;
+            clearInterval(timer);
+            window.removeEventListener(VND_PROPOSALS_CHANGED_EVENT, refresh);
+        };
+    }, [canSeeProposals]);
+
     const dynamicBadges: Record<string, number> = {
+        "vnd-proposals": canSeeProposals ? proposalsUnread : 0,
         pln: planningBadge,
         tasks: tasksBadge,
         notif: unreadCount,
     };
 
     const dynamicBadgeTooltips: Record<string, string> = {
+        "vnd-proposals": t("sidebar.badgeTooltips.proposals", {count: proposalsUnread}),
         pln: t("sidebar.badgeTooltips.planning", {count: planningBadge}),
         tasks: t("sidebar.badgeTooltips.tasks", {count: tasksBadge}),
         notif: t("sidebar.badgeTooltips.notif", {count: unreadCount}),

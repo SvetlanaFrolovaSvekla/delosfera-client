@@ -11,6 +11,7 @@ import type {VndResponse} from "@/service/vndService/vndServiceType.ts";
 import {formatDate} from "@/utils/dateUtils.ts";
 import {useVndActualizationFlow} from "@/hooks/vndHooks/useVndActualizationFlow.ts";
 import {useVndActualizationHistory} from "@/hooks/vndHooks/useVndActualizationHistory.ts";
+import {useIsVndEditor} from "@/hooks/vndHooks/useIsVndEditor.ts";
 
 import {StartActualizationModal} from "./componentsActualizationTab/StartActualizationModal.tsx";
 import {
@@ -37,6 +38,7 @@ interface VndActualizationTabProps {
 export function VndActualizationTab({vnd, onVndChanged, onGoToEditions, onGoToApproval}: VndActualizationTabProps) {
     const {t} = useTranslation();
     const {user} = useAuth();
+    const isVndEditor = useIsVndEditor();
 
     const {
         canDirectly, canByRequest,
@@ -400,7 +402,9 @@ export function VndActualizationTab({vnd, onVndChanged, onGoToEditions, onGoToAp
                 </div>
             )}
 
-            {!canDirectly && !canByRequest && (
+            {/* Рядовому пользователю (не редактору ВНД) сообщение "У вас нет прав на актуализацию"
+                не показываем - актуализация для него в принципе не предусмотрена. */}
+            {!canDirectly && !canByRequest && isVndEditor && (
                 <div className="rounded-[14px] border border-[#e9edf3] bg-white px-5 py-6 text-center text-[13px] text-[#8b97ab]">
                     {t("openVndPage.redactionsSidebar.noPermissionHint")}
                 </div>

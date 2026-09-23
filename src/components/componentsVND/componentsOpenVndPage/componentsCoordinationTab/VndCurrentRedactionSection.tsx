@@ -19,6 +19,9 @@ interface VndCurrentRedactionSectionProps {
     onDownload: (fileId: number, name: string) => void;
     onView: (redaction: VndRedactionResponse, language: RedactionViewTarget) => void;
     onCompareClick: () => void;
+    /** У редакции уже есть промежуточные версии ("Р2.1", "Р2.2"... - после согласования с
+     * замечаниями) - сравнение доступно, даже если это первая редакция ВНД. */
+    hasRevisions?: boolean;
     /** Отступ снизу у заголовка - у видов согласующего и инициатора он исторически отличался
      * (mb-2 / mb-4 в оригинальном файле) - явно передаётся вызывающей стороной, а не зашит
      * здесь, чтобы визуально ничего не изменилось при переносе. Стоит присмотреться, не
@@ -28,7 +31,7 @@ interface VndCurrentRedactionSectionProps {
 
 export function VndCurrentRedactionSection({
     vnd, isFirstRedaction, redaction, previousRedaction, downloadingId, downloadError,
-    onDownload, onView, onCompareClick, headerClassName,
+    onDownload, onView, onCompareClick, headerClassName, hasRevisions = false,
 }: VndCurrentRedactionSectionProps) {
     const {t} = useTranslation();
 
@@ -40,7 +43,7 @@ export function VndCurrentRedactionSection({
                         ? t("openVndPage.coordinationTab.firstRedactionLabel")
                         : t("openVndPage.coordinationTab.newRedactionLabel")}
                 </div>
-                {!isFirstRedaction && redaction && previousRedaction && (
+                {redaction && ((!isFirstRedaction && previousRedaction) || hasRevisions) && (
                     <button
                         type="button"
                         onClick={onCompareClick}

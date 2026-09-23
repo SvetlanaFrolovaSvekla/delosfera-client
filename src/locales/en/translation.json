@@ -321,6 +321,9 @@
     "fileTooLarge": "File \"{{fileName}}\" exceeds the maximum allowed size ({{maxSize}})",
     "cancel": "Cancel",
     "upload": "Upload",
+    "revisionTitle": "CAT for the revised redaction — {{redactionCode}}",
+    "introRevisionRound": "The CAT (Change and Amendment Table) is required when actualizing an IRD — attach an updated CAT on every revision round together with the revised redaction. Below is an automatically generated table of changes between the current redaction and the revised one (if you have already selected a replacement RU file, it is compared against that file). Generate the CAT, download and check it (add justification for the changes, edit where needed), then upload the final file and attach it to the submission.",
+    "attach": "Attach CAT",
     "sizeUnitBytes": "B",
     "sizeUnitKb": "KB",
     "sizeUnitMb": "MB"
@@ -698,6 +701,7 @@
   },
   "sidebar": {
     "badgeTooltips": {
+      "proposals": "Unread proposals: {{count}}",
       "planning": "Overdue and critical VND: {{count}}",
       "tasks": "Tasks requiring attention: {{count}}",
       "notif": "Unread notifications: {{count}}"
@@ -719,6 +723,7 @@
       "management": "Administration"
     },
     "items": {
+      "vndProposals": "IRD proposals",
       "home": "Dashboard",
       "rubric": "Rubricator",
       "vnd": "VND Registry",
@@ -2231,5 +2236,73 @@
     "bannerNoPrevious": "Revision {{code}} has no previous approval sheets.",
     "historySheetsCount": "Approval sheets: {{count}}",
     "timelineSheetGenerated": "Approval sheet generated"
+  },
+  "vndProposals": {
+    "button": "IRD proposals",
+    "buttonTooltip": "Suggest changes or additions to this IRD — the chief IRD editor will receive your proposal",
+    "modal": {
+      "title": "Proposal on the IRD",
+      "redactionChip": "Redaction {{code}}",
+      "intro": "Describe what should be changed or added in the document. You can quote specific text fragments and attach files — the chief IRD editor will receive the proposal (in the system and by email).",
+      "textLabel": "Your proposal",
+      "textPlaceholder": "For example: in clause 3.2 I suggest clarifying the review period…",
+      "quotesLabel": "Redaction text fragments",
+      "citeButton": "Quote the redaction text",
+      "citeHint": "The redaction viewer will open — select text and click “Quote selection”.",
+      "quoteNotePlaceholder": "Comment on the fragment (optional)",
+      "removeQuote": "Remove quote",
+      "quoteDuplicate": "This fragment has already been added",
+      "quotesLimit": "You can add at most {{max}} quotes",
+      "attachmentsLabel": "Files",
+      "attachFiles": "Attach files",
+      "attachHint": "up to {{max}} files, each up to {{size}}",
+      "fileTooLarge": "File “{{name}}” exceeds the allowed size ({{size}})",
+      "filesLimit": "You can attach at most {{max}} files",
+      "removeFile": "Remove file",
+      "emptyHint": "Write a proposal or quote the redaction text",
+      "cancel": "Cancel",
+      "submit": "Send proposal",
+      "submitting": "Sending…",
+      "submitError": "Failed to send the proposal",
+      "discardTitle": "Close without sending?",
+      "discardMessage": "The text, quotes and files you added will not be saved.",
+      "discardConfirm": "Close",
+      "successTitle": "Proposal sent",
+      "successDescription": "Thank you! The chief IRD editor will be notified and will review it."
+    },
+    "page": {
+      "title": "IRD proposals",
+      "description": "Employee proposals for changes and additions to internal regulatory documents",
+      "tabAll": "All",
+      "tabUnread": "Unread",
+      "tabRead": "Read",
+      "searchPlaceholder": "Search by IRD, text or author",
+      "markAllRead": "Mark all as read",
+      "markAllReadDone": "All proposals are marked as read",
+      "loadError": "Failed to load proposals",
+      "emptyTitle": "No proposals yet",
+      "emptyUnreadTitle": "All caught up",
+      "emptyDescription": "When employees send proposals on IRDs, they will appear here.",
+      "emptySearchTitle": "Nothing found",
+      "emptySearchDescription": "Try changing the query or filter.",
+      "showMore": "Show more",
+      "unreadBadge": "New",
+      "redaction": "redaction {{code}}",
+      "quotesTitle": "Text fragments",
+      "attachmentsTitle": "Files",
+      "markRead": "Mark as read",
+      "markUnread": "Mark as unread",
+      "openVnd": "Open IRD",
+      "readBy": "Read by {{name}}, {{date}}",
+      "expand": "More",
+      "collapse": "Collapse",
+      "noText": "No text — quotes only",
+      "counter": "{{shown}} of {{total}}"
+    },
+    "langs": {
+      "ru": "RU",
+      "kg": "KG",
+      "en": "EN"
+    }
   }
 }

@@ -119,6 +119,12 @@ const paths: Record<string, JSX.Element> = {
             <path d="M19 15l.7 2 2 .7-2 .7-.7 2-.7-2-2-.7 2-.7z" />
         </>
     ),
+    idea: (
+        <>
+            <path d="M9 18h6M10 21h4" />
+            <path d="M12 3a6 6 0 0 0-3.6 10.8c.7.5 1.1 1.3 1.1 2.2h5c0-.9.4-1.7 1.1-2.2A6 6 0 0 0 12 3z" />
+        </>
+    ),
     user: (
         <>
             <circle cx="12" cy="8" r="4" />

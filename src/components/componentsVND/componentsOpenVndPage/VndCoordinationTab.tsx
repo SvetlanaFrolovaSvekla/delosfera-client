@@ -75,6 +75,9 @@ export function VndCoordinationTab({vnd, onVndChanged}: VndCoordinationTabProps)
         hasPermission(PermissionCode.CreateVndWithoutApproval) ||
         hasPermission(PermissionCode.ActualizeAnyVndWithApproval) ||
         hasPermission(PermissionCode.ActualizeAnyVndWithoutApproval);
+    // Системная роль "Администратор" (id === 1) - вместе с главным редактором может менять поле
+    // "Разработчик" сформированного ТИД (см. VndEditionsTab.canChangeTidDeveloper).
+    const isAdmin = user?.roles.some((role) => role.id === 1) ?? false;
     // Право на отзыв чужого согласования (роль главного редактора).
     const canCancelAnyApproval = hasPermission(PermissionCode.CancelAnyVndApproval);
     // Право редактировать маршрут уже запущенного согласования - добавлять/убирать
@@ -232,6 +235,12 @@ export function VndCoordinationTab({vnd, onVndChanged}: VndCoordinationTabProps)
     const previousRedaction = redaction
         ? redactions?.find((r) => r.number === redaction.number - 1)
         : undefined;
+    // База для автосравнения в окне формирования ТИД на доработке - действующая (актуальная)
+    // редакция ВНД; если её почему-то нет в списке - предыдущая по номеру.
+    // Были ли у согласуемой редакции промежуточные версии ("Р2.1"...) - тогда их можно сравнить.
+    const hasRevisions = !!redaction && process.redactionSnapshots.length > 0;
+    const tidBaseRedaction =
+        redactions?.find((r) => r.isCurrent && r.id !== redaction?.id) ?? previousRedaction;
 
     // "+ Сослаться на текст редакции" в "Ваша резолюция" - открывает просмотр проверяемой
     // редакции в режиме цитирования, а вставка выделенного текста в комментарий делегируется
@@ -369,6 +378,7 @@ export function VndCoordinationTab({vnd, onVndChanged}: VndCoordinationTabProps)
                     onDownload={handleDownload}
                     onView={openView}
                     onCompareClick={() => setModal({kind: "compare"})}
+                    hasRevisions={hasRevisions}
                     headerClassName="mb-2"
                 />
 
@@ -493,6 +503,7 @@ export function VndCoordinationTab({vnd, onVndChanged}: VndCoordinationTabProps)
                 onDownload={handleDownload}
                 onView={openView}
                 onCompareClick={() => setModal({kind: "compare"})}
+                hasRevisions={hasRevisions}
                 headerClassName="mb-4"
             />
 
@@ -528,6 +539,10 @@ export function VndCoordinationTab({vnd, onVndChanged}: VndCoordinationTabProps)
                     process={process}
                     redaction={redaction}
                     requiresTid={!!redaction && redaction.number > 1}
+                    tidPreviousFileId={tidBaseRedaction?.docFileRuId ?? null}
+                    tidDefaultResponsibleUserId={user?.id ?? vnd.actualizationResponsibleUserId}
+                    tidDefaultResponsibleUserName={user?.fullName ?? vnd.actualizationResponsibleUserName}
+                    tidCanSelectResponsible={isChiefEditor || isAdmin}
                     onChanged={reload}
                     onResubmitted={handleResubmitted}
                     onShowQuoteInText={redaction ? handleShowQuoteInText : undefined}

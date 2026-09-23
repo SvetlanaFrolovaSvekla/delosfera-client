@@ -1,9 +1,9 @@
 // Одна строка плоского справочника
-import {Pencil, Trash2} from "lucide-react";
 import {useTranslation} from "react-i18next";
+import type {FlatDictItem} from "@/hooks/dictionariesHooks/useFlatDictList.ts";
 import {HighlightText} from "@/utils/highlightText.tsx";
 import {Tooltip} from "@/components/componentsGeneral/Tooltip.tsx";
-import type {FlatDictItem} from "@/hooks/dictionariesHooks/useFlatDictList.ts";
+import {Pencil, Trash2} from "lucide-react";
 
 interface FlatDictRowProps<T extends FlatDictItem> {
     item: T;
@@ -31,6 +31,7 @@ export function FlatDictRow<T extends FlatDictItem>({
 
                 {canManage && (
                     <div className="flex-none flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                        {/* Изменить */}
                         <Tooltip content={t("dictionaries.editAction")} side="top">
                             <button
                                 type="button"
@@ -40,7 +41,7 @@ export function FlatDictRow<T extends FlatDictItem>({
                                 <Pencil className="w-[13px] h-[13px]" strokeWidth={2}/>
                             </button>
                         </Tooltip>
-
+                        {/* Удалить */}
                         <Tooltip content={t("dictionaries.deleteAction")} side="top">
                             <button
                                 type="button"

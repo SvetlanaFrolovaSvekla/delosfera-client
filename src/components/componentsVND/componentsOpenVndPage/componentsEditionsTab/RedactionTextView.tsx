@@ -3,7 +3,7 @@ import {useTranslation} from "react-i18next";
 import type {VndRedactionResponse, VndResponse} from "@/service/vndService/vndServiceType.ts";
 import {useDocxPreview} from "@/hooks/vndHooks/useDocxPreview.ts";
 import {useDocxTextSearch} from "@/hooks/vndHooks/useDocxTextSearch.ts";
-import {useDocxQuoteMarks} from "@/hooks/vndHooks/useDocxQuoteMarks.ts";
+import {useDocxQuoteMarks, type QuoteMarkFocusRequest} from "@/hooks/vndHooks/useDocxQuoteMarks.ts";
 import {useDocxLegacyLinks} from "@/hooks/vndHooks/useDocxLegacyLinks.ts";
 import type {QuoteMarkInfo} from "@/utils/vndProcess/redactionQuoteMarks.ts";
 import {buildRedactionFileName} from "@/utils/downloadFiles/fileNaming.ts";
@@ -34,6 +34,11 @@ interface RedactionTextViewProps {
      * useDocxQuoteMarks) - пустой массив при уходе курсора. */
     onHoverQuoteMark?: (marks: QuoteMarkInfo[], rect: DOMRect | null) => void;
     onClickQuoteMark?: (marks: QuoteMarkInfo[]) => void;
+    /** "Показать в тексте": прокрутить к цитате с этим id и выделить её (см. useDocxQuoteMarks).
+     * Цитата должна быть среди quoteMarks. */
+    quoteMarkFocus?: QuoteMarkFocusRequest | null;
+    /** Итог quoteMarkFocus - нашлась ли цитата в тексте (и точно ли). */
+    onQuoteMarkFocusResult?: (result: {id: number; found: boolean; approximate: boolean}) => void;
 }
 
 export interface RedactionTextViewHandle {
@@ -55,6 +60,7 @@ export const RedactionTextView = forwardRef<RedactionTextViewHandle, RedactionTe
     function RedactionTextView({
                                     vnd, selected, activeLanguage, searchQuery = "", onClearSearch, scrollX = false,
                                     quoteMarks, quoteMarksClickable, onHoverQuoteMark, onClickQuoteMark,
+                                    quoteMarkFocus, onQuoteMarkFocusResult,
                                 }, ref) {
         const {t} = useTranslation();
         const fileId = activeLanguage === "tid"
@@ -86,6 +92,8 @@ export const RedactionTextView = forwardRef<RedactionTextViewHandle, RedactionTe
                 clickable: !!quoteMarksClickable,
                 onHoverMark: onHoverQuoteMark ?? (() => {}),
                 onClickMark: onClickQuoteMark ?? (() => {}),
+                focus: quoteMarkFocus,
+                onFocusResult: onQuoteMarkFocusResult,
             },
         );
 

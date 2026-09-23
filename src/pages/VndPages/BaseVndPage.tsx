@@ -1,5 +1,5 @@
 // Страница "Реестр ВНД"
-import {useState} from "react";
+import {useMemo, useState} from "react";
 import {useTranslation} from "react-i18next";
 import {useNavigate} from "react-router-dom";
 import {useAuth} from "@/context/AuthContext.ts";
@@ -28,6 +28,8 @@ import {Tabs} from "@/components/componentsGeneral/Tabs.tsx";
 import {Loader} from "@/components/componentsGeneral/Loader";
 import {EmptyState} from "@/components/componentsGeneral/EmptyState.tsx";
 import {JournalViewPicker} from "@/components/componentsGeneral/JournalViewPicker.tsx";
+import {VndSortDropdown} from "@/components/componentsVND/componentsBaseVndPage/VndSortDropdown.tsx";
+import {DEFAULT_VND_SORT, sortVndRows, type VndSortKey} from "@/utils/vndProcess/vndSort.ts";
 
 import {FileEdit} from "lucide-react";
 
@@ -51,6 +53,10 @@ export function BaseVndPage() {
     const [scope, setScope] = useState<VndScope>("all");
     const [draftOwnerScope, setDraftOwnerScope] = useState<DraftOwnerScope>("allDraft");
     const [advOpen, setAdvOpen] = useState(false);
+    // Сортировка реестра: по коду (возр./убыв.) или по последнему изменению документа
+    // (реквизиты, редакция, актуализация и т.д. — см. getVndLastChangeDate). По умолчанию —
+    // по коду по возрастанию. "Сбросить фильтры" сортировку не трогает.
+    const [sort, setSort] = useState<VndSortKey>(DEFAULT_VND_SORT);
 
     const filters = useVndFilters(
         scope,
@@ -71,6 +77,7 @@ export function BaseVndPage() {
 
     const counts = useVndScopeCounts(canCreateVnd);
     const {filteredRows, loading, error} = useVndFilteredRows(filters.searchRequest, filters.search);
+    const sortedRows = useMemo(() => sortVndRows(filteredRows, sort), [filteredRows, sort]);
 
     const dictionaries = useDictionaries();
     const {keywordNames, rubricNames, secrecyLevelName, userGroupNames, responsibleExecutorNames} =
@@ -195,6 +202,7 @@ export function BaseVndPage() {
                         onRemove={(v) => void views.remove(v)}
                     />
                 }
+                sortPicker={<VndSortDropdown value={sort} onChange={setSort}/>}
                 toggleableColumns={toggleableColumns}
                 visibleCols={visibleCols}
                 onToggleColumn={toggleColumn}
@@ -266,7 +274,7 @@ export function BaseVndPage() {
                     searchQuery={filters.search}
                     canViewExtended={canViewVndRegistryExtended}
                     columns={columns}
-                    rows={filteredRows}
+                    rows={sortedRows}
                     gridTemplate={gridTemplate}
                     daysUntil={daysUntil}
                     responsibleExecutorNames={responsibleExecutorNames}

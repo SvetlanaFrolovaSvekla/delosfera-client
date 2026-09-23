@@ -168,3 +168,15 @@ a:hover { color: #1b4fd0; }
     8.3%    { background-position: -10% 125%; opacity: 0; }
     100%    { background-position: -10% 125%; opacity: 0; }
 }
+/* "Показать в тексте": цитата согласующего, к которой только что перешли, - пульсирующая
+   обводка на несколько секунд (см. useDocxQuoteMarks, FOCUS_CLASS). */
+@keyframes quoteMarkFocusPulse {
+    0% { box-shadow: 0 0 0 0 rgba(78, 87, 214, 0.55); }
+    70% { box-shadow: 0 0 0 7px rgba(78, 87, 214, 0); }
+    100% { box-shadow: 0 0 0 0 rgba(78, 87, 214, 0); }
+}
+mark.quote-mark-focused {
+    outline: 2px solid #4e57d6;
+    outline-offset: 1px;
+    animation: quoteMarkFocusPulse 1.2s ease-out 3;
+}

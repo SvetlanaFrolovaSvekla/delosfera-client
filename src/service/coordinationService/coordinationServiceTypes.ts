@@ -78,10 +78,22 @@ export interface ApprovalDecisionRequest {
 }
 
 /** Один элемент quotes в ApprovalDecisionRequest. */
-export interface ApprovalQuoteItem {
+export interface ApprovalQuoteItem extends QuoteAnchorFields {
     /** "ru"/"kg"/"en"/"tid"/"approvalSheet"/"disagreementMatrix" — см. RedactionViewTarget. */
     documentTarget: string;
     text: string;
+    /** Замечание согласующего именно к этому фрагменту (карточка в "Замечания к тексту"). */
+    note?: string | null;
+}
+
+/** "Якорь" цитаты - контекст вокруг неё и номер вхождения на момент цитирования (см.
+ * utils/docxWork/quoteAnchor.ts, VndApprovalStageQuote.Prefix/Suffix/Occurrence на бэке). По
+ * нему из всех вхождений той же фразы в документе выбирается именно то, на которое сослались.
+ * У цитат, сохранённых до появления якорей, поля отсутствуют - они ищутся по одному тексту. */
+export interface QuoteAnchorFields {
+    prefix?: string | null;
+    suffix?: string | null;
+    occurrence?: number | null;
 }
 
 export interface ResubmitAfterRevisionRequest {
@@ -173,7 +185,7 @@ export interface ApprovalStageAttachmentResponse {
  * подсветки в тексте (см. useDocxQuoteMarks). Отдельного комментария к цитате нет — по клику
  * на маркер показывается вся резолюция фазы (primary/repeat/finalHoldComment), в которую эта
  * цитата попадает. */
-export interface ApprovalStageQuoteResponse {
+export interface ApprovalStageQuoteResponse extends QuoteAnchorFields {
     id: number;
     /** Id этапа (ApprovalStageResponse.id), к которому относится цитата — заполнен и когда
      * цитата приходит внутри списка конкретного этапа/фазы, и в ApprovalProcessResponse.allQuotes. */
@@ -189,6 +201,9 @@ export interface ApprovalStageQuoteResponse {
      * цитаты произвольной прошлой версии, используйте ApprovalProcessResponse.allQuotes,
      * отфильтровав по этому полю (см. utils/vndProcess/redactionRevisions.ts). */
     revisionIndex: number;
+    /** Замечание согласующего именно к этому фрагменту (null у старых цитат и у цитат без
+     * отдельного замечания) - показывается при наведении на подсветку в тексте. */
+    note?: string | null;
 }
 
 export interface ApprovalStageResponse {
@@ -237,6 +252,9 @@ export interface ApprovalPhaseRoundStageDecisionResponse {
     decision: ApprovalStageDecisionResponse;
     comment: string | null;
     decidedAt: string | null;
+    /** Файлы, приложенные к решению этого круга (раньше удалялись при переходе к следующему
+     * кругу - теперь сохраняются в истории). У кругов, завершённых до этого изменения, пусто. */
+    attachments?: ApprovalStageAttachmentResponse[];
 }
 
 /** Один завершённый круг фазы "Повторное согласование" или "Финальная выдержка" — см.
@@ -297,6 +315,13 @@ export interface ApprovalProcessResponse {
     initiatorName: string;
     /** Должность инициатора согласования */
     initiatorPosition?: string;
+    /** Процесс запущен в рамках актуализации без изменений: на согласование ушла уже
+     * действующая редакция (новая редакция не создавалась). */
+    isNoChangesActualization?: boolean;
+    /** Лист согласования, сформированный по итогам ИМЕННО этого процесса (у редакции их может
+     * быть несколько) - null, пока процесс не завершён согласованием. */
+    approvalSheetFileId?: number | null;
+    approvalSheetFileName?: string | null;
     status: ApprovalProcessStatus;
     primaryDeadlineMinutes: number;
     repeatDeadlineMinutes: number;

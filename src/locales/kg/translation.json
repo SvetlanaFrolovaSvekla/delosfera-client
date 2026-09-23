@@ -1438,7 +1438,11 @@
           "approved_with_comment": "Эскертүүлөр менен",
           "rejected": "Четке кагылды",
           "auto_approved_timeout": "Автоматтык макулдашылды"
-        }
+        },
+        "versionLabel": "{{code}} версиясы",
+        "openVersionButton": "Версияны ачуу",
+        "downloadFinalVersionLabel": "Жыйынтык (макулдашылган) версияны жүктөп алуу:",
+        "downloadCurrentVersionLabel": "Учурдагы версияны жүктөп алуу:"
       }
     },
     "coordinationTab": {
@@ -1542,6 +1546,13 @@
         "reset": "Тазалоо",
         "apply": "Издөө"
       }
+    },
+    "sort": {
+      "label": "Иреттөө: ",
+      "codeAsc": "Код боюнча: өсүү тартибинде",
+      "codeDesc": "Код боюнча: кемүү тартибинде",
+      "updatedDesc": "Өзгөртүү боюнча: адегенде жаңылары",
+      "updatedAsc": "Өзгөртүү боюнча: адегенде эскилери"
     },
     "table": {
       "revisionsCountTooltip": "Редакциялардын саны (актуалдуу жана эмес)"
@@ -2200,5 +2211,20 @@
     "rubric": "Рубрика",
     "secrecyLevel": "Купуялуулук деңгээли",
     "userGroups": "Жеткиликтүүлүк топтору"
+  },
+  "approvalSheets": {
+    "primary": "Алгачкы макулдашуу",
+    "noChanges": "Өзгөртүүсүз актуалдаштыруу",
+    "manual": "Кол менен тиркелген",
+    "sectionTitle": "Макулдашуу барактары",
+    "latest": "акыркы",
+    "pickTitle": "Макулдашуу барагы",
+    "noChangesBadge": "Өзгөртүүсүз актуалдаштыруу",
+    "processSheetButton": "Макулдашуу барагы",
+    "bannerTitle": "Өзгөртүүсүз кайра макулдашуу",
+    "bannerPrevious": "{{code}} редакциясы мурда да макулдашылган:",
+    "bannerNoPrevious": "{{code}} редакциясынын мурунку макулдашуу барактары жок.",
+    "historySheetsCount": "Макулдашуу барактары: {{count}}",
+    "timelineSheetGenerated": "Макулдашуу барагы түзүлдү"
   }
 }

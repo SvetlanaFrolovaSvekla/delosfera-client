@@ -314,3 +314,30 @@ export function highlightCrossNodeMatches(
 
     return result;
 }
+
+/** Снимает обёртки-подсветки (напр. <mark data-search-hl> поиска или <mark data-quote-mark-ids>
+ * цитат согласующих), СОХРАНЯЯ всё их содержимое как есть.
+ *
+ * ⚠ Раньше каждая подсветка снималась заменой элемента на текстовый узел с его textContent. Две
+ * подсветки (временный поиск и маркеры цитат) живут в одном и том же DOM и вкладываются друг в
+ * друга - и такая замена молча уничтожала ВЛОЖЕННУЮ чужую подсветку: например, при любом
+ * пересчёте маркеров цитат (перезагрузка процесса согласования, переключение фильтра этапа) пропадала
+ * подсветка найденного фрагмента, а сохранённые ссылки на её элементы "отрывались" от документа,
+ * и прокрутка к ним больше не работала. Перенос дочерних узлов наружу оставляет чужие подсветки
+ * на месте. */
+export function unwrapHighlights(root: HTMLElement, selector: string): void {
+    const parents = new Set<Node>();
+    root.querySelectorAll(selector).forEach((el) => {
+        const parent = el.parentNode;
+        if (!parent) return;
+        while (el.firstChild) parent.insertBefore(el.firstChild, el);
+        parent.removeChild(el);
+        parents.add(parent);
+    });
+    // Склеиваем разрезанные при оборачивании текстовые узлы обратно - иначе после многих
+    // пересчётов абзац превращается в россыпь мелких узлов (на поиск это не влияет, но зря
+    // замедляет обход DOM).
+    parents.forEach((p) => {
+        if (p.isConnected) p.normalize();
+    });
+}

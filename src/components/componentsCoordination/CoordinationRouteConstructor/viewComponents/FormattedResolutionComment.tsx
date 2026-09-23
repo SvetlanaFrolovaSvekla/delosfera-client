@@ -5,8 +5,15 @@ import {Tooltip} from "@/components/componentsGeneral/Tooltip.tsx";
 import {escapeRegExp} from "@/utils/highlightText.tsx";
 
 const QUOTE_LINE_RE = /^Цитата: «/;
+// Строка с замечанием к фрагменту - идёт сразу после строки цитаты (см. composeResolutionComment
+// в VndApproverResolutionPanel).
+const NOTE_LINE_RE = /^Замечание: /;
 
 export interface FormattedCommentQuoteRef {
+    /** Id сохранённой цитаты (ApprovalStageQuoteResponse.id) - по нему "Показать в тексте"
+     * переходит ровно к месту этой цитаты (см. RedactionViewModal.initialFocusQuoteId), а не к
+     * первому совпадению её текста. */
+    id?: number;
     documentTarget: string;
     text: string;
     revisionIndex?: number;
@@ -119,6 +126,10 @@ export function FormattedResolutionComment({
                                     </Tooltip>
                                 )}
                             </>
+                        ) : NOTE_LINE_RE.test(line) ? (
+                            <span className="text-[#26324a]">
+                                {renderWithSearch(line, `n-${i}`, query, activeMatchIndex, matchCounter, onRegisterMatchRef)}
+                            </span>
                         ) : (
                             renderWithSearch(line, `l-${i}`, query, activeMatchIndex, matchCounter, onRegisterMatchRef)
                         )}

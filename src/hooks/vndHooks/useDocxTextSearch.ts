@@ -1,5 +1,7 @@
 import React, {useCallback, useEffect, useRef, useState} from "react";
-import {buildWhitespaceTolerantRegex, debugNoMatch, highlightCrossNodeMatches} from "@/utils/docxWork/domCrossNodeSearch.ts";
+import {
+    buildWhitespaceTolerantRegex, debugNoMatch, highlightCrossNodeMatches, unwrapHighlights,
+} from "@/utils/docxWork/domCrossNodeSearch.ts";
 import {scrollElementIntoCenter} from "@/utils/docxWork/scrollElementIntoCenter.ts";
 
 interface UseDocxTextSearchResult {
@@ -11,13 +13,9 @@ interface UseDocxTextSearchResult {
 
 const MATCH_ATTR = "data-search-hl";
 
+// Снимаем только СВОЮ подсветку, не трогая вложенные в неё маркеры цитат - см. unwrapHighlights.
 function clearHighlights(root: HTMLElement) {
-    root.querySelectorAll(`mark[${MATCH_ATTR}]`).forEach((mark) => {
-        const parent = mark.parentNode;
-        if (!parent) return;
-        parent.replaceChild(document.createTextNode(mark.textContent ?? ""), mark);
-        parent.normalize();
-    });
+    unwrapHighlights(root, `mark[${MATCH_ATTR}]`);
 }
 
 function createMark(text: string): HTMLElement {

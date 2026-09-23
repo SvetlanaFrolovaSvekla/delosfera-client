@@ -14,6 +14,18 @@ import {STAGE_DECISION_META} from "@/constants/coordinationParams.ts";
 import type {RedactionViewTarget} from "@/utils/vndProcess/redactionLanguagePanelUtils.ts";
 import {findSnapshotForRevision, getLiveRevisionIndex} from "@/utils/vndProcess/redactionRevisions.ts";
 
+/** Цитата резолюции - текст, вкладка документа, "якорь" (см. utils/docxWork/quoteAnchor.ts) и
+ * замечание к фрагменту. Совместима с ApprovalStageQuoteResponse (его подмножество). */
+export interface QuoteRef {
+    id: number;
+    documentTarget: string;
+    text: string;
+    prefix?: string | null;
+    suffix?: string | null;
+    occurrence?: number | null;
+    note?: string | null;
+}
+
 /** "primary"/"repeat"/"finalHold" -> подпись фазы, как в PHASE_ORDER (RedactionViewModal) и
  * phaseLabel у collectQuoteMarks/collectAllStageComments ниже. */
 const PHASE_LABEL_BY_KEY: Record<string, string> = {
@@ -31,6 +43,16 @@ export interface QuoteMarkInfo {
     documentTarget: RedactionViewTarget;
     /** Текст цитаты для поиска/подсветки в тексте документа (без обёртки "Цитата: «...»"). */
     text: string;
+    /** "Якорь" - контекст до/после и номер вхождения (см. quoteAnchor.ts); null у старых цитат. */
+    prefix?: string | null;
+    suffix?: string | null;
+    occurrence?: number | null;
+    /** Замечание согласующего именно к этому фрагменту (если было указано отдельно). */
+    note?: string | null;
+    /** true - это ещё НЕ отправленное замечание текущего пользователя (черновик из "Ваша
+     * резолюция"), а не сохранённая цитата: рисуется пунктиром, без клика, с подписью
+     * "Ваше замечание - ещё не отправлено". */
+    isDraft?: boolean;
     stageId: number;
     approverName: string;
     approverUserId: number;
@@ -44,7 +66,7 @@ export interface QuoteMarkInfo {
      * тексте" рядом с каждой строкой "Цитата: «...»" внутри CommentViewModal (см.
      * FormattedResolutionComment) - одна резолюция может ссылаться на несколько мест в тексте,
      * а не только на то первое, что попало в text/documentTarget выше. */
-    allQuotes: {id: number; documentTarget: string; text: string}[];
+    allQuotes: QuoteRef[];
     /** Версия документа редакции, к которой относится эта резолюция/цитата (см.
      * ApprovalStageQuoteResponse.revisionIndex, utils/vndProcess/redactionRevisions.ts) - нужна
      * при переходе "Показать в тексте" (см. VndCoordinationTab.handleShowQuoteInText), чтобы
@@ -59,7 +81,7 @@ function marksForPhase(
     comment: string | null,
     decidedAt: string | null,
     attachments: ApprovalStageAttachmentResponse[],
-    quotes: {id: number; documentTarget: string; text: string}[],
+    quotes: QuoteRef[],
     revisionIndex: number,
 ): QuoteMarkInfo[] {
     if (!decision || !comment || quotes.length === 0) return [];
@@ -67,6 +89,10 @@ function marksForPhase(
         id: q.id,
         documentTarget: q.documentTarget as RedactionViewTarget,
         text: q.text,
+        prefix: q.prefix,
+        suffix: q.suffix,
+        occurrence: q.occurrence,
+        note: q.note,
         stageId: stage.id,
         approverName: stage.approverName,
         approverUserId: stage.approverUserId,
@@ -125,7 +151,7 @@ function allCommentsForPhase(
     comment: string | null,
     decidedAt: string | null,
     attachments: ApprovalStageAttachmentResponse[],
-    quotes: {id: number; documentTarget: string; text: string}[],
+    quotes: QuoteRef[],
     revisionIndex: number,
 ): QuoteMarkInfo[] {
     if (!decision || !comment) return [];
@@ -236,7 +262,7 @@ export function collectQuoteMarksForRevision(
     process: ApprovalProcessResponse, documentTarget: RedactionViewTarget, revisionIndex: number,
 ): QuoteMarkInfo[] {
     const stageById = new Map(process.stages.map((s) => [s.id, s]));
-    const quotesByKey = new Map<string, {id: number; documentTarget: string; text: string}[]>();
+    const quotesByKey = new Map<string, QuoteRef[]>();
     for (const q of process.allQuotes) {
         if (q.revisionIndex !== revisionIndex) continue;
         const key = `${q.stageId}:${q.phase}`;
@@ -264,7 +290,7 @@ export function collectQuoteMarksForRevision(
 export function collectAllStageCommentsForRevision(
     process: ApprovalProcessResponse, revisionIndex: number,
 ): QuoteMarkInfo[] {
-    const quotesByKey = new Map<string, {id: number; documentTarget: string; text: string}[]>();
+    const quotesByKey = new Map<string, QuoteRef[]>();
     for (const q of process.allQuotes) {
         if (q.revisionIndex !== revisionIndex) continue;
         const key = `${q.stageId}:${q.phase}`;

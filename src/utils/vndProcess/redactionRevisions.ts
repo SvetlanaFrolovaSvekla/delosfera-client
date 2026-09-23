@@ -32,7 +32,22 @@ export function getRevisionLabel(redaction: VndRedactionResponse, revisionIndex:
 export function findSnapshotForRevision(
     process: ApprovalProcessResponse, revisionIndex: number,
 ): VndRedactionRevisionSnapshotResponse | null {
-    return process.redactionSnapshots.find((s) => s.snapshotNumber === revisionIndex + 1) ?? null;
+    // По ПОРЯДКУ снимков процесса, а не по равенству snapshotNumber === revisionIndex + 1: у
+    // процессов, запущенных повторно по той же редакции (актуализация без изменений), сервер
+    // раньше нумеровал снимки сквозь все процессы редакции - и версия "Р1.1" нового процесса не
+    // находила свой снимок. Порядок снимков внутри процесса от этого не зависит.
+    if (revisionIndex < 0) return null;
+    const ordered = [...process.redactionSnapshots].sort((a, b) => a.snapshotNumber - b.snapshotNumber);
+    return ordered[revisionIndex] ?? null;
+}
+
+/** Номер версии документа (см. revisionIndex), которую зафиксировал снимок - обратная к
+ * findSnapshotForRevision операция. -1, если снимка нет в этом процессе. */
+export function getSnapshotRevisionIndex(
+    process: ApprovalProcessResponse, snapshotId: number,
+): number {
+    const ordered = [...process.redactionSnapshots].sort((a, b) => a.snapshotNumber - b.snapshotNumber);
+    return ordered.findIndex((s) => s.id === snapshotId);
 }
 
 /** "Эффективная" редакция для просмотра версии revisionIndex - копия redaction с файловыми
@@ -83,4 +98,43 @@ export function listRevisions(
         label: getRevisionLabel(redaction, revisionIndex),
         isLive: revisionIndex === live,
     }));
+}
+
+const SNAPSHOT_PHASE_LABEL: Record<string, string> = {
+    primary: "замечания первичного согласования",
+    repeat: "замечания повторного согласования",
+    finalHold: "замечания финальной выдержки",
+};
+
+/** Синтетический id "редакции"-версии для списков выбора (RedactionCompareModal различает
+ * варианты по id) - отрицательный, чтобы никогда не совпасть с настоящим id редакции. */
+export function revisionOptionId(redactionId: number, revisionIndex: number): number {
+    return -(redactionId * 1000 + revisionIndex + 1);
+}
+
+/** Все версии документа этой редакции ("Р1", "Р1.1", "Р1.2"...) в виде "редакций" для окна
+ * сравнения (RedactionCompareModal) - чтобы проверяющие могли сравнить версию, к которой
+ * относились их замечания, с исправленной. number подобран так, чтобы более поздняя версия
+ * считалась "новее" (подписи "Новая"/"Предыдущая" в окне сравнения), description - что это за
+ * версия. */
+export function buildRevisionCompareOptions(
+    process: ApprovalProcessResponse, redaction: VndRedactionResponse,
+): VndRedactionResponse[] {
+    const live = getLiveRevisionIndex(process);
+    return Array.from({length: live + 1}, (_, revisionIndex) => {
+        const base = buildRevisionRedaction(process, redaction, revisionIndex);
+        const snapshot = revisionIndex < live ? findSnapshotForRevision(process, revisionIndex) : null;
+        const phaseLabel = snapshot ? SNAPSHOT_PHASE_LABEL[snapshot.phase] ?? "" : "";
+        const round = snapshot?.roundNumber && snapshot.roundNumber > 1 ? `, круг ${snapshot.roundNumber}` : "";
+        const description = revisionIndex === live
+            ? "Текущая версия"
+            : `Прошлая версия — на неё получены ${phaseLabel}${round}`;
+        return {
+            ...base,
+            id: revisionOptionId(redaction.id, revisionIndex),
+            code: getRevisionLabel(redaction, revisionIndex),
+            number: redaction.number + revisionIndex / 1000,
+            description,
+        };
+    });
 }

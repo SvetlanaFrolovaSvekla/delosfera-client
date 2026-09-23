@@ -11,7 +11,9 @@
 // именно к ней история: кто и когда что решил, на какой фазе, с каким комментарием.
 import {useTranslation} from "react-i18next";
 import type {TFunction} from "i18next";
-import {ArrowLeft, Route as RouteIcon} from "lucide-react";
+import {ArrowLeft, Download, Route as RouteIcon} from "lucide-react";
+import {downloadWithToast} from "@/utils/downloadFiles/downloadFile.ts";
+import {approvalSheetCaption, getRedactionApprovalSheets} from "@/utils/vndProcess/approvalSheets.ts";
 import {formatDateTime} from "@/utils/dateUtils.ts";
 import {EmptyState} from "@/components/componentsGeneral/EmptyState.tsx";
 import type {VndRedactionResponse, VndResponse} from "@/service/vndService/vndServiceType.ts";
@@ -59,7 +61,8 @@ function buildProcessTimeline(t: TFunction, process: ApprovalProcessResponse, at
     events.push({
         id: `${process.id}-start`,
         at: process.primaryStartedAt,
-        title: `${attemptPrefix}${t("openVndPage.historyTab.timeline.primaryStartedTitle")}`,
+        title: `${attemptPrefix}${t("openVndPage.historyTab.timeline.primaryStartedTitle")}` +
+            (process.isNoChangesActualization ? ` (${t("approvalSheets.noChanges")})` : ""),
         detail: t("openVndPage.historyTab.timeline.initiatorDetailLabel", {
             name: `${process.initiatorName}${process.initiatorPosition ? ` (${process.initiatorPosition})` : ""}`,
         }),
@@ -164,13 +167,23 @@ function buildProcessTimeline(t: TFunction, process: ApprovalProcessResponse, at
             at: process.completedAt,
             title: `${attemptPrefix}${completionLabel}`,
         });
+
+        if (process.approvalSheetFileId) {
+            events.push({
+                id: `${process.id}-sheet`,
+                at: process.completedAt,
+                title: `${attemptPrefix}${t("approvalSheets.timelineSheetGenerated")}` +
+                    (process.isNoChangesActualization ? ` (${t("approvalSheets.noChanges")})` : ""),
+                detail: process.approvalSheetFileName ?? null,
+            });
+        }
     }
 
     return events;
 }
 
 export function VndRedactionHistoryDetail({
-                                              redaction, displayStatus, processes, onBack,
+                                              vnd, redaction, displayStatus, processes, onBack,
                                           }: VndRedactionHistoryDetailProps) {
     const {t} = useTranslation();
     const meta = REDACTION_STATUS_META[displayStatus];
@@ -188,6 +201,10 @@ export function VndRedactionHistoryDetail({
         .sort((a, b) => new Date(a.at).getTime() - new Date(b.at).getTime());
 
     const processStatusLabel = (status: ApprovalProcessStatus) => t(`openVndPage.historyTab.processStatuses.${status}`);
+
+    // Все листы согласования этой редакции (от нового к старому) - у редакции, которую
+    // актуализировали без изменений, их несколько.
+    const approvalSheets = [...getRedactionApprovalSheets(redaction)].reverse();
 
     return (
         <div className="flex flex-col gap-[18px]">
@@ -237,6 +254,34 @@ export function VndRedactionHistoryDetail({
                 </div>
             </div>
 
+            {approvalSheets.length > 0 && (
+                <div className="bg-white border border-[#e9edf3] rounded-2xl overflow-hidden">
+                    <div className="px-5 pt-4 pb-3 border-b border-[#eef2f7]">
+                        <h2 className="m-0 text-sm font-semibold">
+                            {t("approvalSheets.sectionTitle")} ({approvalSheets.length})
+                        </h2>
+                    </div>
+                    <div className="px-5 py-2">
+                        {approvalSheets.map((sheet) => (
+                            <div key={`${sheet.id}-${sheet.fileId}`}
+                                 className="flex items-center gap-3 py-2 border-t border-[#f3f6f9] first:border-t-0">
+                                <div className="min-w-0 flex-1">
+                                    <div className="text-[12.5px] text-[#26324a]">{approvalSheetCaption(t, sheet)}</div>
+                                    <div className="truncate text-[11px] text-[#8b97ab]">{sheet.fileName}</div>
+                                </div>
+                                <button
+                                    type="button"
+                                    onClick={() => void downloadWithToast(sheet.fileId, sheet.fileName).catch(() => undefined)}
+                                    className="flex-none cursor-pointer grid h-8 w-8 place-items-center rounded-[8px] border border-[#d7dee8] bg-white text-[#4e57d6] hover:bg-[#ececfc]"
+                                >
+                                    <Download size={14}/>
+                                </button>
+                            </div>
+                        ))}
+                    </div>
+                </div>
+            )}
+
             <div className="flex flex-col gap-[14px]">
                 <div className="flex items-center gap-[9px] px-1">
                     <RouteIcon size={17} strokeWidth={1.8} className="text-[#8b97ab]"/>
@@ -266,10 +311,33 @@ export function VndRedactionHistoryDetail({
                                     {processStatusLabel(p.status)}
                                     {p.completedAt ? t("openVndPage.historyTab.completedAtLabel", {date: formatDateTime(p.completedAt)}) : ""}
                                 </span>
+                                {p.isNoChangesActualization && (
+                                    <span className="inline-block rounded bg-[#ececfc] px-1.5 py-0.5 text-[9.5px] font-bold text-[#4e57d6] whitespace-nowrap">
+                                        {t("approvalSheets.noChangesBadge")}
+                                    </span>
+                                )}
+                                {p.approvalSheetFileId && (
+                                    <button
+                                        type="button"
+                                        onClick={() => void downloadWithToast(
+                                            p.approvalSheetFileId as number,
+                                            p.approvalSheetFileName ?? `${redaction.code}_Лист_согласования.docx`,
+                                        ).catch(() => undefined)}
+                                        className="ml-auto inline-flex cursor-pointer items-center gap-1 rounded-[8px] border border-[#e5e9f0] bg-white px-2.5 py-1 text-[11px] font-semibold text-[#4e57d6] hover:bg-[#ececfc]"
+                                    >
+                                        <Download size={12}/>
+                                        {t("approvalSheets.processSheetButton")}
+                                    </button>
+                                )}
                             </div>
                             <div className="flex flex-col gap-4 p-4">
                                 <VndApprovalSummary process={p}/>
-                                <ApprovalRouteHistoryCarousel process={p}/>
+                                <ApprovalRouteHistoryCarousel
+                                    process={p}
+                                    vnd={vnd}
+                                    redaction={redaction}
+                                    isLatestProcess={i === sortedProcesses.length - 1}
+                                />
                             </div>
                         </div>
                     ))

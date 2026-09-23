@@ -32,8 +32,9 @@ export function useResolutionDecision(vndId: number, reload: () => Promise<void>
         comment: string,
         files: File[],
         quotes: ApprovalQuoteItem[],
-    ) => {
-        if (!myStage || decisionInFlightRef.current) return;
+    ): Promise<boolean> => {
+        // true - резолюция сохранена (панель резолюции по нему стирает свой черновик в браузере).
+        if (!myStage || decisionInFlightRef.current) return false;
         decisionInFlightRef.current = true;
         setSubmitting(true);
         setDecisionError(null);
@@ -46,8 +47,10 @@ export function useResolutionDecision(vndId: number, reload: () => Promise<void>
             });
             await reload();
             toast.success(t("openVndPage.coordinationTab.decisionSubmittedToastTitle"), t("openVndPage.coordinationTab.decisionSubmittedToastDescription"));
+            return true;
         } catch (err) {
             setDecisionError(err instanceof Error ? err.message : t("openVndPage.coordinationTab.decisionErrorDefault"));
+            return false;
         } finally {
             decisionInFlightRef.current = false;
             setSubmitting(false);

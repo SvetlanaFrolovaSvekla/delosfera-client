@@ -335,7 +335,8 @@ function RedactionListItem({
     // нельзя - посмотреть лист согласования можно было только со страницы согласования.
     const specialAttachmentsCount =
         (redaction.tidFileId !== null ? 1 : 0)
-        + (redaction.approvalSheetFileId !== null ? 1 : 0)
+        // Листов согласования может быть несколько (актуализация без изменений) - считаем все.
+        + Math.max(redaction.approvalSheets?.length ?? 0, redaction.approvalSheetFileId !== null ? 1 : 0)
         + (redaction.disagreementMatrixFileId !== null ? 1 : 0);
     const totalAttachmentsCount = redaction.attachments.length + specialAttachmentsCount;
     const hasAttachments = totalAttachmentsCount > 0;

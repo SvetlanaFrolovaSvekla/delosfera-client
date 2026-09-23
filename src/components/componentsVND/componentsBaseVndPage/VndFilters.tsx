@@ -57,6 +57,10 @@ interface VndFiltersProps {
 
     /** Выбор представления журнала. Стоит рядом с «Колонки» — им и распоряжается. */
     viewPicker?: ReactNode;
+    /** Выпадающий список "Сортировка" (VndSortDropdown) — показывается справа от выбора
+     * представления. Сортировка — настройка отображения, а не фильтр, поэтому на
+     * hasActiveFilters/"Сбросить фильтры" не влияет. */
+    sortPicker?: ReactNode;
 
     toggleableColumns: ColDef[];
     visibleCols: Record<string, boolean>;
@@ -139,6 +143,7 @@ export function VndFilters(props: VndFiltersProps) {
         rubricFilters, onRubricFiltersChange,
         resultCount, totalCount, onResetFilters,
         viewPicker,
+        sortPicker,
         toggleableColumns, visibleCols, onToggleColumn, onSelectAllColumns, onDeselectAllColumns,
         onDocTypeFiltersChange, docTypeFilters,
         organFilters, onOrganFiltersChange,
@@ -360,6 +365,8 @@ export function VndFilters(props: VndFiltersProps) {
                 )}
 
                 {viewPicker}
+
+                {sortPicker}
 
                 <div className="flex-1"/>
 

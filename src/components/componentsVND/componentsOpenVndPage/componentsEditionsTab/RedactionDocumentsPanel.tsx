@@ -1,5 +1,6 @@
 // Компонента с карточкой панели для скачивания ВНД (Документы редакции) в RedactionColumn, RedactionSummaryCard
 import React, {useState} from "react";
+import {useTranslation} from "react-i18next";
 import type {VndRedactionResponse, VndResponse} from "@/service/vndService/vndServiceType.ts";
 import {buildRedactionFileName, isPreviewableFile, resolveVndDocTitle} from "@/utils/downloadFiles/fileNaming.ts";
 import type {RedactionLanguage, RedactionViewTarget} from "@/utils/vndProcess/redactionLanguagePanelUtils.ts";
@@ -9,6 +10,7 @@ import {
     AttachmentDocxPreviewModal
 } from "@/components/componentsGeneral/modal/AttachmentDocxPreviewModal.tsx";
 import {Tooltip} from "@/components/componentsGeneral/Tooltip.tsx";
+import {approvalSheetCaption, getRedactionApprovalSheets} from "@/utils/vndProcess/approvalSheets.ts";
 
 interface RedactionDocumentsPanelProps {
     vnd: VndResponse;
@@ -44,6 +46,7 @@ export function RedactionDocumentsPanel({
     // отдельную кнопку-глазик рядом со скачиванием, только для форматов, которые эта модалка
     // умеет показать: .docx/.xlsx/.pptx (см. isPreviewableFile).
     const [previewAttachment, setPreviewAttachment] = useState<{ fileId: number; fileName: string } | null>(null);
+    const {t} = useTranslation();
 
     // Метка "Обновлено, дата" актуальна только пока редакция ещё в процессе согласования
     // (т.е. пока не исключено, что мы смотрим именно на этап "Согласование после внесённых
@@ -73,10 +76,14 @@ export function RedactionDocumentsPanel({
     // не через buildRedactionFileName (та функция заточена под языковые варианты документа).
     const tidFileName = `${selected.code}_ТИД.docx`;
 
-    // Лист согласования формируется автоматически сервером (см. VndApprovalService.
-    // FinalizeApprovalAsync) - имя файла тоже собираем отдельно, оригинальное имя сохранённого
-    // на сервере вложения совпадает с этим шаблоном.
-    const approvalSheetFileName = `${selected.code}_Лист_согласования.docx`;
+    // Листы согласования формируются автоматически сервером (см. VndApprovalService.
+    // FinalizeApprovalAsync). У редакции их может быть несколько - первичное согласование плюс
+    // по листу за каждое повторное согласование в рамках актуализации без изменений (см.
+    // VndRedactionApprovalSheet на бэке); показываем все, от нового к старому, с подписью, от
+    // какого согласования и какого числа лист. Последний открывается тем же просмотрщиком, что
+    // и раньше (onView("approvalSheet") - он смотрит на approvalSheetFileId), предыдущие - в
+    // AttachmentDocxPreviewModal.
+    const approvalSheets = [...getRedactionApprovalSheets(selected)].reverse();
 
     // Матрица разногласий - тоже "специальное" вложение без привязки к языку, появляется, если
     // инициатор при доработке был не полностью согласен с замечаниями (см. RemarksAgreement).
@@ -133,27 +140,39 @@ export function RedactionDocumentsPanel({
                 </>
             )}
 
-            {(selected.approvalSheetFileId !== null || selected.disagreementMatrixFileId !== null) && (
+            {(approvalSheets.length > 0 || selected.disagreementMatrixFileId !== null) && (
                 <>
                     <SectionLabel className="mt-5">Специальные вложения</SectionLabel>
                     <div className="flex flex-col gap-2">
-                        {selected.approvalSheetFileId !== null && (
-                            <DownloadRow
-                                icon={<FileText size={16} className="flex-none text-[#4e57d6]"/>}
-                                isDownloading={downloadingId === selected.approvalSheetFileId}
-                                onClick={() => onDownload(selected.approvalSheetFileId as number, approvalSheetFileName)}
-                                onView={onView ? () => onView("approvalSheet") : undefined}
-                            >
-                                <span className="flex min-w-0 flex-1 flex-col">
-                                    <span className="text-[9.5px] font-bold uppercase tracking-[0.04em] text-[#a3adbd]">
-                                        Лист согласования
+                        {approvalSheets.map((sheet) => {
+                            const isLatest = sheet.fileId === selected.approvalSheetFileId;
+                            return (
+                                <DownloadRow
+                                    key={`sheet-${sheet.id}-${sheet.fileId}`}
+                                    icon={<FileText size={16} className="flex-none text-[#4e57d6]"/>}
+                                    isDownloading={downloadingId === sheet.fileId}
+                                    onClick={() => onDownload(sheet.fileId, sheet.fileName)}
+                                    onView={isLatest
+                                        ? (onView ? () => onView("approvalSheet") : undefined)
+                                        : () => setPreviewAttachment({fileId: sheet.fileId, fileName: sheet.fileName})}
+                                >
+                                    <span className="flex min-w-0 flex-1 flex-col">
+                                        <span className="text-[9.5px] font-bold uppercase tracking-[0.04em] text-[#a3adbd]">
+                                            Лист согласования
+                                            {approvalSheets.length > 1 && isLatest ? ` · ${t("approvalSheets.latest")}` : ""}
+                                        </span>
+                                        <span className="truncate text-[13px] text-[#26324a]">
+                                            {approvalSheetCaption(t, sheet)}
+                                        </span>
                                     </span>
-                                    <span className="truncate text-[13px] text-[#26324a]">
-                                        {approvalSheetFileName}
-                                    </span>
-                                </span>
-                            </DownloadRow>
-                        )}
+                                    {sheet.isNoChangesActualization && (
+                                        <span className="flex-none rounded-full bg-[#ececfc] px-2 py-[3px] text-[10.5px] font-semibold text-[#4e57d6]">
+                                            {t("approvalSheets.noChangesBadge")}
+                                        </span>
+                                    )}
+                                </DownloadRow>
+                            );
+                        })}
                         {selected.disagreementMatrixFileId !== null && (
                             <DownloadRow
                                 icon={<FileText size={16} className="flex-none text-[#4e57d6]"/>}

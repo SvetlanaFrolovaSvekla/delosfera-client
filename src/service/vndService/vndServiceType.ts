@@ -249,6 +249,21 @@ export interface VndResponse {
 }
 
 // --- Редакции
+/** Один лист согласования редакции - см. VndRedactionApprovalSheetResponse на бэке. */
+export interface VndRedactionApprovalSheetResponse {
+    id: number;
+    fileId: number;
+    fileName: string;
+    sizeBytes: number;
+    /** Процесс согласования, по итогам которого сформирован лист (null - приложен вручную). */
+    approvalProcessId: number | null;
+    /** Лист от повторного согласования в рамках актуализации без изменений. */
+    isNoChangesActualization: boolean;
+    /** Приложен главным редактором вручную, а не сформирован системой. */
+    isManual: boolean;
+    approvedAt: string;
+}
+
 export interface VndRedactionResponse {
     id: number;
     code: string;
@@ -275,6 +290,11 @@ export interface VndRedactionResponse {
      * завершается. Null, пока редакция не согласована. Показывается отдельным блоком
      * "Специальные вложения" (см. RedactionDocumentsPanel). */
     approvalSheetFileId: number | null;
+
+    /** ВСЕ листы согласования редакции, от первого к последнему (последний совпадает с
+     * approvalSheetFileId). Больше одного - когда редакцию повторно согласовывали в рамках
+     * актуализации без изменений (у каждого такого согласования - свой лист). */
+    approvalSheets?: VndRedactionApprovalSheetResponse[];
 
     /** Матрица разногласий - null, пока инициатор не отправил редакцию с несогласием (частичным
      * или полным) по замечаниям. Показывается в "Специальные вложения" (см. RedactionDocumentsPanel). */

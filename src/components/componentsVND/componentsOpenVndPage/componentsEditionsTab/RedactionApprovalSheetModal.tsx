@@ -1,12 +1,16 @@
 // Модалка "Просмотр Листа согласования" — устроена так же, как RedactionTidModal (одиночный
 // специальный документ редакции без языковых вкладок), только для файла, который формируется
 // автоматически по завершении согласования (см. VndApprovalService.GenerateApprovalSheetAsync).
+// Если у редакции несколько листов (повторные согласования в рамках актуализации без изменений,
+// см. approvalSheets.ts) - над документом переключатель между ними, по умолчанию последний.
+import {useState} from "react";
 import {createPortal} from "react-dom";
 import {useTranslation} from "react-i18next";
 import type {VndRedactionResponse, VndResponse} from "@/service/vndService/vndServiceType.ts";
 import {RedactionTextView} from "@/components/componentsVND/componentsOpenVndPage/componentsEditionsTab/RedactionTextView.tsx";
 import {Tooltip} from "@/components/componentsGeneral/Tooltip.tsx";
 import {ClipboardCheck, Download, Loader2, X} from "lucide-react";
+import {approvalSheetCaption, getRedactionApprovalSheets} from "@/utils/vndProcess/approvalSheets.ts";
 
 interface RedactionApprovalSheetModalProps {
     vnd: VndResponse;
@@ -20,8 +24,12 @@ export function RedactionApprovalSheetModal({
                                                 vnd, redaction, downloadingId, onDownload, onClose,
                                             }: RedactionApprovalSheetModalProps) {
     const {t} = useTranslation();
-    const approvalSheetFileId = redaction.approvalSheetFileId;
-    const approvalSheetFileName = `${redaction.code}_Лист_согласования.docx`;
+    const sheets = getRedactionApprovalSheets(redaction);
+    const [selectedFileId, setSelectedFileId] = useState<number | null>(redaction.approvalSheetFileId);
+    const selectedSheet = sheets.find((s) => s.fileId === selectedFileId) ?? sheets[sheets.length - 1] ?? null;
+
+    const approvalSheetFileId = selectedSheet?.fileId ?? redaction.approvalSheetFileId;
+    const approvalSheetFileName = selectedSheet?.fileName ?? `${redaction.code}_Лист_согласования.docx`;
 
     return createPortal(
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-3">
@@ -68,6 +76,26 @@ export function RedactionApprovalSheetModal({
                     </div>
                 </div>
 
+                {sheets.length > 1 && (
+                    <div className="flex flex-none flex-wrap items-center gap-2 border-b border-[#eef2f7] px-6 py-3">
+                        {[...sheets].reverse().map((sheet) => {
+                            const active = sheet.fileId === approvalSheetFileId;
+                            return (
+                                <button
+                                    key={`${sheet.id}-${sheet.fileId}`}
+                                    type="button"
+                                    onClick={() => setSelectedFileId(sheet.fileId)}
+                                    className={`cursor-pointer rounded-full border px-3 py-[5px] text-[12px] font-semibold ${active
+                                        ? "border-[#4e57d6] bg-[#ececfc] text-[#4e57d6]"
+                                        : "border-[#d7dee8] bg-white text-[#5b6680] hover:bg-[#f6f8fb]"}`}
+                                >
+                                    {approvalSheetCaption(t, sheet)}
+                                </button>
+                            );
+                        })}
+                    </div>
+                )}
+
                 <div className="flex min-h-0 flex-1 flex-col overflow-hidden py-4">
                     {approvalSheetFileId === null ? (
                         <div className="flex flex-1 flex-col items-center justify-center gap-2 p-[48px] text-center text-[13px] text-[#8b97ab]">
@@ -77,8 +105,9 @@ export function RedactionApprovalSheetModal({
                         </div>
                     ) : (
                         <RedactionTextView
+                            key={approvalSheetFileId}
                             vnd={vnd}
-                            selected={redaction}
+                            selected={{...redaction, approvalSheetFileId}}
                             activeLanguage="approvalSheet"
                             downloadingId={downloadingId}
                             onDownload={onDownload}

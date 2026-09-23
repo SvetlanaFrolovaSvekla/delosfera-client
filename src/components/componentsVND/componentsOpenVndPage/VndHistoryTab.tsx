@@ -10,6 +10,8 @@ import type {
 } from "@/service/coordinationService/coordinationServiceTypes.ts";
 import type {VndRedactionResponse, VndResponse} from "@/service/vndService/vndServiceType.ts";
 import {getRedactionDisplayStatus, REDACTION_STATUS_META} from "@/utils/vndProcess/redactionStatus.ts";
+import {approvalSheetCaption, getRedactionApprovalSheets} from "@/utils/vndProcess/approvalSheets.ts";
+import {downloadWithToast} from "@/utils/downloadFiles/downloadFile.ts";
 import {
     VndRedactionHistoryDetail
 } from "@/components/componentsVND/componentsOpenVndPage/componentsHistoryTab/VndRedactionHistoryDetail.tsx";
@@ -204,6 +206,9 @@ export function VndHistoryTab({vnd, redactions}: VndHistoryTabProps) {
                             // approvalHistory отсортирован сервером по убыванию CreatedAt — первое
                             // совпадение по redactionId и есть последний цикл согласования этой редакции.
                             const process = approvalHistory?.find((p) => p.redactionId === r.id) ?? null;
+                            // Все листы согласования редакции - у "актуализированной без изменений"
+                            // их несколько (по одному на каждое согласование этой же редакции).
+                            const sheets = [...getRedactionApprovalSheets(r)].reverse();
 
                             return (
                                 <div key={r.id}
@@ -235,6 +240,11 @@ export function VndHistoryTab({vnd, redactions}: VndHistoryTabProps) {
                                                 <div className="text-[11.5px] text-[#8b97ab] mt-0.5">
                                                     {t("openVndPage.historyTab.statusLabel")}: {t(`openVndPage.historyTab.processStatuses.${process.status}`)}
                                                     {process.completedAt ? t("openVndPage.historyTab.completedSuffix", {date: formatDateTime(process.completedAt)}) : ""}
+                                                    {process.isNoChangesActualization && (
+                                                        <span className="ml-1.5 inline-block rounded bg-[#ececfc] px-1.5 py-0.5 text-[9.5px] font-bold text-[#4e57d6] whitespace-nowrap">
+                                                            {t("approvalSheets.noChangesBadge")}
+                                                        </span>
+                                                    )}
                                                 </div>
                                                 {process.stages.length > 0 && (
                                                     <div className="mt-1.5 flex flex-col gap-1">
@@ -272,6 +282,26 @@ export function VndHistoryTab({vnd, redactions}: VndHistoryTabProps) {
                                         ) : (
                                             <div className="text-[11.5px] text-[#a3adbd] mt-0.5">
                                                 {t("openVndPage.historyTab.notStartedHint")}
+                                            </div>
+                                        )}
+
+                                        {sheets.length > 0 && (
+                                            <div className="mt-1.5">
+                                                <div className="text-[11.5px] text-[#8b97ab]">
+                                                    {t("approvalSheets.historySheetsCount", {count: sheets.length})}
+                                                </div>
+                                                <div className="mt-0.5 flex flex-col gap-0.5">
+                                                    {sheets.map((sheet) => (
+                                                        <button
+                                                            key={`${sheet.id}-${sheet.fileId}`}
+                                                            type="button"
+                                                            onClick={() => void downloadWithToast(sheet.fileId, sheet.fileName).catch(() => undefined)}
+                                                            className="w-fit cursor-pointer text-left text-[11.5px] text-[#4e57d6] hover:underline"
+                                                        >
+                                                            {approvalSheetCaption(t, sheet)}
+                                                        </button>
+                                                    ))}
+                                                </div>
                                             </div>
                                         )}
                                     </div>

@@ -1,5 +1,5 @@
-import {forwardRef, useImperativeHandle, useRef, useState} from "react";
-import {Check, MessageSquare, Paperclip, Quote, X, AlertCircle, ExternalLink} from "lucide-react";
+import {forwardRef, useEffect, useImperativeHandle, useMemo, useRef, useState} from "react";
+import {Check, MessageSquare, Paperclip, Quote, X, AlertCircle, Search, Trash2, TextQuote} from "lucide-react";
 import {ConfirmActionModal} from "@/components/componentsGeneral/modal/ConfirmActionModal.tsx";
 import {formatFileSize} from "@/service/documentService/attachmentService.ts";
 import {Tooltip} from "@/components/componentsGeneral/Tooltip.tsx";
@@ -12,80 +12,135 @@ import {
 import {CharCounter} from "@/components/componentsGeneral/CharCounter.tsx";
 import type {ApprovalQuoteItem} from "@/service/coordinationService/coordinationServiceTypes.ts";
 import type {RedactionViewTarget} from "@/utils/vndProcess/redactionLanguagePanelUtils.ts";
+import type {QuoteAnchorContext} from "@/utils/docxWork/quoteAnchor.ts";
+import {
+    formatQuoteLine, QUOTE_NOTE_PREFIX, quoteDisplayText, quoteMatchText,
+} from "@/utils/vndProcess/quoteText.ts";
 
 export type ResolutionChoice = "approve" | "approveWithComment" | "reject";
 export type ResolutionPhase = "primary" | "repeated" | "finalHold";
 
+/** Одно замечание к фрагменту текста редакции - карточка в блоке "Замечания к тексту".
+ * Хранится отдельно от общего комментария (раньше цитата вставлялась прямо в текст комментария
+ * строкой "Цитата: «...»", и связь "цитата ↔ маркер в тексте" держалась на том, что эту строку
+ * никто не правил руками - любая правка молча отвязывала цитату). Итоговый текст резолюции
+ * собирается из общего комментария и карточек только в момент отправки (см. composeResolutionComment). */
+export interface DraftTextRemark {
+    /** Отрицательный локальный id - не пересекается с id сохранённых цитат (они > 0), поэтому
+     * черновик можно подсвечивать в тексте документа вместе с чужими цитатами. */
+    id: number;
+    documentTarget: RedactionViewTarget;
+    /** Текст для поиска в документе (без многоточия, см. quoteMatchText). */
+    text: string;
+    /** Текст для отображения в резолюции (обрезанный с многоточием, см. quoteDisplayText). */
+    displayText: string;
+    prefix: string | null;
+    suffix: string | null;
+    occurrence: number | null;
+    /** Замечание к этому фрагменту - необязательно. */
+    note: string;
+}
+
 interface VndApproverResolutionPanelProps {
+    /** Возвращает true, если резолюция успешно отправлена (тогда черновик в браузере стирается). */
     onSubmit: (
         choice: ResolutionChoice, comment: string, files: File[], quotes: ApprovalQuoteItem[],
-    ) => Promise<void> | void;
+    ) => Promise<boolean | void> | boolean | void;
     submitting?: boolean;
     error?: string | null;
     phase?: ResolutionPhase;
     /** Открыть просмотр проверяемой редакции в режиме "сослаться на текст" (см. insertQuote
-     * у VndApproverResolutionPanelHandle). Кнопка "Сослаться на текст редакции" рисуется только
+     * у VndApproverResolutionPanelHandle). Кнопка "Добавить замечание к тексту" рисуется только
      * если передан этот проп - вызывающая сторона должна знать, какую редакцию открывать. */
     onCiteRequest?: () => void;
-    /** Открыть просмотр редакции, сразу проскроллив к месту одной из уже вставленных цитат
-     * (см. список "Ваши цитаты" ниже под комментарием) - см. RedactionViewModal.initialSearchQuery. */
-    onJumpToQuote?: (quote: ApprovalQuoteItem) => void;
+    /** Открыть просмотр редакции с прокруткой к фрагменту одного из черновых замечаний
+     * ("Показать в тексте" на карточке) - см. RedactionViewModal.initialFocusQuoteId. */
+    onJumpToQuote?: (remark: DraftTextRemark) => void;
+    /** Сообщает наверх актуальный список черновых замечаний - чтобы окно просмотра редакции
+     * подсвечивало их в тексте (RedactionViewModal.draftQuotes). */
+    onDraftRemarksChange?: (remarks: DraftTextRemark[]) => void;
+    /** Ключ для автосохранения черновика резолюции в браузере (localStorage) - должен
+     * однозначно определять процесс/этап/фазу/версию документа (см. VndCoordinationTab). Без него
+     * черновик не сохраняется. */
+    draftStorageKey?: string;
 }
 
 export interface VndApproverResolutionPanelHandle {
-    /** Вставляет цитату выделенного в редакции текста в поле "Комментарий" на месте курсора
-     * (см. RedactionViewModal.onInsertQuote). Панель сама оборачивает текст в "Цитата: «...»".
-     * documentTarget - вкладка документа (язык/ТИД/...), с которой процитировали - нужна, чтобы
-     * потом правильно подсветить маркер в тексте на нужной вкладке (см. VndApprovalStageQuote). */
-    insertQuote: (selectedText: string, documentTarget: RedactionViewTarget) => void;
+    /** Добавляет замечание к выделенному в редакции фрагменту (см.
+     * RedactionViewModal.onInsertQuote) - новой карточкой в блоке "Замечания к тексту", с фокусом
+     * на поле замечания. anchor - "якорь" фрагмента (см. utils/docxWork/quoteAnchor.ts). */
+    insertQuote: (
+        selectedText: string, documentTarget: RedactionViewTarget, anchor: QuoteAnchorContext | null,
+    ) => void;
 }
 
-// Совсем длинные выделения (например, случайно выделенный целый раздел) обрезаем - иначе
-// комментарий резолюции превращается в нечитаемую простыню. 35000 символов лимита поля
-// с запасом хватает даже без обрезки, ограничение здесь чисто про читаемость.
-const MAX_QUOTE_SOURCE_LENGTH = 600;
+const TARGET_LABELS: Record<RedactionViewTarget, string> = {
+    ru: "RU", kg: "KG", en: "EN", tid: "ТИД", approvalSheet: "Лист согласования",
+    disagreementMatrix: "Матрица разногласий",
+};
 
-// Схлопываем переносы строк/лишние пробелы - многострочный фрагмент документа, вставленный
-// как есть, в plain-text поле резолюции выглядит неряшливо. Общее и для текста, вставляемого
-// в комментарий, и для текста, который отправляется на бэк для подсветки маркера в документе.
-function collapseQuoteText(rawText: string): string {
-    return rawText.replace(/\s+/g, " ").trim();
+// Строка, начинающаяся с "Цитата: «", при отображении резолюции считается цитатой и
+// сопоставляется со списком сохранённых цитат ПО ПОРЯДКУ (см. FormattedResolutionComment). Если
+// пользователь сам напечатает такую строку в комментарии/замечании, порядок собьётся - поэтому в
+// свободном тексте этот префикс слегка меняем.
+function neutralizeQuoteMarkers(text: string): string {
+    return text.replace(/^(\s*)Цитата: «/gm, "$1Цитата «");
 }
 
-// Текст цитаты, как он вставляется в поле "Комментарий" - обрезан до MAX_QUOTE_SOURCE_LENGTH с
-// многоточием (чисто ради читаемости комментария). ВАЖНО: этот вариант не годится для поиска
-// цитаты в самом документе (см. matchTextFor ниже) - многоточие "…" не входит в исходный текст
-// документа, и обрезанная с многоточием строка никогда не найдётся как подстрока.
-function formatQuote(rawText: string): string {
-    const collapsed = collapseQuoteText(rawText);
-    const clipped = collapsed.length > MAX_QUOTE_SOURCE_LENGTH
-        ? `${collapsed.slice(0, MAX_QUOTE_SOURCE_LENGTH).trimEnd()}…`
-        : collapsed;
-    return `Цитата: «${clipped}»`;
+/** Итоговый текст резолюции: общий комментарий, затем по каждой карточке строка
+ * "Цитата: «...»" и (если есть) строка "Замечание: ...". Формат строк цитат прежний, поэтому
+ * история, лист согласования, уведомления и уже отправленные резолюции отображаются как раньше. */
+function composeResolutionComment(comment: string, remarks: DraftTextRemark[]): string {
+    const blocks: string[] = [];
+    const general = neutralizeQuoteMarkers(comment.trim());
+    if (general) blocks.push(general);
+    for (const r of remarks) {
+        const lines = [formatQuoteLine(r.displayText)];
+        const note = neutralizeQuoteMarkers(r.note.trim());
+        if (note) lines.push(`${QUOTE_NOTE_PREFIX}${note}`);
+        blocks.push(lines.join("\n"));
+    }
+    return blocks.join("\n\n");
 }
 
-// Текст цитаты, как он отправляется на бэк и используется для подсветки/поиска маркера в тексте
-// документа (см. useDocxQuoteMarks/useDocxTextSearch) - схлопывание пробелов, БЕЗ многоточия,
-// чтобы остаться точной подстрокой исходного текста документа.
-//
-// ⚠ Длина ограничена (в отличие от formatQuote выше, который обрезает только ОТОБРАЖАЕМУЮ в
-// комментарии строку) - раньше сюда шёл ВЕСЬ выделенный текст целиком, без всякого предела.
-// Чем длиннее точная строка, которую нужно найти как непрерывную подстроку в документе, тем выше
-// шанс, что где-то внутри неё окажется разрыв, который поиск не умеет "прощать" (перенос страницы,
-// сноска, номер страницы, вставленный docx-preview служебный элемент - в отличие от пробелов
-// между словами и невидимых символов внутри слова, такие разрывы не сглаживаются
-// buildWhitespaceTolerantRegex) - тогда точное совпадение не находится ВООБЩЕ, и кнопка "Показать
-// в тексте" выглядит как "не работает" (сама модалка честно открывается, просто "Совпадений
-// нет"), хотя чаще всего именно так проявлялся баг именно на длинных, в несколько абзацев,
-// выделениях. Короткий, но всё ещё однозначно идентифицирующий фрагмент того же самого места
-// документа поводов для такого разрыва почти не оставляет.
-const MAX_QUOTE_MATCH_LENGTH = 300;
+interface StoredDraft {
+    choice: ResolutionChoice;
+    comment: string;
+    remarks: DraftTextRemark[];
+    savedAt: number;
+}
 
-function matchTextFor(rawText: string): string {
-    const collapsed = collapseQuoteText(rawText);
-    return collapsed.length > MAX_QUOTE_MATCH_LENGTH
-        ? collapsed.slice(0, MAX_QUOTE_MATCH_LENGTH).trimEnd()
-        : collapsed;
+// Черновик старше этого срока не восстанавливаем - скорее всего он уже неактуален.
+const DRAFT_TTL_MS = 30 * 24 * 60 * 60 * 1000;
+
+function loadDraft(key: string | undefined): StoredDraft | null {
+    if (!key) return null;
+    try {
+        const raw = window.localStorage.getItem(key);
+        if (!raw) return null;
+        const parsed = JSON.parse(raw) as StoredDraft;
+        if (!parsed || !Array.isArray(parsed.remarks) || typeof parsed.comment !== "string") return null;
+        if (Date.now() - (parsed.savedAt ?? 0) > DRAFT_TTL_MS) return null;
+        return parsed;
+    } catch {
+        return null;
+    }
+}
+
+function saveDraft(key: string | undefined, draft: StoredDraft | null) {
+    if (!key) return;
+    try {
+        if (!draft) window.localStorage.removeItem(key);
+        else window.localStorage.setItem(key, JSON.stringify(draft));
+    } catch {
+        // Приватный режим/переполненное хранилище - черновик просто не сохранится.
+    }
+}
+
+let draftIdSeq = 0;
+function nextDraftId(): number {
+    draftIdSeq = (draftIdSeq + 1) % 1000;
+    return -(Date.now() * 1000 + draftIdSeq);
 }
 
 interface OptionConfig {
@@ -178,18 +233,19 @@ export const VndApproverResolutionPanel = forwardRef<
                                           phase = "primary",
                                           onCiteRequest,
                                           onJumpToQuote,
+                                          onDraftRemarksChange,
+                                          draftStorageKey,
                                       }, ref) {
-    const [choice, setChoice] = useState<ResolutionChoice>("approve");
-    const [comment, setComment] = useState("");
-    const textareaRef = useRef<HTMLTextAreaElement>(null);
-    // Цитаты, вставленные через "+ Сослаться на текст редакции" - структурированно, отдельно от
-    // текста комментария (куда они попадают в виде "Цитата: «...»") - нужны, чтобы при отправке
-    // резолюции сохранить их на бэке как маркеры для подсветки в тексте документа (см.
-    // VndApprovalStageQuote). displayLine - ровно та строка, что вставлена в textarea, по ней
-    // при отправке проверяем, что цитату не удалили из комментария вручную.
-    const [quotes, setQuotes] = useState<
-        {documentTarget: RedactionViewTarget; text: string; displayLine: string}[]
-    >([]);
+    // Черновик, сохранённый в браузере (см. draftStorageKey) - читаем один раз при монтировании:
+    // случайно закрытая вкладка/перезагрузка страницы/переход на другую вкладку ВНД больше не
+    // уничтожают набранную резолюцию и замечания к тексту.
+    const [restoredDraft] = useState(() => loadDraft(draftStorageKey));
+    const [choice, setChoice] = useState<ResolutionChoice>(restoredDraft?.choice ?? "approve");
+    const [comment, setComment] = useState(restoredDraft?.comment ?? "");
+    const [remarks, setRemarks] = useState<DraftTextRemark[]>(restoredDraft?.remarks ?? []);
+    const [draftRestoredNoticeVisible, setDraftRestoredNoticeVisible] = useState(
+        !!restoredDraft && (restoredDraft.comment.trim().length > 0 || restoredDraft.remarks.length > 0),
+    );
     const [files, setFiles] = useState<File[]>([]);
     const [attachmentCountLimitHit, setAttachmentCountLimitHit] = useState(false);
     const [oversizedFileNames, setOversizedFileNames] = useState<string[]>([]);
@@ -201,13 +257,58 @@ export const VndApproverResolutionPanel = forwardRef<
     // гарантированно снимает это состояние.
     const [fileInputKey, setFileInputKey] = useState(0);
 
+    // Поля "Замечание" карточек - чтобы поставить фокус в только что добавленную карточку.
+    const noteRefs = useRef<Map<number, HTMLTextAreaElement>>(new Map());
+    const [pendingFocusRemarkId, setPendingFocusRemarkId] = useState<number | null>(null);
+    // Карточка, которую только что добавили (или попытались добавить повторно) - коротко
+    // подсвечиваем, чтобы было видно, куда попало замечание.
+    const [flashRemarkId, setFlashRemarkId] = useState<number | null>(null);
+
+    useEffect(() => {
+        if (pendingFocusRemarkId === null) return;
+        const el = noteRefs.current.get(pendingFocusRemarkId);
+        if (el) {
+            el.scrollIntoView({block: "center", behavior: "smooth"});
+            el.focus({preventScroll: true});
+        }
+        setPendingFocusRemarkId(null);
+    }, [pendingFocusRemarkId, remarks]);
+
+    useEffect(() => {
+        if (flashRemarkId === null) return;
+        const timer = setTimeout(() => setFlashRemarkId(null), 1600);
+        return () => clearTimeout(timer);
+    }, [flashRemarkId]);
+
+    // Черновые замечания - наверх, для подсветки в окне просмотра редакции.
+    const onDraftRemarksChangeRef = useRef(onDraftRemarksChange);
+    onDraftRemarksChangeRef.current = onDraftRemarksChange;
+    useEffect(() => {
+        onDraftRemarksChangeRef.current?.(remarks);
+    }, [remarks]);
+
+    // Автосохранение черновика (с небольшой задержкой, чтобы не писать в хранилище на каждый символ).
+    useEffect(() => {
+        const timer = setTimeout(() => {
+            const empty = comment.trim().length === 0 && remarks.length === 0 && choice === "approve";
+            saveDraft(draftStorageKey, empty ? null : {choice, comment, remarks, savedAt: Date.now()});
+        }, 400);
+        return () => clearTimeout(timer);
+    }, [choice, comment, remarks, draftStorageKey]);
+
     const options = OPTIONS_BY_PHASE[phase];
     const theme = CHOICE_THEME[choice];
     const SubmitIcon = theme.icon;
 
+    const composedComment = useMemo(() => composeResolutionComment(comment, remarks), [comment, remarks]);
+    const composedTooLong = composedComment.length > MAX_RESOLUTION_COMMENT_LENGTH;
+    const hasRemarkNotes = remarks.some((r) => r.note.trim().length > 0);
+
+    // Для "с замечаниями"/"отклонить" нужен хоть какой-то текст: общий комментарий ИЛИ замечание
+    // хотя бы к одному фрагменту (одна только ссылка на фрагмент без пояснения замечанием не считается).
     const commentRequired = choice !== "approve";
-    const commentMissing = commentRequired && comment.trim().length === 0;
-    const canSubmit = !commentMissing;
+    const commentMissing = commentRequired && comment.trim().length === 0 && !hasRemarkNotes;
+    const canSubmit = !commentMissing && !composedTooLong;
 
     const attachmentSlotsLeft = MAX_RESOLUTION_ATTACHMENTS - files.length;
     const attachmentLimitReached = attachmentSlotsLeft <= 0;
@@ -238,42 +339,50 @@ export const VndApproverResolutionPanel = forwardRef<
         setAttachmentCountLimitHit(false);
     };
 
-    // Вставка цитаты из просмотра редакции (см. RedactionViewModal.onInsertQuote) - в позицию
-    // курсора, которая была в textarea до открытия окна просмотра (selectionStart/End у
-    // textarea сохраняются, даже когда фокус временно уходит на модалку поверх). Блок цитаты
-    // всегда начинается с новой строки, чтобы не разрывать уже напечатанный текст посередине.
-    const insertQuote = (selectedText: string, documentTarget: RedactionViewTarget) => {
-        const quoted = formatQuote(selectedText);
-        if (!quoted) return;
+    // Новое замечание к выделенному фрагменту (см. RedactionViewModal.onInsertQuote). Если ровно
+    // этот фрагмент (та же вкладка, тот же текст, то же вхождение) уже есть в списке - не
+    // дублируем, а переводим фокус на существующую карточку.
+    const insertQuote = (
+        selectedText: string, documentTarget: RedactionViewTarget, anchor: QuoteAnchorContext | null,
+    ) => {
+        const text = quoteMatchText(selectedText);
+        if (!text) return;
 
-        const el = textareaRef.current;
-        const start = el?.selectionStart ?? comment.length;
-        const end = el?.selectionEnd ?? comment.length;
-        const before = comment.slice(0, start);
-        const after = comment.slice(end);
-        const needsLeadingNewline = before.length > 0 && !before.endsWith("\n");
-        const block = `${needsLeadingNewline ? "\n" : ""}${quoted}\n`;
-        const next = `${before}${block}${after}`.slice(0, MAX_RESOLUTION_COMMENT_LENGTH);
+        const existing = remarks.find((r) =>
+            r.documentTarget === documentTarget && r.text === text
+            && (r.occurrence ?? null) === (anchor?.occurrence ?? null));
+        if (existing) {
+            setPendingFocusRemarkId(existing.id);
+            setFlashRemarkId(existing.id);
+            return;
+        }
 
-        setComment(next);
-        setQuotes((prev) => [
-            ...prev,
-            {documentTarget, text: matchTextFor(selectedText), displayLine: quoted},
-        ]);
-
-        // Курсор и фокус возвращаем уже после перерисовки - до неё textarea ещё не содержит
-        // новый текст, и setSelectionRange встанет на старую (короткую) позицию.
-        requestAnimationFrame(() => {
-            const pos = Math.min(before.length + block.length, next.length);
-            el?.focus();
-            el?.setSelectionRange(pos, pos);
-        });
+        const remark: DraftTextRemark = {
+            id: nextDraftId(),
+            documentTarget,
+            text,
+            displayText: quoteDisplayText(selectedText),
+            prefix: anchor?.prefix ?? null,
+            suffix: anchor?.suffix ?? null,
+            occurrence: anchor?.occurrence ?? null,
+            note: "",
+        };
+        setRemarks((prev) => [...prev, remark]);
+        setPendingFocusRemarkId(remark.id);
+        setFlashRemarkId(remark.id);
+        // Добавление замечания к тексту почти всегда означает "есть замечания" - если пользователь
+        // ещё не выбрал вариант, подсказываем подходящий (он может поменять его обратно).
+        if (choice === "approve") setChoice("approveWithComment");
     };
 
-    useImperativeHandle(ref, () => ({insertQuote}), [comment]);
+    useImperativeHandle(ref, () => ({insertQuote}), [remarks, choice]);
 
-    const handleRemoveQuote = (index: number) => {
-        setQuotes((prev) => prev.filter((_, i) => i !== index));
+    const updateRemarkNote = (id: number, note: string) =>
+        setRemarks((prev) => prev.map((r) => (r.id === id ? {...r, note} : r)));
+
+    const handleRemoveRemark = (id: number) => {
+        setRemarks((prev) => prev.filter((r) => r.id !== id));
+        noteRefs.current.delete(id);
     };
 
     // Синхронная защита от повторной отправки. Одного React-стейта `submitting` (которым
@@ -289,14 +398,18 @@ export const VndApproverResolutionPanel = forwardRef<
         if (submitLockRef.current) return;
         submitLockRef.current = true;
         try {
-            const trimmedComment = comment.trim();
-            // Цитата, чей блок пользователь вручную стёр из текста комментария перед отправкой,
-            // маркером в документе становиться не должна - иначе появится "осиротевший" маркер
-            // без соответствующего текста в самой резолюции.
-            const quotesToSend: ApprovalQuoteItem[] = quotes
-                .filter((q) => trimmedComment.includes(q.displayLine))
-                .map((q) => ({documentTarget: q.documentTarget, text: q.text}));
-            await onSubmit(choice, trimmedComment, files, quotesToSend);
+            const quotesToSend: ApprovalQuoteItem[] = remarks.map((r) => ({
+                documentTarget: r.documentTarget,
+                text: r.text,
+                prefix: r.prefix,
+                suffix: r.suffix,
+                occurrence: r.occurrence,
+                note: r.note.trim() || null,
+            }));
+            const ok = await onSubmit(choice, composedComment, files, quotesToSend);
+            // Черновик стираем только после успешной отправки - при ошибке он нужен, чтобы
+            // пользователь ничего не потерял.
+            if (ok === true) saveDraft(draftStorageKey, null);
         } finally {
             submitLockRef.current = false;
         }
@@ -316,12 +429,42 @@ export const VndApproverResolutionPanel = forwardRef<
         void doSubmit();
     };
 
+    const handleDiscardDraft = () => {
+        setComment("");
+        setRemarks([]);
+        setChoice("approve");
+        setDraftRestoredNoticeVisible(false);
+        saveDraft(draftStorageKey, null);
+    };
+
     return (
         <div className="rounded-[16px] border border-[#e9edf3] bg-white p-5">
             <div className="text-[15px] font-bold text-[#1c2740]">Ваша резолюция</div>
-            {/*     <div className="mt-1 text-[12.5px] text-[#8b97ab]">
-                Резолюция фиксируется ЕСИА с отметкой времени и хешем версии.
-            </div>*/}
+
+            {draftRestoredNoticeVisible && (
+                <div className="mt-3 flex flex-wrap items-center justify-between gap-2 rounded-[10px] border border-[#d4d6f8] bg-[#f5f6fd] px-3.5 py-2 text-[12px] text-[#3c424a]">
+                    <span>
+                        Восстановлен несохранённый черновик резолюции. Прикреплённые файлы в черновике не
+                        сохраняются — при необходимости приложите их заново.
+                    </span>
+                    <span className="flex items-center gap-3">
+                        <button
+                            type="button"
+                            onClick={() => setDraftRestoredNoticeVisible(false)}
+                            className="cursor-pointer font-semibold text-[#4e57d6] hover:text-[#3f47bd]"
+                        >
+                            Продолжить
+                        </button>
+                        <button
+                            type="button"
+                            onClick={handleDiscardDraft}
+                            className="cursor-pointer font-semibold text-[#8b97ab] hover:text-[#c0392b]"
+                        >
+                            Начать заново
+                        </button>
+                    </span>
+                </div>
+            )}
 
             <div className="mt-4 flex flex-col gap-2.5">
                 {options.map((opt) => {
@@ -354,83 +497,125 @@ export const VndApproverResolutionPanel = forwardRef<
                 })}
             </div>
 
+            {/* --- Замечания к тексту --- */}
+            {(onCiteRequest || remarks.length > 0) && (
+                <div className="mt-4 rounded-[12px] border border-[#e9edf3] bg-[#fbfcfe] p-3.5">
+                    <div className="flex flex-wrap items-center justify-between gap-2">
+                        <span className="flex items-center gap-1 text-[12.5px] font-semibold text-[#1c2740]">
+                            <TextQuote size={14} className="text-[#4e57d6]"/>
+                            Замечания к тексту{remarks.length > 0 ? ` (${remarks.length})` : ""}
+                            <HelpTooltip
+                                content="Выделите фрагмент в тексте редакции — он будет прикреплён к замечанию. Проверяющие и инициатор увидят подсветку именно этого места в документе и смогут перейти к нему кнопкой «Показать в тексте»."
+                                side="bottom"
+                                className="h-5 w-5"
+                            />
+                        </span>
+                        {onCiteRequest && (
+                            <button
+                                type="button"
+                                onClick={onCiteRequest}
+                                className="cursor-pointer inline-flex items-center gap-1.5 rounded-[8px] border border-[#d7dee8] bg-white px-3 py-[6px] text-[12px] font-semibold text-[#4e57d6] hover:bg-[#ececfc]"
+                            >
+                                <Quote size={13}/>
+                                Добавить замечание к тексту
+                            </button>
+                        )}
+                    </div>
+
+                    {remarks.length === 0 ? (
+                        <div className="mt-2 text-[11.5px] leading-[1.5] text-[#8b97ab]">
+                            Нажмите «Добавить замечание к тексту», выделите нужный фрагмент в документе и
+                            нажмите «Сослаться на выделенное» — фрагмент появится здесь, и к нему можно
+                            будет написать замечание.
+                        </div>
+                    ) : (
+                        <div className="mt-2.5 flex flex-col gap-2">
+                            {remarks.map((r, index) => (
+                                <div
+                                    key={r.id}
+                                    className={`rounded-[10px] border bg-white px-3 py-2.5 transition-shadow ${
+                                        flashRemarkId === r.id
+                                            ? "border-[#4e57d6] shadow-[0_0_0_3px_#ececfc]"
+                                            : "border-[#e9edf3]"
+                                    }`}
+                                >
+                                    <div className="flex items-start gap-2">
+                                        <span className="mt-[1px] flex h-[18px] min-w-[18px] flex-none items-center justify-center rounded-full bg-[#ececfc] px-1 text-[10px] font-bold text-[#4e57d6]">
+                                            {index + 1}
+                                        </span>
+                                        <div className="min-w-0 flex-1">
+                                            <div className="flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-[.03em] text-[#a3adbd]">
+                                                Фрагмент · {TARGET_LABELS[r.documentTarget] ?? r.documentTarget}
+                                            </div>
+                                            <Tooltip content={r.displayText} side="top" className="block min-w-0">
+                                                <div className="mt-0.5 line-clamp-3 break-words border-l-2 border-[#4e57d6]/50 pl-2 text-[12px] italic leading-[1.45] text-[#3a4560]">
+                                                    «{r.displayText}»
+                                                </div>
+                                            </Tooltip>
+                                        </div>
+                                        <div className="flex flex-none items-center gap-1">
+                                            {onJumpToQuote && (
+                                                <Tooltip content="Показать в тексте" side="top">
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => onJumpToQuote(r)}
+                                                        className="cursor-pointer grid h-[24px] w-[24px] place-items-center rounded-[7px] text-[#4e57d6] hover:bg-[#ececfc]"
+                                                    >
+                                                        <Search size={13}/>
+                                                    </button>
+                                                </Tooltip>
+                                            )}
+                                            <Tooltip content="Удалить замечание" side="top">
+                                                <button
+                                                    type="button"
+                                                    onClick={() => handleRemoveRemark(r.id)}
+                                                    className="cursor-pointer grid h-[24px] w-[24px] place-items-center rounded-[7px] text-[#8b97ab] hover:bg-[#fdf1f1] hover:text-[#c0392b]"
+                                                >
+                                                    <Trash2 size={13}/>
+                                                </button>
+                                            </Tooltip>
+                                        </div>
+                                    </div>
+                                    <textarea
+                                        ref={(el) => {
+                                            if (el) noteRefs.current.set(r.id, el);
+                                            else noteRefs.current.delete(r.id);
+                                        }}
+                                        value={r.note}
+                                        onChange={(e) => updateRemarkNote(r.id, e.target.value)}
+                                        placeholder="Замечание к этому фрагменту…"
+                                        rows={2}
+                                        className="mt-2 w-full resize-y rounded-[8px] border border-[#e9edf3] bg-[#fbfcfe] px-3 py-2 text-[12.5px] text-[#1c2740] outline-none focus:border-[#4e57d6] focus:bg-white"
+                                    />
+                                </div>
+                            ))}
+                        </div>
+                    )}
+                </div>
+            )}
+
             <div className="mt-3 flex flex-wrap items-center justify-between gap-2">
                 <span className="text-[12px] font-semibold text-[#1c2740]">
-                    Комментарий{commentRequired
+                    {remarks.length > 0 ? "Общий комментарий" : "Комментарий"}
+                    {commentRequired && remarks.length === 0
                         ? <span className="text-[#d62815]"> *</span>
                         : <span className="font-normal text-[#8b97ab]"> (необязательно)</span>}
                 </span>
-                <div className="flex items-center gap-3">
-                    {onCiteRequest && (
-                        <button
-                            type="button"
-                            onClick={onCiteRequest}
-                            className="cursor-pointer flex items-center gap-1 text-[11.5px] font-semibold text-[#4e57d6] hover:text-[#3f47bd]"
-                        >
-                            <Quote size={13}/>
-                            + Сослаться на текст редакции
-                        </button>
-                    )}
-                    <CharCounter length={comment.length} max={MAX_RESOLUTION_COMMENT_LENGTH}/>
-                </div>
+                <Tooltip content="Длина всей резолюции — общего комментария вместе с замечаниями к тексту" side="top">
+                    <span><CharCounter length={composedComment.length} max={MAX_RESOLUTION_COMMENT_LENGTH}/></span>
+                </Tooltip>
             </div>
 
             <textarea
-                ref={textareaRef}
                 value={comment}
                 onChange={(e) => setComment(e.target.value.slice(0, MAX_RESOLUTION_COMMENT_LENGTH))}
-                placeholder={COMMENT_PLACEHOLDER[choice]}
+                placeholder={remarks.length > 0 ? "Общий комментарий к редакции (необязательно)…" : COMMENT_PLACEHOLDER[choice]}
                 maxLength={MAX_RESOLUTION_COMMENT_LENGTH}
                 rows={3}
-                className={`h-[250px] mt-1.5 w-full resize-none rounded-[10px] border bg-[#fbfcfe] px-3.5 py-2.5 text-[13px] text-[#1c2740] outline-none focus:border-[#4e57d6] ${
-                    commentMissing ? "border-[#e8b4b4]" : "border-[#e9edf3]"
-                }`}
+                className={`mt-1.5 w-full resize-y rounded-[10px] border bg-[#fbfcfe] px-3.5 py-2.5 text-[13px] text-[#1c2740] outline-none focus:border-[#4e57d6] ${
+                    remarks.length > 0 ? "h-[120px]" : "h-[200px]"
+                } ${commentMissing ? "border-[#e8b4b4]" : "border-[#e9edf3]"}`}
             />
-
-            {/* Список вставленных цитат - у каждой можно открыть текст редакции сразу с
-                прокруткой к этому месту (см. onJumpToQuote/RedactionViewModal.initialSearchQuery),
-                либо убрать цитату из списка (сам текст "Цитата: «...»" в комментарии при этом
-                остаётся - его пользователь при желании стирает вручную прямо в textarea). */}
-            {quotes.length > 0 && (
-                <div className="mt-2 flex flex-col gap-1.5">
-                    {quotes.map((q, index) => (
-                        <div
-                            key={index}
-                            className="flex items-center gap-2 rounded-[8px] border border-[#e9edf3] bg-[#fbfcfe] px-2.5 py-[6px] text-[11.5px] text-[#5c6780]"
-                        >
-                            <Quote size={12} className="flex-none text-[#8b97ab]"/>
-                            {/* Это ещё не отправленная резолюция - цитата видна только самому
-                                согласующему, пока он её набирает, поэтому уточняем при наведении,
-                                чей это черновик (в отличие от уже отправленных резолюций других
-                                участников маршрута - там при наведении на маркер в тексте
-                                документа видно имя автора, см. hoverMark в RedactionViewModal). */}
-                            <Tooltip content="Это ваш комментарий (ещё не отправлен)" side="top" className="min-w-0 flex-1">
-                                <span className="block truncate">«{q.text}»</span>
-                            </Tooltip>
-                            {onJumpToQuote && (
-                                <Tooltip content="Показать в тексте" side="top">
-                                    <button
-                                        type="button"
-                                        onClick={() => onJumpToQuote(q)}
-                                        className="cursor-pointer flex-none text-[#4e57d6] hover:text-[#3f47bd]"
-                                    >
-                                        <ExternalLink size={13}/>
-                                    </button>
-                                </Tooltip>
-                            )}
-                            <Tooltip content="Убрать из списка" side="top">
-                                <button
-                                    type="button"
-                                    onClick={() => handleRemoveQuote(index)}
-                                    className="cursor-pointer flex-none text-[#8b97ab] hover:text-[#c0392b]"
-                                >
-                                    <X size={13}/>
-                                </button>
-                            </Tooltip>
-                        </div>
-                    ))}
-                </div>
-            )}
 
             <div className="mt-3">
                 <div className="flex items-center justify-between gap-3">
@@ -548,7 +733,19 @@ export const VndApproverResolutionPanel = forwardRef<
                 <div className="mt-3 flex items-start gap-1.5 text-[11.5px] text-[#d62815]">
                     <AlertCircle className="mt-[1px] h-3.5 w-3.5 shrink-0"/>
                     <span>
-                        Поле "{choice === "reject" ? "Причина отклонения" : "Комментарий / текст замечаний"}" является обязательным при данном выборе
+                        {choice === "reject"
+                            ? "Укажите причину отклонения — в общем комментарии или в замечании к фрагменту текста"
+                            : "Укажите комментарий или замечание хотя бы к одному фрагменту текста — при данном выборе это обязательно"}
+                    </span>
+                </div>
+            )}
+
+            {composedTooLong && (
+                <div className="mt-3 flex items-start gap-1.5 text-[11.5px] text-[#d62815]">
+                    <AlertCircle className="mt-[1px] h-3.5 w-3.5 shrink-0"/>
+                    <span>
+                        Резолюция вместе с замечаниями к тексту длиннее {MAX_RESOLUTION_COMMENT_LENGTH} символов —
+                        сократите текст.
                     </span>
                 </div>
             )}

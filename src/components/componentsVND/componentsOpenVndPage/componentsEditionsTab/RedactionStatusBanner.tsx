@@ -214,7 +214,7 @@ function getBannerMessage(
             return currentNumber
                 // "Действующая редакция — Р{{number}}"
                 ? `${t("redactionStatusBanner.statusMessage.outdated")}\n${t(
-                    "redactionStatusBanner.statusMessage.outdatedCurrentNumber",
+                    "redactionStatusBanner.statusMessage.outdatedCurrentRevision",
                     {number: currentNumber},
                 )}`
                 // "Актуальной редакции на данный момент нет!"

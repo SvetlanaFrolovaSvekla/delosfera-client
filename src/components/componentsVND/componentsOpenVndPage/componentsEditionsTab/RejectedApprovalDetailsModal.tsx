@@ -32,15 +32,20 @@ interface RejectedApprovalDetailsModalProps {
  * процессе, а не о текущем ходе согласования. */
 interface QuoteViewState {
     language: RedactionViewTarget;
-    initialSearchQuery: string;
+    /** Id цитаты - точный переход к её месту (маркеру) в тексте; без id - поиск по тексту. */
+    focusQuoteId?: number;
+    initialSearchQuery?: string;
+    revisionIndex?: number;
 }
 
 export function RejectedApprovalDetailsModal({vnd, redaction, process, onClose}: RejectedApprovalDetailsModalProps) {
     const {t} = useTranslation();
     const [quoteView, setQuoteView] = useState<QuoteViewState | null>(null);
 
-    const handleShowQuoteInText = (quote: {documentTarget: string; text: string}) => {
-        setQuoteView({language: quote.documentTarget as RedactionViewTarget, initialSearchQuery: quote.text});
+    const handleShowQuoteInText = (quote: {id?: number; documentTarget: string; text: string; revisionIndex?: number}) => {
+        setQuoteView(quote.id !== undefined
+            ? {language: quote.documentTarget as RedactionViewTarget, focusQuoteId: quote.id, revisionIndex: quote.revisionIndex}
+            : {language: quote.documentTarget as RedactionViewTarget, initialSearchQuery: quote.text});
     };
 
     return createPortal(
@@ -83,6 +88,12 @@ export function RejectedApprovalDetailsModal({vnd, redaction, process, onClose}:
                     redaction={redaction}
                     initialLanguage={quoteView.language}
                     initialSearchQuery={quoteView.initialSearchQuery}
+                    // С процессом согласования в тексте видны все цитаты согласующих (маркерами),
+                    // а переход идёт ровно к месту выбранной цитаты. Процесс завершён - маркеры
+                    // только для просмотра (quoteMarksClickable не передаём).
+                    approvalProcess={process}
+                    initialFocusQuoteId={quoteView.focusQuoteId}
+                    initialRevisionIndex={quoteView.revisionIndex}
                     downloadingId={null}
                     onDownload={() => {}}
                     onClose={() => setQuoteView(null)}

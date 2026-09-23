@@ -1443,7 +1443,11 @@
           "approved_with_comment": "With comments",
           "rejected": "Rejected",
           "auto_approved_timeout": "Auto-approved"
-        }
+        },
+        "versionLabel": "Version {{code}}",
+        "openVersionButton": "Open version",
+        "downloadFinalVersionLabel": "Download the final (approved) version:",
+        "downloadCurrentVersionLabel": "Download the current version:"
       }
     },
     "coordinationTab": {
@@ -1547,6 +1551,13 @@
         "reset": "Reset",
         "apply": "Search"
       }
+    },
+    "sort": {
+      "label": "Sort: ",
+      "codeAsc": "By code: ascending",
+      "codeDesc": "By code: descending",
+      "updatedDesc": "Last updated: newest first",
+      "updatedAsc": "Last updated: oldest first"
     },
     "table": {
       "revisionsCountTooltip": "Number of editions (current and outdated)"
@@ -2205,5 +2216,20 @@
     "rubric": "Rubric",
     "secrecyLevel": "Secrecy level",
     "userGroups": "Access groups"
+  },
+  "approvalSheets": {
+    "primary": "Initial approval",
+    "noChanges": "Actualization without changes",
+    "manual": "Attached manually",
+    "sectionTitle": "Approval sheets",
+    "latest": "latest",
+    "pickTitle": "Approval sheet",
+    "noChangesBadge": "Actualization without changes",
+    "processSheetButton": "Approval sheet",
+    "bannerTitle": "Re-approval without changes",
+    "bannerPrevious": "Revision {{code}} has already been approved before:",
+    "bannerNoPrevious": "Revision {{code}} has no previous approval sheets.",
+    "historySheetsCount": "Approval sheets: {{count}}",
+    "timelineSheetGenerated": "Approval sheet generated"
   }
 }

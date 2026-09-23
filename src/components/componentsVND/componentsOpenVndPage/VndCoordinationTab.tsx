@@ -1,5 +1,5 @@
 // Таб "Ход согласования"
-import {useRef, useState} from "react";
+import {useMemo, useRef, useState} from "react";
 import {useTranslation} from "react-i18next";
 import {useAuth} from "@/context/AuthContext.ts";
 import type {ApprovalQuoteItem} from "@/service/coordinationService/coordinationServiceTypes.ts";
@@ -27,11 +27,15 @@ import {
 } from "@/components/componentsCoordination/CoordinationRouteConstructor/functionalComponents/VndStartApprovalModal.tsx";
 import {
     VndApproverResolutionPanel,
+    type DraftTextRemark,
     type ResolutionChoice,
     type VndApproverResolutionPanelHandle,
 } from "./componentsCoordinationTab/VndApproverResolutionPanel.tsx";
+import type {QuoteMarkInfo} from "@/utils/vndProcess/redactionQuoteMarks.ts";
+import {getLiveRevisionIndex} from "@/utils/vndProcess/redactionRevisions.ts";
 import {VndRevisionNeededPanel} from "./componentsCoordinationTab/VndRevisionNeededPanel.tsx";
 import {VndNoChangesHintBanner} from "./componentsCoordinationTab/VndNoChangesHintBanner.tsx";
+import {getRedactionApprovalSheets} from "@/utils/vndProcess/approvalSheets.ts";
 import {VndCurrentRedactionSection} from "./componentsCoordinationTab/VndCurrentRedactionSection.tsx";
 import {VndRedactionModals} from "./componentsCoordinationTab/VndRedactionModals.tsx";
 import {VndCoordinationRouteSection} from "./componentsCoordinationTab/VndCoordinationRouteSection.tsx";
@@ -79,6 +83,9 @@ export function VndCoordinationTab({vnd, onVndChanged}: VndCoordinationTabProps)
 
     // "+ Сослаться на текст редакции" в "Ваша резолюция"
     const resolutionPanelRef = useRef<VndApproverResolutionPanelHandle>(null);
+    // Черновые (ещё не отправленные) замечания к тексту из "Ваша резолюция" - см.
+    // VndApproverResolutionPanel.onDraftRemarksChange; подсвечиваются в окне просмотра редакции.
+    const [draftRemarks, setDraftRemarks] = useState<DraftTextRemark[]>([]);
 
     // Редакции ВНД грузим, чтобы достать ту, что связана с process.redactionId
     const {
@@ -108,6 +115,34 @@ export function VndCoordinationTab({vnd, onVndChanged}: VndCoordinationTabProps)
     const cancelApproval = useCancelApproval(vnd.id, onVndChanged);
     const routeEditing = useApprovalRouteEditing(vnd.id, reload);
     const resolutionDecision = useResolutionDecision(vnd.id, reload);
+
+    // Черновые замечания в виде маркеров для окна просмотра редакции (RedactionViewModal.draftQuotes).
+    // Хук - до ранних return'ов ниже (Rules of Hooks), поэтому данные о "моём" этапе берём
+    // напрямую из process, а не из getCoordinationRoleState.
+    const draftQuoteMarks = useMemo<QuoteMarkInfo[]>(() => {
+        if (!process || draftRemarks.length === 0) return [];
+        const stage = process.stages.find((s) => s.approverUserId === currentUserId && !s.isRemovedByEditor);
+        return draftRemarks.map((r) => ({
+            id: r.id,
+            documentTarget: r.documentTarget,
+            text: r.text,
+            prefix: r.prefix,
+            suffix: r.suffix,
+            occurrence: r.occurrence,
+            note: r.note.trim() || null,
+            isDraft: true,
+            stageId: stage?.id ?? 0,
+            approverName: stage?.approverName ?? "",
+            approverUserId: currentUserId ?? 0,
+            phaseLabel: "Ваше замечание",
+            decision: "pending",
+            decidedAt: null,
+            comment: "",
+            attachments: [],
+            allQuotes: [],
+            revisionIndex: getLiveRevisionIndex(process),
+        }));
+    }, [process, draftRemarks, currentUserId]);
 
     if (loading || redactionsLoading) {
         return <Loader label={t("openVndPage.coordinationTab.loadingLabel")} fullHeight={false}/>;
@@ -180,6 +215,16 @@ export function VndCoordinationTab({vnd, onVndChanged}: VndCoordinationTabProps)
 
     const redaction = redactions?.find((r) => r.id === process.redactionId);
 
+    // Актуализация без изменений: флаг на ВНД (actualizationPlannedNoChanges) сбрасывается после
+    // публикации, а признак самого процесса (isNoChangesActualization) остаётся навсегда - по
+    // нему плашка видна и после того, как согласование завершилось. Прежние листы согласования
+    // этой редакции (кроме листа текущего процесса) показываем там же - видно, когда редакция
+    // уже согласовывалась раньше.
+    const isNoChangesRound = vnd.actualizationPlannedNoChanges || !!process.isNoChangesActualization;
+    const previousApprovalSheets = redaction
+        ? getRedactionApprovalSheets(redaction).filter((s) => s.approvalProcessId !== process.id).reverse()
+        : [];
+
     // Если у редакции, вынесенной на согласование, номер 1 — это первая редакция ВНД,
     // предыдущей ещё не существует. Иначе ВНД актуализируется, и есть предыдущая
     // (действовавшая до старта этой актуализации) редакция — её тоже показываем рядом.
@@ -197,21 +242,24 @@ export function VndCoordinationTab({vnd, onVndChanged}: VndCoordinationTabProps)
         setModal({
             kind: "view",
             redaction,
-            onInsertQuote: (selectedText, documentTarget) =>
-                resolutionPanelRef.current?.insertQuote(selectedText, documentTarget),
+            onInsertQuote: (selectedText, documentTarget, anchor) =>
+                resolutionPanelRef.current?.insertQuote(selectedText, documentTarget, anchor),
         });
     };
 
     // "Показать в тексте" у уже вставленной (но ещё не отправленной) цитаты в "Ваша резолюция" -
     // открывает просмотр редакции сразу на нужной вкладке, с прокруткой к месту цитаты (через
     // обычный поиск по тексту - см. RedactionViewModal.initialSearchQuery).
-    const handleJumpToQuote = (quote: ApprovalQuoteItem) => {
+    //
+    // Переход - по id черновика (фокус на его маркере, который стоит ровно на выделенном месте -
+    // см. quoteAnchor.ts), а не поиском текста: поиск всегда находил ПЕРВОЕ вхождение фразы.
+    const handleJumpToQuote = (remark: DraftTextRemark) => {
         if (!redaction) return;
         setModal({
             kind: "view",
             redaction,
-            language: quote.documentTarget as RedactionViewTarget,
-            initialSearchQuery: quote.text,
+            language: remark.documentTarget,
+            initialFocusQuoteId: remark.id,
         });
     };
 
@@ -225,7 +273,11 @@ export function VndCoordinationTab({vnd, onVndChanged}: VndCoordinationTabProps)
             kind: "view",
             redaction,
             language: quote.documentTarget as RedactionViewTarget,
-            initialSearchQuery: quote.text,
+            // С id - точный переход к маркеру цитаты; без id (не должно случаться, но на всякий
+            // случай) - как раньше, поиском по тексту.
+            ...(quote.id !== undefined
+                ? {initialFocusQuoteId: quote.id}
+                : {initialSearchQuery: quote.text}),
             initialRevisionIndex: quote.revisionIndex,
         });
     };
@@ -273,8 +325,13 @@ export function VndCoordinationTab({vnd, onVndChanged}: VndCoordinationTabProps)
     if (isApprover) {
         return (
             <div className="py-4 px-4 sm:px-6">
-                {vnd.actualizationPlannedNoChanges && (
-                    <VndNoChangesHintBanner message={t("openVndPage.coordinationTab.noChangesApproverHint")}/>
+                {isNoChangesRound && (
+                    <VndNoChangesHintBanner
+                        message={t("openVndPage.coordinationTab.noChangesApproverHint")}
+                        previousSheets={previousApprovalSheets}
+                        redactionCode={redaction?.code}
+                        onDownloadSheet={handleDownload}
+                    />
                 )}
 
                 {/* Плашка для согласующего на этапе "Согласование после внесённых изменений" —
@@ -326,6 +383,7 @@ export function VndCoordinationTab({vnd, onVndChanged}: VndCoordinationTabProps)
                     onDownload={handleDownload}
                     process={process}
                     isProcessActive={isProcessActive}
+                    draftQuotes={draftQuoteMarks}
                 />
 
                 <VndCoordinationRouteSection
@@ -355,6 +413,13 @@ export function VndCoordinationTab({vnd, onVndChanged}: VndCoordinationTabProps)
                             phase={isFinalHoldPhase ? "finalHold" : isRepeatedPhase ? "repeated" : "primary"}
                             onCiteRequest={redaction ? handleCiteRequest : undefined}
                             onJumpToQuote={redaction ? handleJumpToQuote : undefined}
+                            onDraftRemarksChange={setDraftRemarks}
+                            // Черновик резолюции в браузере - свой для процесса, этапа, фазы и версии
+                            // документа: после повторной отправки (новая версия) старый черновик
+                            // к новой версии не "приклеится".
+                            draftStorageKey={myStage
+                                ? `vnd-resolution-draft:v1:${process.id}:${myStage.id}:${process.status}:${getLiveRevisionIndex(process)}`
+                                : undefined}
                         />
                     </div>
                 )}
@@ -381,8 +446,15 @@ export function VndCoordinationTab({vnd, onVndChanged}: VndCoordinationTabProps)
     return (
         <div className="py-4 px-6">
             {/* Если актуализация без изменений */}
-            {vnd.actualizationPlannedNoChanges && (
-                <VndNoChangesHintBanner message={t("openVndPage.coordinationTab.noChangesInitiatorHint")}/>
+            {isNoChangesRound && (
+                <VndNoChangesHintBanner
+                    message={isInitiator
+                        ? t("openVndPage.coordinationTab.noChangesInitiatorHint")
+                        : t("openVndPage.coordinationTab.noChangesApproverHint")}
+                    previousSheets={previousApprovalSheets}
+                    redactionCode={redaction?.code}
+                    onDownloadSheet={handleDownload}
+                />
             )}
 
             {/* Плашка для инициатора: редакцию отправили на доработку, есть замечания.

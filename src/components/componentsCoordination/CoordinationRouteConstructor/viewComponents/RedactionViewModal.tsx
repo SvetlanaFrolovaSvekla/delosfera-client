@@ -15,14 +15,24 @@ import {
 import {buildRedactionFileName} from "@/utils/downloadFiles/fileNaming.ts";
 import {Tooltip} from "@/components/componentsGeneral/Tooltip.tsx";
 import {SearchBar} from "@/components/componentsGeneral/SearchBar.tsx";
-import {Download, Eye, EyeOff, FileText, Highlighter, ListTree, Loader2, MessageSquareText, Quote, X} from "lucide-react";
+import {
+    AlertTriangle, Columns2, Download, Eye, EyeOff, FileText, Highlighter, ListTree, Loader2, MessageSquareText,
+    Quote, Search, X,
+} from "lucide-react";
 import {
     collectAllStageCommentsForRevision, collectQuoteMarksForRevision, quoteMarkModalProps, type QuoteMarkInfo
 } from "@/utils/vndProcess/redactionQuoteMarks.ts";
 import {CommentViewModal} from "./CommentViewModal.tsx";
 import {getInitials} from "@/utils/namingUsers/getInitials.ts";
 import {getApproverColor} from "@/utils/docxWork/approverColors.ts";
-import {buildRevisionRedaction, getLiveRevisionIndex, listRevisions} from "@/utils/vndProcess/redactionRevisions.ts";
+import {
+    buildRevisionCompareOptions, buildRevisionRedaction, getLiveRevisionIndex, listRevisions, revisionOptionId,
+} from "@/utils/vndProcess/redactionRevisions.ts";
+import {buildQuoteAnchor, type QuoteAnchorContext} from "@/utils/docxWork/quoteAnchor.ts";
+import {quoteMatchText} from "@/utils/vndProcess/quoteText.ts";
+import type {QuoteMarkFocusRequest} from "@/hooks/vndHooks/useDocxQuoteMarks.ts";
+import {RedactionCompareModal} from "./RedactionCompareModal.tsx";
+import {useAuth} from "@/context/AuthContext.ts";
 
 interface RedactionViewModalProps {
     vnd: VndResponse;
@@ -37,8 +47,26 @@ interface RedactionViewModalProps {
      * VndApproverResolutionPanel): если передан - при выделении текста документа рядом
      * всплывает кнопка "Сослаться на выделенное", клик по которой вызывает этот колбэк с
      * выделенным текстом (и вкладкой, на которой было выделение) и сразу закрывает модалку.
-     * Без этого пропа модалка ведёт себя как обычный просмотр. */
-    onInsertQuote?: (selectedText: string, documentTarget: RedactionViewTarget) => void;
+     * Без этого пропа модалка ведёт себя как обычный просмотр.
+     *
+     * anchor - "якорь" выделенного фрагмента (контекст до/после и номер вхождения, см.
+     * utils/docxWork/quoteAnchor.ts) - по нему замечание потом находит ИМЕННО это место в тексте,
+     * даже если такая же фраза встречается в документе несколько раз. null - не удалось построить
+     * (тогда цитата ищется по одному тексту, как раньше). */
+    onInsertQuote?: (
+        selectedText: string, documentTarget: RedactionViewTarget, anchor: QuoteAnchorContext | null,
+    ) => void;
+    /** Ещё НЕ отправленные замечания текущего пользователя к тексту (карточки "Замечания к
+     * тексту" в VndApproverResolutionPanel) - подсвечиваются в тексте ТЕКУЩЕЙ версии пунктиром, с
+     * подсказкой "Ваше замечание - ещё не отправлено", и перечислены отдельным блоком в панели
+     * "Комментарии". Их id - отрицательные (см. VndApproverResolutionPanel), чтобы не пересечься
+     * с id сохранённых цитат. */
+    draftQuotes?: QuoteMarkInfo[];
+    /** Открыть модалку сразу с прокруткой к этой цитате (сохранённой - id из
+     * ApprovalStageQuoteResponse, или черновой из draftQuotes) и её выделением - "Показать в
+     * тексте". Вкладку документа (initialLanguage) и версию (initialRevisionIndex) вызывающая
+     * сторона передаёт те, к которым относится цитата. */
+    initialFocusQuoteId?: number;
     /** Процесс согласования - если передан, поверх текста подсвечиваются маркерами цитаты,
      * на которые сослались согласующие в резолюциях (см. collectQuoteMarks), с кнопкой
      * "Комментарии" рядом с "Содержание"/"Скачать". Без этого пропа маркеров нет. */
@@ -66,6 +94,8 @@ interface QuoteHint {
     text: string;
     top: number;
     left: number;
+    /** Копия диапазона выделения - по нему строится "якорь" цитаты (см. buildQuoteAnchor). */
+    range: Range | null;
 }
 
 // Порядок фаз согласования - для группировки панели "Комментарии" и подписи активной подсветки
@@ -87,8 +117,11 @@ const LANG_FILE_KEYS: Record<RedactionLanguage, "docFileRuId" | "docFileKgId" | 
 export function RedactionViewModal({
                                        vnd, redaction, initialLanguage, downloadingId, onDownload, onClose,
                                        onInsertQuote, approvalProcess, quoteMarksClickable, initialSearchQuery,
-                                       initialRevisionIndex,
+                                       initialRevisionIndex, draftQuotes, initialFocusQuoteId,
                                    }: RedactionViewModalProps) {
+    // Текущий пользователь - чтобы в подсказке над его собственными (уже отправленными)
+    // цитатами было видно "Ваше замечание", а не только его ФИО.
+    const {user: currentUser} = useAuth();
     // Версии документа этой редакции ("Р1", "Р1.1", "Р1.2"... - см. listRevisions) - доступны
     // только вместе с approvalProcess (сами данные о версиях приходят внутри него) и никогда в
     // режиме цитирования (onInsertQuote) - процитировать имеет смысл только живой/текущий
@@ -147,18 +180,24 @@ export function RedactionViewModal({
     // подставленную цитату - именно поэтому раньше "цитата вставляется в поисковую строку и
     // почему-то так не ищется" (баг проявлялся именно при переходе с одной вкладки на другую).
     const pendingJumpQueryRef = useRef<string | null>(null);
+    // ⚠ 23.09.2026: сравниваем с ПРЕДЫДУЩИМ значением вкладки/редакции/версии, а не полагаемся на
+    // флаг "первый запуск" (didMountRef). В режиме разработки React.StrictMode запускает эффекты
+    // при монтировании ДВАЖДЫ - и второй запуск видел флаг уже выставленным и стирал
+    // initialSearchQuery сразу после открытия модалки. Именно поэтому "Показать в тексте" в dev
+    // выглядело полностью сломанным: окно открывалось, но ни прокрутки, ни подсветки не было.
+    const searchResetKey = `${activeLanguage}|${redaction.id}|${revisionIndex}`;
+    const prevSearchResetKeyRef = useRef(searchResetKey);
     useEffect(() => {
-        if (!didMountRef.current) {
-            didMountRef.current = true;
-            return;
-        }
+        didMountRef.current = true;
+        if (prevSearchResetKeyRef.current === searchResetKey) return;
+        prevSearchResetKeyRef.current = searchResetKey;
         if (pendingJumpQueryRef.current !== null) {
             setSearchQuery(pendingJumpQueryRef.current);
             pendingJumpQueryRef.current = null;
             return;
         }
         setSearchQuery("");
-    }, [activeLanguage, redaction.id, revisionIndex]);
+    }, [searchResetKey]);
 
     // Подстраховка: если проп initialSearchQuery изменился, а вкладка при этом НЕ переключилась
     // (тот случай выше это уже покрывает через pendingJumpQueryRef) - например, родитель когда-
@@ -216,7 +255,7 @@ export function RedactionViewModal({
             // Последний прямоугольник - ближе к концу выделения (важно для многострочных
             // выделений, getBoundingClientRect дал бы верхний левый угол всего диапазона).
             const rect = rects[rects.length - 1] ?? range.getBoundingClientRect();
-            setQuoteHint({text, top: rect.bottom, left: rect.left});
+            setQuoteHint({text, top: rect.bottom, left: rect.left, range: range.cloneRange()});
         };
 
         document.addEventListener("selectionchange", handleSelectionChange);
@@ -225,7 +264,12 @@ export function RedactionViewModal({
 
     const handleInsertQuote = () => {
         if (!quoteHint || !onInsertQuote) return;
-        onInsertQuote(quoteHint.text, activeLanguage);
+        // Якорь строится по тому же тексту, который будет сохранён и потом искаться (quoteMatchText),
+        // и по позиции самого выделения - так из нескольких одинаковых фраз запоминается именно
+        // выделенная.
+        const container = textViewRef.current?.getContainer();
+        const anchor = container ? buildQuoteAnchor(container, quoteHint.range, quoteMatchText(quoteHint.text)) : null;
+        onInsertQuote(quoteHint.text, activeLanguage, anchor);
         onClose();
     };
 
@@ -234,10 +278,24 @@ export function RedactionViewModal({
     // (сервер уже фильтрует "живые" поля по текущей версии), а при просмотре прошлой версии
     // ("Р1.1" и т.п.) показывает именно её собственные замечания, не смешивая с более поздними -
     // см. utils/vndProcess/redactionQuoteMarks.ts.
-    const quoteMarks = useMemo(
-        () => (approvalProcess ? collectQuoteMarksForRevision(approvalProcess, activeLanguage, revisionIndex) : []),
-        [approvalProcess, activeLanguage, revisionIndex],
+    // Черновые (ещё не отправленные) замечания относятся к ТЕКУЩЕЙ версии документа - только её
+    // согласующий сейчас и проверяет - поэтому на прошлых версиях их не показываем.
+    const liveRevisionIndex = approvalProcess ? getLiveRevisionIndex(approvalProcess) : 0;
+    const isLiveRevision = revisionIndex === liveRevisionIndex;
+    const draftMarks = useMemo(
+        () => (isLiveRevision ? (draftQuotes ?? []) : []),
+        [draftQuotes, isLiveRevision],
     );
+    const quoteMarks = useMemo(
+        () => [
+            ...(approvalProcess ? collectQuoteMarksForRevision(approvalProcess, activeLanguage, revisionIndex) : []),
+            ...draftMarks.filter((d) => d.documentTarget === activeLanguage),
+        ],
+        [approvalProcess, activeLanguage, revisionIndex, draftMarks],
+    );
+
+    // Кнопка "глаз" - см. подробный комментарий ниже, рядом с эффектом для hoverMark.
+    const [quoteMarksVisible, setQuoteMarksVisible] = useState(true);
 
 // Какого этапа комментарии сейчас подсвечиваются поверх текста документа - null означает
 // "подсветка не ограничена одним этапом". По умолчанию - последний этап, у которого есть
@@ -253,14 +311,45 @@ export function RedactionViewModal({
     });
     // Сброс ограничения подсветки при смене версии - "этап" прошлой версии не обязательно
     // существует у новой выбранной.
+    // Сравниваем с предыдущей версией, а не сбрасываем на каждом запуске эффекта - иначе сброс
+    // срабатывал и при самом открытии модалки, затирая выбранный по умолчанию этап.
+    const prevRevisionIndexRef = useRef(revisionIndex);
     useEffect(() => {
-        // eslint-disable-next-line react-hooks/set-state-in-effect
+        if (prevRevisionIndexRef.current === revisionIndex) return;
+        prevRevisionIndexRef.current = revisionIndex;
         setHighlightedPhase(null);
     }, [revisionIndex]);
 
+    // "Показать в тексте" - к какой цитате сейчас нужно прокрутить (см. useDocxQuoteMarks) и
+    // что из этого вышло (focusNotice - если цитату не нашли или нашли только приблизительно).
+    const [focus, setFocus] = useState<QuoteMarkFocusRequest | null>(
+        () => (initialFocusQuoteId !== undefined ? {id: initialFocusQuoteId, nonce: 1} : null),
+    );
+    const [focusNotice, setFocusNotice] = useState<string | null>(null);
+    // Счётчик запросов фокуса - чтобы повторный переход к той же цитате снова прокрутил к ней.
+    const focusNonceRef = useRef(1);
+    useEffect(() => {
+        if (!focusNotice) return;
+        const timer = setTimeout(() => setFocusNotice(null), 7000);
+        return () => clearTimeout(timer);
+    }, [focusNotice]);
+    const handleFocusResult = (result: {id: number; found: boolean; approximate: boolean}) => {
+        if (!result.found) {
+            setFocusNotice("Не удалось найти этот фрагмент в тексте документа — возможно, текст на этой вкладке или в этой версии изменился.");
+        } else if (result.approximate) {
+            setFocusNotice("Точный текст цитаты в документе изменился — показано наиболее похожее место.");
+        } else {
+            setFocusNotice(null);
+        }
+    };
+
+    // Цитата, к которой переходят, видна ВСЕГДА - даже если подсветка выключена "глазом" или
+    // ограничена другим этапом (иначе переход "Показать в тексте" молча ничего бы не показал).
     const displayedQuoteMarks = useMemo(
-        () => (highlightedPhase ? quoteMarks.filter((m) => m.phaseLabel === highlightedPhase) : quoteMarks),
-        [quoteMarks, highlightedPhase], // добавлен highlightedPhase
+        () => quoteMarks.filter((m) =>
+            (m.id === focus?.id)
+            || (quoteMarksVisible && (m.isDraft || !highlightedPhase || m.phaseLabel === highlightedPhase))),
+        [quoteMarks, highlightedPhase, focus?.id, quoteMarksVisible],
     );
 
     const allComments = useMemo(
@@ -284,7 +373,7 @@ export function RedactionViewModal({
     // просмотре самой редакции (эта модалка) в панели "Комментарии" не показывался вовсе, хотя
     // логически он такой же комментарий к этой редакции, как и резолюции согласующих.
     const hasInitiatorComment = !!approvalProcess?.repeatInitiatorComment;
-    const commentsCount = allComments.length + (hasInitiatorComment ? 1 : 0);
+    const commentsCount = allComments.length + (hasInitiatorComment ? 1 : 0) + draftMarks.length;
     const [initiatorCommentOpen, setInitiatorCommentOpen] = useState(false);
 
     // marks - ВСЕ цитаты, которые накрывают отрезок под курсором/по клику (обычно одна, но
@@ -300,14 +389,18 @@ export function RedactionViewModal({
     // Ничего не удаляет - просто не рисует (см. quoteMarks ниже - при выключении в
     // RedactionTextView уходит пустой массив, и useDocxQuoteMarks сам снимает уже нарисованные
     // маркеры). Показываем кнопку только когда маркерам вообще есть из чего берись - т.е. вместе
-    // с approvalProcess, как и кнопку "Комментарии" рядом.
-    const [quoteMarksVisible, setQuoteMarksVisible] = useState(true);
+    // с approvalProcess, как и кнопку "Комментарии" рядом. (Сам useState объявлен выше - до
+    // displayedQuoteMarks, который от него зависит.)
     // На выключении подсветки маркеры убираются программно (не настоящим уходом курсора мышью),
     // поэтому mouseout может не сработать - без этого подсказка при наведении могла бы "зависнуть"
     // на экране поверх уже погашенной подсветки.
     useEffect(() => {
-        // eslint-disable-next-line react-hooks/set-state-in-effect
-        if (!quoteMarksVisible) setHoverMark(null);
+        if (!quoteMarksVisible) {
+            // eslint-disable-next-line react-hooks/set-state-in-effect
+            setHoverMark(null);
+            // Выключили подсветку - не держим "принудительно видимой" и цитату последнего перехода.
+            setFocus(null);
+        }
     }, [quoteMarksVisible]);
     // Для места с несколькими пересекшимися цитатами - какую по счёту показали в прошлый раз
     // (ключ - отсортированные id всех цитат этого места), чтобы следующий клик по тому же месту
@@ -348,10 +441,24 @@ export function RedactionViewModal({
     // FormattedResolutionComment.onShowInText) - резолюция может ссылаться на несколько мест в
     // тексте, поэтому принимает конкретную цитату, а не резолюцию целиком. Закрывает саму
     // модалку резолюции - иначе она перекрывает подсвеченный в документе текст.
-    const jumpToQuoteInText = (quote: {documentTarget: string; text: string}) => {
+    //
+    // 23.09.2026: если у цитаты есть id (сохранённая цитата или черновое замечание) - переход
+    // идёт не через строку поиска (она всегда находила ПЕРВОЕ вхождение фразы, а при двойном
+    // запуске эффектов в StrictMode и вовсе сбрасывалась), а через "фокус" на маркере самой
+    // цитаты: он стоит ровно там, куда сослался согласующий (см. quoteAnchor.ts), к нему
+    // прокручиваем и мигаем обводкой. Поиск по тексту остаётся только для цитат без id.
+    const jumpToQuoteInText = (quote: {id?: number; documentTarget: string; text: string}) => {
         if (!quote.text) return;
         setOpenMark(null);
+        setMarksPanelOpen(false);
         const target = quote.documentTarget as RedactionViewTarget;
+        if (quote.id !== undefined) {
+            if (target !== activeLanguage && availableViews.includes(target)) setActiveLanguage(target);
+            setFocusNotice(null);
+            focusNonceRef.current += 1;
+            setFocus({id: quote.id, nonce: focusNonceRef.current});
+            return;
+        }
         if (target !== activeLanguage) {
             pendingJumpQueryRef.current = quote.text;
             setActiveLanguage(target);
@@ -359,6 +466,23 @@ export function RedactionViewModal({
             setSearchQuery(quote.text);
         }
     };
+
+    // Подстраховка для переиспользования того же экземпляра модалки под новый "Показать в тексте".
+    const prevInitialFocusQuoteIdRef = useRef(initialFocusQuoteId);
+    useEffect(() => {
+        if (initialFocusQuoteId === prevInitialFocusQuoteIdRef.current) return;
+        prevInitialFocusQuoteIdRef.current = initialFocusQuoteId;
+        focusNonceRef.current += 1;
+        if (initialFocusQuoteId !== undefined) setFocus({id: initialFocusQuoteId, nonce: focusNonceRef.current});
+    }, [initialFocusQuoteId]);
+
+    // "Сравнить версии" - окно сравнения, где слева/справа можно выбрать любую версию документа
+    // этой редакции ("Р1", "Р1.1", ...), чтобы увидеть, что исправлено в ответ на замечания.
+    const [compareOpen, setCompareOpen] = useState(false);
+    const revisionCompareOptions = useMemo(
+        () => (approvalProcess && revisions.length > 1 ? buildRevisionCompareOptions(approvalProcess, redaction) : []),
+        [approvalProcess, redaction, revisions.length],
+    );
 
     const activeFileId = activeLanguage === "tid"
         ? effectiveRedaction.tidFileId
@@ -393,7 +517,9 @@ export function RedactionViewModal({
                         </span>
                         <div className="min-w-0">
                             <h2 className="truncate text-[16px] font-bold text-[#1c2740]">
-                                {effectiveRedaction.code}
+                                {/* У текущей версии после исправлений замечаний - тоже её номер
+                                    ("10296-Р1.2"), а не просто код редакции. */}
+                                {revisions.find((r) => r.revisionIndex === revisionIndex)?.label ?? effectiveRedaction.code}
                             </h2>
                             <div className="mt-[2px] text-[11px] font-medium text-[#8b97ab]">
                                 {onInsertQuote
@@ -431,12 +557,24 @@ export function RedactionViewModal({
                             ))}
                         </div>
                     )}
+                    {revisions.length > 1 && (
+                        <Tooltip content="Сравнить версии документа — что исправлено в ответ на замечания" side="bottom">
+                            <button
+                                type="button"
+                                onClick={() => setCompareOpen(true)}
+                                className="cursor-pointer flex h-9 flex-none items-center gap-1.5 rounded-[9px] border border-[#d7dee8] bg-white px-3 text-[12px] font-semibold text-[#4e57d6] hover:bg-[#ececfc]"
+                            >
+                                <Columns2 size={15}/>
+                                Сравнить версии
+                            </button>
+                        </Tooltip>
+                    )}
 
                     {/* растягивается и занимает всё свободное место между заголовком и кнопками */}
                     <div className="min-w-0 flex-1">
                         <SearchBar
                             variant="white"
-                            placeholder="Поиск по тексту редакции…"
+                            placeholder="Поиск по тексту…"
                             value={searchQuery}
                             onChange={setSearchQuery}
                             onSubmit={() => textViewRef.current?.goNext()}
@@ -567,6 +705,19 @@ export function RedactionViewModal({
                             "Комментарии" ниже) - видна независимо от того, открыта ли сама
                             панель, чтобы не забывалось, что подсветка сейчас ограничена одним
                             этапом. */}
+                        {focusNotice && (
+                            <div className="mb-2 flex flex-none items-start gap-2 self-start rounded-[10px] border border-[#f0dcae] bg-[#fdf6e8] px-3 py-2 text-[11.5px] text-[#7a5006]">
+                                <AlertTriangle size={14} className="mt-[1px] flex-none"/>
+                                <span>{focusNotice}</span>
+                                <button
+                                    type="button"
+                                    onClick={() => setFocusNotice(null)}
+                                    className="cursor-pointer flex-none text-[#b08a3e] hover:text-[#7a5006]"
+                                >
+                                    <X size={13}/>
+                                </button>
+                            </div>
+                        )}
                         {quoteMarksVisible && highlightedPhase && (
                             <div className="mb-2 flex flex-none items-center gap-1.5 self-start rounded-full border border-[#d7dee8] bg-[#f5f6fd] px-3 py-1 text-[11px] font-semibold text-[#4e57d6]">
                                 <Highlighter size={12} className="flex-none"/>
@@ -582,8 +733,10 @@ export function RedactionViewModal({
                             onDownload={onDownload}
                             searchQuery={searchQuery}
                             onClearSearch={() => setSearchQuery("")}
-                            quoteMarks={quoteMarksVisible ? displayedQuoteMarks : []}
+                            quoteMarks={displayedQuoteMarks}
                             quoteMarksClickable={quoteMarksClickable}
+                            quoteMarkFocus={focus}
+                            onQuoteMarkFocusResult={handleFocusResult}
                             onHoverQuoteMark={(marks, rect) => setHoverMark(marks.length > 0 && rect ? {marks, rect} : null)}
                             onClickQuoteMark={handleClickMark}
                         />
@@ -625,6 +778,37 @@ export function RedactionViewModal({
                                             выше. Показываем первым (это всегда самое свежее событие - комментарий
                                             появляется только при повторной отправке на согласование, т.е. позже
                                             любой резолюции текущего круга). */}
+                                        {/* Ваши ещё не отправленные замечания к тексту - черновик резолюции
+                                            (см. draftQuotes). Первыми, т.к. именно с ними пользователь
+                                            сейчас работает; клик - перейти к фрагменту в тексте. */}
+                                        {draftMarks.length > 0 && (
+                                            <div className="flex flex-col gap-1.5">
+                                                <span className="px-0.5 text-[10px] font-semibold uppercase tracking-[0.03em] text-[#4e57d6]">
+                                                    Ваши замечания · ещё не отправлены
+                                                </span>
+                                                {draftMarks.map((d) => (
+                                                    <button
+                                                        key={d.id}
+                                                        type="button"
+                                                        onClick={() => jumpToQuoteInText(d)}
+                                                        className="cursor-pointer flex flex-col gap-1 rounded-[9px] border border-dashed border-[#b9bdf0] bg-[#f7f7fe] px-2.5 py-2 text-left hover:border-[#4e57d6] hover:bg-white"
+                                                    >
+                                                        <span className="flex items-center gap-1.5 text-[10px] font-semibold text-[#4e57d6]">
+                                                            <Search size={11} className="flex-none"/>
+                                                            {LANG_LABELS[d.documentTarget]} · показать в тексте
+                                                        </span>
+                                                        <span className="line-clamp-2 break-words text-[11px] leading-snug text-[#3a4560]">
+                                                            «{d.text}»
+                                                        </span>
+                                                        {d.note && (
+                                                            <span className="line-clamp-2 break-words text-[11px] leading-snug text-[#6b7488]">
+                                                                {d.note}
+                                                            </span>
+                                                        )}
+                                                    </button>
+                                                ))}
+                                            </div>
+                                        )}
                                         {hasInitiatorComment && approvalProcess && (
                                             <button
                                                 type="button"
@@ -685,24 +869,46 @@ export function RedactionViewModal({
                                                         </Tooltip>
                                                     </div>
                                                     {commentsByPhase.get(label)!.map((item) => (
-                                                        <button
+                                                        <div
                                                             key={item.id}
-                                                            type="button"
-                                                            onClick={() => handleCommentClick(item)}
-                                                            className="cursor-pointer flex flex-col gap-1 rounded-[9px] border border-[#e9edf3] bg-[#fbfcfe] px-2.5 py-2 text-left hover:border-[#4e57d6]/40 hover:bg-white"
+                                                            className="relative rounded-[9px] border border-[#e9edf3] bg-[#fbfcfe] hover:border-[#4e57d6]/40 hover:bg-white"
                                                         >
-                                                            <span className="flex items-center gap-1.5">
-                                                                <span className="flex h-5 w-5 flex-none items-center justify-center rounded-md bg-[#ececfc] text-[8.5px] font-bold text-[#4e57d6]">
-                                                                    {getInitials(item.approverName)}
+                                                            <button
+                                                                type="button"
+                                                                onClick={() => handleCommentClick(item)}
+                                                                className="cursor-pointer flex w-full flex-col gap-1 px-2.5 py-2 pr-8 text-left"
+                                                            >
+                                                                <span className="flex items-center gap-1.5">
+                                                                    <span className="flex h-5 w-5 flex-none items-center justify-center rounded-md bg-[#ececfc] text-[8.5px] font-bold text-[#4e57d6]">
+                                                                        {getInitials(item.approverName)}
+                                                                    </span>
+                                                                    <span className="truncate text-[11.5px] font-semibold text-[#26324a]">
+                                                                        {item.approverName}
+                                                                    </span>
                                                                 </span>
-                                                                <span className="truncate text-[11.5px] font-semibold text-[#26324a]">
-                                                                    {item.approverName}
+                                                                <span className="line-clamp-2 break-words text-[11px] leading-snug text-[#6b7488]">
+                                                                    {item.text ? `«${item.text}»` : item.comment}
                                                                 </span>
-                                                            </span>
-                                                            <span className="line-clamp-2 break-words text-[11px] leading-snug text-[#6b7488]">
-                                                                {item.text ? `«${item.text}»` : item.comment}
-                                                            </span>
-                                                        </button>
+                                                                {item.allQuotes.length > 1 && (
+                                                                    <span className="text-[10px] text-[#a3adbd]">
+                                                                        Ссылок на текст: {item.allQuotes.length}
+                                                                    </span>
+                                                                )}
+                                                            </button>
+                                                            {/* Сразу к месту в тексте - без открытия резолюции целиком
+                                                                (у комментария без цитаты кнопки нет). */}
+                                                            {item.allQuotes.length > 0 && (
+                                                                <Tooltip content="Показать в тексте" side="left">
+                                                                    <button
+                                                                        type="button"
+                                                                        onClick={() => jumpToQuoteInText(item.allQuotes[0])}
+                                                                        className="cursor-pointer absolute right-2 top-2 grid h-[20px] w-[20px] place-items-center rounded-[6px] bg-[#ececfc] text-[#4e57d6] hover:bg-[#dcdefa]"
+                                                                    >
+                                                                        <Search size={11}/>
+                                                                    </button>
+                                                                </Tooltip>
+                                                            )}
+                                                        </div>
                                                     ))}
                                                 </div>
                                             );
@@ -725,16 +931,37 @@ export function RedactionViewModal({
                     className="pointer-events-none fixed z-[70] flex flex-col gap-1 rounded-[8px] border border-[#e5e9f0] bg-[#1c2740] px-2.5 py-[6px] text-[11.5px] font-medium text-white shadow-lg"
                 >
                     {hoverMark.marks.map((m) => (
-                        <div key={m.id} className="flex items-center gap-1.5 whitespace-nowrap">
-                            <span
-                                className="h-[7px] w-[7px] flex-none rounded-full"
-                                style={{background: getApproverColor(m.approverUserId).accent}}
-                            />
-                            <span className="font-semibold">{m.approverName}</span>
-                            <span className="text-[#a3adbd]">— {m.phaseLabel.toLowerCase()}</span>
+                        <div key={m.id} className="flex max-w-[380px] flex-col gap-0.5">
+                            {m.isDraft ? (
+                                <div className="flex items-center gap-1.5 whitespace-nowrap">
+                                    <span className="h-[7px] w-[7px] flex-none rounded-full border border-dashed border-white"/>
+                                    <span className="font-semibold">Ваше замечание</span>
+                                    <span className="text-[#a3adbd]">— ещё не отправлено</span>
+                                </div>
+                            ) : (
+                                <div className="flex items-center gap-1.5 whitespace-nowrap">
+                                    <span
+                                        className="h-[7px] w-[7px] flex-none rounded-full"
+                                        style={{background: getApproverColor(m.approverUserId).accent}}
+                                    />
+                                    <span className="font-semibold">
+                                        {currentUser && m.approverUserId === currentUser.id
+                                            ? `Ваше замечание (${m.approverName})`
+                                            : m.approverName}
+                                    </span>
+                                    <span className="text-[#a3adbd]">— {m.phaseLabel.toLowerCase()}</span>
+                                </div>
+                            )}
+                            {/* Само замечание к этому фрагменту (если согласующий его указал) - чтобы
+                                не открывать резолюцию целиком ради одной строки. */}
+                            {m.note && (
+                                <div className="line-clamp-3 whitespace-normal break-words pl-[13px] text-[11px] font-normal text-[#d7dcf5]">
+                                    {m.note}
+                                </div>
+                            )}
                         </div>
                     ))}
-                    {quoteMarksClickable && (
+                    {quoteMarksClickable && hoverMark.marks.some((m) => !m.isDraft) && (
                         <span className="text-[#a3adbd]">
                             {hoverMark.marks.length > 1 ? "Клик по очереди — посмотреть каждого  " : "Клик — посмотреть"}
                         </span>
@@ -752,6 +979,27 @@ export function RedactionViewModal({
                     onShowInText={openMark.allQuotes.length > 0 ? jumpToQuoteInText : undefined}
                 />
             )}
+
+            {compareOpen && approvalProcess && revisionCompareOptions.length > 1 && (() => {
+                // Слева - открытая сейчас версия, справа - предыдущая к ней (или следующая, если
+                // открыта самая первая).
+                const leftIndex = revisionIndex;
+                const rightIndex = revisionIndex > 0 ? revisionIndex - 1 : Math.min(1, revisionCompareOptions.length - 1);
+                const left = revisionCompareOptions.find((o) => o.id === revisionOptionId(redaction.id, leftIndex));
+                const right = revisionCompareOptions.find((o) => o.id === revisionOptionId(redaction.id, rightIndex));
+                if (!left || !right) return null;
+                return (
+                    <RedactionCompareModal
+                        vnd={vnd}
+                        redactions={revisionCompareOptions}
+                        initialLeft={left}
+                        initialRight={right}
+                        downloadingId={downloadingId}
+                        onDownload={onDownload}
+                        onClose={() => setCompareOpen(false)}
+                    />
+                );
+            })()}
 
             {initiatorCommentOpen && approvalProcess && (
                 <CommentViewModal

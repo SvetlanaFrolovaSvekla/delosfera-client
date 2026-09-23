@@ -10,6 +10,7 @@ import {
     AttachmentDocxPreviewModal
 } from "@/components/componentsGeneral/modal/AttachmentDocxPreviewModal.tsx";
 import {Download, Eye, FileText, Loader2, Paperclip, X} from "lucide-react";
+import {approvalSheetCaption, getRedactionApprovalSheets} from "@/utils/vndProcess/approvalSheets.ts";
 
 /** Специальные вложения открываются просмотрщиком (RedactionTidModal/RedactionApprovalSheetModal
  * из VndEditionsTab), а не просто скачиваются. Обычные вложения произвольного формата (см. ниже,
@@ -36,6 +37,10 @@ interface SpecialAttachment {
     fileId: number;
     label: string;
     fileName: string;
+    /** Открывать просмотр прямо здесь (AttachmentDocxPreviewModal), а не через onView(target) -
+     * для прежних листов согласования редакции: просмотрщик "approvalSheet" показывает
+     * последний лист (approvalSheetFileId). */
+    previewInline?: boolean;
 }
 
 export function RedactionAttachmentsModal({
@@ -64,15 +69,21 @@ export function RedactionAttachmentsModal({
                 fileName: `${redaction.code}_ТИД.docx`,
             }]
             : []),
-        ...(redaction.approvalSheetFileId !== null
-            ? [{
-                key: "approvalSheet",
+        // Все листы согласования редакции (их бывает несколько - см. approvalSheets.ts), от
+        // нового к старому, с подписью "Актуализация без изменений · дата" и т.п.
+        ...(() => {
+            const sheets = [...getRedactionApprovalSheets(redaction)].reverse();
+            return sheets.map((sheet) => ({
+                key: `approvalSheet-${sheet.id}-${sheet.fileId}`,
                 target: "approvalSheet" as const,
-                fileId: redaction.approvalSheetFileId,
-                label: t("redactionAttachmentsModal.approvalSheetLabel"),
-                fileName: `${redaction.code}_Лист_согласования.docx`,
-            }]
-            : []),
+                fileId: sheet.fileId,
+                label: sheets.length > 1
+                    ? `${t("redactionAttachmentsModal.approvalSheetLabel")} — ${approvalSheetCaption(t, sheet)}`
+                    : t("redactionAttachmentsModal.approvalSheetLabel"),
+                fileName: sheet.fileName,
+                previewInline: sheet.fileId !== redaction.approvalSheetFileId,
+            }));
+        })(),
         ...(redaction.disagreementMatrixFileId !== null
             ? [{
                 key: "disagreementMatrix",
@@ -152,12 +163,14 @@ export function RedactionAttachmentsModal({
                                             )}
                                         </button>
 
-                                        {onView && (
+                                        {(onView || item.previewInline) && (
                                             /* Просмотреть документ */
                                             <Tooltip content={t("redactionAttachmentsModal.viewDocumentTooltip")} side="top">
                                                 <button
                                                     type="button"
-                                                    onClick={() => onView(item.target)}
+                                                    onClick={() => item.previewInline
+                                                        ? setPreviewAttachment({fileId: item.fileId, fileName: item.fileName})
+                                                        : onView?.(item.target)}
                                                     className="cursor-pointer flex-none rounded-[7px] border border-[#d7dee8] bg-white p-[6px] text-[#4e57d6] hover:bg-[#ececfc]"
                                                 >
                                                     <Eye size={14}/>

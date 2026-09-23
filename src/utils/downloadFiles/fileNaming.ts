@@ -28,14 +28,16 @@ export function resolveVndDocTitle(
 
 /** Форматы, для которых AttachmentDocxPreviewModal умеет показать хоть какое-то содержимое
  * прямо в браузере (без скачивания) - "докс" в имени модалки остался историческим, сейчас она
- * рендерит все три. .doc/.xls/.ppt (старый бинарный формат Office, не ZIP) сюда не входят -
- * ни docx-preview, ни SheetJS, ни наш разбор презентаций через JSZip их не читают. */
-export type PreviewableFileKind = "docx" | "xlsx" | "pptx";
+ * рендерит все четыре (.pdf - через pdf.js, см. usePdfPreview). .doc/.xls/.ppt (старый бинарный
+ * формат Office, не ZIP) сюда не входят - ни docx-preview, ни SheetJS, ни наш разбор
+ * презентаций через JSZip их не читают. */
+export type PreviewableFileKind = "docx" | "xlsx" | "pptx" | "pdf";
 
 const PREVIEWABLE_EXTENSIONS: Record<PreviewableFileKind, string> = {
     docx: ".docx",
     xlsx: ".xlsx",
     pptx: ".pptx",
+    pdf: ".pdf",
 };
 
 export function getPreviewableFileKind(fileName: string): PreviewableFileKind | null {
@@ -52,7 +54,7 @@ export function isPreviewableFile(fileName: string): boolean {
 }
 
 /** @deprecated используйте isPreviewableFile - оставлено на случай, если .docx где-то нужно
- * отличить от .xlsx/.pptx отдельно (например, для текста подсказки). */
+ * отличить от .xlsx/.pptx/.pdf отдельно (например, для текста подсказки). */
 export function isDocxFile(fileName: string): boolean {
     return getPreviewableFileKind(fileName) === "docx";
 }

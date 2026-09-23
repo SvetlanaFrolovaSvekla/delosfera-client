@@ -1,7 +1,9 @@
 // Модалка "Просмотр документа" для произвольного вложения ВНД - .docx рендерится через
 // docx-preview (useDocxPreview) почти как в Word, .xlsx через SheetJS как обычная HTML-таблица,
 // .pptx - слайд в слайд через @office-kit/pptx-preview (см. usePptxPreview) в виде SVG.
-// Имя компонента осталось от тех времён, когда он умел только docx - сейчас показывает все три
+// .pdf - постранично в <canvas> через pdf.js (см. usePdfPreview), страницы рисуются лениво по
+// мере прокрутки.
+// Имя компонента осталось от тех времён, когда он умел только docx - сейчас показывает все четыре
 // формата (см. getPreviewableFileKind в utils/fileNaming.ts).
 import {createPortal} from "react-dom";
 import {AlertTriangle, Download, FileSpreadsheet, FileText, Loader2, Presentation, X} from "lucide-react";
@@ -9,6 +11,7 @@ import {Tooltip} from "@/components/componentsGeneral/Tooltip.tsx";
 import {useDocxPreview} from "@/hooks/vndHooks/useDocxPreview.ts";
 import {useSheetPreview} from "@/hooks/vndHooks/useSheetPreview.ts";
 import {usePptxPreview} from "@/hooks/vndHooks/usePptxPreview.ts";
+import {usePdfPreview} from "@/hooks/vndHooks/usePdfPreview.ts";
 import {getPreviewableFileKind} from "@/utils/downloadFiles/fileNaming.ts";
 
 interface AttachmentDocxPreviewModalProps {
@@ -31,6 +34,7 @@ const KIND_ICON = {
     docx: FileText,
     xlsx: FileSpreadsheet,
     pptx: Presentation,
+    pdf: FileText,
 };
 
 // У .xlsx и .pptx принципиально разная неполнота превью, поэтому и предупреждения разные,
@@ -40,6 +44,9 @@ const ACCURACY_WARNING = {
     // Картинки, таблицы, диаграммы и текст теперь рендерятся по-настоящему (см. usePptxPreview) -
     // не воспроизводятся только SmartArt, 3D-объекты, анимации и часть векторной графики (WMF/EMF).
     pptx: "Приближённый рендер слайдов: SmartArt, 3D-объекты, анимации и часть эффектов оформления не воспроизводятся.",
+    // Сами страницы pdf.js рисует точно, но только "картинкой": интерактивные элементы PDF
+    // (заполняемые поля, проверка электронной подписи, вложенные файлы, закладки) здесь не работают.
+    pdf: "Предпросмотр PDF без интерактивных элементов: заполняемые поля, проверка электронной подписи, вложенные в PDF файлы и закладки недоступны.",
 };
 
 export function AttachmentDocxPreviewModal({
@@ -72,8 +79,15 @@ export function AttachmentDocxPreviewModal({
         error: pptxError,
     } = usePptxPreview(kind === "pptx" ? fileId : null, {endpoint, pathSuffix});
 
-    const loading = kind === "docx" ? docxLoading : kind === "xlsx" ? sheetLoading : pptxLoading;
-    const error = kind === "docx" ? docxError : kind === "xlsx" ? sheetError : pptxError;
+    const {
+        containerRef: pdfContainerRef,
+        loading: pdfLoading,
+        error: pdfError,
+        pageCount: pdfPageCount,
+    } = usePdfPreview(kind === "pdf" ? fileId : null, {endpoint, pathSuffix});
+
+    const loading = {docx: docxLoading, xlsx: sheetLoading, pptx: pptxLoading, pdf: pdfLoading}[kind];
+    const error = {docx: docxError, xlsx: sheetError, pptx: pptxError, pdf: pdfError}[kind];
 
     // .pptx после разбора файла дорисовывает слайды по одному (см. usePptxPreview) - "loading"
     // здесь перестаёт быть true, как только известно число слайдов, но сами они ещё могут
@@ -100,6 +114,7 @@ export function AttachmentDocxPreviewModal({
                             </h2>
                             <div className="mt-[2px] text-[11px] font-medium text-[#8b97ab]">
                                 Просмотр вложения
+                                {kind === "pdf" && pdfPageCount > 0 && ` · страниц: ${pdfPageCount}`}
                             </div>
                         </div>
                     </div>
@@ -155,6 +170,13 @@ export function AttachmentDocxPreviewModal({
 
                     {kind === "xlsx" && (
                         <div ref={sheetContainerRef} className={loading || error ? "hidden" : ""}/>
+                    )}
+
+                    {/* В отличие от docx/xlsx контейнер PDF не прячем через "hidden" на время
+                        загрузки: usePdfPreview по его ширине сразу размечает страницы под нужный
+                        масштаб, а у скрытого элемента ширина 0. Пока он пустой, места не занимает. */}
+                    {kind === "pdf" && (
+                        <div ref={pdfContainerRef} className={error ? "hidden" : ""}/>
                     )}
 
                     {kind === "pptx" && !loading && !error && (

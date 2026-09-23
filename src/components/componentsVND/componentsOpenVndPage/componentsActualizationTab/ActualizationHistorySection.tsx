@@ -4,7 +4,7 @@ import type { VndActualizationRecordResponse } from "@/service/vndService/vndSer
 import {useTranslation} from "react-i18next";
 import type {VndActualizationRequestResponse} from "@/service/actualizationService/actualizationServiceTypes.ts";
 import {Loader} from "@/components/componentsGeneral/Loader.tsx";
-import {CheckCircle2, Send, XCircle, History} from "lucide-react";
+import {CheckCircle2, Send, Undo2, XCircle, History} from "lucide-react";
 import {formatDateTime} from "@/utils/dateUtils.ts";
 
 export function ActualizationHistorySection({
@@ -99,6 +99,8 @@ export function ActualizationHistorySection({
                             <div key={r.id} className="flex gap-[11px] py-3 border-t border-[#f3f6f9] first:border-t-0">
                                 {r.status === "approved" ? (
                                     <CheckCircle2 size={14} strokeWidth={1.8} className="mt-0.5 flex-none text-[#1c7a4d]"/>
+                                ) : r.status === "revoked" ? (
+                                    <Undo2 size={14} strokeWidth={1.8} className="mt-0.5 flex-none text-[#8b97ab]"/>
                                 ) : (
                                     <XCircle size={14} strokeWidth={1.8} className="mt-0.5 flex-none text-[#c0392b]"/>
                                 )}
@@ -106,9 +108,17 @@ export function ActualizationHistorySection({
                                     <div>
                                         <span className="font-semibold">{r.requestedByName}</span> {t("openVndPage.actualizationTab.requestedAccessLabel", {date: formatDateTime(r.createdAt)})}
                                     </div>
-                                    <div className={`mt-0.5 ${r.status === "approved" ? "text-[#1c7a4d]" : "text-[#c0392b]"}`}>
-                                        {r.status === "approved" ? t("openVndPage.actualizationTab.approvedLabel") : t("openVndPage.actualizationTab.rejectedLabel")}
-                                        {r.decidedByName ? ` — ${r.decidedByName}` : ""}
+                                    <div className={`mt-0.5 ${
+                                        r.status === "approved" ? "text-[#1c7a4d]"
+                                            : r.status === "revoked" ? "text-[#8b97ab]"
+                                                : "text-[#c0392b]"
+                                    }`}>
+                                        {r.status === "approved"
+                                            ? t("openVndPage.actualizationTab.approvedLabel")
+                                            : r.status === "revoked"
+                                                ? t("openVndPage.actualizationTab.revokedLabel")
+                                                : t("openVndPage.actualizationTab.rejectedLabel")}
+                                        {r.status !== "revoked" && r.decidedByName ? ` — ${r.decidedByName}` : ""}
                                         {r.decidedAt ? `, ${formatDateTime(r.decidedAt)}` : ""}
                                     </div>
                                 </div>

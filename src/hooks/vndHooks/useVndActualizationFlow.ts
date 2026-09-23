@@ -3,6 +3,7 @@
 // актуализацию»). Инкапсулирует права, состояние модалок Start/Request/Approve/Perform и статус
 // собственной заявки текущего пользователя по этому документу.
 import {useMemo, useState} from "react";
+import {useTranslation} from "react-i18next";
 import {useAuth} from "@/context/AuthContext.ts";
 import {PermissionCode} from "@/constants/permissions/permissions.ts";
 import {actualizationService} from "@/service/actualizationService/actualizationService.ts";
@@ -17,6 +18,7 @@ export type VndMyActualizationAccessState =
     | { kind: "approved"; requestId: number; decidedByName: string | null; shiftNextPeriod: boolean };
 
 export function useVndActualizationFlow(vnd: VndResponse, onVndChanged: () => void) {
+    const {t} = useTranslation();
     const {user, hasPermission} = useAuth();
 
     const canWithoutApproval = hasPermission(PermissionCode.ActualizeAnyVndWithoutApproval);
@@ -97,11 +99,33 @@ export function useVndActualizationFlow(vnd: VndResponse, onVndChanged: () => vo
         try {
             await actualizationService.requestAccess(vnd.id);
             setRequestOpen(false);
+            toast.success(
+                t("openVndPage.actualizationTab.toast.requestSentTitle"),
+                t("openVndPage.actualizationTab.toast.requestSentDescription"),
+            );
             refetchRequests();
         } catch (err) {
             setError(err instanceof Error ? err.message : "Не удалось отправить заявку");
         } finally {
             setSubmitting(false);
+        }
+    };
+
+    // Заявитель отзывает свою ещё не рассмотренную заявку - например, передумал или доступ
+    // больше не нужен. Отдельное состояние загрузки (не submitting/approvingRequestId) - кнопка
+    // отзыва показывается в собственном блоке "моя заявка в ожидании", не привязанном к модалкам.
+    const [revokingRequestId, setRevokingRequestId] = useState<number | null>(null);
+    const handleRevokeRequest = async (requestId: number) => {
+        setRevokingRequestId(requestId);
+        setError(null);
+        try {
+            await actualizationService.revokeRequest(requestId);
+            toast.success(t("openVndPage.actualizationTab.toast.revokeSuccessTitle"));
+            refetchRequests();
+        } catch (err) {
+            setError(err instanceof Error ? err.message : "Не удалось отозвать заявку");
+        } finally {
+            setRevokingRequestId(null);
         }
     };
 
@@ -165,6 +189,7 @@ export function useVndActualizationFlow(vnd: VndResponse, onVndChanged: () => vo
         try {
             await actualizationService.decideRequest(requestId, {approve: true, shiftNextPeriod});
             setApproveTarget(null);
+            toast.success(t("openVndPage.actualizationTab.toast.approveSuccessTitle"));
             refetchRequests();
         } catch (err) {
             setError(err instanceof Error ? err.message : "Не удалось одобрить заявку");
@@ -178,6 +203,7 @@ export function useVndActualizationFlow(vnd: VndResponse, onVndChanged: () => vo
         setError(null);
         try {
             await actualizationService.decideRequest(requestId, {approve: false});
+            toast.success(t("openVndPage.actualizationTab.toast.rejectSuccessTitle"));
             refetchRequests();
         } catch (err) {
             setError(err instanceof Error ? err.message : "Не удалось отклонить заявку");
@@ -206,6 +232,7 @@ export function useVndActualizationFlow(vnd: VndResponse, onVndChanged: () => vo
         handleStart, handleRequestAccess, handlePerformConfirm, handleUpdatePerformedSettings,
         myAccessState, requests, refetchRequests,
         handleApproveRequest, handleRejectRequest, approvingRequestId,
+        handleRevokeRequest, revokingRequestId,
         needsPerform, needsConfirmStartAfterRequest,
     };
 }

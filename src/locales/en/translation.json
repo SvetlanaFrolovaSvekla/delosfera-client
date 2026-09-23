@@ -17,6 +17,54 @@
     "saving": "Saving…",
     "archiving": "Archiving…"
   },
+  "tidDeveloperPickerModal": {
+    "title": "Select developer",
+    "searchPlaceholder": "Search by full name or username…",
+    "sourceTriggerLabel": "Source",
+    "sourceFieldLabel": "Account source",
+    "sourceLocal": "Local",
+    "sourceLdap": "LDAP",
+    "positionLabel": "Position",
+    "positionSearchPlaceholder": "Search position…",
+    "orgUnitLabel": "Unit",
+    "orgUnitModalTitle": "Organizational unit",
+    "orgUnitSearchPlaceholder": "Search unit…",
+    "rolesLabel": "Roles",
+    "rolesSearchPlaceholder": "Search role…",
+    "loadFailedTitle": "Failed to load data!",
+    "noResults": "No one found"
+  },
+  "tidChangesTable": {
+    "formSectionTitle": "Auto-generate TID:",
+    "formDescription": "Automatically generate a table of changes between the current and new editions",
+    "formButton": "Generate TID",
+    "header": "Auto-generated TID",
+    "exportButton": "Download generated TID as DOCX",
+    "exportDefaultError": "Failed to generate the TID file",
+    "columnNumber": "No.",
+    "columnNumberSub": "",
+    "columnOldRedaction": "Current edition",
+    "columnJustification": "Nature/justification of the proposed changes",
+    "columnNewRedaction": "New edition",
+    "comparingLoading": "Comparing editions…",
+    "comparisonUnavailable": "Could not automatically compare editions — add rows manually",
+    "noRowsYet": "No rows yet",
+    "highlightRed": "in red",
+    "highlightGreen": "in green",
+    "deleteRowTitle": "Delete row",
+    "addRow": "Add row",
+    "developerLabel": "Developer:",
+    "selectDeveloperPlaceholder": "Select developer…",
+    "clearTitle": "Clear",
+    "notSpecified": "not specified",
+    "defaultFileName": "TID.docx"
+  },
+  "approveActualizationRequestModal": {
+    "title": "Approve request",
+    "willBecomeResponsible": "will become responsible for updating this document",
+    "shiftNextPeriod": "Shift the next update deadline after publication",
+    "confirm": "Approve"
+  },
   "stageCard": {
     "removeApproverTooltip": "Remove approver from the route",
     "replaceApproverTooltip": "Replace approver at this stage",
@@ -328,6 +376,7 @@
     "sizeUnitMb": "MB"
   },
   "redactionStatusBanner": {
+    "tidMissingDraft": "To continue, you need to attach the TID:",
     "submitForApproval": "Submit for approval",
     "makeCurrentWithoutApproval": "Make current revision without approval",
     "makeCurrentWithoutApprovalTooltip": "The revision will become effective immediately, bypassing the approval process entirely. This decision is recorded as an action taken by the chief editor.",
@@ -1296,10 +1345,19 @@
       "requestedAccessLabel": "requested access {{date}}",
       "approvedLabel": "Approved",
       "rejectedLabel": "Rejected",
+      "revokedLabel": "Revoked by the requester",
+      "revokeButton": "Revoke request",
+      "revokeConfirmTitle": "Revoke the actualization access request?",
+      "revokeConfirmMessage": "The request will be cancelled, and you can submit a new one at any time.",
       "toast": {
         "noChangesConfirmedTitle": "Absence of changes confirmed",
         "noChangesConfirmedDescription": "The document moved to consolidation",
-        "confirmErrorTitle": "Failed to confirm"
+        "confirmErrorTitle": "Failed to confirm",
+        "requestSentTitle": "Request sent",
+        "requestSentDescription": "The chief VND editor has been notified and will review it",
+        "approveSuccessTitle": "Request approved",
+        "rejectSuccessTitle": "Request rejected",
+        "revokeSuccessTitle": "Request revoked"
       }
     },
     "historyTab": {

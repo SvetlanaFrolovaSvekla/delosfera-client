@@ -71,7 +71,7 @@ export interface ConfirmActualizationStartRequest {
     plannedNoChanges: boolean;
 }
 
-export type ActualizationAccessStatus = "pending" | "approved" | "rejected";
+export type ActualizationAccessStatus = "pending" | "approved" | "rejected" | "revoked";
 
 export interface VndActualizationRequestResponse {
     id: number;

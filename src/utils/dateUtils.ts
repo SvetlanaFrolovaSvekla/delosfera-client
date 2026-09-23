@@ -13,6 +13,11 @@ export function formatDateTime(iso: string): string {
     });
 }
 
+/** YYYY-MM-DD в местном представлении даты. */
+export function keyOf(d: Date): string {
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+}
+
 // "только что" / "N мин назад" / "N ч назад" / "N дн назад" - переиспользует те же
 // ключи time.justNow/time.minutes/time.hours/time.days/time.ago, что и getElapsedLabel,
 // только без комбинирования двух единиц (напр. "2 дня 5 часов") - тут всегда одна.

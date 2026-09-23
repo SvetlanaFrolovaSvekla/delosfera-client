@@ -35,7 +35,7 @@ export function useNotificationRows(
     page: number,
     reloadKey: number
 ) {
-    const { t } = useTranslation();
+    const { t, i18n } = useTranslation();
     const [rows, setRows] = useState<Notification[]>([]);
     const [totalCount, setTotalCount] = useState(0);
     const [loading, setLoading] = useState(true);
@@ -64,8 +64,12 @@ export function useNotificationRows(
         return () => {
             cancelled = true;
         };
+        // Перезапрашиваем и при смене языка интерфейса (i18n.language) - заголовок/текст
+        // каждого уведомления резолвится сервером по заголовку X-Language на момент запроса
+        // (см. NotificationService.ResolveBody), поэтому без этой зависимости переключение
+        // языка не обновляло уже отрисованный список, пока страница не перезагружалась целиком.
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [mainTab, categoryTab, severities, search, page, reloadKey]);
+    }, [mainTab, categoryTab, severities, search, page, reloadKey, i18n.language]);
 
     const totalPages = Math.max(1, Math.ceil(totalCount / PAGE_SIZE));
 

@@ -1,10 +1,10 @@
 // Один элемент рубрикатора (надпись с чекбоксом)
 import React, {memo} from "react";
-import {ChevronRight, ArrowUpRight} from "lucide-react";
 import type {TreeNodeOf} from "@/utils/treeSelectUtils.ts";
-import type {RubricTreeOption} from "./RubricTreeModal";
 import {HighlightText} from "@/utils/highlightText.tsx";
+import type {RubricTreeOption} from "./RubricTreeModal";
 import {TreeCheckbox} from "@/components/componentsGeneral/rubricator/TreeCheckbox.tsx";
+import {ChevronRight, ArrowUpRight} from "lucide-react";
 
 interface RubricTreeNodeProps {
     node: TreeNodeOf<RubricTreeOption>;

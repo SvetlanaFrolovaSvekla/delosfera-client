@@ -819,8 +819,14 @@ export function VndEditionsTab({vnd, onVndChanged, onGoToApproval}: VndEditionsT
                     vndTitle={vnd.titleRu}
                     previousFileId={current && current.id !== selected.id ? current.docFileRuId : null}
                     draftFileId={selected.docFileRuId}
-                    defaultResponsibleUserId={vnd.actualizationResponsibleUserId}
-                    defaultResponsibleUserName={vnd.actualizationResponsibleUserName}
+                    // "Разработчик" по умолчанию - тот, кто сейчас формирует ТИД (т.е. будущий
+                    // инициатор согласования), а не обязательно ответственный за актуализацию -
+                    // это разные роли, и раньше поле по умолчанию неверно показывало последнего
+                    // даже тем, кто не может его изменить (см. canChangeTidDeveloper выше).
+                    // Ответственный за актуализацию остаётся запасным вариантом только на случай,
+                    // если текущий пользователь почему-то ещё не загрузился.
+                    defaultResponsibleUserId={user?.id ?? vnd.actualizationResponsibleUserId}
+                    defaultResponsibleUserName={user?.fullName ?? vnd.actualizationResponsibleUserName}
                     canSelectResponsible={canChangeTidDeveloper}
                     canUploadWithoutApproval={canWithoutApproval}
                     onClose={() => setUploadTidOpen(false)}
@@ -913,9 +919,27 @@ export function VndEditionsTab({vnd, onVndChanged, onGoToApproval}: VndEditionsT
             {approvalModalOpen && (
                 <VndStartApprovalModal
                     vndId={vnd.id}
-                    draftOwnerUserId={vnd.createdByUserId}
-                    draftOwnerUserName={vnd.createdByUserName}
+                    // Кто фактически подготовил редакцию/ТИД, отправляемые на согласование именно
+                    // сейчас: если сейчас идёт цикл актуализации - это её ответственный
+                    // (actualizationResponsibleUserId, тот, кто взял ВНД в актуализацию и всё
+                    // загрузил), а не тот, кто когда-то создал сам документ (createdByUserId).
+                    // Иначе, когда согласование запускает главный редактор, который к тому же и
+                    // есть первоначальный создатель ВНД (а актуализацию по факту вёл кто-то
+                    // другой), выбор инициатора не предлагался бы вовсе - хотя настоящий автор
+                    // ЭТОЙ редакции не он. Зеркалит draftOwnerId в VndApprovalService.StartAsync
+                    // на бэке; тот же принцип уже применён у defaultResponsibleUserId в
+                    // VndUploadTidModal ("Разработчик" ТИД).
+                    draftOwnerUserId={vnd.actualizationResponsibleUserId ?? vnd.createdByUserId}
+                    draftOwnerUserName={vnd.actualizationResponsibleUserName ?? vnd.createdByUserName}
                     currentUserId={user?.id}
+                    // Не isChiefEditor: тот широкий набор прав (CreateVndWith(out)Approval/
+                    // ActualizeAnyVndWith(out)Approval) практически есть у любого автора ВНД,
+                    // включая обычных редакторов (см. комментарий у PermissionCode.
+                    // EditAnyVndApprovalRoute и VndApprovalService.StartAsync на бэке) - из-за
+                    // этого обычный редактор с одним лишь CreateVndWithApproval тоже видел выбор
+                    // инициатора. Нужно узкое право EditAnyVndApprovalRoute ("роль главного
+                    // редактора"), а не широкий isChiefEditor.
+                    canChooseInitiator={hasPermission(PermissionCode.EditAnyVndApprovalRoute)}
                     onClose={() => setApprovalModalOpen(false)}
                     onStarted={() => {
                         setApprovalModalOpen(false);

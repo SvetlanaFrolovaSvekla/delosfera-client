@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { notificationsService } from "@/service/notificationsService/notificationsService.ts";
 import type { Notification } from "@/service/notificationsService/notificationsServiceType.ts";
 
@@ -14,6 +15,7 @@ interface UseNotificationByIdResult {
 }
 
 export function useNotificationById(id: number | undefined): UseNotificationByIdResult {
+    const { i18n } = useTranslation();
     const [notification, setNotification] = useState<Notification | null>(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
@@ -44,7 +46,11 @@ export function useNotificationById(id: number | undefined): UseNotificationById
         return () => {
             cancelled = true;
         };
-    }, [id, reloadKey]);
+        // i18n.language - переоткрыть уведомление при смене языка интерфейса, иначе
+        // заголовок/текст остаются в языке, который был на момент первой загрузки страницы
+        // (см. тот же комментарий в useNotificationRows.ts).
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [id, reloadKey, i18n.language]);
 
     const markAsRead = useCallback(async () => {
         if (!notification || notification.isRead) return;

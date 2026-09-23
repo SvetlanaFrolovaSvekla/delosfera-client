@@ -19,7 +19,7 @@ import {EmptyState} from "@/components/componentsGeneral/EmptyState.tsx";
 const POLL_INTERVAL_MS = 45_000;
 
 export function NotificationsDropdown() {
-    const {t} = useTranslation();
+    const {t, i18n} = useTranslation();
     const navigate = useNavigate();
 
     const [open, setOpen] = useState(false);
@@ -133,7 +133,11 @@ export function NotificationsDropdown() {
         if (!open) return;
         // eslint-disable-next-line react-hooks/set-state-in-effect
         loadPreview();
-    }, [open, loadPreview]);
+        // i18n.language - перезагрузить превью при смене языка интерфейса, пока список открыт,
+        // иначе заголовки/текст остаются на прежнем языке (см. тот же комментарий в
+        // useNotificationRows.ts).
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [open, loadPreview, i18n.language]);
 
     useEffect(() => {
         if (!open) return;

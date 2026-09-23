@@ -14,7 +14,6 @@ import {
     type SelectOption
 } from "@/components/componentsGeneral/selects/SingleSelects/SelectDropdown.tsx";
 
-
 export type RubricTreeOption = BaseTreeOption;
 
 export type RubricatorVariantOption = SelectOption;

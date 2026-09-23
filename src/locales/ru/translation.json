@@ -17,6 +17,54 @@
     "saving": "Сохранение…",
     "archiving": "Архивация…"
   },
+  "tidDeveloperPickerModal": {
+    "title": "Выбор разработчика",
+    "searchPlaceholder": "Поиск по ФИО или логину…",
+    "sourceTriggerLabel": "Источник",
+    "sourceFieldLabel": "Источник учётной записи",
+    "sourceLocal": "Локальный",
+    "sourceLdap": "LDAP",
+    "positionLabel": "Должность",
+    "positionSearchPlaceholder": "Поиск должности…",
+    "orgUnitLabel": "СП",
+    "orgUnitModalTitle": "Структурное подразделение",
+    "orgUnitSearchPlaceholder": "Поиск подразделения…",
+    "rolesLabel": "Роли",
+    "rolesSearchPlaceholder": "Поиск роли…",
+    "loadFailedTitle": "Не удалось загрузить данные!",
+    "noResults": "Никого не нашлось"
+  },
+  "tidChangesTable": {
+    "formSectionTitle": "Автоформирование ТИД:",
+    "formDescription": "Автоматически сформируйте таблицу изменений между действующей и новой редакцией",
+    "formButton": "Сформировать ТИД",
+    "header": "Автоформирование ТИД",
+    "exportButton": "Скачать сформированный ТИД в формате DOCX",
+    "exportDefaultError": "Не удалось сформировать файл ТИД",
+    "columnNumber": "№",
+    "columnNumberSub": "п/п",
+    "columnOldRedaction": "Действующая редакция",
+    "columnJustification": "Суть/обоснование предлагаемых изменений",
+    "columnNewRedaction": "Новая редакция",
+    "comparingLoading": "Сравнение редакций…",
+    "comparisonUnavailable": "Не удалось автоматически сравнить редакции — добавьте строки вручную",
+    "noRowsYet": "Строк пока нет",
+    "highlightRed": "красным",
+    "highlightGreen": "зелёным",
+    "deleteRowTitle": "Удалить строку",
+    "addRow": "Добавить строку",
+    "developerLabel": "Разработчик:",
+    "selectDeveloperPlaceholder": "Выбрать разработчика…",
+    "clearTitle": "Очистить",
+    "notSpecified": "не указан",
+    "defaultFileName": "ТИД.docx"
+  },
+  "approveActualizationRequestModal": {
+    "title": "Одобрить заявку",
+    "willBecomeResponsible": "станет ответственным за актуализацию этого документа",
+    "shiftNextPeriod": "Сдвинуть срок следующей актуализации после публикации",
+    "confirm": "Одобрить"
+  },
   "stageCard": {
     "removeApproverTooltip": "Убрать согласующего из маршрута",
     "replaceApproverTooltip": "Заменить согласующего на этом этапе",
@@ -315,6 +363,7 @@
     "sizeUnitMb": "МБ"
   },
   "redactionStatusBanner": {
+    "tidMissingDraft": "Чтобы продолжить — необходимо приложить ТИД:",
     "submitForApproval": "Отправить на согласование",
     "makeCurrentWithoutApproval": "Сделать актуальной редакцией без согласования",
     "makeCurrentWithoutApprovalTooltip": "Редакция станет действующей сразу, минуя процесс согласования полностью. Это решение фиксируется как выполненное главным редактором.",
@@ -1288,10 +1337,19 @@
       "requestedAccessLabel": "запросил(а) доступ {{date}}",
       "approvedLabel": "Одобрено",
       "rejectedLabel": "Отклонено",
+      "revokedLabel": "Отозвана заявителем",
+      "revokeButton": "Отозвать заявку",
+      "revokeConfirmTitle": "Отозвать заявку на доступ к актуализации?",
+      "revokeConfirmMessage": "Заявка будет отменена, и вы сможете подать новую в любой момент.",
       "toast": {
         "noChangesConfirmedTitle": "Отсутствие изменений подтверждено",
         "noChangesConfirmedDescription": "Документ переведён в консолидацию",
-        "confirmErrorTitle": "Не удалось подтвердить"
+        "confirmErrorTitle": "Не удалось подтвердить",
+        "requestSentTitle": "Заявка отправлена",
+        "requestSentDescription": "Главный редактор ВНД получил уведомление и рассмотрит её",
+        "approveSuccessTitle": "Заявка одобрена",
+        "rejectSuccessTitle": "Заявка отклонена",
+        "revokeSuccessTitle": "Заявка отозвана"
       }
     },
     "historyTab": {

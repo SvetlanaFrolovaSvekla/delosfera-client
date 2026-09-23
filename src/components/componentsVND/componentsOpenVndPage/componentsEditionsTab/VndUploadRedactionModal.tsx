@@ -497,24 +497,6 @@ export function VndUploadRedactionModal({
                             />
                         </div>
 
-                        {/* В режиме актуализации решение "с согласованием / без" уже зафиксировано при
-                        старте цикла - показываем как информацию, менять здесь нельзя */}
-                        {isActualization && (
-                            <div
-                                className="rounded-[10px] border border-[#e5e9f0] bg-[#f9fafc] px-3 py-[10px] text-[12.5px] text-[#55617a]">
-                                {/* Согласование: */}
-                                {t("vndUploadRedactionModal.approvalStatusLabel")}{" "}
-                                <span className="font-semibold text-[#26324a]">
-                                {/* требуется / не требуется */}
-                                    {effectiveRequiresApproval
-                                        ? t("vndUploadRedactionModal.approvalRequired")
-                                        : t("vndUploadRedactionModal.approvalNotRequired")}
-                            </span>{" "}
-                                {/* — определено при старте актуализации */}
-                                {t("vndUploadRedactionModal.approvalLockedHint")}
-                            </div>
-                        )}
-
                         {/* Чекбокс показываем только тем, у кого есть права на публикацию редакции без согласования */}
                         {canSkipApproval && (
                             <>

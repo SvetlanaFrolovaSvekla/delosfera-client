@@ -1,9 +1,11 @@
 // Таблица ТИД с автоматическим формированием изменений в редакции (редактируемая)
 // - можно её скачать и приложить, как файл-тид для последующего согласования
 import {useEffect, useState} from "react";
-import type {TidAutoRow, TidDiffSegment} from "@/hooks/vndHooks/useTidDiffRows.ts";
+import {useTranslation} from "react-i18next";
 import {userService} from "@/service/userService/userService.ts";
+import type {TidAutoRow} from "@/hooks/vndHooks/useTidDiffRows.ts";
 import {downloadBlob, generateTidDocx, type TidExportRow} from "@/utils/docxWork/docxTidExport.ts";
+import {getInitials, segmentsToHtml} from "@/utils/tidBuilding/tidUtils.ts";
 import {
     RichDiffEditor
 } from "@/components/componentsVND/componentsOpenVndPage/componentsEditionsTab/RichDiffEditor.tsx";
@@ -13,34 +15,8 @@ import {
 import {colors} from "@/design/tokens";
 import {ChevronDown, Download, Loader2, Trash2, Wand2, X} from "lucide-react";
 
-function getInitials(fullName: string): string {
-    return fullName
-        .split(" ")
-        .filter(Boolean)
-        .map((part) => part[0])
-        .join("")
-        .toUpperCase()
-        .slice(0, 2);
-}
-
 const REMOVE_COLOR = colors.ryg.red.fg;
 const ADD_COLOR = colors.ryg.green.fg;
-
-function escapeHtml(text: string): string {
-    return text.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
-}
-
-/** Сегменты автосравнения в HTML для начального содержимого
- * RichDiffEditor: изменённые куски (hl: true) оборачиваются в цветной <span>, остальной текст
- * идёт как есть - никакой заливки фона и зачёркивания, просто цвет текста. */
-function segmentsToHtml(segments: TidDiffSegment[], color: string): string {
-    return segments
-        .map((seg) => {
-            const escaped = escapeHtml(seg.text).replace(/\n/g, "<br/>");
-            return seg.hl ? `<span style="color:${color}">${escaped}</span>` : escaped;
-        })
-        .join("");
-}
 
 interface ManualTidRow {
     id: string;
@@ -58,8 +34,8 @@ interface TidChangesTableProps {
     disabled?: boolean;
     /** Имя файла для скачивания сформированного ТИД, напр. по коду редакции. */
     exportFileName?: string;
-    /** Ответственный за актуализацию по данным ВНД - строка "Разработано:" под таблицей
-     * предзаполняется им. */
+    /** Тот, кто сейчас формирует ТИД (обычно - текущий пользователь) - строка "Разработчик:" под
+     * таблицей предзаполняется им, см. VndUploadTidModal. */
     defaultResponsibleUserId?: number | null;
     defaultResponsibleUserName?: string | null;
     /** Главному редактору и администратору доступен выбор другого сотрудника вместо
@@ -76,22 +52,21 @@ interface TidChangesTableProps {
 let manualRowCounter = 0;
 
 export function TidChangesTable({
-                                     autoRows, loading, unavailable, disabled, exportFileName,
-                                     defaultResponsibleUserId, defaultResponsibleUserName, canSelectResponsible,
-                                     vndTitle, formed, onForm,
-                                 }: TidChangesTableProps) {
+                                    autoRows, loading, unavailable, disabled, exportFileName,
+                                    defaultResponsibleUserId, defaultResponsibleUserName, canSelectResponsible,
+                                    vndTitle, formed, onForm,
+                                }: TidChangesTableProps) {
+    const {t} = useTranslation();
     const [justifications, setJustifications] = useState<Record<string, string>>({});
     const [manualRows, setManualRows] = useState<ManualTidRow[]>([]);
-    // Правки, сделанные пользователем поверх авто-сформированного текста (см. RichDiffEditor)
-    // строк из useTidDiffRows - изначально там просто подсвеченный diff, но раз колонки стали
-    // редактируемыми, для выгрузки в docx нужен актуальный текст, а не тот, что был при построении.
-    const [autoEdits, setAutoEdits] = useState<Record<string, {oldHtml?: string; newHtml?: string}>>({});
+    // Правки, сделанные пользователем поверх авто-сформированного текста
+    const [autoEdits, setAutoEdits] = useState<Record<string, { oldHtml?: string; newHtml?: string }>>({});
     const [exporting, setExporting] = useState(false);
     const [exportError, setExportError] = useState<string | null>(null);
 
-    // "Разработано:" - по умолчанию ответственный за актуализацию текущей ВНД (см.
-    // vnd.actualizationResponsibleUserId/Name), главный редактор и администратор могут выбрать
-    // другого сотрудника через TidDeveloperPickerModal (см. ниже).
+    // "Разработчик:" - по умолчанию тот, кто сейчас формирует ТИД (defaultResponsibleUserId,
+    // обычно текущий пользователь); главный редактор и администратор могут выбрать другого
+    // сотрудника через TidDeveloperPickerModal - остальные видят поле нередактируемым.
     const [developerPickerOpen, setDeveloperPickerOpen] = useState(false);
     const [responsibleUser, setResponsibleUser] = useState<TidDeveloperOption | null>(
         defaultResponsibleUserId != null
@@ -178,9 +153,11 @@ export function TidChangesTable({
                 })),
             ];
             const blob = await generateTidDocx(exportRows, developedBy, vndTitle);
-            downloadBlob(blob, exportFileName ?? "ТИД.docx");
+            // ТИД.docx (запасное имя файла, если exportFileName не передан)
+            downloadBlob(blob, exportFileName ?? t("tidChangesTable.defaultFileName"));
         } catch (e) {
-            setExportError(e instanceof Error ? e.message : "Не удалось сформировать файл ТИД");
+            // Не удалось сформировать файл ТИД (запасной текст ошибки)
+            setExportError(e instanceof Error ? e.message : t("tidChangesTable.exportDefaultError"));
         } finally {
             setExporting(false);
         }
@@ -193,12 +170,17 @@ export function TidChangesTable({
             {!formed ? (
                 <>
                     <div className="mb-[10px] flex items-center justify-between gap-3">
-                        <span className="ml-[16px] text-[12.5px] font-semibold text-[#26324a]">Автоформирование ТИД:</span>
+                        <span className="ml-[16px] text-[12.5px] font-semibold text-[#26324a]">
+                            {/* Автоформирование ТИД: */}
+                            {t("tidChangesTable.formSectionTitle")}
+                        </span>
                     </div>
 
-                    <div className="flex flex-col items-center justify-center gap-3 rounded-[14px] border border-dashed border-[#d5dae3] bg-[#f9fafc] px-4 py-9 text-center">
+                    <div
+                        className="flex flex-col items-center justify-center gap-3 rounded-[14px] border border-dashed border-[#d5dae3] bg-[#f9fafc] px-4 py-9 text-center">
                     <span className="text-[13px] text-[#8b97ab]">
-                        Автоматически сформируйте таблицу изменений между действующей и новой редакцией
+                        {/* Автоматически сформируйте таблицу изменений между действующей и новой редакцией */}
+                        {t("tidChangesTable.formDescription")}
                     </span>
                         <button
                             type="button"
@@ -207,240 +189,299 @@ export function TidChangesTable({
                             className="cursor-pointer flex items-center gap-2 rounded-[10px] bg-[#4e57d6] px-4 py-[9px] text-[13px] font-semibold text-white transition-colors hover:bg-[#3f47bd] disabled:cursor-not-allowed disabled:opacity-50"
                         >
                             {loading ? <Loader2 size={14} className="animate-spin"/> : <Wand2 size={14}/>}
-                            Сформировать ТИД
+                            {/* Сформировать ТИД */}
+                            {t("tidChangesTable.formButton")}
                         </button>
                     </div>
                 </>
 
             ) : (
-            <>
-            <div className="mb-[10px] flex items-center justify-between gap-3">
-                <span className="text-[13.5px] font-bold text-[#1c2740]">Автоформирование ТИД</span>
-                <button
-                    type="button"
-                    onClick={handleExport}
-                    disabled={exporting || loading || totalRows === 0}
-                    className="cursor-pointer flex items-center gap-2 rounded-[10px] border border-[#4e57d6] px-3 py-[7px] text-[12px] font-semibold text-[#4e57d6] transition-colors hover:bg-[#ececfc] disabled:cursor-not-allowed disabled:opacity-40"
-                >
-                    {exporting ? <Loader2 size={14} className="animate-spin"/> : <Download size={14}/>}
-                    Скачать сформированный ТИД в формате DOCX
-                </button>
-            </div>
+                <>
+                    <div className="mb-[10px] flex items-center justify-between gap-3">
+                        <span className="text-[13.5px] font-bold text-[#1c2740]">
+                            {/* Автоформирование ТИД */}
+                            {t("tidChangesTable.header")}
+                        </span>
+                        <button
+                            type="button"
+                            onClick={handleExport}
+                            disabled={exporting || loading || totalRows === 0}
+                            className="cursor-pointer flex items-center gap-2 rounded-[10px] border border-[#4e57d6] px-3 py-[7px] text-[12px] font-semibold text-[#4e57d6] transition-colors hover:bg-[#ececfc] disabled:cursor-not-allowed disabled:opacity-40"
+                        >
+                            {exporting ? <Loader2 size={14} className="animate-spin"/> : <Download size={14}/>}
+                            {/* Скачать сформированный ТИД в формате DOCX */}
+                            {t("tidChangesTable.exportButton")}
+                        </button>
+                    </div>
 
-            {exportError && (
-                <div className="mb-3 rounded-md border border-[#f2c2c2] bg-[#fdf1f1] px-3 py-2 text-[12.5px] text-[#c0392b]">
-                    {exportError}
-                </div>
-            )}
+                    {exportError && (
+                        <div
+                            className="mb-3 rounded-md border border-[#f2c2c2] bg-[#fdf1f1] px-3 py-2 text-[12.5px] text-[#c0392b]">
+                            {exportError}
+                        </div>
+                    )}
 
-            <div className="overflow-x-auto rounded-[4px] border border-[#c9ced8]">
-                <table className="w-full table-fixed border-collapse text-[13px]">
-                    <thead>
-                    <tr className="bg-[#e9ebf0] text-center text-[12.5px] font-bold text-[#1c2740]">
-                        <th className="border border-[#c9ced8] px-2 py-2 w-[44px]">№<br/>п/п</th>
-                        <th className="border border-[#c9ced8] px-3 py-2 w-[34%]">Действующая редакция</th>
-                        <th className="border border-[#c9ced8] px-3 py-2 w-[32%]">
-                            Суть/обоснование предлагаемых изменений
-                        </th>
-                        <th className="border border-[#c9ced8] px-3 py-2 w-[34%]">Новая редакция</th>
-                        {!disabled && <th className="border border-[#c9ced8] px-2 py-2 w-10"/>}
-                    </tr>
-                    </thead>
-                    <tbody>
-                    {loading && (
-                        <tr>
-                            <td colSpan={disabled ? 4 : 5} className="border border-[#c9ced8] px-4 py-6 text-center text-[#8b97ab]">
+                    <div className="overflow-x-auto rounded-[4px] border border-[#c9ced8]">
+                        <table className="w-full table-fixed border-collapse text-[13px]">
+                            <thead>
+                            <tr className="bg-[#e9ebf0] text-center text-[12.5px] font-bold text-[#1c2740]">
+                                <th className="border border-[#c9ced8] px-2 py-2 w-[44px]">
+                                    {/* № */}
+                                    {t("tidChangesTable.columnNumber")}
+                                    <br/>
+                                    {/* п/п */}
+                                    {t("tidChangesTable.columnNumberSub")}
+                                </th>
+                                <th className="border border-[#c9ced8] px-3 py-2 w-[34%]">
+                                    {/* Действующая редакция */}
+                                    {t("tidChangesTable.columnOldRedaction")}
+                                </th>
+                                <th className="border border-[#c9ced8] px-3 py-2 w-[32%]">
+                                    {/* Суть/обоснование предлагаемых изменений */}
+                                    {t("tidChangesTable.columnJustification")}
+                                </th>
+                                <th className="border border-[#c9ced8] px-3 py-2 w-[34%]">
+                                    {/* Новая редакция */}
+                                    {t("tidChangesTable.columnNewRedaction")}
+                                </th>
+                                {!disabled && <th className="border border-[#c9ced8] px-2 py-2 w-10"/>}
+                            </tr>
+                            </thead>
+                            <tbody>
+                            {loading && (
+                                <tr>
+                                    <td colSpan={disabled ? 4 : 5}
+                                        className="border border-[#c9ced8] px-4 py-6 text-center text-[#8b97ab]">
                                 <span className="inline-flex items-center gap-2">
                                     <Loader2 size={14} className="animate-spin"/>
-                                    Сравнение редакций…
+                                    {/* Сравнение редакций… */}
+                                    {t("tidChangesTable.comparingLoading")}
                                 </span>
-                            </td>
-                        </tr>
-                    )}
+                                    </td>
+                                </tr>
+                            )}
 
-                    {!loading && unavailable && (
-                        <tr>
-                            <td colSpan={disabled ? 4 : 5} className="border border-[#c9ced8] px-4 py-4 text-center text-[#8b97ab]">
-                                Не удалось автоматически сравнить редакции — добавьте строки вручную
-                            </td>
-                        </tr>
-                    )}
+                            {!loading && unavailable && (
+                                <tr>
+                                    <td colSpan={disabled ? 4 : 5}
+                                        className="border border-[#c9ced8] px-4 py-4 text-center text-[#8b97ab]">
+                                        {/* Не удалось автоматически сравнить редакции — добавьте строки вручную */}
+                                        {t("tidChangesTable.comparisonUnavailable")}
+                                    </td>
+                                </tr>
+                            )}
 
-                    {!loading && !unavailable && totalRows === 0 && (
-                        <tr>
-                            <td colSpan={disabled ? 4 : 5} className="border border-[#c9ced8] px-4 py-4 text-center text-[#8b97ab]">
-                                Строк пока нет
-                            </td>
-                        </tr>
-                    )}
+                            {!loading && !unavailable && totalRows === 0 && (
+                                <tr>
+                                    <td colSpan={disabled ? 4 : 5}
+                                        className="border border-[#c9ced8] px-4 py-4 text-center text-[#8b97ab]">
+                                        {/* Строк пока нет */}
+                                        {t("tidChangesTable.noRowsYet")}
+                                    </td>
+                                </tr>
+                            )}
 
-                    {!loading && autoRows.map((row, index) => (
-                        <tr key={row.id} className="align-top">
-                            <td className="border border-[#c9ced8] px-2 py-3 text-center text-[#1c2740]">
-                                {index + 1}
-                            </td>
-                            <td className="border border-[#c9ced8] px-2 py-2">
-                                <RichDiffEditor
-                                    initialHtml={segmentsToHtml(row.oldSegments, REMOVE_COLOR)}
-                                    placeholder="Действующая редакция"
-                                    highlightOptions={[{color: REMOVE_COLOR, label: "красным"}]}
-                                    disabled={disabled}
-                                    onChangeText={(_text, html) =>
-                                        setAutoEdits((prev) => ({...prev, [row.id]: {...prev[row.id], oldHtml: html}}))
-                                    }
-                                />
-                            </td>
-                            <td className="border border-[#c9ced8] px-3 py-3">
+                            {!loading && autoRows.map((row, index) => (
+                                <tr key={row.id} className="align-top">
+                                    <td className="border border-[#c9ced8] px-2 py-3 text-center text-[#1c2740]">
+                                        {index + 1}
+                                    </td>
+                                    <td className="border border-[#c9ced8] px-2 py-2">
+                                        <RichDiffEditor
+                                            initialHtml={segmentsToHtml(row.oldSegments, REMOVE_COLOR)}
+                                            // Действующая редакция
+                                            placeholder={t("tidChangesTable.columnOldRedaction")}
+                                            // красным
+                                            highlightOptions={[{color: REMOVE_COLOR, label: t("tidChangesTable.highlightRed")}]}
+                                            disabled={disabled}
+                                            onChangeText={(_text, html) =>
+                                                setAutoEdits((prev) => ({
+                                                    ...prev,
+                                                    [row.id]: {...prev[row.id], oldHtml: html}
+                                                }))
+                                            }
+                                        />
+                                    </td>
+                                    <td className="border border-[#c9ced8] px-3 py-3">
                                 <textarea
                                     value={justifications[row.id] ?? ""}
                                     onChange={(e) => setJustifications((prev) => ({...prev, [row.id]: e.target.value}))}
                                     disabled={disabled}
-                                    placeholder="Суть/обоснование предлагаемых изменений"
+                                    // Суть/обоснование предлагаемых изменений
+                                    placeholder={t("tidChangesTable.columnJustification")}
                                     rows={2}
                                     className="h-[220px] w-full resize-y rounded-[8px] border border-[#e0e5ee] bg-white px-2 py-[6px] text-[12.5px] outline-none focus:border-[#4e57d6] disabled:bg-[#f6f8fb]"
                                 />
-                            </td>
-                            <td className="border border-[#c9ced8] px-2 py-2">
-                                <RichDiffEditor
-                                    initialHtml={segmentsToHtml(row.newSegments, ADD_COLOR)}
-                                    placeholder="Новая редакция"
-                                    highlightOptions={[{color: ADD_COLOR, label: "зелёным"}]}
-                                    disabled={disabled}
-                                    onChangeText={(_text, html) =>
-                                        setAutoEdits((prev) => ({...prev, [row.id]: {...prev[row.id], newHtml: html}}))
-                                    }
-                                />
-                            </td>
-                            {!disabled && <td className="border border-[#c9ced8]"/>}
-                        </tr>
-                    ))}
+                                    </td>
+                                    <td className="border border-[#c9ced8] px-2 py-2">
+                                        <RichDiffEditor
+                                            initialHtml={segmentsToHtml(row.newSegments, ADD_COLOR)}
+                                            // Новая редакция
+                                            placeholder={t("tidChangesTable.columnNewRedaction")}
+                                            // зелёным
+                                            highlightOptions={[{color: ADD_COLOR, label: t("tidChangesTable.highlightGreen")}]}
+                                            disabled={disabled}
+                                            onChangeText={(_text, html) =>
+                                                setAutoEdits((prev) => ({
+                                                    ...prev,
+                                                    [row.id]: {...prev[row.id], newHtml: html}
+                                                }))
+                                            }
+                                        />
+                                    </td>
+                                    {!disabled && <td className="border border-[#c9ced8]"/>}
+                                </tr>
+                            ))}
 
-                    {manualRows.map((row, index) => (
-                        <tr key={row.id} className="align-top">
-                            <td className="border border-[#c9ced8] px-2 py-3 text-center text-[#1c2740]">
-                                {autoRows.length + index + 1}
-                            </td>
-                            <td className="border border-[#c9ced8] px-3 py-3 whitespace-pre-wrap break-words text-[#1c2740]">
-                                {row.oldText.trim()
-                                    ? <span dangerouslySetInnerHTML={{__html: row.oldHtml}}/>
-                                    : <span className="text-[#c3c9d4]">—</span>}
-                            </td>
-                            <td className="border border-[#c9ced8] px-3 py-3 whitespace-pre-wrap break-words text-[#3c424a]">
-                                {row.justification || <span className="text-[#c3c9d4]">—</span>}
-                            </td>
-                            <td className="border border-[#c9ced8] px-3 py-3 whitespace-pre-wrap break-words text-[#1c2740]">
-                                {row.newText.trim()
-                                    ? <span dangerouslySetInnerHTML={{__html: row.newHtml}}/>
-                                    : <span className="text-[#c3c9d4]">—</span>}
-                            </td>
-                            {!disabled && (
-                                <td className="border border-[#c9ced8] px-2 py-3 text-center">
-                                    <button
-                                        type="button"
-                                        onClick={() => handleDelete(row.id)}
-                                        title="Удалить строку"
-                                        className="cursor-pointer text-[#8b97ab] hover:text-[#c0392b]"
-                                    >
-                                        <Trash2 size={15}/>
-                                    </button>
-                                </td>
-                            )}
-                        </tr>
-                    ))}
-                    </tbody>
-                </table>
-            </div>
-
-            {!disabled && (
-                <div className="mt-4 rounded-[10px] px-1 py-4">
-                    <div className="mb-3 text-[12.5px] font-semibold text-[#1c2740]">Добавить строку</div>
-                    <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
-                        <RichDiffEditor
-                            key={`draft-old-${draftKey}`}
-                            placeholder="Действующая редакция"
-                            highlightOptions={[{color: REMOVE_COLOR, label: "красным"}]}
-                            onChangeText={(text, html) => {
-                                setDraftOldText(text);
-                                setDraftOldHtml(html);
-                            }}
-                        />
-                        <textarea
-                            value={draftJustification}
-                            onChange={(e) => setDraftJustification(e.target.value)}
-                            placeholder="Суть/обоснование предлагаемых изменений"
-                            rows={2}
-                            className="h-[220px] resize-y rounded-[8px] border border-[#e0e5ee] bg-white px-2 py-[6px] text-[12.5px] outline-none focus:border-[#4e57d6]"
-                        />
-                        <RichDiffEditor
-                            key={`draft-new-${draftKey}`}
-                            placeholder="Новая редакция"
-                            highlightOptions={[{color: ADD_COLOR, label: "зелёным"}]}
-                            onChangeText={(text, html) => {
-                                setDraftNewText(text);
-                                setDraftNewHtml(html);
-                            }}
-                        />
+                            {manualRows.map((row, index) => (
+                                <tr key={row.id} className="align-top">
+                                    <td className="border border-[#c9ced8] px-2 py-3 text-center text-[#1c2740]">
+                                        {autoRows.length + index + 1}
+                                    </td>
+                                    <td className="border border-[#c9ced8] px-3 py-3 whitespace-pre-wrap break-words text-[#1c2740]">
+                                        {row.oldText.trim()
+                                            ? <span dangerouslySetInnerHTML={{__html: row.oldHtml}}/>
+                                            : <span className="text-[#c3c9d4]">—</span>}
+                                    </td>
+                                    <td className="border border-[#c9ced8] px-3 py-3 whitespace-pre-wrap break-words text-[#3c424a]">
+                                        {row.justification || <span className="text-[#c3c9d4]">—</span>}
+                                    </td>
+                                    <td className="border border-[#c9ced8] px-3 py-3 whitespace-pre-wrap break-words text-[#1c2740]">
+                                        {row.newText.trim()
+                                            ? <span dangerouslySetInnerHTML={{__html: row.newHtml}}/>
+                                            : <span className="text-[#c3c9d4]">—</span>}
+                                    </td>
+                                    {!disabled && (
+                                        <td className="border border-[#c9ced8] px-2 py-3 text-center">
+                                            <button
+                                                type="button"
+                                                onClick={() => handleDelete(row.id)}
+                                                // Удалить строку
+                                                title={t("tidChangesTable.deleteRowTitle")}
+                                                className="cursor-pointer text-[#8b97ab] hover:text-[#c0392b]"
+                                            >
+                                                <Trash2 size={15}/>
+                                            </button>
+                                        </td>
+                                    )}
+                                </tr>
+                            ))}
+                            </tbody>
+                        </table>
                     </div>
 
-                    <button
-                        type="button"
-                        onClick={handleAdd}
-                        disabled={!canAdd}
-                        className="cursor-pointer mt-3 rounded-[10px] bg-[#4e57d6] px-4 py-2 text-[12.5px] font-semibold text-white disabled:opacity-40 hover:brightness-[1.06]"
-                    >
-                        Добавить строку
-                    </button>
-                </div>
-            )}
+                    {!disabled && (
+                        <div className="mt-4 rounded-[10px] px-1 py-4">
+                            <div className="mb-3 text-[12.5px] font-semibold text-[#1c2740]">
+                                {/* Добавить строку */}
+                                {t("tidChangesTable.addRow")}
+                            </div>
+                            <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+                                <RichDiffEditor
+                                    key={`draft-old-${draftKey}`}
+                                    // Действующая редакция
+                                    placeholder={t("tidChangesTable.columnOldRedaction")}
+                                    // красным
+                                    highlightOptions={[{color: REMOVE_COLOR, label: t("tidChangesTable.highlightRed")}]}
+                                    onChangeText={(text, html) => {
+                                        setDraftOldText(text);
+                                        setDraftOldHtml(html);
+                                    }}
+                                />
+                                <textarea
+                                    value={draftJustification}
+                                    onChange={(e) => setDraftJustification(e.target.value)}
+                                    // Суть/обоснование предлагаемых изменений
+                                    placeholder={t("tidChangesTable.columnJustification")}
+                                    rows={2}
+                                    className="h-[220px] resize-y rounded-[8px] border border-[#e0e5ee] bg-white px-2 py-[6px] text-[12.5px] outline-none focus:border-[#4e57d6]"
+                                />
+                                <RichDiffEditor
+                                    key={`draft-new-${draftKey}`}
+                                    // Новая редакция
+                                    placeholder={t("tidChangesTable.columnNewRedaction")}
+                                    // зелёным
+                                    highlightOptions={[{color: ADD_COLOR, label: t("tidChangesTable.highlightGreen")}]}
+                                    onChangeText={(text, html) => {
+                                        setDraftNewText(text);
+                                        setDraftNewHtml(html);
+                                    }}
+                                />
+                            </div>
 
-            <div className="mt-4 flex flex-wrap items-center gap-2 text-[13px]">
-                <span className="font-semibold text-[#1c2740]">Разработчик:</span>
-                {canSelectResponsible && !disabled ? (
-                    <div className="flex items-center gap-1.5">
-                        <button
-                            type="button"
-                            onClick={() => setDeveloperPickerOpen(true)}
-                            className="flex h-9 min-w-[240px] cursor-pointer items-center justify-between gap-2 rounded-[9px] border border-[#e0e5ee] bg-white px-3 text-left text-[12.5px] outline-none hover:border-[#4e57d6]/50 focus:border-[#4e57d6]"
-                        >
-                            {responsibleUser ? (
-                                <span className="flex min-w-0 items-center gap-1.5">
-                                    <span className="flex h-6 w-6 flex-none items-center justify-center rounded-full bg-[#ececfc] text-[9px] font-bold text-[#4e57d6]">
+                            <button
+                                type="button"
+                                onClick={handleAdd}
+                                disabled={!canAdd}
+                                className="cursor-pointer mt-3 rounded-[10px] bg-[#4e57d6] px-4 py-2 text-[12.5px] font-semibold text-white disabled:opacity-40 hover:brightness-[1.06]"
+                            >
+                                {/* Добавить строку */}
+                                {t("tidChangesTable.addRow")}
+                            </button>
+                        </div>
+                    )}
+
+                    <div className="mt-4 flex flex-wrap items-center gap-2 text-[13px]">
+                        <span className="font-semibold text-[#1c2740]">
+                            {/* Разработчик: */}
+                            {t("tidChangesTable.developerLabel")}
+                        </span>
+                        {canSelectResponsible && !disabled ? (
+                            <div className="flex items-center gap-1.5">
+                                <button
+                                    type="button"
+                                    onClick={() => setDeveloperPickerOpen(true)}
+                                    className="flex h-9 min-w-[240px] cursor-pointer items-center justify-between gap-2 rounded-[9px] border border-[#e0e5ee] bg-white px-3 text-left text-[12.5px] outline-none hover:border-[#4e57d6]/50 focus:border-[#4e57d6]"
+                                >
+                                    {responsibleUser ? (
+                                        <span className="flex min-w-0 items-center gap-1.5">
+                                    <span
+                                        className="flex h-6 w-6 flex-none items-center justify-center rounded-full bg-[#ececfc] text-[9px] font-bold text-[#4e57d6]">
                                         {getInitials(responsibleUser.fullName)}
                                     </span>
                                     <span className="truncate text-[#26324a]">{responsibleUser.fullName}</span>
                                 </span>
-                            ) : (
-                                <span className="text-[#a3adbd]">Выбрать разработчика…</span>
-                            )}
-                            <ChevronDown size={14} className="flex-none text-[#8b97ab]"/>
-                        </button>
-                        {responsibleUser && (
-                            <button
-                                type="button"
-                                onClick={() => setResponsibleUser(null)}
-                                title="Очистить"
-                                className="cursor-pointer flex-none text-[#8b97ab] hover:text-[#c0392b]"
-                            >
-                                <X size={15}/>
-                            </button>
-                        )}
-                    </div>
-                ) : (
-                    <span className="text-[#26324a]">
+                                    ) : (
+                                        <span className="text-[#a3adbd]">
+                                            {/* Выбрать разработчика… */}
+                                            {t("tidChangesTable.selectDeveloperPlaceholder")}
+                                        </span>
+                                    )}
+                                    <ChevronDown size={14} className="flex-none text-[#8b97ab]"/>
+                                </button>
+                                {responsibleUser && (
+                                    <button
+                                        type="button"
+                                        onClick={() => setResponsibleUser(null)}
+                                        // Очистить
+                                        title={t("tidChangesTable.clearTitle")}
+                                        className="cursor-pointer flex-none text-[#8b97ab] hover:text-[#c0392b]"
+                                    >
+                                        <X size={15}/>
+                                    </button>
+                                )}
+                            </div>
+                        ) : (
+                            <span className="text-[#26324a]">
                         {developedBy
                             ? [developedBy.positionName, developedBy.fullName].filter(Boolean).join(", ")
-                            : <span className="text-[#8b97ab]">не указан</span>}
+                            : (
+                                <span className="text-[#8b97ab]">
+                                    {/* не указан */}
+                                    {t("tidChangesTable.notSpecified")}
+                                </span>
+                            )}
                     </span>
-                )}
-            </div>
+                        )}
+                    </div>
 
-            {developerPickerOpen && (
-                <TidDeveloperPickerModal
-                    onClose={() => setDeveloperPickerOpen(false)}
-                    onSelect={(u) => setResponsibleUser(u)}
-                />
-            )}
-            </>
+                    {developerPickerOpen && (
+                        <TidDeveloperPickerModal
+                            onClose={() => setDeveloperPickerOpen(false)}
+                            onSelect={(u) => setResponsibleUser(u)}
+                        />
+                    )}
+                </>
             )}
         </div>
     );

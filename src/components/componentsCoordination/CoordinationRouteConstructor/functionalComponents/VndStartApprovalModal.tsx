@@ -35,10 +35,21 @@ interface VndStartApprovalModalProps {
     draftOwnerUserId?: number | null;
     draftOwnerUserName?: string | null;
     currentUserId?: number;
+    /** Выбор инициатора доступен только настоящему главному редактору ВНД - передаётся снаружи
+     * как hasPermission(PermissionCode.EditAnyVndApprovalRoute), а НЕ широкий isChiefEditor
+     * (CreateVndWith(out)Approval/ActualizeAnyVndWith(out)Approval): тот набор практически есть
+     * у любого автора ВНД, включая обычных редакторов, из-за чего они тоже видели этот выбор.
+     * Зеркалит бэковый actingOnSomeoneElsesDraft в VndApprovalService.StartAsync (тот проверяет
+     * то же самое узкое право). У обычного редактора выбора нет вообще, он всегда сам инициатор,
+     * когда отправляет согласование, даже если формально не является автором черновика (например,
+     * взял документ в актуализацию не от изначального автора). По умолчанию false - явная
+     * небезопасная сторона (без выбора). */
+    canChooseInitiator?: boolean;
 }
 
 export function VndStartApprovalModal({
                                           vndId, onClose, onStarted, draftOwnerUserId, draftOwnerUserName, currentUserId,
+                                          canChooseInitiator = false,
                                       }: VndStartApprovalModalProps) {
     const {t} = useTranslation();
 
@@ -71,11 +82,14 @@ export function VndStartApprovalModal({
         },
     ];
 
-    // Запускающий - не автор черновика (например, главный редактор действует за него) - тогда
-    // даём выбор, кто станет инициатором согласования: сам запускающий или автор черновика.
-    // См. VndApprovalService.StartAsync/actingOnSomeoneElsesDraft на бэке.
+    // Запускающий - настоящий главный редактор (EditAnyVndApprovalRoute, см. canChooseInitiator
+    // выше) и не автор черновика (например, действует за него) - тогда даём выбор, кто станет
+    // инициатором согласования: сам запускающий или автор черновика. У обычного редактора такого
+    // выбора нет вообще - он всегда сам инициатор, когда отправляет. См.
+    // VndApprovalService.StartAsync/actingOnSomeoneElsesDraft на бэке - та же гейтинг-логика
+    // (тоже по EditAnyVndApprovalRoute) продублирована там для defence in depth.
     const actingOnSomeoneElsesDraft =
-        draftOwnerUserId != null && currentUserId != null && draftOwnerUserId !== currentUserId;
+        canChooseInitiator && draftOwnerUserId != null && currentUserId != null && draftOwnerUserId !== currentUserId;
     const [initiator, setInitiator] = useState<"self" | "owner">("self");
     // Станет ли текущий пользователь инициатором ЭТОГО запуска согласования - передаётся в
     // VndSelectApproverModal, чтобы подпись "авто-согласование" не показывалась, когда сам себя

@@ -65,7 +65,7 @@ const ProcurementProtocolPage = lazy(() => import("@/pages/ProcurementPages/Proc
 // Сводный реестр задач по всем контурам (GEN-11)
 const TaskInboxPage = lazy(() => import("@/pages/TasksPages/TaskInboxPage.tsx").then(m => ({default: m.TaskInboxPage})));
 const DigestPage = lazy(() => import("@/pages/DigestPage.tsx").then(m => ({default: m.DigestPage})));
-const CalendarPage = lazy(() => import("@/pages/CalendarPage.tsx").then(m => ({default: m.CalendarPage})));
+const CalendarPage = lazy(() => import("@/pages/CalendarPage/CalendarPage.tsx").then(m => ({default: m.CalendarPage})));
 const NotificationSettingsPage = lazy(() => import("@/pages/NotificationSettingsPage.tsx").then(m => ({default: m.NotificationSettingsPage})));
 const TaskStatsPage = lazy(() => import("@/pages/TasksPages/TaskStatsPage.tsx").then(m => ({default: m.TaskStatsPage})));
 const ObligationsBoardPage = lazy(() => import("@/pages/ObligationsBoardPage.tsx").then(m => ({default: m.ObligationsBoardPage})));

@@ -12,6 +12,8 @@ import {toast} from "@/service/toastService.ts";
 import {useVndById} from "@/hooks/vndHooks/useVndById.ts";
 import {useVndDictionaries} from "@/hooks/vndHooks/useVndDictionaries.ts";
 import {useVndRedactions} from "@/hooks/vndHooks/useVndRedactions.ts";
+import {useAsyncAction} from "@/hooks/useAsyncAction.ts";
+import {downloadWithToast} from "@/utils/downloadFiles/downloadFile.ts";
 import {formatDate} from "@/utils/dateUtils.ts";
 import {collapseDocumentStatus, DOCUMENT_STATUS_META, getVndDisplayMeta} from "@/constants/vndStatus.ts";
 import {getVndTabs, type VndTabId} from "@/constants/vndTabs.ts";
@@ -40,8 +42,6 @@ import {VndStatusBanner} from "@/components/componentsGeneral/knowledgeBaseCompo
 import {ConfirmActionModal} from "@/components/componentsGeneral/modal/ConfirmActionModal.tsx";
 import {Tooltip} from "@/components/componentsGeneral/Tooltip.tsx";
 import {Archive, Eye, Trash2} from "lucide-react";
-import {useAsyncAction} from "@/hooks/useAsyncAction.ts";
-import {downloadWithToast} from "@/utils/downloadFiles/downloadFile.ts";
 
 export function OpenVndPage() {
     const {t} = useTranslation();
@@ -215,7 +215,8 @@ export function OpenVndPage() {
     }
 
     if (error) {
-        {/* Не удалось загрузить документ: {error} */}
+        {/* Не удалось загрузить документ: {error} */
+        }
         return (
             <div
                 className="my-4 mx-auto max-w-[1000px] rounded-md border border-[#f2c2c2] bg-[#fdf1f1] px-4 py-3 text-[13px] text-[#c0392b]">
@@ -268,7 +269,6 @@ export function OpenVndPage() {
                 />
             </div>
 
-            {/*TODO: Ограничить длину названия, при навидении полный текст*/}
             <div className="px-4 sm:px-6 pb-2">
                 <h1 className="text-[13px] font-bold leading-tight text-[#1c2740]">
                     {vnd.name}
@@ -299,8 +299,8 @@ export function OpenVndPage() {
                     <div className="flex items-center gap-1.5">
                         <span className="text-[#8b97ab]">{/*Код ВНД:*/}{t("openVndPage.vndCodeLabel")}</span>
                         <span className="text-[12px] text-[#4e57d6] bg-[#ececfc] px-2.5 py-0.5 rounded-[7px]">
-            {vnd.code}
-        </span>
+                            {vnd.code}
+                        </span>
                     </div>
 
 
@@ -316,10 +316,11 @@ export function OpenVndPage() {
                     {/* Блок 3: Статус последней редакции (детальный, как и раньше — виден всем,
                         без изменений) */}
                     <div className="flex items-center gap-1.5">
-                        <span className="text-[#8b97ab]">{/*Статус последней редакции ВНД:*/}{t("openVndPage.lastRedactionStatusLabel")}</span>
+                        <span
+                            className="text-[#8b97ab]">{/*Статус последней редакции ВНД:*/}{t("openVndPage.lastRedactionStatusLabel")}</span>
                         <span
                             className="px-2.5 py-0.5 rounded-full text-[12px]"
-                            style={{ color: meta.color, background: meta.bg }}
+                            style={{color: meta.color, background: meta.bg}}
                         >
                             {t(meta.label)}
                         </span>
@@ -333,10 +334,11 @@ export function OpenVndPage() {
                         всё же попал сюда как редактор ВНД (см. documentStatusMeta). */}
                     {canSeeDocumentStatus && (
                         <div className="flex items-center gap-1.5">
-                            <span className="text-[#8b97ab]">{/*Статус ВНД:*/}{t("openVndPage.documentStatusLabel")}</span>
+                            <span
+                                className="text-[#8b97ab]">{/*Статус ВНД:*/}{t("openVndPage.documentStatusLabel")}</span>
                             <span
                                 className="px-2.5 py-0.5 rounded-full text-[12px]"
-                                style={{ color: documentStatusMeta.color, background: documentStatusMeta.bg }}
+                                style={{color: documentStatusMeta.color, background: documentStatusMeta.bg}}
                             >
                                 {t(documentStatusMeta.label)}
                             </span>
@@ -364,7 +366,7 @@ export function OpenVndPage() {
                                 disabled={deleting}
                                 className="shrink-0 flex items-center gap-1.5 rounded-[9px] border border-[#e0b4ae] bg-white px-3 py-1 text-[12px] font-semibold text-[#c0392b] cursor-pointer hover:bg-[#fbecea] transition-colors"
                             >
-                                <Trash2 className="w-3.5 h-3.5" strokeWidth={2} />
+                                <Trash2 className="w-3.5 h-3.5" strokeWidth={2}/>
                                 {deleting ? t("general.deleting") : t("openVndPage.deleteDraftButton")}
                             </button>
                         )}
@@ -376,7 +378,7 @@ export function OpenVndPage() {
                                 disabled={canceling}
                                 className="shrink-0 flex items-center gap-1.5 rounded-[9px] border border-[#e0b4ae] bg-white px-3 py-1 text-[12px] font-semibold text-[#c0392b] cursor-pointer hover:bg-[#fbecea] transition-colors"
                             >
-                                <Archive className="w-3.5 h-3.5" strokeWidth={2} />
+                                <Archive className="w-3.5 h-3.5" strokeWidth={2}/>
                                 {canceling ? t("general.archiving") : t("openVndPage.archiveButton")}
                             </button>
                         )}
@@ -386,7 +388,8 @@ export function OpenVndPage() {
 
             {/* Редакции */}
             {activeTab === "editions" && (
-                <VndEditionsTab vnd={vnd} onVndChanged={handleVndOrRedactionsChanged} onGoToApproval={() => setTab("approval")}/>
+                <VndEditionsTab vnd={vnd} onVndChanged={handleVndOrRedactionsChanged}
+                                onGoToApproval={() => setTab("approval")}/>
             )}
             {/* Реквизиты */}
             {activeTab === "passport" && (

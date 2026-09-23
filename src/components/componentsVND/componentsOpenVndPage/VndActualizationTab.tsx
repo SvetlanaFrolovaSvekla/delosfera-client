@@ -22,9 +22,10 @@ import {
 import {
     ActualizationHistorySection
 } from "@/components/componentsVND/componentsOpenVndPage/componentsActualizationTab/ActualizationHistorySection.tsx";
+import {ConfirmActionModal} from "@/components/componentsGeneral/modal/ConfirmActionModal.tsx";
 
 import {Loader} from "@/components/componentsGeneral/Loader.tsx";
-import {CheckCircle2, ClipboardList, Clock, Inbox, Loader2, RefreshCw, Send} from "lucide-react";
+import {CheckCircle2, ClipboardList, Clock, Inbox, Loader2, RefreshCw, Send, Undo2} from "lucide-react";
 
 interface VndActualizationTabProps {
     vnd: VndResponse;
@@ -46,8 +47,13 @@ export function VndActualizationTab({vnd, onVndChanged, onGoToEditions, onGoToAp
         handleStart, handleRequestAccess,
         myAccessState, requests,
         handleApproveRequest, handleRejectRequest, approvingRequestId,
+        handleRevokeRequest, revokingRequestId,
         needsPerform, needsConfirmStartAfterRequest,
     } = useVndActualizationFlow(vnd, onVndChanged);
+
+    // Подтверждение отзыва собственной заявки - отдельная простая модалка (ConfirmActionModal),
+    // без своей отдельной формы, как у Approve/Request - тут нечего настраивать, только да/нет.
+    const [revokeConfirmOpen, setRevokeConfirmOpen] = useState(false);
 
     const {data: history, loading: historyLoading} = useVndActualizationHistory(vnd.id);
 
@@ -313,11 +319,23 @@ export function VndActualizationTab({vnd, onVndChanged, onGoToEditions, onGoToAp
             })()}
 
             {myAccessState.kind === "pending" && (
-                <div className="mb-3 flex items-center gap-2.5 overflow-hidden rounded-[14px] border border-[#f0dcae] bg-[#fdf6e8] px-5 py-4">
+                <div className="mb-3 flex flex-wrap items-center gap-2.5 overflow-hidden rounded-[14px] border border-[#f0dcae] bg-[#fdf6e8] px-5 py-4">
                     <Clock size={16} strokeWidth={1.8} className="flex-none text-[#9a6408]"/>
-                    <span className="text-[13px] text-[#9a6408]">
+                    <span className="flex-1 text-[13px] text-[#9a6408]">
                         {t("openVndPage.redactionsSidebar.pendingRequestHint")}
                     </span>
+                    <button
+                        type="button"
+                        disabled={revokingRequestId === myAccessState.requestId}
+                        onClick={() => setRevokeConfirmOpen(true)}
+                        className="cursor-pointer inline-flex h-8 flex-none items-center gap-1.5 rounded-[8px] border border-[#e5e9f0] bg-white px-3 text-[12px] font-semibold text-[#9a6408] hover:bg-[#f6f8fb] disabled:opacity-50"
+                    >
+                        {revokingRequestId === myAccessState.requestId
+                            ? <Loader2 size={13} className="animate-spin"/>
+                            : <Undo2 size={13} strokeWidth={1.8}/>}
+                        {/* Отозвать заявку */}
+                        {t("openVndPage.actualizationTab.revokeButton")}
+                    </button>
                 </div>
             )}
 
@@ -420,6 +438,24 @@ export function VndActualizationTab({vnd, onVndChanged, onGoToEditions, onGoToAp
                     error={error}
                     onClose={() => { if (approvingRequestId) return; setApproveTarget(null); setError(null); }}
                     onConfirm={(shiftNextPeriod) => handleApproveRequest(approveTarget.id, shiftNextPeriod)}
+                />
+            )}
+
+            {myAccessState.kind === "pending" && (
+                <ConfirmActionModal
+                    open={revokeConfirmOpen}
+                    onClose={() => setRevokeConfirmOpen(false)}
+                    onConfirm={async () => {
+                        await handleRevokeRequest(myAccessState.requestId);
+                        setRevokeConfirmOpen(false);
+                    }}
+                    title={t("openVndPage.actualizationTab.revokeConfirmTitle")}
+                    message={t("openVndPage.actualizationTab.revokeConfirmMessage")}
+                    confirmLabel={t("openVndPage.actualizationTab.revokeButton")}
+                    loading={revokingRequestId === myAccessState.requestId}
+                    error={error}
+                    variant="warning"
+                    icon={Undo2}
                 />
             )}
 

@@ -39,7 +39,13 @@ export function getCoordinationRoleState(
     const isRejected = process.status === "rejected";
     const isProcessActive = !isApproved && !isRejected;
 
+    // Убранные главным редактором этапы (isRemovedByEditor) пропускаем: у одного и того же
+    // человека в маршруте может быть и старый, уже убранный этап (например, его заменили на
+    // обязательном этапе), и новый действующий (его же вернули доп. этапом). Старый стоит в
+    // списке раньше - без этой проверки находился именно он, и у согласующего пропадала
+    // панель резолюции по его действующему этапу.
     const myStage = process.stages.find((s) => {
+        if (s.isRemovedByEditor) return false;
         if (isPrimaryPhase) return s.approverUserId === currentUserId;
         if (isRepeatedPhase) return s.approverUserId === currentUserId && s.participatesInRepeat;
         if (isFinalHoldPhase) return s.approverUserId === currentUserId;

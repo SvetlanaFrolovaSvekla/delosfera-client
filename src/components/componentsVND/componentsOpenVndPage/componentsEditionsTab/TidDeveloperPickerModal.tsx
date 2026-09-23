@@ -1,22 +1,20 @@
 // Модал выбора разработчика сформированного ТИД (строка "Разработчик:" в TidChangesTable) —
 // список пользователей с теми же фильтрами, что и на странице "Пользователи" (СП, должность,
-// источник учётной записи, роль). Специально переиспользует useUsersList/useDictionaries вместо
-// узкого списка согласующих (см. VndSelectApproverModal, который берёт GET /users/approvers) —
-// разработчиком ТИД может быть любой активный сотрудник, а не только тот, у кого есть право
-// ActAsApprover.
+// источник учётной записи, роль).
 import {useMemo} from "react";
 import {createPortal} from "react-dom";
-import {Loader2, User as UserIcon, X} from "lucide-react";
-import {useUsersList} from "@/hooks/userHooks/useUsersList.ts";
+import {useTranslation} from "react-i18next";
 import {useDictionaries} from "@/context/DictionariesContext.tsx";
+import type {UserResponse, UserSource} from "@/service/userService/userServiceType.ts";
+import {useUsersList} from "@/hooks/userHooks/useUsersList.ts";
+import {HighlightText} from "@/utils/highlightText.tsx";
 import {
     MultiSelectDropdown, type MultiSelectOption
 } from "@/components/componentsGeneral/selects/MultiSelects/MultiSelectDropdown.tsx";
 import {MultiSelectField} from "@/components/componentsGeneral/selects/MultiSelects/MultiSelectField.tsx";
 import {EmptyState} from "@/components/componentsGeneral/EmptyState.tsx";
 import {SearchBar} from "@/components/componentsGeneral/SearchBar.tsx";
-import {HighlightText} from "@/utils/highlightText.tsx";
-import type {UserResponse, UserSource} from "@/service/userService/userServiceType.ts";
+import {Loader2, User as UserIcon, X} from "lucide-react";
 
 export interface TidDeveloperOption {
     id: number;
@@ -24,20 +22,24 @@ export interface TidDeveloperOption {
     positionName: string | null;
 }
 
-// Те же подписи и цвета, что и у бейджа источника в столбце "Источник" на странице
-// "Пользователи" (см. SOURCE_LABEL/SOURCE_STYLE в UsersTable.tsx) - чтобы чипс выбора в фильтре
-// выглядел так же, как сам признак у пользователя.
-const SOURCE_OPTIONS: (MultiSelectOption & { key: UserSource })[] = [
-    {key: "Local", label: "Локальный", chipClassName: "text-[#7a4fd6] bg-[#f3edfd]"},
-    {key: "Ldap", label: "LDAP", chipClassName: "text-[#3b6fd6] bg-[#eaf1fd]"},
-];
-
 interface TidDeveloperPickerModalProps {
     onClose: () => void;
     onSelect: (user: TidDeveloperOption) => void;
 }
 
 export function TidDeveloperPickerModal({onClose, onSelect}: TidDeveloperPickerModalProps) {
+    const {t} = useTranslation();
+
+    // Те же подписи и цвета, что и у бейджа источника в столбце "Источник" на странице
+    // "Пользователи" (см. SOURCE_LABEL/SOURCE_STYLE в UsersTable.tsx) - чтобы чипс выбора в фильтре
+    // выглядел так же, как сам признак у пользователя.
+    const SOURCE_OPTIONS: (MultiSelectOption & { key: UserSource })[] = [
+        // Локальный
+        {key: "Local", label: t("tidDeveloperPickerModal.sourceLocal"), chipClassName: "text-[#7a4fd6] bg-[#f3edfd]"},
+        // LDAP
+        {key: "Ldap", label: t("tidDeveloperPickerModal.sourceLdap"), chipClassName: "text-[#3b6fd6] bg-[#eaf1fd]"},
+    ];
+
     const {
         search, setSearch,
         sourceFilters, toggleSourceFilter,
@@ -75,7 +77,10 @@ export function TidDeveloperPickerModal({onClose, onSelect}: TidDeveloperPickerM
                     "Источник" (MultiSelectDropdown) позиционируется абсолютно и не через портал,
                     поэтому overflow-hidden на этом контейнере обрезало бы его снизу. */}
                 <div className="flex flex-none items-center justify-between border-b border-[#eef0f5] px-6 py-4">
-                    <h2 className="text-[15px] font-bold text-[#1c2740]">Выбор разработчика</h2>
+                    <h2 className="text-[15px] font-bold text-[#1c2740]">
+                        {/* Выбор разработчика */}
+                        {t("tidDeveloperPickerModal.title")}
+                    </h2>
                     <button onClick={onClose} className="cursor-pointer text-[#8b97ab] hover:text-[#3a4560]">
                         <X size={20}/>
                     </button>
@@ -87,13 +92,16 @@ export function TidDeveloperPickerModal({onClose, onSelect}: TidDeveloperPickerM
                         variant="white"
                         value={search}
                         onChange={setSearch}
-                        placeholder="Поиск по ФИО или логину…"
+                        // Поиск по ФИО или логину…
+                        placeholder={t("tidDeveloperPickerModal.searchPlaceholder")}
                         autoFocus
                     />
 
                     <MultiSelectDropdown
-                        triggerLabel="Источник"
-                        label="Источник учётной записи"
+                        // Источник
+                        triggerLabel={t("tidDeveloperPickerModal.sourceTriggerLabel")}
+                        // Источник учётной записи
+                        label={t("tidDeveloperPickerModal.sourceFieldLabel")}
                         showFieldLabel
                         options={SOURCE_OPTIONS}
                         selectedKeys={sourceFilters}
@@ -111,31 +119,38 @@ export function TidDeveloperPickerModal({onClose, onSelect}: TidDeveloperPickerM
 
                     <div className="grid [grid-template-columns:repeat(auto-fit,minmax(160px,1fr))] gap-x-3 gap-y-2.5">
                         <MultiSelectField
-                            label="Должность"
-                            modalTitle="Должность"
+                            // Должность
+                            label={t("tidDeveloperPickerModal.positionLabel")}
+                            modalTitle={t("tidDeveloperPickerModal.positionLabel")}
                             options={dictionaries.positionOptions}
                             selectedKeys={positionFilters}
                             onChange={setPositionFilters}
-                            searchPlaceholder="Поиск должности…"
+                            // Поиск должности…
+                            searchPlaceholder={t("tidDeveloperPickerModal.positionSearchPlaceholder")}
                             boldLabel={false}
                         />
                         <MultiSelectField
-                            label="СП"
-                            modalTitle="Структурное подразделение"
+                            // СП
+                            label={t("tidDeveloperPickerModal.orgUnitLabel")}
+                            // Структурное подразделение
+                            modalTitle={t("tidDeveloperPickerModal.orgUnitModalTitle")}
                             options={dictionaries.orgUnitOptions}
                             selectedKeys={orgUnitFilters}
                             onChange={setOrgUnitFilters}
-                            searchPlaceholder="Поиск подразделения…"
+                            // Поиск подразделения…
+                            searchPlaceholder={t("tidDeveloperPickerModal.orgUnitSearchPlaceholder")}
                             hierarchical
                             boldLabel={false}
                         />
                         <MultiSelectField
-                            label="Роли"
-                            modalTitle="Роли"
+                            // Роли
+                            label={t("tidDeveloperPickerModal.rolesLabel")}
+                            modalTitle={t("tidDeveloperPickerModal.rolesLabel")}
                             options={roleOptions}
                             selectedKeys={roleFilters}
                             onChange={setRoleFilters}
-                            searchPlaceholder="Поиск роли…"
+                            // Поиск роли…
+                            searchPlaceholder={t("tidDeveloperPickerModal.rolesSearchPlaceholder")}
                             boldLabel={false}
                         />
                     </div>
@@ -148,10 +163,16 @@ export function TidDeveloperPickerModal({onClose, onSelect}: TidDeveloperPickerM
                             <Loader2 size={20} className="animate-spin"/>
                         </div>
                     ) : error ? (
-                        <EmptyState variant="error" title="Не удалось загрузить данные!" description={error}/>
+                        <EmptyState
+                            variant="error"
+                            // Не удалось загрузить данные!
+                            title={t("tidDeveloperPickerModal.loadFailedTitle")}
+                            description={error}
+                        />
                     ) : activeUsers.length === 0 ? (
                         <div className="flex h-full items-center justify-center text-[12.5px] text-[#8b97ab]">
-                            Никого не нашлось
+                            {/* Никого не нашлось */}
+                            {t("tidDeveloperPickerModal.noResults")}
                         </div>
                     ) : (
                         <div className="flex flex-col gap-1">

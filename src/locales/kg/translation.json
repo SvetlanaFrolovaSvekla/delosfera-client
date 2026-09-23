@@ -17,6 +17,54 @@
     "saving": "Сакталууда…",
     "archiving": "Архивдөө…"
   },
+  "tidDeveloperPickerModal": {
+    "title": "Иштеп чыгуучуну тандоо",
+    "searchPlaceholder": "Аты-жөнү же логин боюнча издөө…",
+    "sourceTriggerLabel": "Булак",
+    "sourceFieldLabel": "Аккаунттун булагы",
+    "sourceLocal": "Локалдык",
+    "sourceLdap": "LDAP",
+    "positionLabel": "Кызмат",
+    "positionSearchPlaceholder": "Кызматты издөө…",
+    "orgUnitLabel": "СБ",
+    "orgUnitModalTitle": "Структуралык бөлүм",
+    "orgUnitSearchPlaceholder": "Бөлүмдү издөө…",
+    "rolesLabel": "Ролдор",
+    "rolesSearchPlaceholder": "Ролду издөө…",
+    "loadFailedTitle": "Маалыматтарды жүктөө мүмкүн болбоду!",
+    "noResults": "Эч ким табылган жок"
+  },
+  "tidChangesTable": {
+    "formSectionTitle": "ТИДди автоматтык түзүү:",
+    "formDescription": "Учурдагы жана жаңы редакциянын ортосундагы өзгөртүүлөр таблицасын автоматтык түрдө түзүңүз",
+    "formButton": "ТИД түзүү",
+    "header": "ТИДди автоматтык түзүү",
+    "exportButton": "Түзүлгөн ТИДди DOCX форматында жүктөп алуу",
+    "exportDefaultError": "ТИД файлын түзүү мүмкүн болбоду",
+    "columnNumber": "№",
+    "columnNumberSub": "р/б",
+    "columnOldRedaction": "Учурдагы редакция",
+    "columnJustification": "Сунушталган өзгөртүүлөрдүн маңызы/негиздемеси",
+    "columnNewRedaction": "Жаңы редакция",
+    "comparingLoading": "Редакциялар салыштырылууда…",
+    "comparisonUnavailable": "Редакцияларды автоматтык түрдө салыштыруу мүмкүн болбоду — саптарды кол менен кошуңуз",
+    "noRowsYet": "Азырынча саптар жок",
+    "highlightRed": "кызыл түс менен",
+    "highlightGreen": "жашыл түс менен",
+    "deleteRowTitle": "Сапты өчүрүү",
+    "addRow": "Сап кошуу",
+    "developerLabel": "Иштеп чыгуучу:",
+    "selectDeveloperPlaceholder": "Иштеп чыгуучуну тандоо…",
+    "clearTitle": "Тазалоо",
+    "notSpecified": "көрсөтүлгөн эмес",
+    "defaultFileName": "ТИД.docx"
+  },
+  "approveActualizationRequestModal": {
+    "title": "Өтүнмөнү бекитүү",
+    "willBecomeResponsible": "бул документти актуалдаштыруу үчүн жооптуу болот",
+    "shiftNextPeriod": "Жарыялангандан кийин кийинки актуалдаштыруу мөөнөтүн жылдыруу",
+    "confirm": "Бекитүү"
+  },
   "stageCard": {
     "removeApproverTooltip": "Макулдашуучуну маршруттан алып салуу",
     "replaceApproverTooltip": "Бул этаптагы макулдашуучуну алмаштыруу",
@@ -328,6 +376,7 @@
     "sizeUnitMb": "МБ"
   },
   "redactionStatusBanner": {
+    "tidMissingDraft": "Улантуу үчүн ТИДди тиркөө керек:",
     "submitForApproval": "Макулдашууга жөнөтүү",
     "makeCurrentWithoutApproval": "Макулдашуусуз колдонуудагы редакция кылуу",
     "makeCurrentWithoutApprovalTooltip": "Редакция макулдашуу процессин таптакыр айланып өтүп, дароо күчүнө кирет. Бул чечим башкы редактор тарабынан аткарылган катары катталат.",
@@ -1291,10 +1340,19 @@
       "requestedAccessLabel": "мүмкүнчүлүк сурады {{date}}",
       "approvedLabel": "Кабыл алынды",
       "rejectedLabel": "Четке кагылды",
+      "revokedLabel": "Арыз ээси тарабынан кайтарылды",
+      "revokeButton": "Арызды кайтарып алуу",
+      "revokeConfirmTitle": "Актуалдаштырууга мүмкүнчүлүк алуу арызын кайтарып аласызбы?",
+      "revokeConfirmMessage": "Арыз жокко чыгарылат, каалаган убакта жаңы арыз бере аласыз.",
       "toast": {
         "noChangesConfirmedTitle": "Өзгөрүүлөрдүн жоктугу ырасталды",
         "noChangesConfirmedDescription": "Документ консолидацияга өткөрүлдү",
-        "confirmErrorTitle": "Ырастоо мүмкүн болбоду"
+        "confirmErrorTitle": "Ырастоо мүмкүн болбоду",
+        "requestSentTitle": "Арыз жөнөтүлдү",
+        "requestSentDescription": "ВНДдин башкы редактору кабарландырылды жана аны карап чыгат",
+        "approveSuccessTitle": "Арыз кабыл алынды",
+        "rejectSuccessTitle": "Арыз четке кагылды",
+        "revokeSuccessTitle": "Арыз кайтарылды"
       }
     },
     "historyTab": {

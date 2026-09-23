@@ -1,10 +1,11 @@
 import {useEffect, useMemo, useState} from "react";
 import {useTranslation} from "react-i18next";
 import {Link} from "react-router-dom";
+import {keyOf} from "@/utils/dateUtils.ts";
 import {calendarService, type CalendarEvent} from "@/service/analyticsService/calendarService.ts";
-import {ChevronLeft, ChevronRight} from "lucide-react";
 import {Tooltip} from "@/components/componentsGeneral/Tooltip.tsx";
 import {SelectDropdown} from "@/components/componentsGeneral/selects/SingleSelects/SelectDropdown.tsx";
+import {ChevronLeft, ChevronRight, X} from "lucide-react";
 
 /**
  * Календарь сроков (ЗС-13): датированные задачи по всем контурам на сетке месяца.
@@ -33,13 +34,9 @@ function eventLink(e: CalendarEvent): string {
     }
 }
 
-/** YYYY-MM-DD в местном представлении даты. */
-function keyOf(d: Date): string {
-    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
-}
-
 export function CalendarPage() {
     const {t} = useTranslation();
+    const [modalDay, setModalDay] = useState<Date | null>(null);
     const weekdays = t("calendar.weekdays", {returnObjects: true}) as string[];
     const months = t("calendar.months", {returnObjects: true}) as string[];
 
@@ -205,8 +202,12 @@ export function CalendarPage() {
                                             </Tooltip>
                                         ))}
                                         {evs.length > 3 && (
-                                            <span
-                                                className="text-[10.5px] text-[#8b97ab] px-1.5">+{evs.length - 3} {t("calendar.more")}</span>
+                                            <button
+                                                onClick={() => setModalDay(d)}
+                                                className="text-[10.5px] text-[#8b97ab] px-1.5 text-left hover:text-[#4e57d6] hover:underline cursor-pointer"
+                                            >
+                                                +{evs.length - 3} {t("calendar.more")}
+                                            </button>
                                         )}
                                     </div>
                                 </div>
@@ -215,6 +216,49 @@ export function CalendarPage() {
                     </div>
                 </div>
             </div>
+
+            {modalDay && (
+                <div
+                    className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 px-4"
+                    onClick={() => setModalDay(null)}
+                >
+                    <div
+                        className="bg-white rounded-[12px] w-full max-w-[480px] max-h-[80vh] flex flex-col shadow-xl"
+                        onClick={(e) => e.stopPropagation()}
+                    >
+                        <div className="flex items-center justify-between px-5 py-4 border-b border-[#e5e9f0]">
+                            <div className="text-[14px] font-bold text-[#0f1b2d]">
+                                {modalDay.getDate()} {months[modalDay.getMonth()]} {modalDay.getFullYear()}
+                            </div>
+                            <button
+                                onClick={() => setModalDay(null)}
+                                className="w-7 h-7 grid place-items-center rounded-[7px] hover:bg-[#f6f8fb] cursor-pointer"
+                            >
+                                <X className="w-4 h-4 text-[#8b97ab]"/>
+                            </button>
+                        </div>
+                        <div className="overflow-y-auto px-3 py-3 flex flex-col gap-1.5">
+                            {(byDay.get(keyOf(modalDay)) ?? []).map((e, j) => (
+                                <Link
+                                    key={j}
+                                    to={eventLink(e)}
+                                    onClick={() => setModalDay(null)}
+                                    className="block rounded-[8px] px-3 py-2 text-[12.5px] font-medium no-underline"
+                                    style={{
+                                        background: e.isOverdue ? "#fdecea" : "#eef3ff",
+                                        color: e.isOverdue ? "#c0392b" : "#2f68f5",
+                                    }}
+                                >
+                                    <div className="font-semibold">{e.regNumber ?? e.documentTypeTitle}: {e.title}</div>
+                                    <div
+                                        className="text-[11px] opacity-70 mt-0.5">{e.documentTypeTitle} · {e.taskType}</div>
+                                </Link>
+                            ))}
+                        </div>
+                    </div>
+                </div>
+            )}
+
         </div>
     );
 }

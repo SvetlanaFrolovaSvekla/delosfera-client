@@ -134,6 +134,15 @@ class ActualizationService {
         return data;
     }
 
+    /** Отозвать свою заявку на доступ к актуализации - доступно только заявителю и только пока
+     * заявка ожидает решения (status === "pending"). */
+    async revokeRequest(requestId: number): Promise<VndActualizationRequestResponse> {
+        const {data} = await axiosInstance.post<VndActualizationRequestResponse>(
+            `/vnd/actualization/requests/${requestId}/revoke`,
+        );
+        return data;
+    }
+
     /** История циклов актуализации документа — кто и когда актуализировал, от новых к старым */
     async getHistory(vndId: number): Promise<VndActualizationRecordResponse[]> {
         const {data} = await axiosInstance.get<VndActualizationRecordResponse[]>(

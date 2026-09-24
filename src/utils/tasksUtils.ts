@@ -4,11 +4,18 @@ import {DEADLINE_URGENCY_META} from "@/constants/vndStatus.ts";
 import type {VndTaskResponse} from "@/service/tasksVndService/tasksServiceTypes.ts";
 import type {InboxTask} from "@/service/workflowService/taskInboxService.ts";
 
-export function getDeadlineTone(deadlineAt: string | null, totalMinutes: number | null, t: TFunction): { label: string; color: string } {
+export function getDeadlineTone(
+    deadlineAt: string | null,
+    totalMinutes: number | null,
+    t: TFunction,
+    workingTime?: boolean,
+): { label: string; color: string } {
     if (!deadlineAt) return { label: "—", color: "#8b97ab" };
 
-    const urgency = getDeadlineUrgency(deadlineAt, totalMinutes);
-    const label = getRemainingLabel(deadlineAt, t);
+    // workingTime - срок согласования ВНД в рабочем времени: "осталось" и срочность считаются
+    // только по рабочим часам (пн–пт 09–18, без праздников), см. utils/workCalendar.ts
+    const urgency = getDeadlineUrgency(deadlineAt, totalMinutes, {workingTime});
+    const label = getRemainingLabel(deadlineAt, t, {workingTime});
 
     return { label, color: DEADLINE_URGENCY_META[urgency].color };
 }
@@ -63,7 +70,9 @@ export function getMetaText(task: VndTaskResponse, t: TFunction): string {
         if (stageLabel) parts.push(stageLabel);
         if (task.initiatorName) parts.push(t("tasks.vnd.meta.initiator", {name: task.initiatorName}));
         if (task.deadlineMinutes) {
-            parts.push(t("tasks.vnd.meta.norm", {value: formatDurationMinutes(task.deadlineMinutes, t)}));
+            parts.push(t("tasks.vnd.meta.norm", {
+                value: formatDurationMinutes(task.deadlineMinutes, t, {workingTime: task.usesWorkingTime}),
+            }));
         }
 
         return parts.length > 0 ? parts.join(" · ") : t("tasks.vnd.meta.waitingDecision");

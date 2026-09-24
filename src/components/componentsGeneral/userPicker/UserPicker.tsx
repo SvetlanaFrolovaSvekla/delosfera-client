@@ -1,7 +1,3 @@
-import {useMemo, useRef, useState} from "react";
-import {Check, ChevronDown, Search, X} from "lucide-react";
-import {useClickOutside} from "@/hooks/useClickOutside.ts";
-
 /**
  * Выбор сотрудника поиском.
  *
@@ -13,6 +9,9 @@ import {useClickOutside} from "@/hooks/useClickOutside.ts";
  * сверху вниз — Правление, затем руководитель, затем остальные. Поэтому список
  * не алфавитный, а по старшинству; внутри группы — по алфавиту.
  */
+import {useMemo, useRef, useState} from "react";
+import {useClickOutside} from "@/hooks/useClickOutside.ts";
+import {Check, ChevronDown, Search, X} from "lucide-react";
 
 export interface PickableUser {
     id: number;

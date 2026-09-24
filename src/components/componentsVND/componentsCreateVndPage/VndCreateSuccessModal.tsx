@@ -56,12 +56,12 @@ export function VndCreateSuccessModal({
                 </div>
 
                 <h3 className="text-center text-[16px] font-bold text-[#1c2740] mb-1">
-                    {/*Черновик-карточка была успешно создана!*/}
+                    {/* Черновик-карточка была успешно создана! */}
                     {t("createVnd.successModal.title")}
                 </h3>
                 <p className="text-center text-[13px] text-[#8b97ab] mb-1">
                     <span className="font-semibold text-[#3a4560]">
-                        {/*ВНД-{{code}}*/}
+                        {/* ВНД-{{code}} */}
                         {t("createVnd.successModal.codeLabel", {code})}
                     </span>
                 </p>
@@ -76,7 +76,7 @@ export function VndCreateSuccessModal({
                     />
                 </div>
                 <p className="text-center text-[11px] text-[#a3adbd] mt-2">
-                    {/*Переход к карточке ВНД…*/}
+                    {/* Переход к карточке ВНД… */}
                     {t("createVnd.successModal.redirecting")}
                 </p>
             </div>

@@ -86,6 +86,30 @@ export const vndService = {
         return handleResponse<VndResponse>(response);
     },
 
+    /** Добавить ВНД в "Избранное" текущего пользователя (звёздочка на странице документа) */
+    async addToFavorites(id: number): Promise<void> {
+        const response = await fetch(`${API_BASE}/vnd/${id}/favorite`, {
+            method: "PUT",
+            headers: authHeaders(),
+        });
+        if (!response.ok) {
+            const errorBody = await response.json().catch(() => null);
+            throw new Error(errorBody?.message ?? `Ошибка запроса: ${response.status}`);
+        }
+    },
+
+    /** Убрать ВНД из "Избранного" текущего пользователя */
+    async removeFromFavorites(id: number): Promise<void> {
+        const response = await fetch(`${API_BASE}/vnd/${id}/favorite`, {
+            method: "DELETE",
+            headers: authHeaders(),
+        });
+        if (!response.ok) {
+            const errorBody = await response.json().catch(() => null);
+            throw new Error(errorBody?.message ?? `Ошибка запроса: ${response.status}`);
+        }
+    },
+
     async getActualizationSummary(): Promise<VndActualizationSummaryResponse> {
         const response = await fetch(`${API_BASE}/vnd/actualization/summary`, {
             headers: authHeaders(),

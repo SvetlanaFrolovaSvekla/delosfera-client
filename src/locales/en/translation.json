@@ -17,6 +17,19 @@
     "saving": "Saving…",
     "archiving": "Archiving…"
   },
+  "createRole": {
+    "title": "New role",
+    "description": "You can enable permissions right after creation — on the role page, on the right.",
+    "titleRuLabel": "Title (RU)",
+    "titleRuPlaceholder": "E.g.: Approver",
+    "titleEnLabel": "Title (EN)",
+    "titleEnPlaceholder": "E.g.: Approver",
+    "titleKgLabel": "Title (KG)",
+    "titleKgPlaceholder": "Title in Kyrgyz",
+    "createError": "Failed to create role",
+    "creating": "Creating…",
+    "submit": "Create role"
+  },
   "attachmentPreview": {
     "title": "Attachment preview",
     "pageCount": "pages: {count}",
@@ -692,6 +705,8 @@
     },
     "days_one": "{{count}} day",
     "days_other": "{{count}} days",
+    "workDays_one": "{{count}} working day",
+    "workDays_other": "{{count}} working days",
     "hours_one": "{{count}} hour",
     "hours_other": "{{count}} hours",
     "minutes_one": "{{count}} minute",
@@ -710,6 +725,14 @@
     },
     "normBlock": {
       "phaseStarted": "Phase started {{date}}"
+    },
+    "workingTime": {
+      "title": "Deadlines run in working hours only:",
+      "hint": "Mon–Fri {{hours}} Bishkek time, excluding holidays and weekends. 1 d = 1 working day ({{dayHours}} h).",
+      "calendarLink": "Working calendar",
+      "dayUnitTitle": "Bank working day = {{dayHours}} h ({{hours}})",
+      "until": "if started now — until {{date}}",
+      "paused": "outside working hours — the deadline is paused"
     }
   },
   "sidebar": {
@@ -1117,6 +1140,10 @@
       "arch": {
         "total": "Total archived VND",
         "found": "Found archived VND"
+      },
+      "favorites": {
+        "total": "Total in favorites",
+        "found": "Found in favorites"
       }
     },
     "deadlineUrgencyMeta": {
@@ -1609,7 +1636,8 @@
       "active": "Active",
       "notYetActive": "Not yet active",
       "arch": "Archived",
-      "draft": "Drafts"
+      "draft": "Drafts",
+      "favorites": "Favorites"
     },
     "draftOwnerScope": {
       "allDraft": "All drafts",
@@ -1815,6 +1843,10 @@
       "approvalNorms": {
         "title": "Default Approval Deadlines",
         "subtitle": "Stage deadlines of the VND redaction approval route that are pre-filled on launch"
+      },
+      "workCalendar": {
+        "title": "Working Calendar VND",
+        "subtitle": "Bank working hours and holidays used to count VND approval deadlines"
       }
     },
     "procurement": {
@@ -1949,12 +1981,58 @@
   "vndApprovalNormSettingsPage": {
     "title": "Default Approval Deadlines",
     "subtitle": "Stage deadlines of the VND redaction approval route that are pre-filled in the launch approval window. The initiator can still change them for a specific route.",
-    "hint": "Changes apply to newly launched approvals. Approvals already in progress keep their own deadlines. The maximum value for each stage is 90 days.",
+    "hint": "Changes apply to newly launched approvals. Approvals already in progress keep their own deadlines. The maximum value for each stage is 90 working days.",
     "resetDefaults": "Reset to 7 d / 4 d / 3 d",
-    "errorRange": "Each deadline must be greater than zero and no more than 90 days",
+    "errorRange": "Each deadline must be greater than zero and no more than 90 working days",
     "saveError": "Failed to save the deadlines. Please try again.",
     "saved": "Saved",
     "retry": "Retry"
+  },
+  "vndWorkCalendarPage": {
+    "title": "Working Calendar VND",
+    "subtitle": "Bank working hours and holidays used to count VND revision approval deadlines. Mark holidays a year ahead — approval deadlines will only run during working hours.",
+    "rulesHint": "Approval deadlines run only during bank working hours: Monday to Friday, excluding holidays. A holiday removes the day from the deadline. After saving, deadlines of approvals in progress are recalculated automatically.",
+    "prevYear": "Previous year",
+    "nextYear": "Next year",
+    "stats": {
+      "working_one": "{{count}} working day",
+      "working_other": "{{count}} working days",
+      "holidays_one": "{{count}} holiday",
+      "holidays_other": "{{count}} holidays"
+    },
+    "copyFrom": "Holidays from {{year}}",
+    "copyHint": "Copy last year's holidays to the same dates. Check lunar-calendar holidays (Orozo Ait, Kurman Ait) and fix them manually.",
+    "addDay": "Add holiday",
+    "savedNotice": "Saved. Deadlines of approvals in progress were recalculated.",
+    "deletedNotice": "Deleted. Deadlines of approvals in progress were recalculated.",
+    "copiedNotice_one": "Added {{count}} holiday from {{year}}. Check the dates of Orozo Ait and Kurman Ait.",
+    "copiedNotice_other": "Added {{count}} holidays from {{year}}. Check the dates of Orozo Ait and Kurman Ait.",
+    "copiedNothing": "No new holidays found in {{year}} — all dates are already filled in.",
+    "saveError": "Failed to save. Please try again.",
+    "weekend": "Weekend",
+    "clickHint": "Click a day to mark a holiday",
+    "listTitle": "Holidays of {{year}}",
+    "empty": "No holidays have been marked for this year yet. Click a day in the calendar or copy last year's holidays.",
+    "edit": "Edit",
+    "editTitle": "Edit holiday",
+    "addTitle": "Mark holiday",
+    "fields": {
+      "date": "Date",
+      "title": "Name"
+    },
+    "holiday": "Holiday",
+    "holidayHint": "Non-working day — not counted in the approval deadline.",
+    "titlePlaceholder": "E.g. Nooruz",
+    "hours": {
+      "title": "Bank working hours",
+      "weekdays": "Monday to Friday, Bishkek time",
+      "start": "Working day start",
+      "end": "Working day end",
+      "dayLength": "Working day: {{duration}}",
+      "invalid": "A working day must be at least 1 hour",
+      "changeHint": "“1 d” in approval norms is one bank working day. When hours change, norms in days keep their meaning (7 d stay 7 working days), and deadlines of approvals in progress are recalculated.",
+      "savedNotice": "Working hours saved. Deadlines of approvals in progress were recalculated."
+    }
   },
   "tasks": {
     "myTasks": {
@@ -2412,5 +2490,12 @@
       "kg": "KG",
       "en": "EN"
     }
+  },
+  "favorites": {
+    "add": "Add to favorites",
+    "inFavorites": "In favorites",
+    "addTooltip": "Add the document to favorites — it will appear on the “Favorites” tab of the VND registry",
+    "removeTooltip": "Remove from favorites",
+    "toggleError": "Failed to update favorites"
   }
 }

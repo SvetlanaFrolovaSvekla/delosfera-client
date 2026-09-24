@@ -3,7 +3,7 @@ import {Link} from "react-router-dom";
 import {Trash2} from "lucide-react";
 import {useAuth} from "@/context/AuthContext.ts";
 import {PermissionCode} from "@/constants/permissions/permissions.ts";
-import {UserPicker, type PickableUser} from "@/components/componentsGeneral/UserPicker.tsx";
+import {UserPicker, type PickableUser} from "@/components/componentsGeneral/userPicker/UserPicker.tsx";
 import {userService} from "@/service/userService/userService.ts";
 import {
     BODY_ROLE_TITLE, BODY_TITLE, bodyMemberService,

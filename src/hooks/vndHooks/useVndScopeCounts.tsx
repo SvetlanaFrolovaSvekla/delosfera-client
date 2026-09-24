@@ -28,5 +28,7 @@ export function useVndScopeCounts(canCreateVnd: boolean = false) {
         notYetActive: allForCounts.filter((r) => r.status !== "draft" && r.documentStatus === "notYetActive").length,
         arch: allForCounts.filter((r) => r.status === "arch").length,
         draft: allForCounts.filter((r) => r.status === "draft").length,
+        // "Избранное" — личные отметки пользователя; черновики — на тех же условиях, что и в "Все"
+        favorites: allForCounts.filter((r) => r.isFavorite && (canCreateVnd || r.status !== "draft")).length,
     };
 }

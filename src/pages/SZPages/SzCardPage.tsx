@@ -5,7 +5,7 @@ import {colors} from "@/design/tokens.ts";
 import {useDictionaries} from "@/context/DictionariesContext.tsx";
 import {useAuth} from "@/context/AuthContext.ts";
 import {PermissionCode} from "@/constants/permissions/permissions.ts";
-import {UserPicker, type PickableUser} from "@/components/componentsGeneral/UserPicker.tsx";
+import {UserPicker, type PickableUser} from "@/components/componentsGeneral/userPicker/UserPicker.tsx";
 import {SzTemplateBar} from "@/components/componentsSz/SzTemplateBar.tsx";
 import {SzTracePanel} from "@/components/componentsSz/SzTracePanel.tsx";
 import {SzDuplicateWarning} from "@/components/componentsSz/SzDuplicateWarning.tsx";

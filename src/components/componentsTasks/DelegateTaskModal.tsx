@@ -5,7 +5,7 @@
 import {useEffect, useState} from "react";
 import {useTranslation} from "react-i18next";
 import {axiosInstance} from "@/service/axiosInstance.ts";
-import {UserPicker, type PickableUser} from "@/components/componentsGeneral/UserPicker.tsx";
+import {UserPicker, type PickableUser} from "@/components/componentsGeneral/userPicker/UserPicker.tsx";
 import {taskInboxService, type InboxTask} from "@/service/workflowService/taskInboxService.ts";
 
 interface Props {

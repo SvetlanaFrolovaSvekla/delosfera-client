@@ -1,6 +1,6 @@
-import {Check} from "lucide-react";
 import {useTranslation} from "react-i18next";
 import {SearchBar} from "@/components/componentsGeneral/SearchBar.tsx";
+import {Check} from "lucide-react";
 
 interface NotificationsPageHeaderProps {
     unreadCount: number;

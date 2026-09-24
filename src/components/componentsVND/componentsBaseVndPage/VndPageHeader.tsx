@@ -7,8 +7,6 @@ import {Plus} from "lucide-react";
 
 interface VndPageHeaderProps {
     onCreateClick?: () => void;
-    // Нет прав создавать ВНД - кнопка блокируется, вместо клика, который бы дошёл
-    // до бэкенда и там упал с сырой ошибкой авторизации, показываем тултип
     canCreate?: boolean;
 }
 
@@ -18,10 +16,10 @@ export function VndPageHeader({onCreateClick, canCreate = true}: VndPageHeaderPr
 
     return (
         <PageHeader
-            /*Реестр ВНД*/
+            /* Реестр ВНД */
             title={t("registry.title")}
-            /*Централизованный реестр действующих внутренних нормативных документов · поиск и фильтрация
-            по всем реквизитам и по тексту редакций*/
+            /* Централизованный реестр действующих внутренних нормативных документов · поиск и фильтрация
+            по всем реквизитам и по тексту редакций */
             description={t("registry.description")}
             actions={
                 <Tooltip content={cannotCreateVndMessage} disabled={canCreate} side="left">
@@ -35,7 +33,7 @@ export function VndPageHeader({onCreateClick, canCreate = true}: VndPageHeaderPr
                         }`}
                     >
                         <Plus className="w-[18px] h-[18px]" strokeWidth={2}/>
-                        {/*Создать ВНД*/}
+                        {/* Создать ВНД */}
                         {t("registry.createButton")}
                     </button>
                 </Tooltip>

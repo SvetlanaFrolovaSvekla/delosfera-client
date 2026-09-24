@@ -2,15 +2,15 @@
 import {useState} from "react";
 import {useTranslation} from "react-i18next";
 import {useNavigate} from "react-router-dom";
-import {History, Lock} from "lucide-react";
 import type {ActivityIcon} from "@/service/activityLogService/activityLogServiceType.ts";
+import {HOME_BOTTOM_ROW_HEIGHT} from "@/constants/homeConst.ts";
 import {useRecentActivity} from "@/hooks/activityLogHooks/useRecentActivity.ts";
 import {timeAgo} from "@/utils/dateUtils.ts";
-import {Icon} from "@/assets/icons/Icon";
 import {Loader} from "@/components/componentsGeneral/Loader.tsx";
 import {EmptyState} from "@/components/componentsGeneral/EmptyState.tsx";
-import {HOME_BOTTOM_ROW_HEIGHT} from "@/constants/homeConst.ts";
 import {Tooltip} from "@/components/componentsGeneral/Tooltip.tsx";
+import {Icon} from "@/assets/icons/Icon";
+import {History, Lock} from "lucide-react";
 
 const ICON_STYLE: Record<ActivityIcon, { iconName: string; col: string; bg: string }> = {
     check: {iconName: "check", col: "#1c7a4d", bg: "#e2f4ea"},
@@ -30,10 +30,7 @@ interface RecentActivityCardProps {
     module?: string;
 }
 
-// Фильтр активности по разделам (#11): всё / ВНД / служебные записки / закупки.
-// undefined = все контуры сразу. labelKey - ключ i18n (см.
-// home.recentActivity.tabs.* в translation.json), а не готовый текст: иначе табы
-// оставались русскими при переключении языка интерфейса.
+// Фильтр активности по разделам
 const SECTIONS: { id: string; labelKey: string; module?: string }[] = [
     {id: "all", labelKey: "home.recentActivity.tabs.all"},
     {id: "vnd", labelKey: "home.recentActivity.tabs.vnd", module: "vnd"},
@@ -105,10 +102,7 @@ export function RecentActivityCard({limit = 15, module}: RecentActivityCardProps
                         const style = ICON_STYLE[item.icon] ?? ICON_STYLE.info;
                         // canOpen=false — запись о чужом черновике ВНД, который у пользователя нет
                         // прав открыть (см. ActivityLogService.CanOpenVndEntry на бэке — тот же
-                        // критерий, что и на самой странице ВНД). Раньше строка выглядела как
-                        // обычная кликабельная, а переход по её ссылке падал с ошибкой доступа —
-                        // теперь такая строка не кликается и выглядит явно приглушённой, с замком
-                        // вместо обычной иконки.
+                        // критерий, что и на самой странице ВНД).
                         const locked = !item.canOpen;
                         return (
                             <Tooltip

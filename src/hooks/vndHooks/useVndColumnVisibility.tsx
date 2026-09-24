@@ -32,6 +32,7 @@ export function useVndColumnVisibility(scope: VndScope, canViewExtended: boolean
         notYetActive: buildDefaultVisibility("notYetActive", canViewExtended, linkedToMeOnly),
         draft: buildDefaultVisibility("draft", canViewExtended, linkedToMeOnly),
         arch: buildDefaultVisibility("arch", canViewExtended, linkedToMeOnly),
+        favorites: buildDefaultVisibility("favorites", canViewExtended, linkedToMeOnly),
     });
 
     // Когда набор переключаемых колонок меняется (право выдано/забрано, чекбокс "Только

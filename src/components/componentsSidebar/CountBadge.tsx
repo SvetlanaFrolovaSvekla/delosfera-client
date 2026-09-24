@@ -1,3 +1,4 @@
+// Яблочко со счётчиком на Sidebar
 import {type Side, Tooltip} from "@/components/componentsGeneral/Tooltip.tsx";
 
 interface CountBadgeProps {

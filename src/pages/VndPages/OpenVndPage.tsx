@@ -45,6 +45,7 @@ import {VndStatusBanner} from "@/components/componentsGeneral/knowledgeBaseCompo
 import {ConfirmActionModal} from "@/components/componentsGeneral/modal/ConfirmActionModal.tsx";
 import {Tooltip} from "@/components/componentsGeneral/Tooltip.tsx";
 import {VndProposalModal} from "@/components/componentsVND/componentsOpenVndPage/VndProposalModal.tsx";
+import {VndFavoriteButton} from "@/components/componentsVND/componentsOpenVndPage/VndFavoriteButton.tsx";
 import {Archive, Eye, Lightbulb, Trash2} from "lucide-react";
 
 // Переход с одного ВНД на другой (ссылка в тексте, "Связанные документы") идёт по тому же
@@ -318,8 +319,8 @@ function OpenVndPageContent() {
                 />
             </div>
 
-            <div className="px-4 sm:px-6 pb-2">
-                <h1 className="text-[13px] font-bold leading-tight text-[#1c2740]">
+            <div className="px-4 sm:px-6 pb-2 flex items-center gap-3">
+                <h1 className="min-w-0 text-[13px] font-bold leading-tight text-[#1c2740]">
                     {vnd.name}
                 </h1>
             </div>
@@ -408,13 +409,15 @@ function OpenVndPageContent() {
                             </Tooltip>
                         )}
 
+                        <VndFavoriteButton vndId={vnd.id} isFavorite={vnd.isFavorite}/>
+
                         {/* + Предложения по ВНД - любой сотрудник может предложить изменения/дополнения,
                             предложение получает главный редактор ВНД (см. VndProposalModal) */}
                         {activeTab === "editions" && canSendProposal && (
                             <Tooltip content={t("vndProposals.buttonTooltip")} side="bottom">
                                 <button
                                     onClick={() => setProposalOpen(true)}
-                                    className="shrink-0 flex h-7 items-center gap-1.5 rounded-[9px] border border-[#f0dcae] bg-[#fffaf0] px-2.5 text-[12px] font-semibold text-[#9a6408] cursor-pointer hover:border-[#e0b95c] hover:bg-[#fff3d6] transition-colors"
+                                    className="shrink-0 flex h-7 items-center gap-1.5 rounded-[9px] border border-[#f0dcae] bg-[#fffaf0] px-2 text-[12px] font-semibold text-[#9a6408] cursor-pointer hover:border-[#e0b95c] hover:bg-[#fff3d6] transition-colors"
                                 >
                                     <Lightbulb className="w-3.5 h-3.5" strokeWidth={2}/>
                                     + {t("vndProposals.button")}
@@ -427,7 +430,7 @@ function OpenVndPageContent() {
                             <button
                                 onClick={() => setDeleteOpen(true)}
                                 disabled={deleting}
-                                className="shrink-0 flex items-center gap-1.5 rounded-[9px] border border-[#e0b4ae] bg-white px-3 py-1 text-[12px] font-semibold text-[#c0392b] cursor-pointer hover:bg-[#fbecea] transition-colors"
+                                className="shrink-0 flex items-center gap-1.5 rounded-[9px] border border-[#e0b4ae] bg-white px-2 py-1 text-[12px] font-semibold text-[#c0392b] cursor-pointer hover:bg-[#fbecea] transition-colors"
                             >
                                 <Trash2 className="w-3.5 h-3.5" strokeWidth={2}/>
                                 {deleting ? t("general.deleting") : t("openVndPage.deleteDraftButton")}
@@ -439,7 +442,7 @@ function OpenVndPageContent() {
                             <button
                                 onClick={() => setCancelOpen(true)}
                                 disabled={canceling}
-                                className="shrink-0 flex items-center gap-1.5 rounded-[9px] border border-[#e0b4ae] bg-white px-3 py-1 text-[12px] font-semibold text-[#c0392b] cursor-pointer hover:bg-[#fbecea] transition-colors"
+                                className="shrink-0 flex items-center gap-1.5 rounded-[9px] border border-[#e0b4ae] bg-white px-2 py-1 text-[12px] font-semibold text-[#c0392b] cursor-pointer hover:bg-[#fbecea] transition-colors"
                             >
                                 <Archive className="w-3.5 h-3.5" strokeWidth={2}/>
                                 {canceling ? t("general.archiving") : t("openVndPage.archiveButton")}

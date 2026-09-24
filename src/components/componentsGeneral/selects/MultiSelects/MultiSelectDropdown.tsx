@@ -1,10 +1,10 @@
+import * as React from "react";
 import {useRef, useState} from "react";
 import {useTranslation} from "react-i18next";
-import {Check, ChevronDown, Search, X} from "lucide-react";
 import {HighlightText} from "@/utils/highlightText.tsx";
-import * as React from "react";
 import {useClickOutside} from "@/hooks/useClickOutside.ts";
 import {Tooltip} from "@/components/componentsGeneral/Tooltip.tsx";
+import {Check, ChevronDown, Search, X} from "lucide-react";
 
 export interface MultiSelectOption {
     key: string;

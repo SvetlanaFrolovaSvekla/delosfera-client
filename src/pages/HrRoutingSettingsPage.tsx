@@ -1,5 +1,5 @@
 import {useEffect, useState} from "react";
-import {UserPicker, type PickableUser} from "@/components/componentsGeneral/UserPicker.tsx";
+import {UserPicker, type PickableUser} from "@/components/componentsGeneral/userPicker/UserPicker.tsx";
 import {userService} from "@/service/userService/userService.ts";
 import {hrRoutingService} from "@/service/szService/hrRoutingService.ts";
 

@@ -1,8 +1,8 @@
 import {useRef, useState} from "react";
 import {useTranslation} from "react-i18next";
-import {Check, X} from "lucide-react";
 import {HighlightText} from "@/utils/highlightText.tsx";
 import {SearchBar} from "@/components/componentsGeneral/SearchBar.tsx";
+import {Check, X} from "lucide-react";
 
 export interface MultiSelectModalOption {
     key: string;

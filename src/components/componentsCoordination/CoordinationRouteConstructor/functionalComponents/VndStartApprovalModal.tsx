@@ -1,10 +1,12 @@
 // Модалка запуска согласования: конструктор маршрута + нормативы сроков
 import {useState} from "react";
 import {createPortal} from "react-dom";
+import {useTranslation} from "react-i18next";
 import type {ApprovalProcessResponse} from "@/service/coordinationService/coordinationServiceTypes.ts";
 import {MAX_STAGES} from "@/constants/coordinationParams.ts";
 import {useStageDrafts} from "@/hooks/coordinationHooks/useStageDrafts.ts";
 import {useApprovalNorms} from "@/hooks/coordinationHooks/useApprovalNorms.ts";
+import {addWorkingMinutes, formatBankDateTime, useWorkCalendar} from "@/utils/workCalendar.ts";
 import {useStartApproval} from "@/hooks/coordinationHooks/useStartApproval.ts";
 import {useStageRouting} from "@/hooks/coordinationHooks/useStageRouting.ts";
 import {VndSelectApproverModal} from "./VndSelectApproverModal.tsx";
@@ -22,7 +24,6 @@ import {Tooltip} from "@/components/componentsGeneral/Tooltip.tsx";
 import {Loader} from "@/components/componentsGeneral/Loader.tsx";
 
 import {ArrowDown, Clock, Loader2, Route, Lock, Plus, X, BadgeCheck} from "lucide-react";
-import {useTranslation} from "react-i18next";
 
 interface VndStartApprovalModalProps {
     vndId: number;
@@ -118,6 +119,16 @@ export function VndStartApprovalModal({
         setFinalHoldMinutes,
         normsValid,
     } = useApprovalNorms(); // Логика с настройкой нормативов согласования
+
+    // Сроки идут только в рабочее время (пн–пт 09–18 по Бишкеку, без праздников) - подсказываем,
+    // когда истечёт первичное согласование, если запустить его прямо сейчас.
+    useWorkCalendar();
+    const primaryDeadlinePreview = primaryMinutes
+        ? t("coordination.workingTime.until", {
+            // eslint-disable-next-line react-hooks/purity
+            date: formatBankDateTime(addWorkingMinutes(Date.now(), Number(primaryMinutes))),
+        })
+        : null;
 
     const {submitting, error, canSubmit, handleSubmit} = useStartApproval({
         vndId,
@@ -281,6 +292,7 @@ export function VndStartApprovalModal({
                                 blockRef={targetRef}
                                 // Время, за которое каждый согласующий должен принять решение на этом этапе. Участвуют все согласующие, добавленные в маршрут.
                                 helpText={t("vndStartApprovalModal.primaryApprovalHelp")}
+                                footnote={primaryDeadlinePreview}
                             />
                             <ArrowDown size={16} className="flex-none text-[#c3c9d4]"/>
                             <NormBlock

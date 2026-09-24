@@ -326,6 +326,10 @@ export interface ApprovalProcessResponse {
     primaryDeadlineMinutes: number;
     repeatDeadlineMinutes: number;
     finalHoldDeadlineMinutes: number;
+    /** true — нормативы в рабочих минутах (1 д. = 9 ч), сроки *DeadlineAt посчитаны по
+     * производственному календарю ВНД (пн–пт 09–18 по Бишкеку без праздников). false —
+     * процесс запущен до перехода на рабочее время, нормативы календарные. */
+    usesWorkingTime: boolean;
     primaryStartedAt: string;
     primaryDeadlineAt: string;
     repeatStartedAt: string | null;

@@ -8,6 +8,7 @@ import type {FormattedCommentQuoteRef} from "./FormattedResolutionComment.tsx";
 import {NormBlockView, type NormPhaseStatus} from "./NormBlockView";
 import {ArrowDown, ArrowLeft, ChevronDown, MessageSquareText, UserPlus} from "lucide-react";
 import {getElapsedLabel, getRemainingLabel} from "@/utils/dateUtils.ts";
+import {isWorkingNow, useWorkCalendar} from "@/utils/workCalendar.ts";
 import {getInitials} from "@/utils/namingUsers/getInitials.ts";
 import {COMMENT_TRUNCATE_LENGTH} from "@/constants/coordinationParams.ts";
 import {
@@ -64,6 +65,8 @@ function getFinalHoldPhaseStatus(process: ApprovalProcessResponse): NormPhaseSta
 interface CurrentPhaseHintProps {
     startedAt: string | null | undefined;
     deadlineAt: string | null | undefined;
+    /** Срок идёт только в рабочее время - "прошло"/"осталось" в рабочих часах */
+    workingTime?: boolean;
 }
 
 // Подсказка "Текущий этап" со стрелочкой, выводится правее блока активной фазы.
@@ -75,9 +78,13 @@ interface CurrentPhaseHintProps {
 // возвращает готовую фразу ("осталось X"/"просрочено на X"), поэтому подпись строки
 // заменена с "Осталось до дедлайна:" на нейтральное "Дедлайн:", чтобы не задваивать
 // "осталось" ("Осталось до дедлайна: осталось 3 часа" читалось бы странно).
-function CurrentPhaseHint({startedAt, deadlineAt}: CurrentPhaseHintProps) {
+function CurrentPhaseHint({startedAt, deadlineAt, workingTime}: CurrentPhaseHintProps) {
     const {t} = useTranslation();
-    const elapsed = startedAt ? getElapsedLabel(startedAt, t) : "—";
+    useWorkCalendar(!!workingTime);
+    const elapsed = startedAt ? getElapsedLabel(startedAt, t, {workingTime}) : "—";
+    // Вечером/в выходные/в праздник срок не тикает - говорим об этом, чтобы "осталось" не
+    // казалось застывшим по ошибке.
+    const paused = workingTime && deadlineAt && new Date(deadlineAt).getTime() > Date.now() && !isWorkingNow();
 
     return (
         <div className="absolute left-full top-1/2 ml-3 flex -translate-y-1/2 items-center gap-2 whitespace-nowrap">
@@ -85,7 +92,10 @@ function CurrentPhaseHint({startedAt, deadlineAt}: CurrentPhaseHintProps) {
             <div className="flex flex-col text-[11.5px] leading-[1.5]">
                 <span className="font-semibold">{t("coordination.currentPhaseHint.title")}</span>
                 <span className="text-[#8b97ab]">{t("coordination.currentPhaseHint.phaseStarted", {time: elapsed})}</span>
-                <span className="text-[#8b97ab]">{t("coordination.currentPhaseHint.deadline", {time: getRemainingLabel(deadlineAt, t)})}</span>
+                <span className="text-[#8b97ab]">{t("coordination.currentPhaseHint.deadline", {time: getRemainingLabel(deadlineAt, t, {workingTime})})}</span>
+                {paused && (
+                    <span className="text-[#b3730a]">{t("coordination.workingTime.paused")}</span>
+                )}
             </div>
         </div>
     );
@@ -349,6 +359,7 @@ export function VndApprovalRouteView({
                     <NormBlockView
                         label="Первичное согласование"
                         value={process.primaryDeadlineMinutes}
+                        workingTime={process.usesWorkingTime}
                         phaseStatus={primaryPhaseStatus}
                         blockRef={targetRef}
                         startedAt={process.primaryStartedAt}
@@ -357,6 +368,7 @@ export function VndApprovalRouteView({
                         <CurrentPhaseHint
                             startedAt={process.primaryStartedAt}
                             deadlineAt={process.primaryDeadlineAt}
+                            workingTime={process.usesWorkingTime}
                         />
                     )}
                 </div>
@@ -367,6 +379,7 @@ export function VndApprovalRouteView({
                     <NormBlockView
                         label="Согласование после внесённых изменений"
                         value={process.repeatDeadlineMinutes}
+                        workingTime={process.usesWorkingTime}
                         phaseStatus={repeatPhaseStatus}
                         startedAt={process.repeatStartedAt}
                     />
@@ -374,6 +387,7 @@ export function VndApprovalRouteView({
                         <CurrentPhaseHint
                             startedAt={process.repeatStartedAt}
                             deadlineAt={process.repeatDeadlineAt}
+                            workingTime={process.usesWorkingTime}
                         />
                     )}
                 </div>
@@ -384,6 +398,7 @@ export function VndApprovalRouteView({
                     <NormBlockView
                         label="Финальная выдержка"
                         value={process.finalHoldDeadlineMinutes}
+                        workingTime={process.usesWorkingTime}
                         phaseStatus={finalHoldPhaseStatus}
                         startedAt={process.finalHoldStartedAt}
                     />
@@ -391,6 +406,7 @@ export function VndApprovalRouteView({
                         <CurrentPhaseHint
                             startedAt={process.finalHoldStartedAt}
                             deadlineAt={process.finalHoldDeadlineAt}
+                            workingTime={process.usesWorkingTime}
                         />
                     )}
                 </div>

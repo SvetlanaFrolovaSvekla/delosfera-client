@@ -12,8 +12,7 @@ interface UserPickerModalShellProps {
 }
 
 /** Общий каркас модалки-пикера пользователей: portal + header + блок фильтров + скролл-зона
- * списка. Список/состояния передаются снаружи, т.к. рендер строки пользователя у каждого
- * пикера свой (разные поля/бейджи). */
+ * списка. */
 export function UserPickerModalShell({title, onClose, filters, children}: UserPickerModalShellProps) {
     return createPortal(
         <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/30 p-4">

@@ -3,10 +3,10 @@
 // руководством после дополнительных процессов — здесь просто фиксируется решение (органа утверждения)
 import {useState} from "react";
 import {createPortal} from "react-dom";
+import {useTranslation} from "react-i18next";
 import {EditableDateField, EditableTextField} from "@/components/componentsGeneral/RequisitesEditFields.tsx";
 import {HelpTooltip} from "@/components/componentsGeneral/knowledgeBaseComponents/HelpTooltip.tsx";
 import {Layers, Loader2, X} from "lucide-react";
-import {useTranslation} from "react-i18next";
 
 export interface ConsolidateRequisites {
     adoptionCode: string; // Код принятия

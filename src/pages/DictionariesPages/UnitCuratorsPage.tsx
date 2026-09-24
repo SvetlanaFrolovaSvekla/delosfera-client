@@ -1,6 +1,6 @@
 import {useEffect, useMemo, useState} from "react";
 import {Link} from "react-router-dom";
-import {UserPicker, type PickableUser} from "@/components/componentsGeneral/UserPicker.tsx";
+import {UserPicker, type PickableUser} from "@/components/componentsGeneral/userPicker/UserPicker.tsx";
 import {userService} from "@/service/userService/userService.ts";
 import {organizationUnitService} from "@/service/dictionariesService/organizationUnitService/organizationUnitService.ts";
 import type {OrganizationUnitResponse} from "@/service/dictionariesService/organizationUnitService/organizationUnitServiceType.ts";

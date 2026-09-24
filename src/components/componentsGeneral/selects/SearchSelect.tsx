@@ -1,6 +1,3 @@
-import {useEffect, useMemo, useRef, useState} from "react";
-import {Check, ChevronDown, X} from "lucide-react";
-
 /**
  * Выбор одного значения с поиском.
  *
@@ -12,6 +9,8 @@ import {Check, ChevronDown, X} from "lucide-react";
  * Ищет и по подписи, и по подсказке: у однофамильцев различие в должности, и
  * набрать «Иванов юрид» должно быть достаточно.
  */
+import React, {useEffect, useMemo, useRef, useState} from "react";
+import {Check, ChevronDown, X} from "lucide-react";
 
 export interface SearchOption {
     value: number | string;
@@ -76,6 +75,7 @@ export function SearchSelect({
     // Список перестроился — подсветка съезжает на первый пункт, иначе она
     // указывала бы на строку, которой там уже нет.
     useEffect(() => {
+        // eslint-disable-next-line react-hooks/set-state-in-effect
         setCursor(0);
     }, [query]);
 

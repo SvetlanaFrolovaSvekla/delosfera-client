@@ -3,6 +3,7 @@ import type {TFunction} from "i18next";
 import {
     Ban,
     Briefcase,
+    CalendarDays,
     Building2,
     FileText,
     Folder,
@@ -171,6 +172,16 @@ export const getRefSections = (t: TFunction): RefSection[] => [
                 subtitle: t("refSections.vnd.approvalNorms.subtitle"),
                 icon: Timer,
                 path: "/management/refs/approval-norms",
+            },
+            {
+                key: "work-calendar",
+                code: "08",
+                // Производственный календарь
+                title: t("refSections.vnd.workCalendar.title"),
+                // Праздники, переносы и сокращённые дни - по ним считаются сроки согласования
+                subtitle: t("refSections.vnd.workCalendar.subtitle"),
+                icon: CalendarDays,
+                path: "/management/refs/work-calendar",
             },
         ],
     },

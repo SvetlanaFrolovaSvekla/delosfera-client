@@ -9,6 +9,8 @@ interface NormBlockViewProps {
     label: string;
     /** Суммарное значение норматива в минутах */
     value: number;
+    /** Норматив в рабочих минутах (1 д. = 9 ч) - см. ApprovalProcessResponse.usesWorkingTime */
+    workingTime?: boolean;
     phaseStatus: NormPhaseStatus;
     blockRef?: React.Ref<HTMLDivElement>;
     /** Дата и время начала этой фазы - показывается только у уже начавшихся фаз (passed/current),
@@ -40,7 +42,7 @@ NormPhaseStatus,
         },
     };
 
-export function NormBlockView({label, value, phaseStatus, blockRef, startedAt}: NormBlockViewProps) {
+export function NormBlockView({label, value, phaseStatus, blockRef, startedAt, workingTime}: NormBlockViewProps) {
     const {t} = useTranslation();
     const style = PHASE_STYLES[phaseStatus];
 
@@ -62,7 +64,7 @@ export function NormBlockView({label, value, phaseStatus, blockRef, startedAt}: 
             <span
                 className={`flex-none whitespace-nowrap rounded-[8px] border bg-white px-2.5 py-1 text-[12.5px] font-semibold ${style.badgeBorder} ${style.badgeText}`}
             >
-                {formatDurationMinutes(value, t)}
+                {formatDurationMinutes(value, t, {workingTime})}
             </span>
         </div>
     );

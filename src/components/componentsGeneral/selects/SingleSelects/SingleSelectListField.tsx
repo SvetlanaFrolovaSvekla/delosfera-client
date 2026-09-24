@@ -14,7 +14,7 @@ interface SingleSelectListFieldProps {
     searchPlaceholder?: string;
     placeholder?: string; // текст в поле, когда ничего не выбрано
     clearLabel?: string; // подпись кнопки очистки выбора в модалке — по умолчанию "Очистить выбор"
-    clearedLabel?: string; // подпись той же кнопки, когда выбор уже снят (см. TreeSingleSelectModal)
+    clearedLabel?: string; // Подпись той же кнопки, когда выбор уже снят (см. TreeSingleSelectModal)
     boldLabel?: boolean;
     required?: boolean;
     showChevron?: boolean; // показывать ли стрелочку-шеврон справа в поле

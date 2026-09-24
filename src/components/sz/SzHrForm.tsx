@@ -5,7 +5,7 @@ import type {
     HrFormSchema,
     SzEmployee,
 } from "@/service/szService/szService.ts";
-import {UserPicker, type PickableUser} from "@/components/componentsGeneral/UserPicker.tsx";
+import {UserPicker, type PickableUser} from "@/components/componentsGeneral/userPicker/UserPicker.tsx";
 
 /**
  * Поля кадровой записки, свои для каждого вида.

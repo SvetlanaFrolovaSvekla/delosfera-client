@@ -2,6 +2,7 @@ import type {TFunction} from "i18next";
 import type {DateRangeFilter} from "@/service/vndService/vndServiceType.ts";
 import type {DeadlineUrgencyKey} from "@/constants/vndStatus.ts";
 import type {DateFilterValue} from "@/components/componentsGeneral/datePickers/DateFilterGroup.tsx";
+import {getWorkDayMinutes, workingMinutesBetween} from "@/utils/workCalendar.ts";
 
 export function formatDateTime(iso: string): string {
     return new Date(iso).toLocaleString("ru-RU", {
@@ -54,16 +55,54 @@ export function formatRelativeTime(iso: string, t: TFunction): string {
     return date.toLocaleDateString("ru-RU", {day: "2-digit", month: "2-digit"});
 }
 
+// Сроки согласования ВНД (новые процессы, usesWorkingTime) считаются только в рабочее время
+// банка: пн–пт в рабочие часы банка без праздников, 1 д. = рабочий день банка — см. utils/workCalendar.ts.
+// Для них все функции ниже принимают {workingTime: true}: "осталось", "прошло", срочность и
+// сам норматив считаются в рабочих минутах, а дни подписываются как рабочие ("2 раб. дня").
+export interface DurationOptions {
+    workingTime?: boolean;
+}
+
+/** "2 дня 5 часов" / "2 раб. дня 5 часов" / "3 часа 10 минут" / "5 минут" — две старшие единицы. */
+function formatSpan(totalMinutes: number, t: TFunction, workingTime: boolean | undefined): string | null {
+    const dayMinutes = workingTime ? getWorkDayMinutes() : 60 * 24;
+    const days = Math.floor(totalMinutes / dayMinutes);
+    const hours = Math.floor((totalMinutes % dayMinutes) / 60);
+    const minutes = totalMinutes % 60;
+
+    if (days > 0) {
+        const daysLabel = t(workingTime ? "time.workDays" : "time.days", {count: days});
+        return hours > 0 ? `${daysLabel} ${t("time.hours", {count: hours})}` : daysLabel;
+    }
+    if (hours > 0) {
+        const hoursLabel = t("time.hours", {count: hours});
+        return minutes > 0 ? `${hoursLabel} ${t("time.minutes", {count: minutes})}` : hoursLabel;
+    }
+    if (minutes > 0) return t("time.minutes", {count: minutes});
+    return null;
+}
+
+/** Сколько минут (календарных или рабочих) от момента a до момента b. */
+function minutesBetween(fromMs: number, toMs: number, workingTime: boolean | undefined): number {
+    return workingTime
+        ? workingMinutesBetween(fromMs, toMs)
+        : Math.trunc((toMs - fromMs) / 60000);
+}
+
 // Определяет срочность дедлайна по проценту оставшегося времени от норматива.
-// totalHours — норматив, выданный на согласование (напр. PrimaryDeadlineMinutes)
-export function getDeadlineUrgency(deadlineAt: string | null, totalMinutes: number | null): DeadlineUrgencyKey {
+// totalMinutes — норматив, выданный на согласование (напр. PrimaryDeadlineMinutes)
+export function getDeadlineUrgency(
+    deadlineAt: string | null,
+    totalMinutes: number | null,
+    options?: DurationOptions,
+): DeadlineUrgencyKey {
     if (!deadlineAt || !totalMinutes || totalMinutes <= 0) return "normal";
 
-    const remainingMs = new Date(deadlineAt).getTime() - Date.now();
-    if (remainingMs <= 0) return "overdue";
+    const deadlineMs = new Date(deadlineAt).getTime();
+    if (deadlineMs - Date.now() <= 0) return "overdue";
 
-    const totalMs = totalMinutes * 60 * 1000;
-    const percentRemaining = (remainingMs / totalMs) * 100;
+    const remaining = minutesBetween(Date.now(), deadlineMs, options?.workingTime);
+    const percentRemaining = (remaining / totalMinutes) * 100;
 
     if (percentRemaining >= 50) return "normal";
     if (percentRemaining >= 25) return "approaching";
@@ -71,86 +110,35 @@ export function getDeadlineUrgency(deadlineAt: string | null, totalMinutes: numb
 }
 
 // Сколько времени осталось до дедлайна, в формате "2 дня 5 часов" или "просрочено на 3 часа"
-export function getRemainingLabel(deadlineAt: string | null | undefined, t: TFunction): string {
+export function getRemainingLabel(
+    deadlineAt: string | null | undefined,
+    t: TFunction,
+    options?: DurationOptions,
+): string {
     if (!deadlineAt) return "—";
 
-    const diffMs = new Date(deadlineAt).getTime() - Date.now();
-    const isOverdue = diffMs < 0;
-    const absMs = Math.abs(diffMs);
+    const deadlineMs = new Date(deadlineAt).getTime();
+    const isOverdue = deadlineMs < Date.now();
+    const diff = Math.abs(minutesBetween(Date.now(), deadlineMs, options?.workingTime));
 
-    const totalMinutes = Math.floor(absMs / 60000);
-    const days = Math.floor(totalMinutes / (60 * 24));
-    const hours = Math.floor((totalMinutes % (60 * 24)) / 60);
-    const minutes = totalMinutes % 60;
-
-    let time: string;
-
-    if (days > 0) {
-        const daysLabel = t("time.days", {count: days});
-        time = hours > 0
-            ? `${daysLabel} ${t("time.hours", {count: hours})}`
-            : daysLabel;
-    } else if (hours > 0) {
-        const hoursLabel = t("time.hours", {count: hours});
-        time = minutes > 0
-            ? `${hoursLabel} ${t("time.minutes", {count: minutes})}`
-            : hoursLabel;
-    } else if (minutes > 0) {
-        time = t("time.minutes", {count: minutes});
-    } else {
-        time = t("time.lessThanMinute");
-    }
-
+    const time = formatSpan(diff, t, options?.workingTime) ?? t("time.lessThanMinute");
     return isOverdue ? t("time.overdueBy", {time}) : t("time.remaining", {time});
 }
 
-// Норматив срока (в минутах, как хранится и приходит с бэка)
-export function formatDurationMinutes(totalMinutes: number, t: TFunction): string {
-    const days = Math.floor(totalMinutes / (60 * 24));
-    const hours = Math.floor((totalMinutes % (60 * 24)) / 60);
-    const minutes = totalMinutes % 60;
-
-    if (days > 0) {
-        const daysLabel = t("time.days", {count: days});
-        return hours > 0
-            ? `${daysLabel} ${t("time.hours", {count: hours})}`
-            : daysLabel;
-    }
-    if (hours > 0) {
-        const hoursLabel = t("time.hours", {count: hours});
-        return minutes > 0
-            ? `${hoursLabel} ${t("time.minutes", {count: minutes})}`
-            : hoursLabel;
-    }
-    if (minutes > 0) return t("time.minutes", {count: minutes});
-    return t("time.minutes", {count: 0});
+// Норматив срока (в минутах, как хранится и приходит с бэка). workingTime — рабочие минуты:
+// 1 д. = 9 ч, подпись "раб. дн.".
+export function formatDurationMinutes(totalMinutes: number, t: TFunction, options?: DurationOptions): string {
+    return formatSpan(totalMinutes, t, options?.workingTime) ?? t("time.minutes", {count: 0});
 }
 
 // Сколько времени прошло с указанной даты, в формате "2 дня 5 часов назад"
-export function getElapsedLabel(dateString: string, t: TFunction): string {
-    const diffMs = Date.now() - new Date(dateString).getTime();
-    if (diffMs < 0) return t("time.justNow");
+export function getElapsedLabel(dateString: string, t: TFunction, options?: DurationOptions): string {
+    const startMs = new Date(dateString).getTime();
+    if (Date.now() - startMs < 0) return t("time.justNow");
 
-    const totalMinutes = Math.floor(diffMs / 60000);
-    const days = Math.floor(totalMinutes / (60 * 24));
-    const hours = Math.floor((totalMinutes % (60 * 24)) / 60);
-    const minutes = totalMinutes % 60;
-
-    let time: string;
-
-    if (days > 0) {
-        const daysLabel = t("time.days", {count: days});
-        time = hours > 0 ? `${daysLabel} ${t("time.hours", {count: hours})}` : daysLabel;
-    } else if (hours > 0) {
-        const hoursLabel = t("time.hours", {count: hours});
-        time = minutes > 0 ? `${hoursLabel} ${t("time.minutes", {count: minutes})}` : hoursLabel;
-    } else if (minutes > 0) {
-        time = t("time.minutes", {count: minutes});
-    } else {
-        return t("time.justNow");
-    }
-
-    return t("time.ago", {time});
+    const elapsed = minutesBetween(startMs, Date.now(), options?.workingTime);
+    const time = formatSpan(elapsed, t, options?.workingTime);
+    return time ? t("time.ago", {time}) : t("time.justNow");
 }
 
 // Берем значение из UI (DatePicker/RangePicker), преобразуем в { exact, from, to } для фильтрации

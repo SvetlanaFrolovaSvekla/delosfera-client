@@ -1,3 +1,4 @@
+// Компонента для выбора нескольких СП
 import {useTranslation} from "react-i18next";
 import {MultiSelectField} from "@/components/componentsGeneral/selects/MultiSelects/MultiSelectField.tsx";
 import type {TreeSelectOption} from "@/components/componentsGeneral/selects/MultiSelects/TreeMultiSelectModal.tsx";

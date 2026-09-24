@@ -2,7 +2,7 @@ import {useCallback, useEffect, useState} from "react";
 import {Plus, Trash2, GripVertical, ChevronDown, ChevronRight} from "lucide-react";
 import {useAuth} from "@/context/AuthContext.ts";
 import {PermissionCode} from "@/constants/permissions/permissions.ts";
-import {UserPicker, type PickableUser} from "@/components/componentsGeneral/UserPicker.tsx";
+import {UserPicker, type PickableUser} from "@/components/componentsGeneral/userPicker/UserPicker.tsx";
 import {userService} from "@/service/userService/userService.ts";
 import {organizationUnitService}
     from "@/service/dictionariesService/organizationUnitService/organizationUnitService.ts";

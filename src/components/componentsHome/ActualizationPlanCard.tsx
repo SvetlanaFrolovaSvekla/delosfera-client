@@ -1,9 +1,9 @@
-// Виджет "План актуализации ВНД" - карточки В норме, прибл. срок, крит. срок, просрочено
+// Виджет "План актуализации ВНД" - карточки В норме, прибл. Срок, крит. Срок, просрочено
 import {useNavigate} from "react-router-dom";
 import {useTranslation} from "react-i18next";
 import type {VndActualizationSummaryResponse} from "@/service/vndService/vndServiceType.ts";
-import {ACTUALIZATION_BUCKET_ORDER, useActualizationBucketMeta} from "@/hooks/actualizationHooks/useActualizationBucketMeta.ts";
 import {HOME_TOP_ROW_HEIGHT} from "@/constants/homeConst.ts";
+import {ACTUALIZATION_BUCKET_ORDER, useActualizationBucketMeta} from "@/hooks/actualizationHooks/useActualizationBucketMeta.ts";
 
 interface ActualizationPlanCardProps {
     summary: VndActualizationSummaryResponse | null | undefined;

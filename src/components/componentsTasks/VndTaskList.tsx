@@ -1,8 +1,8 @@
-import type {LucideIcon} from "lucide-react";
-import { Loader } from "@/components/componentsGeneral/Loader.tsx";
-import { EmptyState } from "@/components/componentsGeneral/EmptyState.tsx";
 import type {VndTaskResponse} from "@/service/tasksVndService/tasksServiceTypes.ts";
 import {VndTaskCard} from "@/components/componentsTasks/VndTaskCard.tsx";
+import { Loader } from "@/components/componentsGeneral/Loader.tsx";
+import { EmptyState } from "@/components/componentsGeneral/EmptyState.tsx";
+import type {LucideIcon} from "lucide-react";
 
 interface VndTaskListProps {
     tasks: VndTaskResponse[];

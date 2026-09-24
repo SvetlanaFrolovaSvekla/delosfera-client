@@ -24,7 +24,7 @@ export function CreateRoleModal({open, onClose, onCreate}: CreateRoleModalProps)
     const [prevOpen, setPrevOpen] = useState(open);
     const panelRef = useRef<HTMLDivElement>(null);
 
-    // Сброс формы при каждом открытии модалки — обновление state во время рендера
+    // Сброс формы при каждом открытии модалки - обновление state во время рендера
     // (тот же паттерн, что и в MultiSelectModal, вместо useEffect + setState)
     if (open !== prevOpen) {
         setPrevOpen(open);
@@ -67,7 +67,8 @@ export function CreateRoleModal({open, onClose, onCreate}: CreateRoleModalProps)
             });
             onClose();
         } catch (e) {
-            setError(e instanceof Error ? e.message : "Не удалось создать роль");
+            // Не удалось создать роль
+            setError(e instanceof Error ? e.message : t("createRole.createError"));
         } finally {
             setSaving(false);
         }
@@ -85,7 +86,10 @@ export function CreateRoleModal({open, onClose, onCreate}: CreateRoleModalProps)
             >
                 {/* Заголовок */}
                 <div className="flex items-center justify-between px-5 py-4 border-b border-[#eef2f7] flex-none">
-                    <h3 className="m-0 text-[15px] font-semibold text-[#1c2740]">Новая роль</h3>
+                    <h3 className="m-0 text-[15px] font-semibold text-[#1c2740]">
+                        {/* Новая роль */}
+                        {t("createRole.title")}
+                    </h3>
                     <button
                         onClick={onClose}
                         className="w-7 h-7 grid place-items-center rounded-full text-[#a3adbd] hover:bg-[#f2f5f9] hover:text-[#55617a] cursor-pointer"
@@ -97,12 +101,14 @@ export function CreateRoleModal({open, onClose, onCreate}: CreateRoleModalProps)
                 {/* Форма */}
                 <div className="px-5 py-4 flex flex-col gap-[14px]">
                     <p className="m-0 text-[12.5px] text-[#8b97ab] leading-[1.5]">
-                        Права можно будет включить сразу после создания — на странице роли справа.
+                        {/* Права можно будет включить сразу после создания — на странице роли справа. */}
+                        {t("createRole.description")}
                     </p>
 
                     <label className="flex flex-col gap-[6px]">
                         <span className="text-[12px] font-semibold text-[#55617a]">
-                            Название (RU) <span className="text-[#e05252]">*</span>
+                            {/* Название (RU) */}
+                            {t("createRole.titleRuLabel")} <span className="text-[#e05252]">*</span>
                         </span>
                         <input
                             autoFocus
@@ -111,33 +117,42 @@ export function CreateRoleModal({open, onClose, onCreate}: CreateRoleModalProps)
                             onKeyDown={(e) => {
                                 if (e.key === "Enter") void handleSubmit();
                             }}
-                            placeholder="Например: Согласующий"
+                            // Например: Согласующий
+                            placeholder={t("createRole.titleRuPlaceholder")}
                             className="h-10 px-[13px] rounded-[10px] border border-[#e5e9f0] text-[13.5px] text-[#1c2740] outline-none focus:border-[#4e57d6] transition-colors"
                         />
                     </label>
 
                     <label className="flex flex-col gap-[6px]">
-                        <span className="text-[12px] font-semibold text-[#55617a]">Название (EN)</span>
+                        <span className="text-[12px] font-semibold text-[#55617a]">
+                            {/* Название (EN) */}
+                            {t("createRole.titleEnLabel")}
+                        </span>
                         <input
                             value={titleEn}
                             onChange={(e) => setTitleEn(e.target.value)}
                             onKeyDown={(e) => {
                                 if (e.key === "Enter") void handleSubmit();
                             }}
-                            placeholder="Например: Approver"
+                            // Например: Approver
+                            placeholder={t("createRole.titleEnPlaceholder")}
                             className="h-10 px-[13px] rounded-[10px] border border-[#e5e9f0] text-[13.5px] text-[#1c2740] outline-none focus:border-[#4e57d6] transition-colors"
                         />
                     </label>
 
                     <label className="flex flex-col gap-[6px]">
-                        <span className="text-[12px] font-semibold text-[#55617a]">Название (KG)</span>
+                        <span className="text-[12px] font-semibold text-[#55617a]">
+                            {/* Название (KG) */}
+                            {t("createRole.titleKgLabel")}
+                        </span>
                         <input
                             value={titleKg}
                             onChange={(e) => setTitleKg(e.target.value)}
                             onKeyDown={(e) => {
                                 if (e.key === "Enter") void handleSubmit();
                             }}
-                            placeholder="Название на кыргызском"
+                            // Название на кыргызском
+                            placeholder={t("createRole.titleKgPlaceholder")}
                             className="h-10 px-[13px] rounded-[10px] border border-[#e5e9f0] text-[13.5px] text-[#1c2740] outline-none focus:border-[#4e57d6] transition-colors"
                         />
                     </label>
@@ -163,7 +178,8 @@ export function CreateRoleModal({open, onClose, onCreate}: CreateRoleModalProps)
                         disabled={!canSubmit}
                         className="h-9 px-5 rounded-[9px] border-none bg-[#4e57d6] text-white font-semibold text-[12.5px] cursor-pointer hover:brightness-[1.06] disabled:opacity-60 disabled:cursor-not-allowed"
                     >
-                        {saving ? "Создание…" : "Создать роль"}
+                        {/* Создание… : Создать роль */}
+                        {saving ? t("createRole.creating") : t("createRole.submit")}
                     </button>
                 </div>
             </div>

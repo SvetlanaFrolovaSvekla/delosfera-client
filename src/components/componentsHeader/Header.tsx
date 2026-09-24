@@ -1,3 +1,4 @@
+// Главный Header на странице: логотип, поиск, смена языка, уведомления и профиль
 import {useEffect, useRef, useState} from "react";
 import {useNavigate} from "react-router-dom";
 import {useVndQuickSearch} from "@/hooks/vndHooks/useVndQuickSearch.ts";

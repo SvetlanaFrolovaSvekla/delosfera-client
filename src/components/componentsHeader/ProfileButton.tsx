@@ -2,9 +2,9 @@
 import {useEffect, useRef, useState} from "react";
 import {useTranslation} from "react-i18next";
 import {useNavigate} from "react-router-dom";
-import {User, LogOut, ChevronRight} from "lucide-react";
 import {useAuth} from "@/context/AuthContext.ts";
 import {transliterate} from "@/utils/translations/transliterate.ts";
+import {User, LogOut, ChevronRight} from "lucide-react";
 
 function getInitials(fullName: string): string {
     return fullName
@@ -58,7 +58,8 @@ export function ProfileMenu() {
                 onClick={() => setOpen((v) => !v)}
                 className="flex h-[42px] items-center gap-2.5 rounded-[11px] border border-[#e5e9f0] bg-white py-0 pl-1.5 pr-3 hover:bg-[#f6f8fb] cursor-pointer"
             >
-                <span className="grid h-[30px] w-[30px] flex-none place-items-center rounded-lg bg-[var(--app-soft,_#ececfc)] text-[12px] font-bold text-[var(--app-accent,_#4e57d6)]">
+                <span
+                    className="grid h-[30px] w-[30px] flex-none place-items-center rounded-lg bg-[var(--app-soft,_#ececfc)] text-[12px] font-bold text-[var(--app-accent,_#4e57d6)]">
                     {abbr}
                 </span>
                 <span className="text-left leading-[1.25]">
@@ -68,10 +69,12 @@ export function ProfileMenu() {
             </button>
 
             {open && (
-                <div className="absolute top-[50px] right-0 w-[288px] bg-white border border-[#e5e9f0] rounded-[13px] shadow-[0_18px_46px_-14px_rgba(15,27,45,0.28)] z-40 overflow-hidden">
+                <div
+                    className="absolute top-[50px] right-0 w-[288px] bg-white border border-[#e5e9f0] rounded-[13px] shadow-[0_18px_46px_-14px_rgba(15,27,45,0.28)] z-40 overflow-hidden">
                     {/* Краткая информация о пользователе */}
                     <div className="flex items-center gap-2.5 px-[15px] py-3">
-                        <span className="grid h-[38px] w-[38px] flex-none place-items-center rounded-lg bg-[var(--app-soft,_#ececfc)] text-[14px] font-bold text-[var(--app-accent,_#4e57d6)]">
+                        <span
+                            className="grid h-[38px] w-[38px] flex-none place-items-center rounded-lg bg-[var(--app-soft,_#ececfc)] text-[14px] font-bold text-[var(--app-accent,_#4e57d6)]">
                             {abbr}
                         </span>
                         <div className="min-w-0">
@@ -112,13 +115,14 @@ export function ProfileMenu() {
                             }}
                             className="w-full flex items-center gap-[11px] px-[11px] py-[9px] rounded-[9px] bg-transparent hover:bg-[#f6f8fb] text-left cursor-pointer"
                         >
-                            <span className="grid h-[30px] w-[30px] flex-none place-items-center rounded-lg bg-[#eef1f5] text-[#55617a]">
-                                <User className="w-4 h-4" strokeWidth={1.9} />
+                            <span
+                                className="grid h-[30px] w-[30px] flex-none place-items-center rounded-lg bg-[#eef1f5] text-[#55617a]">
+                                <User className="w-4 h-4" strokeWidth={1.9}/>
                             </span>
                             <span className="flex-1 font-semibold text-[13px] text-[#0f1b2d]">
                                 {t("header.myProfile")}
                             </span>
-                            <ChevronRight className="w-4 h-4 text-[#c3ccd8]" strokeWidth={2} />
+                            <ChevronRight className="w-4 h-4 text-[#c3ccd8]" strokeWidth={2}/>
                         </button>
 
                         <button
@@ -126,8 +130,9 @@ export function ProfileMenu() {
                             onClick={() => void handleLogout()}
                             className="w-full flex items-center gap-[11px] px-[11px] py-[9px] rounded-[9px] bg-transparent hover:bg-[#fdecec] text-left cursor-pointer group"
                         >
-                            <span className="grid h-[30px] w-[30px] flex-none place-items-center rounded-lg bg-[#fdecec] text-[#e5484d]">
-                                <LogOut className="w-4 h-4" strokeWidth={1.9} />
+                            <span
+                                className="grid h-[30px] w-[30px] flex-none place-items-center rounded-lg bg-[#fdecec] text-[#e5484d]">
+                                <LogOut className="w-4 h-4" strokeWidth={1.9}/>
                             </span>
                             <span className="flex-1 font-semibold text-[13px] text-[#e5484d]">
                                 {t("header.logout")}

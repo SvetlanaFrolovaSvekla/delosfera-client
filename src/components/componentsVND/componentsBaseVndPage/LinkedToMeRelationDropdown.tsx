@@ -1,12 +1,12 @@
 // Выпадающий список "Тип связи" для фильтра "Только связанные со мной" - в отличие от
 // обычного MultiSelectDropdown, пункты сгруппированы по смыслу (согласование/актуализация/
 // консолидация/инициатива) и каждая группа выделена лёгкой подложкой цвета соответствующей
-// "таблетки" статуса последней редакции (см. LINKED_TO_ME_RELATION_GROUPS).
+// "таблетки" статуса последней редакции
 import {useRef, useState} from "react";
 import {useTranslation} from "react-i18next";
-import {Check, ChevronDown} from "lucide-react";
-import {useClickOutside} from "@/hooks/useClickOutside.ts";
 import {LINKED_TO_ME_RELATION_GROUPS, type LinkedToMeRelationKey} from "@/constants/linkedToMeRelations.ts";
+import {useClickOutside} from "@/hooks/useClickOutside.ts";
+import {Check, ChevronDown} from "lucide-react";
 
 interface LinkedToMeRelationDropdownProps {
     selectedKeys: string[];

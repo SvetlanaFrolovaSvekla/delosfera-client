@@ -1,12 +1,13 @@
+// Список уведомлений
 import { useMemo } from "react";
 import { useTranslation } from "react-i18next";
-import { Bell } from "lucide-react";
-import { NotificationRow } from "./NotificationRow.tsx";
-import { EmptyState } from "@/components/componentsGeneral/EmptyState.tsx";
 import type {
     Notification,
     NotificationCategoryOption,
 } from "@/service/notificationsService/notificationsServiceType.ts";
+import { NotificationRow } from "./NotificationRow.tsx";
+import { EmptyState } from "@/components/componentsGeneral/EmptyState.tsx";
+import { Bell } from "lucide-react";
 
 interface NotificationListProps {
     rows: Notification[];

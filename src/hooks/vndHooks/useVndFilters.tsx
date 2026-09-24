@@ -117,6 +117,8 @@ export function useVndFilters(scope: VndScope, draftOwnerScope?: "mine" | "other
             linkedToMeOnly: linkedToMeOnly || undefined,
             linkedToMeRelations: linkedToMeOnly ? linkedToMeRelations : undefined,
             draftOwnerScope: scope === "draft" ? draftOwnerScope : undefined,
+            // "Избранное" — те же статусы, что и на "Все", но только отмеченные звёздочкой
+            favoritesOnly: scope === "favorites" || undefined,
         };
     }, [
         scope, statusFilters, advSearchCode, advSearchName, advSearchRevisionText,

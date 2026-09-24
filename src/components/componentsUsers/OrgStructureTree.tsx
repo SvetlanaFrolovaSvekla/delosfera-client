@@ -1,12 +1,3 @@
-import {useEffect, useMemo, useState} from "react";
-import {Building2, ChevronRight, Users2} from "lucide-react";
-import {
-    orgTree, filterTree, totalStaff,
-    type OrgTree, type OrgTreeNode,
-} from "@/service/orgStructureService/orgTreeService.ts";
-import {Loader} from "@/components/componentsGeneral/Loader";
-import {EmptyState} from "@/components/componentsGeneral/EmptyState.tsx";
-
 /**
  * Кто кому подчиняется.
  *
@@ -16,6 +7,15 @@ import {EmptyState} from "@/components/componentsGeneral/EmptyState.tsx";
  * Править структуру отсюда нельзя. Её ведут в портале банка, и правка здесь
  * держалась бы до следующей синхронизации — то есть до ночи.
  */
+import {useEffect, useMemo, useState} from "react";
+import {Building2, ChevronRight, Users2} from "lucide-react";
+import {
+    orgTree, filterTree, totalStaff,
+    type OrgTree, type OrgTreeNode,
+} from "@/service/orgStructureService/orgTreeService.ts";
+import {Loader} from "@/components/componentsGeneral/Loader";
+import {EmptyState} from "@/components/componentsGeneral/EmptyState.tsx";
+
 export function OrgStructureTree() {
     const [tree, setTree] = useState<OrgTree | null>(null);
     const [loading, setLoading] = useState(true);

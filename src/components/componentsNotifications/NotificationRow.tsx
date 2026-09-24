@@ -1,14 +1,15 @@
+// Одна строка уведомления
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
-import type { Notification } from "@/service/notificationsService/notificationsServiceType.ts";
-import { HighlightText } from "@/utils/highlightText.tsx";
 import { NOTIFICATION_CATEGORY_META, DEFAULT_CATEGORY_META } from "@/constants/notificationCategory.ts";
+import type { Notification } from "@/service/notificationsService/notificationsServiceType.ts";
+import { toast } from "@/service/toastService.ts";
+import { HighlightText } from "@/utils/highlightText.tsx";
 import { SeverityDot } from "./SeverityDot.tsx";
-import { Bell, ChevronRight, Paperclip, Star, Trash2 } from "lucide-react";
 import { Tooltip } from "../componentsGeneral/Tooltip.tsx";
 import { ConfirmDeleteModal } from "@/components/componentsGeneral/modal/ConfirmDeleteModal.tsx";
-import { toast } from "@/service/toastService.ts";
+import { Bell, ChevronRight, Paperclip, Star, Trash2 } from "lucide-react";
 
 interface NotificationRowProps {
     notification: Notification;

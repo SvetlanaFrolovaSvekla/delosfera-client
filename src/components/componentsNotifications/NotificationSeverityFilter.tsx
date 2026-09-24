@@ -1,7 +1,8 @@
-import {Info, CheckCircle2, AlertTriangle, AlertCircle, RotateCcw} from "lucide-react";
+// Фильтрация уведомлений по категориям
 import {useTranslation} from "react-i18next";
-import {NOTIFICATION_SEVERITY_META} from "@/constants/notificationSeverity.ts";
 import type {NotificationSeverity} from "@/service/notificationsService/notificationsServiceType.ts";
+import {NOTIFICATION_SEVERITY_META} from "@/constants/notificationSeverity.ts";
+import {Info, CheckCircle2, AlertTriangle, AlertCircle, RotateCcw} from "lucide-react";
 
 const SEVERITY_ORDER: NotificationSeverity[] = ["Info", "Success", "Warning", "Urgent"];
 

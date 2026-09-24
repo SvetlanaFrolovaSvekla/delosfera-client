@@ -5,6 +5,7 @@ import {useNavigate} from "react-router-dom";
 import {useAuth} from "@/context/AuthContext.ts";
 import {useDictionaries} from "@/context/DictionariesContext.tsx";
 import {daysUntil} from "@/utils/dateUtils.ts";
+import {DEFAULT_VND_SORT, sortVndRows, type VndSortKey} from "@/utils/vndProcess/vndSort.ts";
 import {useVndFilters} from "@/hooks/vndHooks/useVndFilters.tsx";
 import {useCanCreateVnd} from "@/hooks/vndHooks/useCanCreateVnd.ts";
 import {useIsVndEditor} from "@/hooks/vndHooks/useIsVndEditor.ts";
@@ -23,15 +24,14 @@ import {STATUS_META, STATUS_OPTIONS_BY_SCOPE} from "@/constants/vndStatus.ts";
 import {VndPageHeader} from "@/components/componentsVND/componentsBaseVndPage/VndPageHeader.tsx";
 import {VndFilters} from "@/components/componentsVND/componentsBaseVndPage/VndFilters.tsx";
 import {VndTable} from "@/components/componentsVND/componentsBaseVndPage/VndTable.tsx";
+import {VndSortDropdown} from "@/components/componentsVND/componentsBaseVndPage/VndSortDropdown.tsx";
 
 import {Tabs} from "@/components/componentsGeneral/Tabs.tsx";
 import {Loader} from "@/components/componentsGeneral/Loader";
 import {EmptyState} from "@/components/componentsGeneral/EmptyState.tsx";
 import {JournalViewPicker} from "@/components/componentsGeneral/JournalViewPicker.tsx";
-import {VndSortDropdown} from "@/components/componentsVND/componentsBaseVndPage/VndSortDropdown.tsx";
-import {DEFAULT_VND_SORT, sortVndRows, type VndSortKey} from "@/utils/vndProcess/vndSort.ts";
 
-import {FileEdit} from "lucide-react";
+import {FileEdit, Star} from "lucide-react";
 
 type DraftOwnerScope = "mine" | "others" | "allDraft";
 
@@ -116,6 +116,8 @@ export function BaseVndPage() {
             // Черновики
             ? [{id: "draft" as VndScope, label: t("registry.tabs.draft"), n: counts.draft, icon: <FileEdit size={14}/>}]
             : []),
+        // Избранное — личные отметки-звёздочки пользователя
+        {id: "favorites" as VndScope, label: t("registry.tabs.favorites"), n: counts.favorites, icon: <Star size={14}/>},
     ];
 
     return (
@@ -185,7 +187,8 @@ export function BaseVndPage() {
                         scope === "notYetActive" ? counts.notYetActive :
                             scope === "draft" ? counts.draft :
                                 scope === "arch" ? counts.arch :
-                                    counts.all
+                                    scope === "favorites" ? counts.favorites :
+                                        counts.all
                 }
                 viewPicker={
                     <JournalViewPicker

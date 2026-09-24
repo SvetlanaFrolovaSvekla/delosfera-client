@@ -3,6 +3,7 @@ import {
     type ApprovalProcessStatus
 } from "@/service/coordinationService/coordinationServiceTypes.ts";
 import {ShieldCheck, User} from "lucide-react";
+import {getWorkDayMinutes} from "@/utils/workCalendar.ts";
 
 // Максимальное число согласующих
 export const MAX_STAGES = 10;
@@ -19,16 +20,24 @@ export const MAX_RESOLUTION_COMMENT_LENGTH = 35000;
 // Длина, после которой комментарий/замечание обрезается в списках с кнопкой "См. полностью"
 export const COMMENT_TRUNCATE_LENGTH = 260;
 
-// Верхняя граница норматива срока согласования (в минутах) - 90 дней.
-// Ограничивает поля "ч." / "м." в NormBlock и должна совпадать с MaxDeadlineMinutes на бэкенде
-export const MAX_DEADLINE_MINUTES = 90 * 24 * 60;
+// Нормативы согласования считаются в РАБОЧИХ минутах: срок идёт только пн–пт в рабочие часы
+// банка (по умолчанию 09:00–18:00 по Бишкеку), без праздников — и часы, и праздники задаются в
+// справочнике "Производственный календарь"; 1 д. = 1 рабочий день банка = getWorkDayMinutes()
+// (см. utils/workCalendar.ts и VndWorkingCalendar на бэкенде). Поэтому значения ниже — функции:
+// длина рабочего дня может смениться в справочнике.
 
-// Встроенные нормативы по умолчанию (минуты) - используются, пока не загрузился справочник
+// Верхняя граница норматива срока согласования - 90 рабочих дней (в рабочих минутах).
+// Ограничивает поля в NormBlock и должна совпадать с Rules.MaxDeadlineMinutes на бэкенде
+export const MAX_DEADLINE_WORK_DAYS = 90;
+export const getMaxDeadlineMinutes = () => MAX_DEADLINE_WORK_DAYS * getWorkDayMinutes();
+
+// Встроенные нормативы по умолчанию (рабочие минуты) - используются, пока не загрузился справочник
 // "Нормативы согласования по умолчанию" (раздел ВНД), и должны совпадать с
-// VndApprovalNormSettings.Default*Minutes на бэкенде: 7 д. / 4 д. / 3 д.
-export const DEFAULT_PRIMARY_MINUTES = 7 * 24 * 60;
-export const DEFAULT_REPEAT_MINUTES = 4 * 24 * 60;
-export const DEFAULT_FINAL_HOLD_MINUTES = 3 * 24 * 60;
+// VndApprovalNormSettings.Default*Minutes на бэкенде: 7 д. / 4 д. / 3 д. (рабочих)
+export const getDefaultNormMinutes = () => {
+    const day = getWorkDayMinutes();
+    return {primary: 7 * day, repeat: 4 * day, finalHold: 3 * day};
+};
 
 // Обязательные (фиксированные) этапы ведутся динамическим справочником (dictionaries/coordination-users)
 export const FIXED_STAGE_ICON = ShieldCheck;

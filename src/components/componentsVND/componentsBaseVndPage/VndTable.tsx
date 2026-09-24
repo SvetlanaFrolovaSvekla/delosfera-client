@@ -11,7 +11,7 @@ import {type ColDef} from "@/constants/columnsFilters/vndColumns.ts";
 import {EmptyState} from "@/components/componentsGeneral/EmptyState.tsx";
 import {Tooltip} from "@/components/componentsGeneral/Tooltip.tsx";
 
-import {Clock} from "lucide-react";
+import {Clock, Star} from "lucide-react";
 
 interface VndTableProps {
     columns: ColDef[];
@@ -80,15 +80,7 @@ export function VndTable({
                 {rows.map((r) => {
                     // Без права ViewVndRegistryExtended значок первой колонки показывает только
                     // "Статус ВНД" (действующий/архивированный — документы "ещё не действующие"
-                    // сервер таким пользователям в реестре вообще не отдаёт, см.
-                    // VndService.SearchAsync; collapseDocumentStatus здесь — защитный дубль на
-                    // случай прямого перехода по ссылке, где documentStatus всё ещё может прийти
-                    // свёрнутым из GetById, см. VndService.CollapseDocumentStatus), без деталей
-                    // о стадии жизненного цикла (на актуализации/согласовании/консолидации).
-                    // "Черновик" — отдельная, не связанная с ViewVndRegistryExtended ось видимости
-                    // (завязана на право создавать ВНД), поэтому проверяется отдельно и первым, в
-                    // обход DOCUMENT_STATUS_META - тем же STATUS_META.draft, что и для
-                    // ViewVndRegistryExtended-варианта выше (getVndDisplayMeta).
+                    // сервер таким пользователям в реестре вообще не отдаёт
                     const meta = canViewExtended
                         ? getVndDisplayMeta(r.status, r.effectiveDate)
                         : r.status === "draft"
@@ -118,20 +110,30 @@ export function VndTable({
                                     case "statusIcon":
                                         return (
                                             <div key={c.key} className="min-w-0">
-                                                <span
-                                                    className="w-7 h-7 rounded-lg grid place-items-center"
-                                                    style={{background: meta.bg, color: meta.color}}
-                                                    title={t(meta.label)}
-                                                >
-                                                    <StatusIcon className="w-[15px] h-[15px]" strokeWidth={2}/>
-                                                </span>
+                                                <Tooltip content={r.isFavorite
+                                                    ? `${t(meta.label)} · ${t("favorites.inFavorites")}`
+                                                    : t(meta.label)}>
+                                                    <span
+                                                        className="relative w-7 h-7 rounded-lg grid place-items-center"
+                                                        style={{background: meta.bg, color: meta.color}}
+                                                    >
+                                                        <StatusIcon className="w-[15px] h-[15px]" strokeWidth={2}/>
+                                                        {/* Звёздочка "Избранное" — бейджем в углу значка статуса */}
+                                                        {r.isFavorite && (
+                                                            <span className="absolute -right-[5px] -top-[5px] grid h-[15px] w-[15px] place-items-center rounded-full bg-white shadow-[0_1px_3px_rgba(15,27,45,0.25)]">
+                                                                <Star className="h-[10px] w-[10px]" strokeWidth={2.2}
+                                                                      fill="#f5b400" color="#e0a100"/>
+                                                            </span>
+                                                        )}
+                                                    </span>
+                                                </Tooltip>
                                             </div>
                                         );
                                     case "code":
                                         return (
                                             <div key={c.key} className="min-w-0">
                                                 <span className="font-mono text-[12px] font-semibold text-[#4e57d6]">
-                                                    <HighlightText text={r.code} query={searchQuery} />
+                                                    <HighlightText text={r.code} query={searchQuery}/>
                                                 </span>
                                             </div>
                                         );
@@ -186,7 +188,7 @@ export function VndTable({
                                         return (
                                             <div key={c.key} className="min-w-0">
                                                 {/* У архивированного ВНД срок актуализации в БД может остаться
-                                                    (при архивации его не сбрасывают - см. VndService.CancelAsync),
+                                                    (при архивации его не сбрасывают),
                                                     но показывать его в реестре не нужно: документ отменён,
                                                     актуализировать больше нечего - прочерк, как и у остальных
                                                     неприменимых колонок. */}
@@ -259,13 +261,15 @@ export function VndTable({
                                                 {sorted.length === 0 ? (
                                                     <span className="text-[12px] text-[#a3adbd]">—</span>
                                                 ) : (
-                                                    <span className="block text-[12px] whitespace-normal break-words line-clamp-5">
+                                                    <span
+                                                        className="block text-[12px] whitespace-normal break-words line-clamp-5">
                                                         {sorted.map((key, i) => {
                                                             const relMeta = LINKED_TO_ME_RELATION_META[key];
                                                             if (!relMeta) return null;
                                                             return (
                                                                 <span key={key}>
-                                                                    <span style={{color: relMeta.color}} className="font-semibold">
+                                                                    <span style={{color: relMeta.color}}
+                                                                          className="font-semibold">
                                                                         {t(relMeta.label)}
                                                                     </span>
                                                                     {i < sorted.length - 1 && (

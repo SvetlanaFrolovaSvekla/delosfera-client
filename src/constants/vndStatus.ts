@@ -121,6 +121,10 @@ export const SCOPE_COUNT_LABELS: Record<VndScope, { total: string; found: string
         total: "vnd.scopeCountLabels.arch.total",
         found: "vnd.scopeCountLabels.arch.found",
     },
+    favorites: {
+        total: "vnd.scopeCountLabels.favorites.total",
+        found: "vnd.scopeCountLabels.favorites.found",
+    },
 };
 
 

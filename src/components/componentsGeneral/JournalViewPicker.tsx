@@ -1,12 +1,3 @@
-import {useRef, useState} from "react";
-import {useTranslation} from "react-i18next";
-import type {JournalView} from "@/service/journalViewService/journalViewService.ts";
-import {useClickOutside} from "@/hooks/useClickOutside.ts";
-import {HelpTooltip} from "@/components/componentsGeneral/knowledgeBaseComponents/HelpTooltip.tsx";
-import {ConfirmActionModal} from "@/components/componentsGeneral/modal/ConfirmActionModal.tsx";
-import {Tooltip} from "@/components/componentsGeneral/Tooltip.tsx";
-import {Check, ChevronDown, Save, Trash2, Users} from "lucide-react";
-
 /**
  * Выбор представления журнала — сохранённого набора колонок.
  *
@@ -18,6 +9,14 @@ import {Check, ChevronDown, Save, Trash2, Users} from "lucide-react";
  * Кнопка «Сохранить» появляется только когда показанное разошлось с выбранным
  * представлением. Висящая всегда, она приучает не замечать её.
  */
+import {useRef, useState} from "react";
+import {useTranslation} from "react-i18next";
+import type {JournalView} from "@/service/journalViewService/journalViewService.ts";
+import {useClickOutside} from "@/hooks/useClickOutside.ts";
+import {HelpTooltip} from "@/components/componentsGeneral/knowledgeBaseComponents/HelpTooltip.tsx";
+import {ConfirmActionModal} from "@/components/componentsGeneral/modal/ConfirmActionModal.tsx";
+import {Tooltip} from "@/components/componentsGeneral/Tooltip.tsx";
+import {Check, ChevronDown, Save, Trash2, Users} from "lucide-react";
 
 interface Props {
     views: JournalView[];

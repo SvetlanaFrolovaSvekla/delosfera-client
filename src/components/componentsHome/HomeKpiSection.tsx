@@ -112,7 +112,7 @@ const BOTTOM_TOOLTIPS: Record<string, string> = {
     "prc-active": "home.kpi.tooltip.prcActive",
 };
 
-// Заголовки карточек нижнего ряда переводятся на клиенте по стабильному DashboardKpi.code,
+// Заголовки карточек нижнего ряда переводятся на клиенте по-стабильному DashboardKpi.code,
 // а не по DashboardKpi.label с бэка — там текст приходит уже готовой русской строкой
 // (DashboardService.GetSummaryAsync), которую i18next перевести не может: это не ключ, а
 // произвольное значение. Бэкендовый label используется только как fallback для кода, для

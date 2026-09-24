@@ -5,6 +5,7 @@ import type {VndTaskResponse} from "@/service/tasksVndService/tasksServiceTypes.
 import {COORDINATION_STAGE_META, REVISION_NEEDED_META, TASK_SCOPE_META} from "@/constants/vndStatus.ts";
 import {getActionTitle, getDeadlineTone, getMetaText} from "@/utils/tasksUtils.ts";
 import {timeAgo} from "@/utils/dateUtils.ts";
+import {useWorkCalendar} from "@/utils/workCalendar.ts";
 import {HighlightText} from "@/utils/highlightText.tsx";
 
 import {Icon} from "@/assets/icons/Icon.tsx";
@@ -48,6 +49,9 @@ const ACTUAL_TAB_SCOPES: VndTaskResponse["scope"][] = ["actualizationRequest", "
 
 export function VndTaskCard({task, searchQuery = "", square = false, noTopBorder = false}: VndTaskCardProps) {
     const {t} = useTranslation();
+    // Перерисовать карточку, когда подтянется производственный календарь (праздники) -
+    // "осталось" у согласований ВНД считается в рабочем времени.
+    useWorkCalendar(!!task.usesWorkingTime);
 
     // Основной бейдж = раздел/вкладка "Мои задачи", в которую ведёт карточка
     // ("Ждущие моего согласования" / "Мои ВНД на согласовании" / "Актуализация" / "Консолидация")
@@ -65,7 +69,7 @@ export function VndTaskCard({task, searchQuery = "", square = false, noTopBorder
 
     const hasStagePhase = task.scope === "coordination" || task.scope === "myVndApproval";
     const due = hasStagePhase
-        ? getDeadlineTone(task.deadlineAt, task.deadlineMinutes, t)
+        ? getDeadlineTone(task.deadlineAt, task.deadlineMinutes, t, task.usesWorkingTime)
         : getDeadlineTone(task.dueActualizationDate, null, t);
 
     return (

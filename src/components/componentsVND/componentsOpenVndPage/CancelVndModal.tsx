@@ -1,15 +1,13 @@
 // Модалка «Архивировать ВНД» — кнопка "Архивировать", доступна на любом статусе, кроме
-// черновика (тот только удаляется — см. handleDelete в OpenVndPage.tsx) и уже архивированного.
+// черновика (тот только удаляется) и уже архивированного.
 // Оформляется № и датой отмены (служебная записка), без согласования — см.
-// VndService.CancelAsync на бэке. После архивации все редакции документа перестают быть
-// "текущими" (IsCurrent) — см. VndService.ToRedactionResponse на бэке.
 import {useState} from "react";
 import {createPortal} from "react-dom";
-import {Archive, Loader2, X} from "lucide-react";
+import {useTranslation} from "react-i18next";
 import {
     EditableDateField, EditableTextAreaField, EditableTextField
 } from "@/components/componentsGeneral/RequisitesEditFields.tsx";
-import {useTranslation} from "react-i18next";
+import {Archive, Loader2, X} from "lucide-react";
 
 export interface CancelVndFields {
     cancelCode: string; // Код отмены

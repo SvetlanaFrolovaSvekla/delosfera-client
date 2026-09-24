@@ -1,7 +1,10 @@
+/**
+ * Ряд вкладок-карточек над списком уведомлений: "Все категории" + один пункт на категорию.
+ */
 import {useTranslation} from "react-i18next";
 import type {NotificationCategoryOption} from "@/service/notificationsService/notificationsServiceType.ts";
-import type {NotificationCategoryTab} from "@/hooks/notificationsHooks/useNotificationTabs.ts";
 import {NOTIFICATION_CATEGORY_META, DEFAULT_CATEGORY_META} from "@/constants/notificationCategory.ts";
+import type {NotificationCategoryTab} from "@/hooks/notificationsHooks/useNotificationTabs.ts";
 import {Layers} from "lucide-react";
 
 interface NotificationCategoryPanelProps {
@@ -12,12 +15,6 @@ interface NotificationCategoryPanelProps {
     totalCount: number;
 }
 
-/**
- * Ряд вкладок-карточек над списком уведомлений: "Все категории" + один пункт на категорию.
- * Стилизован так же, как TaskInboxFilterTabs на странице "Мои задачи" (карточка, цветная
- * иконка, подсветка активной вкладки цветом категории) — чтобы обе страницы выглядели
- * единообразно.
- */
 export function NotificationCategoryPanel({
                                               categories,
                                               value,

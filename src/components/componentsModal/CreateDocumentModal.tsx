@@ -3,10 +3,10 @@ import {useState} from "react";
 import {createPortal} from "react-dom";
 import {useNavigate} from "react-router-dom";
 import {useTranslation} from "react-i18next";
-import {FilePlus2, X} from "lucide-react";
 import {useModalShake} from "@/hooks//useModalShake.ts";
-import {Tooltip} from "@/components/componentsGeneral/Tooltip.tsx";
 import {useCannotCreateVndMessage, useCanCreateVnd} from "@/hooks/vndHooks/useCanCreateVnd.ts";
+import {Tooltip} from "@/components/componentsGeneral/Tooltip.tsx";
+import {FilePlus2, X} from "lucide-react";
 
 type DocumentType = "vnd" | "memo" | "procurement";
 

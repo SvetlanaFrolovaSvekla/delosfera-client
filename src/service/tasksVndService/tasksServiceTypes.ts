@@ -51,6 +51,8 @@ export interface VndTaskResponse {
 
     initiatorName: string | null;
     deadlineMinutes: number | null;
+    /// deadlineMinutes в рабочих минутах (1 д. = 9 ч), "осталось" считается в рабочем времени
+    usesWorkingTime?: boolean;
     /// Комментарий инициатора к повторному кругу/финальной выдержке
     initiatorComment?: string | null;
     /// true, если процесс сейчас на доработке у инициатора (замечания устраняются) — только

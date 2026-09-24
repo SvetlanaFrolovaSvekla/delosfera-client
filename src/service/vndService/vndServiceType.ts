@@ -122,6 +122,9 @@ export interface VndSearchRequest {
     /** Для вкладки "Черновики": "mine" — только свои, "others" — черновики других
      * пользователей (требует право ViewOtherUsersDrafts) */
     draftOwnerScope?: "mine" | "others";
+
+    /** Вкладка "Избранное": только документы, отмеченные звёздочкой текущим пользователем */
+    favoritesOnly?: boolean;
 }
 
 // --- Экспорт таблицы "Планирование актуализации" в Excel (кнопка "Экспорт плана в Excel") ---
@@ -246,6 +249,9 @@ export interface VndResponse {
     /** Виды связи текущего пользователя с этим документом (LinkedToMeRelationKey[]) —
      * заполнено только когда поиск шёл с linkedToMeOnly=true, иначе пустой массив */
     linkedToMeRelations: string[];
+
+    /** Документ в "Избранном" текущего пользователя (звёздочка) */
+    isFavorite: boolean;
 }
 
 // --- Редакции

@@ -1,11 +1,11 @@
-import {useEffect, useState} from "react";
-import {BookmarkPlus, Trash2} from "lucide-react";
-import {savedFilterService, type SavedFilter} from "@/service/savedFilterService.ts";
-
 /**
  * Сохранённые фильтры реестра (БП-16). Применить именованный набор условий одним
  * кликом или сохранить текущий. Универсальный: scope задаёт реестр (sz | procurement).
  */
+import {useEffect, useState} from "react";
+import {savedFilterService, type SavedFilter} from "@/service/savedFilterService.ts";
+import {BookmarkPlus, Trash2} from "lucide-react";
+
 interface Props {
     scope: string;
     /** Текущие условия фильтра — сохраняются как есть. */
@@ -29,6 +29,7 @@ export function SavedFiltersBar({scope, current, onApply}: Props) {
     }
 
     useEffect(() => {
+        // eslint-disable-next-line react-hooks/set-state-in-effect
         void reload();
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [scope]);

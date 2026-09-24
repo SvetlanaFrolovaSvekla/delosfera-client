@@ -3,19 +3,18 @@ import {useTranslation} from "react-i18next";
 import {useNavigate, Link} from "react-router-dom";
 import {notificationsService} from "@/service/notificationsService/notificationsService.ts";
 import type {Notification} from "@/service/notificationsService/notificationsServiceType.ts";
-import {PREVIEW_COUNT, SEVERITY_DOT, SEVERITY_TOAST_VARIANT} from "@/constants/notificationConst.ts";
 import {toast} from "@/service/toastService.ts";
 import {notificationPopupPreference} from "@/service/notificationPopupPreference.ts";
 import {notificationsRefreshBus} from "@/service/notificationsRefreshBus.ts";
+import {PREVIEW_COUNT, SEVERITY_DOT, SEVERITY_TOAST_VARIANT} from "@/constants/notificationConst.ts";
 import {formatRelativeTime} from "@/utils/dateUtils.ts";
-import {Icon} from "@/assets/icons/Icon";
 import {Loader} from "@/components/componentsGeneral/Loader.tsx";
 import {EmptyState} from "@/components/componentsGeneral/EmptyState.tsx";
+import {Icon} from "@/assets/icons/Icon";
 
 // Как часто спрашиваем сервер о новых уведомлениях, чтобы обновить счётчик,
-// тряхнуть колокольчик и показать тост (см. pollForNew ниже). Опрос дополнительно
-// приостанавливается, пока вкладка свёрнута/неактивна (см. visibilitychange ниже) -
-// не тратим запросы впустую, пока на неё никто не смотрит.
+// тряхнуть колокольчик и показать тост Опрос дополнительно приостанавливается,
+// пока вкладка свёрнута/неактивна - не тратим запросы впустую, пока на неё никто не смотрит.
 const POLL_INTERVAL_MS = 45_000;
 
 export function NotificationsDropdown() {
@@ -26,23 +25,9 @@ export function NotificationsDropdown() {
     const [items, setItems] = useState<Notification[]>([]);
     const [unreadCount, setUnreadCount] = useState(0);
     const [loading, setLoading] = useState(false);
-    // Меняется на каждое новое уведомление, а не просто true/false: React не
-    // перерисовывает компонент, если setState вызвали с тем же значением (true -> true
-    // ничего не даёт), из-за чего при двух срабатываниях подряд анимация не
-    // перезапускалась бы. Плюс key={shakeToken} ниже гарантированно пересоздаёт узел
-    // иконки, так что CSS-анимация проигрывается заново при каждом срабатывании.
     const [shakeToken, setShakeToken] = useState(0);
-
     const rootRef = useRef<HTMLDivElement>(null);
 
-    // Наибольший id уведомления, который уже видели - "новое" это всё, что пришло
-    // позже него. Именно число, а не набор id из последнего опроса: /search отдаёт
-    // скользящее окно "топ-10 по дате", и если у нескольких уведомлений одинаковый
-    // createdAt (например, разосланы одним пакетом), Postgres не гарантирует
-    // стабильный порядок на границе этого окна - два подряд идущих одинаковых запроса
-    // (в т.ч. из-за двойного вызова эффектов React.StrictMode в dev) могут вернуть
-    // чуть разный срез и породить тост "из ниоткуда" на обычном обновлении страницы.
-    // Id монотонно растёт при создании, так что сравнение по нему такой пробле не боится.
     const lastSeenIdRef = useRef<number | null>(null);
     // Не даёт двум опросам выполняться параллельно (в т.ч. тому самому двойному
     // вызову эффекта в StrictMode/dev) - второй, пока первый не закончился, просто
@@ -98,16 +83,16 @@ export function NotificationsDropdown() {
     }, [navigate]);
 
     useEffect(() => {
-        pollForNew();
+        // eslint-disable-next-line react-hooks/set-state-in-effect
+        void pollForNew();
 
         const intervalId = window.setInterval(() => {
-            if (document.hidden) return; // вкладка свёрнута/неактивна - не тратим запрос
-            pollForNew();
+            if (document.hidden) return;
+            void pollForNew();
         }, POLL_INTERVAL_MS);
 
-        // Вернулись на вкладку - сразу проверим, что пропустили, а не ждём до 45с
         const handleVisibility = () => {
-            if (!document.hidden) pollForNew();
+            if (!document.hidden) void pollForNew();
         };
         document.addEventListener("visibilitychange", handleVisibility);
 
@@ -136,7 +121,6 @@ export function NotificationsDropdown() {
         // i18n.language - перезагрузить превью при смене языка интерфейса, пока список открыт,
         // иначе заголовки/текст остаются на прежнем языке (см. тот же комментарий в
         // useNotificationRows.ts).
-        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [open, loadPreview, i18n.language]);
 
     useEffect(() => {

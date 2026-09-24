@@ -11,7 +11,7 @@ interface SearchBarProps {
     maxWidth?: string; // ограничить рост, если понадобится в другом месте
     variant?: "gray" | "white"; // фон поля, серый по умолчанию
     onSubmit?: (value: string) => void; // Enter в поле: там, где строка ведёт к выдаче
-    autoFocus?: boolean; // фокус сразу при монтировании - напр. поиск в только что открытой модалке
+    autoFocus?: boolean; // Фокус сразу при монтировании - напр. Поиск в только что открытой модалке
 }
 
 export function SearchBar({

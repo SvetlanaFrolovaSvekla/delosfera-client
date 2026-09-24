@@ -2,19 +2,19 @@
 import type {ReactNode} from "react";
 import {Trans, useTranslation} from "react-i18next";
 import {useDictionaries} from "@/context/DictionariesContext.tsx";
-import {useVndAdvancedFiltersDraft, type AdvancedDraft} from "@/hooks/vndHooks/useVndAdvancedFiltersDraft.ts";
-import {useVndHasActiveFilters} from "@/hooks/vndHooks/useVndHasActiveFilters.ts";
 import type {VndScope} from "@/constants/vndTabs.ts";
 import type {ColDef} from "@/constants/columnsFilters/vndColumns.ts";
 import {SCOPE_COUNT_LABELS} from "@/constants/vndStatus.ts";
+import {LINKED_TO_ME_RELATION_OPTIONS} from "@/constants/linkedToMeRelations.ts";
+import {useVndAdvancedFiltersDraft, type AdvancedDraft} from "@/hooks/vndHooks/useVndAdvancedFiltersDraft.ts";
+import {useVndHasActiveFilters} from "@/hooks/vndHooks/useVndHasActiveFilters.ts";
+import {useInitiatorOptions} from "@/hooks/useInitiatorOptions.ts";
+import {LinkedToMeRelationDropdown} from "@/components/componentsVND/componentsBaseVndPage/LinkedToMeRelationDropdown.tsx";
 import {MultiSelectField} from "@/components/componentsGeneral/selects/MultiSelects/MultiSelectField.tsx";
 import {DateFilterGroup, type DateFilterValue} from "@/components/componentsGeneral/datePickers/DateFilterGroup.tsx";
 import {SearchBar} from "@/components/componentsGeneral/SearchBar.tsx";
 import {MultiSelectDropdown} from "@/components/componentsGeneral/selects/MultiSelects/MultiSelectDropdown.tsx";
 import {AlertTriangle, Check, ChevronDown, ChevronUp, Filter, SlidersHorizontal} from "lucide-react";
-import {useInitiatorOptions} from "@/hooks/useInitiatorOptions.ts";
-import {LinkedToMeRelationDropdown} from "@/components/componentsVND/componentsBaseVndPage/LinkedToMeRelationDropdown.tsx";
-import {LINKED_TO_ME_RELATION_OPTIONS} from "@/constants/linkedToMeRelations.ts";
 
 interface VndFiltersProps {
     scope: VndScope;
@@ -304,7 +304,7 @@ export function VndFilters(props: VndFiltersProps) {
                     />
                 </div>
 
-                {(scope === "all" || scope === "active" || scope === "notYetActive") && canViewExtended && (
+                {(scope === "all" || scope === "active" || scope === "notYetActive" || scope === "favorites") && canViewExtended && (
                     <div className="relative">
                         <MultiSelectDropdown
                             triggerLabel={t("registry.filters.statusLabel")}

@@ -8,8 +8,8 @@ export type LastActualizationStatus = "no_changes" | "with_changes";
 
 // Режимы просмотра реестра ВНД: все, действующие, ещё не действующие (таб доступен только при
 // праве ViewVndRegistryExtended — см. BaseVndPage/useVndFilters/useVndScopeCounts), архивированные,
-// черновики
-export type VndScope = "all" | "active" | "notYetActive" | "arch" | "draft";
+// черновики, избранное (личные отметки-звёздочки пользователя, см. VndFavoriteButton)
+export type VndScope = "all" | "active" | "notYetActive" | "arch" | "draft" | "favorites";
 // Режимы открытого ВНД:
 export const VND_TAB_IDS = ["editions", "passport", "links", "history", "approval", "actual"] as const;
 export type VndTabId = (typeof VND_TAB_IDS)[number];

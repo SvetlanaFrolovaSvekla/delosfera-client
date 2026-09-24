@@ -1,34 +1,32 @@
 // Страница-справочник "Нормативы согласования по умолчанию" (раздел ВНД).
 // Задаёт сроки этапов маршрута согласования редакции, которыми предзаполняется
-// модалка запуска согласования (VndStartApprovalModal → useApprovalNorms).
+// модалка запуска согласования (VndStartApprovalModal).
 import {useEffect, useState} from "react";
 import {useTranslation} from "react-i18next";
 import {useNavigate} from "react-router-dom";
-import {ArrowDown, ArrowLeft, Timer} from "lucide-react";
-
 import {useAuth} from "@/context/AuthContext.ts";
-import {PermissionCode} from "@/constants/permissions/permissions.ts";
-import {
-    DEFAULT_FINAL_HOLD_MINUTES,
-    DEFAULT_PRIMARY_MINUTES,
-    DEFAULT_REPEAT_MINUTES,
-    MAX_DEADLINE_MINUTES,
-} from "@/constants/coordinationParams.ts";
 import {
     vndApprovalNormSettingsService,
     type VndApprovalNormSettings,
 } from "@/service/vndApprovalNormSettingsService/vndApprovalNormSettingsService.ts";
+import {PermissionCode} from "@/constants/permissions/permissions.ts";
+import {getDefaultNormMinutes, getMaxDeadlineMinutes} from "@/constants/coordinationParams.ts";
+import {useWorkCalendar} from "@/utils/workCalendar.ts";
 import {NormBlock} from "@/components/componentsCoordination/CoordinationRouteConstructor/functionalComponents/NormBlock.tsx";
 import {Loader} from "@/components/componentsGeneral/Loader.tsx";
 import {EmptyState} from "@/components/componentsGeneral/EmptyState.tsx";
+import {WorkingTimeNote} from "@/components/componentsCoordination/CoordinationRouteConstructor/viewComponents/WorkingTimeNote.tsx";
+import {ArrowDown, ArrowLeft, Timer} from "lucide-react";
 
-const inRange = (value: number | "") => Number(value) > 0 && Number(value) <= MAX_DEADLINE_MINUTES;
+const inRange = (value: number | "") => Number(value) > 0 && Number(value) <= getMaxDeadlineMinutes();
 
 export function VndApprovalNormSettingsPage() {
     const {t} = useTranslation();
     const navigate = useNavigate();
     const {hasPermission} = useAuth();
     const canManage = hasPermission(PermissionCode.ManageVndDictionaries);
+    useWorkCalendar(); // длина рабочего дня (1 д.) — из справочника "Производственный календарь"
+    const defaults = getDefaultNormMinutes();
 
     const [loading, setLoading] = useState(true);
     const [loadError, setLoadError] = useState(false);
@@ -71,14 +69,14 @@ export function VndApprovalNormSettingsPage() {
     );
 
     const isFactoryDefaults =
-        primary === DEFAULT_PRIMARY_MINUTES &&
-        repeat === DEFAULT_REPEAT_MINUTES &&
-        finalHold === DEFAULT_FINAL_HOLD_MINUTES;
+        primary === defaults.primary &&
+        repeat === defaults.repeat &&
+        finalHold === defaults.finalHold;
 
     const resetToFactoryDefaults = () => {
-        setPrimary(DEFAULT_PRIMARY_MINUTES);
-        setRepeat(DEFAULT_REPEAT_MINUTES);
-        setFinalHold(DEFAULT_FINAL_HOLD_MINUTES);
+        setPrimary(defaults.primary);
+        setRepeat(defaults.repeat);
+        setFinalHold(defaults.finalHold);
         setSaved(false);
     };
 
@@ -110,7 +108,7 @@ export function VndApprovalNormSettingsPage() {
     };
 
     return (
-        <div className="w-full max-w-[1000px] mx-auto px-4 sm:px-6 lg:px-8 xl:px-10 pt-5 sm:pt-[26px] pb-10 sm:pb-[60px]">
+        <div className="w-full max-w-[1700px] mx-auto px-4 sm:px-6 lg:px-8 xl:px-10 pt-5 sm:pt-[26px] pb-10 sm:pb-[60px] ">
             <button
                 onClick={() => navigate("/management/refs")}
                 className="inline-flex items-center gap-[7px] border-none bg-transparent text-[#8b97ab] text-[13px] font-medium cursor-pointer p-0 mb-1 hover:text-[#4e57d6]"
@@ -143,7 +141,7 @@ export function VndApprovalNormSettingsPage() {
             )}
 
             {!loading && !loadError && savedSettings && (
-                <div className="bg-white border border-[#e9edf3] rounded-2xl p-5 sm:p-6">
+                <div className="bg-white border border-[#e9edf3] rounded-2xl p-5 sm:p-6 bg-[#fbfcfe] bg-[radial-gradient(#e4e9f1_1px,transparent_1px)] bg-[length:18px_18px]">
                     <div className="flex flex-col items-center gap-4">
                         <NormBlock
                             // Первичное согласование
@@ -173,7 +171,9 @@ export function VndApprovalNormSettingsPage() {
                         />
                     </div>
 
-                    <p className="mt-6 mb-0 text-[12px] text-[#8b97ab] leading-[1.6]">
+                    <WorkingTimeNote className="mx-auto mt-6 max-w-[520px]"/>
+
+                    <p className="mt-4 mb-0 text-[12px] text-[#8b97ab] leading-[1.6]">
                         {t("vndApprovalNormSettingsPage.hint")}
                     </p>
 

@@ -3,7 +3,7 @@ import {useNavigate, useParams} from "react-router-dom";
 import {ArrowLeft, Plus, Printer, Trash2} from "lucide-react";
 import {useAuth} from "@/context/AuthContext.ts";
 import {PermissionCode} from "@/constants/permissions/permissions.ts";
-import {UserPicker, type PickableUser} from "@/components/componentsGeneral/UserPicker.tsx";
+import {UserPicker, type PickableUser} from "@/components/componentsGeneral/userPicker/UserPicker.tsx";
 import {userService} from "@/service/userService/userService.ts";
 import {organizationUnitService} from "@/service/dictionariesService/organizationUnitService/organizationUnitService.ts";
 import {

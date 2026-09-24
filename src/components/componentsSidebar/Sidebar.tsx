@@ -3,18 +3,17 @@ import {useAuth} from "@/context/AuthContext.ts";
 import {useTranslation} from "react-i18next";
 import {Link, useLocation, useNavigate} from "react-router-dom";
 import {notificationsService} from "@/service/notificationsService/notificationsService.ts";
+import {
+    VND_PROPOSALS_CHANGED_EVENT,
+    vndProposalService,
+} from "@/service/vndProposalService/vndProposalService.ts";
 import {useDictionaries} from "@/context/DictionariesContext.tsx";
 import {useVndActualizationSummary} from "@/hooks/vndHooks/useVndActualizationSummary.tsx";
 import {useVndTaskCounts} from "@/hooks/tasksVndHooks/useVndTaskCounts.ts";
 import {navGroups} from "@/constants/sidebarData.tsx";
 import {PermissionCode} from "@/constants/permissions/permissions.ts";
 import {CountBadge} from "@/components/componentsSidebar/CountBadge.tsx";
-import {
-    VND_PROPOSALS_CHANGED_EVENT,
-    vndProposalService,
-} from "@/service/vndProposalService/vndProposalService.ts";
 import {RubricTreeModal} from "@/components/componentsGeneral/rubricator/RubricTreeModal.tsx";
-
 import {Icon} from "@/assets/icons/Icon";
 import {ChevronRight, PanelLeftClose, PanelLeftOpen} from "lucide-react";
 
@@ -22,10 +21,6 @@ const MODAL_ITEM_IDS = ["rubric"];
 
 type RubricVariant = "vnd" | "sz";
 
-/**
- * Состояние панели переживает перезагрузку: тот, кто её спрятал ради места на
- * экране, не хочет прятать её заново после каждого входа.
- */
 const COLLAPSED_KEY = "delosfera.sidebar.collapsed";
 const HIDDEN_KEY = "delosfera.sidebar.hidden";
 

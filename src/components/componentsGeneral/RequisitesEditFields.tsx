@@ -1,6 +1,6 @@
 // Поля для ввода/выбора для редактирования реквизитов ВНД
-import {DatePickerInput} from "@/components/componentsGeneral/datePickers/DatePickerInput.tsx";
 import {formatDate, parseDDMMYYYYToISO} from "@/utils/dateUtils.ts";
+import {DatePickerInput} from "@/components/componentsGeneral/datePickers/DatePickerInput.tsx";
 import {HelpTooltip} from "@/components/componentsGeneral/knowledgeBaseComponents/HelpTooltip.tsx";
 
 interface EditableTextFieldProps {

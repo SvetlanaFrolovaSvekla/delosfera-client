@@ -1,8 +1,8 @@
 // Всплывающее уведомление при успехе, загрузки, предупреждении и др.
 import React, { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
-import { AlertTriangle, CheckCircle2, Info, Loader2, X, XCircle } from "lucide-react";
 import { toast, type ToastItem } from "@/service/toastService.ts";
+import { AlertTriangle, CheckCircle2, Info, Loader2, X, XCircle } from "lucide-react";
 
 const VARIANT_META = {
     success: { icon: CheckCircle2, color: "#1c7a4d", bg: "#eafaf1", border: "#bfe8d0" },
@@ -68,10 +68,6 @@ function ToastCard({ item }: { item: ToastItem }) {
                 className={`mt-[1px] flex-none ${item.variant === "loading" ? "animate-spin" : ""}`}
                 style={{ color: meta.color }}
             />
-            {/* Заголовок и описание ограничены по числу строк (см. clampStyle) - уведомления
-                вроде "Редакцию согласовали (с замечаниями)" приходят с длинным текстом и
-                раньше растягивали тост на пол-экрана. Полный текст - во всплывающей подсказке
-                (title) и в самом уведомлении, куда ведёт клик по тосту. */}
             <div
                 className="min-w-0 flex-1"
                 title={item.description ? `${item.title}\n${item.description}` : item.title}

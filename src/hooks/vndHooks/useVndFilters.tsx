@@ -2,9 +2,10 @@ import {useMemo, useState} from "react";
 import type {DocumentStatusKey, VndSearchRequest} from "@/service/vndService/vndServiceType.ts";
 import type {VndScope, VndStatusKey} from "@/constants/vndTabs.ts";
 import {STATUS_OPTIONS_BY_SCOPE} from "@/constants/vndStatus.ts";
-import {type DateFilterValue, EMPTY_DATE_FILTER} from "@/components/componentsGeneral/datePickers/DateFilterGroup.tsx";
+import {type DateFilterValue} from "@/components/componentsGeneral/datePickers/DateFilterGroup.tsx";
 import {toDateRangeFilter} from "@/utils/dateUtils.ts";
 import {ALL_LINKED_TO_ME_RELATION_KEYS, type LinkedToMeRelationKey} from "@/constants/linkedToMeRelations.ts";
+import {EMPTY_DATE_FILTER} from "@/constants/emptyDateFilter.ts";
 
 // canCreateVnd — право создавать ВНД (CreateVndWithApproval / CreateVndWithoutApproval):
 // определяет, входят ли черновики в состав таба "Все" по умолчанию (без ручного фильтра

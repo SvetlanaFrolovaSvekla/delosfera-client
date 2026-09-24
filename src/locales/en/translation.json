@@ -17,6 +17,19 @@
     "saving": "Saving…",
     "archiving": "Archiving…"
   },
+  "attachmentPreview": {
+    "title": "Attachment preview",
+    "pageCount": "pages: {count}",
+    "download": "Download document",
+    "loading": "Loading document…",
+    "downloadForAccuracy": "For an exact view of the document, download it using the button above.",
+    "warningXlsx": "Simplified table preview: formatting, formulas, and merged cells are not reproduced.",
+    "warningPptx": "Approximate slide rendering: SmartArt, 3D objects, animations, and some design effects are not reproduced.",
+    "warningPdf": "PDF preview without interactive elements: fillable fields, digital signature verification, embedded files, and bookmarks are unavailable.",
+    "slideLabel": "Slide {index}",
+    "slideRenderFailed": "Failed to display this slide",
+    "slideRendering": "Rendering slide {current} of {total}…"
+  },
   "tidDeveloperPickerModal": {
     "title": "Select developer",
     "searchPlaceholder": "Search by full name or username…",
@@ -1287,13 +1300,13 @@
       "emptyOutgoing": "No links to other documents yet",
       "emptyIncoming": "No one links to this document yet",
       "attachmentRefsHeader": "Attachment links (found in the text)",
-      "autoDetectedTooltip": "Detected automatically from a reference in the document text",
+      "autoDetectedTooltip": "The hyperlink is embedded in the text of this revision (migrated from the legacy system) — detected automatically",
       "autoDetectedBadge": "from text",
       "deleteLinkTooltip": "Remove link",
       "openAttachmentTooltip": "Open attachment",
       "attachmentNotFoundTooltip": "No attachment found with this number",
-      "attachmentRefLabel": "Attachment No. {{index}} from the document text",
-      "attachmentRefNotFoundSuffix": " — not found",
+      "attachmentRefLabel": "Attachment #{{index}} — link from the text",
+      "attachmentRefNotFoundSuffix": " · this revision has no such attachment",
       "statuses": {
         "active": "Effective",
         "onact": "Under actualization",
@@ -1301,7 +1314,29 @@
         "consol": "Under consolidation",
         "arch": "Archived",
         "draft": "Draft"
-      }
+      },
+      "linkAddedTitle": "Link added",
+      "linkAddedWithMention": "The link is attached to a text fragment of the revision",
+      "linkAddedWithoutMention": "The link was added without a mention in the text",
+      "deleteErrorTitle": "Failed to delete the link",
+      "emptyGeneral": "No general links (without a mention in the text)",
+      "emptyInRedaction": "The text of revision {{redaction}} has no links to other documents",
+      "filterAll": "All",
+      "filterGeneral": "General",
+      "filterGeneralTooltip": "Links without a mention in the text — refer to the document as a whole",
+      "redactionChipTooltip": "Links from the text of revision {{code}}",
+      "currentRedaction": "current revision",
+      "openDocumentTooltip": "Open document",
+      "withoutMention": "No mention in the text",
+      "toFragmentOfTarget": "to the fragment “{{fragment}}”",
+      "toFragmentOfThis": "to this document's fragment “{{fragment}}”",
+      "showInTextTooltip": "Show in text — go to the Revisions tab at the link",
+      "showInSourceTextTooltip": "Show in the text of the referring document",
+      "showTargetPlaceTooltip": "Open the place in the document the link points to",
+      "showThisPlaceTooltip": "Show the fragment of this document being referenced",
+      "showAttachmentInTextTooltip": "Show the attachment link in the revision text",
+      "previewAttachmentTooltip": "Open preview",
+      "downloadAttachmentTooltip": "Download"
     },
     "actualizationTab": {
       "performStepTitle": "Actualization started — the \"Perform actualization\" step is not done yet",
@@ -1496,6 +1531,65 @@
       "decisionSubmittedToastTitle": "Resolution submitted",
       "decisionSubmittedToastDescription": "Your approval decision has been recorded",
       "decisionErrorDefault": "Failed to submit the resolution"
+    },
+    "linkMarks": {
+      "outgoingTitle": "Link to a document",
+      "incomingTitle": "This fragment is referenced by",
+      "toFragment": "to the fragment “{{fragment}}”",
+      "clickToOpenTarget": "Click to open the document",
+      "clickToOpenSource": "Click to open the referring document",
+      "focusNotAnchoredTitle": "The link is not attached to the text",
+      "focusNotAnchoredDescription": "This link was added without a mention in the text — there is no place to show",
+      "focusRedactionHiddenTitle": "Revision is not available",
+      "focusRedactionHiddenDescription": "The link is in the text of revision {{code}}, which you are not allowed to view",
+      "focusNotFoundTitle": "Link place not found",
+      "focusNotFoundDescription": "The fragment the link was attached to was not found in the revision text — the text may have changed",
+      "focusApproximateTitle": "Approximate place shown",
+      "focusApproximateDescription": "The fragment text has changed since the link was added — the most similar place is shown",
+      "clickToOpenTargetNewTabHint": "Click to open · Ctrl+click — in a new tab",
+      "resolving": "Looking up document {{code}}…",
+      "documentNotFound": "Document with code {{code}} was not found",
+      "attachmentTitle": "Attachment #{{index}}",
+      "clickToPreview": "Click to open preview",
+      "clickToDownload": "Preview is not available — click to download",
+      "resolvingAttachment": "Looking up the attachment…",
+      "attachmentNotFound": "This revision has no attachment #{{index}}"
+    },
+    "linkWizard": {
+      "stepOf": "Step {{step}} of {{total}}",
+      "redactionsTitle": "Revisions of {{code}}",
+      "redactionStatus": {
+        "current": "current",
+        "pendingEffective": "awaiting entry into force",
+        "draft": "draft",
+        "pending": "under approval",
+        "rejected": "rejected",
+        "consolidation": "consolidation",
+        "outdated": "outdated"
+      },
+      "noRedactions": "The document has no available revisions",
+      "selectHint": "Select a text fragment with the mouse — an attach button will appear next to it",
+      "back": "Back",
+      "saveError": "Failed to save the link",
+      "sourceTitle": "Where the link is mentioned in the text",
+      "sourceDescription": "Choose a revision of {{code}}, select the fragment that should refer to {{target}} and click “Attach link here”.",
+      "attachHere": "Attach link here",
+      "targetTitle": "Which place in {{code}} the link points to",
+      "targetDescription": "Select the fragment in the text of {{code}} the link should point to and click “Link to this place”.",
+      "linkToThisPlace": "Link to this place",
+      "modeTitle": "How to add the link",
+      "targetModeTitle": "Where the link points to",
+      "mentionedIn": "Mention in the text · {{redaction}} · {{lang}}",
+      "withoutMentionTitle": "Without a mention in the text",
+      "withoutMentionDescription": "A link to the document as a whole — shown among “General” links, not tied to a revision.",
+      "withMentionTitle": "With a mention in the text",
+      "withMentionDescription": "Choose a revision and select the text fragment to attach the link to.",
+      "wholeDocumentTitle": "To the whole document",
+      "wholeDocumentDescription": "The link opens the whole document {{code}}.",
+      "specificPlaceTitle": "To a specific place",
+      "specificPlaceDescription": "Select a fragment in the text of {{code}} — the link opens exactly that place.",
+      "chooseAnotherDocument": "Choose another document",
+      "chooseAnotherFragment": "Choose another fragment"
     }
   },
   "docxEditor": {
@@ -1717,6 +1811,10 @@
       "actualizationThresholds": {
         "title": "Actualization Deadline Indicator Thresholds",
         "subtitle": "How many days before the deadline the status becomes \"approaching\" and \"critical\""
+      },
+      "approvalNorms": {
+        "title": "Default Approval Deadlines",
+        "subtitle": "Stage deadlines of the VND redaction approval route that are pre-filled on launch"
       }
     },
     "procurement": {
@@ -1845,6 +1943,16 @@
     "errorRange": "Enter a number from 0 to {{max}}",
     "errorMustExceedCritical": "Must be greater than the \"Critical\" threshold",
     "saveError": "Failed to save the thresholds. Please try again.",
+    "saved": "Saved",
+    "retry": "Retry"
+  },
+  "vndApprovalNormSettingsPage": {
+    "title": "Default Approval Deadlines",
+    "subtitle": "Stage deadlines of the VND redaction approval route that are pre-filled in the launch approval window. The initiator can still change them for a specific route.",
+    "hint": "Changes apply to newly launched approvals. Approvals already in progress keep their own deadlines. The maximum value for each stage is 90 days.",
+    "resetDefaults": "Reset to 7 d / 4 d / 3 d",
+    "errorRange": "Each deadline must be greater than zero and no more than 90 days",
+    "saveError": "Failed to save the deadlines. Please try again.",
     "saved": "Saved",
     "retry": "Retry"
   },

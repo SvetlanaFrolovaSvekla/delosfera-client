@@ -1,10 +1,42 @@
-import {useState} from "react";
-import {MAX_DEADLINE_MINUTES} from "@/constants/coordinationParams.ts";
+import {useEffect, useRef, useState} from "react";
+import {
+    DEFAULT_FINAL_HOLD_MINUTES,
+    DEFAULT_PRIMARY_MINUTES,
+    DEFAULT_REPEAT_MINUTES,
+    MAX_DEADLINE_MINUTES,
+} from "@/constants/coordinationParams.ts";
+import {vndApprovalNormSettingsService} from "@/service/vndApprovalNormSettingsService/vndApprovalNormSettingsService.ts";
 
 export function useApprovalNorms() {
-    const [primaryMinutes, setPrimaryMinutes] = useState<number | "">(72 * 60);
-    const [repeatMinutes, setRepeatMinutes] = useState<number | "">(48 * 60);
-    const [finalHoldMinutes, setFinalHoldMinutes] = useState<number | "">(24 * 60);
+    // Стартовые значения - из справочника "Нормативы согласования по умолчанию" (раздел ВНД).
+    // Пока справочник грузится (или если запрос упал) - встроенные значения по умолчанию.
+    const [primaryMinutes, setPrimaryMinutes] = useState<number | "">(DEFAULT_PRIMARY_MINUTES);
+    const [repeatMinutes, setRepeatMinutes] = useState<number | "">(DEFAULT_REPEAT_MINUTES);
+    const [finalHoldMinutes, setFinalHoldMinutes] = useState<number | "">(DEFAULT_FINAL_HOLD_MINUTES);
+
+    // Если инициатор успел поправить норматив до ответа справочника - не затираем его ввод.
+    const touchedRef = useRef(false);
+    const touch = <T,>(setter: (v: T) => void) => (v: T) => {
+        touchedRef.current = true;
+        setter(v);
+    };
+
+    useEffect(() => {
+        let cancelled = false;
+        vndApprovalNormSettingsService.get()
+            .then((s) => {
+                if (cancelled || touchedRef.current) return;
+                setPrimaryMinutes(s.primaryDeadlineMinutes);
+                setRepeatMinutes(s.repeatDeadlineMinutes);
+                setFinalHoldMinutes(s.finalHoldDeadlineMinutes);
+            })
+            .catch(() => {
+                // Не критично: остаёмся на встроенных значениях, инициатор может их поправить
+            });
+        return () => {
+            cancelled = true;
+        };
+    }, []);
 
     // Диапазон дублирует ограничение полей ввода в NormBlock (0 < значение <= MAX_DEADLINE_MINUTES) -
     // на случай, если значение попадёт в стейт в обход инпута.
@@ -13,11 +45,11 @@ export function useApprovalNorms() {
 
     return {
         primaryMinutes,
-        setPrimaryMinutes,
+        setPrimaryMinutes: touch(setPrimaryMinutes),
         repeatMinutes,
-        setRepeatMinutes,
+        setRepeatMinutes: touch(setRepeatMinutes),
         finalHoldMinutes,
-        setFinalHoldMinutes,
+        setFinalHoldMinutes: touch(setFinalHoldMinutes),
         normsValid,
     };
 }

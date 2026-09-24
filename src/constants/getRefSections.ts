@@ -12,6 +12,7 @@ import {
     Scale,
     ShieldCheck,
     Tag,
+    Timer,
     Users
 } from "lucide-react";
 
@@ -160,6 +161,16 @@ export const getRefSections = (t: TFunction): RefSection[] => [
                 subtitle: t("refSections.vnd.actualizationThresholds.subtitle"),
                 icon: Gauge,
                 path: "/management/refs/actualization-thresholds",
+            },
+            {
+                key: "approval-norms",
+                code: "07",
+                // Нормативы согласования по умолчанию
+                title: t("refSections.vnd.approvalNorms.title"),
+                // Сроки этапов маршрута согласования редакции, которые подставляются при запуске
+                subtitle: t("refSections.vnd.approvalNorms.subtitle"),
+                icon: Timer,
+                path: "/management/refs/approval-norms",
             },
         ],
     },

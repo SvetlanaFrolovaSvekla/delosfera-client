@@ -11,9 +11,6 @@ interface HelpTooltipProps {
 export function HelpTooltip({content, side = "bottom", className = ""}: HelpTooltipProps) {
     return (
         <Tooltip content={content} side={side}>
-            {/* span, а не button: HelpTooltip иногда оказывается внутри других
-                интерактивных элементов (например CheckBoxOne), а вложенные
-                <button> внутри <button> невалидны в HTML и ломают гидрацию */}
             <span
                 role="button"
                 tabIndex={0}

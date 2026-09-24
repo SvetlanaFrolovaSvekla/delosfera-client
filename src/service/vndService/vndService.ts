@@ -7,6 +7,7 @@ import type {
     VndActualizationSummaryResponse,
     LegacyLinkResolveResponse,
     VndLinksResponse, VndQuickSearchResult,
+    AddVndLinkRequest, VndLinkItem,
     VndRedactionResponse,
     VndResponse,
     VndSearchRequest
@@ -154,14 +155,16 @@ export const vndService = {
         return handleResponse<VndLinksResponse>(response);
     },
 
-    /** Добавить ссылку на другой (только действующий) ВНД */
-    async addLink(vndId: number, targetVndId: number): Promise<VndLinksResponse> {
+    /** Добавить ссылку на другой (только действующий) ВНД - без упоминания в тексте (только
+     * targetVndId) или с привязкой к фрагменту текста редакции (source) и, при желании, к
+     * конкретному месту целевого документа (target). */
+    async addLink(vndId: number, request: AddVndLinkRequest): Promise<VndLinkItem> {
         const response = await fetch(`${API_BASE}/vnd/${vndId}/links`, {
             method: "POST",
             headers: {"Content-Type": "application/json", ...authHeaders()},
-            body: JSON.stringify({targetVndId}),
+            body: JSON.stringify(request),
         });
-        return handleResponse<VndLinksResponse>(response);
+        return handleResponse<VndLinkItem>(response);
     },
 
     /** Удалить ВНД (только черновик; проверка прав и статуса — на бэке) */
@@ -205,9 +208,13 @@ export const vndService = {
      * (клик по такой ссылке внутри отрендеренного docx). */
     async resolveLegacyLink(
         vndId: number, type: "documents" | "attachments", legacyId: string,
+        /** Для db://attachments/{n}: редакция, в тексте которой ссылка (номер вложения - среди
+         * ЕЁ вложений). Без него - текущая редакция документа. */
+        redactionId?: number,
     ): Promise<LegacyLinkResolveResponse> {
+        const redactionParam = redactionId ? `&redactionId=${redactionId}` : "";
         const response = await fetch(
-            `${API_BASE}/vnd/${vndId}/legacy-link?type=${type}&legacyId=${encodeURIComponent(legacyId)}`,
+            `${API_BASE}/vnd/${vndId}/legacy-link?type=${type}&legacyId=${encodeURIComponent(legacyId)}${redactionParam}`,
             {headers: authHeaders()},
         );
         return handleResponse<LegacyLinkResolveResponse>(response);

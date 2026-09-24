@@ -10,11 +10,13 @@ interface NormBlockProps {
     onChange: (value: number | "") => void;
     blockRef?: React.Ref<HTMLDivElement>;
     helpText?: string;
+    /** Только просмотр (например, в справочнике у пользователя без прав на изменение) */
+    disabled?: boolean;
 }
 
 const MAX_DAYS = Math.floor(MAX_DEADLINE_MINUTES / (24 * 60)); // 90
 
-export function NormBlock({label, value, onChange, blockRef, helpText}: NormBlockProps) {
+export function NormBlock({label, value, onChange, blockRef, helpText, disabled = false}: NormBlockProps) {
     const totalMinutes = value === "" ? 0 : value;
     const days = Math.floor(totalMinutes / (24 * 60));
     const hours = Math.floor((totalMinutes % (24 * 60)) / 60);
@@ -84,7 +86,8 @@ export function NormBlock({label, value, onChange, blockRef, helpText}: NormBloc
                     value={days || ""}
                     onChange={(e) => handleDaysChange(e.target.value)}
                     placeholder="0"
-                    className="h-[32px] w-[42px] rounded-[8px] border border-[#e5e9f0] bg-white text-center text-[12.5px] text-[#26324a] outline-none focus:border-[#4e57d6]"
+                    disabled={disabled}
+                    className="h-[32px] w-[42px] rounded-[8px] border border-[#e5e9f0] bg-white text-center text-[12.5px] text-[#26324a] outline-none focus:border-[#4e57d6] disabled:bg-[#fafbfc] disabled:text-[#8b97ab]"
                 />
                 <span className="text-[11px] text-[#8b97ab]">д.</span>
                 <input
@@ -94,7 +97,8 @@ export function NormBlock({label, value, onChange, blockRef, helpText}: NormBloc
                     value={hours || ""}
                     onChange={(e) => handleHoursChange(e.target.value)}
                     placeholder="0"
-                    className="h-[32px] w-[42px] rounded-[8px] border border-[#e5e9f0] bg-white text-center text-[12.5px] text-[#26324a] outline-none focus:border-[#4e57d6]"
+                    disabled={disabled}
+                    className="h-[32px] w-[42px] rounded-[8px] border border-[#e5e9f0] bg-white text-center text-[12.5px] text-[#26324a] outline-none focus:border-[#4e57d6] disabled:bg-[#fafbfc] disabled:text-[#8b97ab]"
                 />
                 <span className="text-[11px] text-[#8b97ab]">ч.</span>
                 <input
@@ -104,7 +108,8 @@ export function NormBlock({label, value, onChange, blockRef, helpText}: NormBloc
                     value={minutes || ""}
                     onChange={(e) => handleMinutesChange(e.target.value)}
                     placeholder="0"
-                    className="h-[32px] w-[42px] rounded-[8px] border border-[#e5e9f0] bg-white text-center text-[12.5px] text-[#26324a] outline-none focus:border-[#4e57d6]"
+                    disabled={disabled}
+                    className="h-[32px] w-[42px] rounded-[8px] border border-[#e5e9f0] bg-white text-center text-[12.5px] text-[#26324a] outline-none focus:border-[#4e57d6] disabled:bg-[#fafbfc] disabled:text-[#8b97ab]"
                 />
                 <span className="text-[11px] text-[#8b97ab]">м.</span>
             </div>

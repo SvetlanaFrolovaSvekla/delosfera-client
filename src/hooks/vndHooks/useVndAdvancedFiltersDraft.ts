@@ -1,6 +1,7 @@
 // Хук для черновика расширенного поиска
 import {useState} from "react";
-import {type DateFilterValue, EMPTY_DATE_FILTER} from "@/components/componentsGeneral/datePickers/DateFilterGroup.tsx";
+import {type DateFilterValue} from "@/components/componentsGeneral/datePickers/DateFilterGroup.tsx";
+import {EMPTY_DATE_FILTER} from "@/constants/emptyDateFilter.ts";
 
 export interface AdvancedDraft {
     docTypeFilters: string[];

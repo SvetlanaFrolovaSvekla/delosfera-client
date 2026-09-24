@@ -28,15 +28,45 @@
     --kpi-default-bd: #e5e9f0;
 }
 
-* { box-sizing: border-box; }
-html, body { margin: 0; padding: 0; }
-body { font-family: 'IBM Plex Sans', system-ui, sans-serif; -webkit-font-smoothing: antialiased; color: #0f1b2d; }
-a { color: #2f68f5; }
-a:hover { color: #1b4fd0; }
+* {
+    box-sizing: border-box;
+}
 
-::-webkit-scrollbar { width: 10px; height: 10px; }
-::-webkit-scrollbar-thumb { background: #d3dbe6; border-radius: 8px; border: 2px solid transparent; background-clip: padding-box; }
-::-webkit-scrollbar-thumb:hover { background: #b9c4d3; background-clip: padding-box; }
+html, body {
+    margin: 0;
+    padding: 0;
+}
+
+body {
+    font-family: 'IBM Plex Sans', system-ui, sans-serif;
+    -webkit-font-smoothing: antialiased;
+    color: #0f1b2d;
+}
+
+a {
+    color: #2f68f5;
+}
+
+a:hover {
+    color: #1b4fd0;
+}
+
+::-webkit-scrollbar {
+    width: 10px;
+    height: 10px;
+}
+
+::-webkit-scrollbar-thumb {
+    background: #d3dbe6;
+    border-radius: 8px;
+    border: 2px solid transparent;
+    background-clip: padding-box;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: #b9c4d3;
+    background-clip: padding-box;
+}
 
 .docx-preview-content table {
     border-collapse: collapse;
@@ -74,6 +104,7 @@ a:hover { color: #1b4fd0; }
 .docx-preview-wrapper .docx-wrapper > .docx {
     border: none !important;
 }
+
 .docx-preview-content [class*="_tssoderzhanie"] {
     background-color: transparent !important;
 }
@@ -100,36 +131,131 @@ a:hover { color: #1b4fd0; }
     line-height: 0 !important;
     margin: 0 !important;
 }
+
 /* Анимации страницы авторизации (левая hero-панель) */
-@keyframes authFloat { 0%,100% { transform: translate(0,0) rotate(var(--rot,0deg)); } 50% { transform: translate(6px,-16px) rotate(calc(var(--rot,0deg) + 5deg)); } }
-@keyframes authDash { to { stroke-dashoffset: -200; } }
-@keyframes authGlow { 0%,100% { opacity:.5; transform:scale(1); } 50% { opacity:1; transform:scale(1.12); } }
-@keyframes authTravel { 0% { offset-distance: 0%; opacity:0; } 8% { opacity:1; } 92% { opacity:1; } 100% { offset-distance: 100%; opacity:0; } }
-@keyframes authStampPop { 0%,70% { transform: scale(0) rotate(-18deg); opacity:0; } 82% { transform: scale(1.25) rotate(-18deg); opacity:1; } 90%,100% { transform: scale(1) rotate(-18deg); opacity:1; } }
+@keyframes authFloat {
+    0%, 100% {
+        transform: translate(0, 0) rotate(var(--rot, 0deg));
+    }
+    50% {
+        transform: translate(6px, -16px) rotate(calc(var(--rot, 0deg) + 5deg));
+    }
+}
+
+@keyframes authDash {
+    to {
+        stroke-dashoffset: -200;
+    }
+}
+
+@keyframes authGlow {
+    0%, 100% {
+        opacity: .5;
+        transform: scale(1);
+    }
+    50% {
+        opacity: 1;
+        transform: scale(1.12);
+    }
+}
+
+@keyframes authTravel {
+    0% {
+        offset-distance: 0%;
+        opacity: 0;
+    }
+    8% {
+        opacity: 1;
+    }
+    92% {
+        opacity: 1;
+    }
+    100% {
+        offset-distance: 100%;
+        opacity: 0;
+    }
+}
+
+@keyframes authStampPop {
+    0%, 70% {
+        transform: scale(0) rotate(-18deg);
+        opacity: 0;
+    }
+    82% {
+        transform: scale(1.25) rotate(-18deg);
+        opacity: 1;
+    }
+    90%, 100% {
+        transform: scale(1) rotate(-18deg);
+        opacity: 1;
+    }
+}
 
 /* Пользователь просил уменьшить анимацию — гасим декоративное движение */
 @media (prefers-reduced-motion: reduce) {
-    [data-auth-decor] * { animation: none !important; }
+    [data-auth-decor] * {
+        animation: none !important;
+    }
 }
 
-@keyframes dsSpin { to { transform: rotate(360deg); } }
-@keyframes dsIn { from { opacity: 0; transform: translateY(7px); } to { opacity: 1; transform: none; } }
-@keyframes dsPop { from { opacity: 0; transform: translateY(6px) scale(.98); } to { opacity: 1; transform: none; } }
+@keyframes dsSpin {
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+@keyframes dsIn {
+    from {
+        opacity: 0;
+        transform: translateY(7px);
+    }
+    to {
+        opacity: 1;
+        transform: none;
+    }
+}
+
+@keyframes dsPop {
+    from {
+        opacity: 0;
+        transform: translateY(6px) scale(.98);
+    }
+    to {
+        opacity: 1;
+        transform: none;
+    }
+}
 
 /* Колокольчик в шапке трясётся, когда приходит новое уведомление (см. NotificationsDropdown) */
 @keyframes bellShake {
-    0%, 100% { transform: rotate(0deg); }
-    15% { transform: rotate(14deg); }
-    30% { transform: rotate(-12deg); }
-    45% { transform: rotate(9deg); }
-    60% { transform: rotate(-7deg); }
-    75% { transform: rotate(4deg); }
-    90% { transform: rotate(-2deg); }
+    0%, 100% {
+        transform: rotate(0deg);
+    }
+    15% {
+        transform: rotate(14deg);
+    }
+    30% {
+        transform: rotate(-12deg);
+    }
+    45% {
+        transform: rotate(9deg);
+    }
+    60% {
+        transform: rotate(-7deg);
+    }
+    75% {
+        transform: rotate(4deg);
+    }
+    90% {
+        transform: rotate(-2deg);
+    }
 }
+
 .bell-shake {
     animation: bellShake .65s ease-in-out;
     transform-origin: 50% 0;
 }
+
 /* Тряска колокольчика - не декоративная анимация, а единственный визуальный сигнал
    о новом уведомлении помимо тоста, поэтому prefers-reduced-motion её не гасит
    (в отличие от authFloat выше) - иначе на системах с "уменьшить анимацию"
@@ -142,12 +268,12 @@ a:hover { color: #1b4fd0; }
     z-index: 50;
     display: block;
     pointer-events: none;
-  /*  background-image: linear-gradient(
-            to top right,
-            rgba(255, 255, 255, 0) 32%,
-            rgba(255, 255, 255, .55) 50%,
-            rgba(255, 255, 255, 0) 68%
-    );*/
+    /*  background-image: linear-gradient(
+              to top right,
+              rgba(255, 255, 255, 0) 32%,
+              rgba(255, 255, 255, .55) 50%,
+              rgba(255, 255, 255, 0) 68%
+      );*/
     background-image: linear-gradient(
             to top right,
             rgba(255, 255, 255, 0) 25%,
@@ -161,22 +287,102 @@ a:hover { color: #1b4fd0; }
     animation: kpiShine 18s linear infinite;
     animation-delay: 0s;
 }
+
 @keyframes kpiShine {
-    0%      { background-position: 125% -25%; opacity: 0; }
-    1.1%    { opacity: .55; }
-    6.1%    { opacity: .55; }
-    8.3%    { background-position: -10% 125%; opacity: 0; }
-    100%    { background-position: -10% 125%; opacity: 0; }
+    0% {
+        background-position: 125% -25%;
+        opacity: 0;
+    }
+    1.1% {
+        opacity: .55;
+    }
+    6.1% {
+        opacity: .55;
+    }
+    8.3% {
+        background-position: -10% 125%;
+        opacity: 0;
+    }
+    100% {
+        background-position: -10% 125%;
+        opacity: 0;
+    }
 }
+
 /* "Показать в тексте": цитата согласующего, к которой только что перешли, - пульсирующая
    обводка на несколько секунд (см. useDocxQuoteMarks, FOCUS_CLASS). */
 @keyframes quoteMarkFocusPulse {
-    0% { box-shadow: 0 0 0 0 rgba(78, 87, 214, 0.55); }
-    70% { box-shadow: 0 0 0 7px rgba(78, 87, 214, 0); }
-    100% { box-shadow: 0 0 0 0 rgba(78, 87, 214, 0); }
+    0% {
+        box-shadow: 0 0 0 0 rgba(78, 87, 214, 0.55);
+    }
+    70% {
+        box-shadow: 0 0 0 7px rgba(78, 87, 214, 0);
+    }
+    100% {
+        box-shadow: 0 0 0 0 rgba(78, 87, 214, 0);
+    }
 }
+
 mark.quote-mark-focused {
     outline: 2px solid #4e57d6;
     outline-offset: 1px;
     animation: quoteMarkFocusPulse 1.2s ease-out 3;
+}
+
+/* Ссылки между ВНД в тексте редакции (см. useDocxLinkMarks / useDocxLegacyLinks).
+   И прикреплённые к фрагменту ссылки (настоящие <a href>), и гиперссылки db://... из старой
+   системы выглядят как обычная ссылка: синий #0000FF и тонкое подчёркивание, без своих эффектов. Tailwind (preflight) сбрасывает у <a> цвет и
+   подчёркивание, а docx-preview проставляет цвет прямо в style вложенных span - поэтому
+   стандартный вид возвращаем явно и с !important. */
+.docx-preview-wrapper a.vnd-link-mark-source,
+.docx-preview-wrapper a.vnd-link-mark-source *,
+.docx-preview-wrapper a.docx-legacy-link * {
+    color: #0000ff !important;
+    text-decoration: underline !important;
+    /* Тонкая линия (по умолчанию браузер берёт толщину из шрифта - у жирного/крупного текста
+       она заметно толще). */
+    cursor: pointer;
+}
+
+.docx-preview-wrapper a.vnd-link-mark-source:active,
+.docx-preview-wrapper a.vnd-link-mark-source:active *,
+.docx-preview-wrapper a.docx-legacy-link:active,
+.docx-preview-wrapper a.docx-legacy-link:active * {
+    color: #0000cc !important;
+}
+
+/* Ссылка из старой системы, которая никуда не ведёт (документа/вложения в системе нет). */
+.docx-preview-wrapper a.docx-legacy-link.docx-legacy-link-broken,
+.docx-preview-wrapper a.docx-legacy-link.docx-legacy-link-broken * {
+    color: GrayText !important;
+    cursor: help;
+}
+
+/* На этот фрагмент ссылается другой ВНД - это не ссылка "отсюда", поэтому не синяя, а
+   мягкая зелёная пунктирная отметка. */
+mark.vnd-link-mark-target {
+    color: inherit;
+    background: transparent;
+    padding: 0;
+    cursor: pointer;
+    border-bottom: 2px dotted rgba(5, 150, 105, 0.75);
+    box-decoration-break: clone;
+    -webkit-box-decoration-break: clone;
+}
+
+mark.vnd-link-mark-target:hover {
+    background: rgba(16, 185, 129, 0.10);
+}
+
+/* "Лупа" - место ссылки, к которому только что перешли. */
+.vnd-link-focused {
+    outline: 2px solid #4e57d6;
+    outline-offset: 2px;
+    border-radius: 3px;
+    animation: quoteMarkFocusPulse 1.2s ease-out 3;
+}
+
+/* Выделение фрагмента в окне "Прикрепить ссылку к этому месту" (VndLinkFragmentPicker). */
+.vnd-link-picking ::selection {
+    background: rgba(78, 87, 214, 0.28);
 }

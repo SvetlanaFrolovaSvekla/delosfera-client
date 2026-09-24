@@ -96,6 +96,9 @@ import {Clue} from "@/components/componentsGeneral/knowledgeBaseComponents/Clue.
 import {SearchBar} from "@/components/componentsGeneral/SearchBar.tsx";
 import {ConfirmActionModal} from "@/components/componentsGeneral/modal/ConfirmActionModal.tsx";
 import {Upload} from "lucide-react";
+import {useVndLinks} from "@/hooks/vndHooks/useVndLinks.ts";
+import type {DocLinkFocusRequest, DocLinkMark} from "@/hooks/vndHooks/useDocxLinkMarks.ts";
+import {anchorLanguage, type VndLinkFocusRequest} from "@/utils/vndProcess/vndLinkNavigation.ts";
 
 interface VndEditionsTabProps {
     vnd: VndResponse;
@@ -104,6 +107,9 @@ interface VndEditionsTabProps {
      * успешного запуска согласования, чтобы пользователь увидел маршрут, а не
      * остался на «Редакциях», где дальше делать нечего. */
     onGoToApproval?: () => void;
+    /** "Лупа" со вкладки "Связанные документы" (или переход по адресу ?link=...&side=...):
+     * выбрать нужную редакцию/язык и прокрутить к месту ссылки в тексте. */
+    linkFocus?: VndLinkFocusRequest | null;
 }
 
 // ВАЖНО: только права "...WithoutApproval" реально дают возможность обойти согласование.
@@ -115,7 +121,7 @@ const PUBLISH_WITHOUT_APPROVAL_PERMISSIONS: number[] = [
     PermissionCode.ActualizeAnyVndWithoutApproval,
 ];
 
-export function VndEditionsTab({vnd, onVndChanged, onGoToApproval}: VndEditionsTabProps) {
+export function VndEditionsTab({vnd, onVndChanged, onGoToApproval, linkFocus}: VndEditionsTabProps) {
     const {t} = useTranslation();
     const {data: redactions, loading, error, refetch} = useVndRedactions(vnd.id);
     const [uploadOpen, setUploadOpen] = useState(false);
@@ -407,6 +413,105 @@ export function VndEditionsTab({vnd, onVndChanged, onGoToApproval}: VndEditionsT
         // eslint-disable-next-line react-hooks/set-state-in-effect
         setSearchQuery("");
     }, [selected?.id]);
+
+    // --- Ссылки на другие ВНД в тексте редакции (и ссылки других ВНД на фрагменты этой) ---
+    const {data: links} = useVndLinks(vnd.id);
+
+    const linkMarks = useMemo<DocLinkMark[]>(() => {
+        if (!links || !selected) return [];
+        const result: DocLinkMark[] = [];
+        for (const link of links.outgoing) {
+            const src = link.source;
+            if (!src || src.redactionId !== selected.id || anchorLanguage(src) !== activeLanguage) continue;
+            result.push({
+                linkId: link.id,
+                side: "source",
+                kind: link.kind === "legacy" || link.isAutoDetected ? "legacy" : "manual",
+                text: src.text, prefix: src.prefix, suffix: src.suffix, occurrence: src.occurrence,
+                legacyCode: src.legacyCode,
+                other: {vndId: link.vndId, code: link.code, title: link.title, status: link.status},
+                targetFragment: link.target?.text ?? null,
+            });
+        }
+        for (const link of links.incoming) {
+            const tgt = link.target;
+            if (!tgt || tgt.redactionId !== selected.id || anchorLanguage(tgt) !== activeLanguage) continue;
+            result.push({
+                linkId: link.id,
+                side: "target",
+                kind: "manual",
+                text: tgt.text, prefix: tgt.prefix, suffix: tgt.suffix, occurrence: tgt.occurrence,
+                other: {vndId: link.vndId, code: link.code, title: link.title, status: link.status},
+            });
+        }
+        return result;
+    }, [links, selected, activeLanguage]);
+
+    // "Лупа": как только связи загружены - выбираем редакцию и язык, где находится ссылка, и
+    // передаём запрос прокрутки в RedactionTextView (сама прокрутка - в useDocxLinkMarks, когда
+    // документ отрендерен и подсветка нарисована).
+    const [textLinkFocus, setTextLinkFocus] = useState<DocLinkFocusRequest | null>(null);
+    const handledLinkFocusRef = useRef<number | null>(null);
+    useEffect(() => {
+        if (!linkFocus || redactions.length === 0) return;
+        if (handledLinkFocusRef.current === linkFocus.nonce) return;
+
+        // Легаси-ссылка на вложение (db://attachments/{n}) - связь не нужна, только редакция.
+        if (linkFocus.attachment) {
+            handledLinkFocusRef.current = linkFocus.nonce;
+            const {redactionId, index, language} = linkFocus.attachment;
+            const redaction = visibleRedactions.find((r) => r.id === redactionId);
+            if (!redaction) {
+                toast.info(
+                    t("openVndPage.linkMarks.focusRedactionHiddenTitle"),
+                    t("openVndPage.linkMarks.focusRedactionHiddenDescription", {
+                        code: redactions.find((r) => r.id === redactionId)?.code ?? "",
+                    }),
+                );
+                return;
+            }
+            // eslint-disable-next-line react-hooks/set-state-in-effect
+            setSelectedId(redactionId);
+            const lang = anchorLanguage({documentTarget: language});
+            if (lang) setActiveLanguage(lang);
+            setSearchQuery("");
+            setTextLinkFocus({linkId: 0, side: "source", nonce: linkFocus.nonce, legacyAttachmentIndex: index});
+            return;
+        }
+
+        if (!links) return;
+        handledLinkFocusRef.current = linkFocus.nonce;
+
+        const list = linkFocus.side === "source" ? links.outgoing : links.incoming;
+        const link = list.find((l) => l.id === linkFocus.linkId);
+        const anchor = linkFocus.side === "source" ? link?.source : link?.target;
+        if (!link || !anchor) {
+            toast.info(t("openVndPage.linkMarks.focusNotAnchoredTitle"), t("openVndPage.linkMarks.focusNotAnchoredDescription"));
+            return;
+        }
+        if (!visibleRedactions.some((r) => r.id === anchor.redactionId)) {
+            toast.info(
+                t("openVndPage.linkMarks.focusRedactionHiddenTitle"),
+                t("openVndPage.linkMarks.focusRedactionHiddenDescription", {code: anchor.redactionCode}),
+            );
+            return;
+        }
+        // eslint-disable-next-line react-hooks/set-state-in-effect
+        setSelectedId(anchor.redactionId);
+        const lang = anchorLanguage(anchor);
+        if (lang) setActiveLanguage(lang);
+        setSearchQuery("");
+        setTextLinkFocus({linkId: link.id, side: linkFocus.side, nonce: linkFocus.nonce});
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [linkFocus?.nonce, links, redactions.length]);
+
+    const handleLinkFocusResult = (result: {found: boolean; approximate: boolean}) => {
+        if (!result.found) {
+            toast.info(t("openVndPage.linkMarks.focusNotFoundTitle"), t("openVndPage.linkMarks.focusNotFoundDescription"));
+        } else if (result.approximate) {
+            toast.info(t("openVndPage.linkMarks.focusApproximateTitle"), t("openVndPage.linkMarks.focusApproximateDescription"));
+        }
+    };
 
     const handleDownload = (fileId: number, name: string) =>
         download.run(fileId, () => downloadWithToast(fileId, name), t("openVndPage.editionsTab.downloadError"));
@@ -836,6 +941,9 @@ export function VndEditionsTab({vnd, onVndChanged, onGoToApproval}: VndEditionsT
                         onDownload={handleDownload}
                         searchQuery={searchQuery}
                         onClearSearch={() => setSearchQuery("")}
+                        linkMarks={linkMarks}
+                        linkFocus={textLinkFocus}
+                        onLinkFocusResult={handleLinkFocusResult}
                     />
                 </div>
             </div>

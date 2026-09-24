@@ -2,11 +2,11 @@
 import {useEffect, useState} from "react";
 import {useTranslation} from "react-i18next";
 import {useModalShake} from "@/hooks/useModalShake.ts";
+import type {HierarchicalDictFormValues} from "@/hooks/dictionariesHooks/useHierarchicalDictTree.ts";
 import {ParentMultiSelectField} from "@/components/componentsGeneral/selects/MultiSelects/ParentMultiSelectField.tsx";
 import type {
     ParentTreeOption
 } from "@/components/componentsGeneral/selects/MultiSelects/ParentTreeMultiSelectModal.tsx";
-import type {HierarchicalDictFormValues} from "@/hooks/dictionariesHooks/useHierarchicalDictTree.ts";
 
 import {X} from "lucide-react";
 

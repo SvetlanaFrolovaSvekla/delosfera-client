@@ -1,3 +1,15 @@
+/**
+ * Вложения карточки: перетаскивание, вставка снимка экрана из буфера и обычный выбор файла.
+ *
+ * Снимок экрана — самый частый вид вложения в служебной записке и заявке: скриншот
+ * ошибки, счёта, переписки. Через диалог выбора файла его сначала пришлось бы
+ * сохранить на диск, поэтому вставка из буфера здесь не украшение, а основной путь.
+ */
+/**
+ * Что принимает хранилище: те же форматы и тот же предел, что проверяет сервер.
+ * Держать список в двух местах приходится ради ранней проверки; расхождение
+ * безопасно — окончательное слово всё равно за сервером.
+ */
 import {useCallback, useEffect, useRef, useState} from "react";
 import {useTranslation} from "react-i18next";
 import {
@@ -5,12 +17,15 @@ import {
     formatFileSize,
     type Attachment,
 } from "@/service/documentService/attachmentService.ts";
-import {Paperclip, Trash2, Download, Eye, Loader2} from "lucide-react";
-import {Tooltip} from "@/components/componentsGeneral/Tooltip.tsx";
+import {ALLOWED_EXTENSIONS} from "@/constants/validation/attachmentsValidation.ts";
+import {MAX_FILE_SIZE} from "@/constants/validation/totalValidatuon.ts";
 import {isPreviewableFile} from "@/utils/downloadFiles/fileNaming.ts";
+import {Tooltip} from "@/components/componentsGeneral/Tooltip.tsx";
 import {
     AttachmentDocxPreviewModal
 } from "@/components/componentsGeneral/modal/AttachmentDocxPreviewModal.tsx";
+import {Paperclip, Trash2, Download, Eye, Loader2} from "lucide-react";
+
 
 interface Props {
     /** Карточка, к которой цепляются файлы. null — карточка ещё не создана. */
@@ -28,21 +43,6 @@ interface Props {
     pending?: File[];
     onPendingChange?: (files: File[]) => void;
 }
-
-/**
- * Вложения карточки: перетаскивание, вставка снимка экрана из буфера и обычный выбор файла.
- *
- * Снимок экрана — самый частый вид вложения в служебной записке и заявке: скриншот
- * ошибки, счёта, переписки. Через диалог выбора файла его сначала пришлось бы
- * сохранить на диск, поэтому вставка из буфера здесь не украшение, а основной путь.
- */
-/**
- * Что принимает хранилище: те же форматы и тот же предел, что проверяет сервер.
- * Держать список в двух местах приходится ради ранней проверки; расхождение
- * безопасно — окончательное слово всё равно за сервером.
- */
-const ALLOWED_EXTENSIONS = [".doc", ".docx", ".pdf", ".xls", ".xlsx", ".ppt", ".pptx", ".png", ".jpg", ".jpeg"];
-const MAX_FILE_SIZE = 100 * 1024 * 1024;
 
 function extensionOf(name: string): string {
     const i = name.lastIndexOf(".");
@@ -78,16 +78,16 @@ export function AttachmentsPanel({
         if (!ALLOWED_EXTENSIONS.includes(ext)) {
             return t("attachments.errorFormat", {
                 name: file.name,
-                ext: ext || t("attachments.noExtension"),
+                ext: ext || t("attachments.noExtension"), // без расширения
             });
         }
-        return t("attachments.errorSize", {name: file.name});
+        return t("attachments.errorSize", {name: file.name}); // файл больше 100 МБ
     }, [t]);
 
     const reload = useCallback(() => {
         if (!documentId) return;
         attachmentService.list(documentId).then(setItems)
-            .catch(() => setError(t("attachments.errorLoad")));
+            .catch(() => setError(t("attachments.errorLoad"))); // Не удалось загрузить вложения
     }, [documentId, t]);
 
     useEffect(reload, [reload]);
@@ -126,7 +126,7 @@ export function AttachmentsPanel({
             // пользователь просто повторял бы то же самое.
             const message = (e as { response?: { data?: { message?: string } } })
                 .response?.data?.message;
-            setError(message ?? t("attachments.errorUpload"));
+            setError(message ?? t("attachments.errorUpload")); // Не удалось приложить файл
             reload();
         } finally {
             setBusy(false);
@@ -149,7 +149,7 @@ export function AttachmentsPanel({
             // превратился бы в набор безымянных строк.
             void upload(files.map((f, i) => f.name
                 ? f
-                : new File([f], `${t("attachments.screenshotName", {
+                : new File([f], `${t("attachments.screenshotName", { // Снимок экрана
                         datetime: new Date().toLocaleString("ru-RU"),
                     })}${i ? ` (${i + 1})` : ""}.png`,
                     {type: f.type})));
@@ -177,7 +177,7 @@ export function AttachmentsPanel({
         // Удаление подписанного файла аннулирует подписи под ним. Это решение
         // юридического веса, и терять его на случайном клике нельзя.
         if (attachment.signatureCount > 0 && !window.confirm(
-            t("attachments.confirmRemoveSigned", {
+            t("attachments.confirmRemoveSigned", { // Под файлом «{{name}}» есть подписи ({{count}}). Удаление аннулирует их. Продолжить?
                 name: attachment.fileName,
                 count: attachment.signatureCount,
             }))) {
@@ -189,7 +189,7 @@ export function AttachmentsPanel({
             await attachmentService.remove(attachment.id);
             reload();
         } catch {
-            setError(t("attachments.errorRemove"));
+            setError(t("attachments.errorRemove")); // Не удалось удалить вложение
         } finally {
             setBusy(false);
         }
@@ -235,13 +235,16 @@ export function AttachmentsPanel({
                         <>
                             {t("attachments.dropPrefix")}{" "}
                             <span className="font-semibold text-[#2f68f5] underline">
+                                {/* Обзор */}
                                 {t("attachments.browseLink")}
                             </span>
                         </>
                     ) : (
+                        /* Сохраните черновик, чтобы приложить файлы */
                         t("attachments.saveHint")
                     )}
                     <div className="mt-1.5 text-[11.5px] text-[#a6b0c2]">
+                        {/* PDF, Word, Excel, PowerPoint, PNG, JPG · до 100 МБ */}
                         {t("attachments.allowedTypes")}
                     </div>
                     <input
@@ -292,12 +295,14 @@ export function AttachmentsPanel({
 
                             {a.signatureCount > 0 && (
                                 <span className="text-[11.5px] font-semibold text-[#1f8a4c]">
+                                    {/* Подписей: */}
                                     {t("attachments.signatureCount", {count: a.signatureCount})}
                                 </span>
                             )}
                             {a.hasRevokedSignatures && (
                                 <span className="text-[11.5px] font-semibold text-[#b3730a]"
                                       title={t("attachments.signaturesRevokedTitle")}>
+                                    {/* Файл заменялся — прежние подписи аннулированы */}
                                     {t("attachments.signaturesRevoked")}
                                 </span>
                             )}

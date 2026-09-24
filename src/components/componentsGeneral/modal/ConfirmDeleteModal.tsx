@@ -1,9 +1,7 @@
 // Модалка подтверждения удаления - тонкая обёртка над ConfirmActionModal
 import {useTranslation} from "react-i18next";
-import {AlertTriangle} from "lucide-react";
 import {ConfirmActionModal} from "@/components/componentsGeneral/modal/ConfirmActionModal.tsx";
-
-// TODO: Исправить предыдущие места, где использовалась ConfirmDeleteModal (сделала её оберткой)
+import {AlertTriangle} from "lucide-react";
 
 interface ConfirmDeleteModalProps {
     open: boolean;

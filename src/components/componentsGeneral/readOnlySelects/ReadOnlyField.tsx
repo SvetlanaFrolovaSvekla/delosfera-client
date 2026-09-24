@@ -1,7 +1,7 @@
-import {Link} from "react-router-dom";
-
 // Нередактируемое поле с лейблом. linkTo — необязательный переход (например, на профиль
 // сотрудника: /users/{id}), делает значение кликабельной ссылкой вместо обычного текста.
+import {Link} from "react-router-dom";
+
 export function ReadOnlyField(
     {label, value, highlighted, linkTo}: { label: string; value: string; highlighted?: boolean; linkTo?: string }
 ) {

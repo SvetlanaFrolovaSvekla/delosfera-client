@@ -1,10 +1,21 @@
-import {forwardRef, useImperativeHandle} from "react";
+import {forwardRef, useImperativeHandle, useState} from "react";
 import {useTranslation} from "react-i18next";
+import {useNavigate} from "react-router-dom";
 import type {VndRedactionResponse, VndResponse} from "@/service/vndService/vndServiceType.ts";
 import {useDocxPreview} from "@/hooks/vndHooks/useDocxPreview.ts";
 import {useDocxTextSearch} from "@/hooks/vndHooks/useDocxTextSearch.ts";
 import {useDocxQuoteMarks, type QuoteMarkFocusRequest} from "@/hooks/vndHooks/useDocxQuoteMarks.ts";
-import {useDocxLegacyLinks} from "@/hooks/vndHooks/useDocxLegacyLinks.ts";
+import {
+    useDocxLegacyLinks, type LegacyAttachmentInfo, type LegacyLinkHover,
+} from "@/hooks/vndHooks/useDocxLegacyLinks.ts";
+import {AttachmentDocxPreviewModal} from "@/components/componentsGeneral/modal/AttachmentDocxPreviewModal.tsx";
+import {isPreviewableFile} from "@/utils/downloadFiles/fileNaming.ts";
+import {useDocxLinkMarks, type DocLinkFocusRequest, type DocLinkMark} from "@/hooks/vndHooks/useDocxLinkMarks.ts";
+import {
+    LegacyLinkHoverCard, VndLinkHoverCard,
+} from "@/components/componentsVND/componentsOpenVndPage/componentsLinks/VndLinkHoverCard.tsx";
+import {buildLinkFocusUrl} from "@/utils/vndProcess/vndLinkNavigation.ts";
+import type {VndLinkSide} from "@/utils/vndProcess/vndLinkNavigation.ts";
 import type {QuoteMarkInfo} from "@/utils/vndProcess/redactionQuoteMarks.ts";
 import {buildRedactionFileName} from "@/utils/downloadFiles/fileNaming.ts";
 import type {RedactionLanguage, RedactionViewTarget} from "@/utils/vndProcess/redactionLanguagePanelUtils.ts";
@@ -39,6 +50,15 @@ interface RedactionTextViewProps {
     quoteMarkFocus?: QuoteMarkFocusRequest | null;
     /** Итог quoteMarkFocus - нашлась ли цитата в тексте (и точно ли). */
     onQuoteMarkFocusResult?: (result: {id: number; found: boolean; approximate: boolean}) => void;
+    /** Ссылки на другие ВНД, прикреплённые к фрагментам ЭТОГО текста (и ссылки других ВНД на
+     * фрагменты этого текста) - подсвечиваются и кликаются (см. useDocxLinkMarks). */
+    linkMarks?: DocLinkMark[];
+    /** "Лупа": прокрутить к месту ссылки и мигнуть им. Ссылка должна быть среди linkMarks. */
+    linkFocus?: DocLinkFocusRequest | null;
+    onLinkFocusResult?: (result: {linkId: number; side: VndLinkSide; found: boolean; approximate: boolean}) => void;
+    /** false - метки ссылок не кликаются (например, в окне выбора фрагмента при добавлении
+     * ссылки, где клик нужен для выделения текста). По умолчанию true. */
+    linkMarksClickable?: boolean;
 }
 
 export interface RedactionTextViewHandle {
@@ -58,11 +78,18 @@ const FILE_KEY_BY_LANG: Record<RedactionLanguage, "docFileRuId" | "docFileKgId" 
 
 export const RedactionTextView = forwardRef<RedactionTextViewHandle, RedactionTextViewProps>(
     function RedactionTextView({
-                                    vnd, selected, activeLanguage, searchQuery = "", onClearSearch, scrollX = false,
+                                    vnd, selected, activeLanguage, downloadingId, onDownload,
+                                    searchQuery = "", onClearSearch, scrollX = false,
                                     quoteMarks, quoteMarksClickable, onHoverQuoteMark, onClickQuoteMark,
                                     quoteMarkFocus, onQuoteMarkFocusResult,
+                                    linkMarks, linkFocus, onLinkFocusResult, linkMarksClickable = true,
                                 }, ref) {
         const {t} = useTranslation();
+        const navigate = useNavigate();
+        const [hoveredLinks, setHoveredLinks] = useState<{marks: DocLinkMark[]; rect: DOMRect} | null>(null);
+        const [legacyHover, setLegacyHover] = useState<{hover: LegacyLinkHover; rect: DOMRect} | null>(null);
+        // Вложение, открытое по легаси-ссылке db://attachments/{n} из текста.
+        const [previewAttachment, setPreviewAttachment] = useState<LegacyAttachmentInfo | null>(null);
         const fileId = activeLanguage === "tid"
             ? selected.tidFileId
             : activeLanguage === "approvalSheet"
@@ -104,6 +131,43 @@ export const RedactionTextView = forwardRef<RedactionTextViewHandle, RedactionTe
             vnd.id,
             !loading && fileId !== null,
             `${fileId}-${activeLanguage}`,
+            {
+                // Номер вложения в db://attachments/{n} - среди вложений ИМЕННО этой редакции.
+                redactionId: selected.id,
+                clickable: linkMarksClickable,
+                onHover: (hover, rect) => setLegacyHover(hover && rect ? {hover, rect} : null),
+                onOpenAttachment: (attachment) => {
+                    if (isPreviewableFile(attachment.fileName)) setPreviewAttachment(attachment);
+                    else onDownload(attachment.fileId, attachment.fileName);
+                },
+            },
+        );
+
+        // Куда ведёт ссылка из текста: "отсюда" - на документ-цель (или конкретное место в нём),
+        // "сюда" (другой ВНД ссылается на этот фрагмент) - на место в ссылающемся документе.
+        const linkMarkHref = (mark: DocLinkMark): string => mark.side === "source"
+            ? (mark.targetFragment ? buildLinkFocusUrl(mark.other.vndId, mark.linkId, "target") : `/base-vnd/${mark.other.vndId}`)
+            : buildLinkFocusUrl(mark.other.vndId, mark.linkId, "source");
+
+        // Ссылки на другие ВНД, прикреплённые к фрагментам текста (и ссылки других ВНД сюда).
+        useDocxLinkMarks(
+            containerRef,
+            linkMarks ?? [],
+            !loading && fileId !== null,
+            `${fileId}-${activeLanguage}`,
+            {
+                focus: linkFocus,
+                onFocusResult: onLinkFocusResult,
+                onHover: (marks, rect) => setHoveredLinks(marks.length > 0 && rect ? {marks, rect} : null),
+                hrefFor: linkMarkHref,
+                onClick: (marks) => {
+                    if (!linkMarksClickable) return;
+                    // Если на одном месте несколько ссылок - открываем первую; остальные видны
+                    // в карточке при наведении и на вкладке "Связанные документы".
+                    setHoveredLinks(null);
+                    navigate(linkMarkHref(marks[0]));
+                },
+            },
         );
 
         useImperativeHandle(ref, () => ({
@@ -217,6 +281,19 @@ export const RedactionTextView = forwardRef<RedactionTextViewHandle, RedactionTe
                         style={{display: loading ? "none" : "block"}}
                     />
                 </div>
+                {hoveredLinks && (
+                    <VndLinkHoverCard marks={hoveredLinks.marks} rect={hoveredLinks.rect} clickable={linkMarksClickable}/>
+                )}
+                {legacyHover && <LegacyLinkHoverCard hover={legacyHover.hover} rect={legacyHover.rect}/>}
+                {previewAttachment && (
+                    <AttachmentDocxPreviewModal
+                        fileId={previewAttachment.fileId}
+                        fileName={previewAttachment.fileName}
+                        downloadingId={downloadingId}
+                        onDownload={onDownload}
+                        onClose={() => setPreviewAttachment(null)}
+                    />
+                )}
             </div>
         );
     }

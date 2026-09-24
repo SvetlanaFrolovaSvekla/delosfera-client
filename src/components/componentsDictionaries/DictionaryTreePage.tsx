@@ -1,8 +1,9 @@
 // Универсальная страница иерархического справочника (дерево + CRUD)
-import type {LucideIcon} from "lucide-react";
 import {useTranslation} from "react-i18next";
 import {useNavigate} from "react-router-dom";
-import {AlertTriangle, ArrowLeft, Plus} from "lucide-react";
+
+import type {HierarchicalDictTreeResult} from "@/hooks/dictionariesHooks/useHierarchicalDictTree.ts";
+import type {TreeDictItem} from "@/utils/dictionaries/hierarchicalDictTree.ts";
 
 import {DictionaryFormModal} from "@/components/componentsDictionaries/DictionaryFormModal.tsx";
 import {DictionaryTreeNode} from "@/components/componentsDictionaries/DictionaryTreeNode.tsx";
@@ -10,10 +11,10 @@ import {DictionaryTreeNode} from "@/components/componentsDictionaries/Dictionary
 import {SearchBar} from "@/components/componentsGeneral/SearchBar.tsx";
 import {Loader} from "@/components/componentsGeneral/Loader.tsx";
 import {EmptyState} from "@/components/componentsGeneral/EmptyState.tsx";
-
-import type {TreeDictItem} from "@/utils/dictionaries/hierarchicalDictTree.ts";
-import type {HierarchicalDictTreeResult} from "@/hooks/dictionariesHooks/useHierarchicalDictTree.ts";
 import {ConfirmActionModal} from "@/components/componentsGeneral/modal/ConfirmActionModal.tsx";
+
+import {AlertTriangle, ArrowLeft, Plus} from "lucide-react";
+import type {LucideIcon} from "lucide-react";
 
 interface DictionaryTreePageProps<T extends TreeDictItem> {
     // Данные и колбэки - прокидываются из конкретного хука (useApprovalBodyTree и т.п.)
@@ -24,7 +25,7 @@ interface DictionaryTreePageProps<T extends TreeDictItem> {
     // Конфиг страницы
     pageKey: string;       // "approvalBodyPage" / "organizationUnitPage" - префикс i18n ключей
     icon: LucideIcon;
-    backTo: string;        // куда ведёт кнопка "Назад", напр. "/management/refs"
+    backTo: string;        // Куда ведёт кнопка "Назад", напр. "/management/refs"
     backLabelKey: string;  // "dictionaries.navigateGeneral" и т.п.
 }
 

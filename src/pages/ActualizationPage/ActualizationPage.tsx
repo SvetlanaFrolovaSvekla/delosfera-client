@@ -3,7 +3,7 @@ import {useMemo, useState} from "react";
 import {useTranslation} from "react-i18next";
 
 import type {VndSearchRequest} from "@/service/vndService/vndServiceType.ts";
-import {EMPTY_DATE_FILTER, type DateFilterValue} from "@/components/componentsGeneral/datePickers/DateFilterGroup.tsx";
+import {type DateFilterValue} from "@/components/componentsGeneral/datePickers/DateFilterGroup.tsx";
 
 import {
     ActualizationFilterPills,
@@ -36,6 +36,7 @@ import {
     ACTUALIZATION_PLANNING_STATUSES,
     toDateRangeFilter,
 } from "@/utils/vndProcess/actualizationSearchRequest.ts";
+import {EMPTY_DATE_FILTER} from "@/constants/emptyDateFilter.ts";
 
 export function ActualizationPage() {
     const {t} = useTranslation();

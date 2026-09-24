@@ -69,7 +69,10 @@ export function VndLinkPicker({ excludeIds, onSelect, onClose }: VndLinkPickerPr
         }, 300);
 
         return () => clearTimeout(timeoutId);
-    }, [query, codeFilter, revisionTextFilter, docTypeFilters, rubricFilters, developerFilters, keywordFilters, excludeIds]);
+        // excludeIds - по содержимому, а не по ссылке на массив (родитель пересоздаёт его на
+        // каждом рендере - без этого поиск перезапускался бы без причины).
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [query, codeFilter, revisionTextFilter, docTypeFilters, rubricFilters, developerFilters, keywordFilters, excludeIds.join(",")]);
 
     const handleResetAdv = () => {
         setCodeFilter("");
@@ -90,6 +93,9 @@ export function VndLinkPicker({ excludeIds, onSelect, onClose }: VndLinkPickerPr
                 <div className="flex items-center gap-2.5 px-5 pt-4 pb-3 border-b border-[#eef2f7]">
                     <Link2 size={17} strokeWidth={1.8} className="text-[#4e57d6]" />
                     <h2 className="m-0 text-[13.5px] font-semibold flex-1">Добавить ссылку на ВНД</h2>
+                    <span className="rounded-full bg-[#f2f5f9] px-2 py-0.5 text-[10.5px] font-semibold text-[#8b97ab]">
+                        Шаг 1 · выберите документ
+                    </span>
                     <button onClick={onClose} className="flex-none text-[#c3ccd8] hover:text-[#55617a] cursor-pointer">
                         <X size={18} />
                     </button>

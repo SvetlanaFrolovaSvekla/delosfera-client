@@ -25,6 +25,7 @@ import {DatePickerInput} from "@/components/componentsGeneral/datePickers/DatePi
 import {Clue} from "@/components/componentsGeneral/knowledgeBaseComponents/Clue.tsx";
 
 import {Archive, CalendarCheck, FileText, History, Pencil, RotateCw, Tags, Type, X, Loader2} from "lucide-react";
+import {PlainCheckbox} from "@/components/componentsGeneral/componentsCheckBox/PlainCheckbox.tsx";
 
 interface DictOption {
     key: string;
@@ -251,20 +252,14 @@ export function VndPassportTab({
                         ))}
                     </div>
 
-                    <label
-                        className={`inline-flex items-center gap-2 text-[13px] text-[#55617a] select-none ${
-                            canShowDiff ? "cursor-pointer" : "opacity-50 cursor-not-allowed"
-                        }`}
+                    <PlainCheckbox
+                        checked={showDiff}
+                        onChange={setShowDiff}
+                        disabled={!canShowDiff}
                     >
-                        <input
-                            type="checkbox"
-                            checked={showDiff}
-                            disabled={!canShowDiff}
-                            onChange={(e) => setShowDiff(e.target.checked)}
-                            className="w-[15px] h-[15px] cursor-pointer disabled:cursor-not-allowed"
-                        />
+                        {/* Показать изменения в связи с предыдущей редакцией */}
                         {t("openVndPage.passportTab.showDiffCheckbox")}
-                    </label>
+                    </PlainCheckbox>
                 </div>
             )}
 

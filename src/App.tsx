@@ -97,6 +97,7 @@ const CorrespondencePage = lazy(() => import("@/pages/CorrespondencePage.tsx").t
 const ObligationsPage = lazy(() => import("@/pages/ObligationsPage.tsx").then(m => ({default: m.ObligationsPage})));
 const AgendaCandidatesPage = lazy(() => import("@/pages/MeetingsPages/AgendaCandidatesPage.tsx").then(m => ({default: m.AgendaCandidatesPage})));
 const ActualizationBucketSettingsPage = lazy(() => import("@/pages/DictionariesPages/ActualizationBucketSettingsPage.tsx").then(m => ({default: m.ActualizationBucketSettingsPage})));
+const VndApprovalNormSettingsPage = lazy(() => import("@/pages/DictionariesPages/VndApprovalNormSettingsPage.tsx").then(m => ({default: m.VndApprovalNormSettingsPage})));
 const ManagementPage = lazy(() => import("@/pages/ManagementPage.tsx").then(m => ({default: m.ManagementPage})));
 const NotificationMailingSettingsPage = lazy(() => import("@/pages/NotificationMailingSettingsPage.tsx").then(m => ({default: m.NotificationMailingSettingsPage})));
 const DocumentTypesPage = lazy(() => import("@/pages/DocumentTypesPage.tsx").then(m => ({default: m.DocumentTypesPage})));
@@ -229,6 +230,7 @@ function App() {
                                     <Route path="refs/sz-rubric" element={<SzRubricPage/>}/>
                                     <Route path="refs/coordination-users" element={<CoordinationApproversPage/>}/>
                                     <Route path="refs/actualization-thresholds" element={<ActualizationBucketSettingsPage/>}/>
+                                    <Route path="refs/approval-norms" element={<VndApprovalNormSettingsPage/>}/>
                                     <Route path="mailing-settings" element={<NotificationMailingSettingsPage/>}/>
                                     <Route path="notification-settings" element={<NotificationSettingsPage/>}/>
 

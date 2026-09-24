@@ -5,10 +5,10 @@
 // файла (basePath) и обвязкой (наличие кнопки закрытия, размеры панели).
 import {useEffect, useRef, useState} from "react";
 import {useTranslation} from "react-i18next";
-import {ListTree, Loader2, X} from "lucide-react";
 import {useDocxHeadings} from "@/hooks/vndHooks/useDocxHeadings.ts";
 import type {DocxHeadingItem} from "@/utils/docxWork/docxHeadings.ts";
 import {Tooltip} from "@/components/componentsGeneral/Tooltip.tsx";
+import {ListTree, Loader2, X} from "lucide-react";
 
 const LEVEL_PADDING: Record<DocxHeadingItem["level"], string> = {
     1: "pl-0",

@@ -1,8 +1,8 @@
 // Общая модалка подтверждения действия (удаление, блокировка, разблокировка и т.п.)
+import type {ReactNode} from "react";
 import {useTranslation} from "react-i18next";
 import {useModalShake} from "@/hooks/useModalShake.ts";
 import {AlertTriangle, Lock, Unlock, ShieldCheck, type LucideIcon} from "lucide-react";
-import type {ReactNode} from "react";
 
 export type ConfirmActionVariant = "danger" | "warning" | "success" | "primary";
 

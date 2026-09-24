@@ -23,6 +23,13 @@ export const COMMENT_TRUNCATE_LENGTH = 260;
 // Ограничивает поля "ч." / "м." в NormBlock и должна совпадать с MaxDeadlineMinutes на бэкенде
 export const MAX_DEADLINE_MINUTES = 90 * 24 * 60;
 
+// Встроенные нормативы по умолчанию (минуты) - используются, пока не загрузился справочник
+// "Нормативы согласования по умолчанию" (раздел ВНД), и должны совпадать с
+// VndApprovalNormSettings.Default*Minutes на бэкенде: 7 д. / 4 д. / 3 д.
+export const DEFAULT_PRIMARY_MINUTES = 7 * 24 * 60;
+export const DEFAULT_REPEAT_MINUTES = 4 * 24 * 60;
+export const DEFAULT_FINAL_HOLD_MINUTES = 3 * 24 * 60;
+
 // Обязательные (фиксированные) этапы ведутся динамическим справочником (dictionaries/coordination-users)
 export const FIXED_STAGE_ICON = ShieldCheck;
 export const CUSTOM_STAGE_ICON = User;

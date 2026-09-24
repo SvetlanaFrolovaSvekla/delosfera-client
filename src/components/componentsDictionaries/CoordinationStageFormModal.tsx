@@ -2,17 +2,16 @@
 // название этапа, СП (структурное подразделение) и согласующий по умолчанию из этого СП.
 import {useEffect, useMemo, useState} from "react";
 import {useTranslation} from "react-i18next";
-import {useModalShake} from "@/hooks/useModalShake.ts";
-
-import {ChevronDown, Search, X} from "lucide-react";
+import {useDictionaries} from "@/context/DictionariesContext.tsx";
 import type {
     CoordinationDefaultApproverResponse
 } from "@/service/dictionariesService/coordinationDefaultApproverService/coordinationDefaultApproverServiceType.ts";
+import {useModalShake} from "@/hooks/useModalShake.ts";
 import type {CoordinationStageFormValues} from "@/hooks/dictionariesHooks/useCoordinationApprovers.ts";
-import {useDictionaries} from "@/context/DictionariesContext.tsx";
 import {
     VndSelectApproverModal, type ApproverOption
 } from "@/components/componentsCoordination/CoordinationRouteConstructor/functionalComponents/VndSelectApproverModal.tsx";
+import {ChevronDown, Search, X} from "lucide-react";
 
 const EMPTY_EXCLUDED = new Set<number>();
 

@@ -1,7 +1,7 @@
 // Открытый документ ВНД в любом статусе
 import {useLocation, useNavigate, useParams, useSearchParams} from "react-router-dom";
 import {useTranslation} from "react-i18next";
-import {useEffect, useState} from "react";
+import {useEffect, useRef, useState} from "react";
 
 import {useAuth} from "@/context/AuthContext.ts";
 import {actualizationService} from "@/service/actualizationService/actualizationService.ts";
@@ -26,6 +26,9 @@ import {
 } from "@/components/componentsCoordination/CoordinationRouteConstructor/viewComponents/RedactionViewModal.tsx";
 import {VndPassportTab} from "@/components/componentsVND/componentsOpenVndPage/VndPassportTab.tsx";
 import {VndLinksTab} from "@/components/componentsVND/componentsOpenVndPage/VndLinksTab.tsx";
+import {
+    parseLinkFocusFromSearch, type VndLinkFocusRequest, type VndLinkSide,
+} from "@/utils/vndProcess/vndLinkNavigation.ts";
 import {VndHistoryTab} from "@/components/componentsVND/componentsOpenVndPage/VndHistoryTab.tsx";
 import {VndActualizationTab} from "@/components/componentsVND/componentsOpenVndPage/VndActualizationTab.tsx";
 import {VndCoordinationTab} from "@/components/componentsVND/componentsOpenVndPage/VndCoordinationTab.tsx";
@@ -44,7 +47,15 @@ import {Tooltip} from "@/components/componentsGeneral/Tooltip.tsx";
 import {VndProposalModal} from "@/components/componentsVND/componentsOpenVndPage/VndProposalModal.tsx";
 import {Archive, Eye, Lightbulb, Trash2} from "lucide-react";
 
+// Переход с одного ВНД на другой (ссылка в тексте, "Связанные документы") идёт по тому же
+// маршруту /base-vnd/:id - без key React переиспользовал бы страницу вместе со всем её
+// состоянием (выбранная вкладка, редакция, язык, открытые окна) от ПРЕДЫДУЩЕГО документа.
 export function OpenVndPage() {
+    const {id} = useParams<{ id: string }>();
+    return <OpenVndPageContent key={id}/>;
+}
+
+function OpenVndPageContent() {
     const {t} = useTranslation();
     const {id} = useParams<{ id: string }>();
     const location = useLocation();
@@ -75,8 +86,38 @@ export function OpenVndPage() {
     // например с карточки задачи), затем ?tab= в URL (переход из уведомления — там нет
     // возможности передать state, только сам URL), иначе — «Редакции» по умолчанию.
     const tabFromQuery = searchParams.get("tab") as VndTabId | null;
-    const initialTab = (location.state as { tab?: VndTabId } | null)?.tab ?? tabFromQuery ?? "editions";
+    // ?link=...&side=... - открыть «Редакции» на месте ссылки (см. buildLinkFocusUrl).
+    const linkFocusFromQuery = parseLinkFocusFromSearch(searchParams);
+    const initialTab = linkFocusFromQuery
+        ? "editions"
+        : (location.state as { tab?: VndTabId } | null)?.tab ?? tabFromQuery ?? "editions";
     const [tab, setTab] = useState<VndTabId>(initialTab);
+    const [linkFocus, setLinkFocus] = useState<VndLinkFocusRequest | null>(
+        () => linkFocusFromQuery ? {...linkFocusFromQuery, nonce: Date.now()} : null,
+    );
+    // Тот же документ открыли по другой ссылке на место (страница не пересоздаётся - key
+    // тот же): подхватываем новый ?link=... из адреса.
+    const lastSearchRef = useRef(location.search);
+    useEffect(() => {
+        if (lastSearchRef.current === location.search) return;
+        lastSearchRef.current = location.search;
+        const focus = parseLinkFocusFromSearch(new URLSearchParams(location.search));
+        if (!focus) return;
+        // eslint-disable-next-line react-hooks/set-state-in-effect
+        setLinkFocus({...focus, nonce: Date.now()});
+        setTab("editions");
+    }, [location.search]);
+
+    // "Лупа" на вкладке «Связанные документы» для места в ЭТОМ документе - переключаемся на
+    // «Редакции» без перезагрузки страницы.
+    const handleShowLinkInText = (linkId: number, side: VndLinkSide) => {
+        setLinkFocus({linkId, side, nonce: Date.now()});
+        setTab("editions");
+    };
+    const handleShowAttachmentInText = (redactionId: number, index: number, language: string | null) => {
+        setLinkFocus({linkId: 0, side: "source", nonce: Date.now(), attachment: {redactionId, index, language}});
+        setTab("editions");
+    };
 
     const [consolidateOpen, setConsolidateOpen] = useState(false);
     const [consolidating, setConsolidating] = useState(false);
@@ -411,7 +452,8 @@ export function OpenVndPage() {
             {/* Редакции */}
             {activeTab === "editions" && (
                 <VndEditionsTab vnd={vnd} onVndChanged={handleVndOrRedactionsChanged}
-                                onGoToApproval={() => setTab("approval")}/>
+                                onGoToApproval={() => setTab("approval")}
+                                linkFocus={linkFocus}/>
             )}
             {/* Реквизиты */}
             {activeTab === "passport" && (
@@ -432,7 +474,8 @@ export function OpenVndPage() {
             {/* Согласование */}
             {activeTab === "approval" && <VndCoordinationTab vnd={vnd} onVndChanged={handleVndOrRedactionsChanged}/>}
             {/* Связи */}
-            {activeTab === "links" && <VndLinksTab vndId={vnd.id}/>}
+            {activeTab === "links" && <VndLinksTab vnd={vnd} onShowInText={handleShowLinkInText}
+                                                       onShowAttachmentInText={handleShowAttachmentInText}/>}
             {/* История */}
             {activeTab === "history" && <VndHistoryTab vnd={vnd} redactions={redactions}/>}
             {/* Актуализация */}

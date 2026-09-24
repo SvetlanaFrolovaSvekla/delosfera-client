@@ -3,16 +3,16 @@
 // .pptx - слайд в слайд через @office-kit/pptx-preview (см. usePptxPreview) в виде SVG.
 // .pdf - постранично в <canvas> через pdf.js (см. usePdfPreview), страницы рисуются лениво по
 // мере прокрутки.
-// Имя компонента осталось от тех времён, когда он умел только docx - сейчас показывает все четыре
-// формата (см. getPreviewableFileKind в utils/fileNaming.ts).
+// Имя компонента осталось от тех времён, когда он умел только docx - сейчас показывает все четыре формата
 import {createPortal} from "react-dom";
-import {AlertTriangle, Download, FileSpreadsheet, FileText, Loader2, Presentation, X} from "lucide-react";
-import {Tooltip} from "@/components/componentsGeneral/Tooltip.tsx";
+import {useTranslation} from "react-i18next";
 import {useDocxPreview} from "@/hooks/vndHooks/useDocxPreview.ts";
 import {useSheetPreview} from "@/hooks/vndHooks/useSheetPreview.ts";
 import {usePptxPreview} from "@/hooks/vndHooks/usePptxPreview.ts";
 import {usePdfPreview} from "@/hooks/vndHooks/usePdfPreview.ts";
 import {getPreviewableFileKind} from "@/utils/downloadFiles/fileNaming.ts";
+import {Tooltip} from "@/components/componentsGeneral/Tooltip.tsx";
+import {AlertTriangle, Download, FileSpreadsheet, FileText, Loader2, Presentation, X} from "lucide-react";
 
 interface AttachmentDocxPreviewModalProps {
     fileId: number;
@@ -37,22 +37,29 @@ const KIND_ICON = {
     pdf: FileText,
 };
 
-// У .xlsx и .pptx принципиально разная неполнота превью, поэтому и предупреждения разные,
-// а не одна общая фраза на оба формата.
-const ACCURACY_WARNING = {
-    xlsx: "Упрощённый предпросмотр таблицы: форматирование, формулы и объединённые ячейки не воспроизводятся.",
-    // Картинки, таблицы, диаграммы и текст теперь рендерятся по-настоящему (см. usePptxPreview) -
-    // не воспроизводятся только SmartArt, 3D-объекты, анимации и часть векторной графики (WMF/EMF).
-    pptx: "Приближённый рендер слайдов: SmartArt, 3D-объекты, анимации и часть эффектов оформления не воспроизводятся.",
-    // Сами страницы pdf.js рисует точно, но только "картинкой": интерактивные элементы PDF
-    // (заполняемые поля, проверка электронной подписи, вложенные файлы, закладки) здесь не работают.
-    pdf: "Предпросмотр PDF без интерактивных элементов: заполняемые поля, проверка электронной подписи, вложенные в PDF файлы и закладки недоступны.",
-};
-
 export function AttachmentDocxPreviewModal({
-                                                fileId, fileName, downloadingId, onDownload, onClose,
-                                                endpoint, pathSuffix,
-                                            }: AttachmentDocxPreviewModalProps) {
+                                               fileId, fileName, downloadingId, onDownload, onClose,
+                                               endpoint, pathSuffix,
+                                           }: AttachmentDocxPreviewModalProps) {
+    const {t} = useTranslation();
+
+    // У .xlsx и .pptx принципиально разная неполнота превью, поэтому и предупреждения разные,
+    // а не одна общая фраза на оба формата.
+    // Вынесено внутрь компонента (а не top-level, как раньше), поскольку t() доступен только
+    // из useTranslation внутри компонента.
+    const ACCURACY_WARNING = {
+        // Упрощённый предпросмотр таблицы: форматирование, формулы и объединённые ячейки не воспроизводятся.
+        xlsx: t("attachmentPreview.warningXlsx"),
+        // Картинки, таблицы, диаграммы и текст теперь рендерятся по-настоящему (см. usePptxPreview) -
+        // не воспроизводятся только SmartArt, 3D-объекты, анимации и часть векторной графики (WMF/EMF).
+        // Приближённый рендер слайдов: SmartArt, 3D-объекты, анимации и часть эффектов оформления не воспроизводятся.
+        pptx: t("attachmentPreview.warningPptx"),
+        // Сами страницы pdf.js рисует точно, но только "картинкой": интерактивные элементы PDF
+        // (заполняемые поля, проверка электронной подписи, вложенные файлы, закладки) здесь не работают.
+        // Предпросмотр PDF без интерактивных элементов: заполняемые поля, проверка электронной подписи, вложенные в PDF файлы и закладки недоступны.
+        pdf: t("attachmentPreview.warningPdf"),
+    };
+
     // Модалку открывают только по кнопке "Просмотр" у уже отфильтрованных isPreviewableFile
     // вложений (см. AttachmentRow/RedactionAttachmentsModal/VndEditLastRevisionModal) - но на
     // случай рассинхронизации (файл переименовали, кэш и т.п.) без распознанного вида честно
@@ -113,14 +120,22 @@ export function AttachmentDocxPreviewModal({
                                 {fileName}
                             </h2>
                             <div className="mt-[2px] text-[11px] font-medium text-[#8b97ab]">
-                                Просмотр вложения
-                                {kind === "pdf" && pdfPageCount > 0 && ` · страниц: ${pdfPageCount}`}
+                                {/* Просмотр вложения */}
+                                {t("attachmentPreview.title")}
+                                {kind === "pdf" && pdfPageCount > 0 && (
+                                    <>
+                                        {" · "}
+                                        {/* страниц: ${pdfPageCount} */}
+                                        {t("attachmentPreview.pageCount", {count: pdfPageCount})}
+                                    </>
+                                )}
                             </div>
                         </div>
                     </div>
 
                     <div className="flex items-center gap-4">
-                        <Tooltip content="Скачать документ" side="bottom">
+                        {/* Скачать документ */}
+                        <Tooltip content={t("attachmentPreview.download")} side="bottom">
                             <button
                                 type="button"
                                 disabled={downloadingId === fileId}
@@ -147,7 +162,11 @@ export function AttachmentDocxPreviewModal({
                 {accuracyWarning && !loading && !error && (
                     <div className="flex flex-none items-start gap-2 border-b border-[#f5e3c4] bg-[#fffaf0] px-6 py-2.5 text-[12px] text-[#8a6116]">
                         <AlertTriangle size={15} className="mt-[1px] flex-none"/>
-                        <span>{accuracyWarning} Если нужен точный вид документа — скачайте файл кнопкой выше.</span>
+                        <span>
+                            {accuracyWarning}{" "}
+                            {/* Если нужен точный вид документа — скачайте файл кнопкой выше. */}
+                            {t("attachmentPreview.downloadForAccuracy")}
+                        </span>
                     </div>
                 )}
 
@@ -155,7 +174,8 @@ export function AttachmentDocxPreviewModal({
                     {loading && (
                         <div className="flex flex-1 items-center justify-center gap-2 text-[13px] text-[#8b97ab]">
                             <Loader2 size={16} className="animate-spin"/>
-                            Загрузка документа…
+                            {/* Загрузка документа… */}
+                            {t("attachmentPreview.loading")}
                         </div>
                     )}
                     {error && (
@@ -187,7 +207,8 @@ export function AttachmentDocxPreviewModal({
                                     className="overflow-hidden rounded-[10px] border border-[#e9edf3] bg-[#fbfcfe]"
                                 >
                                     <div className="border-b border-[#e9edf3] bg-white px-4 py-1.5 text-[11px] font-bold uppercase tracking-[0.04em] text-[#a3adbd]">
-                                        Слайд {slide.index}
+                                        {/* Слайд {slide.index} */}
+                                        {t("attachmentPreview.slideLabel", {index: slide.index})}
                                     </div>
                                     {slide.svg !== null ? (
                                         // svg приходит уже готовой строкой разметки от renderSlideToSvg
@@ -201,7 +222,8 @@ export function AttachmentDocxPreviewModal({
                                         // остальные слайды это не должно касаться, показываем заглушку
                                         // только тут.
                                         <div className="p-6 text-center text-[12px] text-[#8b97ab]">
-                                            Не удалось отобразить этот слайд
+                                            {/* Не удалось отобразить этот слайд */}
+                                            {t("attachmentPreview.slideRenderFailed")}
                                         </div>
                                     )}
                                 </div>
@@ -215,7 +237,11 @@ export function AttachmentDocxPreviewModal({
                             {pptxStillRendering && (
                                 <div className="flex items-center justify-center gap-2 py-3 text-[12px] text-[#8b97ab]">
                                     <Loader2 size={14} className="animate-spin"/>
-                                    Рендерим слайд {pptxSlides.length + 1} из {pptxTotalSlides}…
+                                    {/* Рендерим слайд {pptxSlides.length + 1} из {pptxTotalSlides}… */}
+                                    {t("attachmentPreview.slideRendering", {
+                                        current: pptxSlides.length + 1,
+                                        total: pptxTotalSlides,
+                                    })}
                                 </div>
                             )}
                         </div>

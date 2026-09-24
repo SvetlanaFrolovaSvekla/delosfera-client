@@ -1,3 +1,4 @@
+// Группа компонентов для выбора даты (для выбора периода)
 import {useTranslation} from "react-i18next";
 import {DatePickerInput} from "@/components/componentsGeneral/datePickers/DatePickerInput.tsx";
 
@@ -7,14 +8,6 @@ export interface DateFilterValue {
     from: string;
     to: string;
 }
-
-// eslint-disable-next-line react-refresh/only-export-components
-export const EMPTY_DATE_FILTER: DateFilterValue = {
-    mode: "exact",
-    exact: "",
-    from: "",
-    to: "",
-};
 
 export interface DateFilterRowConfig {
     key: string;

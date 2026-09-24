@@ -407,15 +407,63 @@ export interface VndActualizationRecordResponse {
     isCompleted: boolean;
 }
 
+/** Место в тексте конкретной редакции документа, к которому привязана ссылка (см. VndLinkItem.source
+ * / VndLinkItem.target) - тот же принцип "якоря" (текст + контекст до/после + номер вхождения),
+ * что и у цитат согласующих (см. utils/docxWork/quoteAnchor.ts). */
+export interface VndLinkAnchor {
+    redactionId: number;
+    redactionNumber: number;
+    redactionCode: string;
+    isCurrentRedaction: boolean;
+    redactionApprovalStatus: RedactionApprovalStatus;
+    /** "ru" | "kg" | "en" */
+    documentTarget: string | null;
+    text: string | null;
+    prefix: string | null;
+    suffix: string | null;
+    occurrence: number | null;
+    /** Только для легаси-ссылки: код из гиперссылки db://documents/{код}. */
+    legacyCode?: string | null;
+}
+
+export type VndLinkKind = "manual" | "legacy";
+
 export interface VndLinkItem {
     id: number;
+    /** id документа на ДРУГОМ конце связи (для outgoing - на который ссылаемся, для incoming - который ссылается) */
     vndId: number;
     code: string;
     title: string;
     status: string; // "active" | "onact" | "review" | "consol" | "arch" | "draft"
-    /** true — ссылка не добавлена вручную через "Добавить ссылку", а автоматически обнаружена
-     * в тексте документа (легаси-гиперссылка db://documents/{код} из старой системы isrib). */
+    /** "manual" - добавлена через "Добавить ссылку"; "legacy" - гиперссылка db://documents/{код},
+     * прошитая в Word-файл редакции ещё в старой системе (isrib) и найденная автоматически. */
+    kind?: VndLinkKind;
+    /** То же, что kind === "legacy" (оставлено для обратной совместимости). */
     isAutoDetected?: boolean;
+    /** Где ссылка упоминается в тексте ССЫЛАЮЩЕГОСЯ документа. null - "без упоминания в тексте". */
+    source?: VndLinkAnchor | null;
+    /** На какое место документа, НА КОТОРЫЙ ссылаются, ведёт ссылка. null - на весь документ. */
+    target?: VndLinkAnchor | null;
+    createdAt?: string | null;
+}
+
+/** Фрагмент текста для "якоря" ссылки при её добавлении (см. VndAddLinkWizard). */
+export interface VndLinkAnchorRequest {
+    redactionId: number;
+    /** "ru" | "kg" | "en" */
+    documentTarget: string;
+    text: string;
+    prefix?: string | null;
+    suffix?: string | null;
+    occurrence?: number | null;
+}
+
+export interface AddVndLinkRequest {
+    targetVndId: number;
+    /** null/undefined - "Без упоминания в тексте". */
+    source?: VndLinkAnchorRequest | null;
+    /** null/undefined - ссылка на весь документ. */
+    target?: VndLinkAnchorRequest | null;
 }
 
 /** Ссылка на СОБСТВЕННОЕ вложение документа, обнаруженная в тексте текущей редакции
@@ -425,8 +473,17 @@ export interface VndAttachmentLinkItem {
     legacyIndex: number;
     fileId: number;
     fileName: string;
-    /** false — вложения с таким номером у текущей редакции нет, ссылка нерабочая. */
+    /** false — вложения с таким номером у этой редакции нет, ссылка нерабочая. */
     resolved: boolean;
+    /** В тексте какой редакции найдена ссылка (номер вложения - среди вложений ИМЕННО этой
+     * редакции). Может отсутствовать у старого бэка. */
+    redactionId?: number;
+    redactionNumber?: number;
+    redactionCode?: string;
+    isCurrentRedaction?: boolean;
+    redactionApprovalStatus?: RedactionApprovalStatus | string;
+    /** В тексте на каких языках ("ru"/"kg"/"en") встречается ссылка. */
+    languages?: string[];
 }
 
 export interface VndLinksResponse {
@@ -442,6 +499,8 @@ export interface LegacyLinkResolveResponse {
     kind: "vnd" | "attachment";
     vndId?: number;
     code?: string;
+    title?: string;
+    status?: string;
     fileId?: number;
     fileName?: string;
 }

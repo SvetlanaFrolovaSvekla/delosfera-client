@@ -1291,13 +1291,13 @@
       "emptyOutgoing": "Ссылок на другие документы пока нет",
       "emptyIncoming": "Никто ещё не ссылается на этот документ",
       "attachmentRefsHeader": "Ссылки на вложения (найдено в тексте)",
-      "autoDetectedTooltip": "Обнаружено автоматически по ссылке в тексте документа",
+      "autoDetectedTooltip": "Гиперссылка прошита в самом тексте этой редакции (перенесено из старой системы) — найдена автоматически",
       "autoDetectedBadge": "из текста",
       "deleteLinkTooltip": "Удалить ссылку",
       "openAttachmentTooltip": "Открыть вложение",
       "attachmentNotFoundTooltip": "Вложение с таким номером не найдено",
-      "attachmentRefLabel": "Вложение №{{index}} из текста документа",
-      "attachmentRefNotFoundSuffix": " — не найдено",
+      "attachmentRefLabel": "Вложение №{{index}} — ссылка из текста",
+      "attachmentRefNotFoundSuffix": " · у этой редакции нет такого вложения",
       "statuses": {
         "active": "Действующий",
         "onact": "На актуализации",
@@ -1305,7 +1305,29 @@
         "consol": "На консолидации",
         "arch": "В архиве",
         "draft": "Черновик"
-      }
+      },
+      "linkAddedTitle": "Ссылка добавлена",
+      "linkAddedWithMention": "Ссылка прикреплена к фрагменту текста редакции",
+      "linkAddedWithoutMention": "Ссылка добавлена без упоминания в тексте",
+      "deleteErrorTitle": "Не удалось удалить ссылку",
+      "emptyGeneral": "Общих ссылок (без упоминания в тексте) нет",
+      "emptyInRedaction": "В тексте редакции {{redaction}} ссылок на другие документы нет",
+      "filterAll": "Все",
+      "filterGeneral": "Общие",
+      "filterGeneralTooltip": "Ссылки без упоминания в тексте — относятся к документу в целом",
+      "redactionChipTooltip": "Ссылки из текста редакции {{code}}",
+      "currentRedaction": "действующая редакция",
+      "openDocumentTooltip": "Открыть документ",
+      "withoutMention": "Без упоминания в тексте",
+      "toFragmentOfTarget": "на фрагмент «{{fragment}}»",
+      "toFragmentOfThis": "на фрагмент этого документа «{{fragment}}»",
+      "showInTextTooltip": "Показать в тексте — перейти на вкладку «Редакции» к месту ссылки",
+      "showInSourceTextTooltip": "Показать в тексте ссылающегося документа",
+      "showTargetPlaceTooltip": "Открыть место в документе, на которое ведёт ссылка",
+      "showThisPlaceTooltip": "Показать фрагмент этого документа, на который ссылаются",
+      "showAttachmentInTextTooltip": "Показать ссылку на вложение в тексте редакции",
+      "previewAttachmentTooltip": "Открыть для просмотра",
+      "downloadAttachmentTooltip": "Скачать"
     },
     "actualizationTab": {
       "performStepTitle": "Актуализация начата — шаг «Выполнить актуализацию» ещё не пройден",
@@ -1500,6 +1522,65 @@
       "decisionSubmittedToastTitle": "Резолюция отправлена",
       "decisionSubmittedToastDescription": "Ваше решение по согласованию учтено",
       "decisionErrorDefault": "Не удалось отправить резолюцию"
+    },
+    "linkMarks": {
+      "outgoingTitle": "Ссылка на документ",
+      "incomingTitle": "На этот фрагмент ссылается",
+      "toFragment": "на фрагмент «{{fragment}}»",
+      "clickToOpenTarget": "Нажмите, чтобы открыть документ",
+      "clickToOpenSource": "Нажмите, чтобы открыть ссылающийся документ",
+      "focusNotAnchoredTitle": "Ссылка не привязана к тексту",
+      "focusNotAnchoredDescription": "Эта ссылка добавлена без упоминания в тексте — показать её место нельзя",
+      "focusRedactionHiddenTitle": "Редакция недоступна",
+      "focusRedactionHiddenDescription": "Ссылка находится в тексте редакции {{code}}, которая вам недоступна для просмотра",
+      "focusNotFoundTitle": "Место ссылки не найдено",
+      "focusNotFoundDescription": "Фрагмент, к которому была прикреплена ссылка, в тексте редакции не найден — возможно, текст изменился",
+      "focusApproximateTitle": "Показано примерное место",
+      "focusApproximateDescription": "Текст фрагмента с момента добавления ссылки изменился — показано наиболее похожее место",
+      "clickToOpenTargetNewTabHint": "Нажмите, чтобы открыть · Ctrl+клик — в новой вкладке",
+      "resolving": "Ищем документ с кодом {{code}}…",
+      "documentNotFound": "Документ с кодом {{code}} не найден в системе",
+      "attachmentTitle": "Вложение №{{index}}",
+      "clickToPreview": "Нажмите, чтобы открыть для просмотра",
+      "clickToDownload": "Просмотр недоступен — нажмите, чтобы скачать",
+      "resolvingAttachment": "Ищем вложение…",
+      "attachmentNotFound": "У этой редакции нет вложения №{{index}}"
+    },
+    "linkWizard": {
+      "stepOf": "Шаг {{step}} из {{total}}",
+      "redactionsTitle": "Редакции {{code}}",
+      "redactionStatus": {
+        "current": "действующая",
+        "pendingEffective": "ожидает вступления в силу",
+        "draft": "черновик",
+        "pending": "на согласовании",
+        "rejected": "отклонена",
+        "consolidation": "консолидация",
+        "outdated": "неактуальна"
+      },
+      "noRedactions": "У документа нет доступных редакций",
+      "selectHint": "Выделите мышью фрагмент текста — рядом появится кнопка прикрепления",
+      "back": "Назад",
+      "saveError": "Не удалось сохранить ссылку",
+      "sourceTitle": "Где в тексте упоминается ссылка",
+      "sourceDescription": "Выберите редакцию документа {{code}}, выделите фрагмент, который должен ссылаться на {{target}}, и нажмите «Прикрепить ссылку к этому месту».",
+      "attachHere": "Прикрепить ссылку к этому месту",
+      "targetTitle": "На какое место в {{code}} ведёт ссылка",
+      "targetDescription": "Выделите фрагмент в тексте документа {{code}}, на который должна вести ссылка, и нажмите «Сослаться на это место».",
+      "linkToThisPlace": "Сослаться на это место",
+      "modeTitle": "Как добавить ссылку",
+      "targetModeTitle": "Куда ведёт ссылка",
+      "mentionedIn": "Упоминание в тексте · {{redaction}} · {{lang}}",
+      "withoutMentionTitle": "Без упоминания в тексте",
+      "withoutMentionDescription": "Ссылка на документ в целом — появится в «Общих» ссылках и не привязана к редакции.",
+      "withMentionTitle": "С упоминанием в тексте",
+      "withMentionDescription": "Выберите редакцию и выделите фрагмент текста, к которому прикрепить ссылку.",
+      "wholeDocumentTitle": "На весь документ",
+      "wholeDocumentDescription": "По ссылке откроется документ {{code}} целиком.",
+      "specificPlaceTitle": "На конкретное место",
+      "specificPlaceDescription": "Выделите фрагмент в тексте {{code}} — по ссылке откроется именно это место.",
+      "chooseAnotherDocument": "Выбрать другой документ",
+      "chooseAnotherFragment": "Выбрать другой фрагмент"
     }
   },
   "docxEditor": {
@@ -1731,6 +1812,10 @@
       "actualizationThresholds": {
         "title": "Пороги индикации сроков актуализации",
         "subtitle": "Через сколько дней срок актуализации становится «приближается» и «критично»"
+      },
+      "approvalNorms": {
+        "title": "Нормативы согласования по умолчанию",
+        "subtitle": "Сроки этапов маршрута согласования редакции ВНД, которые подставляются при запуске"
       }
     },
     "procurement": {
@@ -2107,6 +2192,16 @@
     "errorRange": "Введите число от 0 до {{max}}",
     "errorMustExceedCritical": "Должно быть больше порога «Критично»",
     "saveError": "Не удалось сохранить пороги. Попробуйте ещё раз.",
+    "saved": "Сохранено",
+    "retry": "Повторить"
+  },
+  "vndApprovalNormSettingsPage": {
+    "title": "Нормативы согласования по умолчанию",
+    "subtitle": "Сроки этапов маршрута согласования редакции ВНД, которые автоматически подставляются в окне запуска согласования. Инициатор может изменить их для конкретного маршрута.",
+    "hint": "Изменения применяются к новым запускам согласования. Уже запущенные процессы согласования продолжают работать со своими сроками. Максимальное значение для каждого этапа — 90 дней.",
+    "resetDefaults": "Вернуть 7 д. / 4 д. / 3 д.",
+    "errorRange": "Каждый норматив должен быть больше нуля и не больше 90 дней",
+    "saveError": "Не удалось сохранить нормативы. Попробуйте ещё раз.",
     "saved": "Сохранено",
     "retry": "Повторить"
   },

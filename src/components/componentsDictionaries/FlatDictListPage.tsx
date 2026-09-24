@@ -1,8 +1,9 @@
 // Универсальная страница плоского справочника (список + CRUD)
-import type {LucideIcon} from "lucide-react";
 import {useTranslation} from "react-i18next";
 import {useNavigate} from "react-router-dom";
-import {ArrowLeft, Plus} from "lucide-react";
+
+import type {FlatDictItem} from "@/hooks/dictionariesHooks/useFlatDictList.ts";
+import type {FlatDictListResult} from "@/hooks/dictionariesHooks/useFlatDictList.ts";
 
 import {FlatDictFormModal} from "@/components/componentsDictionaries/FlatDictFormModal.tsx";
 import {FlatDictRow} from "@/components/componentsDictionaries/FlatDictRow.tsx";
@@ -12,8 +13,8 @@ import {SearchBar} from "@/components/componentsGeneral/SearchBar.tsx";
 import {Loader} from "@/components/componentsGeneral/Loader.tsx";
 import {EmptyState} from "@/components/componentsGeneral/EmptyState.tsx";
 
-import type {FlatDictItem} from "@/hooks/dictionariesHooks/useFlatDictList.ts";
-import type {FlatDictListResult} from "@/hooks/dictionariesHooks/useFlatDictList.ts";
+import type {LucideIcon} from "lucide-react";
+import {ArrowLeft, Plus} from "lucide-react";
 
 interface FlatDictListPageProps<T extends FlatDictItem> {
     list: FlatDictListResult<T>;
@@ -72,6 +73,7 @@ export function FlatDictListPage<T extends FlatDictItem>({
                         className="flex-none inline-flex items-center gap-1.5 h-9 px-4 rounded-[9px] border-none bg-[#4e57d6] text-white font-semibold text-[12.5px] cursor-pointer hover:brightness-[1.06] shadow-[0_6px_16px_-6px_#4e57d6]"
                     >
                         <Plus className="w-[15px] h-[15px]" strokeWidth={2.2}/>
+                        {/* Добавить значение */}
                         {t("dictionaries.addRoot")}
                     </button>
                 )}
@@ -94,7 +96,7 @@ export function FlatDictListPage<T extends FlatDictItem>({
                 <EmptyState
                     variant="error"
                     title={t("dictionaries.loadError")}
-                    actionLabel={t("general.retry")}
+                    actionLabel={t("general.retry")} // Повторить
                     onAction={refetch}
                 />
             )}

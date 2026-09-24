@@ -1,3 +1,4 @@
+// Компонента выбора даты: ввод вручную, выбор из календаря
 import React, {useEffect, useLayoutEffect, useRef, useState} from "react";
 import {useTranslation} from "react-i18next";
 import {createPortal} from "react-dom";

@@ -25,6 +25,8 @@ interface SelectDropdownProps {
     className?: string;
     minWidth?: string;
     valueClassName?: string;
+    /** Подсветить кнопку как невалидную/незаполненную (жёлтая рамка вместо обычной) */
+    invalid?: boolean;
 }
 
 export function SelectDropdown({
@@ -39,6 +41,7 @@ export function SelectDropdown({
                                    className = "",
                                    minWidth = "180px",
                                    valueClassName,
+                                   invalid = false,
                                }: SelectDropdownProps) {
     const {t} = useTranslation();
     const [open, setOpen] = useState(false);
@@ -84,7 +87,9 @@ export function SelectDropdown({
                     className={`inline-flex items-center justify-between gap-2 h-9 px-3 rounded-[9px] border text-[12.5px] font-medium text-[#3a4560] outline-none cursor-pointer hover:bg-[#f6f8fb] ${
                         open
                             ? "border-[#4e57d6] ring-[3px] ring-[#ececfc] bg-[#f6f8fb]"
-                            : "border-[#e5e9f0] bg-white"
+                            : invalid
+                                ? "border-[#e0b978] bg-white"
+                                : "border-[#e5e9f0] bg-white"
                     }`}
                 >
                   <span

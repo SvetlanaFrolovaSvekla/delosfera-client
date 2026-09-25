@@ -123,10 +123,10 @@ export function FilterChip({
         <button
             type="button"
             onClick={onClick}
-            className={`rounded-[9px] border px-3 py-1.5 text-[13px] transition
+            className={`cursor-pointer rounded-[9px] border px-3 py-1.5 text-[13px] transition
                 ${active
                 ? "border-[#2f68f5] bg-[#eaf0ff] text-[#2f68f5]"
-                : "border-[#e1e7ef] text-[#4d5a72] hover:border-[#c3cede]"}`}
+                : "border-[#e5e9f0] bg-white/40 text-[#55617a] hover:bg-[#f6f8fb]"}`}
         >
             {children}
             {count !== undefined && count > 0 && (

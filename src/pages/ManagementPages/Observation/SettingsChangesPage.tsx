@@ -1,15 +1,3 @@
-import {useEffect, useState} from "react";
-import {ArrowRight, MinusCircle, PencilLine, PlusCircle} from "lucide-react";
-import {
-    settingsChangeService, fieldTitle,
-    CHANGE_KIND_ORDER, CHANGE_KIND_TITLE,
-    type AreaSummary, type SettingsChange, type SettingsChangeKind,
-} from "@/service/settingsChangeService/settingsChangeService.ts";
-import {PageHeader} from "@/components/componentsGeneral/PageHeader.tsx";
-import {Loader} from "@/components/componentsGeneral/Loader.tsx";
-import {EmptyState} from "@/components/componentsGeneral/EmptyState.tsx";
-import {FilterChip, formatDateTime} from "@/components/componentsGeneral/DataTable.tsx";
-
 /**
  * Журнал изменений настроек.
  *
@@ -20,6 +8,21 @@ import {FilterChip, formatDateTime} from "@/components/componentsGeneral/DataTab
  * Каждое изменение показано парой «было → стало». Одно название поля без
  * значений отвечает на «что трогали», но не на «что сломали».
  */
+
+import {useEffect, useState} from "react";
+import {useTranslation} from "react-i18next";
+import {
+    settingsChangeService, fieldTitle,
+    CHANGE_KIND_ORDER, CHANGE_KIND_TITLE,
+    type AreaSummary, type SettingsChange, type SettingsChangeKind,
+} from "@/service/settingsChangeService/settingsChangeService.ts";
+import {PageHeader} from "@/components/componentsGeneral/PageHeader.tsx";
+import {Loader} from "@/components/componentsGeneral/Loader.tsx";
+import {EmptyState} from "@/components/componentsGeneral/EmptyState.tsx";
+import {FilterChip, formatDateTime} from "@/components/componentsGeneral/DataTable.tsx";
+import {SearchBar} from "@/components/componentsGeneral/SearchBar.tsx";
+import {SelectDropdown} from "@/components/componentsGeneral/selects/SingleSelects/SelectDropdown.tsx";
+import {ArrowRight, MinusCircle, PencilLine, PlusCircle} from "lucide-react";
 
 const KIND_ICON: Record<SettingsChangeKind, typeof PlusCircle> = {
     Added: PlusCircle,
@@ -34,6 +37,7 @@ const KIND_COLOR: Record<SettingsChangeKind, string> = {
 };
 
 export function SettingsChangesPage() {
+    const {t} = useTranslation();
     const [areas, setAreas] = useState<AreaSummary[]>([]);
     const [rows, setRows] = useState<SettingsChange[]>([]);
     const [total, setTotal] = useState(0);
@@ -64,6 +68,7 @@ export function SettingsChangesPage() {
     };
 
     useEffect(() => {
+        // eslint-disable-next-line react-hooks/set-state-in-effect
         void load();
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [area, kind]);
@@ -71,12 +76,14 @@ export function SettingsChangesPage() {
     return (
         <div className="flex flex-col gap-5">
             <PageHeader
-                title="Журнал изменений"
-                description="Кто и когда правил справочники и настройки"
+                title={t("settingsChanges.title") /* Журнал изменений настроек */}
+                description={t("settingsChanges.description") /* Кто и когда правил справочники и настройки */}
             />
 
             <div className="flex flex-wrap items-center gap-2">
-                <FilterChip active={kind === ""} onClick={() => setKind("")}>Все</FilterChip>
+                <FilterChip active={kind === ""} onClick={() => setKind("")}>
+                    {t("settingsChanges.allKinds") /* Все */}
+                </FilterChip>
                 {CHANGE_KIND_ORDER.map((value) => (
                     <FilterChip key={value} active={kind === value} onClick={() => setKind(value)}>
                         {CHANGE_KIND_TITLE[value]}
@@ -85,36 +92,35 @@ export function SettingsChangesPage() {
 
                 <span className="mx-1 h-5 w-px bg-[#e1e7ef]"/>
 
-                <select
+                <SelectDropdown
+                    options={[
+                        {value: "", label: t("settingsChanges.allAreas") /* Все области */},
+                        ...areas.map((a) => ({
+                            value: a.area,
+                            label: `${a.area} (${a.count})`,
+                        })),
+                    ]}
                     value={area}
-                    onChange={(e) => setArea(e.target.value)}
-                    className="rounded-[9px] border border-[#e1e7ef] px-3 py-1.5 text-[13px]
-                               outline-none focus:border-[#2f68f5]"
-                >
-                    <option value="">Все области</option>
-                    {areas.map((a) => (
-                        <option key={a.area} value={a.area}>
-                            {a.area} ({a.count})
-                        </option>
-                    ))}
-                </select>
+                    onChange={setArea}
+                    searchable
+                    minWidth="200px"
+                />
 
-                <input
+                <SearchBar
                     value={text}
-                    onChange={(e) => setText(e.target.value)}
-                    onKeyDown={(e) => e.key === "Enter" && void load()}
-                    placeholder="Название записи"
-                    className="ml-auto w-[260px] rounded-[9px] border border-[#e1e7ef] px-3 py-1.5
-                               text-[13px] outline-none transition focus:border-[#2f68f5]"
+                    onChange={setText}
+                    onSubmit={() => void load()}
+                    placeholder={t("settingsChanges.entryNamePlaceholder") /* Название записи */}
+                    className="ml-auto"
                 />
             </div>
 
             {loading ? (
-                <Loader label="Загружаем журнал…"/>
+                <Loader label={t("settingsChanges.loading") /* Загружаем журнал… */}/>
             ) : rows.length === 0 ? (
                 <EmptyState
-                    title="Записей нет"
-                    description="Справочники и настройки за выбранный отбор не менялись."
+                    title={t("settingsChanges.emptyTitle") /* Записей нет */}
+                    description={t("settingsChanges.emptyDescription") /* Справочники и настройки за выбранный отбор не менялись. */}
                 />
             ) : (
                 <>
@@ -126,7 +132,10 @@ export function SettingsChangesPage() {
 
                     {total > rows.length && (
                         <p className="text-[12.5px] text-[#8593a8]">
-                            Показаны последние {rows.length} из {total}. Уточните отбор, чтобы увидеть остальное.
+                            {t("settingsChanges.truncatedNotice", {
+                                shown: rows.length,
+                                total,
+                            }) /* `Показаны последние ${rows.length} из ${total}. Уточните отбор, чтобы увидеть остальное.` */}
                         </p>
                     )}
                 </>
@@ -136,6 +145,7 @@ export function SettingsChangesPage() {
 }
 
 function ChangeCard({change}: {change: SettingsChange}) {
+    const {t} = useTranslation();
     const Icon = KIND_ICON[change.kind];
 
     // У заведения и удаления полей бывает под три десятка — показываем первые,
@@ -156,7 +166,7 @@ function ChangeCard({change}: {change: SettingsChange}) {
                     {change.area}
                 </span>
                 <span className="text-[13px] text-[#101a2c]">
-                    {change.entityTitle ?? `запись № ${change.entityId}`}
+                    {change.entityTitle ?? t("settingsChanges.entryFallback", {id: change.entityId}) /* `запись № ${change.entityId}` */}
                 </span>
 
                 <span className="ml-auto flex items-center gap-3 text-[12px] text-[#8593a8]">
@@ -179,16 +189,16 @@ function ChangeCard({change}: {change: SettingsChange}) {
                             {change.kind === "Modified" ? (
                                 <>
                                     <span className="text-[#c0392b] line-through decoration-[#e0a9a1]">
-                                        {field.before ?? "пусто"}
+                                        {field.before ?? t("settingsChanges.emptyValue") /* пусто */}
                                     </span>
                                     <ArrowRight size={13} className="text-[#a8b3c4]"/>
                                     <span className="font-medium text-[#1c7a4d]">
-                                        {field.after ?? "пусто"}
+                                        {field.after ?? t("settingsChanges.emptyValue") /* пусто */}
                                     </span>
                                 </>
                             ) : (
                                 <span className="text-[#4d5a72]">
-                                    {field.after ?? field.before ?? "пусто"}
+                                    {field.after ?? field.before ?? t("settingsChanges.emptyValue") /* пусто */}
                                 </span>
                             )}
                         </div>
@@ -200,7 +210,7 @@ function ChangeCard({change}: {change: SettingsChange}) {
                             onClick={() => setExpanded(true)}
                             className="mt-0.5 self-start text-[12.5px] text-[#2f68f5] hover:underline"
                         >
-                            показать ещё {hidden}
+                            {t("settingsChanges.showMore", {count: hidden}) /* `показать ещё ${hidden}` */}
                         </button>
                     )}
                 </div>

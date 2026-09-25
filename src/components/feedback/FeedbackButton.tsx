@@ -1,14 +1,3 @@
-import {useEffect, useRef, useState} from "react";
-import {createPortal} from "react-dom";
-import {useLocation} from "react-router-dom";
-import {
-    feedbackService,
-    KIND_ORDER,
-    KIND_TITLE,
-    type FeedbackKind,
-} from "@/service/feedbackService/feedbackService.ts";
-import {AlertTriangle, CircleHelp, Lightbulb, MessageSquarePlus, X} from "lucide-react";
-
 /**
  * Кнопка «Сообщить» на каждом экране системы.
  *
@@ -17,9 +6,20 @@ import {AlertTriangle, CircleHelp, Lightbulb, MessageSquarePlus, X} from "lucide
  * порог в одно нажатие, и тогда замечание вообще случается.
  *
  * Где человек находился, что за экран, какой браузер и какого размера окно —
- * система записывает сама. Половина сообщений вида «кнопка не помещается»
+ * система записывает сама. Половина сообщений вида «кнопка не помещается»,
  * объясняется размером окна, и спрашивать об этом потом значит потерять день.
  */
+import {useEffect, useRef, useState} from "react";
+import {createPortal} from "react-dom";
+import {useLocation} from "react-router-dom";
+import {useTranslation} from "react-i18next";
+import {
+    feedbackService,
+    KIND_ORDER,
+    getKindTitle,
+    type FeedbackKind,
+} from "@/service/feedbackService/feedbackService.ts";
+import {AlertTriangle, CircleHelp, Lightbulb, MessageSquarePlus, X} from "lucide-react";
 
 const KIND_ICON: Record<FeedbackKind, typeof AlertTriangle> = {
     Problem: AlertTriangle,
@@ -27,13 +27,8 @@ const KIND_ICON: Record<FeedbackKind, typeof AlertTriangle> = {
     Question: CircleHelp,
 };
 
-const KIND_HINT: Record<FeedbackKind, string> = {
-    Problem: "Ошибка, пустой экран, действие не проходит",
-    Wish: "Работает, но неудобно или чего-то не хватает",
-    Question: "Не разобрался, что делать на этом экране",
-};
-
 export function FeedbackButton() {
+    const {t} = useTranslation();
     const location = useLocation();
 
     const [open, setOpen] = useState(false);
@@ -44,6 +39,12 @@ export function FeedbackButton() {
     const [error, setError] = useState<string | null>(null);
 
     const textRef = useRef<HTMLTextAreaElement>(null);
+
+    const KIND_HINT: Record<FeedbackKind, string> = {
+        Problem: t("feedbackButton.kindHint.problem"),
+        Wish: t("feedbackButton.kindHint.wish"),
+        Question: t("feedbackButton.kindHint.question"),
+    };
 
     // Экран сменился — прежнее сообщение к нему не относится.
     useEffect(() => {
@@ -80,7 +81,8 @@ export function FeedbackButton() {
 
     const submit = async () => {
         if (text.trim().length < 3) {
-            setError("Напишите, что не так или чего не хватает.");
+            // setError("Напишите, что не так или чего не хватает.");
+            setError(t("feedbackButton.validationError"));
             return;
         }
 
@@ -92,7 +94,8 @@ export function FeedbackButton() {
             setSent(true);
             window.setTimeout(close, 1600);
         } catch {
-            setError("Не удалось отправить. Попробуйте ещё раз.");
+            // setError("Не удалось отправить. Попробуйте ещё раз.");
+            setError(t("feedbackButton.sendError"));
         } finally {
             setSending(false);
         }
@@ -103,14 +106,16 @@ export function FeedbackButton() {
             <button
                 type="button"
                 onClick={() => setOpen(true)}
-                title="Сообщить о проблеме или предложить улучшение"
+                // title="Сообщить о проблеме или предложить улучшение"
+                title={t("feedbackButton.buttonTitle")}
                 className="fixed bottom-5 right-5 z-40 flex items-center gap-2 rounded-full
                            bg-[#2f68f5] px-4 py-3 text-sm font-medium text-white shadow-lg
                            transition hover:bg-[#2554cc] focus:outline-none focus-visible:ring-2
                            focus-visible:ring-[#2f68f5] focus-visible:ring-offset-2 cursor-pointer"
             >
                 <MessageSquarePlus size={18}/>
-                <span className="hidden sm:inline">Сообщить</span>
+                {/* <span className="hidden sm:inline">Сообщить</span> */}
+                <span className="hidden sm:inline">{t("feedbackButton.buttonLabel")}</span>
             </button>
 
             {open && createPortal(
@@ -123,21 +128,25 @@ export function FeedbackButton() {
                         onClick={(event) => event.stopPropagation()}
                         role="dialog"
                         aria-modal="true"
-                        aria-label="Сообщение о работе системы"
+                        // aria-label="Сообщение о работе системы"
+                        aria-label={t("feedbackButton.dialogAriaLabel")}
                     >
                         <div className="mb-4 flex items-start justify-between gap-3">
                             <div>
                                 <h2 className="text-[18px] font-semibold text-[#101a2c]">
-                                    Что не так на этом экране?
+                                    {/* Что не так на этом экране? */}
+                                    {t("feedbackButton.modalTitle")}
                                 </h2>
                                 <p className="mt-1 text-[13px] text-[#8593a8]">
-                                    Пишем разработчикам. Страницу и браузер система укажет сама.
+                                    {/* Пишем разработчикам. Страницу и браузер система укажет сама. */}
+                                    {t("feedbackButton.modalDescription")}
                                 </p>
                             </div>
                             <button
                                 type="button"
                                 onClick={close}
-                                aria-label="Закрыть"
+                                // aria-label="Закрыть"
+                                aria-label={t("feedbackButton.closeAriaLabel")}
                                 className="rounded-lg p-1 text-[#8593a8] transition hover:bg-[#eef2f7] hover:text-[#101a2c]"
                             >
                                 <X size={20}/>
@@ -146,9 +155,13 @@ export function FeedbackButton() {
 
                         {sent ? (
                             <div className="rounded-[12px] bg-[#e6f4ec] px-4 py-6 text-center">
-                                <p className="text-[15px] font-medium text-[#1c7a4d]">Спасибо, записали</p>
+                                <p className="text-[15px] font-medium text-[#1c7a4d]">
+                                    {/* Спасибо, записали */}
+                                    {t("feedbackButton.sentTitle")}
+                                </p>
                                 <p className="mt-1 text-[13px] text-[#4d5a72]">
-                                    Ответ придёт в раздел «Мои сообщения».
+                                    {/* Ответ придёт в раздел «Мои сообщения». */}
+                                    {t("feedbackButton.sentDescription")}
                                 </p>
                             </div>
                         ) : (
@@ -174,7 +187,7 @@ export function FeedbackButton() {
                                                 />
                                                 <span>
                                                     <span className="block text-[14px] font-medium text-[#101a2c]">
-                                                        {KIND_TITLE[value]}
+                                                        {getKindTitle()[value]}
                                                     </span>
                                                     <span className="block text-[12.5px] text-[#8593a8]">
                                                         {KIND_HINT[value]}
@@ -191,7 +204,8 @@ export function FeedbackButton() {
                                     onChange={(event) => setText(event.target.value)}
                                     rows={5}
                                     maxLength={4000}
-                                    placeholder="Что произошло или чего не хватает. Чем конкретнее, тем быстрее поправим."
+                                    // placeholder="Что произошло или чего не хватает. Чем конкретнее, тем быстрее поправим."
+                                    placeholder={t("feedbackButton.textPlaceholder")}
                                     className="w-full resize-y rounded-[12px] border border-[#e1e7ef] px-3 py-2.5
                                                text-[14px] text-[#101a2c] outline-none transition
                                                placeholder:text-[#a8b3c4] focus:border-[#2f68f5]"
@@ -213,7 +227,8 @@ export function FeedbackButton() {
                                             className="rounded-[10px] px-4 py-2 text-[14px] text-[#4d5a72]
                                                        transition hover:bg-[#eef2f7]"
                                         >
-                                            Отмена
+                                            {/* Отмена */}
+                                            {t("feedbackButton.cancel")}
                                         </button>
                                         <button
                                             type="button"
@@ -222,7 +237,8 @@ export function FeedbackButton() {
                                             className="rounded-[10px] bg-[#2f68f5] px-4 py-2 text-[14px] font-medium
                                                        text-white transition hover:bg-[#2554cc] disabled:opacity-60"
                                         >
-                                            {sending ? "Отправляем…" : "Отправить"}
+                                            {/* {sending ? "Отправляем…" : "Отправить"} */}
+                                            {sending ? t("feedbackButton.sending") : t("feedbackButton.send")}
                                         </button>
                                     </div>
                                 </div>

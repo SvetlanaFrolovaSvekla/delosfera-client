@@ -19,10 +19,10 @@ import {FeedbackButton} from "@/components/feedback/FeedbackButton.tsx";
 // Named-экспорты оборачиваем в { default } для React.lazy.
 const AuthorizationPage = lazy(() => import("@/pages/AuthorizationPage.tsx").then(m => ({default: m.AuthorizationPage})));
 const HomePage = lazy(() => import("@/pages/HomePage.tsx").then(m => ({default: m.HomePage})));
-const DictionariesPages = lazy(() => import("@/pages/DictionariesPages/DictionariesPages.tsx").then(m => ({default: m.DictionariesPages})));
+const DictionariesPages = lazy(() => import("@/pages/ManagementPages/Dictionaries/DictionariesPages.tsx").then(m => ({default: m.DictionariesPages})));
 const ApprovalBodyPage = lazy(() => import("@/pages/DictionariesPages/ApprovalBodyPage.tsx").then(m => ({default: m.ApprovalBodyPage})));
 const OrganizationUnitPage = lazy(() => import("@/pages/DictionariesPages/OrganizationUnitPage.tsx").then(m => ({default: m.OrganizationUnitPage})));
-const UnitCuratorsPage = lazy(() => import("@/pages/DictionariesPages/UnitCuratorsPage.tsx").then(m => ({default: m.UnitCuratorsPage})));
+const UnitCuratorsPage = lazy(() => import("@/pages/ManagementPages/Dictionaries/UnitCuratorsPage.tsx").then(m => ({default: m.UnitCuratorsPage})));
 const PositionPage = lazy(() => import("@/pages/DictionariesPages/PositionPage.tsx").then(m => ({default: m.PositionPage})));
 const BodyMembersPage = lazy(() => import("@/pages/DictionariesPages/BodyMembersPage.tsx").then(m => ({default: m.BodyMembersPage})));
 const RouteTemplatesPage = lazy(() => import("@/pages/RouteTemplatesPage.tsx").then(m => ({default: m.RouteTemplatesPage})));
@@ -34,11 +34,11 @@ const RubricPage = lazy(() => import("@/pages/DictionariesPages/RubricPage.tsx")
 const SzRubricPage = lazy(() => import("@/pages/DictionariesPages/SzRubricPage.tsx").then(m => ({default: m.SzRubricPage})));
 const KeywordPage = lazy(() => import("@/pages/DictionariesPages/KeywordPage.tsx").then(m => ({default: m.KeywordPage})));
 const CoordinationApproversPage = lazy(() => import("@/pages/DictionariesPages/CoordinationApproversPage.tsx").then(m => ({default: m.CoordinationApproversPage})));
-const RolesPermissionPage = lazy(() => import("@/pages/RolesPermissionPage.tsx").then(m => ({default: m.RolesPermissionPage})));
+const RolesPermissionPage = lazy(() => import("@/pages/ManagementPages/PeopleAndAccessSettings/RolesPermissionPage.tsx").then(m => ({default: m.RolesPermissionPage})));
 const BaseVndPage = lazy(() => import("@/pages/VndPages/BaseVndPage.tsx").then(m => ({default: m.BaseVndPage})));
 const CreateVndPage = lazy(() => import("@/pages/VndPages/CreateVndPage.tsx").then(m => ({default: m.CreateVndPage})));
 const OpenVndPage = lazy(() => import("@/pages/VndPages/OpenVndPage.tsx").then(m => ({default: m.OpenVndPage})));
-const ProfilePage = lazy(() => import("@/pages/ProfilePage.tsx").then(m => ({default: m.ProfilePage})));
+const ProfilePage = lazy(() => import("@/pages/UsersPages/ProfilePage.tsx").then(m => ({default: m.ProfilePage})));
 const UserProfileViewPage = lazy(() => import("@/pages/UsersPages/UserProfileViewPage.tsx").then(m => ({default: m.UserProfileViewPage})));
 const NotificationsPage = lazy(() => import("@/pages/NotificationsPage/NotificationsPage.tsx").then(m => ({default: m.NotificationsPage})));
 const OpenNotificationPage = lazy(() => import("@/pages/NotificationsPage/OpenNotificationPage.tsx").then(m => ({default: m.OpenNotificationPage})));
@@ -46,7 +46,7 @@ const ActualizationPlanPage = lazy(() => import("@/pages/ActualizationPage/Actua
 const ActualizationPage = lazy(() => import("@/pages/ActualizationPage/ActualizationPage.tsx").then(m => ({default: m.ActualizationPage})));
 const ReportVndPage = lazy(() => import("@/pages/ReportPages/ReportVndPages/ReportVndPage.tsx").then(m => ({default: m.ReportVndPage})));
 const AnalyticsPage = lazy(() => import("@/pages/AnalyticsPage.tsx").then(m => ({default: m.AnalyticsPage})));
-const UsersPage = lazy(() => import("@/pages/UsersPages/UsersPage.tsx").then(m => ({default: m.UsersPage})));
+const UsersPage = lazy(() => import("@/pages/ManagementPages/PeopleAndAccessSettings/UsersPage.tsx").then(m => ({default: m.UsersPage})));
 
 // Контур служебных записок (контур 4 ТЗ)
 const SzRegistryPage = lazy(() => import("@/pages/SZPages/SzRegistryPage.tsx").then(m => ({default: m.SzRegistryPage})));
@@ -66,10 +66,10 @@ const ProcurementProtocolPage = lazy(() => import("@/pages/ProcurementPages/Proc
 const TaskInboxPage = lazy(() => import("@/pages/TasksPages/TaskInboxPage.tsx").then(m => ({default: m.TaskInboxPage})));
 const DigestPage = lazy(() => import("@/pages/DigestPage.tsx").then(m => ({default: m.DigestPage})));
 const CalendarPage = lazy(() => import("@/pages/CalendarPage/CalendarPage.tsx").then(m => ({default: m.CalendarPage})));
-const NotificationSettingsPage = lazy(() => import("@/pages/NotificationSettingsPage.tsx").then(m => ({default: m.NotificationSettingsPage})));
+const NotificationSettingsPage = lazy(() => import("@/pages/ManagementPages/NotificationsSettings/NotificationSettingsPage.tsx").then(m => ({default: m.NotificationSettingsPage})));
 const TaskStatsPage = lazy(() => import("@/pages/TasksPages/TaskStatsPage.tsx").then(m => ({default: m.TaskStatsPage})));
 const ObligationsBoardPage = lazy(() => import("@/pages/ObligationsBoardPage.tsx").then(m => ({default: m.ObligationsBoardPage})));
-const HrRoutingSettingsPage = lazy(() => import("@/pages/HrRoutingSettingsPage.tsx").then(m => ({default: m.HrRoutingSettingsPage})));
+const HrRoutingSettingsPage = lazy(() => import("@/pages/ManagementPages/PeopleAndAccessSettings/HrRoutingSettingsPage.tsx").then(m => ({default: m.HrRoutingSettingsPage})));
 const SubstitutionRequestsPage = lazy(() => import("@/pages/SubstitutionsPages/SubstitutionsPage.tsx").then(m => ({default: m.SubstitutionRequestsPage})));
 const SubstitutionCardPage = lazy(() => import("@/pages/SubstitutionsPages/SubstitutionCardPage.tsx").then(m => ({default: m.SubstitutionCardPage})));
 
@@ -79,19 +79,19 @@ const ActivityFeedPage = lazy(() => import("@/pages/ActivityFeedPage.tsx").then(
 
 // Поиск по документам: реквизиты и текстовые поля карточек (GEN-02/04)
 const UserCardPage = lazy(() => import("@/pages/UsersPages/UserCardPage.tsx").then(m => ({default: m.UserCardPage})));
-const SystemSettingsPage = lazy(() => import("@/pages/SystemSettingsPage.tsx").then(m => ({default: m.SystemSettingsPage})));
+const SystemSettingsPage = lazy(() => import("@/pages/ManagementPages/SystemSettings/SystemSettingsPage.tsx").then(m => ({default: m.SystemSettingsPage})));
 const SearchPage = lazy(() => import("@/pages/SearchPage/SearchPage.tsx").then(m => ({default: m.SearchPage})));
 
 // Заседания Правления, КПА и комитетов: журнал и карточка с повесткой
 const MeetingRegistryPage = lazy(() => import("@/pages/MeetingsPages/MeetingRegistryPage.tsx").then(m => ({default: m.MeetingRegistryPage})));
 const MeetingCardPage = lazy(() => import("@/pages/MeetingsPages/MeetingCardPage.tsx").then(m => ({default: m.MeetingCardPage})));
-const AuditLogPage = lazy(() => import("@/pages/AuditLogPage.tsx").then(m => ({default: m.AuditLogPage})));
+const AuditLogPage = lazy(() => import("@/pages/ManagementPages/Observation/AuditLogPage.tsx").then(m => ({default: m.AuditLogPage})));
 const SigningWorkplacePage = lazy(() => import("@/pages/SigningWorkplacePage.tsx").then(m => ({default: m.SigningWorkplacePage})));
 const AcknowledgementPage = lazy(() => import("@/pages/AcknowledgementPage.tsx").then(m => ({default: m.AcknowledgementPage})));
 const HelpPage = lazy(() => import("@/pages/HelpPage.tsx").then(m => ({default: m.HelpPage})));
 const VndProposalsPage = lazy(() => import("@/pages/VndPages/VndProposalsPage.tsx").then(m => ({default: m.VndProposalsPage})));
-const FeedbackInboxPage = lazy(() => import("@/pages/FeedbackInboxPage.tsx").then(m => ({default: m.FeedbackInboxPage})));
-const UsageAnalyticsPage = lazy(() => import("@/pages/UsageAnalyticsPage.tsx").then(m => ({default: m.UsageAnalyticsPage})));
+const FeedbackInboxPage = lazy(() => import("@/pages/ManagementPages/Observation/FeedbackInboxPage.tsx").then(m => ({default: m.FeedbackInboxPage})));
+const UsageAnalyticsPage = lazy(() => import("@/pages/ManagementPages/Observation/UsageAnalyticsPage.tsx").then(m => ({default: m.UsageAnalyticsPage})));
 const PoaRegistryPage = lazy(() => import("@/pages/PoaRegistryPage.tsx").then(m => ({default: m.PoaRegistryPage})));
 const CorrespondencePage = lazy(() => import("@/pages/CorrespondencePage.tsx").then(m => ({default: m.CorrespondencePage})));
 const ObligationsPage = lazy(() => import("@/pages/ObligationsPage.tsx").then(m => ({default: m.ObligationsPage})));
@@ -99,13 +99,13 @@ const AgendaCandidatesPage = lazy(() => import("@/pages/MeetingsPages/AgendaCand
 const ActualizationBucketSettingsPage = lazy(() => import("@/pages/DictionariesPages/ActualizationBucketSettingsPage.tsx").then(m => ({default: m.ActualizationBucketSettingsPage})));
 const VndApprovalNormSettingsPage = lazy(() => import("@/pages/DictionariesPages/VndApprovalNormSettingsPage.tsx").then(m => ({default: m.VndApprovalNormSettingsPage})));
 const VndWorkCalendarPage = lazy(() => import("@/pages/DictionariesPages/VndWorkCalendarPage.tsx").then(m => ({default: m.VndWorkCalendarPage})));
-const ManagementPage = lazy(() => import("@/pages/ManagementPage.tsx").then(m => ({default: m.ManagementPage})));
-const NotificationMailingSettingsPage = lazy(() => import("@/pages/NotificationMailingSettingsPage.tsx").then(m => ({default: m.NotificationMailingSettingsPage})));
-const DocumentTypesPage = lazy(() => import("@/pages/DocumentTypesPage.tsx").then(m => ({default: m.DocumentTypesPage})));
-const SettingsChangesPage = lazy(() => import("@/pages/SettingsChangesPage.tsx").then(m => ({default: m.SettingsChangesPage})));
+const ManagementPage = lazy(() => import("@/pages/ManagementPages/ManagementPage.tsx").then(m => ({default: m.ManagementPage})));
+const NotificationMailingSettingsPage = lazy(() => import("@/pages/ManagementPages/NotificationsSettings/NotificationMailingSettingsPage.tsx").then(m => ({default: m.NotificationMailingSettingsPage})));
+const DocumentTypesPage = lazy(() => import("@/pages/ManagementPages/Dictionaries/DocumentTypesPage.tsx").then(m => ({default: m.DocumentTypesPage})));
+const SettingsChangesPage = lazy(() => import("@/pages/ManagementPages/Observation/SettingsChangesPage.tsx").then(m => ({default: m.SettingsChangesPage})));
 const HrOrdersPage = lazy(() => import("@/pages/HrOrdersPage.tsx").then(m => ({default: m.HrOrdersPage})));
 const SzStatisticsPage = lazy(() => import("@/pages/SZPages/SzStatisticsPage.tsx").then(m => ({default: m.SzStatisticsPage})));
-const SubstitutionsPage = lazy(() => import("@/pages/UsersPages/SubstitutionsPage.tsx").then(m => ({default: m.SubstitutionsPage})));
+const SubstitutionsPage = lazy(() => import("@/pages/ManagementPages/PeopleAndAccessSettings/SubstitutionsPage.tsx").then(m => ({default: m.SubstitutionsPage})));
 const SupplierRegistryPage = lazy(() => import("@/pages/ProcurementPages/SupplierRegistryPage.tsx").then(m => ({default: m.SupplierRegistryPage})));
 const ProcurementPlanPage = lazy(() => import("@/pages/ProcurementPages/ProcurementPlanPage.tsx").then(m => ({default: m.ProcurementPlanPage})));
 

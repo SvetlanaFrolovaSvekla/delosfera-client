@@ -1,9 +1,10 @@
 // Поиск и фильтры для страницы пользователей
 import React, {type ReactNode, useRef, useState} from "react";
+import {useTranslation} from "react-i18next";
+import {useDictionaries} from "@/context/DictionariesContext.tsx";
 import type {RoleResponse, UserSortBy, UserSource} from "@/service/userService/userServiceType.ts";
 import type {UserColDef} from "@/constants/columnsFilters/usersColumns.ts";
 import {useClickOutside} from "@/hooks/useClickOutside.ts";
-import {useDictionaries} from "@/context/DictionariesContext.tsx";
 import {
     useUsersAdvancedFiltersDraft,
     type UserAdvancedDraft,
@@ -16,32 +17,39 @@ import {
     ArrowDownAZ, ArrowUpAZ, ArrowDown10, ArrowUp10,
 } from "lucide-react";
 
-const SORT_OPTIONS: { value: UserSortBy; label: string; icon: React.ReactNode }[] = [
-    {value: "NameAsc", label: "ФИО (А–Я)", icon: <ArrowDownAZ className="w-[15px] h-[15px]" strokeWidth={1.8}/>},
-    {value: "NameDesc", label: "ФИО (Я–А)", icon: <ArrowUpAZ className="w-[15px] h-[15px]" strokeWidth={1.8}/>},
-    {
-        value: "CreatedAtDesc",
-        label: "Сначала новые",
-        icon: <ArrowDown10 className="w-[15px] h-[15px]" strokeWidth={1.8}/>
-    },
-    {
-        value: "CreatedAtAsc",
-        label: "Сначала старые",
-        icon: <ArrowUp10 className="w-[15px] h-[15px]" strokeWidth={1.8}/>
-    },
-];
 
-const SOURCE_OPTIONS: { key: UserSource; label: string }[] = [
-    {key: "Local", label: "Локальный"},
-    {key: "Ldap", label: "LDAP"},
-];
-
-// Триггер сортировки в стиле MultiSelectDropdown, но одиночный выбор —
-// поэтому не переиспользую сам MultiSelectDropdown, а собираю рядом в том же визуальном языке
 function SortDropdown({value, onChange}: { value: UserSortBy; onChange: (v: UserSortBy) => void }) {
+    const {t} = useTranslation();
     const [open, setOpen] = useState(false);
     const rootRef = useRef<HTMLDivElement>(null);
     useClickOutside(rootRef, open, () => setOpen(false));
+
+    const SORT_OPTIONS: { value: UserSortBy; label: string; icon: React.ReactNode }[] = [
+        // {value: "NameAsc", label: "ФИО (А–Я)", icon: <ArrowDownAZ .../>},
+        {
+            value: "NameAsc",
+            label: t("usersFilters.sortNameAsc"),
+            icon: <ArrowDownAZ className="w-[15px] h-[15px]" strokeWidth={1.8}/>
+        },
+        // {value: "NameDesc", label: "ФИО (Я–А)", icon: <ArrowUpAZ .../>},
+        {
+            value: "NameDesc",
+            label: t("usersFilters.sortNameDesc"),
+            icon: <ArrowUpAZ className="w-[15px] h-[15px]" strokeWidth={1.8}/>
+        },
+        // {value: "CreatedAtDesc", label: "Сначала новые", icon: <ArrowDown10 .../>},
+        {
+            value: "CreatedAtDesc",
+            label: t("usersFilters.sortCreatedDesc"),
+            icon: <ArrowDown10 className="w-[15px] h-[15px]" strokeWidth={1.8}/>
+        },
+        // {value: "CreatedAtAsc", label: "Сначала старые", icon: <ArrowUp10 .../>},
+        {
+            value: "CreatedAtAsc",
+            label: t("usersFilters.sortCreatedAsc"),
+            icon: <ArrowUp10 className="w-[15px] h-[15px]" strokeWidth={1.8}/>
+        },
+    ];
 
     const current = SORT_OPTIONS.find((o) => o.value === value) ?? SORT_OPTIONS[0];
 
@@ -146,6 +154,17 @@ export function UsersFilters({
                                  hasActiveFilters, onResetFilters,
                                  countLabel,
                              }: UsersFiltersProps) {
+    const {t} = useTranslation();
+
+    // const SOURCE_OPTIONS: { key: UserSource; label: string }[] = [
+    //     {key: "Local", label: "Локальный"},
+    //     {key: "Ldap", label: "LDAP"},
+    // ];
+    const SOURCE_OPTIONS: { key: UserSource; label: string }[] = [
+        {key: "Local", label: t("usersFilters.sourceLocal")},
+        {key: "Ldap", label: t("usersFilters.sourceLdap")},
+    ];
+
     const selectedColumnKeys = toggleableColumns
         .filter((c) => visibleCols[c.key] !== false)
         .map((c) => c.key);
@@ -176,7 +195,8 @@ export function UsersFilters({
                     variant="white"
                     value={search}
                     onChange={onSearchChange}
-                    placeholder="Поиск по ФИО или логину…"
+                    // placeholder="Поиск по ФИО или логину…"
+                    placeholder={t("usersFilters.searchPlaceholder")}
                     className="min-w-[280px]"
                 />
             </div>
@@ -192,7 +212,8 @@ export function UsersFilters({
                     }`}
                 >
                     <SlidersHorizontal className="w-[15px] h-[15px]" strokeWidth={1.8}/>
-                    Расширенный поиск
+                    {/* Расширенный поиск */}
+                    {t("usersFilters.advancedSearch")}
                     <ChevronDown
                         className={`w-[15px] h-[15px] flex-none text-[#a3adbd] transition-transform ${advOpen ? "rotate-180" : ""}`}
                         strokeWidth={2}
@@ -202,8 +223,10 @@ export function UsersFilters({
                 <SortDropdown value={sortBy} onChange={onSortByChange}/>
 
                 <MultiSelectDropdown
-                    triggerLabel="Источник"
-                    label="Источник учётной записи"
+                    // triggerLabel="Источник"
+                    triggerLabel={t("usersFilters.sourceTrigger")}
+                    // label="Источник учётной записи"
+                    label={t("usersFilters.sourceLabel")}
                     options={SOURCE_OPTIONS.map((s) => ({key: s.key, label: s.label}))}
                     selectedKeys={sourceFilters}
                     onToggle={(key) => onToggleSourceFilter(key as UserSource)}
@@ -211,12 +234,15 @@ export function UsersFilters({
                     onDeselectAll={onDeselectAllSources}
                     searchable={false}
                     searchThreshold={Infinity}
+                    plain
                 />
 
                 <MultiSelectDropdown
                     icon={<Filter className="w-[15px] h-[15px]" strokeWidth={1.8}/>}
-                    triggerLabel="Колонки"
-                    label="Отображение колонок"
+                    // triggerLabel="Колонки"
+                    triggerLabel={t("usersFilters.columnsTrigger")}
+                    // label="Отображение колонок"
+                    label={t("usersFilters.columnsLabel")}
                     options={toggleableColumns.map((c) => ({key: c.key, label: c.label}))}
                     selectedKeys={selectedColumnKeys}
                     onToggle={onToggleColumn}
@@ -235,7 +261,8 @@ export function UsersFilters({
                         onClick={onResetFilters}
                         className="inline-flex items-center h-9 px-3 rounded-[9px] border border-[#e5e9f0] bg-white text-[#55617a] font-semibold text-[12.5px] cursor-pointer hover:bg-[#f6f8fb]"
                     >
-                        Сбросить фильтры
+                        {/* Сбросить фильтры */}
+                        {t("usersFilters.resetFilters")}
                     </button>
                 )}
 
@@ -255,29 +282,38 @@ export function UsersFilters({
                         <div
                             className="grid [grid-template-columns:repeat(auto-fit,minmax(220px,1fr))] gap-x-[18px] gap-y-3.5 mb-[18px]">
                             <MultiSelectField
-                                label="Должность"
-                                modalTitle="Должность"
+                                // label="Должность"
+                                label={t("usersFilters.positionLabel")}
+                                // modalTitle="Должность"
+                                modalTitle={t("usersFilters.positionLabel")}
                                 options={dictionaries.positionOptions}
                                 selectedKeys={draft.positionFilters}
                                 onChange={(v) => updateDraft("positionFilters", v)}
-                                searchPlaceholder="Поиск должности…"
+                                // searchPlaceholder="Поиск должности…"
+                                searchPlaceholder={t("usersFilters.positionSearchPlaceholder")}
                             />
                             <MultiSelectField
-                                label="СП"
-                                modalTitle="Структурное подразделение"
+                                // label="СП"
+                                label={t("usersFilters.orgUnitLabel")}
+                                // modalTitle="Структурное подразделение"
+                                modalTitle={t("usersFilters.orgUnitModalTitle")}
                                 options={dictionaries.orgUnitOptions}
                                 selectedKeys={draft.orgUnitFilters}
                                 onChange={(v) => updateDraft("orgUnitFilters", v)}
-                                searchPlaceholder="Поиск подразделения…"
+                                // searchPlaceholder="Поиск подразделения…"
+                                searchPlaceholder={t("usersFilters.orgUnitSearchPlaceholder")}
                                 hierarchical
                             />
                             <MultiSelectField
-                                label="Роли"
-                                modalTitle="Роли"
+                                // label="Роли"
+                                label={t("usersFilters.rolesLabel")}
+                                // modalTitle="Роли"
+                                modalTitle={t("usersFilters.rolesLabel")}
                                 options={roleOptions}
                                 selectedKeys={draft.roleFilters}
                                 onChange={(v) => updateDraft("roleFilters", v)}
-                                searchPlaceholder="Поиск роли…"
+                                // searchPlaceholder="Поиск роли…"
+                                searchPlaceholder={t("usersFilters.rolesSearchPlaceholder")}
                             />
                         </div>
 
@@ -287,19 +323,22 @@ export function UsersFilters({
                                 className="inline-flex items-center gap-1.5 h-10 px-4 rounded-[10px] border border-[#e5e9f0] bg-white text-[#55617a] font-semibold text-[12.5px] cursor-pointer hover:bg-[#f6f8fb]"
                             >
                                 <ChevronUp className="w-[15px] h-[15px]" strokeWidth={2}/>
-                                Свернуть
+                                {/* Свернуть */}
+                                {t("usersFilters.collapse")}
                             </button>
                             <button
                                 onClick={handleResetDraft}
                                 className="h-10 px-4 rounded-[10px] border border-[#e5e9f0] bg-white text-[#55617a] font-semibold text-[12.5px] cursor-pointer hover:bg-[#f6f8fb]"
                             >
-                                Сбросить
+                                {/* Сбросить */}
+                                {t("usersFilters.reset")}
                             </button>
                             <button
                                 onClick={handleApply}
                                 className="h-10 px-5 rounded-[10px] border-none bg-[#4e57d6] text-white font-semibold text-[12.5px] cursor-pointer hover:brightness-[1.06]"
                             >
-                                Найти
+                                {/* Найти */}
+                                {t("usersFilters.apply")}
                             </button>
                         </div>
                     </div>

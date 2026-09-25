@@ -1,9 +1,13 @@
 import {useEffect, useMemo, useState} from "react";
-import {Link} from "react-router-dom";
-import {UserPicker, type PickableUser} from "@/components/componentsGeneral/userPicker/UserPicker.tsx";
-import {userService} from "@/service/userService/userService.ts";
+import {UserPickerField} from "@/components/componentsGeneral/userPicker/UserPickerField.tsx";
+import {userService, type UserLookupItem} from "@/service/userService/userService.ts";
 import {organizationUnitService} from "@/service/dictionariesService/organizationUnitService/organizationUnitService.ts";
 import type {OrganizationUnitResponse} from "@/service/dictionariesService/organizationUnitService/organizationUnitServiceType.ts";
+import {PageHeader} from "@/components/componentsGeneral/PageHeader.tsx";
+import {PlainCheckbox} from "@/components/componentsGeneral/componentsCheckBox/PlainCheckbox.tsx";
+import {SearchBar} from "@/components/componentsGeneral/SearchBar.tsx";
+import {Loader} from "@/components/componentsGeneral/Loader.tsx";
+import {HighlightText} from "@/utils/highlightText.tsx";
 
 /**
  * Кураторство подразделений (КСЗ-11): начальник и куратор (курирующий зампред) у каждого
@@ -12,7 +16,7 @@ import type {OrganizationUnitResponse} from "@/service/dictionariesService/organ
  * дозаполняет пробелы; синхронизация перезапишет только то, что портал сам присылает.
  */
 export function UnitCuratorsPage() {
-    const [users, setUsers] = useState<PickableUser[]>([]);
+    const [users, setUsers] = useState<UserLookupItem[]>([]);
     const [units, setUnits] = useState<OrganizationUnitResponse[]>([]);
     const [edited, setEdited] = useState<Record<number, {head: number | null; curator: number | null}>>({});
     const [savingId, setSavingId] = useState<number | null>(null);
@@ -25,12 +29,7 @@ export function UnitCuratorsPage() {
     useEffect(() => {
         Promise.all([userService.lookup(), organizationUnitService.getAll()])
             .then(([list, u]) => {
-                setUsers(list.map((x) => ({
-                    id: x.id, fullName: x.fullName,
-                    position: x.position ?? null, orgUnit: x.orgUnit ?? null,
-                    orgUnitId: x.orgUnitId ?? null,
-                    isBoardMember: x.isBoardMember ?? false, isUnitHead: x.isUnitHead ?? false,
-                })));
+                setUsers(list);
                 setUnits(u);
                 setEdited(Object.fromEntries(u.map((it) => [it.id, {head: it.headUserId, curator: it.curatorUserId}])));
             })
@@ -76,50 +75,68 @@ export function UnitCuratorsPage() {
         }
     }
 
+
     const dirty = (id: number) =>
         edited[id]?.head !== units.find((u) => u.id === id)?.headUserId
         || edited[id]?.curator !== units.find((u) => u.id === id)?.curatorUserId;
 
     return (
-        <div className="w-full max-w-[1100px] px-4 sm:px-6 pt-5 pb-12">
-            <Link to="/management/refs" className="text-[13px] text-[#2f68f5] no-underline hover:underline">← Справочники</Link>
-            <h1 className="mt-2 mb-0 text-[19px] font-bold text-[#0f1b2d]">Кураторство подразделений</h1>
-            <div className="mt-1 text-[12.5px] text-[#8b97ab]">
-                Начальник и куратор (курирующий зампред) у каждого подразделения. По ним маршрут
-                кадровых СЗ находит согласующих. Портал заполняет их не везде — дозаполните пробелы здесь.
-            </div>
+        <div             className="w-full max-w-[1700px] mx-auto px-4 sm:px-6 lg:px-8 xl:px-10 pt-5 sm:pt-[26px] pb-10 sm:pb-[60px]">
+            <PageHeader
+                // title="Типы документов"
+                title="Кураторство подразделений"
+                // description="Свои виды документов: поля карточки и маршрут согласования — без программирования"
+                description=" Начальник и куратор (курирующий зампред) у каждого подразделения. По ним маршрут
+                кадровых СЗ находит согласующих. Портал заполняет их не везде — дозаполните пробелы здесь."
+            />
 
             <div className="mt-4 flex items-center gap-3 flex-wrap">
-                <input
-                    className="h-9 flex-1 min-w-[240px] px-3 rounded-[9px] border border-[#e5e9f0] text-[13px] outline-none focus:border-[#2f68f5]"
-                    placeholder="Поиск подразделения…" value={query} onChange={(e) => setQuery(e.target.value)}
+                <SearchBar
+                    placeholder="Поиск подразделения…"
+                    value={query}
+                    onChange={setQuery}
                 />
-                <label className="flex items-center gap-1.5 text-[13px] text-[#55617a] cursor-pointer">
-                    <input type="checkbox" checked={onlyEmpty} onChange={(e) => setOnlyEmpty(e.target.checked)}/>
+                <PlainCheckbox checked={onlyEmpty} onChange={setOnlyEmpty}>
                     Только с пробелами
-                </label>
+                </PlainCheckbox>
                 <span className="text-[12.5px] text-[#8b97ab]">Показано {shown.length} из {units.length}</span>
             </div>
 
             {loading ? (
-                <div className="mt-5 text-[13px] text-[#8b97ab]">Загрузка…</div>
+                <Loader label="Загрузка"/>
             ) : (
                 <div className="mt-4 flex flex-col gap-2.5">
                     {shown.map((u) => (
                         <div key={u.id} className="rounded-[12px] border border-[#e5e9f0] bg-white p-3.5">
-                            <div className="text-[13.5px] font-semibold text-[#0f1b2d] mb-2.5">{u.titleRu}</div>
+                            <div className="text-[13.5px] font-semibold text-[#0f1b2d] mb-2.5">
+                                <HighlightText text={u.titleRu} query={query}/>
+                            </div>
                             <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
                                 <div>
                                     <div className="text-[11.5px] text-[#8b97ab] mb-1">Начальник</div>
-                                    <UserPicker users={users} value={edited[u.id]?.head ?? null} clearable bySeniority
-                                                placeholder="Найти сотрудника"
-                                                onChange={(x) => change(u.id, "head", x?.id ?? null)}/>
+                                    <UserPickerField
+                                        people={users}
+                                        value={edited[u.id]?.head ?? null}
+                                        clearable
+                                        placeholder="Найти сотрудника"
+                                        modalTitle="Начальник"
+                                        searchPlaceholder="Поиск по ФИО"
+                                        onChange={(id) => change(u.id, "head", id)}
+                                        onClear={() => change(u.id, "head", null)}
+                                    />
                                 </div>
                                 <div>
                                     <div className="text-[11.5px] text-[#8b97ab] mb-1">Куратор (курир. зампред)</div>
-                                    <UserPicker users={users} value={edited[u.id]?.curator ?? null} clearable bySeniority
-                                                placeholder="Найти сотрудника"
-                                                onChange={(x) => change(u.id, "curator", x?.id ?? null)}/>
+                                    <UserPickerField
+                                        people={users}
+                                        value={edited[u.id]?.curator ?? null}
+                                        clearable
+                                        placeholder="Найти сотрудника"
+                                        modalTitle="Куратор (курирующий зампред)"
+                                        searchPlaceholder="Поиск по ФИО"
+                                        onChange={(id) => change(u.id, "curator", id)}
+                                        onClear={() => change(u.id, "curator", null)}
+                                    />
                                 </div>
                             </div>
                             <div className="mt-2.5 flex items-center gap-3">

@@ -7,8 +7,8 @@ import {useNavigate} from "react-router-dom";
 import type {ActivityIcon} from "@/service/activityLogService/activityLogServiceType.ts";
 import {useRecentActivity} from "@/hooks/activityLogHooks/useRecentActivity.ts";
 import {timeAgo} from "@/utils/dateUtils.ts";
-import {Icon} from "@/assets/icons/Icon";
 import {Loader} from "@/components/componentsGeneral/Loader.tsx";
+import {Icon} from "@/assets/icons/Icon";
 import {Lock} from "lucide-react";
 
 const ICON_STYLE: Record<ActivityIcon, { iconName: string; col: string; bg: string }> = {

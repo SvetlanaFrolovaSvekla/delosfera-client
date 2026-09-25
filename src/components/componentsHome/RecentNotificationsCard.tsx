@@ -25,7 +25,7 @@ interface RecentNotificationsCardProps {
 // иначе табы оставались русскими при переключении языка интерфейса.
 const SECTIONS: { id: string; labelKey: string; category?: NotificationCategory }[] = [
     {id: "all", labelKey: "home.recentNotifications.tabs.all"},
-    {id: "System", labelKey: "home.recentNotifications.tabs.system", category: "System"},
+    {id: "System", labelKey: "home.recentNotifications.tabs.componentsSystemSettings", category: "System"},
     {id: "Vnd", labelKey: "home.recentNotifications.tabs.vnd", category: "Vnd"},
     {id: "Sz", labelKey: "home.recentNotifications.tabs.sz", category: "Sz"},
     {id: "Procurement", labelKey: "home.recentNotifications.tabs.procurement", category: "Procurement"},

@@ -161,7 +161,7 @@ export const documentTypeService = {
     },
 };
 
-/** Тип без шаблона маршрута нельзя отправить на согласование — сервер откажет. */
-export function готовКРаботе(type: DocumentType): boolean {
+/** Тип без шаблона маршрута нельзя отправить на согласование - сервер откажет. */
+export function isReadyToUse(type: DocumentType): boolean {
     return type.routeTemplateId != null;
 }

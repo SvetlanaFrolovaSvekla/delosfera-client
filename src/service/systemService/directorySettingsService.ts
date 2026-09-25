@@ -66,7 +66,7 @@ export interface DirectorySyncResult {
     message: string;
 }
 
-const BASE = "/system/directory";
+const BASE = "/componentsSystemSettings/directory";
 
 export const directorySettingsService = {
     get: () => apiClient.get<DirectorySettings>(BASE).then((r) => r.data),

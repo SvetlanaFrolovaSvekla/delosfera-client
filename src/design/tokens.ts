@@ -47,7 +47,7 @@ export const radius = {
 export const space = (n: number) => `${n * 4}px`;
 
 export const font = {
-    sans: "'IBM Plex Sans', system-ui, sans-serif",
+    sans: "'IBM Plex Sans', componentsSystemSettings-ui, sans-serif",
     mono: "'IBM Plex Mono', monospace",
 } as const;
 

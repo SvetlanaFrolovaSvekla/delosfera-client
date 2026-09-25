@@ -1,26 +1,25 @@
-import {useEffect, useMemo, useState} from "react";
-import {AlertTriangle, CircleHelp, Lightbulb, Monitor} from "lucide-react";
-import {
-    feedbackService,
-    KIND_TITLE,
-    STATUS_ORDER,
-    STATUS_TITLE,
-    type FeedbackKind,
-    type FeedbackRow,
-    type FeedbackStatus,
-    type FeedbackSummary,
-} from "@/service/feedbackService/feedbackService.ts";
-import {PageHeader} from "@/components/componentsGeneral/PageHeader.tsx";
-import {Loader} from "@/components/componentsGeneral/Loader.tsx";
-import {EmptyState} from "@/components/componentsGeneral/EmptyState.tsx";
-
 /**
+ * Пожелания и замечания
  * Разбор пожеланий и замечаний с экранов системы.
  *
  * Главное здесь — не список, а сводка по страницам сверху. Во время обкатки важнее
  * знать, какой экран собрал больше всего жалоб, чем прочитать их по одной: три
  * замечания об одном экране — это одна задача, а не три.
  */
+import {useEffect, useMemo, useState} from "react";
+import {useTranslation} from "react-i18next";
+import {
+    feedbackService,
+    STATUS_ORDER,
+    type FeedbackKind,
+    type FeedbackRow,
+    type FeedbackStatus,
+    type FeedbackSummary, getStatusTitle, getKindTitle,
+} from "@/service/feedbackService/feedbackService.ts";
+import {PageHeader} from "@/components/componentsGeneral/PageHeader.tsx";
+import {Loader} from "@/components/componentsGeneral/Loader.tsx";
+import {EmptyState} from "@/components/componentsGeneral/EmptyState.tsx";
+import {AlertTriangle, CircleHelp, Lightbulb, Monitor} from "lucide-react";
 
 const KIND_ICON: Record<FeedbackKind, typeof AlertTriangle> = {
     Problem: AlertTriangle,
@@ -71,6 +70,7 @@ function shortBrowser(userAgent: string | null): string | null {
 }
 
 export function FeedbackInboxPage() {
+    const {t} = useTranslation();
     const [rows, setRows] = useState<FeedbackRow[]>([]);
     const [summary, setSummary] = useState<FeedbackSummary | null>(null);
     const [status, setStatus] = useState<FeedbackStatus | "">("");
@@ -97,6 +97,7 @@ export function FeedbackInboxPage() {
     };
 
     useEffect(() => {
+        // eslint-disable-next-line react-hooks/set-state-in-effect
         void load();
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [status, routePath]);
@@ -118,17 +119,21 @@ export function FeedbackInboxPage() {
     };
 
     return (
-        <div className="flex flex-col gap-5 p-6">
+        <div
+            className="w-full max-w-[1700px] mx-auto px-4 sm:px-6 lg:px-8 xl:px-10 pt-5 sm:pt-[26px] pb-10 sm:pb-[60px]">
             <PageHeader
-                title="Пожелания и замечания"
-                description="Что пишут сотрудники с экранов системы во время обкатки"
+                // title="Пожелания и замечания"
+                title={t("feedbackInbox.title")}
+                // description="Что пишут сотрудники с экранов системы во время обкатки"
+                description={t("feedbackInbox.description")}
             />
 
             {/* Сводка по страницам: три замечания об одном экране — одна задача, а не три. */}
             {summary && summary.byPage.length > 0 && (
                 <section className="rounded-[14px] border border-[#e1e7ef] bg-white p-5">
                     <h2 className="mb-3 text-[15px] font-semibold text-[#101a2c]">
-                        Экраны, о которых пишут чаще всего
+                        {/* Экраны, о которых пишут чаще всего */}
+                        {t("feedbackInbox.topPagesTitle")}
                     </h2>
                     <div className="flex flex-wrap gap-2">
                         {summary.byPage.slice(0, 12).map((page) => (
@@ -147,7 +152,8 @@ export function FeedbackInboxPage() {
                                 <span className="font-mono text-[12px] text-[#4d5a72]">{page.count}</span>
                                 {page.problems > 0 && (
                                     <span className="font-mono text-[11.5px] text-[#c0392b]">
-                                        ошибок {page.problems}
+                                        {/* ошибок {page.problems} */}
+                                        {t("feedbackInbox.problemsCount", {count: page.problems})}
                                     </span>
                                 )}
                             </button>
@@ -159,30 +165,32 @@ export function FeedbackInboxPage() {
                             onClick={() => setRoutePath("")}
                             className="mt-3 text-[13px] text-[#2f68f5] hover:underline"
                         >
-                            Показать все экраны
+                            {/* Показать все экраны */}
+                            {t("feedbackInbox.showAllPages")}
                         </button>
                     )}
                 </section>
             )}
 
-            <div className="flex flex-wrap gap-2">
+            <div className="py-4 flex flex-wrap gap-2">
                 <button
                     type="button"
                     onClick={() => setStatus("")}
-                    className={`rounded-[9px] border px-3 py-1.5 text-[13px] transition
-                        ${status === "" ? "border-[#2f68f5] bg-[#eaf0ff] text-[#2f68f5]" : "border-[#e1e7ef] text-[#4d5a72]"}`}
+                    className={`cursor-pointer rounded-[9px] border px-3 py-1.5 text-[13px] transition
+                        ${status === "" ? "border-[#2f68f5] bg-[#eaf0ff] text-[#2f68f5]" : "border-[#e5e9f0] bg-white/40 text-[#55617a] hover:bg-[#f6f8fb]\""}`}
                 >
-                    Все
+                    {/* Все */}
+                    {t("feedbackInbox.allStatuses")}
                 </button>
                 {STATUS_ORDER.map((value) => (
                     <button
                         key={value}
                         type="button"
                         onClick={() => setStatus(value)}
-                        className={`rounded-[9px] border px-3 py-1.5 text-[13px] transition
-                            ${status === value ? "border-[#2f68f5] bg-[#eaf0ff] text-[#2f68f5]" : "border-[#e1e7ef] text-[#4d5a72]"}`}
+                        className={`cursor-pointer rounded-[9px] border px-3 py-1.5 text-[13px] transition
+                            ${status === value ? "border-[#2f68f5] bg-[#eaf0ff] text-[#2f68f5]" : "border-[#e5e9f0] bg-white/40 text-[#55617a] hover:bg-[#f6f8fb]"}`}
                     >
-                        {STATUS_TITLE[value]}
+                        {getStatusTitle()[value]}
                         {counts.has(value) && (
                             <span className="ml-1.5 font-mono text-[12px] opacity-70">{counts.get(value)}</span>
                         )}
@@ -191,11 +199,14 @@ export function FeedbackInboxPage() {
             </div>
 
             {loading ? (
-                <Loader label="Загружаем сообщения…"/>
+                // <Loader label="Загружаем сообщения…"/>
+                <Loader label={t("feedbackInbox.loadingMessages")}/>
             ) : rows.length === 0 ? (
                 <EmptyState
-                    title="Сообщений нет"
-                    description="Пока никто не написал. Кнопка «Сообщить» есть на каждом экране системы."
+                    // title="Сообщений нет"
+                    title={t("feedbackInbox.emptyTitle")}
+                    // description="Пока никто не написал. Кнопка «Сообщить» есть на каждом экране системы."
+                    description={t("feedbackInbox.emptyDescription")}
                 />
             ) : (
                 <div className="flex flex-col gap-3">
@@ -211,11 +222,11 @@ export function FeedbackInboxPage() {
                                 <div className="mb-2 flex flex-wrap items-center gap-x-3 gap-y-1.5">
                                     <Icon size={17} className={KIND_COLOR[row.kind]}/>
                                     <span className="text-[13px] font-medium text-[#101a2c]">
-                                        {KIND_TITLE[row.kind]}
+                                        {getKindTitle()[row.kind]}
                                     </span>
                                     <span
                                         className={`rounded-[5px] px-2 py-0.5 text-[11px] font-semibold uppercase ${STATUS_STYLE[row.status]}`}>
-                                        {STATUS_TITLE[row.status]}
+                                        {getStatusTitle()[row.status]}
                                     </span>
                                     <span className="font-mono text-[11.5px] text-[#8593a8]">
                                         {row.pageTitle || row.routePath}
@@ -229,7 +240,8 @@ export function FeedbackInboxPage() {
                                     {row.text}
                                 </p>
 
-                                <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-1 text-[12px] text-[#8593a8]">
+                                <div
+                                    className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-1 text-[12px] text-[#8593a8]">
                                     {row.author && (
                                         <span>
                                             {row.author.fullName}
@@ -255,11 +267,11 @@ export function FeedbackInboxPage() {
                                             type="button"
                                             disabled={saving === row.id}
                                             onClick={() => change(row.id, next)}
-                                            className="rounded-[8px] border border-[#e1e7ef] px-2.5 py-1 text-[12.5px]
+                                            className="cursor-pointer rounded-[8px] border border-[#e1e7ef] px-2.5 py-1 text-[12.5px]
                                                        text-[#4d5a72] transition hover:border-[#2f68f5] hover:text-[#2f68f5]
                                                        disabled:opacity-50"
                                         >
-                                            {STATUS_TITLE[next]}
+                                            {getStatusTitle()[next]}
                                         </button>
                                     ))}
                                 </div>

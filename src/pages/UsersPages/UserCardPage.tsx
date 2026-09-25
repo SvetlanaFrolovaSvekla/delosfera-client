@@ -1,6 +1,9 @@
-import {useCallback, useEffect, useMemo, useState} from "react";
+/**
+ * Карточка учётной записи: просмотр и правка.
+ */
+import React, {useCallback, useEffect, useMemo, useState} from "react";
 import {useNavigate, useParams} from "react-router-dom";
-import {ArrowLeft} from "lucide-react";
+import {useTranslation} from "react-i18next";
 import {useDictionaries} from "@/context/DictionariesContext.tsx";
 import {userService} from "@/service/userService/userService.ts";
 import {roleService} from "@/service/userService/roleService.ts";
@@ -9,6 +12,7 @@ import type {
     UpdateUserRequest,
     UserResponse,
 } from "@/service/userService/userServiceType.ts";
+import {ArrowLeft} from "lucide-react";
 
 const inputClass =
     "w-full h-10 px-3 rounded-[9px] border border-[#e5e9f0] bg-white text-[13px] outline-none focus:border-[#2f68f5] disabled:bg-[#fafbfd] disabled:text-[#8b97ab]";
@@ -31,16 +35,8 @@ function formatMoment(iso: string | null | undefined): string {
     });
 }
 
-/**
- * Карточка учётной записи: просмотр и правка.
- *
- * Реестр вёл сюда и раньше, но страницы не было — пользователь попадал на пустой
- * экран. Учётные записи из службы каталогов правятся ограниченно: ФИО, почта и
- * пароль живут в домене, и правка здесь всё равно пропала бы при ближайшей
- * синхронизации, поэтому эти поля показаны только для чтения. Роли, должность и
- * подразделение задаются в системе и остаются доступными.
- */
 export function UserCardPage() {
+    const {t} = useTranslation();
     const {id} = useParams<{ id: string }>();
     const isNew = !id || id === "new";
     const navigate = useNavigate();
@@ -79,12 +75,14 @@ export function UserCardPage() {
 
     useEffect(() => {
         if (isNew) return;
+        // eslint-disable-next-line react-hooks/set-state-in-effect
         setLoading(true);
         userService.getById(Number(id))
             .then(apply)
-            .catch(() => setError("Не удалось загрузить учётную запись"))
+            // "Не удалось загрузить учётную запись"
+            .catch(() => setError(t("userCardPage.loadError")))
             .finally(() => setLoading(false));
-    }, [id, isNew, apply]);
+    }, [id, isNew, apply, t]);
 
     const set = <K extends keyof typeof form>(key: K, value: (typeof form)[K]) =>
         setForm((f) => ({...f, [key]: value}));
@@ -97,7 +95,8 @@ export function UserCardPage() {
             await action();
         } catch (e) {
             const message = (e as { message?: string }).message;
-            setError(message ?? "Не удалось выполнить действие");
+            // "Не удалось выполнить действие"
+            setError(message ?? t("userCardPage.actionError"));
         } finally {
             setBusy(false);
         }
@@ -105,13 +104,15 @@ export function UserCardPage() {
 
     const save = () => run(async () => {
         if (!form.fullName.trim() || !form.email.trim()) {
-            setError("Заполните ФИО и адрес почты");
+            // "Заполните ФИО и адрес почты"
+            setError(t("userCardPage.validationRequired"));
             return;
         }
 
         if (isNew) {
             if (!form.password || form.password.length < 8) {
-                setError("Задайте пароль не короче 8 символов");
+                // "Задайте пароль не короче 8 символов"
+                setError(t("userCardPage.validationPassword"));
                 return;
             }
 
@@ -139,18 +140,21 @@ export function UserCardPage() {
         }));
 
         setForm((f) => ({...f, password: ""}));
-        setNotice("Сохранено");
+        // "Сохранено"
+        setNotice(t("userCardPage.savedNotice"));
     });
 
     const block = () => run(async () => {
         apply(await userService.block(Number(id), {reason: blockReason || undefined}));
         setBlockReason("");
-        setNotice("Учётная запись заблокирована");
+        // "Учётная запись заблокирована"
+        setNotice(t("userCardPage.blockedNotice"));
     });
 
     const unblock = () => run(async () => {
         apply(await userService.unblock(Number(id)));
-        setNotice("Блокировка снята");
+        // "Блокировка снята"
+        setNotice(t("userCardPage.unblockedNotice"));
     });
 
     const toggleRole = (roleId: number) =>
@@ -159,10 +163,12 @@ export function UserCardPage() {
             : [...(form.roleIds ?? []), roleId]);
 
     const title = useMemo(
-        () => (isNew ? "Новый пользователь" : user?.fullName ?? "Учётная запись"),
-        [isNew, user]);
+        // "Новый пользователь" / "Учётная запись"
+        () => (isNew ? t("userCardPage.newUserTitle") : user?.fullName ?? t("userCardPage.fallbackTitle")),
+        [isNew, user, t]);
 
-    if (loading) return <div className="p-6 text-[13px] text-[#8b97ab]">Загрузка…</div>;
+    // "Загрузка…"
+    if (loading) return <div className="p-6 text-[13px] text-[#8b97ab]">{t("userCardPage.loading")}</div>;
 
     return (
         <div className="p-6">
@@ -171,7 +177,8 @@ export function UserCardPage() {
                 className="inline-flex items-center gap-1.5 border-none bg-transparent p-0 text-[12.5px] text-[#55617a] cursor-pointer hover:text-[#2f68f5]"
             >
                 <ArrowLeft size={14}/>
-                Пользователи
+                {/* "Пользователи" */}
+                {t("userCardPage.backToList")}
             </button>
 
             <div className="mt-2 flex items-start justify-between">
@@ -181,15 +188,18 @@ export function UserCardPage() {
                         <div className="mt-1 flex items-center gap-2 text-[12.5px] text-[#8b97ab]">
                             <span>{user.email}</span>
                             <span>·</span>
-                            <span>{fromDirectory ? "из службы каталогов" : "локальная учётная запись"}</span>
+                            {/* "из службы каталогов" / "локальная учётная запись" */}
+                            <span>{fromDirectory ? t("userCardPage.sourceLdapInline") : t("userCardPage.sourceLocalInline")}</span>
                             {user.isBlocked && (
                                 <span className="rounded-full bg-[#fdeeec] px-2 py-0.5 font-semibold text-[#c0392b]">
-                                    заблокирована
+                                    {/* "заблокирована" */}
+                                    {t("userCardPage.badgeBlocked")}
                                 </span>
                             )}
                             {!user.isActive && !user.isBlocked && (
                                 <span className="rounded-full bg-[#f6f8fb] px-2 py-0.5 font-semibold text-[#8b97ab]">
-                                    отключена в каталоге
+                                    {/* "отключена в каталоге" */}
+                                    {t("userCardPage.badgeDisabledInDirectory")}
                                 </span>
                             )}
                         </div>
@@ -201,7 +211,8 @@ export function UserCardPage() {
                     disabled={busy}
                     className="h-9 px-4 rounded-[9px] border-none bg-[#2f68f5] text-white font-semibold text-[12.5px] cursor-pointer hover:brightness-[1.06] disabled:opacity-50"
                 >
-                    Сохранить
+                    {/* "Сохранить" */}
+                    {t("userCardPage.save")}
                 </button>
             </div>
 
@@ -217,50 +228,67 @@ export function UserCardPage() {
             )}
 
             <div className="mt-5 rounded-[12px] border border-[#e5e9f0] bg-white p-5">
-                <h2 className="m-0 mb-4 text-[15px] font-semibold">Учётные данные</h2>
+                <h2 className="m-0 mb-4 text-[15px] font-semibold">
+                    {/* "Учётные данные" */}
+                    {t("userCardPage.credentialsSection")}
+                </h2>
 
                 <div className="grid grid-cols-2 gap-4">
                     <Field
-                        label="ФИО"
-                        hint={fromDirectory ? "Приходит из службы каталогов" : undefined}
+                        // "ФИО"
+                        label={t("userCardPage.fullNameLabel")}
+                        // "Приходит из службы каталогов"
+                        hint={fromDirectory ? t("userCardPage.fromDirectoryHint") : undefined}
                     >
                         <input className={inputClass} value={form.fullName} disabled={fromDirectory}
                                onChange={(e) => set("fullName", e.target.value)}/>
                     </Field>
 
                     <Field
-                        label="Почта (она же логин)"
-                        hint={fromDirectory ? "Приходит из службы каталогов" : undefined}
+                        // "Почта (она же логин)"
+                        label={t("userCardPage.emailLabel")}
+                        // "Приходит из службы каталогов"
+                        hint={fromDirectory ? t("userCardPage.fromDirectoryHint") : undefined}
                     >
                         <input className={inputClass} value={form.email} disabled={fromDirectory}
                                onChange={(e) => set("email", e.target.value)}/>
                     </Field>
 
                     <Field
-                        label={isNew ? "Пароль" : "Новый пароль"}
+                        // "Пароль" / "Новый пароль"
+                        label={isNew ? t("userCardPage.passwordLabelNew") : t("userCardPage.passwordLabelExisting")}
                         hint={fromDirectory
-                            ? "Пароль доменной учётной записи хранится в домене"
-                            : isNew ? "Не короче 8 символов" : "Пусто — пароль не меняется"}
+                            // "Пароль доменной учётной записи хранится в домене"
+                            ? t("userCardPage.passwordHintDirectory")
+                            : isNew
+                                // "Не короче 8 символов"
+                                ? t("userCardPage.passwordHintMinLength")
+                                // "Пусто — пароль не меняется"
+                                : t("userCardPage.passwordHintKeepEmpty")}
                     >
                         <input className={inputClass} type="password" autoComplete="new-password"
                                value={form.password ?? ""} disabled={fromDirectory}
                                onChange={(e) => set("password", e.target.value)}/>
                     </Field>
 
-                    <Field label="Должность">
+                    {/* "Должность" */}
+                    <Field label={t("userCardPage.positionLabel")}>
                         <select className={inputClass} value={form.positionId ?? ""}
                                 onChange={(e) => set("positionId", e.target.value ? Number(e.target.value) : null)}>
-                            <option value="">Не задана</option>
+                            {/* "Не задана" */}
+                            <option value="">{t("userCardPage.positionNotSet")}</option>
                             {positions.map((p) => (
                                 <option key={p.id} value={p.id}>{p.titleRu}</option>
                             ))}
                         </select>
                     </Field>
 
-                    <Field label="Структурное подразделение">
+                    {/* "Структурное подразделение" */}
+                    <Field label={t("userCardPage.orgUnitLabel")}>
                         <select className={inputClass} value={form.orgUnitId ?? ""}
                                 onChange={(e) => set("orgUnitId", e.target.value ? Number(e.target.value) : null)}>
-                            <option value="">Не задано</option>
+                            {/* "Не задано" */}
+                            <option value="">{t("userCardPage.orgUnitNotSet")}</option>
                             {orgUnits.map((u) => (
                                 <option key={u.id} value={u.id}>{u.name}</option>
                             ))}
@@ -271,10 +299,12 @@ export function UserCardPage() {
                         <label className="flex items-end gap-2 pb-2.5 text-[13px] text-[#55617a]">
                             <input type="checkbox" checked={form.isActive} disabled={fromDirectory}
                                    onChange={(e) => set("isActive", e.target.checked)}/>
-                            Учётная запись активна
+                            {/* "Учётная запись активна" */}
+                            {t("userCardPage.isActiveLabel")}
                             {fromDirectory && (
                                 <span className="text-[11.5px] text-[#a6b0c2]">
-                                    (задаётся службой каталогов)
+                                    {/* "(задаётся службой каталогов)" */}
+                                    {t("userCardPage.isActiveDirectoryHint")}
                                 </span>
                             )}
                         </label>
@@ -283,10 +313,13 @@ export function UserCardPage() {
             </div>
 
             <div className="mt-4 rounded-[12px] border border-[#e5e9f0] bg-white p-5">
-                <h2 className="m-0 mb-1 text-[15px] font-semibold">Роли</h2>
+                <h2 className="m-0 mb-1 text-[15px] font-semibold">
+                    {/* "Роли" */}
+                    {t("userCardPage.rolesSection")}
+                </h2>
                 <div className="mb-3 text-[12.5px] text-[#8b97ab]">
-                    Определяют, что пользователь видит и может делать. Из каталога роли не приходят —
-                    их назначает администратор системы.
+                    {/* "Определяют, что пользователь видит и может делать. Из каталога роли не приходят — их назначает администратор системы." */}
+                    {t("userCardPage.rolesDescription")}
                 </div>
 
                 <div className="flex flex-wrap gap-2">
@@ -311,25 +344,33 @@ export function UserCardPage() {
 
             {user && (
                 <div className="mt-4 rounded-[12px] border border-[#e5e9f0] bg-white p-5">
-                    <h2 className="m-0 mb-3 text-[15px] font-semibold">Доступ и события</h2>
+                    <h2 className="m-0 mb-3 text-[15px] font-semibold">
+                        {/* "Доступ и события" */}
+                        {t("userCardPage.accessSection")}
+                    </h2>
 
                     <div className="grid grid-cols-4 gap-4 text-[13px]">
                         <div>
-                            <div className={labelClass}>Последний вход</div>
+                            {/* "Последний вход" */}
+                            <div className={labelClass}>{t("userCardPage.lastLoginLabel")}</div>
                             <div className="text-[#1c2740]">{formatMoment(user.lastLoginAt)}</div>
                         </div>
                         <div>
-                            <div className={labelClass}>Создана</div>
+                            {/* "Создана" */}
+                            <div className={labelClass}>{t("userCardPage.createdLabel")}</div>
                             <div className="text-[#1c2740]">{formatMoment(user.createdAt)}</div>
                         </div>
                         <div>
-                            <div className={labelClass}>Изменена</div>
+                            {/* "Изменена" */}
+                            <div className={labelClass}>{t("userCardPage.updatedLabel")}</div>
                             <div className="text-[#1c2740]">{formatMoment(user.updatedAt)}</div>
                         </div>
                         <div>
-                            <div className={labelClass}>Источник</div>
+                            {/* "Источник" */}
+                            <div className={labelClass}>{t("userCardPage.sourceLabel")}</div>
                             <div className="text-[#1c2740]">
-                                {fromDirectory ? "Служба каталогов" : "Заведена в системе"}
+                                {/* "Служба каталогов" / "Заведена в системе" */}
+                                {fromDirectory ? t("userCardPage.sourceLdap") : t("userCardPage.sourceLocal")}
                             </div>
                         </div>
                     </div>
@@ -337,21 +378,30 @@ export function UserCardPage() {
                     {user.isBlocked ? (
                         <div className="mt-4 rounded-[9px] border border-[#f0dcae] bg-[#fdf3e0] px-3 py-2.5">
                             <div className="text-[12.5px] text-[#b3730a]">
-                                Заблокирована {formatMoment(user.blockedAt)}
-                                {user.blockedByUserName ? `, ${user.blockedByUserName}` : ""}
-                                {user.blockReason ? `. Причина: ${user.blockReason}` : ""}
+                                {/* "Заблокирована {date}" */}
+                                {t("userCardPage.blockedAt", {date: formatMoment(user.blockedAt)})}
+                                {/* ", {name}" */}
+                                {user.blockedByUserName ? t("userCardPage.blockedBy", {name: user.blockedByUserName}) : ""}
+                                {/* ". Причина: {reason}" */}
+                                {user.blockReason ? t("userCardPage.blockedReason", {reason: user.blockReason}) : ""}
                             </div>
                             <button
                                 onClick={unblock}
                                 disabled={busy}
                                 className="mt-2 h-8 px-3 rounded-[9px] border border-[#e5e9f0] bg-white text-[12.5px] font-semibold text-[#55617a] cursor-pointer hover:bg-[#f6f8fb] disabled:opacity-50"
                             >
-                                Снять блокировку
+                                {/* "Снять блокировку" */}
+                                {t("userCardPage.unblockButton")}
                             </button>
                         </div>
                     ) : (
                         <div className="mt-4 flex items-end gap-2">
-                            <Field label="Причина блокировки" hint="Останется в журнале и в карточке">
+                            <Field
+                                // "Причина блокировки"
+                                label={t("userCardPage.blockReasonLabel")}
+                                // "Останется в журнале и в карточке"
+                                hint={t("userCardPage.blockReasonHint")}
+                            >
                                 <input className={`${inputClass} w-[420px]`} value={blockReason}
                                        onChange={(e) => setBlockReason(e.target.value)}/>
                             </Field>
@@ -360,7 +410,8 @@ export function UserCardPage() {
                                 disabled={busy}
                                 className="h-10 px-4 rounded-[9px] border border-[#f3c9c2] bg-white text-[12.5px] font-semibold text-[#c0392b] cursor-pointer hover:bg-[#fdeeec] disabled:opacity-50"
                             >
-                                Заблокировать
+                                {/* "Заблокировать" */}
+                                {t("userCardPage.blockButton")}
                             </button>
                         </div>
                     )}

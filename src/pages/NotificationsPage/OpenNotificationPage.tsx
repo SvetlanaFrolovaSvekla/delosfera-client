@@ -8,7 +8,7 @@ import {NOTIFICATION_CATEGORY_META, DEFAULT_CATEGORY_META} from "@/constants/not
 import {useNotificationById} from "@/hooks/notificationsHooks/useNotificationById.ts";
 import {downloadWithToast} from "@/utils/downloadFiles/downloadFile.ts";
 
-import {SeverityDot} from "@/components/componentsNotifications/SeverityDot.tsx";
+import {SeverityDot} from "@/components/componentsGeneral/dots/SeverityDot.tsx";
 import {Loader} from "@/components/componentsGeneral/Loader";
 import {EmptyState} from "@/components/componentsGeneral/EmptyState.tsx";
 import {Bell, ChevronRight, ArrowLeft, Star, Trash2, Paperclip, Download} from "lucide-react";

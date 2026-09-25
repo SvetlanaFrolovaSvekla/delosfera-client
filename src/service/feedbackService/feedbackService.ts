@@ -1,4 +1,5 @@
 import {apiClient} from "@/service/apiClient.ts";
+import i18n from "i18next";
 
 /**
  * Пожелания и замечания сотрудников с экранов системы.
@@ -11,24 +12,40 @@ import {apiClient} from "@/service/apiClient.ts";
 
 export type FeedbackKind = "Problem" | "Wish" | "Question";
 
-export const KIND_TITLE: Record<FeedbackKind, string> = {
-    Problem: "Не работает",
-    Wish: "Неудобно, есть пожелание",
-    Question: "Непонятно, что делать",
-};
+// export const KIND_TITLE: Record<FeedbackKind, string> = {
+//     Problem: "Не работает",
+//     Wish: "Неудобно, есть пожелание",
+//     Question: "Непонятно, что делать",
+// };
+export function getKindTitle(): Record<FeedbackKind, string> {
+    return {
+        Problem: i18n.t("feedbackInbox.kind.problem"),
+        Wish: i18n.t("feedbackInbox.kind.wish"),
+        Question: i18n.t("feedbackInbox.kind.question"),
+    };
+}
 
 /** Порядок в форме — от того, что требует правки кода, к тому, что требует правки инструкции. */
 export const KIND_ORDER: FeedbackKind[] = ["Problem", "Wish", "Question"];
 
 export type FeedbackStatus = "New" | "InProgress" | "Accepted" | "Declined" | "Done";
 
-export const STATUS_TITLE: Record<FeedbackStatus, string> = {
-    New: "Новое",
-    InProgress: "В работе",
-    Accepted: "Принято",
-    Declined: "Отклонено",
-    Done: "Сделано",
-};
+// export const STATUS_TITLE: Record<FeedbackStatus, string> = {
+//     New: "Новое",
+//     InProgress: "В работе",
+//     Accepted: "Принято",
+//     Declined: "Отклонено",
+//     Done: "Сделано",
+// };
+export function getStatusTitle(): Record<FeedbackStatus, string> {
+    return {
+        New: i18n.t("feedbackInbox.status.new"),
+        InProgress: i18n.t("feedbackInbox.status.inProgress"),
+        Accepted: i18n.t("feedbackInbox.status.accepted"),
+        Declined: i18n.t("feedbackInbox.status.declined"),
+        Done: i18n.t("feedbackInbox.status.done"),
+    };
+}
 
 export const STATUS_ORDER: FeedbackStatus[] = ["New", "InProgress", "Accepted", "Done", "Declined"];
 

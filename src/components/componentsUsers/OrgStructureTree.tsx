@@ -8,13 +8,13 @@
  * держалась бы до следующей синхронизации — то есть до ночи.
  */
 import {useEffect, useMemo, useState} from "react";
-import {Building2, ChevronRight, Users2} from "lucide-react";
 import {
     orgTree, filterTree, totalStaff,
     type OrgTree, type OrgTreeNode,
 } from "@/service/orgStructureService/orgTreeService.ts";
 import {Loader} from "@/components/componentsGeneral/Loader";
 import {EmptyState} from "@/components/componentsGeneral/EmptyState.tsx";
+import {Building2, ChevronRight, Users2} from "lucide-react";
 
 export function OrgStructureTree() {
     const [tree, setTree] = useState<OrgTree | null>(null);
@@ -40,6 +40,7 @@ export function OrgStructureTree() {
     const toggle = (id: number) =>
         setCollapsed((prev) => {
             const next = new Set(prev);
+            // eslint-disable-next-line @typescript-eslint/no-unused-expressions
             next.has(id) ? next.delete(id) : next.add(id);
             return next;
         });

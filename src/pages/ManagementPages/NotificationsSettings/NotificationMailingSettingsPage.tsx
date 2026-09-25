@@ -1,7 +1,5 @@
-// Настройки рассылок по актуализации ВНД — раздел "Уведомления" в "Управление"
-// (ManagementPage), кнопка "Настройки рассылок плана" на странице "Планирование
-// актуализации". Двухпанельная раскладка, как у "Системные настройки" (SystemSettingsPage):
-// слева — разделы настроек, справа — содержимое выбранного.
+// Раздел "Уведомления" в "Управление", кнопка "Настройки рассылок плана" на странице "Планирование актуализации".
+// Настройки рассылок по актуализации ВНД,
 import {useState} from "react";
 
 import {ActualizationResponsiblesSection} from "@/components/componentsVND/componentsNotificationSettings/ActualizationResponsiblesSection.tsx";

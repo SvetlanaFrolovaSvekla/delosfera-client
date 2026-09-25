@@ -1,8 +1,10 @@
+// Личный профиль пользователя
 import { useEffect, useMemo, useState } from "react";
-import { Check, KeyRound, User as UserIcon } from "lucide-react";
-import { Tabs } from "@/components/componentsGeneral/Tabs";
+import { useTranslation } from "react-i18next";
 import { userService } from "@/service/userService/userService.ts";
 import type { UserActivityResponse, UserResponse } from "@/service/userService/userServiceType.ts";
+import { Tabs } from "@/components/componentsGeneral/Tabs";
+import { Check, KeyRound, User as UserIcon } from "lucide-react";
 
 const ALL_TAB = "all";
 
@@ -37,6 +39,7 @@ interface UserProfileViewProps {
  * это тот же самый read-only вид, отличаются только формулировки и источник данных.
  */
 export function UserProfileView({ user, isOwnProfile }: UserProfileViewProps) {
+    const { t } = useTranslation();
     const [activeTab, setActiveTab] = useState<string>(ALL_TAB);
     const [activity, setActivity] = useState<UserActivityResponse | null>(null);
     const [activityLoading, setActivityLoading] = useState(true);
@@ -79,14 +82,19 @@ export function UserProfileView({ user, isOwnProfile }: UserProfileViewProps) {
     const permissionTabs = useMemo(() => {
         if (hasSingleRole) return [];
         return [
-            { id: ALL_TAB, label: isOwnProfile ? "Все мои полномочия" : "Все полномочия", n: allPermissions.length },
+            {
+                id: ALL_TAB,
+                // label: isOwnProfile ? "Все мои полномочия" : "Все полномочия",
+                label: isOwnProfile ? t("userProfile.allMyPermissions") : t("userProfile.allPermissions"),
+                n: allPermissions.length,
+            },
             ...user.roles.map((role) => ({
                 id: String(role.id),
                 label: role.name,
                 n: role.permissions.length,
             })),
         ];
-    }, [user, allPermissions, hasSingleRole, isOwnProfile]);
+    }, [user, allPermissions, hasSingleRole, isOwnProfile, t]);
 
     // права текущей выбранной вкладки (или права единственной роли)
     const activePermissions = useMemo(() => {
@@ -121,11 +129,14 @@ export function UserProfileView({ user, isOwnProfile }: UserProfileViewProps) {
                         ) : (
                             <span className="inline-flex items-center gap-[7px] px-[11px] py-[5px] rounded-lg bg-[var(--soft)] text-[var(--accent)] font-semibold text-[12.5px]">
                                 <UserIcon size={14} strokeWidth={1.9} />
-                                Без роли
+                                {/* Без роли */}
+                                {t("userProfile.noRole")}
                             </span>
                         )}
                         <span className="text-[13px] text-[#55617a]">
-                            {user.position?.name ?? "Должность не указана"} · {user.orgUnit?.name ?? "Подразделение не указано"}
+                            {/* {user.position?.name ?? "Должность не указана"} · {user.orgUnit?.name ?? "Подразделение не указано"} */}
+                            {user.position?.name ?? t("userProfile.positionNotSpecified")} ·{" "}
+                            {user.orgUnit?.name ?? t("userProfile.orgUnitNotSpecified")}
                         </span>
                     </div>
                 </div>
@@ -139,7 +150,8 @@ export function UserProfileView({ user, isOwnProfile }: UserProfileViewProps) {
                             user.isActive ? "bg-[#1c7a4d]" : "bg-[#a12b2b]"
                         }`}
                     />
-                    {user.isActive ? "Учётная запись активна" : "Учётная запись деактивирована"}
+                    {/* {user.isActive ? "Учётная запись активна" : "Учётная запись деактивирована"} */}
+                    {user.isActive ? t("userProfile.accountActive") : t("userProfile.accountDeactivated")}
                 </span>
             </div>
 
@@ -147,13 +159,16 @@ export function UserProfileView({ user, isOwnProfile }: UserProfileViewProps) {
                 {/* Левая колонка - история действий */}
                 <div className="bg-white border border-[#e9edf3] rounded-2xl overflow-hidden">
                     <div className="px-[22px] pt-[17px] pb-[14px] border-b border-[#eef2f7]">
-                        <h2 className="m-0 text-[15px] font-bold">История действий</h2>
+                        {/* <h2 className="m-0 text-[15px] font-bold">История действий</h2> */}
+                        <h2 className="m-0 text-[15px] font-bold">{t("userProfile.activityTitle")}</h2>
                     </div>
                     <div className="px-[22px] pb-[18px] pt-[2px]">
                         {activityLoading ? (
-                            <div className="py-7 text-center text-[#a3adbd] text-[13px]">Загрузка…</div>
+                            // <div className="py-7 text-center text-[#a3adbd] text-[13px]">Загрузка…</div>
+                            <div className="py-7 text-center text-[#a3adbd] text-[13px]">{t("userProfile.loading")}</div>
                         ) : !activity || activity.recent.length === 0 ? (
-                            <div className="py-7 text-center text-[#a3adbd] text-[13px]">Действий пока нет</div>
+                            // <div className="py-7 text-center text-[#a3adbd] text-[13px]">Действий пока нет</div>
+                            <div className="py-7 text-center text-[#a3adbd] text-[13px]">{t("userProfile.noActivity")}</div>
                         ) : (
                             <ul className="flex flex-col divide-y divide-[#f1f4f8]">
                                 {activity.recent.map((item, idx) => (
@@ -182,15 +197,21 @@ export function UserProfileView({ user, isOwnProfile }: UserProfileViewProps) {
                 <div className="flex flex-col gap-4">
                     {/* Учётная запись */}
                     <div className="bg-white border border-[#e9edf3] rounded-2xl px-5 py-[18px]">
-                        <h3 className="m-0 mb-[13px] text-[13.5px] font-bold">Учётная запись</h3>
+                        {/* <h3 className="m-0 mb-[13px] text-[13.5px] font-bold">Учётная запись</h3> */}
+                        <h3 className="m-0 mb-[13px] text-[13.5px] font-bold">{t("userProfile.accountSectionTitle")}</h3>
                         <div className="flex flex-col gap-[11px]">
-                            <Row label="Логин" value={user.email} />
-                            <Row label="Должность" value={user.position?.name ?? "—"} />
-                            <Row label="Структурная единица" value={user.orgUnit?.name ?? "—"} />
+                            {/* <Row label="Логин" value={user.email} /> */}
+                            <Row label={t("userProfile.login")} value={user.email} />
+                            {/* <Row label="Должность" value={user.position?.name ?? "—"} /> */}
+                            <Row label={t("userProfile.position")} value={user.position?.name ?? t("userProfile.dash")} />
+                            {/* <Row label="Структурная единица" value={user.orgUnit?.name ?? "—"} /> */}
+                            <Row label={t("userProfile.orgUnit")} value={user.orgUnit?.name ?? t("userProfile.dash")} />
                             <div className="pt-[10px] border-t border-[#f3f6f9]">
-                                <Row label="Последний вход" value={formatDateTime(user.lastLoginAt)} />
+                                {/* <Row label="Последний вход" value={formatDateTime(user.lastLoginAt)} /> */}
+                                <Row label={t("userProfile.lastLogin")} value={formatDateTime(user.lastLoginAt)} />
                             </div>
-                            <Row label="В системе с" value={formatDateTime(user.createdAt)} />
+                            {/* <Row label="В системе с" value={formatDateTime(user.createdAt)} /> */}
+                            <Row label={t("userProfile.memberSince")} value={formatDateTime(user.createdAt)} />
                         </div>
                     </div>
 
@@ -200,10 +221,12 @@ export function UserProfileView({ user, isOwnProfile }: UserProfileViewProps) {
                             <span className="w-[30px] h-[30px] flex-none rounded-lg bg-[var(--soft)] text-[var(--accent)] grid place-items-center">
                                 <KeyRound size={17} strokeWidth={1.8} />
                             </span>
-                            <h3 className="m-0 text-[13.5px] font-bold">Электронная подпись</h3>
+                            {/* <h3 className="m-0 text-[13.5px] font-bold">Электронная подпись</h3> */}
+                            <h3 className="m-0 text-[13.5px] font-bold">{t("userProfile.signatureTitle")}</h3>
                         </div>
                         <p className="m-0 text-[12.5px] text-[#55617a] leading-[1.55]">
-                            Недоступно
+                            {/* Недоступно */}
+                            {t("userProfile.signatureUnavailable")}
                         </p>
                     </div>
 
@@ -211,11 +234,14 @@ export function UserProfileView({ user, isOwnProfile }: UserProfileViewProps) {
                     <div className="bg-white border border-[#e9edf3] rounded-2xl px-5 py-[18px]">
                         {hasSingleRole ? (
                             <h3 className="m-0 mb-3 text-[13.5px] font-bold">
-                                {isOwnProfile ? "Полномочия моей роли" : "Полномочия роли"} «{user.roles[0].name}»:
+                                {/* {isOwnProfile ? "Полномочия моей роли" : "Полномочия роли"} «{user.roles[0].name}»: */}
+                                {isOwnProfile ? t("userProfile.permissionsOfMyRole") : t("userProfile.permissionsOfRole")}{" "}
+                                «{user.roles[0].name}»:
                             </h3>
                         ) : (
                             <>
-                                <h3 className="m-0 text-[13.5px] font-bold">Полномочия</h3>
+                                {/* <h3 className="m-0 text-[13.5px] font-bold">Полномочия</h3> */}
+                                <h3 className="m-0 text-[13.5px] font-bold">{t("userProfile.permissionsTitle")}</h3>
                                 <div className="overflow-x-auto -mx-1 px-1 mb-4">
                                     <Tabs tabs={permissionTabs} value={activeTab} onChange={setActiveTab} />
                                 </div>
@@ -233,7 +259,8 @@ export function UserProfileView({ user, isOwnProfile }: UserProfileViewProps) {
                                 </span>
                             ))}
                             {activePermissions.length === 0 && (
-                                <span className="text-[12px] text-[#a3adbd]">Прав не назначено</span>
+                                // <span className="text-[12px] text-[#a3adbd]">Прав не назначено</span>
+                                <span className="text-[12px] text-[#a3adbd]">{t("userProfile.noPermissionsAssigned")}</span>
                             )}
                         </div>
                     </div>

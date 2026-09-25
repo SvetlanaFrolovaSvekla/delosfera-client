@@ -1,34 +1,35 @@
-import {useState} from "react";
-import {useLocation} from "react-router-dom";
-import {DirectoryIntegrationForm} from "@/components/system/DirectoryIntegrationForm.tsx";
-import {ProcurementParametersForm} from "@/components/system/ProcurementParametersForm.tsx";
-import {SignatureLevelForm} from "@/components/system/SignatureLevelForm.tsx";
-import {CertificateAuthoritiesForm} from "@/components/system/CertificateAuthoritiesForm.tsx";
-import {SigningSettingsForm} from "@/components/system/SigningSettingsForm.tsx";
-import {OrgStructureIntegrationForm} from "@/components/system/OrgStructureIntegrationForm.tsx";
-import {MailSettingsForm} from "@/components/system/MailSettingsForm.tsx";
-import {SubstitutionNumberingForm} from "@/components/system/SubstitutionNumberingForm.tsx";
-
-type IntegrationState = { enabled: boolean; hasError: boolean } | null;
-
 /**
- * Куда попадает вкладка. Одна страница обслуживает два пункта меню — «Интеграции»
- * и «Настройки подписания», — и без разбиения обе показывали весь список: служба
- * каталогов и оргструктура двоились под подписанием, к которому не относятся (НС-1).
+ * Системные настройки (Интеграции):
+ * Служба каталогов, Организационная структура, Параметры закупок, Нумерация замещений, Почтовые уведомления
  */
+import React, {useState} from "react";
+import {useLocation} from "react-router-dom";
+import {useTranslation} from "react-i18next";
+import {DirectoryIntegrationForm} from "@/components/componentsSystemSettings/DirectoryIntegrationForm.tsx";
+import {ProcurementParametersForm} from "@/components/componentsSystemSettings/ProcurementParametersForm.tsx";
+import {SignatureLevelForm} from "@/components/componentsSystemSettings/SignatureLevelForm.tsx";
+import {CertificateAuthoritiesForm} from "@/components/componentsSystemSettings/CertificateAuthoritiesForm.tsx";
+import {SigningSettingsForm} from "@/components/componentsSystemSettings/SigningSettingsForm.tsx";
+import {OrgStructureIntegrationForm} from "@/components/componentsSystemSettings/OrgStructureIntegrationForm.tsx";
+import {MailSettingsForm} from "@/components/componentsSystemSettings/MailSettingsForm.tsx";
+import {SubstitutionNumberingForm} from "@/components/componentsSystemSettings/SubstitutionNumberingForm.tsx";
+import {StateDot} from "@/components/componentsGeneral/dots/StateDot.tsx";
+
+export type IntegrationState = { enabled: boolean; hasError: boolean } | null;
+
 type SettingsGroup = "integration" | "signing";
 
-interface Integration {
+export interface Integration {
     id: string;
-    title: string;
-    subtitle: string;
+    titleKey: string;
+    subtitleKey: string;
     group: SettingsGroup;
 
     /** Форма настроек; отсутствует у интеграций, которые пока живут в конфигурации сервера. */
     render?: (report: (enabled: boolean, hasError: boolean) => void) => React.ReactNode;
 
     /** Чем настраивается, пока раздела нет. */
-    note?: string;
+    noteKey?: string;
 }
 
 /**
@@ -41,15 +42,15 @@ interface Integration {
 const INTEGRATIONS: Integration[] = [
     {
         id: "directory",
-        title: "Служба каталогов",
-        subtitle: "LDAP · пользователи домена",
+        titleKey: "systemSettings.directory.title" /* Служба каталогов */,
+        subtitleKey: "systemSettings.directory.subtitle" /* LDAP · пользователи домена */,
         group: "integration",
         render: (report) => <DirectoryIntegrationForm onStateChange={report}/>,
     },
     {
         id: "org-structure",
-        title: "Организационная структура",
-        subtitle: "Портал банка · подразделения и подчинённость",
+        titleKey: "systemSettings.orgStructure.title" /* Организационная структура */,
+        subtitleKey: "systemSettings.orgStructure.subtitle" /* Портал банка · подразделения и подчинённость */,
         group: "integration",
         render: (report) => <OrgStructureIntegrationForm onStateChange={report}/>,
     },
@@ -57,56 +58,47 @@ const INTEGRATIONS: Integration[] = [
         // Не интеграция, но живёт по тем же правилам: значения, которые задаёт
         // администратор и от которых зависит поведение контура.
         id: "procurement",
-        title: "Параметры закупок",
-        subtitle: "Пороги Положения и Матрицы полномочий",
+        titleKey: "systemSettings.procurement.title" /* Параметры закупок */,
+        subtitleKey: "systemSettings.procurement.subtitle" /* Пороги Положения и Матрицы полномочий */,
         group: "integration",
         render: () => <ProcurementParametersForm/>,
     },
     {
         id: "substitution-numbering",
-        title: "Нумерация замещений",
-        subtitle: "Формат номера заявки и счётчик (HR-1, HR-2, …)",
+        titleKey: "systemSettings.substitutionNumbering.title" /* Нумерация замещений */,
+        subtitleKey: "systemSettings.substitutionNumbering.subtitle" /* Формат номера заявки и счётчик (HR-1, HR-2, …) */,
         group: "integration",
         render: () => <SubstitutionNumberingForm/>,
     },
     {
         id: "mail",
-        title: "Почтовые уведомления",
-        subtitle: "SMTP · письма о задачах и сроках",
+        titleKey: "systemSettings.mail.title" /* Почтовые уведомления */,
+        subtitleKey: "systemSettings.mail.subtitle" /* SMTP · письма о задачах и сроках */,
         group: "integration",
         render: (report) => <MailSettingsForm onStateChange={report}/>,
     },
     {
         id: "signature",
-        title: "Электронная подпись",
-        subtitle: "Чем закрываются этапы согласования",
+        titleKey: "systemSettings.signature.title" /* Электронная подпись */,
+        subtitleKey: "systemSettings.signature.subtitle" /* Чем закрываются этапы согласования */,
         group: "signing",
         render: () => <SignatureLevelForm/>,
     },
     {
         id: "authorities",
-        title: "Удостоверяющие центры",
-        subtitle: "Кому банк доверяет выпуск сертификатов",
+        titleKey: "systemSettings.authorities.title" /* Удостоверяющие центры */,
+        subtitleKey: "systemSettings.authorities.subtitle" /* Кому банк доверяет выпуск сертификатов */,
         group: "signing",
         render: () => <CertificateAuthoritiesForm/>,
     },
     {
         id: "timestamp",
-        title: "Метка времени и отзыв",
-        subtitle: "Служба меток RFC 3161 · списки отзыва",
+        titleKey: "systemSettings.timestamp.title" /* Метка времени и отзыв */,
+        subtitleKey: "systemSettings.timestamp.subtitle" /* Служба меток RFC 3161 · списки отзыва */,
         group: "signing",
         render: () => <SigningSettingsForm/>,
     },
 ];
-
-function StateDot({state}: { state: IntegrationState }) {
-    if (!state) return <span className="h-2 w-2 rounded-full bg-[#d6dded]"/>;
-
-    const color = state.hasError ? "#c0392b" : state.enabled ? "#1f8a4c" : "#a6b0c2";
-    const title = state.hasError ? "Есть ошибка" : state.enabled ? "Включена" : "Выключена";
-
-    return <span className="h-2 w-2 rounded-full" style={{background: color}} title={title}/>;
-}
 
 /**
  * Системные настройки: интеграции с внешними системами.
@@ -115,6 +107,7 @@ function StateDot({state}: { state: IntegrationState }) {
  * учётные записи и расписания задаются здесь и вступают в силу без перезапуска.
  */
 export function SystemSettingsPage() {
+    const {t} = useTranslation();
     const {pathname} = useLocation();
     // Один компонент на два пункта меню: подписание отдельно от интеграций (НС-1).
     const mode: SettingsGroup = pathname.endsWith("/signing") ? "signing" : "integration";
@@ -127,10 +120,12 @@ export function SystemSettingsPage() {
     // пунктами меню — тогда откатываемся на первую вкладку текущего раздела.
     const current = items.find((x) => x.id === selected) ?? items[0];
 
-    const heading = mode === "signing" ? "Настройки подписания" : "Системные настройки";
+    const heading = mode === "signing"
+        ? t("systemSettings.signingHeading") /* Настройки подписания */
+        : t("systemSettings.heading") /* Системные настройки */;
     const subheading = mode === "signing"
-        ? "Электронная подпись, удостоверяющие центры, метки времени и отзыв"
-        : "Интеграции с внешними системами: адреса, учётные записи и расписания обмена";
+        ? t("systemSettings.signingSubheading") /* Электронная подпись, удостоверяющие центры, метки времени и отзыв */
+        : t("systemSettings.subheading") /* Интеграции с внешними системами: адреса, учётные записи и расписания обмена */;
 
     const report = (id: string) => (enabled: boolean, hasError: boolean) =>
         setStates((s) => (s[id]?.enabled === enabled && s[id]?.hasError === hasError
@@ -158,11 +153,11 @@ export function SystemSettingsPage() {
                                     <StateDot state={states[integration.id] ?? null}/>
                                     <span className={`text-[13px] font-semibold ${
                                         active ? "text-[#2f68f5]" : "text-[#1c2740]"}`}>
-                                        {integration.title}
+                                        {t(integration.titleKey)}
                                     </span>
                                 </span>
                                 <span className="mt-0.5 block pl-4 text-[11.5px] text-[#8b97ab]">
-                                    {integration.subtitle}
+                                    {t(integration.subtitleKey)}
                                 </span>
                             </button>
                         );
@@ -174,8 +169,10 @@ export function SystemSettingsPage() {
                         ? current.render(report(current.id))
                         : (
                             <div className="rounded-[12px] border border-[#e5e9f0] bg-white p-5">
-                                <h2 className="m-0 text-[15px] font-semibold">{current.title}</h2>
-                                <div className="mt-2 text-[13px] leading-[1.7] text-[#55617a]">{current.note}</div>
+                                <h2 className="m-0 text-[15px] font-semibold">{t(current.titleKey)}</h2>
+                                <div className="mt-2 text-[13px] leading-[1.7] text-[#55617a]">
+                                    {current.noteKey && t(current.noteKey)}
+                                </div>
                             </div>
                         )}
                 </section>

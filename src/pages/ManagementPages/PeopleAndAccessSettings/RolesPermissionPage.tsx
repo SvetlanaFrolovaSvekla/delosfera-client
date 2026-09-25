@@ -1,12 +1,17 @@
+/* Страница "Доступы и роли" */
 import {useEffect, useMemo, useState} from "react";
-import {Check, Plus, Shield, User as UserIcon} from "lucide-react";
+import {useTranslation} from "react-i18next";
+import {useAuth} from "@/context/AuthContext.ts";
 import {rolesPermissionService} from "@/service/rolesPermissionService/rolesPermissionService.ts";
 import type {RoleResponse} from "@/service/rolesPermissionService/rolesPermissionTypeService.ts";
-import {useAuth} from "@/context/AuthContext.ts";
-import {CreateRoleModal, type CreateRoleData} from "@/components/componentsModal/CreateRoleModal.tsx";
 import {toast} from "@/service/toastService.ts";
+import {CreateRoleModal, type CreateRoleData} from "@/components/componentsModal/CreateRoleModal.tsx";
+import {Loader} from "@/components/componentsGeneral/Loader.tsx";
+import {Check, Plus, Shield, User as UserIcon} from "lucide-react";
+
 
 export function RolesPermissionPage() {
+    const {t} = useTranslation();
     const {user} = useAuth();
     const [roles, setRoles] = useState<RoleResponse[]>([]);
     const [selectedRoleId, setSelectedRoleId] = useState<number | null>(null);
@@ -16,28 +21,32 @@ export function RolesPermissionPage() {
     const [justSaved, setJustSaved] = useState(false);
     const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
 
-    useEffect(() => {
-        void loadRoles();
-    }, []);
+    function selectRole(role: RoleResponse) {
+        setSelectedRoleId(role.id);
+        setCheckedCodes(new Set(role.permissionCodes));
+        setJustSaved(false);
+    }
 
     async function loadRoles() {
-        setLoading(true);
         try {
-            const data = await rolesPermissionService.getAll({sortBy: "NameAsc"});
+            const data = await rolesPermissionService.getAll({
+                sortBy: "NameAsc",
+            });
+
             setRoles(data);
+
             if (data.length > 0) {
-                selectRole(data[0]);
+                setSelectedRoleId(data[0].id);
+                setCheckedCodes(new Set(data[0].permissionCodes));
             }
         } finally {
             setLoading(false);
         }
     }
 
-    function selectRole(role: RoleResponse) {
-        setSelectedRoleId(role.id);
-        setCheckedCodes(new Set(role.permissionCodes));
-        setJustSaved(false);
-    }
+    useEffect(() => {
+        void loadRoles();
+    }, []);
 
     const selectedRole = useMemo(
         () => roles.find((r) => r.id === selectedRoleId) ?? null,
@@ -74,7 +83,11 @@ export function RolesPermissionPage() {
     async function handleSave() {
         if (!selectedRole) return;
         setSaving(true);
-        const toastId = toast.loading("Сохраняем изменения…", `Роль «${selectedRole.name}»`);
+        // "Сохраняем изменения…", `Роль «${selectedRole.name}»`
+        const toastId = toast.loading(
+            t("rolesPermissions.toastSavingChanges"),
+            t("rolesPermissions.toastRoleName", {name: selectedRole.name})
+        );
         try {
             const updated = await rolesPermissionService.update(selectedRole.id, {
                 titleRu: selectedRole.titleRu,
@@ -87,15 +100,19 @@ export function RolesPermissionPage() {
             setJustSaved(true);
             toast.update(toastId, {
                 variant: "success",
-                title: "Изменения сохранены",
-                description: `Роль «${updated.name}» обновлена`,
+                // "Изменения сохранены"
+                title: t("rolesPermissions.toastChangesSaved"),
+                // `Роль «${updated.name}» обновлена`
+                description: t("rolesPermissions.toastRoleUpdated", {name: updated.name}),
                 duration: 4500,
             });
         } catch (e) {
             toast.update(toastId, {
                 variant: "error",
-                title: "Не удалось сохранить",
-                description: e instanceof Error ? e.message : "Попробуйте ещё раз",
+                // "Не удалось сохранить"
+                title: t("rolesPermissions.toastSaveFailed"),
+                // "Попробуйте ещё раз"
+                description: e instanceof Error ? e.message : t("rolesPermissions.toastTryAgain"),
                 duration: 4500,
             });
         } finally {
@@ -106,7 +123,8 @@ export function RolesPermissionPage() {
     // Создание роли: только названия, права по умолчанию пустые —
     // включаются потом в редакторе справа (уже готовый UI выше).
     async function handleCreateRole(data: CreateRoleData) {
-        const toastId = toast.loading("Создаём роль…", data.titleRu);
+        // "Создаём роль…"
+        const toastId = toast.loading(t("rolesPermissions.toastCreatingRole"), data.titleRu);
         try {
             const created = await rolesPermissionService.create({
                 titleRu: data.titleRu,
@@ -118,15 +136,19 @@ export function RolesPermissionPage() {
             selectRole(created);
             toast.update(toastId, {
                 variant: "success",
-                title: "Роль создана",
-                description: `«${created.name}» — включите права в редакторе справа`,
+                // "Роль создана"
+                title: t("rolesPermissions.toastRoleCreated"),
+                // `«${created.name}» — включите права в редакторе справа`
+                description: t("rolesPermissions.toastRoleCreatedDesc", {name: created.name}),
                 duration: 4500,
             });
         } catch (e) {
             toast.update(toastId, {
                 variant: "error",
-                title: "Не удалось создать роль",
-                description: e instanceof Error ? e.message : "Попробуйте ещё раз",
+                // "Не удалось создать роль"
+                title: t("rolesPermissions.toastCreateRoleFailed"),
+                // "Попробуйте ещё раз"
+                description: e instanceof Error ? e.message : t("rolesPermissions.toastTryAgain"),
                 duration: 4500,
             });
             throw e; // пробрасываем, чтобы модалка осталась открытой и показала ошибку в форме
@@ -138,7 +160,8 @@ export function RolesPermissionPage() {
     if (loading) {
         return (
             <div className="max-w-[1200px] mx-auto px-[30px] pt-[26px] pb-[60px] text-[13px] text-[#8b97ab]">
-                Загрузка…
+                {/* "Загрузка…" */}
+                <Loader label={t("general.loading")}/>
             </div>
         );
     }
@@ -148,10 +171,12 @@ export function RolesPermissionPage() {
             <div className="flex items-end justify-between gap-5 flex-wrap  mb-5">
                 <div>
                     <h1 className="m-0 text-[23px] font-bold tracking-[-0.02em] text-[#1c2740]">
-                        Роли и права доступа
+                        {/* "Роли и права доступа" */}
+                        {t("rolesPermissions.title")}
                     </h1>
                     <p className="mt-[7px] mb-0 text-[13px] text-[#8b97ab]">
-                        Настройка полномочий согласующих, подписантов и других ролей.
+                        {/* "Настройка полномочий согласующих, подписантов и других ролей." */}
+                        {t("rolesPermissions.subtitle")}
                     </p>
                 </div>
                 <div className="flex gap-2.5">
@@ -160,7 +185,8 @@ export function RolesPermissionPage() {
                         className="inline-flex items-center gap-2 h-10 px-[15px] rounded-[10px] border-none bg-[#4e57d6] text-white font-semibold text-[13px] cursor-pointer hover:brightness-[1.06] shadow-[0_6px_16px_-6px_#4e57d6]"
                     >
                         <Plus className="w-[18px] h-[18px]" strokeWidth={2}/>
-                        Создать роль
+                        {/* "Создать роль" */}
+                        {t("rolesPermissions.createRole")}
                     </button>
                 </div>
             </div>
@@ -171,7 +197,8 @@ export function RolesPermissionPage() {
                     <p
                         className="py-1 text-[13px] text-[#8b97ab] text-[13px]"
                     >
-                        Роли моего профиля:
+                        {/* "Роли моего профиля:" */}
+                        {t("rolesPermissions.myProfileRoles")}
                     </p>
                     {user.roles.map((role) => (
                         <span
@@ -189,7 +216,8 @@ export function RolesPermissionPage() {
                 {/* Левая колонка — список ролей */}
                 <div className="flex flex-col gap-[9px]">
                     <div className="text-[11px] font-bold tracking-[.04em] uppercase text-[#a3adbd] px-0.5 pb-0.5">
-                        Роли
+                        {/* "Роли" */}
+                        {t("rolesPermissions.roles")}
                     </div>
                     {roles.map((role) => {
                         const isActive = role.id === selectedRoleId;
@@ -239,7 +267,8 @@ export function RolesPermissionPage() {
                                 </div>
                             </div>
                             <span className="text-[12px] text-[#55617a]">
-                                Прав включено:{" "}
+                                {/* "Прав включено:" */}
+                                {t("rolesPermissions.permissionsEnabled")}{" "}
                                 <b className="font-mono text-[#4e57d6]">{checkedCodes.size}</b>
                             </span>
                         </div>
@@ -285,13 +314,15 @@ export function RolesPermissionPage() {
                                 onClick={handleCancel}
                                 className="h-10 px-4 rounded-[10px] border border-[#e5e9f0] bg-white text-[#55617a] font-semibold text-[13px] cursor-pointer hover:bg-[#f6f8fb]"
                             >
-                                Отмена
+                                {/* "Отмена" */}
+                                {t("rolesPermissions.cancel")}
                             </button>
                             {justSaved && (
                                 <span
                                     className="inline-flex items-center gap-[7px] h-10 px-3.5 text-[#1c7a4d] font-semibold text-[12.5px]">
                                     <Check className="w-4 h-4" strokeWidth={2.2}/>
-                                    Сохранено
+                                    {/* "Сохранено" */}
+                                    {t("rolesPermissions.saved")}
                                 </span>
                             )}
                             <button
@@ -300,7 +331,8 @@ export function RolesPermissionPage() {
                                 disabled={saving}
                                 className="h-10 px-[18px] rounded-[10px] border-none bg-[#4e57d6] text-white font-semibold text-[13px] cursor-pointer shadow-[0_6px_16px_-6px_#4e57d6] hover:brightness-[1.06] disabled:opacity-60 disabled:cursor-not-allowed"
                             >
-                                {saving ? "Сохранение…" : "Сохранить изменения"}
+                                {/* saving ? "Сохранение…" : "Сохранить изменения" */}
+                                {saving ? t("rolesPermissions.saving") : t("rolesPermissions.saveChanges")}
                             </button>
                         </div>
                     </div>

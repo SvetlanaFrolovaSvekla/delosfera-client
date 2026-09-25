@@ -1,4 +1,4 @@
-// Кружок уведомления по категории
+// Кружок уведомления по категории (в уведомлениях)
 import { useTranslation } from "react-i18next";
 import { NOTIFICATION_SEVERITY_META } from "@/constants/notificationSeverity.ts";
 import type { NotificationSeverity } from "@/service/notificationsService/notificationsServiceType.ts";

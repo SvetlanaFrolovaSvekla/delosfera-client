@@ -29,6 +29,7 @@ import {
     VndApproverResolutionPanel,
     type DraftTextRemark,
     type ResolutionChoice,
+    type ResolutionEcpSignature,
     type VndApproverResolutionPanelHandle,
 } from "./componentsCoordinationTab/VndApproverResolutionPanel.tsx";
 import type {QuoteMarkInfo} from "@/utils/vndProcess/redactionQuoteMarks.ts";
@@ -37,6 +38,7 @@ import {VndRevisionNeededPanel} from "./componentsCoordinationTab/VndRevisionNee
 import {VndNoChangesHintBanner} from "./componentsCoordinationTab/VndNoChangesHintBanner.tsx";
 import {getRedactionApprovalSheets} from "@/utils/vndProcess/approvalSheets.ts";
 import {VndCurrentRedactionSection} from "./componentsCoordinationTab/VndCurrentRedactionSection.tsx";
+import {VndSignatureJournal} from "./componentsCoordinationTab/VndSignatureJournal.tsx";
 import {VndRedactionModals} from "./componentsCoordinationTab/VndRedactionModals.tsx";
 import {VndCoordinationRouteSection} from "./componentsCoordinationTab/VndCoordinationRouteSection.tsx";
 import {VndCoordinationDangerZone} from "./componentsCoordinationTab/VndCoordinationDangerZone.tsx";
@@ -304,7 +306,8 @@ export function VndCoordinationTab({vnd, onVndChanged}: VndCoordinationTabProps)
 
     const handleResolutionSubmit = (
         choice: ResolutionChoice, comment: string, files: File[], quotes: ApprovalQuoteItem[],
-    ) => resolutionDecision.submit(myStage, choice, comment, files, quotes);
+        ecpSignature?: ResolutionEcpSignature,
+    ) => resolutionDecision.submit(myStage, choice, comment, files, quotes, ecpSignature);
 
     // Конфиг шапки над установленным маршрутом
     const routeHeaderConfig = getRouteHeaderConfig(process.status, isInitiator, t);
@@ -417,6 +420,8 @@ export function VndCoordinationTab({vnd, onVndChanged}: VndCoordinationTabProps)
                         )}
                         <VndApproverResolutionPanel
                             ref={resolutionPanelRef}
+                            vndId={vnd.id}
+                            stageId={myStage?.id ?? 0}
                             onSubmit={handleResolutionSubmit}
                             submitting={resolutionDecision.submitting}
                             error={resolutionDecision.decisionError}
@@ -446,6 +451,8 @@ export function VndCoordinationTab({vnd, onVndChanged}: VndCoordinationTabProps)
                 {canCancelAnyApproval && CANCELLABLE_PHASE.includes(process.status) && (
                     <VndCoordinationDangerZone onCancelClick={cancelApproval.openCancelModal}/>
                 )}
+
+                <VndSignatureJournal vndId={vnd.id} refreshKey={process.updatedAt}/>
 
                 {sharedModals}
             </div>
@@ -553,6 +560,8 @@ export function VndCoordinationTab({vnd, onVndChanged}: VndCoordinationTabProps)
             {(isInitiator || canCancelAnyApproval) && CANCELLABLE_PHASE.includes(process.status) && (
                 <VndCoordinationDangerZone onCancelClick={cancelApproval.openCancelModal}/>
             )}
+
+            <VndSignatureJournal vndId={vnd.id} refreshKey={process.updatedAt}/>
 
             {sharedModals}
         </div>

@@ -22,8 +22,11 @@ import {useEcpSession} from "@/context/EcpSessionContext.ts";
 
 export type ResolutionChoice = "approve" | "approveWithComment" | "reject";
 
-/** Данные ЭЦП, приложенные к резолюции "Согласовать" — см. useEcpApproval/EcpSignModal. */
-export type {ResolutionEcpSignature} from "@/hooks/useEcpApproval.ts";
+import type {ResolutionEcpSignature} from "@/hooks/useEcpApproval.ts";
+
+/** Данные ЭЦП, приложенные к резолюции "Согласовать" — см. useEcpApproval/EcpSignModal.
+ * Реэкспорт: VndCoordinationTab.tsx импортирует этот тип отсюда, а не из useEcpApproval.ts. */
+export type {ResolutionEcpSignature};
 
 /** Обратный отсчёт до истечения ЭЦП-сессии (статичный токен ГП «Инфоком») — опциональная
  * подсказка, пока действует сессия можно "Согласовать" ещё раз без повторного пин-кода. */

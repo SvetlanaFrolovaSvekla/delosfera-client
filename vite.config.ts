@@ -125,3 +125,4 @@ export default defineConfig({
     server: { port: 5174, strictPort: true, host: 'localhost', proxy },
 })
 */
+git add -A

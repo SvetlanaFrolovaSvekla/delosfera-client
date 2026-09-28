@@ -6,6 +6,7 @@ import {ProtectedRoute} from "@/context/ProtectedRoute.tsx";
 import {RequirePermission} from "@/context/RequirePermission.tsx";
 import {PermissionCode} from "@/constants/permissions/permissions.ts";
 import {DictionariesProvider} from "@/context/DictionariesContext.tsx";
+import {EcpSessionProvider} from "@/context/EcpSessionProvider.tsx";
 import {ToastContainer} from "@/components/componentsGeneral/knowledgeBaseComponents/ToastContainer.tsx";
 import {Loader} from "@/components/componentsGeneral/Loader.tsx";
 
@@ -38,6 +39,7 @@ const RolesPermissionPage = lazy(() => import("@/pages/ManagementPages/PeopleAnd
 const BaseVndPage = lazy(() => import("@/pages/VndPages/BaseVndPage.tsx").then(m => ({default: m.BaseVndPage})));
 const CreateVndPage = lazy(() => import("@/pages/VndPages/CreateVndPage.tsx").then(m => ({default: m.CreateVndPage})));
 const OpenVndPage = lazy(() => import("@/pages/VndPages/OpenVndPage.tsx").then(m => ({default: m.OpenVndPage})));
+const EcpTestPage = lazy(() => import("@/pages/EcpTestPage.tsx").then(m => ({default: m.EcpTestPage})));
 const ProfilePage = lazy(() => import("@/pages/UsersPages/ProfilePage.tsx").then(m => ({default: m.ProfilePage})));
 const UserProfileViewPage = lazy(() => import("@/pages/UsersPages/UserProfileViewPage.tsx").then(m => ({default: m.UserProfileViewPage})));
 const NotificationsPage = lazy(() => import("@/pages/NotificationsPage/NotificationsPage.tsx").then(m => ({default: m.NotificationsPage})));
@@ -116,6 +118,9 @@ const MainLayout = () => {
 
     return (
         <DictionariesProvider>
+            {/* ЭЦП-сессия ГП «Инфоком» (SIG-ECP) — только в памяти, на время нахождения в
+                авторизованной части приложения. Смена вкладки/перезагрузка сбрасывает её. */}
+            <EcpSessionProvider>
             {/* Согласие с регламентом ПЭП спрашивается один раз, до первого подписания. */}
             <RegulationConsentGate/>
             <div className="flex h-screen overflow-hidden">
@@ -130,6 +135,7 @@ const MainLayout = () => {
             {/* Кнопка «Сообщить» — на каждом экране, а не в отдельном разделе:
                 замечание случается посреди работы, и искать его некуда некогда. */}
             <FeedbackButton/>
+            </EcpSessionProvider>
         </DictionariesProvider>
     );
 };
@@ -205,6 +211,13 @@ function App() {
                                 <Route path="/sz-analytics" element={<SzStatisticsPage/>}/>
 
                                 <Route path="/signing-workplace" element={<SigningWorkplacePage/>}/>
+                                {/* Dev/test-страница ЭЦП ГП «Инфоком» — сырой прогон всех 6 методов по отдельности,
+                                    в обход боевого флоу (EcpSignModal/useEcpApproval). Раньше это была песочница,
+                                    теперь ЭЦП — часть резолюции "Согласовать", поэтому страница доступна только
+                                    в dev-сборке (import.meta.env.DEV), а не в проде. */}
+                                {import.meta.env.DEV && (
+                                    <Route path="/ecp-test" element={<EcpTestPage/>}/>
+                                )}
                                 <Route path="/hr-ack" element={<AcknowledgementPage/>}/>
                                 <Route path="/help" element={<HelpPage/>}/>
 

@@ -9,6 +9,9 @@ import type {
     ReplaceApprovalStageRequest,
     ApprovalProcessResponse,
     DisagreementMatrixRowResponse,
+    ResolutionHashResponse,
+    VndResolutionSignatureResponse,
+    ResolutionSignatureVerifyResponse,
 } from "./coordinationServiceTypes";
 import {axiosInstance} from "@/service/axiosInstance.ts";
 
@@ -62,6 +65,13 @@ class CoordinationService {
         if (request.quotes && request.quotes.length > 0) {
             formData.append("QuotesJson", JSON.stringify(request.quotes));
         }
+        // ЭЦП ГП «Инфоком» (SIG-ECP) — простые строковые поля, ASP.NET Core биндит их из
+        // [FromForm] как обычно (в отличие от Files/QuotesJson выше).
+        if (request.ecpSignatureBase64) formData.append("EcpSignatureBase64", request.ecpSignatureBase64);
+        if (request.ecpCertToken) formData.append("EcpCertToken", request.ecpCertToken);
+        if (request.ecpHash) formData.append("EcpHash", request.ecpHash);
+        if (request.ecpPersonIdnp) formData.append("EcpPersonIdnp", request.ecpPersonIdnp);
+        if (request.ecpTimestamp) formData.append("EcpTimestamp", String(request.ecpTimestamp));
 
         // Content-Type НЕ задаём вручную: axios/браузер сам подставит
         // "multipart/form-data; boundary=...". Если прописать заголовок явно без
@@ -72,6 +82,31 @@ class CoordinationService {
         const { data } = await axiosInstance.post<ApprovalProcessResponse>(
             `${this.basePath(vndId)}/stages/${stageId}/decision`,
             formData,
+        );
+        return data;
+    }
+
+    /** Хэш для подписи резолюции ЭЦП ГП «Инфоком» (SIG-ECP, см. useEcpApproval). Клиент шлёт
+     * ТОЛЬКО текст резолюции — содержимое текущей редакции и код ВНД backend берёт из БД сам и
+     * повторяет тот же расчёт при сохранении decide(), сверяя с присланным EcpHash. */
+    async getResolutionHash(vndId: number, stageId: number, comment: string): Promise<ResolutionHashResponse> {
+        const { data } = await axiosInstance.post<ResolutionHashResponse>(
+            `${this.basePath(vndId)}/stages/${stageId}/decision/resolution-hash`,
+            {comment},
+        );
+        return data;
+    }
+
+    /** Журнал подписей ЭЦП по документу (только чтение). */
+    async getSignatures(vndId: number): Promise<VndResolutionSignatureResponse[]> {
+        const { data } = await axiosInstance.get<VndResolutionSignatureResponse[]>(`/vnd/${vndId}/signatures`);
+        return data;
+    }
+
+    /** Повторная проверка подписи: хэш из текущего состояния документа + 2.6 по сохранённой подписи. */
+    async verifySignature(vndId: number, signatureId: number): Promise<ResolutionSignatureVerifyResponse> {
+        const { data } = await axiosInstance.post<ResolutionSignatureVerifyResponse>(
+            `/vnd/${vndId}/signatures/${signatureId}/verify`,
         );
         return data;
     }

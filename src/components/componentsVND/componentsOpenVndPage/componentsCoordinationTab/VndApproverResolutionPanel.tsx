@@ -16,8 +16,38 @@ import type {QuoteAnchorContext} from "@/utils/docxWork/quoteAnchor.ts";
 import {
     formatQuoteLine, QUOTE_NOTE_PREFIX, quoteDisplayText, quoteMatchText,
 } from "@/utils/vndProcess/quoteText.ts";
+import {EcpSignModal} from "@/components/signing/EcpSignModal.tsx";
+import {useEcpApproval} from "@/hooks/useEcpApproval.ts";
+import {useEcpSession} from "@/context/EcpSessionContext.ts";
 
 export type ResolutionChoice = "approve" | "approveWithComment" | "reject";
+
+/** Данные ЭЦП, приложенные к резолюции "Согласовать" — см. useEcpApproval/EcpSignModal. */
+export type {ResolutionEcpSignature} from "@/hooks/useEcpApproval.ts";
+
+/** Обратный отсчёт до истечения ЭЦП-сессии (статичный токен ГП «Инфоком») — опциональная
+ * подсказка, пока действует сессия можно "Согласовать" ещё раз без повторного пин-кода. */
+function EcpSessionCountdown({expireAt}: { expireAt: string }) {
+    const [msLeft, setMsLeft] = useState(() => new Date(expireAt).getTime() - Date.now());
+
+    useEffect(() => {
+        const tick = () => setMsLeft(new Date(expireAt).getTime() - Date.now());
+        tick();
+        const id = setInterval(tick, 1000);
+        return () => clearInterval(id);
+    }, [expireAt]);
+
+    if (msLeft <= 0) return null;
+    const totalSeconds = Math.floor(msLeft / 1000);
+    const minutes = Math.floor(totalSeconds / 60);
+    const seconds = totalSeconds % 60;
+
+    return (
+        <span className="rounded-full border border-[#cfe3d6] bg-[#f2f9f5] px-2.5 py-1 text-[11px] font-medium text-[#1c7a4d]">
+            ЭЦП активна ещё {minutes}:{seconds.toString().padStart(2, "0")}
+        </span>
+    );
+}
 export type ResolutionPhase = "primary" | "repeated" | "finalHold";
 
 /** Одно замечание к фрагменту текста редакции - карточка в блоке "Замечания к тексту".
@@ -42,10 +72,18 @@ export interface DraftTextRemark {
 }
 
 interface VndApproverResolutionPanelProps {
-    /** Возвращает true, если резолюция успешно отправлена (тогда черновик в браузере стирается). */
+    /** Нужны для получения ЭЦП-хэша резолюции (см. useEcpApproval) — хэш того, что реально
+     * подписывается (текст резолюции + содержимое редакции + код ВНД), считается на backend,
+     * клиент присылает только текст (см. VndApprovalController.ResolutionHash/Decide). */
+    vndId: number;
+    stageId: number;
+    /** Возвращает true, если резолюция успешно отправлена (тогда черновик в браузере стирается);
+     * "resign" — подпись не подошла к текущему состоянию документа/комментария (нужно подписать
+     * заново), "reauth" — подпись чужая (нужно сбросить ЭЦП-сессию и ввести ПИН заново). */
     onSubmit: (
         choice: ResolutionChoice, comment: string, files: File[], quotes: ApprovalQuoteItem[],
-    ) => Promise<boolean | void> | boolean | void;
+        ecpSignature?: ResolutionEcpSignature,
+    ) => Promise<boolean | "resign" | "reauth" | void> | boolean | void;
     submitting?: boolean;
     error?: string | null;
     phase?: ResolutionPhase;
@@ -227,6 +265,8 @@ const COMMENT_PLACEHOLDER: Record<ResolutionChoice, string> = {
 export const VndApproverResolutionPanel = forwardRef<
     VndApproverResolutionPanelHandle, VndApproverResolutionPanelProps
 >(function VndApproverResolutionPanel({
+                                          vndId,
+                                          stageId,
                                           onSubmit,
                                           submitting,
                                           error,
@@ -394,7 +434,21 @@ export const VndApproverResolutionPanel = forwardRef<
     // без ожидания рендера, поэтому второй клик блокируется гарантированно.
     const submitLockRef = useRef(false);
 
-    const doSubmit = async () => {
+    // "Согласовать" - решение с наибольшими последствиями (закрывает этап маршрута), поэтому
+    // именно оно требует доп. фактора - ЭЦП ГП «Инфоком» (документация провайдера: ЭП нельзя
+    // использовать как первый фактор входа, только как второй/третий при уже выполненном
+    // действии - здесь это действие). "Отклонить"/"Согласовать с замечаниями" подписи не требуют.
+    //
+    // Токен статичный (см. EcpSessionContext): пока он не истёк, useEcpApproval подписывает
+    // тихо, без EcpSignModal - полный флоу (методы → пин → токен) открывается только когда
+    // действующей сессии ещё нет или она истекла.
+    const ecp = useEcpApproval();
+    const {session: ecpSession, isValid: ecpSessionValid} = useEcpSession();
+    // Backend отклонил подпись при сохранении: документ/комментарий изменились после подписания
+    // (или подпись устарела) — предлагаем подписать заново; подпись чужая — заново с вводом ПИН.
+    const [resignNeeded, setResignNeeded] = useState<"resign" | "reauth" | null>(null);
+
+    const doSubmit = async (ecpSignature?: ResolutionEcpSignature) => {
         if (submitLockRef.current) return;
         submitLockRef.current = true;
         try {
@@ -406,19 +460,36 @@ export const VndApproverResolutionPanel = forwardRef<
                 occurrence: r.occurrence,
                 note: r.note.trim() || null,
             }));
-            const ok = await onSubmit(choice, composedComment, files, quotesToSend);
+            const ok = await onSubmit(choice, composedComment, files, quotesToSend, ecpSignature);
             // Черновик стираем только после успешной отправки - при ошибке он нужен, чтобы
             // пользователь ничего не потерял.
             if (ok === true) saveDraft(draftStorageKey, null);
+            if (ok === "reauth") ecp.resetSession();
+            setResignNeeded(ok === "resign" || ok === "reauth" ? ok : null);
         } finally {
             submitLockRef.current = false;
         }
     };
 
     const handleSubmit = () => {
-        if (!canSubmit || submitting || submitLockRef.current) return;
+        if (!canSubmit || submitting || submitLockRef.current || ecp.quietSigning || ecp.modalOpen) return;
+        setResignNeeded(null);
         if (choice === "reject") {
             setRejectConfirmOpen(true);
+            return;
+        }
+        if (choice === "approve") {
+            // requestSignature сама решает: тихо подписать сохранённым токеном (сессия ещё
+            // действует) или открыть EcpSignModal (сессии нет/истекла). Отмена в модалке
+            // (Escape/"Отмена") отклоняет промис - резолюция в этом случае не отправляется.
+            //
+            // vndId/stageId идут дальше на backend за "hash to sign" (см. useEcpApproval) -
+            // хэш считается там же, backend же его и перепроверяет при сохранении решения
+            // (VndApprovalController.Decide), поэтому подписанный текст нельзя подменить
+            // между запросом хэша и отправкой резолюции.
+            ecp.requestSignature(vndId, stageId, composedComment)
+                .then((signature) => doSubmit(signature))
+                .catch(() => {});
             return;
         }
         void doSubmit();
@@ -439,7 +510,10 @@ export const VndApproverResolutionPanel = forwardRef<
 
     return (
         <div className="rounded-[16px] border border-[#e9edf3] bg-white p-5">
-            <div className="text-[15px] font-bold text-[#1c2740]">Ваша резолюция</div>
+            <div className="flex items-center justify-between gap-2">
+                <div className="text-[15px] font-bold text-[#1c2740]">Ваша резолюция</div>
+                {ecpSession && ecpSessionValid() && <EcpSessionCountdown expireAt={ecpSession.expireAt}/>}
+            </div>
 
             {draftRestoredNoticeVisible && (
                 <div className="mt-3 flex flex-wrap items-center justify-between gap-2 rounded-[10px] border border-[#d4d6f8] bg-[#f5f6fd] px-3.5 py-2 text-[12px] text-[#3c424a]">
@@ -719,10 +793,25 @@ export const VndApproverResolutionPanel = forwardRef<
                 </div>
             )}
 
+            {resignNeeded && choice === "approve" && (
+                <div className="mt-2 flex items-center justify-between gap-3 rounded-md border border-[#f3dfb0] bg-[#fdf7e8] px-3.5 py-2 text-[12.5px] text-[#8a6100]">
+                    <span>
+                        {resignNeeded === "resign"
+                            ? "Подпись не соответствует текущему документу или тексту резолюции. Подпишите резолюцию заново."
+                            : "Подпись принадлежит другому лицу. Подпишите заново своей ЭЦП — потребуется ввести ПИН."}
+                    </span>
+                    <button type="button" onClick={handleSubmit}
+                            disabled={!canSubmit || submitting || ecp.quietSigning || ecp.modalOpen}
+                            className="cursor-pointer shrink-0 rounded-[8px] border border-[#e0c47a] bg-white px-3 py-1 text-[12px] font-semibold text-[#8a6100] disabled:opacity-50">
+                        Подписать заново
+                    </button>
+                </div>
+            )}
+
             <button
                 type="button"
                 onClick={handleSubmit}
-                disabled={!canSubmit || submitting}
+                disabled={!canSubmit || submitting || ecp.quietSigning || ecp.modalOpen}
                 className={`cursor-pointer mt-4 flex w-full items-center justify-center gap-2 rounded-[10px] px-4 py-3 text-[13.5px] font-semibold text-white transition-colors disabled:cursor-not-allowed disabled:opacity-50 ${theme.buttonBg} ${theme.buttonHover}`}
             >
                 <SubmitIcon className="h-4 w-4" strokeWidth={2.5}/>
@@ -762,6 +851,16 @@ export const VndApproverResolutionPanel = forwardRef<
                 variant="danger"
                 icon={X}
             />
+
+            {ecp.modalOpen && (
+                <EcpSignModal
+                    vndId={vndId}
+                    stageId={stageId}
+                    payloadText={ecp.modalPayload}
+                    onSigned={ecp.handleModalSigned}
+                    onClose={ecp.handleModalClose}
+                />
+            )}
         </div>
     );
 });

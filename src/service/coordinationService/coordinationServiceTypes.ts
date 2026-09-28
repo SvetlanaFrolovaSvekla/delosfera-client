@@ -75,6 +75,75 @@ export interface ApprovalDecisionRequest {
      * "+ Сослаться на текст редакции"). Хранятся бессрочно вместе с резолюцией и используются
      * для подсветки маркеров в тексте редакции — см. ApprovalStageQuoteResponse. */
     quotes?: ApprovalQuoteItem[];
+
+    // ЭЦП ГП «Инфоком» (SIG-ECP) — ОБЯЗАТЕЛЬНА для decision === Approve (без неё backend
+    // отвечает 400). Backend пересчитывает хэш из БД, проверяет подпись в 2.6 и сверяет ПИН
+    // владельца подписи с ecpPersonIdnp — см. ResolutionSignatureService на бэке.
+    ecpSignatureBase64?: string;
+    /** Токен ГП — backend использует его только для 2.4 (сведения о сертификате) и не хранит. */
+    ecpCertToken?: string;
+    ecpHash?: string;
+    /** ПИН физ. лица (14 цифр), введённый при получении токена. */
+    ecpPersonIdnp?: string;
+    /** timestamp из ответа 2.5 (Unix ms). */
+    ecpTimestamp?: number;
+}
+
+/** Хэш резолюции для подписи (POST .../decision/resolution-hash). */
+export interface ResolutionHashResponse {
+    hash: string;
+    /** Версия схемы канонической строки хэша на бэке (сейчас "v1"). */
+    schemaVersion: string;
+}
+
+/** Машиночитаемые коды отказа проверки подписи (ResolutionSignatureErrorCodes на бэке). */
+export type ResolutionSignatureErrorCode =
+    | "ecp_required"
+    | "invalid_pin"
+    | "document_changed"
+    | "signature_invalid"
+    | "signature_reused"
+    | "stale_signature"
+    | "identity_mismatch"
+    | "provider_unavailable"
+    | "storage_integrity";
+
+/** Запись журнала подписей ЭЦП по документу (GET /vnd/{vndId}/signatures). */
+export interface VndResolutionSignatureResponse {
+    id: number;
+    vndId: number;
+    approvalProcessId: number;
+    redactionId: number;
+    stageId: number;
+    stageTitle: string | null;
+    phase: "Primary" | "Repeat" | "FinalHold";
+    roundNumber: number;
+    userId: number;
+    userFullName: string | null;
+    personIdnp: string;
+    personFio: string | null;
+    organizationName: string | null;
+    certCommonName: string | null;
+    certKeyIdentifier: string | null;
+    certValidNotAfter: string | null;
+    certIssuerCommonName: string | null;
+    hashSchemaVersion: string;
+    hash: string;
+    signatureSha256: string;
+    signedAt: string;
+    verifiedAt: string;
+    verified: boolean;
+}
+
+/** Результат повторной проверки подписи (POST /vnd/{vndId}/signatures/{id}/verify). */
+export interface ResolutionSignatureVerifyResponse {
+    status: "valid" | "document_changed" | "signature_invalid" | "journal_tampered"
+        | "provider_unavailable" | "unsupported_schema";
+    message: string;
+    changedComponents: ("comment" | "content" | "code")[];
+    signatureVerified: boolean | null;
+    signerPersonFio: string | null;
+    checkedAt: string;
 }
 
 /** Один элемент quotes в ApprovalDecisionRequest. */

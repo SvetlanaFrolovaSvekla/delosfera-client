@@ -1309,7 +1309,8 @@
         "vnd": "ИНД",
         "sz": "Кызматтык каттар",
         "procurement": "Сатып алуулар",
-        "acknowledgement": "Таанышуу"
+        "acknowledgement": "Таанышуу",
+        "componentsSystemSettings": "Системные"
       }
     },
     "kpi": {

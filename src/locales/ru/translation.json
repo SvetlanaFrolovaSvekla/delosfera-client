@@ -1303,7 +1303,8 @@
         "vnd": "ВНД",
         "sz": "СЗ",
         "procurement": "Закупки",
-        "acknowledgement": "Ознакомление"
+        "acknowledgement": "Ознакомление",
+        "componentsSystemSettings": "Системные"
       }
     },
     "kpi": {

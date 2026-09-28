@@ -1313,7 +1313,8 @@
         "vnd": "VND",
         "sz": "Memos",
         "procurement": "Procurement",
-        "acknowledgement": "Acknowledgment"
+        "acknowledgement": "Acknowledgment",
+        "componentsSystemSettings": "System"
       }
     },
     "kpi": {

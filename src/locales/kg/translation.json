@@ -1293,7 +1293,8 @@
         "all": "Баары",
         "vnd": "ИНД",
         "sz": "Кызматтык каттар",
-        "procurement": "Сатып алуулар"
+        "procurement": "Сатып алуулар",
+        "componentsSystemSettings": "Системные"
       }
     },
     "recentNotifications": {

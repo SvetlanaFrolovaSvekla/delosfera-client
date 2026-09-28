@@ -1297,7 +1297,8 @@
         "all": "All",
         "vnd": "VND",
         "sz": "Memos",
-        "procurement": "Procurement"
+        "procurement": "Procurement",
+        "componentsSystemSettings": "System"
       }
     },
     "recentNotifications": {

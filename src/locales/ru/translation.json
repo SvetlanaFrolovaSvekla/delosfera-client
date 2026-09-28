@@ -1287,7 +1287,8 @@
         "all": "Все",
         "vnd": "ВНД",
         "sz": "СЗ",
-        "procurement": "Закупки"
+        "procurement": "Закупки",
+        "componentsSystemSettings": "Системные"
       }
     },
     "recentNotifications": {

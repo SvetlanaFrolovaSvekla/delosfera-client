@@ -71,6 +71,8 @@ export const navGroups: NavGroup[] = [
             { id: "obligations", icon: "clock", labelKey: "sidebar.items.obligations", path: "/obligations" },
             // Доска обязательств по стадиям (ПР-1)
             { id: "obligations-board", icon: "clock", labelKey: "sidebar.items.obligationsBoard", path: "/obligations/board" },
+            // События операционного риска из workflow (RISK-1, 716-П / НБКР)
+            { id: "risk-events", icon: "shield", labelKey: "События оп-риска", path: "/risk-events", permission: PermissionCode.ViewRiskEvents },
         ],
     },
     {

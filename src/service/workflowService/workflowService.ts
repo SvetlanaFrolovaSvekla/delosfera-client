@@ -72,6 +72,9 @@ export interface RouteStep {
     kind: string;
     isFinalMethodology: boolean;
 
+    /** Кворум развилки: сколько согласований достаточно; пусто — нужны все. */
+    quorum: number | null;
+
     /**
      * Чем закрывается этап. Пусто — подписи не требуется; «Simple» ставится самим
      * нажатием кнопки; «Qualified» требует криптопровайдера на рабочем месте, и
@@ -172,6 +175,45 @@ export const workflowService = {
     async deleteTemplate(id: number): Promise<void> {
         await apiClient.delete(`${BASE}/templates/${id}`);
     },
+
+    /**
+     * Каталог ролей согласующих с их названиями — источник для конструктора маршрута.
+     * Список задаётся на сервере (RouteRoles.Title), чтобы не расходиться с движком;
+     * при недоступности эндпоинта клиент падает на встроенный ROUTE_ROLES.
+     */
+    async routeRoles(): Promise<RouteRoleOption[]> {
+        try {
+            const {data} = await apiClient.get<RouteRoleOption[]>(`${BASE}/route-roles`);
+            return data.length > 0 ? data : ROUTE_ROLES;
+        } catch {
+            return ROUTE_ROLES;
+        }
+    },
+
+    /**
+     * Условия включения этапов для вида документа. У закупки свои (хозтовары, порог
+     * полномочий), у СЗ и ВНД условных этапов нет — вернётся пустой список, и
+     * конструктор покажет только «Без условия».
+     */
+    async routeConditions(documentType: string): Promise<RouteConditionOption[]> {
+        try {
+            const {data} = await apiClient.get<RouteConditionOption[]>(`${BASE}/route-conditions`, {
+                params: {documentType},
+            });
+            return data;
+        } catch {
+            return [];
+        }
+    },
+
+    /**
+     * Предпросмотр разрешения ролей: в кого развернётся роль на документе выбранного
+     * подразделения. Показывает настройщику, что роль — конкретный человек, а не пустышка.
+     */
+    async previewRoles(request: RolePreviewRequest): Promise<RolePreviewItem[]> {
+        const {data} = await apiClient.post<RolePreviewItem[]>(`${BASE}/route-roles/preview`, request);
+        return data;
+    },
 };
 
 /** Кто согласует на этапе: человек, подразделение или роль. */
@@ -196,6 +238,11 @@ export interface TemplateStep {
     isFinalMethodology: boolean;
     /** Норматив на этап в часах; пусто — без срока. */
     timeNormHours: number | null;
+    /**
+     * Кворум развилки: сколько согласований из назначенных достаточно, чтобы этап
+     * прошёл. Пусто — нужны все. Действует только на mode === "Parallel".
+     */
+    quorum: number | null;
     requiredSignatureLevel: "Simple" | "Qualified" | null;
     /**
      * Условие включения этапа. Пусто — этап всегда в маршруте; строка (например
@@ -236,13 +283,49 @@ export interface RouteTemplateSaveRequest {
  * Так маршрут переживает смену людей в должностях: «руководитель подразделения
  * автора» остаётся верным и после того, как руководитель сменился.
  */
-export const ROUTE_ROLES: {value: string; title: string}[] = [
+export interface RouteRoleOption {
+    value: string;
+    title: string;
+}
+
+export const ROUTE_ROLES: RouteRoleOption[] = [
     {value: "author-head", title: "Руководитель подразделения автора"},
     {value: "author-curator", title: "Куратор подразделения автора"},
     {value: "target-unit-head", title: "Руководитель подразделения из документа"},
     {value: "target-unit-curator", title: "Куратор подразделения из документа"},
     {value: "board-chairman", title: "Председатель Правления"},
+    {value: "hr-officer", title: "Кадровик УЧР"},
 ];
+
+/** Условие включения этапа: код + человеческое название, с сервера по виду документа. */
+export interface RouteConditionOption {
+    value: string;
+    title: string;
+}
+
+/** Запрос предпросмотра ролей: контекст подразделений + список проверяемых ролей. */
+export interface RolePreviewRequest {
+    orgUnitId?: number | null;
+    targetUnitId?: number | null;
+    roles: string[];
+}
+
+/** Результат разрешения одной роли для предпросмотра. */
+export interface RolePreviewItem {
+    roleRef: string;
+    title: string;
+    userId: number | null;
+    fullName: string | null;
+    resolved: boolean;
+    /** Почему роль не разрешилась (пустой справочник / зависит от карточки документа). */
+    note: string | null;
+}
+
+/** Уровень подписи, которым закрывается этап; null — без подписи. */
+export const SIGNATURE_LEVEL_TITLE: Record<NonNullable<TemplateStep["requiredSignatureLevel"]>, string> = {
+    Simple: "Простая подпись (ПЭП)",
+    Qualified: "Квалифицированная (ЭЦП)",
+};
 
 export const STEP_KIND_TITLE: Record<TemplateStep["kind"], string> = {
     Approval: "Согласование",

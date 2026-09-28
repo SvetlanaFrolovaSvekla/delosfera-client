@@ -72,6 +72,7 @@ const ObligationsBoardPage = lazy(() => import("@/pages/ObligationsBoardPage.tsx
 const HrRoutingSettingsPage = lazy(() => import("@/pages/ManagementPages/PeopleAndAccessSettings/HrRoutingSettingsPage.tsx").then(m => ({default: m.HrRoutingSettingsPage})));
 const SubstitutionRequestsPage = lazy(() => import("@/pages/SubstitutionsPages/SubstitutionsPage.tsx").then(m => ({default: m.SubstitutionRequestsPage})));
 const SubstitutionCardPage = lazy(() => import("@/pages/SubstitutionsPages/SubstitutionCardPage.tsx").then(m => ({default: m.SubstitutionCardPage})));
+const RiskEventsPage = lazy(() => import("@/pages/RiskEventsPages/RiskEventsPage.tsx").then(m => ({default: m.RiskEventsPage})));
 
 // Полная лента событий по всем контурам — развёрнутая версия виджета
 // "Последняя активность" с главной (кнопка "Смотреть всю активность").
@@ -275,6 +276,11 @@ function App() {
 
                                 <Route path="/obligations/board" element={<ObligationsBoardPage/>}/>
                                 <Route path="/obligations" element={<ObligationsPage/>}/>
+
+                                {/* События операционного риска из workflow (RISK-1, 716-П / НБКР) */}
+                                <Route element={<RequirePermission code={PermissionCode.ViewRiskEvents}/>}>
+                                    <Route path="/risk-events" element={<RiskEventsPage/>}/>
+                                </Route>
                                 <Route element={<RequirePermission code={PermissionCode.ViewHrOrders}/>}>
                                     <Route path="/hr/orders" element={<HrOrdersPage/>}/>
                                 </Route>

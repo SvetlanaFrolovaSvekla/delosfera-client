@@ -1080,6 +1080,7 @@
     "description": "Reporting across all system domains: regulatory documents, memos, procurement, meetings, HR, and office administration.",
     "tabs": {
       "vnd": "Regulatory Documents",
+      "process": "Process mining",
       "sla": "Deadlines & SLA",
       "sz": "Memos",
       "prc": "Requests & Procurement",
@@ -2764,7 +2765,14 @@
     "preview": "Preview attachment",
     "signatureCount": "signatures: {{count}}",
     "signaturesRevoked": "signatures revoked",
-    "signaturesRevokedTitle": "File was replaced — previous signatures revoked"
+    "signaturesRevokedTitle": "File was replaced — previous signatures revoked",
+    "coEdit": "Open for co-editing"
+  },
+  "coauthoring": {
+    "loading": "Loading editor…",
+    "close": "Close",
+    "errorOpen": "Failed to open the document for co-editing",
+    "errorScript": "Failed to load the OnlyOffice editor"
   },
   "actualizationPage": {
     "loadingData": "Loading data…",

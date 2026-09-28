@@ -24,7 +24,9 @@ import {Tooltip} from "@/components/componentsGeneral/Tooltip.tsx";
 import {
     AttachmentDocxPreviewModal
 } from "@/components/componentsGeneral/modal/AttachmentDocxPreviewModal.tsx";
-import {Paperclip, Trash2, Download, Eye, Loader2} from "lucide-react";
+import {Paperclip, Trash2, Download, Eye, Loader2, Users} from "lucide-react";
+import {isCoauthorable} from "@/service/coauthoringService/coauthoringService.ts";
+import {OnlyOfficeEditor} from "@/components/editor/OnlyOfficeEditor.tsx";
 
 
 interface Props {
@@ -70,6 +72,8 @@ export function AttachmentsPanel({
     // а за /api/documents/attachments/{id}/download (см. attachmentService.download выше),
     // поэтому модалке передаём endpoint/pathSuffix явно.
     const [previewAttachment, setPreviewAttachment] = useState<{ fileId: number; fileName: string } | null>(null);
+    // Вложение, открытое на онлайн-соредактирование (OnlyOffice, COOP-1).
+    const [coEdit, setCoEdit] = useState<Attachment | null>(null);
     const fileInput = useRef<HTMLInputElement>(null);
     const zone = useRef<HTMLDivElement>(null);
 
@@ -317,6 +321,14 @@ export function AttachmentsPanel({
                                 </Tooltip>
                             )}
 
+                            {isCoauthorable(a.fileName) && (
+                                <button type="button" onClick={() => setCoEdit(a)}
+                                        title={t("attachments.coEdit")}
+                                        className="border-none bg-transparent p-1 text-[#55617a] cursor-pointer hover:text-[#2f68f5]">
+                                    <Users size={14}/>
+                                </button>
+                            )}
+
                             <button type="button" onClick={() => void handleDownload(a.id, a.fileName)}
                                     disabled={downloadingId === a.id}
                                     title={t("attachments.download")}
@@ -348,6 +360,19 @@ export function AttachmentsPanel({
                     onClose={() => setPreviewAttachment(null)}
                     endpoint="documents/attachments"
                     pathSuffix="/download"
+                />
+            )}
+
+            {coEdit && (
+                <OnlyOfficeEditor
+                    attachmentId={coEdit.id}
+                    fileName={coEdit.fileName}
+                    onClose={() => {
+                        setCoEdit(null);
+                        // Правки уходят в новую версию на стороне сервера — по закрытии
+                        // перечитываем список, чтобы обновились размер и состояние подписей.
+                        reload();
+                    }}
                 />
             )}
         </div>

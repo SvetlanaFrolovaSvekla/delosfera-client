@@ -30,6 +30,9 @@ import {InboxTaskRow} from "@/components/componentsTasks/InboxTaskRow.tsx";
 import {EmptyState} from "@/components/componentsGeneral/EmptyState.tsx";
 import {SearchBar} from "@/components/componentsGeneral/SearchBar.tsx";
 import {DelegateTaskModal} from "@/components/componentsTasks/DelegateTaskModal.tsx";
+import {RaiseRiskEventModal} from "@/components/componentsTasks/RaiseRiskEventModal.tsx";
+import {useAuth} from "@/context/AuthContext.ts";
+import {PermissionCode} from "@/constants/permissions/permissions.ts";
 
 // Получение текста, иконки при отсутствии задач на соответствующих табах
 function getInboxEmptyMeta(filter: InboxFilterId) {
@@ -40,6 +43,8 @@ const StatsLinkIcon = INBOX_STATS_LINK_ICON; // Иконка при сообще
 
 export const TaskInboxPage = () => {
     const {t} = useTranslation();
+    const {hasPermission} = useAuth();
+    const canRaiseRisk = hasPermission(PermissionCode.ManageRiskEvents);
 
     const [filter, setFilter] = useState<InboxFilterId>("all");
     const [inbox, setInbox] = useState<TaskInbox | null>(null);
@@ -49,6 +54,7 @@ export const TaskInboxPage = () => {
     // запрос в соседнем, не перепечатывая его заново.
     const [searchQuery, setSearchQuery] = useState("");
     const [delegateTask, setDelegateTask] = useState<InboxTask | null>(null);
+    const [riskTask, setRiskTask] = useState<InboxTask | null>(null);
 
     const isVndTab = filter === "vnd";
     const isAllTab = filter === "all";
@@ -164,6 +170,7 @@ export const TaskInboxPage = () => {
                                     key={taskKey(task)}
                                     task={task}
                                     onDelegate={setDelegateTask}
+                                    onRaiseRisk={canRaiseRisk ? setRiskTask : undefined}
                                 />
                             ))}
 
@@ -200,6 +207,14 @@ export const TaskInboxPage = () => {
                         setDelegateTask(null);
                         void load();
                     }}
+                />
+            )}
+
+            {riskTask && (
+                <RaiseRiskEventModal
+                    task={riskTask}
+                    onClose={() => setRiskTask(null)}
+                    onDone={() => setRiskTask(null)}
                 />
             )}
         </div>

@@ -10,6 +10,7 @@ import {contourReportsService} from "@/service/analyticsService/contourReportsSe
 import {ReportVndPage} from "@/pages/ReportPages/ReportVndPages/ReportVndPage.tsx";
 import {ReportVndActualizationPage} from "@/pages/ReportPages/ReportVndPages/ReportVndActualizationPage.tsx";
 import {ReportVndApprovalsPage} from "@/pages/ReportPages/ReportVndPages/ReportVndApprovalsPage.tsx";
+import {ReportProcessMiningPage} from "@/pages/ReportPages/ReportProcessMiningPage.tsx";
 import {SzStatisticsPage} from "@/pages/SZPages/SzStatisticsPage.tsx";
 import {ProcurementStatisticsPage} from "@/pages/ProcurementPages/ProcurementStatisticsPage.tsx";
 import {SlaDashboardPage} from "@/pages/SlaDashboardPage.tsx";
@@ -18,7 +19,7 @@ import {ContourReportView} from "@/components/componentsReport/ContourReportView
 import {PageHeader} from "@/components/componentsGeneral/PageHeader.tsx";
 import {Tabs} from "@/components/componentsGeneral/Tabs.tsx";
 
-const TAB_IDS = ["vnd", "sla", "sz", "prc", "meetings", "hr", "office"] as const;
+const TAB_IDS = ["vnd", "process", "sla", "sz", "prc", "meetings", "hr", "office"] as const;
 type TabId = (typeof TAB_IDS)[number];
 
 // Подвкладки внутри "ВНД" - сводный отчёт, статистика по актуализации и по согласованиям,
@@ -59,6 +60,7 @@ export function AnalyticsPage() {
 
             <Tabs<TabId> tabs={TABS} value={tab} onChange={setTab}/>
 
+            {tab === "process" && <ReportProcessMiningPage/>}
             {tab === "sla" && <SlaDashboardPage/>}
             {tab === "vnd" && (
                 <>

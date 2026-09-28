@@ -3,7 +3,7 @@
 import {Link} from "react-router-dom";
 import {useTranslation} from "react-i18next";
 import {taskLink, type InboxTask} from "@/service/workflowService/taskInboxService.ts";
-import {Share2} from "lucide-react";
+import {Share2, ShieldAlert} from "lucide-react";
 
 // toLocaleString не подхватывает язык интерфейса сам — берём его из i18n.language, иначе
 // дата на "Мои задачи" оставалась бы русской при переключении на en/ky.
@@ -22,9 +22,11 @@ function formatDue(iso: string | null, lang: string): string {
 interface InboxTaskRowProps {
     task: InboxTask;
     onDelegate: (task: InboxTask) => void;
+    /** Поднять оп-риск с этого шага (RISK-1) — задаётся только при праве ManageRiskEvents. */
+    onRaiseRisk?: (task: InboxTask) => void;
 }
 
-export function InboxTaskRow({task, onDelegate}: InboxTaskRowProps) {
+export function InboxTaskRow({task, onDelegate, onRaiseRisk}: InboxTaskRowProps) {
     const {t, i18n} = useTranslation();
 
     return (
@@ -73,6 +75,19 @@ export function InboxTaskRow({task, onDelegate}: InboxTaskRowProps) {
                     className="flex w-11 flex-none cursor-pointer items-center justify-center border-l border-[#eef2f7] bg-transparent text-[#8b97ab] hover:bg-[#f6f8fb] hover:text-[#55617a]"
                 >
                     <Share2 className="h-4 w-4"/>
+                </button>
+            )}
+
+            {/* Поднять оп-риск с любого шага/документа (RISK-1) — кнопка есть только
+                у сотрудников с правом ManageRiskEvents (см. TaskInboxPage). */}
+            {onRaiseRisk && (
+                <button
+                    type="button"
+                    title="Поднять оп-риск"
+                    onClick={() => onRaiseRisk(task)}
+                    className="flex w-11 flex-none cursor-pointer items-center justify-center border-l border-[#eef2f7] bg-transparent text-[#8b97ab] hover:bg-[#fdf6f5] hover:text-[#c0392b]"
+                >
+                    <ShieldAlert className="h-4 w-4"/>
                 </button>
             )}
         </div>

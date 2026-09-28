@@ -36,6 +36,8 @@ import {
 } from "@/service/workflowService/workflowService.ts";
 import {SignatureStampView} from "@/components/signing/SignatureStampView.tsx";
 import {QualifiedSignDialog} from "@/components/signing/QualifiedSignDialog.tsx";
+import {OepSignModal} from "@/components/signing/OepSignModal.tsx";
+import {oepSigningService} from "@/service/signingService/oepSigningService.ts";
 import {
     hrForms as szHrForms,
     type HrFormSchema,
@@ -127,6 +129,11 @@ export function SzCardPage() {
 
     /** Открыто окно подписания: этап требует квалифицированной подписи. */
     const [подписываем, setПодписываем] = useState(false);
+
+    /** Открыто окно облачной ЭП (ОЭП) + доступна ли интеграция на контуре. */
+    const [оэп, setОэп] = useState(false);
+    const [оэпДоступна, setОэпДоступна] = useState(false);
+    useEffect(() => { oepSigningService.status().then(setОэпДоступна).catch(() => setОэпДоступна(false)); }, []);
 
     const [form, setForm] = useState<SzSaveRequest>({
         title: "", kindId: 0, body: "", correspondentUnitId: null, rubricIds: [],
@@ -1046,6 +1053,12 @@ export function SzCardPage() {
                                         className="h-9 px-4 rounded-[9px] border-none bg-[#1c7a4d] text-white font-semibold text-[12.5px] cursor-pointer hover:brightness-[1.06] disabled:opacity-50">
                                     {isSigningStep ? "Подписать" : "Согласовать"}
                                 </button>
+                                {needsQualified && оэпДоступна && (
+                                    <button onClick={() => setОэп(true)} disabled={saving}
+                                            className="h-9 px-4 rounded-[9px] border border-[#cbddff] bg-[#f5f8ff] text-[#2f68f5] font-semibold text-[12.5px] cursor-pointer hover:bg-[#eaf1ff] disabled:opacity-50">
+                                        Облачная ЭП (ОЭП)
+                                    </button>
+                                )}
                                 {!isSigningStep && (
                                     <button onClick={() => resolve("ApprovedWithRemarks")} disabled={saving}
                                             className="h-9 px-4 rounded-[9px] border border-[#f0dcae] bg-white text-[#b3730a] font-semibold text-[12.5px] cursor-pointer hover:bg-[#fdf3e0] disabled:opacity-50">
@@ -1069,6 +1082,19 @@ export function SzCardPage() {
                                 // Подпись поставлена — теперь ею закрывается этап. Разрыв
                                 // между этими действиями оставил бы подпись без резолюции.
                                 await resolve("Approved", signature.id);
+                            }}
+                        />
+                    )}
+
+                    {оэп && sz && (
+                        <OepSignModal
+                            documentId={sz.documentId}
+                            fileName={sz.regNumber ? `${sz.regNumber} · ${sz.title}` : sz.title}
+                            onClose={() => setОэп(false)}
+                            onSigned={async (result) => {
+                                setОэп(false);
+                                // Облачная подпись поставлена — ею же закрываем этап.
+                                await resolve("Approved", result.signatureId);
                             }}
                         />
                     )}

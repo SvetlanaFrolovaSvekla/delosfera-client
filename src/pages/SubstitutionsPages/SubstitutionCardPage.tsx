@@ -363,7 +363,9 @@ export function SubstitutionCardPage() {
                             </button>
                         </>
                     )}
-                    {details?.status === "OnExecution" && hasPermission(PermissionCode.ViewAllSz) && (
+                    {details?.status === "OnExecution"
+                        && (hasPermission(PermissionCode.ViewAllSz)
+                            || details.approvals?.some((a) => a.roleLabel === "УЧР" && a.userId === user?.id)) && (
                         <button type="button" onClick={() => void act(() => substitutionService.execute(details.id))} disabled={busy}
                                 className="h-10 px-5 rounded-[10px] bg-[#1c7a4d] text-white text-[14px] font-semibold cursor-pointer hover:brightness-95 disabled:opacity-50">
                             Исполнено (приказ оформлен)

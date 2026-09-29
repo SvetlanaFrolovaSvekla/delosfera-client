@@ -3,6 +3,9 @@
 // автоматически по завершении согласования (см. VndApprovalService.GenerateApprovalSheetAsync).
 // Если у редакции несколько листов (повторные согласования в рамках актуализации без изменений,
 // см. approvalSheets.ts) - над документом переключатель между ними, по умолчанию последний.
+// Лист, сформированный системой по процессу согласования, показывается в двух режимах - "Обычный"
+// (фактические решения) и "С подписями ЭЦП" (штамп в колонке "Подпись") - см. ApprovalSheetLiveView.
+// Приложенный вручную лист показывается как есть (сохранённый файл).
 import {useState} from "react";
 import {createPortal} from "react-dom";
 import {useTranslation} from "react-i18next";
@@ -11,6 +14,7 @@ import {RedactionTextView} from "@/components/componentsVND/componentsOpenVndPag
 import {Tooltip} from "@/components/componentsGeneral/Tooltip.tsx";
 import {ClipboardCheck, Download, Loader2, X} from "lucide-react";
 import {approvalSheetCaption, getRedactionApprovalSheets} from "@/utils/vndProcess/approvalSheets.ts";
+import {ApprovalSheetLiveView} from "@/components/componentsVND/approvalSheet/ApprovalSheetLiveView.tsx";
 
 interface RedactionApprovalSheetModalProps {
     vnd: VndResponse;
@@ -30,6 +34,8 @@ export function RedactionApprovalSheetModal({
 
     const approvalSheetFileId = selectedSheet?.fileId ?? redaction.approvalSheetFileId;
     const approvalSheetFileName = selectedSheet?.fileName ?? `${redaction.code}_Лист_согласования.docx`;
+    // Лист по процессу согласования - формируется заново в двух режимах; ручной - сохранённый файл.
+    const liveProcessId = selectedSheet?.approvalProcessId ?? null;
 
     return createPortal(
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-3">
@@ -51,8 +57,8 @@ export function RedactionApprovalSheetModal({
                     </div>
 
                     <div className="flex items-center gap-4">
-                        {/* Скачать документ */}
-                        <Tooltip content={t("redactionApprovalSheetModal.downloadDocument")} side="bottom">
+                        {/* Скачать документ (для листа по процессу - кнопка скачивания внутри просмотра) */}
+                        {liveProcessId === null && <Tooltip content={t("redactionApprovalSheetModal.downloadDocument")} side="bottom">
                             <button
                                 type="button"
                                 disabled={approvalSheetFileId === null || downloadingId === approvalSheetFileId}
@@ -65,7 +71,7 @@ export function RedactionApprovalSheetModal({
                                     <Download size={16}/>
                                 )}
                             </button>
-                        </Tooltip>
+                        </Tooltip>}
 
                         <button
                             onClick={onClose}
@@ -97,7 +103,14 @@ export function RedactionApprovalSheetModal({
                 )}
 
                 <div className="flex min-h-0 flex-1 flex-col overflow-hidden py-4">
-                    {approvalSheetFileId === null ? (
+                    {liveProcessId !== null ? (
+                        <ApprovalSheetLiveView
+                            key={liveProcessId}
+                            vndId={vnd.id}
+                            processId={liveProcessId}
+                            redactionCode={redaction.code}
+                        />
+                    ) : approvalSheetFileId === null ? (
                         <div className="flex flex-1 flex-col items-center justify-center gap-2 p-[48px] text-center text-[13px] text-[#8b97ab]">
                             <ClipboardCheck size={22} className="text-[#c3ccd8]"/>
                             {/* Для этой редакции Лист согласования ещё не сформирован. */}

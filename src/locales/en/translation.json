@@ -3061,5 +3061,21 @@
       "tooMany": "Too many checks in a row — try again in a minute",
       "verifyFailed": "Could not perform the check"
     }
+  },
+  "approvalSheetLive": {
+    "title": "Approval sheet",
+    "modePlain": "Standard",
+    "modeSigned": "With digital signatures",
+    "hintPlain": "Approvers' actual decisions and dates. The “Signature” column is left blank.",
+    "hintSigned": "The “Signature” column shows a “Signed with a digital signature” stamp: owner, certificate, time and signature hash.",
+    "downloadPlain": "Download standard",
+    "downloadSigned": "Download with signatures",
+    "downloading": "Generating the approval sheet…",
+    "downloaded": "Downloaded!",
+    "downloadError": "Failed to download the approval sheet",
+    "loading": "Generating the approval sheet…",
+    "loadError": "Failed to generate the approval sheet",
+    "cardHint": "Built from the current decisions — updated after every resolution. Standard or with digital signatures.",
+    "open": "Open"
   }
 }

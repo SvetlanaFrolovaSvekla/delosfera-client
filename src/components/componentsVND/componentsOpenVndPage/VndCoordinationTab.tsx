@@ -39,6 +39,7 @@ import {VndNoChangesHintBanner} from "./componentsCoordinationTab/VndNoChangesHi
 import {getRedactionApprovalSheets} from "@/utils/vndProcess/approvalSheets.ts";
 import {VndCurrentRedactionSection} from "./componentsCoordinationTab/VndCurrentRedactionSection.tsx";
 import {VndSignatureJournal} from "./componentsCoordinationTab/VndSignatureJournal.tsx";
+import {VndApprovalSheetCard} from "@/components/componentsVND/approvalSheet/VndApprovalSheetCard.tsx";
 import {VndRedactionModals} from "./componentsCoordinationTab/VndRedactionModals.tsx";
 import {VndCoordinationRouteSection} from "./componentsCoordinationTab/VndCoordinationRouteSection.tsx";
 import {VndCoordinationDangerZone} from "./componentsCoordinationTab/VndCoordinationDangerZone.tsx";
@@ -453,6 +454,7 @@ export function VndCoordinationTab({vnd, onVndChanged}: VndCoordinationTabProps)
                     <VndCoordinationDangerZone onCancelClick={cancelApproval.openCancelModal}/>
                 )}
 
+                <VndApprovalSheetCard vndId={vnd.id} processId={process.id} redactionCode={redaction?.code ?? vnd.code}/>
                 <VndSignatureJournal vndId={vnd.id} refreshKey={process.updatedAt}/>
 
                 {sharedModals}
@@ -562,6 +564,7 @@ export function VndCoordinationTab({vnd, onVndChanged}: VndCoordinationTabProps)
                 <VndCoordinationDangerZone onCancelClick={cancelApproval.openCancelModal}/>
             )}
 
+            <VndApprovalSheetCard vndId={vnd.id} processId={process.id} redactionCode={redaction?.code ?? vnd.code}/>
             <VndSignatureJournal vndId={vnd.id} refreshKey={process.updatedAt}/>
 
             {sharedModals}

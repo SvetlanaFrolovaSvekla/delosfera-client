@@ -87,6 +87,8 @@ export interface ApprovalDecisionRequest {
     ecpPersonIdnp?: string;
     /** timestamp из ответа 2.5 (Unix ms). */
     ecpTimestamp?: number;
+    /** ТЕСТ: "Согласовать" без ЭЦП — backend разрешает только локальным учётным записям. */
+    withoutEcp?: boolean;
 }
 
 /** Хэш резолюции для подписи (POST .../decision/resolution-hash). */

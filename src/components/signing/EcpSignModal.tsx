@@ -17,6 +17,7 @@ import {useEcpSession} from "@/context/EcpSessionContext.ts";
 import {coordinationService} from "@/service/coordinationService/coordinationService.ts";
 import type {ResolutionEcpSignature} from "@/hooks/useEcpApproval.ts";
 import {toast} from "@/service/toastService.ts";
+import {formatEcpDuration} from "@/utils/formatEcpDuration.ts";
 
 interface Props {
     vndId: number;
@@ -116,11 +117,9 @@ export const EcpSignModal = ({vndId, stageId, payloadText, onSigned, onClose}: P
             if (!auth.token || !auth.expireAt) throw new Error("Токен доступа не получен");
 
             const createAt = auth.createAt ?? new Date().toISOString();
-            const minutesLeft = Math.max(1, Math.round(
-                (new Date(auth.expireAt).getTime() - Date.now()) / 60000,
-            ));
+            const durationText = formatEcpDuration(new Date(auth.expireAt).getTime() - Date.now());
             toast.info("Электронная подпись подключена",
-                `Будет действовать ещё ~${minutesLeft} мин. — повторный пин-код на это время не понадобится`);
+                `Будет действовать ещё ${durationText} — повторный пин-код на это время не понадобится`);
 
             setStep("signing");
 

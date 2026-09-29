@@ -19,6 +19,8 @@ import {
 import {EcpSignModal} from "@/components/signing/EcpSignModal.tsx";
 import {useEcpApproval} from "@/hooks/useEcpApproval.ts";
 import {useEcpSession} from "@/context/EcpSessionContext.ts";
+import {useAuth} from "@/context/AuthContext.ts";
+import {formatEcpCountdown} from "@/utils/formatEcpDuration.ts";
 
 export type ResolutionChoice = "approve" | "approveWithComment" | "reject";
 
@@ -36,18 +38,20 @@ function EcpSessionCountdown({expireAt}: { expireAt: string }) {
     useEffect(() => {
         const tick = () => setMsLeft(new Date(expireAt).getTime() - Date.now());
         tick();
-        const id = setInterval(tick, 1000);
+        // Статичный токен может жить месяцами — тикать раз в секунду всё это время незачем:
+        // ниже часа секунды видны в бейдже (mm:ss), дальше формат укрупняется (formatEcpCountdown),
+        // поэтому раз в минуту достаточно, чтобы бейдж не "застывал" надолго.
+        const remaining = new Date(expireAt).getTime() - Date.now();
+        const intervalMs = remaining < 3600_000 ? 1000 : 60_000;
+        const id = setInterval(tick, intervalMs);
         return () => clearInterval(id);
     }, [expireAt]);
 
     if (msLeft <= 0) return null;
-    const totalSeconds = Math.floor(msLeft / 1000);
-    const minutes = Math.floor(totalSeconds / 60);
-    const seconds = totalSeconds % 60;
 
     return (
         <span className="rounded-full border border-[#cfe3d6] bg-[#f2f9f5] px-2.5 py-1 text-[11px] font-medium text-[#1c7a4d]">
-            ЭЦП активна ещё {minutes}:{seconds.toString().padStart(2, "0")}
+            ЭЦП активна ещё {formatEcpCountdown(msLeft)}
         </span>
     );
 }
@@ -86,6 +90,8 @@ interface VndApproverResolutionPanelProps {
     onSubmit: (
         choice: ResolutionChoice, comment: string, files: File[], quotes: ApprovalQuoteItem[],
         ecpSignature?: ResolutionEcpSignature,
+        /** ТЕСТ: "Согласовать" без ЭЦП (только локальные учётные записи, backend перепроверяет). */
+        withoutEcp?: boolean,
     ) => Promise<boolean | "resign" | "reauth" | void> | boolean | void;
     submitting?: boolean;
     error?: string | null;
@@ -451,7 +457,11 @@ export const VndApproverResolutionPanel = forwardRef<
     // (или подпись устарела) — предлагаем подписать заново; подпись чужая — заново с вводом ПИН.
     const [resignNeeded, setResignNeeded] = useState<"resign" | "reauth" | null>(null);
 
-    const doSubmit = async (ecpSignature?: ResolutionEcpSignature) => {
+    // ТЕСТ: для локальных учётных записей (не LDAP) доступна доп. кнопка "Согласовать" без ЭЦП.
+    const {user: currentUser} = useAuth();
+    const canApproveWithoutEcp = currentUser?.source === "Local";
+
+    const doSubmit = async (ecpSignature?: ResolutionEcpSignature, withoutEcp?: boolean) => {
         if (submitLockRef.current) return;
         submitLockRef.current = true;
         try {
@@ -463,7 +473,7 @@ export const VndApproverResolutionPanel = forwardRef<
                 occurrence: r.occurrence,
                 note: r.note.trim() || null,
             }));
-            const ok = await onSubmit(choice, composedComment, files, quotesToSend, ecpSignature);
+            const ok = await onSubmit(choice, composedComment, files, quotesToSend, ecpSignature, withoutEcp);
             // Черновик стираем только после успешной отправки - при ошибке он нужен, чтобы
             // пользователь ничего не потерял.
             if (ok === true) saveDraft(draftStorageKey, null);
@@ -496,6 +506,12 @@ export const VndApproverResolutionPanel = forwardRef<
             return;
         }
         void doSubmit();
+    };
+
+    const handleSubmitWithoutEcp = () => {
+        if (!canSubmit || submitting || submitLockRef.current || ecp.quietSigning || ecp.modalOpen) return;
+        setResignNeeded(null);
+        void doSubmit(undefined, true);
     };
 
     const handleConfirmReject = () => {
@@ -820,6 +836,18 @@ export const VndApproverResolutionPanel = forwardRef<
                 <SubmitIcon className="h-4 w-4" strokeWidth={2.5}/>
                 {submitting ? "Отправка…" : SUBMIT_LABEL[choice]}
             </button>
+
+            {choice === "approve" && canApproveWithoutEcp && (
+                <button
+                    type="button"
+                    onClick={handleSubmitWithoutEcp}
+                    disabled={!canSubmit || submitting || ecp.quietSigning || ecp.modalOpen}
+                    className="cursor-pointer mt-2 flex w-full items-center justify-center gap-2 rounded-[10px] border border-[#b7dfc6] bg-white px-4 py-3 text-[13.5px] font-semibold text-[#1f7a45] transition-colors hover:bg-[#f1faf4] disabled:cursor-not-allowed disabled:opacity-50"
+                >
+                    <Check className="h-4 w-4" strokeWidth={2.5}/>
+                    Согласовать (без ЭЦП, тест)
+                </button>
+            )}
 
             {commentMissing && (
                 <div className="mt-3 flex items-start gap-1.5 text-[11.5px] text-[#d62815]">

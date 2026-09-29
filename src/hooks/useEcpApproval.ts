@@ -7,6 +7,7 @@ import {
     ECP_CREDENTIAL_EXPIRED, ECP_CREDENTIAL_INVALID, ECP_CREDENTIAL_MISSING, ECP_CREDENTIAL_NOT_CONFIGURED,
 } from "@/service/ecpCredentialService.ts";
 import {coordinationService} from "@/service/coordinationService/coordinationService.ts";
+import {ApprovalDecisionType} from "@/service/coordinationService/coordinationServiceTypes.ts";
 import {toast} from "@/service/toastService.ts";
 
 export interface ResolutionEcpSignature {
@@ -54,22 +55,28 @@ export function useEcpApproval() {
         payloadText: string;
         vndId: number;
         stageId: number;
+        decision: ApprovalDecisionType;
     } | null>(null);
     const [modalPayload, setModalPayload] = useState("");
+    // Решение, под которым ставится подпись (входит в хэш) - передаётся в EcpSignModal.
+    const [modalDecision, setModalDecision] = useState<ApprovalDecisionType>(ApprovalDecisionType.Approve);
 
     const openModalFor = useCallback((
-        vndId: number, stageId: number, payloadText: string,
+        vndId: number, stageId: number, payloadText: string, decision: ApprovalDecisionType,
         resolve: (r: ResolutionEcpSignature) => void, reject: (e: unknown) => void,
     ) => {
-        pendingRef.current = {resolve, reject, payloadText, vndId, stageId};
+        pendingRef.current = {resolve, reject, payloadText, vndId, stageId, decision};
         setModalPayload(payloadText);
+        setModalDecision(decision);
         setModalOpen(true);
     }, []);
 
-    const requestSessionSignature = useCallback((vndId: number, stageId: number, payloadText: string): Promise<ResolutionEcpSignature> => {
+    const requestSessionSignature = useCallback((
+        vndId: number, stageId: number, payloadText: string, decision: ApprovalDecisionType,
+    ): Promise<ResolutionEcpSignature> => {
         return new Promise<ResolutionEcpSignature>((resolve, reject) => {
             if (!session || !isValid()) {
-                openModalFor(vndId, stageId, payloadText, resolve, reject);
+                openModalFor(vndId, stageId, payloadText, decision, resolve, reject);
                 return;
             }
 
@@ -79,7 +86,7 @@ export function useEcpApproval() {
                 const toastId = toast.loading(t("ecp.approval.signing"), t("ecp.approval.signingText"));
                 try {
                     // Хэш - от backend (см. комментарий у функции), не считаем его сами.
-                    const {hash} = await coordinationService.getResolutionHash(vndId, stageId, payloadText);
+                    const {hash} = await coordinationService.getResolutionHash(vndId, stageId, payloadText, decision);
                     const signed = await infocomEcpService.signHash(hash, session.token);
                     if (!signed.isSuccesfull || !signed.sign) throw new Error(t("ecp.modal.signMissing"));
                     toast.update(toastId, {variant: "success", title: t("ecp.approval.signed"), duration: 2000});
@@ -101,7 +108,7 @@ export function useEcpApproval() {
                         // сессию и запускаем полный флоу заново, как будто её не было.
                         clearSession();
                         toast.warning(t("ecp.approval.sessionExpired"), t("ecp.approval.sessionExpiredText"));
-                        openModalFor(vndId, stageId, payloadText, resolve, reject);
+                        openModalFor(vndId, stageId, payloadText, decision, resolve, reject);
                     } else {
                         reject(e);
                     }
@@ -115,12 +122,12 @@ export function useEcpApproval() {
     /** Подпись сохранённой идентификацией. null — идентификации нет/недействительна (идём обычным флоу);
      * исключение — любая другая ошибка (документ изменился, вы не согласующий, сбой провайдера…). */
     const signWithStoredCredential = useCallback(async (
-        vndId: number, stageId: number, payloadText: string,
+        vndId: number, stageId: number, payloadText: string, decision: ApprovalDecisionType,
     ): Promise<ResolutionEcpSignature | null> => {
         setQuietSigning(true);
         const toastId = toast.loading(t("ecp.approval.signing"), t("ecp.approval.signingText"));
         try {
-            const r = await ecpCredentialService.signResolution(vndId, stageId, payloadText);
+            const r = await ecpCredentialService.signResolution(vndId, stageId, payloadText, decision);
             toast.update(toastId, {variant: "success", title: t("ecp.approval.signed"), duration: 2000});
             return {
                 signatureBase64: r.signatureBase64,
@@ -144,12 +151,14 @@ export function useEcpApproval() {
         }
     }, [t]);
 
+    /** Подпись резолюции: decision - решение, под которым ставится подпись (входит в хэш). */
     const requestSignature = useCallback(async (
         vndId: number, stageId: number, payloadText: string,
+        decision: ApprovalDecisionType = ApprovalDecisionType.Approve,
     ): Promise<ResolutionEcpSignature> => {
-        const stored = await signWithStoredCredential(vndId, stageId, payloadText);
+        const stored = await signWithStoredCredential(vndId, stageId, payloadText, decision);
         if (stored) return stored;
-        return requestSessionSignature(vndId, stageId, payloadText);
+        return requestSessionSignature(vndId, stageId, payloadText, decision);
     }, [signWithStoredCredential, requestSessionSignature]);
 
     const handleModalSigned = useCallback((result: ResolutionEcpSignature) => {
@@ -165,7 +174,7 @@ export function useEcpApproval() {
     }, []);
 
     return {
-        modalOpen, modalPayload, quietSigning, requestSignature,
+        modalOpen, modalPayload, modalDecision, quietSigning, requestSignature,
         handleModalSigned, handleModalClose,
         /** Сбросить ЭЦП-сессию (например, backend сообщил, что подпись чужая) — следующий
          * requestSignature откроет полный флоу с вводом ПИН. */

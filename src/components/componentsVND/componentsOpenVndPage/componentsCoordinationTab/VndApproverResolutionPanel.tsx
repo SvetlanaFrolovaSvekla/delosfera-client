@@ -1,4 +1,4 @@
-import {forwardRef, useEffect, useImperativeHandle, useMemo, useRef, useState} from "react";
+import {forwardRef, Fragment, useEffect, useImperativeHandle, useMemo, useRef, useState} from "react";
 import {Check, MessageSquare, Paperclip, Quote, X, AlertCircle, Search, Trash2, TextQuote} from "lucide-react";
 import {ConfirmActionModal} from "@/components/componentsGeneral/modal/ConfirmActionModal.tsx";
 import {formatFileSize} from "@/service/documentService/attachmentService.ts";
@@ -19,7 +19,8 @@ import {
 import {EcpSignModal} from "@/components/signing/EcpSignModal.tsx";
 import {useEcpApproval} from "@/hooks/useEcpApproval.ts";
 import {useEcpSession} from "@/context/EcpSessionContext.ts";
-import {useAuth} from "@/context/AuthContext.ts";
+import {ecpCredentialService} from "@/service/ecpCredentialService.ts";
+import {ApprovalDecisionType} from "@/service/coordinationService/coordinationServiceTypes.ts";
 import {formatEcpCountdown} from "@/utils/formatEcpDuration.ts";
 
 export type ResolutionChoice = "approve" | "approveWithComment" | "reject";
@@ -259,10 +260,30 @@ const OPTIONS_BY_PHASE: Record<ResolutionPhase, OptionConfig[]> = {
     finalHold: FINAL_HOLD_OPTIONS,
 };
 
-const SUBMIT_LABEL: Record<ResolutionChoice, string> = {
-    approve: "Согласовать и подписать (ЭП)",
-    approveWithComment: "Согласовать с замечаниями (ЭП)",
-    reject: "Отклонить редакцию (ЭП)",
+const ACTIONS: ResolutionChoice[] = ["approve", "approveWithComment", "reject"];
+
+const ECP_ACTION_LABEL: Record<ResolutionChoice, string> = {
+    approve: "Согласовать (ЭЦП)",
+    approveWithComment: "Согласовать с замечаниями (ЭЦП)",
+    reject: "Отклонить (ЭЦП)",
+};
+
+const TEST_ACTION_LABEL: Record<ResolutionChoice, string> = {
+    approve: "Согласовать (без ЭЦП, тест)",
+    approveWithComment: "С замечаниями (без ЭЦП, тест)",
+    reject: "Отклонить (без ЭЦП, тест)",
+};
+
+const TEST_ACTION_STYLE: Record<ResolutionChoice, string> = {
+    approve: "border-[#9fd3b4] text-[#1f7a45] hover:bg-[#f1faf4]",
+    approveWithComment: "border-[#9fd3b4] text-[#1f7a45] hover:bg-[#f1faf4]",
+    reject: "border-[#e8a6a6] text-[#c0392b] hover:bg-[#fdf1f1]",
+};
+
+const CHOICE_TO_DECISION: Record<ResolutionChoice, ApprovalDecisionType> = {
+    approve: ApprovalDecisionType.Approve,
+    approveWithComment: ApprovalDecisionType.ApproveWithComment,
+    reject: ApprovalDecisionType.Reject,
 };
 
 const COMMENT_PLACEHOLDER: Record<ResolutionChoice, string> = {
@@ -298,7 +319,10 @@ export const VndApproverResolutionPanel = forwardRef<
     const [files, setFiles] = useState<File[]>([]);
     const [attachmentCountLimitHit, setAttachmentCountLimitHit] = useState(false);
     const [oversizedFileNames, setOversizedFileNames] = useState<string[]>([]);
-    const [rejectConfirmOpen, setRejectConfirmOpen] = useState(false);
+    // "Отклонить" ждёт подтверждения; withEcp - какой кнопкой (с ЭЦП или тестовой) нажато.
+    const [pendingReject, setPendingReject] = useState<{withEcp: boolean} | null>(null);
+    // Последняя нажатая кнопка решения - на ней показываем "Отправка…".
+    const [lastAction, setLastAction] = useState<{choice: ResolutionChoice; withEcp: boolean} | null>(null);
     // Пересоздаём сам <input type="file"> после каждого выбора (через key), а не просто
     // чистим его .value — второй способ на части машин (Windows, некоторые сборки Chrome/Edge)
     // не всегда даёт браузеру повторно открыть диалог или корректно прочитать новый выбор
@@ -346,8 +370,6 @@ export const VndApproverResolutionPanel = forwardRef<
     }, [choice, comment, remarks, draftStorageKey]);
 
     const options = OPTIONS_BY_PHASE[phase];
-    const theme = CHOICE_THEME[choice];
-    const SubmitIcon = theme.icon;
 
     const composedComment = useMemo(() => composeResolutionComment(comment, remarks), [comment, remarks]);
     const composedTooLong = composedComment.length > MAX_RESOLUTION_COMMENT_LENGTH;
@@ -357,7 +379,6 @@ export const VndApproverResolutionPanel = forwardRef<
     // хотя бы к одному фрагменту (одна только ссылка на фрагмент без пояснения замечанием не считается).
     const commentRequired = choice !== "approve";
     const commentMissing = commentRequired && comment.trim().length === 0 && !hasRemarkNotes;
-    const canSubmit = !commentMissing && !composedTooLong;
 
     const attachmentSlotsLeft = MAX_RESOLUTION_ATTACHMENTS - files.length;
     const attachmentLimitReached = attachmentSlotsLeft <= 0;
@@ -443,10 +464,9 @@ export const VndApproverResolutionPanel = forwardRef<
     // без ожидания рендера, поэтому второй клик блокируется гарантированно.
     const submitLockRef = useRef(false);
 
-    // "Согласовать" - решение с наибольшими последствиями (закрывает этап маршрута), поэтому
-    // именно оно требует доп. фактора - ЭЦП ГП «Инфоком» (документация провайдера: ЭП нельзя
-    // использовать как первый фактор входа, только как второй/третий при уже выполненном
-    // действии - здесь это действие). "Отклонить"/"Согласовать с замечаниями" подписи не требуют.
+    // Любое решение согласующего ("Согласовать", "с замечаниями", "Отклонить") подписывается ЭЦП
+    // ГП «Инфоком» (документация провайдера: ЭП нельзя использовать как первый фактор входа, только
+    // как второй/третий при уже выполненном действии - здесь это действие). Решение входит в хэш.
     //
     // Токен статичный (см. EcpSessionContext): пока он не истёк, useEcpApproval подписывает
     // тихо, без EcpSignModal - полный флоу (методы → пин → токен) открывается только когда
@@ -457,11 +477,18 @@ export const VndApproverResolutionPanel = forwardRef<
     // (или подпись устарела) — предлагаем подписать заново; подпись чужая — заново с вводом ПИН.
     const [resignNeeded, setResignNeeded] = useState<"resign" | "reauth" | null>(null);
 
-    // ТЕСТ: для локальных учётных записей (не LDAP) доступна доп. кнопка "Согласовать" без ЭЦП.
-    const {user: currentUser} = useAuth();
-    const canApproveWithoutEcp = currentUser?.source === "Local";
+    // ТЕСТ: кнопки решений без ЭЦП - всем пользователям, пока на сервере включён тестовый режим
+    // (EcpSigning:AllowWithoutEcp). Сервер проверяет это сам и без режима отклонит решение без подписи.
+    const [testMode, setTestMode] = useState(false);
+    useEffect(() => {
+        let cancelled = false;
+        ecpCredentialService.testMode()
+            .then((r) => { if (!cancelled) setTestMode(r.allowWithoutEcp); })
+            .catch(() => { /* нет ответа - тестовых кнопок просто не будет */ });
+        return () => { cancelled = true; };
+    }, []);
 
-    const doSubmit = async (ecpSignature?: ResolutionEcpSignature, withoutEcp?: boolean) => {
+    const doSubmit = async (decisionChoice: ResolutionChoice, ecpSignature?: ResolutionEcpSignature, withoutEcp?: boolean) => {
         if (submitLockRef.current) return;
         submitLockRef.current = true;
         try {
@@ -473,7 +500,7 @@ export const VndApproverResolutionPanel = forwardRef<
                 occurrence: r.occurrence,
                 note: r.note.trim() || null,
             }));
-            const ok = await onSubmit(choice, composedComment, files, quotesToSend, ecpSignature, withoutEcp);
+            const ok = await onSubmit(decisionChoice, composedComment, files, quotesToSend, ecpSignature, withoutEcp);
             // Черновик стираем только после успешной отправки - при ошибке он нужен, чтобы
             // пользователь ничего не потерял.
             if (ok === true) saveDraft(draftStorageKey, null);
@@ -484,39 +511,43 @@ export const VndApproverResolutionPanel = forwardRef<
         }
     };
 
-    const handleSubmit = () => {
-        if (!canSubmit || submitting || submitLockRef.current || ecp.quietSigning || ecp.modalOpen) return;
-        setResignNeeded(null);
-        if (choice === "reject") {
-            setRejectConfirmOpen(true);
+    // Кнопка решения: c - решение, withEcp - с подписью (левая колонка) или тестовое без ЭЦП (правая).
+    // Для "с замечаниями"/"отклонить" нужен текст - без него показываем подсказку (commentMissing по
+    // выбранному решению), запрос не отправляем. "Отклонить" - через подтверждение.
+    const busy = submitting || ecp.quietSigning || ecp.modalOpen;
+    const missingFor = (c: ResolutionChoice) => c !== "approve" && comment.trim().length === 0 && !hasRemarkNotes;
+
+    const runDecision = (c: ResolutionChoice, withEcp: boolean) => {
+        setLastAction({choice: c, withEcp});
+        if (!withEcp) {
+            void doSubmit(c, undefined, true);
             return;
         }
-        if (choice === "approve") {
-            // requestSignature сама решает: тихо подписать сохранённым токеном (сессия ещё
-            // действует) или открыть EcpSignModal (сессии нет/истекла). Отмена в модалке
-            // (Escape/"Отмена") отклоняет промис - резолюция в этом случае не отправляется.
-            //
-            // vndId/stageId идут дальше на backend за "hash to sign" (см. useEcpApproval) -
-            // хэш считается там же, backend же его и перепроверяет при сохранении решения
-            // (VndApprovalController.Decide), поэтому подписанный текст нельзя подменить
-            // между запросом хэша и отправкой резолюции.
-            ecp.requestSignature(vndId, stageId, composedComment)
-                .then((signature) => doSubmit(signature))
-                .catch(() => {});
-            return;
-        }
-        void doSubmit();
+        // requestSignature сама решает: подписать сохранённой идентификацией / действующей сессией
+        // тихо или открыть EcpSignModal. Решение входит в подписываемый хэш (он считается на backend,
+        // тот же хэш backend перепроверит при сохранении резолюции). Отмена в модалке отклоняет
+        // промис - резолюция не отправляется.
+        ecp.requestSignature(vndId, stageId, composedComment, CHOICE_TO_DECISION[c])
+            .then((signature) => doSubmit(c, signature))
+            .catch(() => {});
     };
 
-    const handleSubmitWithoutEcp = () => {
-        if (!canSubmit || submitting || submitLockRef.current || ecp.quietSigning || ecp.modalOpen) return;
+    const handleAction = (c: ResolutionChoice, withEcp: boolean) => {
+        if (busy || submitLockRef.current) return;
+        setChoice(c);
         setResignNeeded(null);
-        void doSubmit(undefined, true);
+        if (missingFor(c) || composedTooLong) return;
+        if (c === "reject") {
+            setPendingReject({withEcp});
+            return;
+        }
+        runDecision(c, withEcp);
     };
 
     const handleConfirmReject = () => {
-        setRejectConfirmOpen(false);
-        void doSubmit();
+        const pending = pendingReject;
+        setPendingReject(null);
+        if (pending) runDecision("reject", pending.withEcp);
     };
 
     const handleDiscardDraft = () => {
@@ -559,36 +590,19 @@ export const VndApproverResolutionPanel = forwardRef<
                 </div>
             )}
 
-            <div className="mt-4 flex flex-col gap-2.5">
-                {options.map((opt) => {
-                    const selected = choice === opt.id;
-                    const optTheme = CHOICE_THEME[opt.id];
-                    return (
-                        <button
-                            key={opt.id}
-                            type="button"
-                            onClick={() => setChoice(opt.id)}
-                            className={`cursor-pointer flex items-start gap-3 rounded-[12px] border px-4 py-3 text-left transition-colors ${
-                                selected
-                                    ? `${optTheme.border} ${optTheme.bg}`
-                                    : "border-[#e9edf3] bg-white hover:border-[#d7dee8]"
-                            }`}
-                        >
-                            <span
-                                className={`mt-[3px] flex h-[16px] w-[16px] shrink-0 items-center justify-center rounded-full border-2 ${
-                                    selected ? optTheme.border : "border-[#c7cede]"
-                                }`}
-                            >
-                                {selected && <span className={`h-[8px] w-[8px] rounded-full ${optTheme.dot}`}/>}
-                            </span>
-                            <span>
-                                <div className="text-[13.5px] font-semibold text-[#1c2740]">{opt.title}</div>
-                                <div className="text-[12px] text-[#8b97ab]">{opt.subtitle}</div>
-                            </span>
-                        </button>
-                    );
-                })}
-            </div>
+            {/* Что означает каждое решение - подсказки для фазы (раньше были подписями у переключателя). */}
+            <details className="mt-4 rounded-[12px] border border-[#e9edf3] bg-[#fbfcfe] px-4 py-2.5 text-[12px] text-[#8b97ab]">
+                <summary className="cursor-pointer select-none font-semibold text-[#5b6680]">
+                    Что означает каждое решение
+                </summary>
+                <ul className="m-0 mt-2 flex list-none flex-col gap-1.5 p-0">
+                    {options.map((opt) => (
+                        <li key={opt.id}>
+                            <span className="font-semibold text-[#1c2740]">{opt.title}.</span> {opt.subtitle}
+                        </li>
+                    ))}
+                </ul>
+            </details>
 
             {/* --- Замечания к тексту --- */}
             {(onCiteRequest || remarks.length > 0) && (
@@ -812,42 +826,64 @@ export const VndApproverResolutionPanel = forwardRef<
                 </div>
             )}
 
-            {resignNeeded && choice === "approve" && (
+            {resignNeeded && (
                 <div className="mt-2 flex items-center justify-between gap-3 rounded-md border border-[#f3dfb0] bg-[#fdf7e8] px-3.5 py-2 text-[12.5px] text-[#8a6100]">
                     <span>
                         {resignNeeded === "resign"
                             ? "Подпись не соответствует текущему документу или тексту резолюции. Подпишите резолюцию заново."
                             : "Подпись принадлежит другому лицу. Подпишите заново своей ЭЦП — потребуется ввести ПИН."}
                     </span>
-                    <button type="button" onClick={handleSubmit}
-                            disabled={!canSubmit || submitting || ecp.quietSigning || ecp.modalOpen}
+                    <button type="button" onClick={() => handleAction(choice, true)}
+                            disabled={busy}
                             className="cursor-pointer shrink-0 rounded-[8px] border border-[#e0c47a] bg-white px-3 py-1 text-[12px] font-semibold text-[#8a6100] disabled:opacity-50">
                         Подписать заново
                     </button>
                 </div>
             )}
 
-            <button
-                type="button"
-                onClick={handleSubmit}
-                disabled={!canSubmit || submitting || ecp.quietSigning || ecp.modalOpen}
-                className={`cursor-pointer mt-4 flex w-full items-center justify-center gap-2 rounded-[10px] px-4 py-3 text-[13.5px] font-semibold text-white transition-colors disabled:cursor-not-allowed disabled:opacity-50 ${theme.buttonBg} ${theme.buttonHover}`}
-            >
-                <SubmitIcon className="h-4 w-4" strokeWidth={2.5}/>
-                {submitting ? "Отправка…" : SUBMIT_LABEL[choice]}
-            </button>
-
-            {choice === "approve" && canApproveWithoutEcp && (
-                <button
-                    type="button"
-                    onClick={handleSubmitWithoutEcp}
-                    disabled={!canSubmit || submitting || ecp.quietSigning || ecp.modalOpen}
-                    className="cursor-pointer mt-2 flex w-full items-center justify-center gap-2 rounded-[10px] border border-[#b7dfc6] bg-white px-4 py-3 text-[13.5px] font-semibold text-[#1f7a45] transition-colors hover:bg-[#f1faf4] disabled:cursor-not-allowed disabled:opacity-50"
-                >
-                    <Check className="h-4 w-4" strokeWidth={2.5}/>
-                    Согласовать (без ЭЦП, тест)
-                </button>
-            )}
+            {/* Решения: левая колонка - с подписью ЭЦП (обязательна для любого решения), правая -
+                тестовые без ЭЦП (только пока на сервере включён EcpSigning:AllowWithoutEcp). */}
+            <div className={`mt-4 grid gap-2.5 ${testMode ? "sm:grid-cols-2" : "grid-cols-1"}`}>
+                {testMode && (
+                    <>
+                        <div className="hidden text-[11px] font-bold uppercase tracking-[.04em] text-[#a3adbd] sm:block">
+                            С подписью ЭЦП
+                        </div>
+                        <div className="hidden text-[11px] font-bold uppercase tracking-[.04em] text-[#a3adbd] sm:block">
+                            Без ЭЦП — тестовый режим
+                        </div>
+                    </>
+                )}
+                {ACTIONS.map((c) => {
+                    const actionTheme = CHOICE_THEME[c];
+                    const Icon = actionTheme.icon;
+                    const isRunning = submitting && lastAction?.choice === c;
+                    return (
+                        <Fragment key={c}>
+                            <button
+                                type="button"
+                                onClick={() => handleAction(c, true)}
+                                disabled={busy || composedTooLong}
+                                className={`cursor-pointer flex w-full items-center justify-center gap-2 rounded-[10px] px-4 py-3 text-[13.5px] font-semibold text-white transition-colors disabled:cursor-not-allowed disabled:opacity-50 ${actionTheme.buttonBg} ${actionTheme.buttonHover}`}
+                            >
+                                <Icon className="h-4 w-4" strokeWidth={2.5}/>
+                                {isRunning && lastAction?.withEcp ? "Отправка…" : ECP_ACTION_LABEL[c]}
+                            </button>
+                            {testMode && (
+                                <button
+                                    type="button"
+                                    onClick={() => handleAction(c, false)}
+                                    disabled={busy || composedTooLong}
+                                    className={`cursor-pointer flex w-full items-center justify-center gap-2 rounded-[10px] border border-dashed bg-white px-4 py-3 text-[13.5px] font-semibold transition-colors disabled:cursor-not-allowed disabled:opacity-50 ${TEST_ACTION_STYLE[c]}`}
+                                >
+                                    <Icon className="h-4 w-4" strokeWidth={2.5}/>
+                                    {isRunning && !lastAction?.withEcp ? "Отправка…" : TEST_ACTION_LABEL[c]}
+                                </button>
+                            )}
+                        </Fragment>
+                    );
+                })}
+            </div>
 
             {commentMissing && (
                 <div className="mt-3 flex items-start gap-1.5 text-[11.5px] text-[#d62815]">
@@ -871,8 +907,8 @@ export const VndApproverResolutionPanel = forwardRef<
             )}
 
             <ConfirmActionModal
-                open={rejectConfirmOpen}
-                onClose={() => setRejectConfirmOpen(false)}
+                open={pendingReject !== null}
+                onClose={() => setPendingReject(null)}
                 onConfirm={handleConfirmReject}
                 title="Отклонить редакцию?"
                 message="ВНД вернётся инициатору — потребуется создать новую редакцию и заново пройти согласование."
@@ -888,6 +924,7 @@ export const VndApproverResolutionPanel = forwardRef<
                     vndId={vndId}
                     stageId={stageId}
                     payloadText={ecp.modalPayload}
+                    decision={ecp.modalDecision}
                     onSigned={ecp.handleModalSigned}
                     onClose={ecp.handleModalClose}
                 />

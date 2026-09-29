@@ -1,4 +1,5 @@
 import {apiClient} from "@/service/apiClient.ts";
+import {ApprovalDecisionType} from "@/service/coordinationService/coordinationServiceTypes.ts";
 
 /**
  * Сохранённая ЭЦП-идентификация ("личный кабинет → Электронная подпись"): ПИН и код из СМС/почты
@@ -58,9 +59,18 @@ export const ecpCredentialService = {
     },
 
     /** Подписать хэш резолюции сохранённой идентификацией (хэш строит backend). */
-    async signResolution(vndId: number, stageId: number, comment: string): Promise<StoredEcpSignature> {
+    async signResolution(
+        vndId: number, stageId: number, comment: string,
+        decision: ApprovalDecisionType = ApprovalDecisionType.Approve,
+    ): Promise<StoredEcpSignature> {
         const {data} = await apiClient.post<StoredEcpSignature>(
-            "/signing/ecp-credential/sign-resolution", {vndId, stageId, comment});
+            "/signing/ecp-credential/sign-resolution", {vndId, stageId, comment, decision});
+        return data;
+    },
+
+    /** Тестовый режим сервера: разрешены ли решения без ЭЦП (EcpSigning:AllowWithoutEcp). */
+    async testMode(): Promise<{allowWithoutEcp: boolean}> {
+        const {data} = await apiClient.get<{allowWithoutEcp: boolean}>("/signing/ecp-credential/test-mode");
         return data;
     },
 };

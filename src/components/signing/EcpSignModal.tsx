@@ -18,6 +18,7 @@ import {infocomEcpService, infocomErrorText} from "@/service/infocomEcpService.t
 import {useEcpSession} from "@/context/EcpSessionContext.ts";
 import {coordinationService} from "@/service/coordinationService/coordinationService.ts";
 import type {ResolutionEcpSignature} from "@/hooks/useEcpApproval.ts";
+import {ApprovalDecisionType} from "@/service/coordinationService/coordinationServiceTypes.ts";
 import {useEcpIdentification} from "@/hooks/useEcpIdentification.ts";
 import {useModalShake} from "@/hooks/useModalShake.ts";
 import {ecpCredentialService} from "@/service/ecpCredentialService.ts";
@@ -31,11 +32,15 @@ interface Props {
     stageId: number;
     /** То, что подписывается — например, итоговый текст резолюции. Хэш считает backend. */
     payloadText: string;
+    /** Решение, под которым ставится подпись (входит в хэш). */
+    decision?: ApprovalDecisionType;
     onSigned: (result: ResolutionEcpSignature) => void;
     onClose: () => void;
 }
 
-export const EcpSignModal = ({vndId, stageId, payloadText, onSigned, onClose}: Props) => {
+export const EcpSignModal = ({
+    vndId, stageId, payloadText, decision = ApprovalDecisionType.Approve, onSigned, onClose,
+}: Props) => {
     const {t} = useTranslation();
     const {setSession} = useEcpSession();
     const {panelRef, handleBackdropClick} = useModalShake();
@@ -89,7 +94,7 @@ export const EcpSignModal = ({vndId, stageId, payloadText, onSigned, onClose}: P
             }
 
             // Хэш — от backend (текст резолюции + содержимое редакции + код ВНД), не считаем сами.
-            const {hash} = await coordinationService.getResolutionHash(vndId, stageId, payloadText);
+            const {hash} = await coordinationService.getResolutionHash(vndId, stageId, payloadText, decision);
             const signed = await infocomEcpService.signHash(hash, auth.token);
             if (!signed.isSuccesfull || !signed.sign) throw new Error(t("ecp.modal.signMissing"));
 

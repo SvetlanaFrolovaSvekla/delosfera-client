@@ -39,7 +39,6 @@ const RolesPermissionPage = lazy(() => import("@/pages/ManagementPages/PeopleAnd
 const BaseVndPage = lazy(() => import("@/pages/VndPages/BaseVndPage.tsx").then(m => ({default: m.BaseVndPage})));
 const CreateVndPage = lazy(() => import("@/pages/VndPages/CreateVndPage.tsx").then(m => ({default: m.CreateVndPage})));
 const OpenVndPage = lazy(() => import("@/pages/VndPages/OpenVndPage.tsx").then(m => ({default: m.OpenVndPage})));
-const EcpTestPage = lazy(() => import("@/pages/EcpTestPage.tsx").then(m => ({default: m.EcpTestPage})));
 const ProfilePage = lazy(() => import("@/pages/UsersPages/ProfilePage.tsx").then(m => ({default: m.ProfilePage})));
 const UserProfileViewPage = lazy(() => import("@/pages/UsersPages/UserProfileViewPage.tsx").then(m => ({default: m.UserProfileViewPage})));
 const NotificationsPage = lazy(() => import("@/pages/NotificationsPage/NotificationsPage.tsx").then(m => ({default: m.NotificationsPage})));
@@ -212,13 +211,6 @@ function App() {
                                 <Route path="/sz-analytics" element={<SzStatisticsPage/>}/>
 
                                 <Route path="/signing-workplace" element={<SigningWorkplacePage/>}/>
-                                {/* Dev/test-страница ЭЦП ГП «Инфоком» — сырой прогон всех 6 методов по отдельности,
-                                    в обход боевого флоу (EcpSignModal/useEcpApproval). Раньше это была песочница,
-                                    теперь ЭЦП — часть резолюции "Согласовать", поэтому страница доступна только
-                                    в dev-сборке (import.meta.env.DEV), а не в проде. */}
-                                {import.meta.env.DEV && (
-                                    <Route path="/ecp-test" element={<EcpTestPage/>}/>
-                                )}
                                 <Route path="/hr-ack" element={<AcknowledgementPage/>}/>
                                 <Route path="/help" element={<HelpPage/>}/>
 

@@ -13,6 +13,7 @@ import type {
     VndResolutionSignatureResponse,
     ResolutionSignatureVerifyResponse,
 } from "./coordinationServiceTypes";
+import {ApprovalDecisionType} from "@/service/coordinationService/coordinationServiceTypes.ts";
 import {axiosInstance} from "@/service/axiosInstance.ts";
 
 class CoordinationService {
@@ -90,10 +91,15 @@ class CoordinationService {
     /** Хэш для подписи резолюции ЭЦП ГП «Инфоком» (SIG-ECP, см. useEcpApproval). Клиент шлёт
      * ТОЛЬКО текст резолюции — содержимое текущей редакции и код ВНД backend берёт из БД сам и
      * повторяет тот же расчёт при сохранении decide(), сверяя с присланным EcpHash. */
-    async getResolutionHash(vndId: number, stageId: number, comment: string): Promise<ResolutionHashResponse> {
+    /** decision входит в подписываемый хэш (схема v2): подпись под "Согласовать" нельзя выдать за
+     * подпись под "Отклонить". */
+    async getResolutionHash(
+        vndId: number, stageId: number, comment: string,
+        decision: ApprovalDecisionType = ApprovalDecisionType.Approve,
+    ): Promise<ResolutionHashResponse> {
         const { data } = await axiosInstance.post<ResolutionHashResponse>(
             `${this.basePath(vndId)}/stages/${stageId}/decision/resolution-hash`,
-            {comment},
+            {comment, decision},
         );
         return data;
     }

@@ -5,13 +5,14 @@
  * Идентификацию можно в любой момент отозвать.
  */
 import {useCallback, useEffect, useState} from "react";
+import {KeyRound} from "lucide-react";
 import {infocomEcpService, infocomErrorText, isValidPersonIdnp} from "@/service/infocomEcpService.ts";
 import {ecpCredentialService, type EcpCredentialStatus} from "@/service/ecpCredentialService.ts";
 import {toast} from "@/service/toastService.ts";
 
 type Step = "idnp" | "code";
 
-const inputCls = "h-9 rounded-[8px] border border-[#e5e9f0] px-2.5 text-[12.5px] font-mono";
+const inputCls = "h-9 w-full rounded-[8px] border border-[#e5e9f0] px-2.5 text-[12.5px] font-mono";
 const primaryBtn = "cursor-pointer h-9 rounded-[9px] border-none bg-[#2f68f5] px-4 text-[12.5px] font-semibold text-white disabled:opacity-40";
 const secondaryBtn = "cursor-pointer h-9 rounded-[9px] border border-[#e5e9f0] bg-white px-4 text-[12.5px] text-[#55617a] disabled:opacity-50";
 
@@ -118,11 +119,16 @@ export function EcpCredentialCard() {
     };
 
     return (
-        <div className="mt-6 rounded-[14px] border border-[#e5e9f0] bg-white p-5">
-            <h2 className="m-0 text-[15px] font-semibold text-[#0f1b2d]">Электронная подпись</h2>
-            <p className="m-0 mt-1 text-[12.5px] leading-[1.6] text-[#55617a]">
-                Пройдите идентификацию один раз — и резолюции «Согласовать (ЭЦП)» будут подписываться без
-                повторного ввода ПИН и кода из СМС/почты.
+        <div className="bg-white border border-[#e9edf3] rounded-2xl px-5 py-[18px]">
+            <div className="flex items-center gap-2.5">
+                <div className="grid h-[30px] w-[30px] shrink-0 place-items-center rounded-[9px] bg-[var(--soft)] text-[var(--accent)]">
+                    <KeyRound size={17} strokeWidth={1.8}/>
+                </div>
+                <h3 className="m-0 text-[13.5px] font-bold text-[#1c2740]">Электронная подпись</h3>
+            </div>
+            <p className="m-0 mt-2.5 text-[12px] leading-[1.6] text-[#55617a]">
+                Пройдите идентификацию один раз — и «Согласовать (ЭЦП)» будет подписывать без повторного ввода
+                ПИН и кода из СМС/почты.
             </p>
 
             {loadError && <div className="mt-3 text-[12.5px] text-[#c0392b]">{loadError}</div>}
@@ -141,7 +147,7 @@ export function EcpCredentialCard() {
                     <div>ПИН: <span className="font-mono">{status.personIdnpMasked}</span></div>
                     <div>Действует до: {formatDate(status.expiresAt)}</div>
                     <div>Последнее подписание: {formatDate(status.lastUsedAt)}</div>
-                    <div className="mt-2 flex gap-2">
+                    <div className="mt-2 flex flex-wrap gap-2">
                         <button className={secondaryBtn} disabled={busy} onClick={() => setFormOpen(true)}>Пройти заново</button>
                         <button className={secondaryBtn} disabled={busy} onClick={revoke}>Отозвать</button>
                     </div>
@@ -158,7 +164,7 @@ export function EcpCredentialCard() {
             )}
 
             {status?.available && formOpen && (
-                <div className="mt-3 flex max-w-[420px] flex-col gap-3">
+                <div className="mt-3 flex flex-col gap-3">
                     {error && (
                         <div className="rounded-[9px] border border-[#f1c9c2] bg-[#fbeae7] px-3 py-2.5 text-[12.5px] leading-[1.6] text-[#c0392b]">
                             {error}
@@ -181,7 +187,7 @@ export function EcpCredentialCard() {
                                     </select>
                                 </label>
                             )}
-                            <div className="flex gap-2">
+                            <div className="flex flex-wrap gap-2">
                                 <button className={secondaryBtn} disabled={busy} onClick={resetForm}>Отмена</button>
                                 {methods.length === 0 ? (
                                     <button className={primaryBtn} disabled={busy || !idnpValid} onClick={loadMethods}>
@@ -204,7 +210,7 @@ export function EcpCredentialCard() {
                                        onChange={(e) => setCode(e.target.value)}
                                        onKeyDown={(e) => { if (e.key === "Enter" && !busy) void save(); }}/>
                             </label>
-                            <div className="flex gap-2">
+                            <div className="flex flex-wrap gap-2">
                                 <button className={secondaryBtn} disabled={busy} onClick={resetForm}>Отмена</button>
                                 <button className={primaryBtn} disabled={busy} onClick={save}>
                                     {busy ? "Проверяем…" : "Подтвердить"}

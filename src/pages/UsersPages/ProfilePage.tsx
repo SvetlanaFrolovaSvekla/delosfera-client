@@ -1,7 +1,6 @@
 import {useTranslation} from "react-i18next";
 import {useAuth} from "@/context/AuthContext.ts";
 import {UserProfileView} from "@/components/componentsUsers/UserProfileView.tsx";
-import {EcpCredentialCard} from "@/components/componentsUsers/EcpCredentialCard.tsx";
 import {Loader} from "@/components/componentsGeneral/Loader.tsx";
 
 export function ProfilePage() {
@@ -20,8 +19,6 @@ export function ProfilePage() {
     return (
         <div className="max-w-[1700px] mx-auto px-[30px] pt-[26px] pb-[60px]">
             <UserProfileView user={user} isOwnProfile/>
-            {/* Идентификация в облачной ЭЦП ГП «Инфоком» — один раз, дальше подписание без повторного ввода. */}
-            <EcpCredentialCard/>
         </div>
     );
 }

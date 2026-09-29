@@ -5,13 +5,10 @@ import { userService } from "@/service/userService/userService.ts";
 import type { UserActivityResponse, UserResponse } from "@/service/userService/userServiceType.ts";
 import { Tabs } from "@/components/componentsGeneral/Tabs";
 import { Check, KeyRound, User as UserIcon } from "lucide-react";
+import { Avatar } from "@/components/componentsGeneral/Avatar.tsx";
+import { EcpCredentialCard } from "@/components/componentsUsers/EcpCredentialCard.tsx";
 
 const ALL_TAB = "all";
-
-function getInitials(fullName: string) {
-    const parts = fullName.trim().split(/\s+/);
-    return parts.slice(0, 2).map((p) => p[0]?.toUpperCase() ?? "").join("");
-}
 
 function formatDateTime(value: string | null | undefined) {
     if (!value) return "—";
@@ -110,9 +107,8 @@ export function UserProfileView({ user, isOwnProfile }: UserProfileViewProps) {
         <div className="animate-[dsIn_.22s_ease]">
             {/* Шапка профиля */}
             <div className="bg-white border border-[#e9edf3] rounded-2xl px-7 py-6 mb-[18px] flex items-center gap-[22px] flex-wrap">
-                <span className="w-[72px] h-[72px] flex-none rounded-[20px] bg-[var(--soft)] text-[var(--accent)] grid place-items-center font-bold text-[25px]">
-                    {getInitials(user.fullName)}
-                </span>
+                {/* Цветной кружок с инициалами (цвет зависит от имени, см. Avatar) */}
+                <Avatar name={user.fullName} size={72} muted={!user.isActive} />
                 <div className="flex-1 min-w-[220px]">
                     <h1 className="m-0 text-[23px] font-bold tracking-[-.02em]">{user.fullName}</h1>
                     <div className="mt-[9px] flex items-center gap-[10px] flex-wrap">
@@ -215,20 +211,25 @@ export function UserProfileView({ user, isOwnProfile }: UserProfileViewProps) {
                         </div>
                     </div>
 
-                    {/* Электронная подпись - данных пока нет */}
-                    <div className="bg-white border border-[#e9edf3] rounded-2xl px-5 py-[18px]">
-                        <div className="flex items-center gap-[9px] mb-[13px]">
-                            <span className="w-[30px] h-[30px] flex-none rounded-lg bg-[var(--soft)] text-[var(--accent)] grid place-items-center">
-                                <KeyRound size={17} strokeWidth={1.8} />
-                            </span>
-                            {/* <h3 className="m-0 text-[13.5px] font-bold">Электронная подпись</h3> */}
-                            <h3 className="m-0 text-[13.5px] font-bold">{t("userProfile.signatureTitle")}</h3>
+                    {/* Электронная подпись: в своём профиле - идентификация в ГП «Инфоком»
+                        (ПИН + код из СМС один раз), в чужом - данных нет, показываем заглушку */}
+                    {isOwnProfile ? (
+                        <EcpCredentialCard />
+                    ) : (
+                        <div className="bg-white border border-[#e9edf3] rounded-2xl px-5 py-[18px]">
+                            <div className="flex items-center gap-[9px] mb-[13px]">
+                                <span className="w-[30px] h-[30px] flex-none rounded-lg bg-[var(--soft)] text-[var(--accent)] grid place-items-center">
+                                    <KeyRound size={17} strokeWidth={1.8} />
+                                </span>
+                                {/* <h3 className="m-0 text-[13.5px] font-bold">Электронная подпись</h3> */}
+                                <h3 className="m-0 text-[13.5px] font-bold">{t("userProfile.signatureTitle")}</h3>
+                            </div>
+                            <p className="m-0 text-[12.5px] text-[#55617a] leading-[1.55]">
+                                {/* Недоступно */}
+                                {t("userProfile.signatureUnavailable")}
+                            </p>
                         </div>
-                        <p className="m-0 text-[12.5px] text-[#55617a] leading-[1.55]">
-                            {/* Недоступно */}
-                            {t("userProfile.signatureUnavailable")}
-                        </p>
-                    </div>
+                    )}
 
                     {/* Полномочия */}
                     <div className="bg-white border border-[#e9edf3] rounded-2xl px-5 py-[18px]">
@@ -248,7 +249,8 @@ export function UserProfileView({ user, isOwnProfile }: UserProfileViewProps) {
                             </>
                         )}
 
-                        <div className="flex flex-wrap gap-[7px]">
+                        {/* Список полномочий может быть очень длинным - ограничиваем высоту, дальше скролл */}
+                        <div className="flex flex-wrap gap-[7px] max-h-[300px] overflow-y-auto pr-1">
                             {activePermissions.map((p) => (
                                 <span
                                     key={p.code}

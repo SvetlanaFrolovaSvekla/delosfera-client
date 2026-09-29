@@ -2,6 +2,7 @@
 import {useTranslation} from "react-i18next";
 import type {UsageEmployee} from "@/service/usageService/usageService.ts";
 import {Cell, formatDateTime, Row} from "@/components/componentsGeneral/DataTable.tsx";
+import {Avatar} from "@/components/componentsGeneral/Avatar.tsx";
 
 export function EmployeeRow({employee}: {employee: UsageEmployee}) {
     const {t} = useTranslation();
@@ -37,34 +38,5 @@ export function EmployeeRow({employee}: {employee: UsageEmployee}) {
                 )}
             </Cell>
         </Row>
-    );
-}
-
-/**
- * Кружок с инициалами. Настоящих фотографий в системе нет, а пустое место в
- * первой колонке делает список трудным для просматривания глазами.
- */
-function Avatar({name, muted}: {name: string; muted?: boolean}) {
-    const initials = name
-        .split(/\s+/)
-        .filter(Boolean)
-        .slice(0, 2)
-        .map((part) => part[0]?.toUpperCase() ?? "")
-        .join("");
-
-    // Цвет из имени: одинаковый у одного человека между заходами, разный у соседей.
-    const hue = [...name].reduce((sum, ch) => sum + ch.charCodeAt(0), 0) % 360;
-
-    return (
-        <span
-            aria-hidden="true"
-            className="grid h-8 w-8 flex-none place-items-center rounded-full
-                       text-[11.5px] font-bold text-white"
-            style={{
-                background: muted ? "#c3cede" : `hsl(${hue} 45% 52%)`,
-            }}
-        >
-            {initials}
-        </span>
     );
 }

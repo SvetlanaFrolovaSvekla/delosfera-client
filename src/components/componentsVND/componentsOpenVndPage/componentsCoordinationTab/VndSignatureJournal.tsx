@@ -12,7 +12,7 @@ import type {
  * состояния документа и резолюции, подпись снова проверяется у провайдера (2.6). Журнал только
  * для чтения — изменить или удалить запись нельзя ни здесь, ни через API.
  *
- * Ничего не рисует, пока подписей нет (или журнал недоступен) — чтобы не загромождать вкладку.
+ * Блок показывается всегда: если подписей нет — пустое состояние, если журнал не загрузился — ошибка.
  */
 
 const PHASE_LABEL: Record<VndResolutionSignatureResponse["phase"], string> = {
@@ -35,14 +35,16 @@ const formatDateTime = (iso: string) =>
 
 export function VndSignatureJournal({vndId, refreshKey}: { vndId: number; refreshKey?: unknown }) {
     const [items, setItems] = useState<VndResolutionSignatureResponse[]>([]);
+    const [loaded, setLoaded] = useState(false);
+    const [loadError, setLoadError] = useState(false);
     const [checking, setChecking] = useState<number | null>(null);
     const [results, setResults] = useState<Record<number, ResolutionSignatureVerifyResponse | string>>({});
 
     useEffect(() => {
         let cancelled = false;
         coordinationService.getSignatures(vndId)
-            .then((data) => { if (!cancelled) setItems(data); })
-            .catch(() => { if (!cancelled) setItems([]); });
+            .then((data) => { if (!cancelled) { setItems(data); setLoadError(false); setLoaded(true); } })
+            .catch(() => { if (!cancelled) { setItems([]); setLoadError(true); setLoaded(true); } });
         return () => { cancelled = true; };
     }, [vndId, refreshKey]);
 
@@ -64,11 +66,17 @@ export function VndSignatureJournal({vndId, refreshKey}: { vndId: number; refres
         }
     }, [vndId]);
 
-    if (items.length === 0) return null;
-
     return (
         <div className="mt-6 rounded-[14px] border border-[#e9edf3] bg-white p-4">
             <div className="text-[13.5px] font-semibold text-[#1c2740]">Журнал подписей ЭЦП</div>
+            {loaded && loadError && (
+                <div className="mt-2 text-[12.5px] text-[#c0392b]">Не удалось загрузить журнал подписей</div>
+            )}
+            {loaded && !loadError && items.length === 0 && (
+                <div className="mt-2 text-[12.5px] leading-[1.6] text-[#8b97ab]">
+                    Подписей ЭЦП по этому документу пока нет.
+                </div>
+            )}
             <div className="mt-3 flex flex-col gap-2.5">
                 {items.map((item) => {
                     const result = results[item.id];

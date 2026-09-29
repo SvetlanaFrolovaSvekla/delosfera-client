@@ -12,6 +12,8 @@ export interface EcpCredentialStatus {
     available: boolean;
     enrolled: boolean;
     personIdnpMasked: string | null;
+    /** ИНН организации, от имени которой подписывают (null — подпись как физ. лицо). */
+    organizationInn: string | null;
     createdAt: string | null;
     expiresAt: string | null;
     lastUsedAt: string | null;
@@ -45,8 +47,9 @@ export const ecpCredentialService = {
     },
 
     /** Проверяет код обменом на токен (2.3) и сохраняет идентификацию. */
-    async save(personIdnp: string, code: string): Promise<EcpCredentialStatus> {
-        const {data} = await apiClient.put<EcpCredentialStatus>("/signing/ecp-credential", {personIdnp, code});
+    async save(personIdnp: string, code: string, organizationInn?: string): Promise<EcpCredentialStatus> {
+        const {data} = await apiClient.put<EcpCredentialStatus>(
+            "/signing/ecp-credential", {personIdnp, code, organizationInn: organizationInn || undefined});
         return data;
     },
 

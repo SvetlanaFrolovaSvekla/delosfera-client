@@ -4,15 +4,15 @@
  *
  * Шаги: ПИН физ. лица (14 цифр, вводится вручную) → способ получения пин-кода (2.1) → пин-код
  * (2.2) → токен (2.3) → get-cert-info (2.4, best-effort) → хэш резолюции от backend → подпись
- * хэша (2.5). ИНН организации не запрашивается: по документации провайдера он "не обязателен для
- * физ. лица", а согласующие подписывают как физ. лица. Полученная сессия (токен + срок действия
+ * хэша (2.5). ИНН организации необязателен: пусто — подпись как физ. лица, заполнено — от имени
+ * организации (представитель юр. лица). Полученная сессия (токен + срок действия
  * + ПИН) хранится в EcpSessionContext — только в памяти, не в localStorage.
  *
  * Хэш для 2.5 запрашивается у backend (coordinationService.getResolutionHash), а НЕ считается
  * здесь — см. обоснование в useEcpApproval.ts.
  */
 import {useEffect, useState} from "react";
-import {infocomEcpService, infocomErrorText, isValidPersonIdnp} from "@/service/infocomEcpService.ts";
+import {infocomEcpService, infocomErrorText, isValidOrganizationInn, isValidPersonIdnp} from "@/service/infocomEcpService.ts";
 import {useEcpSession} from "@/context/EcpSessionContext.ts";
 import {coordinationService} from "@/service/coordinationService/coordinationService.ts";
 import type {ResolutionEcpSignature} from "@/hooks/useEcpApproval.ts";
@@ -54,6 +54,8 @@ export const EcpSignModal = ({vndId, stageId, payloadText, onSigned, onClose}: P
 
     // ПИН физ. лица вводится вручную — без подстановки тестовых значений.
     const [personIdnp, setPersonIdnp] = useState("");
+    // ИНН организации - необязателен: если заполнен, подписываем от имени организации.
+    const [organizationInn, setOrganizationInn] = useState("");
 
     const [step, setStep] = useState<Step>("methods");
     const [methods, setMethods] = useState<string[]>([]);
@@ -80,10 +82,17 @@ export const EcpSignModal = ({vndId, stageId, payloadText, onSigned, onClose}: P
     }, []);
 
     const idnpValid = isValidPersonIdnp(personIdnp);
+    const innValid = organizationInn === "" || isValidOrganizationInn(organizationInn);
 
     const changePersonIdnp = (value: string) => {
         setPersonIdnp(value.replace(/\D/g, "").slice(0, 14));
         // Способы получения пин-кода относятся к конкретному ПИН — при его смене загружаем заново.
+        setMethods([]);
+        setError(null);
+    };
+
+    const changeOrganizationInn = (value: string) => {
+        setOrganizationInn(value.replace(/\D/g, "").slice(0, 14));
         setMethods([]);
         setError(null);
     };
@@ -93,10 +102,14 @@ export const EcpSignModal = ({vndId, stageId, payloadText, onSigned, onClose}: P
             setError("ПИН должен состоять ровно из 14 цифр");
             return;
         }
+        if (!innValid) {
+            setError("ИНН организации — от 10 до 14 цифр (или оставьте поле пустым)");
+            return;
+        }
         setBusy(true);
         setError(null);
         try {
-            const {userAuthMethodList} = await infocomEcpService.authMethods(personIdnp);
+            const {userAuthMethodList} = await infocomEcpService.authMethods(personIdnp, organizationInn);
             const active = userAuthMethodList.filter((m) => m.isActive).map((m) => m.authType);
             const available = active.length > 0 ? active : userAuthMethodList.map((m) => m.authType);
             setMethods(available);
@@ -113,7 +126,7 @@ export const EcpSignModal = ({vndId, stageId, payloadText, onSigned, onClose}: P
         setBusy(true);
         setError(null);
         try {
-            await infocomEcpService.pinCode(personIdnp, method);
+            await infocomEcpService.pinCode(personIdnp, method, organizationInn);
             setStep("pin");
         } catch (e) {
             setError(infocomErrorText(e, "Не удалось запросить пин-код"));
@@ -131,7 +144,7 @@ export const EcpSignModal = ({vndId, stageId, payloadText, onSigned, onClose}: P
         setBusy(true);
         setError(null);
         try {
-            const auth = await infocomEcpService.token(personIdnp, pin.trim());
+            const auth = await infocomEcpService.token(personIdnp, pin.trim(), organizationInn);
             if (!auth.token || !auth.expireAt) throw new Error("Токен доступа не получен");
 
             const createAt = auth.createAt ?? new Date().toISOString();
@@ -174,7 +187,7 @@ export const EcpSignModal = ({vndId, stageId, payloadText, onSigned, onClose}: P
             // Сервер сам проверит код обменом на токен (тот же код принимается повторно).
             if (remember) {
                 const savedPin = pin.trim();
-                void ecpCredentialService.save(personIdnp, savedPin)
+                void ecpCredentialService.save(personIdnp, savedPin, organizationInn)
                     .then(() => toast.success("Идентификация сохранена",
                         "Следующие резолюции будут подписываться без ввода ПИН и кода"))
                     .catch((err) => toast.warning("Идентификацию сохранить не удалось",
@@ -223,6 +236,14 @@ export const EcpSignModal = ({vndId, stageId, payloadText, onSigned, onClose}: P
                                    }}/>
                         </label>
 
+                        <label className="flex flex-col gap-1 text-[11.5px] text-[#8b97ab]">
+                            ИНН организации (необязательно — заполните, чтобы подписать от имени организации)
+                            <input className="h-9 rounded-[8px] border border-[#e5e9f0] px-2.5 text-[12.5px] font-mono"
+                                   value={organizationInn} inputMode="numeric" autoComplete="off" maxLength={14}
+                                   placeholder="ИНН организации"
+                                   onChange={(e) => changeOrganizationInn(e.target.value)}/>
+                        </label>
+
                         {methods.length > 0 && (
                             <label className="flex flex-col gap-1 text-[11.5px] text-[#8b97ab]">Способ получения пин-кода
                                 <select className="h-9 rounded-[8px] border border-[#e5e9f0] px-2.5 text-[12.5px]"
@@ -268,7 +289,7 @@ export const EcpSignModal = ({vndId, stageId, payloadText, onSigned, onClose}: P
                     </button>
 
                     {step === "methods" && methods.length === 0 && (
-                        <button onClick={loadMethods} disabled={busy || !idnpValid}
+                        <button onClick={loadMethods} disabled={busy || !idnpValid || !innValid}
                                 className="cursor-pointer h-10 rounded-[10px] border-none bg-[#2f68f5] px-5 text-[13px] font-semibold text-white disabled:opacity-40">
                             {busy ? "Подождите…" : "Далее"}
                         </button>

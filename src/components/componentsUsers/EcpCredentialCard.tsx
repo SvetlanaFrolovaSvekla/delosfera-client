@@ -6,7 +6,7 @@
  */
 import {useCallback, useEffect, useState} from "react";
 import {KeyRound} from "lucide-react";
-import {infocomEcpService, infocomErrorText, isValidPersonIdnp} from "@/service/infocomEcpService.ts";
+import {infocomEcpService, infocomErrorText, isValidOrganizationInn, isValidPersonIdnp} from "@/service/infocomEcpService.ts";
 import {ecpCredentialService, type EcpCredentialStatus} from "@/service/ecpCredentialService.ts";
 import {toast} from "@/service/toastService.ts";
 
@@ -25,6 +25,7 @@ export function EcpCredentialCard() {
 
     const [step, setStep] = useState<Step>("idnp");
     const [personIdnp, setPersonIdnp] = useState("");
+    const [organizationInn, setOrganizationInn] = useState("");
     const [methods, setMethods] = useState<string[]>([]);
     const [method, setMethod] = useState("sms");
     const [code, setCode] = useState("");
@@ -46,12 +47,14 @@ export function EcpCredentialCard() {
         setFormOpen(false);
         setStep("idnp");
         setPersonIdnp("");
+        setOrganizationInn("");
         setMethods([]);
         setCode("");
         setError(null);
     };
 
     const idnpValid = isValidPersonIdnp(personIdnp);
+    const innValid = organizationInn === "" || isValidOrganizationInn(organizationInn);
 
     const changeIdnp = (value: string) => {
         setPersonIdnp(value.replace(/\D/g, "").slice(0, 14));
@@ -59,12 +62,19 @@ export function EcpCredentialCard() {
         setError(null);
     };
 
+    const changeInn = (value: string) => {
+        setOrganizationInn(value.replace(/\D/g, "").slice(0, 14));
+        setMethods([]);
+        setError(null);
+    };
+
     const loadMethods = async () => {
         if (!idnpValid) { setError("ПИН должен состоять ровно из 14 цифр"); return; }
+        if (!innValid) { setError("ИНН организации — от 10 до 14 цифр (или оставьте поле пустым)"); return; }
         setBusy(true);
         setError(null);
         try {
-            const {userAuthMethodList} = await infocomEcpService.authMethods(personIdnp);
+            const {userAuthMethodList} = await infocomEcpService.authMethods(personIdnp, organizationInn);
             const active = userAuthMethodList.filter((m) => m.isActive).map((m) => m.authType);
             const available = active.length > 0 ? active : userAuthMethodList.map((m) => m.authType);
             setMethods(available);
@@ -81,7 +91,7 @@ export function EcpCredentialCard() {
         setBusy(true);
         setError(null);
         try {
-            await infocomEcpService.pinCode(personIdnp, method);
+            await infocomEcpService.pinCode(personIdnp, method, organizationInn);
             setStep("code");
         } catch (e) {
             setError(infocomErrorText(e, "Не удалось запросить код"));
@@ -95,7 +105,7 @@ export function EcpCredentialCard() {
         setBusy(true);
         setError(null);
         try {
-            setStatus(await ecpCredentialService.save(personIdnp, code.trim()));
+            setStatus(await ecpCredentialService.save(personIdnp, code.trim(), organizationInn));
             toast.success("Электронная подпись подключена", "Теперь резолюции можно подписывать без повторного ввода ПИН и кода");
             resetForm();
         } catch (e) {
@@ -145,6 +155,7 @@ export function EcpCredentialCard() {
                 <div className="mt-3 flex flex-col gap-2 rounded-[10px] border border-[#cfe3d6] bg-[#f2f9f5] px-4 py-3 text-[12.5px] text-[#1c7a4d]">
                     <div className="font-semibold">Идентификация действует</div>
                     <div>ПИН: <span className="font-mono">{status.personIdnpMasked}</span></div>
+                    {status.organizationInn && <div>Организация (ИНН): <span className="font-mono">{status.organizationInn}</span></div>}
                     <div>Действует до: {formatDate(status.expiresAt)}</div>
                     <div>Последнее подписание: {formatDate(status.lastUsedAt)}</div>
                     <div className="mt-2 flex flex-wrap gap-2">
@@ -179,6 +190,12 @@ export function EcpCredentialCard() {
                                        maxLength={14} placeholder="00000000000000"
                                        onChange={(e) => changeIdnp(e.target.value)}/>
                             </label>
+                            <label className="flex flex-col gap-1 text-[11.5px] text-[#8b97ab]">
+                                ИНН организации (необязательно — для подписи от имени организации)
+                                <input className={inputCls} value={organizationInn} inputMode="numeric" autoComplete="off"
+                                       maxLength={14} placeholder="ИНН организации"
+                                       onChange={(e) => changeInn(e.target.value)}/>
+                            </label>
                             {methods.length > 0 && (
                                 <label className="flex flex-col gap-1 text-[11.5px] text-[#8b97ab]">Способ получения кода
                                     <select className="h-9 rounded-[8px] border border-[#e5e9f0] px-2.5 text-[12.5px]"
@@ -190,7 +207,7 @@ export function EcpCredentialCard() {
                             <div className="flex flex-wrap gap-2">
                                 <button className={secondaryBtn} disabled={busy} onClick={resetForm}>Отмена</button>
                                 {methods.length === 0 ? (
-                                    <button className={primaryBtn} disabled={busy || !idnpValid} onClick={loadMethods}>
+                                    <button className={primaryBtn} disabled={busy || !idnpValid || !innValid} onClick={loadMethods}>
                                         {busy ? "Подождите…" : "Далее"}
                                     </button>
                                 ) : (

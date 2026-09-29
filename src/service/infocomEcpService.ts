@@ -83,29 +83,33 @@ export const PERSON_IDNP_PATTERN = /^\d{14}$/;
 
 export const isValidPersonIdnp = (value: string) => PERSON_IDNP_PATTERN.test(value);
 
+/** ИНН организации — только цифры, 10–14 знаков (у физ. лица не задаётся). */
+export const isValidOrganizationInn = (value: string) => /^\d{10,14}$/.test(value);
+
 /**
- * organizationInn не передаётся: по документации провайдера он "не обязателен для физ. лица",
- * а согласующие подписывают как физ. лица. Backend и ecp-service не отправляют поле дальше вовсе.
+ * organizationInn необязателен: для физ. лица не передаётся. Если подписывают от организации
+ * (представитель юр. лица), ИНН уходит в 2.1/2.2/2.3; пустое значение backend и ecp-service
+ * дальше провайдеру не отправляют.
  */
 export const infocomEcpService = {
     /** 2.1 Получение метода авторизации. */
-    async authMethods(personIdnp: string): Promise<UserAuthMethodsResponse> {
+    async authMethods(personIdnp: string, organizationInn?: string): Promise<UserAuthMethodsResponse> {
         const {data} = await apiClient.post<UserAuthMethodsResponse>(
-            "/signing/infocom/auth-methods", {personIdnp});
+            "/signing/infocom/auth-methods", {personIdnp, organizationInn: organizationInn || undefined});
         return data;
     },
 
     /** 2.2 Запрос на отправку пин-кода по выбранному методу. */
-    async pinCode(personIdnp: string, method: string): Promise<GetPinCodeResponse> {
+    async pinCode(personIdnp: string, method: string, organizationInn?: string): Promise<GetPinCodeResponse> {
         const {data} = await apiClient.post<GetPinCodeResponse>(
-            "/signing/infocom/pin-code", {personIdnp, method});
+            "/signing/infocom/pin-code", {personIdnp, method, organizationInn: organizationInn || undefined});
         return data;
     },
 
     /** 2.3 Получение токена доступа по пин-коду. */
-    async token(personIdnp: string, byPin: string): Promise<AccountAuthResponse> {
+    async token(personIdnp: string, byPin: string, organizationInn?: string): Promise<AccountAuthResponse> {
         const {data} = await apiClient.post<AccountAuthResponse>(
-            "/signing/infocom/token", {personIdnp, byPin});
+            "/signing/infocom/token", {personIdnp, byPin, organizationInn: organizationInn || undefined});
         return data;
     },
 

@@ -1,4 +1,5 @@
 import {useCallback, useRef, useState} from "react";
+import {useTranslation} from "react-i18next";
 import {useEcpSession} from "@/context/EcpSessionContext.ts";
 import {infocomEcpService, infocomErrorText} from "@/service/infocomEcpService.ts";
 import {
@@ -43,6 +44,7 @@ export interface ResolutionEcpSignature {
  * сессия сбрасывается и запускается полный флоу — как будто сессии не было.
  */
 export function useEcpApproval() {
+    const {t} = useTranslation();
     const {session, isValid, clearSession} = useEcpSession();
     const [modalOpen, setModalOpen] = useState(false);
     const [quietSigning, setQuietSigning] = useState(false);
@@ -74,13 +76,13 @@ export function useEcpApproval() {
             // Сессия есть и не истекла - подписываем тихо, без полноэкранной модалки.
             void (async () => {
                 setQuietSigning(true);
-                const toastId = toast.loading("Подписываем…", "Согласовать резолюцию электронной подписью");
+                const toastId = toast.loading(t("ecp.approval.signing"), t("ecp.approval.signingText"));
                 try {
                     // Хэш - от backend (см. комментарий у функции), не считаем его сами.
                     const {hash} = await coordinationService.getResolutionHash(vndId, stageId, payloadText);
                     const signed = await infocomEcpService.signHash(hash, session.token);
-                    if (!signed.isSuccesfull || !signed.sign) throw new Error("Подпись не получена");
-                    toast.update(toastId, {variant: "success", title: "Подписано", duration: 2000});
+                    if (!signed.isSuccesfull || !signed.sign) throw new Error(t("ecp.modal.signMissing"));
+                    toast.update(toastId, {variant: "success", title: t("ecp.approval.signed"), duration: 2000});
                     resolve({
                         signatureBase64: signed.sign,
                         certToken: session.token,
@@ -98,7 +100,7 @@ export function useEcpApproval() {
                         // Токен истёк/отозван раньше expireAt на стороне провайдера - сбрасываем
                         // сессию и запускаем полный флоу заново, как будто её не было.
                         clearSession();
-                        toast.warning("ЭЦП-сессия истекла", "Потребуется заново подтвердить электронной подписью");
+                        toast.warning(t("ecp.approval.sessionExpired"), t("ecp.approval.sessionExpiredText"));
                         openModalFor(vndId, stageId, payloadText, resolve, reject);
                     } else {
                         reject(e);
@@ -108,7 +110,7 @@ export function useEcpApproval() {
                 }
             })();
         });
-    }, [session, isValid, clearSession, openModalFor]);
+    }, [t, session, isValid, clearSession, openModalFor]);
 
     /** Подпись сохранённой идентификацией. null — идентификации нет/недействительна (идём обычным флоу);
      * исключение — любая другая ошибка (документ изменился, вы не согласующий, сбой провайдера…). */
@@ -116,10 +118,10 @@ export function useEcpApproval() {
         vndId: number, stageId: number, payloadText: string,
     ): Promise<ResolutionEcpSignature | null> => {
         setQuietSigning(true);
-        const toastId = toast.loading("Подписываем…", "Согласовать резолюцию электронной подписью");
+        const toastId = toast.loading(t("ecp.approval.signing"), t("ecp.approval.signingText"));
         try {
             const r = await ecpCredentialService.signResolution(vndId, stageId, payloadText);
-            toast.update(toastId, {variant: "success", title: "Подписано", duration: 2000});
+            toast.update(toastId, {variant: "success", title: t("ecp.approval.signed"), duration: 2000});
             return {
                 signatureBase64: r.signatureBase64,
                 certToken: r.certToken,
@@ -132,15 +134,15 @@ export function useEcpApproval() {
             const code = ecpCredentialErrorCode(e);
             if (code === ECP_CREDENTIAL_MISSING || code === ECP_CREDENTIAL_NOT_CONFIGURED) return null;
             if (code === ECP_CREDENTIAL_EXPIRED || code === ECP_CREDENTIAL_INVALID) {
-                toast.warning("Идентификация ЭЦП недействительна", infocomErrorText(e, "Пройдите идентификацию заново"));
+                toast.warning(t("ecp.approval.credInvalid"), infocomErrorText(e, t("ecp.approval.credInvalidText")));
                 return null;
             }
-            toast.error("Не удалось подписать", infocomErrorText(e, "Ошибка подписания"));
+            toast.error(t("ecp.approval.signFailed"), infocomErrorText(e, t("ecp.approval.signFailedText")));
             throw e;
         } finally {
             setQuietSigning(false);
         }
-    }, []);
+    }, [t]);
 
     const requestSignature = useCallback(async (
         vndId: number, stageId: number, payloadText: string,

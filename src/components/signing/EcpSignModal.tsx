@@ -12,13 +12,19 @@
  * здесь — см. обоснование в useEcpApproval.ts.
  */
 import {useEffect, useState} from "react";
-import {infocomEcpService, infocomErrorText, isValidOrganizationInn, isValidPersonIdnp} from "@/service/infocomEcpService.ts";
+import {CheckCircle2, ShieldCheck} from "lucide-react";
+import {useTranslation} from "react-i18next";
+import {infocomEcpService, infocomErrorText} from "@/service/infocomEcpService.ts";
 import {useEcpSession} from "@/context/EcpSessionContext.ts";
 import {coordinationService} from "@/service/coordinationService/coordinationService.ts";
 import type {ResolutionEcpSignature} from "@/hooks/useEcpApproval.ts";
+import {useEcpIdentification} from "@/hooks/useEcpIdentification.ts";
+import {useModalShake} from "@/hooks/useModalShake.ts";
 import {ecpCredentialService} from "@/service/ecpCredentialService.ts";
 import {toast} from "@/service/toastService.ts";
 import {formatEcpDuration} from "@/utils/formatEcpDuration.ts";
+import {PlainCheckbox} from "@/components/componentsGeneral/componentsCheckBox/PlainCheckbox.tsx";
+import {EcpIdentityForm} from "@/components/signing/EcpIdentityForm.tsx";
 
 interface Props {
     vndId: number;
@@ -29,40 +35,13 @@ interface Props {
     onClose: () => void;
 }
 
-type Step = "methods" | "pin" | "signing";
-
-/** Щит с галочкой — значок «подтверждено электронной подписью». */
-const ShieldCheckIcon = ({className = "h-5 w-5"}: {className?: string}) => (
-    <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor"
-         strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-        <path d="M12 3l7 3v5c0 4.6-3 8.4-7 10-4-1.6-7-5.4-7-10V6l7-3z"/>
-        <path d="M8.5 12.2l2.5 2.5 4.5-5"/>
-    </svg>
-);
-
-/** Круг с галочкой — для шага подписания. */
-const CheckCircleIcon = ({className = "h-5 w-5"}: {className?: string}) => (
-    <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor"
-         strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-        <circle cx="12" cy="12" r="9"/>
-        <path d="M8 12.5l2.7 2.7L16 9.5"/>
-    </svg>
-);
-
 export const EcpSignModal = ({vndId, stageId, payloadText, onSigned, onClose}: Props) => {
+    const {t} = useTranslation();
     const {setSession} = useEcpSession();
-
-    // ПИН физ. лица вводится вручную — без подстановки тестовых значений.
-    const [personIdnp, setPersonIdnp] = useState("");
-    // ИНН организации - необязателен: если заполнен, подписываем от имени организации.
-    const [organizationInn, setOrganizationInn] = useState("");
-
-    const [step, setStep] = useState<Step>("methods");
-    const [methods, setMethods] = useState<string[]>([]);
-    const [method, setMethod] = useState("sms");
-    const [pin, setPin] = useState("");
-    const [busy, setBusy] = useState(false);
-    const [error, setError] = useState<string | null>(null);
+    const {panelRef, handleBackdropClick} = useModalShake();
+    // ПИН/ИНН/способ/код и шаги 2.1 → 2.2 — общая логика с личным кабинетом.
+    const ident = useEcpIdentification();
+    const [signing, setSigning] = useState(false);
 
     // Сохранение идентификации на сервере (см. личный кабинет → "Электронная подпись"). Предлагается,
     // только если на сервере настроено шифрование; по умолчанию выключено - пользователь соглашается явно.
@@ -81,78 +60,25 @@ export const EcpSignModal = ({vndId, stageId, payloadText, onSigned, onClose}: P
         return () => { cancelled = true; };
     }, []);
 
-    const idnpValid = isValidPersonIdnp(personIdnp);
-    const innValid = organizationInn === "" || isValidOrganizationInn(organizationInn);
-
-    const changePersonIdnp = (value: string) => {
-        setPersonIdnp(value.replace(/\D/g, "").slice(0, 14));
-        // Способы получения пин-кода относятся к конкретному ПИН — при его смене загружаем заново.
-        setMethods([]);
-        setError(null);
-    };
-
-    const changeOrganizationInn = (value: string) => {
-        setOrganizationInn(value.replace(/\D/g, "").slice(0, 14));
-        setMethods([]);
-        setError(null);
-    };
-
-    const loadMethods = async () => {
-        if (!idnpValid) {
-            setError("ПИН должен состоять ровно из 14 цифр");
-            return;
-        }
-        if (!innValid) {
-            setError("ИНН организации — от 10 до 14 цифр (или оставьте поле пустым)");
-            return;
-        }
-        setBusy(true);
-        setError(null);
-        try {
-            const {userAuthMethodList} = await infocomEcpService.authMethods(personIdnp, organizationInn);
-            const active = userAuthMethodList.filter((m) => m.isActive).map((m) => m.authType);
-            const available = active.length > 0 ? active : userAuthMethodList.map((m) => m.authType);
-            setMethods(available);
-            if (available[0]) setMethod(available[0]);
-            if (available.length === 0) setError("Для этого ПИН нет доступных способов получения пин-кода");
-        } catch (e) {
-            setError(infocomErrorText(e, "Не удалось получить методы авторизации"));
-        } finally {
-            setBusy(false);
-        }
-    };
-
-    const requestPin = async () => {
-        setBusy(true);
-        setError(null);
-        try {
-            await infocomEcpService.pinCode(personIdnp, method, organizationInn);
-            setStep("pin");
-        } catch (e) {
-            setError(infocomErrorText(e, "Не удалось запросить пин-код"));
-        } finally {
-            setBusy(false);
-        }
-    };
-
     /** 2.3 → показать срок действия → сразу 2.4 (best-effort) + хэш от backend + 2.5. */
-    const confirmPinAndSign = async () => {
-        if (!pin.trim()) {
-            setError("Введите пин-код");
+    const confirmCodeAndSign = async () => {
+        const {personIdnp, organizationInn} = ident;
+        const code = ident.code.trim();
+        if (!code) {
+            ident.setError(t("ecp.identity.errCodeRequired"));
             return;
         }
-        setBusy(true);
-        setError(null);
+        ident.setBusy(true);
+        ident.setError(null);
         try {
-            const auth = await infocomEcpService.token(personIdnp, pin.trim(), organizationInn);
-            if (!auth.token || !auth.expireAt) throw new Error("Токен доступа не получен");
+            const auth = await infocomEcpService.token(personIdnp, code, organizationInn);
+            if (!auth.token || !auth.expireAt) throw new Error(t("ecp.modal.tokenMissing"));
 
             const createAt = auth.createAt ?? new Date().toISOString();
             const durationText = formatEcpDuration(new Date(auth.expireAt).getTime() - Date.now());
-            toast.info("Электронная подпись подключена",
-                `Будет действовать ещё ${durationText} — повторный пин-код на это время не понадобится`);
+            toast.info(t("ecp.modal.connected"), t("ecp.modal.connectedText", {duration: durationText}));
 
-            setStep("signing");
+            setSigning(true);
 
             let signerFio: string | null = null;
             try {
@@ -165,7 +91,7 @@ export const EcpSignModal = ({vndId, stageId, payloadText, onSigned, onClose}: P
             // Хэш — от backend (текст резолюции + содержимое редакции + код ВНД), не считаем сами.
             const {hash} = await coordinationService.getResolutionHash(vndId, stageId, payloadText);
             const signed = await infocomEcpService.signHash(hash, auth.token);
-            if (!signed.isSuccesfull || !signed.sign) throw new Error("Подпись не получена");
+            if (!signed.isSuccesfull || !signed.sign) throw new Error(t("ecp.modal.signMissing"));
 
             setSession({
                 token: auth.token,
@@ -186,128 +112,59 @@ export const EcpSignModal = ({vndId, stageId, payloadText, onSigned, onClose}: P
             // Подпись уже получена - сохранение идентификации не должно её задерживать или ронять.
             // Сервер сам проверит код обменом на токен (тот же код принимается повторно).
             if (remember) {
-                const savedPin = pin.trim();
-                void ecpCredentialService.save(personIdnp, savedPin, organizationInn)
-                    .then(() => toast.success("Идентификация сохранена",
-                        "Следующие резолюции будут подписываться без ввода ПИН и кода"))
-                    .catch((err) => toast.warning("Идентификацию сохранить не удалось",
-                        infocomErrorText(err, "Подпись при этом поставлена")));
+                void ecpCredentialService.save(personIdnp, code, organizationInn)
+                    .then(() => toast.success(t("ecp.modal.saved"), t("ecp.modal.savedText")))
+                    .catch((err) => toast.warning(t("ecp.modal.saveFailed"),
+                        infocomErrorText(err, t("ecp.modal.saveFailedText"))));
             }
         } catch (e) {
-            setError(infocomErrorText(e, "Подписать не удалось"));
-            setStep("pin");
+            ident.setError(infocomErrorText(e, t("ecp.modal.signFailed")));
+            setSigning(false);
         } finally {
-            setBusy(false);
+            ident.setBusy(false);
         }
     };
 
     return (
-        <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/40 p-4"
-             role="dialog" aria-modal="true" aria-label="Подтверждение ЭЦП ГП Инфоком">
-            <div className="flex w-full max-w-[480px] flex-col rounded-[14px] bg-white p-6 shadow-xl">
-                <div className="flex items-center gap-3">
-                    <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-[#eaf0ff] text-[#2f68f5] ring-4 ring-[#f3f6ff]">
-                        <ShieldCheckIcon className="h-6 w-6"/>
-                    </div>
-                    <div className="min-w-0">
-                        <h2 className="m-0 text-[16px] font-semibold text-[#0f1b2d]">Подтверждение электронной подписью</h2>
-                        <p className="m-0 mt-0.5 text-[12px] text-[#8b97ab]">
-                            Пожалуйста, подтвердите свою резолюцию электронной подписью.
-                        </p>
+        <div onClick={handleBackdropClick}
+             className="fixed inset-0 z-[60] flex items-center justify-center bg-[#0f1b2d]/40 backdrop-blur-[2px] p-4 animate-in fade-in duration-200"
+             role="dialog" aria-modal="true" aria-label={t("ecp.modal.ariaLabel")}>
+            <div ref={panelRef} onClick={(e) => e.stopPropagation()}
+                 className="relative w-[440px] max-w-[92vw] bg-white rounded-2xl px-7 pt-8 pb-6 shadow-[0_30px_70px_-20px_rgba(15,27,45,.35)] animate-in zoom-in-95 slide-in-from-bottom-2 duration-300">
+                <div className="mx-auto mb-4 w-14 h-14 rounded-full bg-[#ececfc] grid place-items-center">
+                    <div className="w-10 h-10 rounded-full bg-[#4e57d6] grid place-items-center">
+                        <ShieldCheck className="w-5 h-5 text-white" strokeWidth={2}/>
                     </div>
                 </div>
+                <h3 className="text-center text-[16px] font-bold text-[#1c2740] mb-1.5">
+                    {t("ecp.modal.title")}
+                </h3>
+                <p className="text-center text-[13px] text-[#8b97ab] leading-[1.5] mb-5">
+                    {t("ecp.modal.subtitle")}
+                </p>
 
-                {error && (
-                    <div className="mt-3 rounded-[9px] border border-[#f1c9c2] bg-[#fbeae7] px-3 py-2.5 text-[12.5px] leading-[1.6] text-[#c0392b]">
-                        {error}
+                {signing ? (
+                    <div className="flex items-center gap-3 rounded-[10px] border border-[#cfe3d6] bg-[#f2f9f5] px-3.5 py-3 text-[12.5px] text-[#1c7a4d]">
+                        <CheckCircle2 className="w-6 h-6 shrink-0 animate-pulse" strokeWidth={1.8}/>
+                        {t("ecp.modal.signing")}
                     </div>
-                )}
-
-                {step === "methods" && (
-                    <div className="mt-4 flex flex-col gap-3">
-                        <label className="flex flex-col gap-1 text-[11.5px] text-[#8b97ab]">
-                            ПИН (персональный идентификационный номер, 14 цифр)
-                            <input className="h-9 rounded-[8px] border border-[#e5e9f0] px-2.5 text-[12.5px] font-mono"
-                                   value={personIdnp} inputMode="numeric" autoComplete="off" maxLength={14}
-                                   placeholder="00000000000000" autoFocus
-                                   onChange={(e) => changePersonIdnp(e.target.value)}
-                                   onKeyDown={(e) => {
-                                       if (e.key === "Enter" && idnpValid && methods.length === 0 && !busy) void loadMethods();
-                                   }}/>
-                        </label>
-
-                        <label className="flex flex-col gap-1 text-[11.5px] text-[#8b97ab]">
-                            ИНН организации (необязательно — заполните, чтобы подписать от имени организации)
-                            <input className="h-9 rounded-[8px] border border-[#e5e9f0] px-2.5 text-[12.5px] font-mono"
-                                   value={organizationInn} inputMode="numeric" autoComplete="off" maxLength={14}
-                                   placeholder="ИНН организации"
-                                   onChange={(e) => changeOrganizationInn(e.target.value)}/>
-                        </label>
-
-                        {methods.length > 0 && (
-                            <label className="flex flex-col gap-1 text-[11.5px] text-[#8b97ab]">Способ получения пин-кода
-                                <select className="h-9 rounded-[8px] border border-[#e5e9f0] px-2.5 text-[12.5px]"
-                                        value={method} onChange={(e) => setMethod(e.target.value)}>
-                                    {methods.map((m) => <option key={m} value={m}>{m}</option>)}
-                                </select>
-                            </label>
+                ) : (
+                    <EcpIdentityForm
+                        ident={ident}
+                        submitLabel={t("ecp.modal.submit")} submitBusyLabel={t("ecp.modal.submitBusy")}
+                        onSubmit={() => void confirmCodeAndSign()} onCancel={onClose}
+                        codeExtra={rememberAvailable && (
+                            <div className="rounded-[10px] bg-[#f6f8fb] px-3.5 py-3">
+                                <PlainCheckbox checked={remember} onChange={setRemember} disabled={ident.busy}>
+                                    {t("ecp.modal.remember", {days: rememberDays})}
+                                </PlainCheckbox>
+                                <p className="m-0 mt-1.5 text-[11.5px] leading-[1.5] text-[#8b97ab]">
+                                    {t("ecp.modal.rememberHint")}
+                                </p>
+                            </div>
                         )}
-                    </div>
+                    />
                 )}
-
-                {step === "pin" && (
-                    <div className="mt-4 flex flex-col gap-3">
-                        <p className="m-0 text-[12.5px] text-[#55617a]">Пин-код отправлен ({method}). Введите его ниже.</p>
-                        <label className="flex flex-col gap-1 text-[11.5px] text-[#8b97ab]">Пин-код
-                            <input className="h-9 rounded-[8px] border border-[#e5e9f0] px-2.5 text-[13px] font-mono"
-                                   value={pin} onChange={(e) => setPin(e.target.value)} autoFocus/>
-                        </label>
-                        {rememberAvailable && (
-                            <label className="flex cursor-pointer items-start gap-2 text-[12px] leading-[1.5] text-[#55617a]">
-                                <input type="checkbox" className="mt-[3px]" checked={remember}
-                                       onChange={(e) => setRemember(e.target.checked)}/>
-                                <span>
-                                    Запомнить на {rememberDays} дн.: следующие резолюции подписываются без ввода ПИН и кода.
-                                    ПИН и код хранятся на сервере в зашифрованном виде, отозвать можно в личном кабинете.
-                                </span>
-                            </label>
-                        )}
-                    </div>
-                )}
-
-                {step === "signing" && (
-                    <div className="mt-4 flex items-center gap-3 rounded-[10px] border border-[#cfe3d6] bg-[#f2f9f5] px-3.5 py-3 text-[12.5px] text-[#1c7a4d]">
-                        <CheckCircleIcon className="h-6 w-6 shrink-0 animate-pulse"/>
-                        Токен получен, подписываем резолюцию…
-                    </div>
-                )}
-
-                <div className="mt-5 flex justify-end gap-2.5">
-                    <button onClick={onClose} disabled={busy}
-                            className="cursor-pointer h-10 rounded-[10px] border border-[#e5e9f0] bg-white px-4 text-[13px] text-[#55617a] disabled:opacity-50">
-                        Отмена
-                    </button>
-
-                    {step === "methods" && methods.length === 0 && (
-                        <button onClick={loadMethods} disabled={busy || !idnpValid || !innValid}
-                                className="cursor-pointer h-10 rounded-[10px] border-none bg-[#2f68f5] px-5 text-[13px] font-semibold text-white disabled:opacity-40">
-                            {busy ? "Подождите…" : "Далее"}
-                        </button>
-                    )}
-                    {step === "methods" && methods.length > 0 && (
-                        <button onClick={requestPin} disabled={busy}
-                                className="cursor-pointer h-10 rounded-[10px] border-none bg-[#2f68f5] px-5 text-[13px] font-semibold text-white disabled:opacity-40">
-                            {busy ? "Подождите…" : "Получить пин-код"}
-                        </button>
-                    )}
-                    {step === "pin" && (
-                        <button onClick={confirmPinAndSign} disabled={busy}
-                                className="inline-flex cursor-pointer items-center gap-1.5 h-10 rounded-[10px] border-none bg-[#2f68f5] px-5 text-[13px] font-semibold text-white disabled:opacity-40">
-                            {!busy && <CheckCircleIcon className="h-4 w-4"/>}
-                            {busy ? "Подписываем…" : "Подтвердить и подписать"}
-                        </button>
-                    )}
-                </div>
             </div>
         </div>
     );

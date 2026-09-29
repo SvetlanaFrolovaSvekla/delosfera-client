@@ -1,6 +1,10 @@
 import {useCallback, useRef, useState} from "react";
 import {useEcpSession} from "@/context/EcpSessionContext.ts";
-import {infocomEcpService} from "@/service/infocomEcpService.ts";
+import {infocomEcpService, infocomErrorText} from "@/service/infocomEcpService.ts";
+import {
+    ecpCredentialService, ecpCredentialErrorCode,
+    ECP_CREDENTIAL_EXPIRED, ECP_CREDENTIAL_INVALID, ECP_CREDENTIAL_MISSING, ECP_CREDENTIAL_NOT_CONFIGURED,
+} from "@/service/ecpCredentialService.ts";
 import {coordinationService} from "@/service/coordinationService/coordinationService.ts";
 import {toast} from "@/service/toastService.ts";
 
@@ -24,6 +28,11 @@ export interface ResolutionEcpSignature {
  * пересчитывает тот же хэш из БД, сверяя с EcpHash. Если документ или текст изменились между
  * подписанием и отправкой — backend отвечает 409 "document_changed", и панель предлагает
  * подписать заново (новый хэш).
+ *
+ * Если пользователь прошёл идентификацию в личном кабинете ("Электронная подпись"), подписание идёт
+ * через сохранённую идентификацию: сервер сам обменивает сохранённый код на минутный токен и
+ * подписывает хэш (ecpCredentialService.signResolution) — без окна и без ввода ПИН/кода. Если
+ * идентификации нет, она истекла или ГП не принял код — работает обычный флоу ниже.
  *
  * Токен из 2.3 (account/auth) живёт какое-то время и им можно подписывать несколько резолюций
  * подряд без повторного пин-кода (см. EcpSessionContext). Поэтому requestSignature ведёт себя
@@ -55,7 +64,7 @@ export function useEcpApproval() {
         setModalOpen(true);
     }, []);
 
-    const requestSignature = useCallback((vndId: number, stageId: number, payloadText: string): Promise<ResolutionEcpSignature> => {
+    const requestSessionSignature = useCallback((vndId: number, stageId: number, payloadText: string): Promise<ResolutionEcpSignature> => {
         return new Promise<ResolutionEcpSignature>((resolve, reject) => {
             if (!session || !isValid()) {
                 openModalFor(vndId, stageId, payloadText, resolve, reject);
@@ -100,6 +109,46 @@ export function useEcpApproval() {
             })();
         });
     }, [session, isValid, clearSession, openModalFor]);
+
+    /** Подпись сохранённой идентификацией. null — идентификации нет/недействительна (идём обычным флоу);
+     * исключение — любая другая ошибка (документ изменился, вы не согласующий, сбой провайдера…). */
+    const signWithStoredCredential = useCallback(async (
+        vndId: number, stageId: number, payloadText: string,
+    ): Promise<ResolutionEcpSignature | null> => {
+        setQuietSigning(true);
+        const toastId = toast.loading("Подписываем…", "Согласовать резолюцию электронной подписью");
+        try {
+            const r = await ecpCredentialService.signResolution(vndId, stageId, payloadText);
+            toast.update(toastId, {variant: "success", title: "Подписано", duration: 2000});
+            return {
+                signatureBase64: r.signatureBase64,
+                certToken: r.certToken,
+                hash: r.hash,
+                personIdnp: r.personIdnp,
+                timestamp: r.timestamp,
+            };
+        } catch (e) {
+            toast.dismiss(toastId);
+            const code = ecpCredentialErrorCode(e);
+            if (code === ECP_CREDENTIAL_MISSING || code === ECP_CREDENTIAL_NOT_CONFIGURED) return null;
+            if (code === ECP_CREDENTIAL_EXPIRED || code === ECP_CREDENTIAL_INVALID) {
+                toast.warning("Идентификация ЭЦП недействительна", infocomErrorText(e, "Пройдите идентификацию заново"));
+                return null;
+            }
+            toast.error("Не удалось подписать", infocomErrorText(e, "Ошибка подписания"));
+            throw e;
+        } finally {
+            setQuietSigning(false);
+        }
+    }, []);
+
+    const requestSignature = useCallback(async (
+        vndId: number, stageId: number, payloadText: string,
+    ): Promise<ResolutionEcpSignature> => {
+        const stored = await signWithStoredCredential(vndId, stageId, payloadText);
+        if (stored) return stored;
+        return requestSessionSignature(vndId, stageId, payloadText);
+    }, [signWithStoredCredential, requestSessionSignature]);
 
     const handleModalSigned = useCallback((result: ResolutionEcpSignature) => {
         setModalOpen(false);

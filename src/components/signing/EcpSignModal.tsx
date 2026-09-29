@@ -11,11 +11,12 @@
  * Хэш для 2.5 запрашивается у backend (coordinationService.getResolutionHash), а НЕ считается
  * здесь — см. обоснование в useEcpApproval.ts.
  */
-import {useState} from "react";
+import {useEffect, useState} from "react";
 import {infocomEcpService, infocomErrorText, isValidPersonIdnp} from "@/service/infocomEcpService.ts";
 import {useEcpSession} from "@/context/EcpSessionContext.ts";
 import {coordinationService} from "@/service/coordinationService/coordinationService.ts";
 import type {ResolutionEcpSignature} from "@/hooks/useEcpApproval.ts";
+import {ecpCredentialService} from "@/service/ecpCredentialService.ts";
 import {toast} from "@/service/toastService.ts";
 import {formatEcpDuration} from "@/utils/formatEcpDuration.ts";
 
@@ -60,6 +61,23 @@ export const EcpSignModal = ({vndId, stageId, payloadText, onSigned, onClose}: P
     const [pin, setPin] = useState("");
     const [busy, setBusy] = useState(false);
     const [error, setError] = useState<string | null>(null);
+
+    // Сохранение идентификации на сервере (см. личный кабинет → "Электронная подпись"). Предлагается,
+    // только если на сервере настроено шифрование; по умолчанию выключено - пользователь соглашается явно.
+    const [rememberAvailable, setRememberAvailable] = useState(false);
+    const [rememberDays, setRememberDays] = useState(0);
+    const [remember, setRemember] = useState(false);
+    useEffect(() => {
+        let cancelled = false;
+        ecpCredentialService.status()
+            .then((s) => {
+                if (cancelled) return;
+                setRememberAvailable(s.available);
+                setRememberDays(s.retentionDays);
+            })
+            .catch(() => { /* не критично: галочки просто не будет */ });
+        return () => { cancelled = true; };
+    }, []);
 
     const idnpValid = isValidPersonIdnp(personIdnp);
 
@@ -151,6 +169,17 @@ export const EcpSignModal = ({vndId, stageId, payloadText, onSigned, onClose}: P
                 personIdnp,
                 timestamp: signed.timestamp,
             });
+
+            // Подпись уже получена - сохранение идентификации не должно её задерживать или ронять.
+            // Сервер сам проверит код обменом на токен (тот же код принимается повторно).
+            if (remember) {
+                const savedPin = pin.trim();
+                void ecpCredentialService.save(personIdnp, savedPin)
+                    .then(() => toast.success("Идентификация сохранена",
+                        "Следующие резолюции будут подписываться без ввода ПИН и кода"))
+                    .catch((err) => toast.warning("Идентификацию сохранить не удалось",
+                        infocomErrorText(err, "Подпись при этом поставлена")));
+            }
         } catch (e) {
             setError(infocomErrorText(e, "Подписать не удалось"));
             setStep("pin");
@@ -212,6 +241,16 @@ export const EcpSignModal = ({vndId, stageId, payloadText, onSigned, onClose}: P
                             <input className="h-9 rounded-[8px] border border-[#e5e9f0] px-2.5 text-[13px] font-mono"
                                    value={pin} onChange={(e) => setPin(e.target.value)} autoFocus/>
                         </label>
+                        {rememberAvailable && (
+                            <label className="flex cursor-pointer items-start gap-2 text-[12px] leading-[1.5] text-[#55617a]">
+                                <input type="checkbox" className="mt-[3px]" checked={remember}
+                                       onChange={(e) => setRemember(e.target.checked)}/>
+                                <span>
+                                    Запомнить на {rememberDays} дн.: следующие резолюции подписываются без ввода ПИН и кода.
+                                    ПИН и код хранятся на сервере в зашифрованном виде, отозвать можно в личном кабинете.
+                                </span>
+                            </label>
+                        )}
                     </div>
                 )}
 

@@ -84,10 +84,13 @@ export function EcpIdentityForm({ident, submitLabel, submitBusyLabel, onSubmit, 
                         onChange={ident.changeIdnp}
                         onEnter={() => { if (ident.canNext && !busy) void ident.next(); }}
                     />
+                    {/* ИНН организации не вводится вручную: подпись от лица банка доступна только
+                        по доверенности и выдаётся отдельным процессом (модуль PoA). Поле оставлено
+                        для наглядности, но нередактируемо. */}
                     <DigitsField
                         label={t("ecp.identity.innLabel")} hint={t("ecp.identity.innHint")}
                         value={ident.organizationInn} max={ORGANIZATION_INN_MAX_LENGTH} placeholder={t("ecp.identity.innPlaceholder")}
-                        disabled={busy}
+                        disabled
                         onChange={ident.changeInn}
                         onEnter={() => { if (ident.canNext && !busy) void ident.next(); }}
                     />

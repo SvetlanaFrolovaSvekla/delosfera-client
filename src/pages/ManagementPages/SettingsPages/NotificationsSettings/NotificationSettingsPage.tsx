@@ -1,0 +1,133 @@
+/**
+ * Настройки уведомлений. emailDigestEnabled хранится на бэке (общий для всех устройств
+ * пользователя), а popupEnabled - чисто клиентская настройка (localStorage этого браузера):
+ * управляет только всплывающими тостами при получении нового уведомления, не самой рассылкой.
+ */
+import {useEffect, useState} from "react";
+import {useTranslation} from "react-i18next";
+
+import {notificationSettingService, type NotificationSetting} from "@/service/notificationSettingService.ts";
+import {notificationPopupPreference} from "@/service/notificationPopupPreference.ts";
+import {PageHeader} from "@/components/componentsGeneral/PageHeader.tsx";
+import {Loader} from "@/components/componentsGeneral/Loader.tsx";
+import {Check} from "lucide-react";
+
+export function NotificationSettingsPage() {
+    const {t} = useTranslation();
+    const [setting, setSetting] = useState<NotificationSetting | null>(null);
+    const [saving, setSaving] = useState(false);
+    const [error, setError] = useState<string | null>(null);
+
+    const [popupEnabled, setPopupEnabled] = useState(() => notificationPopupPreference.isEnabled());
+
+    useEffect(() => {
+        notificationSettingService.get()
+            .then(setSetting)
+            .catch(() => setError(t("notificationSettingsPage.loadError")));
+    }, []);
+
+    async function toggle(key: keyof NotificationSetting) {
+        if (!setting) return;
+        const next = {...setting, [key]: !setting[key]};
+        setSetting(next);
+        setSaving(true);
+        setError(null);
+        try {
+            await notificationSettingService.set(next);
+        } catch {
+            setSetting(setting); // откат
+            setError(t("notificationSettingsPage.saveError"));
+        } finally {
+            setSaving(false);
+        }
+    }
+
+    function togglePopup() {
+        const next = !popupEnabled;
+        setPopupEnabled(next);
+        notificationPopupPreference.set(next);
+    }
+
+    return (
+        <div
+            className="w-full max-w-[1700px] mx-auto px-4 sm:px-6 lg:px-8 xl:px-10 pt-5 sm:pt-[26px] pb-10 sm:pb-[60px]">
+
+            <PageHeader
+                title={t("notificationSettingsPage.title")}
+                description={t("notificationSettingsPage.description")}
+            />
+
+            {error && <div className="mt-4 text-[13px] text-[#c0392b]">{error}</div>}
+            {!setting && !error && <div className="mt-4 text-[13px] text-[#8b97ab]">
+                <Loader label={t("notificationSettingsPage.loading")}/>
+            </div>}
+
+            {setting && (
+                <div className="mt-5 bg-white border border-[#e5e9f0] rounded-[13px] divide-y divide-[#eef2f7]">
+                    <label className="flex items-center justify-between gap-4 px-5 py-4 cursor-pointer">
+                        <span>
+                            <span
+                                className="block text-[14px] font-semibold text-[#0f1b2d]">{t("notificationSettingsPage.digestTitle")}</span>
+                            <span className="block text-[12.5px] text-[#8b97ab] mt-0.5">
+                                {t("notificationSettingsPage.digestDescription")}
+                            </span>
+                        </span>
+                        <span className="relative shrink-0">
+                            <input
+                                type="checkbox"
+                                checked={setting.emailDigestEnabled}
+                                onChange={() => void toggle("emailDigestEnabled")}
+                                disabled={saving}
+                                className="absolute inset-0 w-5 h-5 opacity-0 cursor-pointer disabled:cursor-default"
+                            />
+                            <span
+                                className="w-5 h-5 flex-none rounded-md grid place-items-center border-[1.5px] pointer-events-none"
+                                style={{
+                                    borderColor: setting.emailDigestEnabled ? "#4e57d6" : "#cbd3df",
+                                    background: setting.emailDigestEnabled ? "#4e57d6" : "white",
+                                }}
+                            >
+                                <Check
+                                    className="w-[13px] h-[13px] text-white"
+                                    strokeWidth={3}
+                                    style={{opacity: setting.emailDigestEnabled ? 1 : 0}}
+                                />
+                            </span>
+                        </span>
+                    </label>
+
+                    <label className="flex items-center justify-between gap-4 px-5 py-4 cursor-pointer">
+                        <span>
+                            <span
+                                className="block text-[14px] font-semibold text-[#0f1b2d]">{t("notificationSettingsPage.popupTitle")}</span>
+                            <span className="block text-[12.5px] text-[#8b97ab] mt-0.5">
+                                {t("notificationSettingsPage.popupDescription")}
+                            </span>
+                        </span>
+                        <span className="relative shrink-0">
+                            <input
+                                type="checkbox"
+                                checked={popupEnabled}
+                                onChange={togglePopup}
+                                className="absolute inset-0 w-5 h-5 opacity-0 cursor-pointer"
+                            />
+                            <span
+                                className="w-5 h-5 flex-none rounded-md grid place-items-center border-[1.5px] pointer-events-none"
+                                style={{
+                                    borderColor: popupEnabled ? "#4e57d6" : "#cbd3df",
+                                    background: popupEnabled ? "#4e57d6" : "white",
+                                }}
+                            >
+                                <Check
+                                    className="w-[13px] h-[13px] text-white"
+                                    strokeWidth={3}
+                                    style={{opacity: popupEnabled ? 1 : 0}}
+                                />
+                            </span>
+                        </span>
+                    </label>
+                </div>
+            )}
+        </div>
+    );
+}

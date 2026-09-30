@@ -1,4 +1,5 @@
 import type {ReactNode} from "react";
+import type {TFunction} from "i18next";
 
 /**
  * Таблица реестра.
@@ -16,7 +17,7 @@ interface DataTableProps {
 
 export function DataTable({headers, children}: DataTableProps) {
     return (
-        <div className="overflow-x-auto rounded-[14px] border border-[#e1e7ef] bg-white">
+        <div className="overflow-x-auto rounded-[14px] border border-[#e9edf3] bg-white">
             <table className="w-full border-collapse text-[13.5px]">
                 <thead>
                 <tr>
@@ -27,8 +28,8 @@ export function DataTable({headers, children}: DataTableProps) {
                         return (
                             <th
                                 key={`${title}-${index}`}
-                                className={`whitespace-nowrap border-b border-[#e1e7ef] bg-[#f7f9fc] px-4 py-2.5
-                                            text-[10.5px] font-bold uppercase tracking-wider text-[#8593a8]
+                                className={`whitespace-nowrap border-b border-[#eef2f7] bg-[#fafbfd] px-5 py-3
+                                            text-[11px] font-bold uppercase tracking-[.04em] text-[#a3adbd]
                                             ${align === "right" ? "text-right" : "text-left"}`}
                             >
                                 {title}
@@ -54,8 +55,8 @@ export function Row({children, onClick, alert}: RowProps) {
     return (
         <tr
             onClick={onClick}
-            className={`border-b border-[#e1e7ef] last:border-0
-                        ${onClick ? "cursor-pointer hover:bg-[#f7f9fc]" : ""}
+            className={`border-b border-[#f3f6f9] last:border-0 transition
+                        ${onClick ? "cursor-pointer hover:bg-[#fbfcfe]" : ""}
                         ${alert ? "bg-[#fdf6f5]" : ""}`}
         >
             {children}
@@ -76,11 +77,11 @@ interface CellProps {
 export function Cell({children, strong, mono, align = "left", nowrap, className = ""}: CellProps) {
     return (
         <td
-            className={`px-4 py-2.5 align-top
+            className={`px-5 py-3 align-top
                         ${mono ? "font-mono text-[12.5px]" : ""}
                         ${nowrap || mono ? "whitespace-nowrap" : ""}
                         ${align === "right" ? "text-right" : ""}
-                        ${strong ? "font-semibold text-[#101a2c]" : "text-[#4d5a72]"}
+                        ${strong ? "font-semibold text-[#1c2740]" : "text-[#55617a]"}
                         ${className}`}
         >
             {children}
@@ -92,18 +93,18 @@ export function Cell({children, strong, mono, align = "left", nowrap, className 
 export type BadgeTone = "neutral" | "info" | "good" | "warn" | "bad";
 
 const TONE_STYLE: Record<BadgeTone, string> = {
-    neutral: "bg-[#eef2f7] text-[#8593a8]",
-    info: "bg-[#eaf0ff] text-[#2f68f5]",
-    good: "bg-[#e6f4ec] text-[#1c7a4d]",
-    warn: "bg-[#fdf3e0] text-[#b3730a]",
-    bad: "bg-[#fbeae7] text-[#c0392b]",
+    neutral: "bg-[#eef2f7] text-[#55617a]",
+    info: "bg-[#ececfc] text-[#4e57d6]",
+    good: "bg-[#e5f7ee] text-[#1a8a5f]",
+    warn: "bg-[#fdf3e7] text-[#b3730a]",
+    bad: "bg-[#fdeceb] text-[#c0392b]",
 };
 
 export function Badge({children, tone = "neutral"}: {children: ReactNode; tone?: BadgeTone}) {
     return (
         <span
-            className={`inline-block whitespace-nowrap rounded-[5px] px-2 py-0.5
-                        text-[11px] font-semibold uppercase tracking-wide ${TONE_STYLE[tone]}`}
+            className={`inline-block whitespace-nowrap rounded-full px-[9px] py-[2px]
+                        text-[10.5px] font-semibold ${TONE_STYLE[tone]}`}
         >
             {children}
         </span>
@@ -155,22 +156,13 @@ export function formatDateTime(value: string | null | undefined): string {
 }
 
 /**
- * Срок словами: «через 3 дня», «сегодня», «просрочено на 5 дней».
+ * Срок словами: «осталось 3 дня», «сегодня», «просрочено на 5 дней».
  * Число дней само по себе требует счёта в уме, а срок смотрят бегло.
+ * Склонения («1 день / 2 дня / 5 дней») берутся из переводов time.days.
  */
-export function formatDaysLeft(days: number | null | undefined): string {
+export function formatDaysLeft(days: number | null | undefined, t: TFunction): string {
     if (days === null || days === undefined) return "—";
-    if (days === 0) return "сегодня";
-    if (days < 0) return `просрочено на ${plural(-days, "день", "дня", "дней")}`;
-    return `через ${plural(days, "день", "дня", "дней")}`;
-}
-
-function plural(count: number, one: string, few: string, many: string): string {
-    const mod100 = count % 100;
-    const mod10 = count % 10;
-
-    if (mod100 >= 11 && mod100 <= 14) return `${count} ${many}`;
-    if (mod10 === 1) return `${count} ${one}`;
-    if (mod10 >= 2 && mod10 <= 4) return `${count} ${few}`;
-    return `${count} ${many}`;
+    if (days === 0) return t("dataTable.today");
+    if (days < 0) return t("time.overdueBy", {time: t("time.days", {count: -days})});
+    return t("time.remaining", {time: t("time.days", {count: days})});
 }

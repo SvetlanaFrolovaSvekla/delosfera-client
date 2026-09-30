@@ -3,6 +3,7 @@ import {useTranslation} from "react-i18next";
 import type {UserResponse, UserSource} from "@/service/userService/userServiceType.ts";
 import type {UserColDef} from "@/constants/columnsFilters/usersColumns.ts";
 import {Tooltip} from "@/components/componentsGeneral/Tooltip.tsx";
+import {HighlightText} from "@/utils/highlightText.tsx";
 import {Pencil, Lock, Unlock} from "lucide-react";
 
 const SOURCE_STYLE: Record<UserSource, string> = {
@@ -37,9 +38,11 @@ interface UsersTableProps {
     onEdit: (user: UserResponse) => void;
     onBlock: (user: UserResponse) => void;
     onUnblock: (user: UserResponse) => void;
+    /** Строка поиска: совпадения в ФИО, должности, email и подразделении подсвечиваются. */
+    search?: string;
 }
 
-export function UsersTable({users, columns, gridTemplate, onOpenProfile, onEdit, onBlock, onUnblock}: UsersTableProps) {
+export function UsersTable({users, columns, gridTemplate, onOpenProfile, onEdit, onBlock, onUnblock, search = ""}: UsersTableProps) {
     const {t} = useTranslation();
 
     // Вынесено внутрь компонента: раньше был top-level SOURCE_LABEL с захардкоженными строками —
@@ -98,11 +101,13 @@ export function UsersTable({users, columns, gridTemplate, onOpenProfile, onEdit,
                                                     <div className="min-w-0">
                                                         <div
                                                             className="text-[13px] font-semibold text-[#1c2740] whitespace-nowrap overflow-hidden text-ellipsis hover:text-[#2f68f5] hover:underline underline-offset-2">
-                                                            {u.fullName}
+                                                            <HighlightText text={u.fullName} query={search}/>
                                                         </div>
                                                         <div
                                                             className="text-[11.5px] text-[#8b97ab] whitespace-nowrap overflow-hidden text-ellipsis">
-                                                            {u.position?.titleRu ?? t("usersTable.noPosition")}
+                                                            {u.position?.titleRu
+                                                                ? <HighlightText text={u.position.titleRu} query={search}/>
+                                                                : t("usersTable.noPosition")}
                                                         </div>
                                                     </div>
                                                 </button>
@@ -113,7 +118,7 @@ export function UsersTable({users, columns, gridTemplate, onOpenProfile, onEdit,
                                         return (
                                             <div key={c.key}
                                                  className="min-w-0 font-mono text-[12px] text-[#55617a] whitespace-nowrap overflow-hidden text-ellipsis">
-                                                {u.email}
+                                                <HighlightText text={u.email} query={search}/>
                                             </div>
                                         );
 
@@ -122,7 +127,9 @@ export function UsersTable({users, columns, gridTemplate, onOpenProfile, onEdit,
                                             <div key={c.key}
                                                  className="min-w-0 text-[12.5px] text-[#55617a] whitespace-nowrap overflow-hidden text-ellipsis">
                                                 {/* {u.orgUnit?.titleRu ?? "—"} */}
-                                                {u.orgUnit?.titleRu ?? t("usersTable.noOrgUnit")}
+                                                {u.orgUnit?.titleRu
+                                                    ? <HighlightText text={u.orgUnit.titleRu} query={search}/>
+                                                    : t("usersTable.noOrgUnit")}
                                             </div>
                                         );
 

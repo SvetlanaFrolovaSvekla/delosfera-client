@@ -300,6 +300,8 @@
     }
   },
   "rolesPermissions": {
+    "searchPermissions": "Search permissions…",
+    "permissionsNotFound": "No permissions found",
     "title": "Roles and permissions",
     "subtitle": "Configure permissions for approvers, signers, and other roles.",
     "createRole": "Create role",
@@ -1113,6 +1115,9 @@
   },
   "datePickerInput": {
     "dateFormatPlaceholder": "DD.MM.YYYY",
+    "dateTimeFormatPlaceholder": "DD.MM.YYYY HH:MM",
+    "timeLabel": "Time",
+    "done": "Done",
     "modalTitle": "Select date",
     "weekdays": [
       "Mo",
@@ -1145,7 +1150,8 @@
       "invalidDay": "Invalid day",
       "invalidYear": "Invalid year",
       "dateNotExist": "This date does not exist",
-      "invalidDate": "Invalid date"
+      "invalidDate": "Invalid date",
+      "invalidTime": "Invalid time"
     }
   },
   "journalViews": {
@@ -2348,6 +2354,313 @@
     "formTitleEdit": "Edit Organizational Unit",
     "fieldParent": "Parent unit",
     "deleteConfirmTitle": "Delete organizational unit?"
+  },
+  "acknowledgementPage": {
+    "title": "Acknowledgement",
+    "description": "HR document flow. Documents you are required to read. Acknowledgement is signed with your simple electronic signature — it records the time and a fingerprint of the version of the document you saw.",
+    "errorLoad": "Failed to load the list of documents to acknowledge",
+    "errorAcknowledge": "Failed to record the acknowledgement",
+    "errorReasonRequired": "A refusal needs a reason — without it there is nothing to discuss",
+    "errorRefuse": "Failed to record the refusal",
+    "successAcknowledged": "Acknowledgement recorded: {{title}}",
+    "successRefused": "Refusal recorded, HR has been notified",
+    "overdueBanner": "Overdue: {{total}}. The acknowledgement deadline has passed.",
+    "showAnswered": "Show items I have already answered",
+    "emptyHistoryTitle": "No acknowledgements yet",
+    "emptyHistoryDescription": "The history of what you have acknowledged or refused will appear here.",
+    "emptyDoneTitle": "All read",
+    "emptyDoneDescription": "No documents are waiting for acknowledgement — new ones will appear here as soon as they arrive.",
+    "received": "received {{date}}",
+    "due": "due {{date}}",
+    "noSignature": "no signature",
+    "acknowledge": "Acknowledged",
+    "refuse": "Refuse",
+    "states": {
+      "Pending": "Awaiting acknowledgement",
+      "Acknowledged": "Acknowledged",
+      "Refused": "Refused",
+      "Cancelled": "Withdrawn"
+    },
+    "refusalReasonTitle": "Reason for refusal",
+    "refusalReasonHint": "Refusing is your right. The reason will go into the acknowledgement sheet and be visible to HR.",
+    "confirmRefusal": "Confirm refusal",
+    "cancel": "Cancel"
+  },
+  "hrOrdersPage": {
+    "title": "HR orders",
+    "description": "Register: hiring, transfer, leave, business trip, dismissal",
+    "exporting": "Preparing…",
+    "exportExcel": "Export to Excel",
+    "issue": "Issue an order",
+    "statusAll": "All",
+    "statuses": {
+      "Draft": "Draft",
+      "OnSigning": "Awaiting signature",
+      "Signed": "Signed",
+      "Cancelled": "Cancelled"
+    },
+    "anyKind": "Any kind",
+    "kinds": {
+      "Hiring": "Hiring",
+      "Transfer": "Transfer",
+      "Dismissal": "Dismissal",
+      "Leave": "Leave",
+      "BusinessTrip": "Business trip",
+      "Salary": "Compensation",
+      "Bonus": "Bonus",
+      "Discipline": "Disciplinary action",
+      "Training": "Training",
+      "Combination": "Combined duties",
+      "Other": "Other"
+    },
+    "searchPlaceholder": "Title or number",
+    "loading": "Loading the register…",
+    "emptyTitle": "No orders",
+    "emptyDescription": "Nothing found in the register for the selected conditions.",
+    "columns": {
+      "number": "Number",
+      "kind": "Kind",
+      "title": "Title",
+      "employees": "Employees",
+      "effective": "Effective",
+      "status": "Status"
+    },
+    "draft": "draft",
+    "basis": "basis: {{basis}}",
+    "andMore": "and {{total}} more",
+    "notAcknowledged": "not acknowledged",
+    "notAcknowledgedHint": "Employees have not yet been acquainted with the order"
+  },
+  "poaRegistryPage": {
+    "title": "Powers of attorney",
+    "description": "Who, to whom, for what and for how long",
+    "grant": "Issue a power of attorney",
+    "noNumber": "n/a",
+    "expiringTitle": "Expiring within {{days}} days — {{total}}",
+    "until": "until {{date}}",
+    "statusAll": "All",
+    "statuses": {
+      "Draft": "Draft",
+      "OnApproval": "Awaiting signature",
+      "Active": "Active",
+      "Revoked": "Revoked",
+      "Expired": "Expired"
+    },
+    "searchPlaceholder": "Full name, number or a phrase from the powers",
+    "loading": "Loading the register…",
+    "emptyTitle": "No powers of attorney",
+    "emptyForStatus": "Nothing found for the selected status.",
+    "emptyRegistry": "The register is empty.",
+    "columns": {
+      "number": "Number",
+      "holder": "Granted to",
+      "unit": "Unit",
+      "powers": "Powers",
+      "period": "Validity",
+      "status": "Status"
+    },
+    "subDelegation": "sub-delegated under {{number}}",
+    "amountLimit": "up to {{amount}} {{currency}}"
+  },
+  "correspondencePage": {
+    "title": "Correspondence",
+    "description": "Register of incoming and outgoing letters",
+    "exporting": "Preparing…",
+    "exportExcel": "Export to Excel",
+    "register": "Register",
+    "overdueBanner": "Overdue letters: {{total}}",
+    "andOthers": "and others",
+    "showOverdue": "show →",
+    "directionAll": "All",
+    "directionIncoming": "Incoming",
+    "directionOutgoing": "Outgoing",
+    "searchPlaceholder": "Subject, number or summary",
+    "anyCategory": "Any category",
+    "categories": {
+      "Ordinary": "Correspondence",
+      "RegulatorRequest": "NBKR",
+      "ClientAppeal": "Appeal",
+      "BankSecrecyInquiry": "Account inquiry",
+      "Claim": "Claim"
+    },
+    "onlyOverdue": "Overdue only",
+    "loading": "Loading the register…",
+    "emptyTitle": "No letters",
+    "emptyDescription": "Nothing found in the register for the selected conditions.",
+    "columns": {
+      "number": "Number",
+      "correspondent": "Correspondent",
+      "subject": "Subject",
+      "category": "Category",
+      "due": "Due",
+      "status": "Status"
+    },
+    "draft": "draft",
+    "theirNumber": "their № {{number}} of {{date}}",
+    "inReplyTo": "in reply to {{number}}",
+    "statuses": {
+      "Draft": "Draft",
+      "Registered": "Registered",
+      "OnResolution": "On resolution",
+      "OnExecution": "In progress",
+      "Answered": "Answered",
+      "Closed": "Closed",
+      "Sent": "Sent"
+    }
+  },
+  "dataTable": {
+    "today": "today"
+  },
+  "bodyMembersPage": {
+    "title": "Collegial body membership",
+    "description": "Who belongs to each body and in what capacity. This list is used to build the “To” field of a memo, send meeting notifications and count attendance. Access rights are set separately — only the membership is managed here.",
+    "bodies": {
+      "Board": "Management Board",
+      "Kpa": "Problem Assets Committee",
+      "CreditCommittee": "Credit Committee"
+    },
+    "roles": {
+      "Chairman": "Chairman",
+      "Member": "Member",
+      "Secretary": "Secretary"
+    },
+    "columnWho": "Who",
+    "columnRole": "Role in the body",
+    "columnBasis": "Basis",
+    "noPosition": "position not specified",
+    "removedFromBody": "removed from the body",
+    "removeTooltip": "Remove from the body",
+    "emptyTitle": "No members yet",
+    "emptyDescription": "While it is empty, meeting notifications go out by the previous criterion in role permissions.",
+    "addTitle": "Add to {{body}}",
+    "fieldEmployee": "Employee",
+    "employeePlaceholder": "Find an employee",
+    "employeeSearch": "Search by full name",
+    "basisPlaceholder": "Minutes, order, meeting decision",
+    "add": "Add to the body",
+    "errorLoad": "Failed to load the body membership",
+    "errorChangeRole": "Failed to change the role",
+    "errorRemove": "Failed to remove from the body",
+    "errorAdd": "Failed to add to the body"
+  },
+  "routeTemplatesPage": {
+    "title": "Approval routes",
+    "create": "Create route",
+    "docTypes": {
+      "Sz": "Memo",
+      "Procurement": "Procurement request",
+      "Vnd": "Policy document"
+    },
+    "searchPlaceholder": "Search by name…",
+    "allDocTypes": "All document types",
+    "listEmpty": "No routes yet.",
+    "selectHint": "Select a route on the left or create a new one.",
+    "fieldName": "Name",
+    "namePlaceholder": "For example: HR memo — hiring",
+    "fieldDocType": "Document type",
+    "fieldOrgUnit": "Initiating unit",
+    "allUnits": "All units (type-wide rule)",
+    "globalRule": "Global rule — automatically include mandatory approvers",
+    "globalRuleHint": "Global rule: mandatory approvers are added to the route automatically (TID-03)",
+    "save": "Save",
+    "clone": "Create a copy",
+    "delete": "Delete route",
+    "cancelNew": "Cancel",
+    "saved": "Saved",
+    "unsaved": "There are unsaved changes",
+    "copySuffix": "{{name}} (copy)",
+    "leaveTitle": "Leave without saving?",
+    "leaveMessage": "There are unsaved changes. Continue without saving?",
+    "leaveConfirm": "Continue",
+    "errorLoadList": "Failed to load the list of routes",
+    "errorOpen": "Failed to open the route",
+    "errorPreviewRoles": "Failed to check the roles",
+    "errorSave": "Failed to save the route",
+    "errorDelete": "Failed to delete the route",
+    "validation": {
+      "nameRequired": "Enter the route name",
+      "noSteps": "The route has no steps",
+      "stepNoParticipants": "Step {{steps}}: no approvers — the route will stop there",
+      "parallelNoRequired": "Step {{steps}}: parallel fork without a mandatory approver",
+      "blankParticipant": "Step {{steps}}: no value selected for an approver",
+      "finalNotLast": "The final methodology control step must be the last one in the route"
+    },
+    "stepKinds": {
+      "Approval": "Approval",
+      "FinalControl": "Final control",
+      "Signing": "Signing",
+      "Board": "Escalation to a body"
+    },
+    "effective": {
+      "title": "Route by conditions",
+      "hint": "Turn on the document conditions — steps with that condition will be included in the route.",
+      "fork": "fork",
+      "forkQuorum": "fork · quorum {{quorum}}/{{total}}",
+      "conditional": "conditional: {{title}}",
+      "approvers": "approvers: {{count}}",
+      "empty": "Under these conditions the route is empty."
+    },
+    "preview": {
+      "title": "Role check",
+      "withUnit": "We will resolve the roles for the selected initiating unit.",
+      "withoutUnit": "No initiating unit is set — the author's roles will only be resolved once the author is known.",
+      "targetUnitNone": "Unit from the document — not set",
+      "targetUnitHint": "A trial “unit from the document” — to resolve target-* roles",
+      "run": "Check roles",
+      "running": "Checking…",
+      "noRoles": "The route has no roles — only people or units."
+    }
+  },
+  "unitCuratorsPage": {
+    "title": "Unit curatorship",
+    "description": "The head and curator (supervising deputy chair) of each unit. The HR memo routing uses them to find approvers. The portal doesn't fill them in everywhere — fill in the gaps here.",
+    "searchPlaceholder": "Search for a unit…",
+    "onlyEmpty": "Only with gaps",
+    "shownCount": "Showing {{shown}} of {{total}}",
+    "loading": "Loading",
+    "head": "Head",
+    "curatorShort": "Curator (supervising deputy)",
+    "curatorFull": "Curator (supervising deputy chair)",
+    "pickerPlaceholder": "Find an employee",
+    "pickerSearch": "Search by full name",
+    "save": "Save",
+    "saving": "Saving…",
+    "saved": "Saved",
+    "saveError": "Failed to save",
+    "notFound": "Nothing found."
+  },
+  "notificationMailingSettingsPage": {
+    "title": "Policy-review mailing settings",
+    "description": "Who receives what in policy-review notifications",
+    "sections": {
+      "responsibles": {
+        "title": "Staff responsible for review",
+        "subtitle": "Who is responsible for reviewing policies in each structural unit"
+      },
+      "monthly": {
+        "title": "Monthly notifications",
+        "subtitle": "A summary on the 1st with the review plan in Excel"
+      },
+      "criticalReminders": {
+        "title": "Critical reminders",
+        "subtitle": "Notifications N days before a review becomes overdue"
+      },
+      "oneTimeMailing": {
+        "title": "Create a one-time mailing",
+        "subtitle": "A one-off email with the review plan to selected recipients"
+      }
+    }
+  },
+  "notificationSettingsPage": {
+    "title": "Notifications",
+    "description": "How the system reminds you of tasks and deadlines",
+    "loadError": "Failed to load settings",
+    "saveError": "Failed to save",
+    "loading": "Loading",
+    "digestTitle": "Morning email digest",
+    "digestDescription": "A daily email with a summary: what's urgent and what's coming up.",
+    "popupTitle": "Pop-up notifications",
+    "popupDescription": "Show a pop-up in the bottom-right corner of the screen when a new notification arrives. Applies to this browser only."
   },
   "positionPage": {
     "title": "Positions",

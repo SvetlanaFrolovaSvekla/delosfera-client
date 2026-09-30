@@ -6,6 +6,7 @@ interface HighlightTextProps {
 }
 
 // Экранируем спецсимволы regex
+// eslint-disable-next-line react-refresh/only-export-components
 export function escapeRegExp(str: string): string {
     return str.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 }

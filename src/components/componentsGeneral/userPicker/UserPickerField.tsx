@@ -23,6 +23,8 @@ interface UserPickerFieldProps {
     /** Показать крестик очистки выбора, когда кто-то выбран. */
     clearable?: boolean;
     onClear?: () => void;
+    /** Высота 36px — вровень с DatePickerInput и SelectDropdown в строке фильтров. */
+    compact?: boolean;
 }
 
 export function UserPickerField({
@@ -35,6 +37,7 @@ export function UserPickerField({
                                     excludeId,
                                     clearable,
                                     onClear,
+                                    compact,
                                 }: UserPickerFieldProps) {
     const [open, setOpen] = useState(false);
 
@@ -45,7 +48,7 @@ export function UserPickerField({
             <button
                 type="button"
                 onClick={() => setOpen(true)}
-                className="flex h-10 w-full items-center justify-between gap-2 rounded-[9px] border border-[#e5e9f0] bg-white px-3 text-[13px] outline-none cursor-pointer hover:bg-[#f6f8fb] focus:border-[#2f68f5]"
+                className={`flex ${compact ? "h-9" : "h-10"} w-full items-center justify-between gap-2 rounded-[9px] border border-[#e5e9f0] bg-white px-3 text-[13px] outline-none cursor-pointer hover:bg-[#f6f8fb] focus:border-[#2f68f5]`}
             >
                 <span className="flex min-w-0 items-center gap-2">
                     <UserIcon size={14} className="flex-none text-[#a3adbd]"/>

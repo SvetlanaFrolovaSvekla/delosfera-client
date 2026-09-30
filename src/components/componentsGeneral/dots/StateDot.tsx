@@ -1,5 +1,5 @@
 // Кружки в меню "Системные настройки" ("Интеграции")
-import type {IntegrationState} from "@/pages/ManagementPages/SystemSettings/SystemSettingsPage.tsx";
+import type {IntegrationState} from "@/pages/ManagementPages/SettingsPages/SystemSettings/SystemSettingsPage.tsx";
 
 export function StateDot({state}: { state: IntegrationState }) {
     if (!state) return <span className="h-2 w-2 rounded-full bg-[#d6dded]"/>;

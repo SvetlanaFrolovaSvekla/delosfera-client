@@ -13,7 +13,7 @@ import {ReportVndApprovalsPage} from "@/pages/ReportPages/ReportVndPages/ReportV
 import {ReportProcessMiningPage} from "@/pages/ReportPages/ReportProcessMiningPage.tsx";
 import {SzStatisticsPage} from "@/pages/SZPages/SzStatisticsPage.tsx";
 import {ProcurementStatisticsPage} from "@/pages/ProcurementPages/ProcurementStatisticsPage.tsx";
-import {SlaDashboardPage} from "@/pages/SlaDashboardPage.tsx";
+import {SlaDashboardPage} from "@/pages/MeetingsPages/SlaDashboardPage.tsx";
 
 import {ContourReportView} from "@/components/componentsReport/ContourReportView.tsx";
 import {PageHeader} from "@/components/componentsGeneral/PageHeader.tsx";

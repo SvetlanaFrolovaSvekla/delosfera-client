@@ -226,15 +226,6 @@ export function OpenNotificationPage() {
                         <button
                             onClick={() => {
                                 const url = notification.url!;
-                                // Если сервер уже указал таб явно (?tab=...) в самой ссылке -
-                                // используем его и не форсим state, иначе OpenVndPage.tsx
-                                // (сначала смотрит location.state.tab, потом ?tab=) проигнорирует
-                                // то, что прислал бэк. Раньше здесь стоял безусловный
-                                // state: {tab: "approval"} для любой /base-vnd/... ссылки - из-за
-                                // этого уведомление "Заявка на доступ к актуализации" (шлёт
-                                // /base-vnd/{id}?tab=actual) вело не на «Актуализация», а на
-                                // «Реквизиты» ("approval" не входит в список табов для статуса
-                                // "active", и OpenVndPage.tsx откатывался на "passport").
                                 const hasExplicitTab = url.includes("?tab=");
                                 navigate(url, {
                                     state: !hasExplicitTab && url.startsWith("/base-vnd/")

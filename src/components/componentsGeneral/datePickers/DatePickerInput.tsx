@@ -13,6 +13,10 @@ interface DatePickerInputProps {
     disabled?: boolean;
     modal?: boolean;
     modalTitle?: string;
+    /** Дата + время: значение "дд.мм.гггг чч:мм", в календаре появляются поля часов и минут. */
+    withTime?: boolean;
+    /** Время, подставляемое при выборе дня, пока оно не задано ("00:00" для начала периода, "23:59" для конца). */
+    defaultTime?: string;
 }
 
 interface DayCell {
@@ -44,7 +48,21 @@ function maskDateInput(raw: string): string {
     return out;
 }
 
-type DateValidationErrorCode = "invalidMonth" | "invalidDay" | "invalidYear" | "dateNotExist";
+// Маска дд.мм.гггг чч:мм. Разделитель ставится перед следующей цифрой, а не после
+// последней: иначе Backspace на "01.02." возвращал бы точку и стереть её было бы нельзя.
+function maskDateTimeInput(raw: string): string {
+    const digitsOnly = raw.replace(/\D/g, "").slice(0, 12);
+    let out = "";
+    for (let i = 0; i < digitsOnly.length; i++) {
+        if (i === 2 || i === 4) out += ".";
+        else if (i === 8) out += " ";
+        else if (i === 10) out += ":";
+        out += digitsOnly[i];
+    }
+    return out;
+}
+
+type DateValidationErrorCode = "invalidMonth" | "invalidDay" | "invalidYear" | "dateNotExist" | "invalidTime";
 
 // Полноценная проверка даты — отсекает и некорректные диапазоны (месяц 93),
 // и несуществующие даты (30 февраля), которые формально прошли бы по диапазону
@@ -64,6 +82,17 @@ function validateDateString(s: string): { valid: boolean; errorCode?: DateValida
     return {valid: true, date: d};
 }
 
+function validateDateTimeString(s: string): {
+    valid: boolean; errorCode?: DateValidationErrorCode; date?: Date; time?: string
+} {
+    const match = /^(\d{2}\.\d{2}\.\d{4}) (\d{2}):(\d{2})$/.exec(s);
+    if (!match) return {valid: false};
+    const dateResult = validateDateString(match[1]);
+    if (!dateResult.valid) return dateResult;
+    if (Number(match[2]) > 23 || Number(match[3]) > 59) return {valid: false, errorCode: "invalidTime"};
+    return {...dateResult, time: `${match[2]}:${match[3]}`};
+}
+
 const YEARS_PER_PAGE = 12;
 const POPUP_WIDTH = 264;
 
@@ -75,11 +104,20 @@ export function DatePickerInput({
                                     disabled = false,
                                     modal = false,
                                     modalTitle: modalTitleProp,
+                                    withTime = false,
+                                    defaultTime = "00:00",
                                 }: DatePickerInputProps) {
     const {t} = useTranslation();
 
+    // В режиме со временем value = "дд.мм.гггг чч:мм": дату и время разбираем отдельно.
+    const dateStr = withTime ? value.split(" ")[0] : value;
+    const timeStr = withTime ? (value.split(" ")[1] ?? "") : "";
+    const fullLength = withTime ? 16 : 10;
+
     // дд.мм.гггг
-    const dateFormatPlaceholder = t("datePickerInput.dateFormatPlaceholder");
+    const dateFormatPlaceholder = withTime
+        ? t("datePickerInput.dateTimeFormatPlaceholder") // дд.мм.гггг чч:мм
+        : t("datePickerInput.dateFormatPlaceholder");
     const placeholder = placeholderProp ?? dateFormatPlaceholder;
     // Выбор даты
     const modalTitle = modalTitleProp ?? t("datePickerInput.modalTitle");
@@ -91,15 +129,19 @@ export function DatePickerInput({
     const [open, setOpen] = useState(false);
     const [view, setView] = useState<"days" | "years">("days");
     const today = new Date();
-    const [cursor, setCursor] = useState<Date>(parseDDMMYYYY(value) ?? today);
+    const [cursor, setCursor] = useState<Date>(parseDDMMYYYY(dateStr) ?? today);
     const [yearPageStart, setYearPageStart] = useState<number>(
-        Math.floor((parseDDMMYYYY(value) ?? today).getFullYear() / YEARS_PER_PAGE) * YEARS_PER_PAGE
+        Math.floor((parseDDMMYYYY(dateStr) ?? today).getFullYear() / YEARS_PER_PAGE) * YEARS_PER_PAGE
     );
     const [coords, setCoords] = useState<{ top: number; left: number } | null>(null);
 
     // ручной ввод внутри дропдауна
     const [manualInput, setManualInput] = useState(value);
     const [manualError, setManualError] = useState<string | null>(null);
+
+    // часы и минуты — строками, чтобы можно было стереть поле и набрать заново
+    const [hh, setHh] = useState("00");
+    const [mm, setMm] = useState("00");
 
     const containerRef = useRef<HTMLDivElement>(null);
     const popupRef = useRef<HTMLDivElement>(null);
@@ -129,6 +171,18 @@ export function DatePickerInput({
         }
     }, [open, value]);
 
+    // Часы/минуты подтягиваем из значения только при открытии, а не при каждом изменении:
+    // иначе "5" тут же превращалось бы в "05" под курсором и второй цифре некуда встать.
+    useEffect(() => {
+        if (open && withTime) {
+            const [h = "00", m = "00"] = (timeStr || defaultTime).split(":");
+            // eslint-disable-next-line react-hooks/set-state-in-effect
+            setHh(h);
+            setMm(m);
+        }
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [open]);
+
     const updateCoords = () => {
         if (!containerRef.current) return;
         const rect = containerRef.current.getBoundingClientRect();
@@ -150,14 +204,23 @@ export function DatePickerInput({
 
     const openCalendar = () => {
         if (disabled) return;
-        const base = parseDDMMYYYY(value) ?? today;
+        const base = parseDDMMYYYY(dateStr) ?? today;
         setCursor(base);
         setYearPageStart(Math.floor(base.getFullYear() / YEARS_PER_PAGE) * YEARS_PER_PAGE);
         setView("days");
         setOpen((v) => !v);
     };
 
+    const emit = (d: Date, time: string) =>
+        onChange(withTime ? `${formatDDMMYYYY(d)} ${time}` : formatDDMMYYYY(d));
+
     const selectDay = (d: Date) => {
+        if (withTime) {
+            // выбор дня не закрывает календарь — ниже ещё нужно задать время
+            emit(d, timeStr || defaultTime);
+            setView("days");
+            return;
+        }
         onChange(formatDDMMYYYY(d));
         setOpen(false);
         setView("days");
@@ -175,17 +238,35 @@ export function DatePickerInput({
         setView("days");
     };
 
-    const manualValidation = manualInput.length === 10 ? validateDateString(manualInput) : null;
+    const applyTime = (h: string, m: string) =>
+        emit(parseDDMMYYYY(dateStr) ?? today, `${(h || "0").padStart(2, "0")}:${(m || "0").padStart(2, "0")}`);
+
+    const handleHourChange = (raw: string) => {
+        let v = raw.replace(/\D/g, "").slice(0, 2);
+        if (v.length === 2 && Number(v) > 23) v = "23";
+        setHh(v);
+        applyTime(v, mm);
+    };
+
+    const handleMinuteChange = (raw: string) => {
+        let v = raw.replace(/\D/g, "").slice(0, 2);
+        if (v.length === 2 && Number(v) > 59) v = "59";
+        setMm(v);
+        applyTime(hh, v);
+    };
+
+    const validateManual = (v: string) => (withTime ? validateDateTimeString(v) : validateDateString(v));
+    const manualValidation = manualInput.length === fullLength ? validateManual(manualInput) : null;
     const manualIsValid = !!manualValidation?.valid;
 
     const handleManualChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-        const masked = maskDateInput(e.target.value);
+        const masked = withTime ? maskDateTimeInput(e.target.value) : maskDateInput(e.target.value);
         setManualInput(masked);
-        if (masked.length < 10) {
+        if (masked.length < fullLength) {
             setManualError(null);
             return;
         }
-        const result = validateDateString(masked);
+        const result = validateManual(masked);
         if (result.valid) {
             setManualError(null);
             return;
@@ -200,6 +281,12 @@ export function DatePickerInput({
 
     const applyManualInput = () => {
         if (!manualValidation?.valid || !manualValidation.date) return;
+        if (withTime) {
+            emit(manualValidation.date, manualValidation.time ?? defaultTime);
+            setOpen(false);
+            setView("days");
+            return;
+        }
         selectDay(manualValidation.date);
     };
 
@@ -208,7 +295,7 @@ export function DatePickerInput({
     };
 
     const cells = buildMonthGrid(cursor.getFullYear(), cursor.getMonth());
-    const selected = parseDDMMYYYY(value);
+    const selected = parseDDMMYYYY(dateStr);
 
     return (
         <div className="relative w-full" ref={containerRef}>
@@ -230,7 +317,7 @@ export function DatePickerInput({
                         placeholder={placeholder}
                         value={value}
                         disabled={disabled}
-                        onChange={(e) => onChange(e.target.value)}
+                        onChange={(e) => onChange(withTime ? maskDateTimeInput(e.target.value) : e.target.value)}
                         onFocus={() => {
                             if (!open) openCalendar();
                         }}
@@ -309,11 +396,51 @@ export function DatePickerInput({
                             })}
                         </div>
 
-                        <div className="mt-2.5 pt-2.5 border-t border-[#eef2f7] flex justify-center">
+                        {withTime && (
+                            <div className="mt-2.5 pt-2.5 border-t border-[#eef2f7] flex items-center justify-between">
+                                <span className="text-[10.5px] font-bold tracking-[.04em] uppercase text-[#a3adbd]">
+                                    {t("datePickerInput.timeLabel")} {/* Время */}
+                                </span>
+                                <div className="flex items-center gap-1">
+                                    <input
+                                        type="text"
+                                        inputMode="numeric"
+                                        autoComplete="off"
+                                        value={hh}
+                                        onChange={(e) => handleHourChange(e.target.value)}
+                                        onBlur={() => setHh((v) => v.padStart(2, "0"))}
+                                        className="h-9 w-[46px] rounded-[8px] border border-[#e5e9f0] text-center text-[12.5px] text-[#1c2740] outline-none box-border focus:border-[#4e57d6]"
+                                    />
+                                    <span className="text-[#a3adbd]">:</span>
+                                    <input
+                                        type="text"
+                                        inputMode="numeric"
+                                        autoComplete="off"
+                                        value={mm}
+                                        onChange={(e) => handleMinuteChange(e.target.value)}
+                                        onBlur={() => setMm((v) => v.padStart(2, "0"))}
+                                        className="h-9 w-[46px] rounded-[8px] border border-[#e5e9f0] text-center text-[12.5px] text-[#1c2740] outline-none box-border focus:border-[#4e57d6]"
+                                    />
+                                </div>
+                            </div>
+                        )}
+
+                        <div className={`mt-2.5 pt-2.5 border-t border-[#eef2f7] flex items-center ${
+                            withTime ? "justify-between" : "justify-center"}`}>
                             <button type="button" onClick={goToday}
                                     className="cursor-pointer h-8 px-3 rounded-[8px] text-[12px] font-semibold text-[#4e57d6] hover:bg-[#f6f8fb]">
                                 {t("datePickerInput.today")} {/* Сегодня */}
                             </button>
+                            {withTime && (
+                                <button type="button"
+                                        onClick={() => {
+                                            setOpen(false);
+                                            setView("days");
+                                        }}
+                                        className="cursor-pointer h-8 px-3.5 rounded-[8px] border-none bg-[#4e57d6] text-white text-[12px] font-semibold hover:brightness-[1.06]">
+                                    {t("datePickerInput.done")} {/* Готово */}
+                                </button>
+                            )}
                         </div>
 
                         {/* Ручной ввод даты */}
@@ -330,7 +457,7 @@ export function DatePickerInput({
                                     onChange={handleManualChange}
                                     onKeyDown={handleManualKeyDown}
                                     placeholder={dateFormatPlaceholder} // дд.мм.гггг
-                                    maxLength={10}
+                                    maxLength={fullLength}
                                     className={`h-9 px-2.5 rounded-[8px] border text-[12.5px] text-[#1c2740] outline-none flex-1 box-border focus:border-[#4e57d6] ${
                                         manualError ? "border-[#e0525f] focus:border-[#e0525f]" : "border-[#e5e9f0]"
                                     }`}

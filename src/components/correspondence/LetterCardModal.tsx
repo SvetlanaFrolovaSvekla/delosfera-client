@@ -1,3 +1,4 @@
+import {useTranslation} from "react-i18next";
 import {useEffect, useState} from "react";
 import {createPortal} from "react-dom";
 import {X} from "lucide-react";
@@ -24,6 +25,7 @@ interface Props {
 }
 
 export function LetterCardModal({id, onClose, onChanged}: Props) {
+    const {t} = useTranslation();
     const {users} = useUserLookup();
 
     const [letter, setLetter] = useState<Letter | null>(null);
@@ -129,7 +131,7 @@ export function LetterCardModal({id, onClose, onChanged}: Props) {
                             {letter.dueDate && (
                                 <Field
                                     label="Срок ответа"
-                                    value={`${formatDate(letter.dueDate)} · ${formatDaysLeft(letter.daysLeft)}`}
+                                    value={`${formatDate(letter.dueDate)} · ${formatDaysLeft(letter.daysLeft, t)}`}
                                     alert={letter.isOverdue}
                                 />
                             )}

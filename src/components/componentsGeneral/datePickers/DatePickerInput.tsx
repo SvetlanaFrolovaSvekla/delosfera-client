@@ -66,7 +66,7 @@ type DateValidationErrorCode = "invalidMonth" | "invalidDay" | "invalidYear" | "
 
 // Полноценная проверка даты — отсекает и некорректные диапазоны (месяц 93),
 // и несуществующие даты (30 февраля), которые формально прошли бы по диапазону
-function validateDateString(s: string): { valid: boolean; errorCode?: DateValidationErrorCode; date?: Date } {
+function validateDateString(s: string): { valid: boolean; errorCode?: DateValidationErrorCode; date?: Date; time?: string } {
     const match = /^(\d{2})\.(\d{2})\.(\d{4})$/.exec(s);
     if (!match) return {valid: false};
     const day = Number(match[1]);

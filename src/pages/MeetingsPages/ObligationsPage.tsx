@@ -1,3 +1,4 @@
+import {useTranslation} from "react-i18next";
 /**
  * Регулярные обязательства банка.
  *
@@ -227,6 +228,7 @@ function Panel({tone, icon, title, children}: {
 }
 
 function AttentionLine({row, tone}: {row: AttentionRow; tone: "bad" | "warn"}) {
+    const {t} = useTranslation();
     return (
         <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1 rounded-[8px] border
                         border-white/70 bg-white px-3 py-2">
@@ -239,7 +241,7 @@ function AttentionLine({row, tone}: {row: AttentionRow; tone: "bad" | "warn"}) {
             )}
             <span className={`ml-auto text-[12.5px] font-semibold
                 ${tone === "bad" ? "text-[#c0392b]" : "text-[#b3730a]"}`}>
-                {formatDaysLeft(row.daysLeft)}
+                {formatDaysLeft(row.daysLeft, t)}
             </span>
         </div>
     );

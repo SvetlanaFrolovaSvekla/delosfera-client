@@ -18,7 +18,9 @@ export async function downloadApprovalSheet(
     const toastId = toast.loading(i18n.t("approvalSheetLive.downloading"), fallbackName);
     try {
         const {blob, fileName} = await fetchFileBlob(
-            processId, fallbackName, undefined, approvalSheetEndpoint(vndId), approvalSheetPathSuffix(mode));
+            // download=true — явное скачивание: сервер проверяет право «Экспорт ВНД»
+            // (просмотр в окне идёт без этого флага).
+            processId, fallbackName, undefined, approvalSheetEndpoint(vndId), `${approvalSheetPathSuffix(mode)}&download=true`);
         saveBlob(blob, fileName);
         toast.update(toastId, {
             variant: "success", title: i18n.t("approvalSheetLive.downloaded"), description: fileName, duration: 4500,

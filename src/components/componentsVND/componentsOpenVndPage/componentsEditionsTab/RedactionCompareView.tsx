@@ -1,6 +1,7 @@
 import type {VndRedactionResponse, VndResponse} from "@/service/vndService/vndServiceType.ts";
 import {buildRedactionFileName} from "@/utils/downloadFiles/fileNaming.ts";
 import {FileText} from "lucide-react";
+import {useCanExportVnd, NO_EXPORT_VND_HINT} from "@/hooks/vndHooks/useCanExportVnd.ts";
 
 interface RedactionCompareViewProps {
     vnd: VndResponse;
@@ -67,6 +68,7 @@ function CompareColumn({
     emptyLabel?: string;
 }) {
     const styles = VARIANT_STYLES[variant];
+    const canExportVnd = useCanExportVnd();
 
     return (
         <div className={`p-[16px_20px] ${styles.wrapper}`}>
@@ -76,9 +78,10 @@ function CompareColumn({
             {redaction ? (
                 <button
                     type="button"
-                    disabled={downloadingId === redaction.docFileRuId}
+                    disabled={!canExportVnd || downloadingId === redaction.docFileRuId}
+                    title={canExportVnd ? undefined : NO_EXPORT_VND_HINT}
                     onClick={() => onDownload(redaction.docFileRuId, buildRedactionFileName(redaction.code, vnd.name, "ru"))}
-                    className={`inline-flex items-center gap-2 text-[13px] hover:underline disabled:opacity-60 ${styles.link}`}
+                    className={`inline-flex items-center gap-2 text-[13px] hover:underline disabled:opacity-60 disabled:cursor-not-allowed disabled:no-underline ${styles.link}`}
                 >
                     <FileText size={15}/> Открыть документ (RU)
                 </button>

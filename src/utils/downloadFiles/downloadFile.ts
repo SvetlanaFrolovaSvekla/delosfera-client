@@ -65,6 +65,11 @@ export async function fetchFileBlob(
     });
 
     if (!response.ok) {
+        // 403 на явное скачивание — обычно нет права «Экспорт ВНД»: говорим это прямо,
+        // а не «Не удалось загрузить файл: 403».
+        if (response.status === 403 && /[?&]download=true/.test(pathSuffix)) {
+            throw new Error("Нет права на скачивание документов ВНД (право «Экспорт ВНД»)");
+        }
         // Не удалось загрузить файл: {status}
         throw new Error(`${i18n.t("downloadFile.loadErrorPrefix")} ${response.status}`);
     }
@@ -86,7 +91,9 @@ export async function downloadFile(
     // "файл"
     fallbackName = i18n.t("downloadFile.defaultFileName"),
 ): Promise<void> {
-    const {blob, fileName} = await fetchFileBlob(fileId, fallbackName);
+    // download=true — это именно скачивание, а не просмотр в браузере: для файлов ВНД сервер
+    // проверяет право «Экспорт ВНД» (см. FilesController / VndFileAccessAuthorizer).
+    const {blob, fileName} = await fetchFileBlob(fileId, fallbackName, undefined, "files", "?download=true");
     saveBlob(blob, fileName);
 }
 

@@ -300,7 +300,11 @@ function OpenVndPageContent() {
     // пользователям с расширенным просмотром реестра. Рядовой пользователь без этих прав строку
     // вообще не видит (не просто свёрнутое значение — сам блок не рендерится).
     const canSeeDocumentStatus = isVndEditor || canViewVndRegistryExtended;
-    const tabs = getVndTabs(vnd.status, t);
+    // Рядовому пользователю (не участник процессов ВНД и без расширенного просмотра реестра)
+    // служебные вкладки не нужны: «Согласование» (маршрут, резолюции), «Актуализация» и
+    // «История» (ход согласования с замечаниями согласующих). Остаются реквизиты, редакции и связи.
+    const tabs = getVndTabs(vnd.status, t).filter((tabItem) =>
+        canSeeDocumentStatus || !(["approval", "actual", "history"] as string[]).includes(tabItem.id));
     // Если сменился статус и текущий выбранный таб для него больше не доступен - откатываемся на «Реквизиты»
     const activeTab = tabs.some((tabItem) => tabItem.id === tab) ? tab : "passport";
 

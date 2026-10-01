@@ -1,4 +1,5 @@
 // Панель с перечнем редакций документа
+import {useCanExportVnd, NO_EXPORT_VND_HINT} from "@/hooks/vndHooks/useCanExportVnd.ts";
 import {useTranslation} from "react-i18next";
 import {Fragment} from "react";
 import type {VndRedactionResponse} from "@/service/vndService/vndServiceType.ts";
@@ -157,6 +158,7 @@ export function RedactionsSidebar({
                                       downloading,
                                   }: RedactionsSidebarProps) {
     const {t} = useTranslation();
+    const canExportVnd = useCanExportVnd();
     const lastRedactionId = lastRedactionIdProp ?? redactions[0]?.id;
     const firstRedactionId = redactions[redactions.length - 1]?.id;
     const primaryMeta = PRIMARY_ACTION_META[primaryActionVariant];
@@ -257,7 +259,8 @@ export function RedactionsSidebar({
 
             <button
                 onClick={onDownloadSelected}
-                disabled={downloadDisabled || downloading}
+                disabled={!canExportVnd || downloadDisabled || downloading}
+                title={canExportVnd ? undefined : NO_EXPORT_VND_HINT}
                 className="cursor-pointer mt-2 flex h-[38px] w-full flex-none items-center justify-center gap-2 rounded-[10px] border border-[#e5e9f0] bg-white text-[12.5px] font-semibold text-[#3a4560] transition-colors hover:bg-[#f6f8fb] disabled:cursor-not-allowed disabled:opacity-50"
             >
                 {downloading ? (

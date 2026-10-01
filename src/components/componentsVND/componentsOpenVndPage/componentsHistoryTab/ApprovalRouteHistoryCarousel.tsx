@@ -20,6 +20,7 @@ import {useState} from "react";
 import {useTranslation} from "react-i18next";
 import type {TFunction} from "i18next";
 import {ChevronLeft, ChevronRight, Download, Eye, Paperclip} from "lucide-react";
+import {useCanExportVnd, NO_EXPORT_VND_HINT} from "@/hooks/vndHooks/useCanExportVnd.ts";
 import {formatDateTime} from "@/utils/dateUtils.ts";
 import {getInitials} from "@/utils/namingUsers/getInitials.ts";
 import {downloadWithToast} from "@/utils/downloadFiles/downloadFile.ts";
@@ -266,6 +267,7 @@ interface OpenVersionState {
 
 export function ApprovalRouteHistoryCarousel({process, vnd, redaction, isLatestProcess = true}: ApprovalRouteHistoryCarouselProps) {
     const {t} = useTranslation();
+    const canExportVnd = useCanExportVnd();
     const pages = buildSchemaPages(t, process);
     // По умолчанию открываем ПОСЛЕДНЮЮ страницу (текущий/самый свежий этап) - так сразу видно,
     // на чём процесс сейчас, а назад можно пролистать всю историю кругов.
@@ -375,8 +377,10 @@ export function ApprovalRouteHistoryCarousel({process, vnd, redaction, isLatestP
                         <button
                             key={f.fileId}
                             type="button"
+                            disabled={!canExportVnd}
+                            title={canExportVnd ? undefined : NO_EXPORT_VND_HINT}
                             onClick={() => downloadWithToast(f.fileId, f.name)}
-                            className="flex cursor-pointer items-center gap-1 rounded-full border border-[#d4d6f8] bg-white px-2 py-0.5 text-[10.5px] font-semibold text-[#4e57d6] hover:bg-[#f5f6fd]"
+                            className="flex cursor-pointer items-center gap-1 rounded-full border border-[#d4d6f8] bg-white px-2 py-0.5 text-[10.5px] font-semibold text-[#4e57d6] hover:bg-[#f5f6fd] disabled:cursor-not-allowed disabled:opacity-40"
                         >
                             <Download size={11}/>
                             {f.label}

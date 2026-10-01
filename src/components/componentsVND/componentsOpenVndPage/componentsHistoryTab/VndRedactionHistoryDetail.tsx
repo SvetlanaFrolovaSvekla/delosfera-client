@@ -12,6 +12,7 @@
 import {useTranslation} from "react-i18next";
 import type {TFunction} from "i18next";
 import {ArrowLeft, Download, Route as RouteIcon} from "lucide-react";
+import {useCanExportVnd, NO_EXPORT_VND_HINT} from "@/hooks/vndHooks/useCanExportVnd.ts";
 import {downloadWithToast} from "@/utils/downloadFiles/downloadFile.ts";
 import {approvalSheetCaption, getRedactionApprovalSheets} from "@/utils/vndProcess/approvalSheets.ts";
 import {formatDateTime} from "@/utils/dateUtils.ts";
@@ -186,6 +187,7 @@ export function VndRedactionHistoryDetail({
                                               vnd, redaction, displayStatus, processes, onBack,
                                           }: VndRedactionHistoryDetailProps) {
     const {t} = useTranslation();
+    const canExportVnd = useCanExportVnd();
     const meta = REDACTION_STATUS_META[displayStatus];
 
     // Хронологический порядок попыток (старые → новые) — так понятнее читается история, чем
@@ -271,8 +273,10 @@ export function VndRedactionHistoryDetail({
                                 </div>
                                 <button
                                     type="button"
+                                    disabled={!canExportVnd}
+                                    title={canExportVnd ? undefined : NO_EXPORT_VND_HINT}
                                     onClick={() => void downloadWithToast(sheet.fileId, sheet.fileName).catch(() => undefined)}
-                                    className="flex-none cursor-pointer grid h-8 w-8 place-items-center rounded-[8px] border border-[#d7dee8] bg-white text-[#4e57d6] hover:bg-[#ececfc]"
+                                    className="flex-none cursor-pointer grid h-8 w-8 place-items-center rounded-[8px] border border-[#d7dee8] bg-white text-[#4e57d6] hover:bg-[#ececfc] disabled:cursor-not-allowed disabled:opacity-40"
                                 >
                                     <Download size={14}/>
                                 </button>
@@ -319,11 +323,13 @@ export function VndRedactionHistoryDetail({
                                 {p.approvalSheetFileId && (
                                     <button
                                         type="button"
+                                        disabled={!canExportVnd}
+                                        title={canExportVnd ? undefined : NO_EXPORT_VND_HINT}
                                         onClick={() => void downloadWithToast(
                                             p.approvalSheetFileId as number,
                                             p.approvalSheetFileName ?? `${redaction.code}_Лист_согласования.docx`,
                                         ).catch(() => undefined)}
-                                        className="ml-auto inline-flex cursor-pointer items-center gap-1 rounded-[8px] border border-[#e5e9f0] bg-white px-2.5 py-1 text-[11px] font-semibold text-[#4e57d6] hover:bg-[#ececfc]"
+                                        className="ml-auto inline-flex cursor-pointer items-center gap-1 rounded-[8px] border border-[#e5e9f0] bg-white px-2.5 py-1 text-[11px] font-semibold text-[#4e57d6] hover:bg-[#ececfc] disabled:cursor-not-allowed disabled:opacity-40"
                                     >
                                         <Download size={12}/>
                                         {t("approvalSheets.processSheetButton")}

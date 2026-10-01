@@ -4,6 +4,7 @@
 import {useState} from "react";
 import {useTranslation} from "react-i18next";
 import {AlertTriangle, ClipboardCheck, Download, Loader2, ShieldCheck} from "lucide-react";
+import {useCanExportVnd, NO_EXPORT_VND_HINT} from "@/hooks/vndHooks/useCanExportVnd.ts";
 import {Tabs} from "@/components/componentsGeneral/Tabs.tsx";
 import {useDocxPreview} from "@/hooks/vndHooks/useDocxPreview.ts";
 import {
@@ -20,6 +21,7 @@ interface ApprovalSheetLiveViewProps {
 
 export function ApprovalSheetLiveView({vndId, processId, redactionCode, initialMode = "plain"}: ApprovalSheetLiveViewProps) {
     const {t} = useTranslation();
+    const canExportVnd = useCanExportVnd();
     const [mode, setMode] = useState<ApprovalSheetMode>(initialMode);
     const [downloading, setDownloading] = useState(false);
 
@@ -56,7 +58,8 @@ export function ApprovalSheetLiveView({vndId, processId, redactionCode, initialM
                 <button
                     type="button"
                     onClick={() => void download()}
-                    disabled={downloading || loading}
+                    disabled={!canExportVnd || downloading || loading}
+                    title={canExportVnd ? undefined : NO_EXPORT_VND_HINT}
                     className="mb-2 inline-flex h-9 cursor-pointer items-center gap-2 rounded-[9px] border border-[#d7dee8] bg-white px-3.5 text-[12.5px] font-semibold text-[#4e57d6] hover:bg-[#ececfc] disabled:cursor-not-allowed disabled:opacity-50"
                 >
                     {downloading ? <Loader2 size={15} className="animate-spin"/> : <Download size={15}/>}

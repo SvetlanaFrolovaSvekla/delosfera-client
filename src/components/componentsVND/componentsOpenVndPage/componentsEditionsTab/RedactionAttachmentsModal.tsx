@@ -10,6 +10,7 @@ import {
     AttachmentDocxPreviewModal
 } from "@/components/componentsGeneral/modal/AttachmentDocxPreviewModal.tsx";
 import {Download, Eye, FileText, Loader2, Paperclip, X} from "lucide-react";
+import {useCanExportVnd, NO_EXPORT_VND_HINT} from "@/hooks/vndHooks/useCanExportVnd.ts";
 import {approvalSheetCaption, getRedactionApprovalSheets} from "@/utils/vndProcess/approvalSheets.ts";
 
 /** Специальные вложения открываются просмотрщиком (RedactionTidModal/RedactionApprovalSheetModal
@@ -51,6 +52,7 @@ export function RedactionAttachmentsModal({
                                               onClose,
                                           }: RedactionAttachmentsModalProps) {
     const {t} = useTranslation();
+    const canExportVnd = useCanExportVnd();
     const [previewAttachment, setPreviewAttachment] = useState<{ fileId: number; fileName: string } | null>(null);
 
     // "Специальные вложения" - служебные документы редакции, которые формируются автоматически
@@ -104,6 +106,8 @@ export function RedactionAttachmentsModal({
                 fileName={previewAttachment.fileName}
                 downloadingId={downloadingId}
                 onDownload={onDownload}
+                downloadDisabled={!canExportVnd}
+                downloadDisabledHint={NO_EXPORT_VND_HINT}
                 onClose={() => setPreviewAttachment(null)}
             />
         );
@@ -150,9 +154,10 @@ export function RedactionAttachmentsModal({
                                     >
                                         <button
                                             type="button"
-                                            disabled={downloadingId === item.fileId}
+                                            disabled={!canExportVnd || downloadingId === item.fileId}
+                                            title={canExportVnd ? undefined : NO_EXPORT_VND_HINT}
                                             onClick={() => onDownload(item.fileId, item.fileName)}
-                                            className="cursor-pointer flex min-w-0 flex-1 items-center gap-2 px-3 py-[10px] text-left text-[13px] text-[#3a4560] disabled:opacity-60"
+                                            className="cursor-pointer flex min-w-0 flex-1 items-center gap-2 px-3 py-[10px] text-left text-[13px] text-[#3a4560] disabled:opacity-60 disabled:cursor-not-allowed"
                                         >
                                             <FileText size={16} className="flex-none text-[#4e57d6]"/>
                                             <TruncatedTooltip text={item.label} className="flex-1"/>
@@ -199,9 +204,10 @@ export function RedactionAttachmentsModal({
                                     >
                                         <button
                                             type="button"
-                                            disabled={downloadingId === attachment.fileId}
+                                            disabled={!canExportVnd || downloadingId === attachment.fileId}
+                                            title={canExportVnd ? undefined : NO_EXPORT_VND_HINT}
                                             onClick={() => onDownload(attachment.fileId, attachment.fileName)}
-                                            className="cursor-pointer flex min-w-0 flex-1 items-center gap-2 px-3 py-[10px] text-left text-[13px] text-[#3a4560] disabled:opacity-60"
+                                            className="cursor-pointer flex min-w-0 flex-1 items-center gap-2 px-3 py-[10px] text-left text-[13px] text-[#3a4560] disabled:opacity-60 disabled:cursor-not-allowed"
                                         >
                                             <Paperclip size={16} className="flex-none text-[#8b97ab]"/>
                                             <TruncatedTooltip text={attachment.fileName} className="flex-1"/>

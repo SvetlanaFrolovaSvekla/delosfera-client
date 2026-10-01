@@ -20,6 +20,7 @@ import type {QuoteMarkInfo} from "@/utils/vndProcess/redactionQuoteMarks.ts";
 import {buildRedactionFileName} from "@/utils/downloadFiles/fileNaming.ts";
 import type {RedactionLanguage, RedactionViewTarget} from "@/utils/vndProcess/redactionLanguagePanelUtils.ts";
 import {FileText, Loader2, ChevronUp, ChevronDown, X} from "lucide-react";
+import {useCanExportVnd, NO_EXPORT_VND_HINT} from "@/hooks/vndHooks/useCanExportVnd.ts";
 
 interface RedactionTextViewProps {
     vnd: VndResponse;
@@ -85,6 +86,7 @@ export const RedactionTextView = forwardRef<RedactionTextViewHandle, RedactionTe
                                     linkMarks, linkFocus, onLinkFocusResult, linkMarksClickable = true,
                                 }, ref) {
         const {t} = useTranslation();
+        const canExportVnd = useCanExportVnd();
         const navigate = useNavigate();
         const [hoveredLinks, setHoveredLinks] = useState<{marks: DocLinkMark[]; rect: DOMRect} | null>(null);
         const [legacyHover, setLegacyHover] = useState<{hover: LegacyLinkHover; rect: DOMRect} | null>(null);
@@ -138,7 +140,8 @@ export const RedactionTextView = forwardRef<RedactionTextViewHandle, RedactionTe
                 onHover: (hover, rect) => setLegacyHover(hover && rect ? {hover, rect} : null),
                 onOpenAttachment: (attachment) => {
                     if (isPreviewableFile(attachment.fileName)) setPreviewAttachment(attachment);
-                    else onDownload(attachment.fileId, attachment.fileName);
+                    // Без права «Экспорт ВНД» непросматриваемое вложение не скачиваем.
+                    else if (canExportVnd) onDownload(attachment.fileId, attachment.fileName);
                 },
             },
         );
@@ -291,6 +294,8 @@ export const RedactionTextView = forwardRef<RedactionTextViewHandle, RedactionTe
                         fileName={previewAttachment.fileName}
                         downloadingId={downloadingId}
                         onDownload={onDownload}
+                        downloadDisabled={!canExportVnd}
+                        downloadDisabledHint={NO_EXPORT_VND_HINT}
                         onClose={() => setPreviewAttachment(null)}
                     />
                 )}

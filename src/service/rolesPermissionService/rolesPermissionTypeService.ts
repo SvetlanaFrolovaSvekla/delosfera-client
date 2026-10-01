@@ -18,6 +18,10 @@ export interface RoleResponse {
     titleKg: string | null;
     permissionCodes: number[];
     permissions: PermissionResponse[];
+    /** Системная роль: удалить и переименовать (RU) нельзя, права менять можно. */
+    isSystem?: boolean;
+    /** Сколько пользователей имеют роль. */
+    usersCount?: number;
     createdAt: string;
     updatedAt: string;
 }

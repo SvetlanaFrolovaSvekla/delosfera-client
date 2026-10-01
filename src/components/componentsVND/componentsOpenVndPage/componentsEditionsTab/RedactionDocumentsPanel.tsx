@@ -10,6 +10,7 @@ import {
     AttachmentDocxPreviewModal
 } from "@/components/componentsGeneral/modal/AttachmentDocxPreviewModal.tsx";
 import {Tooltip} from "@/components/componentsGeneral/Tooltip.tsx";
+import {useCanExportVnd, NO_EXPORT_VND_HINT} from "@/hooks/vndHooks/useCanExportVnd.ts";
 import {approvalSheetCaption, getRedactionApprovalSheets} from "@/utils/vndProcess/approvalSheets.ts";
 
 interface RedactionDocumentsPanelProps {
@@ -47,6 +48,7 @@ export function RedactionDocumentsPanel({
     // умеет показать: .docx/.xlsx/.pptx (см. isPreviewableFile).
     const [previewAttachment, setPreviewAttachment] = useState<{ fileId: number; fileName: string } | null>(null);
     const {t} = useTranslation();
+    const canExportVnd = useCanExportVnd();
 
     // Метка "Обновлено, дата" актуальна только пока редакция ещё в процессе согласования
     // (т.е. пока не исключено, что мы смотрим именно на этап "Согласование после внесённых
@@ -225,6 +227,8 @@ export function RedactionDocumentsPanel({
                 fileName={previewAttachment.fileName}
                 downloadingId={downloadingId}
                 onDownload={onDownload}
+                downloadDisabled={!canExportVnd}
+                downloadDisabledHint={NO_EXPORT_VND_HINT}
                 onClose={() => setPreviewAttachment(null)}
             />
         )}
@@ -258,13 +262,15 @@ function DownloadRow({
      * вложение"). */
     viewTooltip?: string;
 }) {
+    const canExportVnd = useCanExportVnd();
     return (
         <div className="flex items-center gap-2 rounded-[9px] border border-[#e5e9f0] pr-2 hover:border-[#4e57d6]/40 hover:bg-[#f6f8fb]">
             <button
                 type="button"
-                disabled={isDownloading}
+                disabled={isDownloading || !canExportVnd}
                 onClick={onClick}
-                className="cursor-pointer flex min-w-0 flex-1 items-center gap-2 px-3 py-[10px] text-left text-[13px] text-[#26324a] disabled:opacity-60"
+                title={canExportVnd ? undefined : NO_EXPORT_VND_HINT}
+                className="cursor-pointer flex min-w-0 flex-1 items-center gap-2 px-3 py-[10px] text-left text-[13px] text-[#26324a] disabled:opacity-60 disabled:cursor-not-allowed"
             >
                 {icon}
                 {children}

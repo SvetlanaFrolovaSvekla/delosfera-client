@@ -13,6 +13,7 @@ import type {VndRedactionResponse, VndResponse} from "@/service/vndService/vndSe
 import {RedactionTextView} from "@/components/componentsVND/componentsOpenVndPage/componentsEditionsTab/RedactionTextView.tsx";
 import {Tooltip} from "@/components/componentsGeneral/Tooltip.tsx";
 import {ClipboardCheck, Download, Loader2, X} from "lucide-react";
+import {useCanExportVnd, NO_EXPORT_VND_HINT} from "@/hooks/vndHooks/useCanExportVnd.ts";
 import {approvalSheetCaption, getRedactionApprovalSheets} from "@/utils/vndProcess/approvalSheets.ts";
 import {ApprovalSheetLiveView} from "@/components/componentsVND/approvalSheet/ApprovalSheetLiveView.tsx";
 
@@ -28,6 +29,7 @@ export function RedactionApprovalSheetModal({
                                                 vnd, redaction, downloadingId, onDownload, onClose,
                                             }: RedactionApprovalSheetModalProps) {
     const {t} = useTranslation();
+    const canExportVnd = useCanExportVnd();
     const sheets = getRedactionApprovalSheets(redaction);
     const [selectedFileId, setSelectedFileId] = useState<number | null>(redaction.approvalSheetFileId);
     const selectedSheet = sheets.find((s) => s.fileId === selectedFileId) ?? sheets[sheets.length - 1] ?? null;
@@ -58,10 +60,10 @@ export function RedactionApprovalSheetModal({
 
                     <div className="flex items-center gap-4">
                         {/* Скачать документ (для листа по процессу - кнопка скачивания внутри просмотра) */}
-                        {liveProcessId === null && <Tooltip content={t("redactionApprovalSheetModal.downloadDocument")} side="bottom">
+                        {liveProcessId === null && <Tooltip content={canExportVnd ? t("redactionApprovalSheetModal.downloadDocument") : NO_EXPORT_VND_HINT} side="bottom">
                             <button
                                 type="button"
-                                disabled={approvalSheetFileId === null || downloadingId === approvalSheetFileId}
+                                disabled={!canExportVnd || approvalSheetFileId === null || downloadingId === approvalSheetFileId}
                                 onClick={() => approvalSheetFileId !== null && onDownload(approvalSheetFileId, approvalSheetFileName)}
                                 className="cursor-pointer flex-none grid h-9 w-9 place-items-center rounded-[9px] border border-[#d7dee8] bg-white text-[#4e57d6] hover:bg-[#ececfc] disabled:cursor-not-allowed disabled:opacity-50"
                             >

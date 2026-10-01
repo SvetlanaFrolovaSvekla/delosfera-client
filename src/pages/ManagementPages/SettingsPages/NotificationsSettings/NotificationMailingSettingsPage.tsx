@@ -8,8 +8,18 @@ import {ActualizationResponsiblesSection} from "@/components/componentsVND/compo
 import {ActualizationMonthlyDigestSection} from "@/components/componentsVND/componentsNotificationSettings/ActualizationMonthlyDigestSection.tsx";
 import {ActualizationCriticalRemindersSection} from "@/components/componentsVND/componentsNotificationSettings/ActualizationCriticalRemindersSection.tsx";
 import {ActualizationOneTimeMailingSection} from "@/components/componentsVND/componentsNotificationSettings/ActualizationOneTimeMailingSection.tsx";
+import {NewRedactionMailingSection} from "@/components/componentsVND/componentsNotificationSettings/NewRedactionMailingSection.tsx";
 
-const SECTION_IDS = ["responsibles", "monthly", "criticalReminders", "oneTimeMailing"] as const;
+const SECTION_IDS = ["responsibles", "monthly", "criticalReminders", "oneTimeMailing", "newRedactions"] as const;
+
+// Подписи раздела «Новые редакции» — пока по умолчанию (ключи переводов можно добавить позже,
+// i18next тогда возьмёт их вместо defaultValue).
+const SECTION_DEFAULTS: Partial<Record<(typeof SECTION_IDS)[number], {title: string; subtitle: string}>> = {
+    newRedactions: {
+        title: "Рассылка с уведомлением о новых редакциях",
+        subtitle: "Письмо при каждой консолидации ВНД",
+    },
+};
 
 export function NotificationMailingSettingsPage() {
     const {t} = useTranslation();
@@ -36,10 +46,10 @@ export function NotificationMailingSettingsPage() {
                             >
                                 <span className={`text-[13px] font-semibold ${
                                     active ? "text-[#2f68f5]" : "text-[#1c2740]"}`}>
-                                    {t(`notificationMailingSettingsPage.sections.${id}.title`)}
+                                    {t(`notificationMailingSettingsPage.sections.${id}.title`, {defaultValue: SECTION_DEFAULTS[id]?.title})}
                                 </span>
                                 <span className="mt-0.5 block text-[11.5px] text-[#8b97ab]">
-                                    {t(`notificationMailingSettingsPage.sections.${id}.subtitle`)}
+                                    {t(`notificationMailingSettingsPage.sections.${id}.subtitle`, {defaultValue: SECTION_DEFAULTS[id]?.subtitle})}
                                 </span>
                             </button>
                         );
@@ -51,6 +61,7 @@ export function NotificationMailingSettingsPage() {
                     {selected === "monthly" && <ActualizationMonthlyDigestSection/>}
                     {selected === "criticalReminders" && <ActualizationCriticalRemindersSection/>}
                     {selected === "oneTimeMailing" && <ActualizationOneTimeMailingSection/>}
+                    {selected === "newRedactions" && <NewRedactionMailingSection/>}
                 </section>
             </div>
         </div>

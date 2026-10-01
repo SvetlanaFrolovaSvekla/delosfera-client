@@ -5,6 +5,7 @@ import type {VndRedactionResponse, VndResponse} from "@/service/vndService/vndSe
 import {RedactionTextView} from "@/components/componentsVND/componentsOpenVndPage/componentsEditionsTab/RedactionTextView.tsx";
 import {createPortal} from "react-dom";
 import {Download, Loader2, Scale, X} from "lucide-react";
+import {useCanExportVnd, NO_EXPORT_VND_HINT} from "@/hooks/vndHooks/useCanExportVnd.ts";
 import {Tooltip} from "@/components/componentsGeneral/Tooltip.tsx";
 
 interface RedactionDisagreementMatrixModalProps {
@@ -19,6 +20,7 @@ export function RedactionDisagreementMatrixModal({
                                                      vnd, redaction, downloadingId, onDownload, onClose,
                                                  }: RedactionDisagreementMatrixModalProps) {
     const {t} = useTranslation();
+    const canExportVnd = useCanExportVnd();
     const matrixFileId = redaction.disagreementMatrixFileId;
     const matrixFileName = `${redaction.code}_Матрица_разногласий.docx`;
 
@@ -43,10 +45,10 @@ export function RedactionDisagreementMatrixModal({
 
                     <div className="flex items-center gap-4">
                         {/* Скачать документ */}
-                        <Tooltip content={t("redactionDisagreementMatrixModal.downloadDocument")} side="bottom">
+                        <Tooltip content={canExportVnd ? t("redactionDisagreementMatrixModal.downloadDocument") : NO_EXPORT_VND_HINT} side="bottom">
                             <button
                                 type="button"
-                                disabled={matrixFileId === null || downloadingId === matrixFileId}
+                                disabled={!canExportVnd || matrixFileId === null || downloadingId === matrixFileId}
                                 onClick={() => matrixFileId !== null && onDownload(matrixFileId, matrixFileName)}
                                 className="cursor-pointer flex-none grid h-9 w-9 place-items-center rounded-[9px] border border-[#d7dee8] bg-white text-[#4e57d6] hover:bg-[#ececfc] disabled:cursor-not-allowed disabled:opacity-50"
                             >

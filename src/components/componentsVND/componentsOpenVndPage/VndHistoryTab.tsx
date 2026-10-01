@@ -20,6 +20,7 @@ import {
 } from "@/components/componentsCoordination/CoordinationRouteConstructor/viewComponents/FormattedResolutionComment.tsx";
 import {EmptyState} from "@/components/componentsGeneral/EmptyState.tsx";
 import {Eye, FileStack, Loader2, Shield} from "lucide-react";
+import {useCanExportVnd, NO_EXPORT_VND_HINT} from "@/hooks/vndHooks/useCanExportVnd.ts";
 
 interface VndHistoryTabProps {
     vnd: VndResponse;
@@ -60,6 +61,7 @@ function stageFinalDecision(s: ApprovalStageResponse): {
 
 export function VndHistoryTab({vnd, redactions}: VndHistoryTabProps) {
     const {t} = useTranslation();
+    const canExportVnd = useCanExportVnd();
     const [auditEntries, setAuditEntries] = useState<ActivityLogEntryResponse[] | null>(null);
     const [approvalHistory, setApprovalHistory] = useState<ApprovalProcessResponse[] | null>(null);
     const [loading, setLoading] = useState(true);
@@ -295,8 +297,10 @@ export function VndHistoryTab({vnd, redactions}: VndHistoryTabProps) {
                                                         <button
                                                             key={`${sheet.id}-${sheet.fileId}`}
                                                             type="button"
+                                                            disabled={!canExportVnd}
+                                                            title={canExportVnd ? undefined : NO_EXPORT_VND_HINT}
                                                             onClick={() => void downloadWithToast(sheet.fileId, sheet.fileName).catch(() => undefined)}
-                                                            className="w-fit cursor-pointer text-left text-[11.5px] text-[#4e57d6] hover:underline"
+                                                            className="w-fit cursor-pointer text-left text-[11.5px] text-[#4e57d6] hover:underline disabled:cursor-not-allowed disabled:text-[#a3adbd] disabled:no-underline"
                                                         >
                                                             {approvalSheetCaption(t, sheet)}
                                                         </button>

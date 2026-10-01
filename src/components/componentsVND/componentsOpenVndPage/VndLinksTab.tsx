@@ -9,6 +9,7 @@
 // Строки сгруппированы по документу на другом конце связи; под документом - где именно
 // упоминается ссылка. Лупа у упоминания открывает вкладку «Редакции» (этого или другого
 // документа) на нужной редакции/языке и прокручивает к месту ссылки.
+import {useCanExportVnd, NO_EXPORT_VND_HINT} from "@/hooks/vndHooks/useCanExportVnd.ts";
 import {useMemo, useState, type ReactNode} from "react";
 import {Link, useNavigate} from "react-router-dom";
 import {useTranslation} from "react-i18next";
@@ -78,6 +79,7 @@ const isLegacy = (link: VndLinkItem) => link.kind === "legacy" || !!link.isAutoD
 
 export function VndLinksTab({vnd, onShowInText, onShowAttachmentInText}: VndLinksTabProps) {
     const {t} = useTranslation();
+    const canExportVnd = useCanExportVnd();
     const navigate = useNavigate();
     const {hasPermission} = useAuth();
     const isVndEditor = useIsVndEditor();
@@ -316,6 +318,8 @@ export function VndLinksTab({vnd, onShowInText, onShowAttachmentInText}: VndLink
                     fileName={previewAttachment.fileName}
                     downloadingId={downloadingId}
                     onDownload={(fileId, name) => void handleDownloadAttachment(fileId, name)}
+                    downloadDisabled={!canExportVnd}
+                    downloadDisabledHint={NO_EXPORT_VND_HINT}
                     onClose={() => setPreviewAttachment(null)}
                 />
             )}
@@ -543,12 +547,14 @@ function AttachmentLinkRow({item, downloading, onPreview, onDownload, onShowInTe
     onShowInText?: () => void;
 }) {
     const {t} = useTranslation();
+    const canExportVnd = useCanExportVnd();
     const previewable = item.resolved && isPreviewableFile(item.fileName);
-    // Клик по строке - самое полезное действие: просмотр, если формат поддерживается, иначе скачать.
+    // Клик по строке - самое полезное действие: просмотр, если формат поддерживается, иначе скачать
+    // (скачать - только с правом «Экспорт ВНД»).
     const handleRowClick = () => {
         if (!item.resolved) return;
         if (previewable) onPreview();
-        else onDownload();
+        else if (canExportVnd) onDownload();
     };
 
     return (
@@ -604,8 +610,8 @@ function AttachmentLinkRow({item, downloading, onPreview, onDownload, onShowInTe
                     </Tooltip>
                 )}
                 {item.resolved && (
-                    <Tooltip content={t("openVndPage.linksTab.downloadAttachmentTooltip")} side="top">
-                        <button type="button" onClick={onDownload} disabled={downloading}
+                    <Tooltip content={canExportVnd ? t("openVndPage.linksTab.downloadAttachmentTooltip") : NO_EXPORT_VND_HINT} side="top">
+                        <button type="button" onClick={onDownload} disabled={downloading || !canExportVnd}
                                 className="grid h-7 w-7 cursor-pointer place-items-center rounded-[7px] text-[#8b97ab] hover:bg-[#ececfc] hover:text-[#4e57d6] disabled:opacity-50">
                             {downloading ? <Loader2 size={14} className="animate-spin"/> : <Download size={14} strokeWidth={2}/>}
                         </button>

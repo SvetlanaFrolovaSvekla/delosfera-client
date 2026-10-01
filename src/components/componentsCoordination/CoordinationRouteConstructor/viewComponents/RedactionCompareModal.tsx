@@ -20,6 +20,7 @@ import {
     RedactionContentsPanel
 } from "@/components/componentsVND/componentsOpenVndPage/componentsEditionsTab/RedactionContentsPanel.tsx";
 import {ChevronDown, Columns2, Download, ListTree, Loader2, Table2, X, ZoomIn, ZoomOut} from "lucide-react";
+import {useCanExportVnd, NO_EXPORT_VND_HINT} from "@/hooks/vndHooks/useCanExportVnd.ts";
 
 interface RedactionCompareModalProps {
     vnd: VndResponse;
@@ -263,6 +264,7 @@ function CompareColumn({
     onRedactionChange: (id: number) => void;
 }) {
     const {t} = useTranslation();
+    const canExportVnd = useCanExportVnd();
 
     // ТИД этой редакции - у каждой из двух колонок своя кнопка "ТИД" и своё состояние (можно
     // открыть с обеих сторон одновременно, независимо друг от друга). Не отдельное окно поверх
@@ -405,7 +407,8 @@ function CompareColumn({
                             </div>
                             <button
                                 type="button"
-                                disabled={downloadingId === redaction.tidFileId}
+                                disabled={!canExportVnd || downloadingId === redaction.tidFileId}
+                                title={canExportVnd ? undefined : NO_EXPORT_VND_HINT}
                                 onClick={() => onDownload(redaction.tidFileId as number, `${redaction.code}_ТИД.docx`)}
                                 className="cursor-pointer grid h-7 w-7 place-items-center rounded-[7px] text-[#8b97ab] hover:bg-[#f2f5f9] hover:text-[#4e57d6] disabled:cursor-not-allowed disabled:opacity-50"
                             >

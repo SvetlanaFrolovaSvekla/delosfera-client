@@ -32,6 +32,7 @@ import {buildQuoteAnchor, type QuoteAnchorContext} from "@/utils/docxWork/quoteA
 import {quoteMatchText} from "@/utils/vndProcess/quoteText.ts";
 import type {QuoteMarkFocusRequest} from "@/hooks/vndHooks/useDocxQuoteMarks.ts";
 import {RedactionCompareModal} from "./RedactionCompareModal.tsx";
+import {useCanExportVnd, NO_EXPORT_VND_HINT} from "@/hooks/vndHooks/useCanExportVnd.ts";
 import {useAuth} from "@/context/AuthContext.ts";
 
 interface RedactionViewModalProps {
@@ -492,8 +493,9 @@ export function RedactionViewModal({
                 ? effectiveRedaction.disagreementMatrixFileId
                 : effectiveRedaction[LANG_FILE_KEYS[activeLanguage]] as number | null;
 
+    const canExportVnd = useCanExportVnd();
     const handleDownloadActive = () => {
-        if (activeFileId === null) return;
+        if (activeFileId === null || !canExportVnd) return;
         const name = activeLanguage === "tid"
             ? `${effectiveRedaction.code}_ТИД.docx`
             : activeLanguage === "approvalSheet"
@@ -674,10 +676,10 @@ export function RedactionViewModal({
                             </Tooltip>
                         )}
 
-                        <Tooltip content="Скачать документ" side="bottom">
+                        <Tooltip content={canExportVnd ? "Скачать документ" : NO_EXPORT_VND_HINT} side="bottom">
                             <button
                                 type="button"
-                                disabled={activeFileId === null || downloadingId === activeFileId}
+                                disabled={!canExportVnd || activeFileId === null || downloadingId === activeFileId}
                                 onClick={handleDownloadActive}
                                 className="cursor-pointer flex-none grid h-9 w-9 place-items-center rounded-[9px] border border-[#d7dee8] bg-white text-[#4e57d6] hover:bg-[#ececfc] disabled:cursor-not-allowed disabled:opacity-50"
                             >

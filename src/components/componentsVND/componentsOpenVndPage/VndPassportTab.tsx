@@ -1,6 +1,7 @@
 import {useEffect, useMemo, useState} from "react";
 import {useTranslation} from "react-i18next";
 import {useAuth} from "@/context/AuthContext";
+import {PermissionCode} from "@/constants/permissions/permissions.ts";
 import type {VndRedactionResponse, VndResponse} from "@/service/vndService/vndServiceType.ts";
 import {vndService} from "@/service/vndService/vndService.ts";
 import {describePeriod, formatDate} from "@/utils/dateUtils.ts";
@@ -62,7 +63,10 @@ export function VndPassportTab({
                                    userGroupOptions,
                                }: VndPassportTabProps) {
     const {t} = useTranslation();
-    const {user: authUser} = useAuth();
+    const {user: authUser, hasPermission} = useAuth();
+    // Правка реквизитов — только с правом EditVndRequisites (сервер проверяет то же право,
+    // PUT /vnd/{id}/requisites). Раньше кнопка показывалась всем, включая рядового пользователя.
+    const canEditRequisites = hasPermission(PermissionCode.EditVndRequisites);
     const isInitiatorMe = Boolean(authUser && vnd.createdByUserId && authUser.id === vnd.createdByUserId);
 
     const isCancelledOrArchived = Boolean(vnd.cancelDate || vnd.archivedDate);
@@ -217,7 +221,7 @@ export function VndPassportTab({
                                 {t("general.save")}
                             </button>
                         </>
-                    ) : (
+                    ) : canEditRequisites && (
                         <button
                             onClick={startEdit}
                             className="inline-flex items-center gap-2 h-8 px-[15px] rounded-[10px]

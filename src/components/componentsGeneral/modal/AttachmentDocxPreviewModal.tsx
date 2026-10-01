@@ -15,6 +15,10 @@ import {Tooltip} from "@/components/componentsGeneral/Tooltip.tsx";
 import {AlertTriangle, Download, FileSpreadsheet, FileText, Loader2, Presentation, X} from "lucide-react";
 
 interface AttachmentDocxPreviewModalProps {
+    /** Заблокировать кнопку скачивания (например, нет права «Экспорт ВНД»). Просмотр остаётся. */
+    downloadDisabled?: boolean;
+    /** Подсказка на заблокированной кнопке скачивания. */
+    downloadDisabledHint?: string;
     fileId: number;
     fileName: string;
     downloadingId: number | null;
@@ -40,6 +44,7 @@ const KIND_ICON = {
 export function AttachmentDocxPreviewModal({
                                                fileId, fileName, downloadingId, onDownload, onClose,
                                                endpoint, pathSuffix,
+                                               downloadDisabled = false, downloadDisabledHint,
                                            }: AttachmentDocxPreviewModalProps) {
     const {t} = useTranslation();
 
@@ -135,10 +140,10 @@ export function AttachmentDocxPreviewModal({
 
                     <div className="flex items-center gap-4">
                         {/* Скачать документ */}
-                        <Tooltip content={t("attachmentPreview.download")} side="bottom">
+                        <Tooltip content={downloadDisabled && downloadDisabledHint ? downloadDisabledHint : t("attachmentPreview.download")} side="bottom">
                             <button
                                 type="button"
-                                disabled={downloadingId === fileId}
+                                disabled={downloadDisabled || downloadingId === fileId}
                                 onClick={() => onDownload(fileId, fileName)}
                                 className="cursor-pointer flex-none grid h-9 w-9 place-items-center rounded-[9px] border border-[#d7dee8] bg-white text-[#4e57d6] hover:bg-[#ececfc] disabled:cursor-not-allowed disabled:opacity-50"
                             >

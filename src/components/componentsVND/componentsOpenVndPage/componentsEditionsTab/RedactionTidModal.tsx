@@ -6,6 +6,7 @@ import type {VndRedactionResponse, VndResponse} from "@/service/vndService/vndSe
 import {RedactionTextView} from "@/components/componentsVND/componentsOpenVndPage/componentsEditionsTab/RedactionTextView.tsx";
 import {Tooltip} from "@/components/componentsGeneral/Tooltip.tsx";
 import {Download, Loader2, Table2, X} from "lucide-react";
+import {useCanExportVnd, NO_EXPORT_VND_HINT} from "@/hooks/vndHooks/useCanExportVnd.ts";
 
 interface RedactionTidModalProps {
     vnd: VndResponse;
@@ -17,6 +18,7 @@ interface RedactionTidModalProps {
 
 export function RedactionTidModal({vnd, redaction, downloadingId, onDownload, onClose}: RedactionTidModalProps) {
     const {t} = useTranslation();
+    const canExportVnd = useCanExportVnd();
     const tidFileId = redaction.tidFileId;
     const tidFileName = `${redaction.code}_ТИД.docx`;
 
@@ -41,10 +43,10 @@ export function RedactionTidModal({vnd, redaction, downloadingId, onDownload, on
 
                     <div className="flex items-center gap-4">
                         {/* Скачать документ */}
-                        <Tooltip content={t("redactionTidModal.downloadDocument")} side="bottom">
+                        <Tooltip content={canExportVnd ? t("redactionTidModal.downloadDocument") : NO_EXPORT_VND_HINT} side="bottom">
                             <button
                                 type="button"
-                                disabled={tidFileId === null || downloadingId === tidFileId}
+                                disabled={!canExportVnd || tidFileId === null || downloadingId === tidFileId}
                                 onClick={() => tidFileId !== null && onDownload(tidFileId, tidFileName)}
                                 className="cursor-pointer flex-none grid h-9 w-9 place-items-center rounded-[9px] border border-[#d7dee8] bg-white text-[#4e57d6] hover:bg-[#ececfc] disabled:cursor-not-allowed disabled:opacity-50"
                             >

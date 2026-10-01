@@ -11,10 +11,18 @@ export interface CreateRoleData {
 interface CreateRoleModalProps {
     open: boolean;
     onClose: () => void;
+    /** Сохранение формы: создание новой роли или правка существующей (mode="edit"). */
     onCreate: (data: CreateRoleData) => Promise<void>;
+    /** "edit" — правка названий существующей роли; по умолчанию создание. */
+    mode?: "create" | "edit";
+    /** Начальные значения полей в режиме правки. */
+    initial?: CreateRoleData;
+    /** Название (RU) системной роли менять нельзя — на него завязаны процессы. */
+    lockTitleRu?: boolean;
 }
 
-export function CreateRoleModal({open, onClose, onCreate}: CreateRoleModalProps) {
+export function CreateRoleModal({open, onClose, onCreate, mode = "create", initial, lockTitleRu}: CreateRoleModalProps) {
+    const isEdit = mode === "edit";
     const {t} = useTranslation();
     const [titleRu, setTitleRu] = useState("");
     const [titleEn, setTitleEn] = useState("");
@@ -29,9 +37,9 @@ export function CreateRoleModal({open, onClose, onCreate}: CreateRoleModalProps)
     if (open !== prevOpen) {
         setPrevOpen(open);
         if (open) {
-            setTitleRu("");
-            setTitleEn("");
-            setTitleKg("");
+            setTitleRu(initial?.titleRu ?? "");
+            setTitleEn(initial?.titleEn ?? "");
+            setTitleKg(initial?.titleKg ?? "");
             setError(null);
             setSaving(false);
         }
@@ -67,8 +75,8 @@ export function CreateRoleModal({open, onClose, onCreate}: CreateRoleModalProps)
             });
             onClose();
         } catch (e) {
-            // Не удалось создать роль
-            setError(e instanceof Error ? e.message : t("createRole.createError"));
+            // Не удалось создать роль / сохранить
+            setError(e instanceof Error ? e.message : (isEdit ? "Не удалось сохранить роль" : t("createRole.createError")));
         } finally {
             setSaving(false);
         }
@@ -87,8 +95,8 @@ export function CreateRoleModal({open, onClose, onCreate}: CreateRoleModalProps)
                 {/* Заголовок */}
                 <div className="flex items-center justify-between px-5 py-4 border-b border-[#eef2f7] flex-none">
                     <h3 className="m-0 text-[15px] font-semibold text-[#1c2740]">
-                        {/* Новая роль */}
-                        {t("createRole.title")}
+                        {/* Новая роль / Изменить роль */}
+                        {isEdit ? "Изменить роль" : t("createRole.title")}
                     </h3>
                     <button
                         onClick={onClose}
@@ -100,10 +108,18 @@ export function CreateRoleModal({open, onClose, onCreate}: CreateRoleModalProps)
 
                 {/* Форма */}
                 <div className="px-5 py-4 flex flex-col gap-[14px]">
-                    <p className="m-0 text-[12.5px] text-[#8b97ab] leading-[1.5]">
-                        {/* Права можно будет включить сразу после создания — на странице роли справа. */}
-                        {t("createRole.description")}
-                    </p>
+                    {!isEdit && (
+                        <p className="m-0 text-[12.5px] text-[#8b97ab] leading-[1.5]">
+                            {/* Права можно будет включить сразу после создания — на странице роли справа. */}
+                            {t("createRole.description")}
+                        </p>
+                    )}
+                    {isEdit && lockTitleRu && (
+                        <p className="m-0 text-[12.5px] text-[#8b97ab] leading-[1.5]">
+                            Это системная роль: русское название менять нельзя — на него завязаны процессы
+                            и синхронизация. Переводы названия и права роли менять можно.
+                        </p>
+                    )}
 
                     <label className="flex flex-col gap-[6px]">
                         <span className="text-[12px] font-semibold text-[#55617a]">
@@ -111,15 +127,16 @@ export function CreateRoleModal({open, onClose, onCreate}: CreateRoleModalProps)
                             {t("createRole.titleRuLabel")} <span className="text-[#e05252]">*</span>
                         </span>
                         <input
-                            autoFocus
+                            autoFocus={!lockTitleRu}
                             value={titleRu}
+                            disabled={lockTitleRu}
                             onChange={(e) => setTitleRu(e.target.value)}
                             onKeyDown={(e) => {
                                 if (e.key === "Enter") void handleSubmit();
                             }}
                             // Например: Согласующий
                             placeholder={t("createRole.titleRuPlaceholder")}
-                            className="h-10 px-[13px] rounded-[10px] border border-[#e5e9f0] text-[13.5px] text-[#1c2740] outline-none focus:border-[#4e57d6] transition-colors"
+                            className="h-10 px-[13px] rounded-[10px] border border-[#e5e9f0] text-[13.5px] text-[#1c2740] outline-none focus:border-[#4e57d6] transition-colors disabled:bg-[#f6f8fb] disabled:text-[#8b97ab]"
                         />
                     </label>
 
@@ -178,8 +195,10 @@ export function CreateRoleModal({open, onClose, onCreate}: CreateRoleModalProps)
                         disabled={!canSubmit}
                         className="h-9 px-5 rounded-[9px] border-none bg-[#4e57d6] text-white font-semibold text-[12.5px] cursor-pointer hover:brightness-[1.06] disabled:opacity-60 disabled:cursor-not-allowed"
                     >
-                        {/* Создание… : Создать роль */}
-                        {saving ? t("createRole.creating") : t("createRole.submit")}
+                        {/* Создание… : Создать роль / Сохранение… : Сохранить */}
+                        {isEdit
+                            ? (saving ? t("rolesPermissions.saving") : t("general.save"))
+                            : (saving ? t("createRole.creating") : t("createRole.submit"))}
                     </button>
                 </div>
             </div>

@@ -63,13 +63,34 @@ export function CoordinationStageFormModal({
 
     const selectedOrgUnit = orgUnits.find((o) => o.id === orgUnitId) ?? null;
 
+    // Путь к СП (без него самого): после синхронизации оргструктуры одноимённые отделы
+    // встречаются в разных департаментах/филиалах, и плоский список без пути не различает их.
+    const parentPathById = useMemo(() => {
+        const byId = new Map(orgUnits.map((o) => [o.id, o]));
+        const result = new Map<number, string>();
+        orgUnits.forEach((o) => {
+            const names: string[] = [];
+            const seen = new Set<number>([o.id]);
+            let parentId = o.parentId;
+            while (parentId !== null && !seen.has(parentId)) {
+                const parent = byId.get(parentId);
+                if (!parent) break;
+                names.unshift(parent.titleRu);
+                seen.add(parentId);
+                parentId = parent.parentId;
+            }
+            if (names.length > 0) result.set(o.id, names.join(" › "));
+        });
+        return result;
+    }, [orgUnits]);
+
     if (!open) return null;
 
     const canSubmit = title.trim().length > 0 && orgUnitId !== null && !submitting;
 
     // Смена СП вручную - ранее выбранный согласующий из старого СП больше не подходит,
-    // список согласующих в пикере теперь тоже другой (фильтруется по СП на бэкенде через
-    // /users/approvers + lockedOrgUnitId), так что сбрасываем выбор.
+    // список согласующих в пикере теперь тоже другой (VndSelectApproverModal с lockedOrgUnitId
+    // показывает сотрудников этого СП и вложенных в него), так что сбрасываем выбор.
     const handlePickOrgUnit = (id: number) => {
         setOrgUnitId(id);
         setOrgUnitQuery("");
@@ -161,7 +182,14 @@ export function CoordinationStageFormModal({
                                                 : "w-full flex items-center gap-2.5 px-3 py-2 text-left hover:bg-[#f6f8fb] cursor-pointer"
                                         }
                                     >
-                                        <span className="text-[13px] text-[#1c2740] truncate">{o.titleRu}</span>
+                                        <span className="min-w-0 flex flex-col">
+                                            <span className="text-[13px] text-[#1c2740] truncate">{o.titleRu}</span>
+                                            {parentPathById.has(o.id) && (
+                                                <span className="text-[11px] text-[#a3adbd] truncate">
+                                                    {parentPathById.get(o.id)}
+                                                </span>
+                                            )}
+                                        </span>
                                     </button>
                                 ))}
                             </div>
@@ -202,7 +230,8 @@ export function CoordinationStageFormModal({
                             )}
                         </div>
                         <p className="mt-1.5 text-[11.5px] text-[#a3adbd]">
-                            В списке — только сотрудники выбранного подразделения с правом быть согласующим.
+                            В списке — сотрудники выбранного подразделения и вложенных в него (отделов, секторов)
+                            с правом быть согласующим.
                         </p>
                     </div>
 

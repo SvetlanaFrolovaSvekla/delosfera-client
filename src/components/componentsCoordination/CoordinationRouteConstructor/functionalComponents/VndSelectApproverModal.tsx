@@ -1,16 +1,18 @@
 // Модал выбора согласующего: список пользователей с иерархическим фильтром по СП и поиском
-import {useEffect, useMemo, useState} from "react";
+import {useCallback, useEffect, useMemo, useState} from "react";
 import {useTranslation} from "react-i18next"
 import {useAuth} from "@/context/AuthContext.ts";
 import {axiosInstance} from "@/service/axiosInstance.ts";
 import {useOrgUnitFilter} from "@/hooks/vndHooks/useOrgUnitFilter.ts";
 import {OrgUnitMultiSelectFilter} from "@/components/componentsGeneral/selects/OrgUnitMultiSelectFilter.tsx";
+import {collectSubtreeKeys} from "@/utils/treeSelectUtils.ts";
+import {userService, type UserLookupItem} from "@/service/userService/userService.ts";
 import {
     UserPickerModalShell,
     UserPickerSearchInput,
     UserPickerListStatus,
 } from "@/components/componentsGeneral/userPicker/UserPickerModalShell.tsx";
-import {ShieldCheck, User as UserIcon} from "lucide-react";
+import {Info, ShieldCheck, User as UserIcon} from "lucide-react";
 
 export interface ApproverOption {
     id: number;
@@ -86,10 +88,23 @@ export function VndSelectApproverModal({
     const [usersError, setUsersError] = useState(false);
     const [search, setSearch] = useState("");
 
-    // Фильтр по СП не нужен, если этап фиксированный (lockedOrgUnitId) - тогда справочник
-    // всё равно не показываем, но хук всё равно безопасно грузится в фоне без побочных эффектов.
+    // Справочник СП нужен в обоих режимах: при свободном выборе - для фильтра, при
+    // фиксированном этапе (lockedOrgUnitId) - чтобы захватить вложенные подразделения.
     const {treeOptions, selectedKeys, setSelectedKeys, selectedIds, loading: orgLoading, error: orgError} =
         useOrgUnitFilter();
+
+    // Все активные сотрудники (без фильтра по праву) - только чтобы подсказать, сколько людей
+    // из выбранного СП не попало в список из-за отсутствия права ActAsApprover. После
+    // синхронизации с AD новые учётки получают роль по умолчанию, и если в ней нет этого права,
+    // список выглядит пустым без объяснения причин. Ошибка загрузки здесь не критична.
+    const [allActive, setAllActive] = useState<UserLookupItem[] | null>(null);
+    useEffect(() => {
+        let cancelled = false;
+        userService.lookup()
+            .then((data) => { if (!cancelled) setAllActive(data); })
+            .catch(() => { if (!cancelled) setAllActive(null); });
+        return () => { cancelled = true; };
+    }, []);
 
     useEffect(() => {
         let cancelled = false;
@@ -108,26 +123,48 @@ export function VndSelectApproverModal({
         };
     }, []);
 
-    const loading = usersLoading || (!lockedOrgUnitId && orgLoading);
+    const loading = usersLoading || orgLoading;
     // Не удалось загрузить список пользователей
     const error = usersError || (!lockedOrgUnitId && orgError) ? t("selectApproverModal.loadUsersError") : null;
+
+    // Множество СП, сотрудники которых попадают в список; null - без ограничения по СП.
+    // Фиксированный этап: само СП этапа и все вложенные в него (сотрудники после синхронизации
+    // оргструктуры числятся в отделах/секторах, а этап заведён на департамент/управление).
+    // Если справочник СП не загрузился - откатываемся к точному совпадению.
+    const scopeIds = useMemo<Set<number> | null>(() => {
+        if (lockedOrgUnitId) {
+            if (treeOptions.length === 0) return new Set([lockedOrgUnitId]);
+            return new Set(Array.from(collectSubtreeKeys(treeOptions, [String(lockedOrgUnitId)]), Number));
+        }
+        // Фильтр-дерево уже каскадно отмечает потомков выбранного узла.
+        return selectedIds.size === 0 ? null : selectedIds;
+    }, [lockedOrgUnitId, treeOptions, selectedIds]);
+
+    const inScope = useCallback(
+        (orgUnitId: number | null | undefined) =>
+            scopeIds === null || (orgUnitId !== null && orgUnitId !== undefined && scopeIds.has(orgUnitId)),
+        [scopeIds],
+    );
+
+    // Сколько сотрудников выбранного СП не показано из-за отсутствия права быть согласующим.
+    const hiddenWithoutRight = useMemo(() => {
+        if (scopeIds === null || allActive === null) return 0;
+        const approverIds = new Set(users.map((u) => u.id));
+        return allActive.filter((u) => !approverIds.has(u.id) && inScope(u.orgUnitId)).length;
+    }, [scopeIds, allActive, users, inScope]);
 
     const filteredUsers = useMemo(() => {
         const term = search.trim().toLowerCase();
 
         return users
-            .filter((u) => {
-                if (lockedOrgUnitId) return u.orgUnitId === lockedOrgUnitId;
-                if (selectedIds.size === 0) return true;
-                return u.orgUnitId !== null && selectedIds.has(u.orgUnitId);
-            })
+            .filter((u) => inScope(u.orgUnitId))
             .filter((u) =>
                 term === ""
                     ? true
                     : u.fullName.toLowerCase().includes(term) || u.email.toLowerCase().includes(term),
             )
             .sort((a, b) => a.fullName.localeCompare(b.fullName, "ru"));
-    }, [users, search, selectedIds, lockedOrgUnitId]);
+    }, [users, search, inScope]);
 
     const handlePick = (user: ApproverOption) => {
         if (excludedUserIds.has(user.id)) return;
@@ -173,6 +210,18 @@ export function VndSelectApproverModal({
             }
         >
             <UserPickerListStatus loading={loading} error={error} isEmpty={filteredUsers.length === 0}/>
+
+            {!loading && !error && hiddenWithoutRight > 0 && (
+                <div className="mb-2 flex items-start gap-2 rounded-[10px] border border-[#f1e3c8] bg-[#fdf8ee] px-3 py-2 text-[11.5px] leading-[1.45] text-[#8a6418]">
+                    <Info size={14} className="mt-[1px] flex-none"/>
+                    <span>
+                        {t("selectApproverModal.hiddenWithoutRight", {
+                            count: hiddenWithoutRight,
+                            defaultValue: "Ещё сотрудников этого СП: {{count}} — их нет в списке, потому что у их ролей нет права «Выступать согласующим». Выдать право можно в «Роли и права».",
+                        })}
+                    </span>
+                </div>
+            )}
 
             {!loading && !error && filteredUsers.length > 0 && (
                 <div className="flex flex-col gap-1">

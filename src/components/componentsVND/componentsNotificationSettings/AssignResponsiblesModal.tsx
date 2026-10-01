@@ -67,6 +67,9 @@ export function AssignResponsiblesModal({
                 search: query.trim() || undefined,
                 // null (фильтр "Все пользователи") — без ограничения по СП, ищем среди всех.
                 orgUnitIds: filterOrgUnitId ? [Number(filterOrgUnitId)] : undefined,
+                // Выбранное СП вместе с вложенными: люди числятся в отделах/секторах, а выбирают
+                // обычно департамент или управление целиком.
+                includeSubunits: filterOrgUnitId ? true : undefined,
                 isBlocked: false,
                 pageSize: 30,
                 sortBy: "NameAsc",

@@ -75,3 +75,29 @@ export function buildNodeIndex<T extends BaseTreeOption>(nodes: TreeNodeOf<T>[])
     index(nodes);
     return map;
 }
+/** Ключи узлов-корней вместе со всеми их потомками (на любую глубину).
+ *
+ * Нужна там, где выбор одного СП должен захватывать и вложенные: после
+ * синхронизации оргструктуры сотрудники сидят в отделах и секторах, а
+ * выбирают обычно департамент или управление целиком — при точном
+ * совпадении по id список оказывается пустым. Работает по плоскому списку
+ * {key, parentId}, без построения дерева; защищена от циклов. */
+export function collectSubtreeKeys<T extends BaseTreeOption>(options: T[], rootKeys: Iterable<string>): Set<string> {
+    const childrenByParent = new Map<string, string[]>();
+    options.forEach((o) => {
+        if (!o.parentId) return;
+        const list = childrenByParent.get(o.parentId);
+        if (list) list.push(o.key);
+        else childrenByParent.set(o.parentId, [o.key]);
+    });
+
+    const result = new Set<string>();
+    const stack = Array.from(rootKeys);
+    while (stack.length > 0) {
+        const key = stack.pop()!;
+        if (result.has(key)) continue;
+        result.add(key);
+        childrenByParent.get(key)?.forEach((child) => stack.push(child));
+    }
+    return result;
+}

@@ -51,6 +51,7 @@ function buildQuery(params?: GetUsersParams): string {
     params.orgUnitIds?.forEach((id) => query.append("orgUnitIds", String(id)));
     params.positionIds?.forEach((id) => query.append("positionIds", String(id)));
     params.roleIds?.forEach((id) => query.append("roleIds", String(id)));
+    if (params.includeSubunits) query.set("includeSubunits", "true");
 
     return query.toString();
 }

@@ -91,6 +91,7 @@ const SigningWorkplacePage = lazy(() => import("@/pages/ManagementPages/SigningW
 const AcknowledgementPage = lazy(() => import("@/pages/PersonDocManagementPages/AcknowledgementPage.tsx").then(m => ({default: m.AcknowledgementPage})));
 const HelpPage = lazy(() => import("@/pages/ManagementPages/HelpPage.tsx").then(m => ({default: m.HelpPage})));
 const VndProposalsPage = lazy(() => import("@/pages/VndPages/VndProposalsPage.tsx").then(m => ({default: m.VndProposalsPage})));
+const VndAuthenticityPage = lazy(() => import("@/pages/VndPages/VndAuthenticityPage.tsx").then(m => ({default: m.VndAuthenticityPage})));
 const FeedbackInboxPage = lazy(() => import("@/pages/ManagementPages/SettingsPages/Observation/FeedbackInboxPage.tsx").then(m => ({default: m.FeedbackInboxPage})));
 const UsageAnalyticsPage = lazy(() => import("@/pages/ManagementPages/SettingsPages/Observation/UsageAnalyticsPage.tsx").then(m => ({default: m.UsageAnalyticsPage})));
 const PoaRegistryPage = lazy(() => import("@/pages/ChancelleryPages/PoaRegistryPage.tsx").then(m => ({default: m.PoaRegistryPage})));
@@ -170,6 +171,11 @@ function App() {
                                 {/* Предложения сотрудников по ВНД — для главного редактора ВНД */}
                                 <Route element={<RequirePermission code={PermissionCode.ManageVndProposals}/>}>
                                     <Route path="/vnd-proposals" element={<VndProposalsPage/>}/>
+                                </Route>
+
+                                {/* Проверка подлинности согласования ВНД по файлу редакции — кто подписал ЭЦП этот текст */}
+                                <Route element={<RequirePermission code={PermissionCode.ViewVnd}/>}>
+                                    <Route path="/vnd-authenticity" element={<VndAuthenticityPage/>}/>
                                 </Route>
 
                                 <Route element={<RequirePermission code={PermissionCode.ViewVndActualizationPage}/>}>

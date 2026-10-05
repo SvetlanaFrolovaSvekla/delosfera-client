@@ -1,4 +1,5 @@
 import {useTranslation} from "react-i18next";
+import {toast} from "@/service/toastService.ts";
 /**
  * Регулярные обязательства банка.
  *
@@ -10,11 +11,11 @@ import {useTranslation} from "react-i18next";
  * либо заведено в системе, либо нет, и вторая отметка об этом же только разошлась
  * бы с повесткой.
  */
-import {useEffect, useState} from "react";
+import React, {useEffect, useState} from "react";
 import {CalendarClock, CircleCheck, Download, Info, TriangleAlert} from "lucide-react";
 import {
     obligationsService,
-    BODY_TITLE, KIND_TITLE, PERIOD_STATUS_TITLE, PERIODICITY_TITLE, SELF_CLOSING,
+    SELF_CLOSING,
     type AttentionRow, type Obligation, type ObligationPeriod, type PeriodStatus,
 } from "@/service/obligationsService/obligationsService.ts";
 import {PageHeader} from "@/components/componentsGeneral/PageHeader.tsx";
@@ -33,6 +34,7 @@ const STATUS_TONE: Record<PeriodStatus, BadgeTone> = {
 };
 
 export function ObligationsPage() {
+    const {t} = useTranslation();
     const [rows, setRows] = useState<Obligation[]>([]);
     const [attention, setAttention] = useState<AttentionRow[]>([]);
     const [loading, setLoading] = useState(true);
@@ -42,8 +44,17 @@ export function ObligationsPage() {
 
     const doExport = async () => {
         setExporting(true);
+        const toastId = toast.loading(t("obligations.toast.exporting"));
         try {
             await obligationsService.exportRegistry();
+            toast.update(toastId, {variant: "success", title: t("obligations.toast.exported"), duration: 4500});
+        } catch {
+            toast.update(toastId, {
+                variant: "error",
+                title: t("obligations.toast.exportFailed"),
+                description: t("meetings.toast.tryAgain"),
+                duration: 6000,
+            });
         } finally {
             setExporting(false);
         }
@@ -64,6 +75,7 @@ export function ObligationsPage() {
     };
 
     useEffect(() => {
+        // eslint-disable-next-line react-hooks/set-state-in-effect
         void load();
     }, []);
 
@@ -73,7 +85,14 @@ export function ObligationsPage() {
     };
 
     const fulfil = async (periodId: number) => {
-        await obligationsService.fulfil(periodId);
+        try {
+            await obligationsService.fulfil(periodId);
+            toast.success(t("obligations.toast.fulfilled"));
+        } catch (e) {
+            const message = (e as {response?: {data?: {message?: string}}}).response?.data?.message;
+            toast.error(t("obligations.toast.fulfilFailed"), message);
+            return;
+        }
         await load();
         if (opened) setPeriods(await obligationsService.periods(opened.id));
     };
@@ -82,33 +101,34 @@ export function ObligationsPage() {
     const soon = attention.filter((a) => a.status === "Pending");
 
     return (
-        <div className="flex flex-col gap-5 p-6">
+        <div className="w-full max-w-[1700px] mx-auto px-4 sm:px-6 lg:px-8 xl:px-10 pt-5 sm:pt-[26px] pb-10 sm:pb-[60px] flex flex-col gap-4">
             <PageHeader
-                title="Регулярные обязательства"
-                description="Заседания комитетов, отчёты, пересмотр политик, график сдачи в НБКР"
+                title={t("obligations.title")}
+                description={t("obligations.description")}
                 actions={(
                     <button
                         type="button"
                         onClick={() => void doExport()}
                         disabled={exporting}
-                        className="flex items-center gap-2 rounded-[10px] border border-[#d5dbe6] bg-white px-4 py-2
-                                   text-[14px] font-medium text-[#374253] transition hover:bg-[#f4f6fa] disabled:opacity-50"
+                        className="inline-flex items-center gap-2 h-10 px-[15px] rounded-[10px] border border-[#e5e9f0] bg-white
+                                   text-[13px] font-semibold text-[#3a4560] cursor-pointer hover:bg-[#f6f8fb]
+                                   disabled:cursor-not-allowed disabled:opacity-60"
                     >
-                        <Download size={17}/>
-                        {exporting ? "Готовим…" : "Выгрузить в Excel"}
+                        <Download className="w-[17px] h-[17px]" strokeWidth={2}/>
+                        {exporting ? t("obligations.exporting") : t("obligations.export")}
                     </button>
                 )}
             />
 
             {loading ? (
-                <Loader label="Считаем сроки…"/>
+                <Loader label={t("obligations.loading")}/>
             ) : (
                 <>
                     {missed.length > 0 && (
                         <Panel
                             tone="bad"
                             icon={<TriangleAlert size={18} className="text-[#c0392b]"/>}
-                            title={`Просрочено — ${missed.length}`}
+                            title={t("obligations.missedTitle", {count: missed.length})}
                         >
                             {missed.map((row) => (
                                 <AttentionLine key={row.periodId} row={row} tone="bad"/>
@@ -120,7 +140,7 @@ export function ObligationsPage() {
                         <Panel
                             tone="warn"
                             icon={<CalendarClock size={18} className="text-[#b3730a]"/>}
-                            title={`Срок в ближайшие две недели — ${soon.length}`}
+                            title={t("obligations.soonTitle", {count: soon.length})}
                         >
                             {soon.map((row) => (
                                 <AttentionLine key={row.periodId} row={row} tone="warn"/>
@@ -133,36 +153,42 @@ export function ObligationsPage() {
                                         bg-[#e6f4ec] px-4 py-3">
                             <CircleCheck size={18} className="text-[#1c7a4d]"/>
                             <span className="text-[14px] font-medium text-[#1c4d35]">
-                                Просроченного нет, ближайшие две недели свободны
+                                {t("obligations.allClear")}
                             </span>
                         </div>
                     )}
 
                     {rows.length === 0 ? (
                         <EmptyState
-                            title="Обязательств нет"
-                            description="Заведите первое: заседания комитета по рискам, отчёты службы рисков, пересмотр риск-аппетита."
+                            title={t("obligations.emptyTitle")}
+                            description={t("obligations.emptyDesc")}
                         />
                     ) : (
                         <DataTable
-                            headers={["Обязательство", "Периодичность", "Ответственный", "Текущий период", "Срывов"]}
+                            headers={[
+                                t("obligations.columns.obligation"),
+                                t("obligations.columns.periodicity"),
+                                t("obligations.columns.responsible"),
+                                t("obligations.columns.currentPeriod"),
+                                t("obligations.columns.missed"),
+                            ]}
                         >
                             {rows.map((obligation) => (
                                 <Row key={obligation.id} onClick={() => void open(obligation)}>
                                     <Cell strong>
                                         {obligation.title}
                                         {obligation.basis && (
-                                            <span className="mt-0.5 block text-[11.5px] font-normal text-[#8593a8]">
+                                            <span className="mt-0.5 block text-[11.5px] font-normal text-[#8b97ab]">
                                                 {obligation.basis}
                                             </span>
                                         )}
                                     </Cell>
                                     <Cell nowrap>
-                                        {PERIODICITY_TITLE[obligation.periodicity]}
-                                        <span className="mt-0.5 block text-[11.5px] text-[#8593a8]">
+                                        {t(`obligations.periodicity.${obligation.periodicity}`)}
+                                        <span className="mt-0.5 block text-[11.5px] text-[#8b97ab]">
                                             {obligation.body
-                                                ? BODY_TITLE[obligation.body]
-                                                : KIND_TITLE[obligation.kind]}
+                                                ? t(`obligations.bodies.${obligation.body}`)
+                                                : t(`obligations.kinds.${obligation.kind}`)}
                                         </span>
                                     </Cell>
                                     <Cell>{obligation.responsible ?? obligation.responsibleUnit ?? "—"}</Cell>
@@ -170,10 +196,10 @@ export function ObligationsPage() {
                                         {obligation.current ? (
                                             <>
                                                 <Badge tone={STATUS_TONE[obligation.current.status]}>
-                                                    {PERIOD_STATUS_TITLE[obligation.current.status]}
+                                                    {t(`obligations.periodStatus.${obligation.current.status}`)}
                                                 </Badge>
-                                                <span className="mt-1 block font-mono text-[11.5px] text-[#8593a8]">
-                                                    до {formatDate(obligation.current.dueDate)}
+                                                <span className="mt-1 block font-mono text-[11.5px] text-[#8b97ab]">
+                                                    {t("obligations.until", {date: formatDate(obligation.current.dueDate)})}
                                                 </span>
                                             </>
                                         ) : "—"}
@@ -232,12 +258,12 @@ function AttentionLine({row, tone}: {row: AttentionRow; tone: "bad" | "warn"}) {
     return (
         <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1 rounded-[8px] border
                         border-white/70 bg-white px-3 py-2">
-            <span className="text-[13.5px] font-medium text-[#101a2c]">{row.title}</span>
-            <span className="text-[12.5px] text-[#8593a8]">
+            <span className="text-[13.5px] font-medium text-[#1c2740]">{row.title}</span>
+            <span className="text-[12.5px] text-[#8b97ab]">
                 {formatDate(row.periodStart)} — {formatDate(row.periodEnd)}
             </span>
             {row.responsible && (
-                <span className="text-[12.5px] text-[#8593a8]">{row.responsible}</span>
+                <span className="text-[12.5px] text-[#8b97ab]">{row.responsible}</span>
             )}
             <span className={`ml-auto text-[12.5px] font-semibold
                 ${tone === "bad" ? "text-[#c0392b]" : "text-[#b3730a]"}`}>
@@ -253,38 +279,44 @@ function PeriodsPanel({obligation, periods, onClose, onFulfil}: {
     onClose: () => void;
     onFulfil: (periodId: number) => void;
 }) {
+    const {t} = useTranslation();
     const selfClosing = obligation.kind === SELF_CLOSING;
 
     return (
-        <section className="rounded-[14px] border border-[#e1e7ef] bg-white p-5">
+        <section className="rounded-2xl border border-[#eef2f7] bg-white p-5 shadow-[0_1px_2px_rgba(16,24,40,0.03)]">
             <div className="mb-4 flex items-start justify-between gap-4">
                 <div>
-                    <h2 className="text-[16px] font-semibold text-[#101a2c]">{obligation.title}</h2>
-                    <p className="mt-1 text-[13px] text-[#8593a8]">
-                        {PERIODICITY_TITLE[obligation.periodicity]}
-                        {obligation.graceDays > 0 && ` · отсрочка ${obligation.graceDays} дн.`}
+                    <h2 className="m-0 text-[16px] font-semibold text-[#1c2740]">{obligation.title}</h2>
+                    <p className="mt-1 text-[13px] text-[#8b97ab]">
+                        {t(`obligations.periodicity.${obligation.periodicity}`)}
+                        {obligation.graceDays > 0 && ` · ${t("obligations.grace", {count: obligation.graceDays})}`}
                         {obligation.basis && ` · ${obligation.basis}`}
                     </p>
                 </div>
                 <button
                     type="button"
                     onClick={onClose}
-                    className="rounded-[9px] px-3 py-1.5 text-[13px] text-[#4d5a72] transition hover:bg-[#eef2f7]"
+                    className="h-8 rounded-[9px] border-none bg-transparent px-3 text-[12.5px] font-semibold text-[#55617a] cursor-pointer transition hover:bg-[#f2f5f9]"
                 >
-                    Свернуть
+                    {t("obligations.collapse")}
                 </button>
             </div>
 
             {selfClosing && (
-                <p className="mb-3 flex items-start gap-2 rounded-[10px] bg-[#eaf0ff] px-3 py-2
-                              text-[12.5px] text-[#2f68f5]">
+                <p className="mb-3 flex items-start gap-2 rounded-[10px] bg-[#ececfc] px-3 py-2
+                              text-[12.5px] text-[#4e57d6]">
                     <Info size={15} className="mt-0.5 shrink-0"/>
-                    Период закрывается заседанием органа автоматически. Отмечать исполнение
-                    вручную не нужно — достаточно завести заседание в разделе «Решения комитетов».
+                    {t("obligations.selfClosingNote")}
                 </p>
             )}
 
-            <DataTable headers={["Период", "Срок", "Состояние", "Чем закрыто", ""]}>
+            <DataTable headers={[
+                t("obligations.periods.period"),
+                t("obligations.periods.due"),
+                t("obligations.periods.state"),
+                t("obligations.periods.closedBy"),
+                "",
+            ]}>
                 {periods.map((period) => (
                     <Row key={period.id}>
                         <Cell mono>
@@ -293,17 +325,17 @@ function PeriodsPanel({obligation, periods, onClose, onFulfil}: {
                         <Cell mono>{formatDate(period.dueDate)}</Cell>
                         <Cell nowrap>
                             <Badge tone={STATUS_TONE[period.status]}>
-                                {PERIOD_STATUS_TITLE[period.status]}
+                                {t(`obligations.periodStatus.${period.status}`)}
                             </Badge>
                             {period.isLate && (
                                 <span className="ml-1.5 text-[11.5px] font-semibold text-[#b3730a]">
-                                    с нарушением срока
+                                    {t("obligations.periods.late")}
                                 </span>
                             )}
                         </Cell>
                         <Cell>
                             {period.meetingId
-                                ? `Заседание № ${period.meetingId}`
+                                ? t("obligations.periods.meeting", {id: period.meetingId})
                                 : period.fulfilledBy ?? period.comment ?? "—"}
                         </Cell>
                         <Cell align="right">
@@ -311,10 +343,10 @@ function PeriodsPanel({obligation, periods, onClose, onFulfil}: {
                                 <button
                                     type="button"
                                     onClick={() => onFulfil(period.id)}
-                                    className="rounded-[8px] border border-[#e1e7ef] px-2.5 py-1 text-[12.5px]
-                                               text-[#4d5a72] transition hover:border-[#1c7a4d] hover:text-[#1c7a4d]"
+                                    className="h-7 rounded-lg border border-[#e5e9f0] bg-white px-2.5 text-[12px] font-semibold
+                                               text-[#55617a] cursor-pointer transition hover:border-[#c9e6d5] hover:bg-[#eef8f2] hover:text-[#1c7a4d]"
                                 >
-                                    Исполнено
+                                    {t("obligations.periods.fulfil")}
                                 </button>
                             )}
                         </Cell>

@@ -1,3 +1,8 @@
+/**
+ * Печатная форма записки с листом согласования (SZ-PAP-02).
+ * Верстается под A4: экранная обвязка скрыта при печати, лист согласования
+ * оставляет место для подписи там, где виза ещё не поставлена.
+ */
 import {useEffect, useState} from "react";
 import {useParams} from "react-router-dom";
 import {
@@ -14,11 +19,6 @@ function formatDate(iso: string | null): string {
     return d && m && y ? `${d}.${m}.${y}` : "";
 }
 
-/**
- * Печатная форма записки с листом согласования (SZ-PAP-02).
- * Верстается под A4: экранная обвязка скрыта при печати, лист согласования
- * оставляет место для подписи там, где виза ещё не поставлена.
- */
 export function SzPrintPage() {
     const {id} = useParams<{ id: string }>();
     const [form, setForm] = useState<SzPrintForm | null>(null);

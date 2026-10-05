@@ -189,27 +189,16 @@ export const getRefSections = (t: TFunction): RefSection[] => [
         key: "procurement",
         // Закупки
         title: t("refSections.procurement.title"),
-        disabled: true,
         items: [
             {
-                key: "counterparty-blacklist",
+                key: "suppliers",
                 code: "01",
-                // Чёрный список контрагентов
-                title: t("refSections.procurement.counterpartyBlacklist.title"),
-                // Поставщики и подрядчики, с которыми запрещено сотрудничество
-                subtitle: t("refSections.procurement.counterpartyBlacklist.subtitle"),
+                // Поставщики и чёрный список
+                title: t("refSections.procurement.suppliers.title"),
+                // Реестр поставщиков и подрядчиков, их рейтинги и запрет на сотрудничество
+                subtitle: t("refSections.procurement.suppliers.subtitle"),
                 icon: Ban,
-                path: "/management/refs/counterparty-blacklist",
-            },
-            {
-                key: "procurement-threshold",
-                code: "02",
-                // Пороги закупок
-                title: t("refSections.procurement.procurementThreshold.title"),
-                // Суммовые пороги, определяющие процедуру и уровень согласования
-                subtitle: t("refSections.procurement.procurementThreshold.subtitle"),
-                icon: Scale,
-                path: "/management/refs/procurement-threshold",
+                path: "/prc/suppliers",
             },
         ],
     },

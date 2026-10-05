@@ -1,10 +1,12 @@
 import {useState} from "react";
 import {useNavigate} from "react-router-dom";
+import {useTranslation} from "react-i18next";
 import {ArrowRight, BookOpen, Download, Eye, FileText, Info, Loader2, TriangleAlert} from "lucide-react";
 import {helpService, type HelpBlock} from "@/service/helpService/helpService.ts";
 import {formatFileSize} from "@/service/documentService/attachmentService.ts";
 import {HelpScreenshot} from "@/components/help/HelpScreenshot.tsx";
 import {HelpAttachmentPreviewModal} from "@/components/help/HelpAttachmentPreviewModal.tsx";
+import {HighlightText} from "@/utils/highlightText.tsx";
 
 /**
  * Отрисовка тела статьи.
@@ -19,15 +21,22 @@ import {HelpAttachmentPreviewModal} from "@/components/help/HelpAttachmentPrevie
 
 interface Props {
     body: HelpBlock[];
+
+    /** Строка поиска по инструкциям: её совпадения подсвечиваются в тексте статьи. */
+    highlight?: string;
 }
 
-export const HelpArticleView = ({body}: Props) => {
+export const HelpArticleView = ({body, highlight = ""}: Props) => {
     const navigate = useNavigate();
+    const {t} = useTranslation();
+
+    // Текст блока с подсветкой совпадений (без запроса — просто текст).
+    const hl = (text: string) => <HighlightText text={text} query={highlight}/>;
 
     if (body.length === 0) {
         return (
             <p className="text-[13px] text-[#8b97ab]">
-                Статья пока не заполнена.
+                {t("help.view.empty")}
             </p>
         );
     }
@@ -48,8 +57,8 @@ export const HelpArticleView = ({body}: Props) => {
 
                     case "text":
                         return (
-                            <p key={i} className="m-0 max-w-[70ch] text-[14px] leading-[1.75] text-[#26324a]">
-                                {block.text}
+                            <p key={i} className="m-0 max-w-[70ch] whitespace-pre-line text-[14px] leading-[1.75] text-[#26324a]">
+                                {hl(block.text)}
                             </p>
                         );
 
@@ -58,11 +67,11 @@ export const HelpArticleView = ({body}: Props) => {
                             <ol key={i} className="m-0 flex list-none flex-col gap-2.5 p-0">
                                 {block.items.map((item, j) => (
                                     <li key={j} className="flex gap-3">
-                                        <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-[#eaf0ff] text-[12px] font-bold text-[#2f68f5]">
+                                        <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-[#ececfc] text-[12px] font-bold text-[#4e57d6]">
                                             {j + 1}
                                         </span>
                                         <span className="max-w-[66ch] pt-0.5 text-[14px] leading-[1.65] text-[#26324a]">
-                                            {item}
+                                            {hl(item)}
                                         </span>
                                     </li>
                                 ))}
@@ -78,12 +87,12 @@ export const HelpArticleView = ({body}: Props) => {
                                  className={`flex max-w-[70ch] items-start gap-2.5 rounded-[10px] border px-4 py-3 ${
                                      warning
                                          ? "border-[#f0dcae] bg-[#fdf3e0]"
-                                         : "border-[#cbddff] bg-[#f5f8ff]"}`}>
+                                         : "border-[#d9dcf7] bg-[#f4f5ff]"}`}>
                                 <Icon className={`mt-0.5 h-4 w-4 shrink-0 ${
-                                    warning ? "text-[#b3730a]" : "text-[#2f68f5]"}`} strokeWidth={2}/>
+                                    warning ? "text-[#b3730a]" : "text-[#4e57d6]"}`} strokeWidth={2}/>
                                 <span className={`text-[13.5px] leading-[1.65] ${
                                     warning ? "text-[#8a5a00]" : "text-[#26324a]"}`}>
-                                    {block.text}
+                                    {hl(block.text)}
                                 </span>
                             </div>
                         );
@@ -92,8 +101,8 @@ export const HelpArticleView = ({body}: Props) => {
                     case "link":
                         return (
                             <button key={i} onClick={() => navigate(block.path)}
-                                    className="flex w-fit items-center gap-2 rounded-[10px] border border-[#cbddff] bg-white px-4 py-2.5 text-[13.5px] font-semibold text-[#2f68f5] hover:bg-[#f5f8ff]">
-                                {block.label}
+                                    className="flex w-fit cursor-pointer items-center gap-2 rounded-[10px] border border-[#d9dcf7] bg-white px-4 py-2.5 text-[13.5px] font-semibold text-[#4e57d6] hover:bg-[#f4f5ff]">
+                                {hl(block.label)}
                                 <ArrowRight className="h-4 w-4" strokeWidth={2}/>
                             </button>
                         );
@@ -101,9 +110,9 @@ export const HelpArticleView = ({body}: Props) => {
                     case "vnd":
                         return (
                             <button key={i} onClick={() => navigate(`/base-vnd/${block.documentId}`)}
-                                    className="flex w-fit items-center gap-2 rounded-[10px] border border-[#e5e9f0] bg-white px-4 py-2.5 text-[13.5px] font-semibold text-[#55617a] hover:border-[#cbddff]">
+                                    className="flex w-fit items-center gap-2 rounded-[10px] border border-[#e5e9f0] bg-white px-4 py-2.5 text-[13.5px] font-semibold text-[#55617a] hover:border-[#d9dcf7]">
                                 <BookOpen className="h-4 w-4 text-[#8b97ab]" strokeWidth={2}/>
-                                {block.label}
+                                {hl(block.label)}
                             </button>
                         );
 
@@ -134,6 +143,7 @@ export const HelpArticleView = ({body}: Props) => {
  * зависит от публикации статьи, а не от общих правил доступа к файлам ВНД.
  */
 function HelpFileAttachment({fileId, fileName, size}: {fileId: number; fileName: string; size: number}) {
+    const {t} = useTranslation();
     const [просмотр, setПросмотр] = useState(false);
     const [скачивается, setСкачивается] = useState(false);
     const [ошибка, setОшибка] = useState<string | null>(null);
@@ -144,7 +154,7 @@ function HelpFileAttachment({fileId, fileName, size}: {fileId: number; fileName:
         try {
             await helpService.downloadFile(fileId, fileName);
         } catch {
-            setОшибка("Не удалось скачать файл");
+            setОшибка(t("help.view.downloadFailed"));
         } finally {
             setСкачивается(false);
         }
@@ -165,18 +175,18 @@ function HelpFileAttachment({fileId, fileName, size}: {fileId: number; fileName:
 
             <div className="flex flex-none items-center gap-2">
                 <button onClick={() => setПросмотр(true)}
-                        className="flex items-center gap-1.5 rounded-[9px] border border-[#e5e9f0] bg-white px-3 py-2 text-[12.5px] font-semibold text-[#55617a] hover:border-[#cbddff]">
+                        className="flex items-center gap-1.5 rounded-[9px] border border-[#e5e9f0] bg-white px-3 py-2 text-[12.5px] font-semibold text-[#55617a] hover:border-[#d9dcf7]">
                     <Eye className="h-4 w-4" strokeWidth={2}/>
-                    Просмотр
+                    {t("help.view.preview")}
                 </button>
                 <button onClick={() => void скачать()} disabled={скачивается}
-                        className="flex items-center gap-1.5 rounded-[9px] border border-[#cbddff] bg-white px-3 py-2 text-[12.5px] font-semibold text-[#2f68f5] hover:bg-[#f5f8ff] disabled:opacity-50">
+                        className="flex items-center gap-1.5 rounded-[9px] border border-[#d9dcf7] bg-white px-3 py-2 text-[12.5px] font-semibold text-[#4e57d6] hover:bg-[#f4f5ff] disabled:opacity-50">
                     {скачивается ? (
                         <Loader2 className="h-4 w-4 animate-spin"/>
                     ) : (
                         <Download className="h-4 w-4" strokeWidth={2}/>
                     )}
-                    Скачать
+                    {t("help.view.download")}
                 </button>
             </div>
 

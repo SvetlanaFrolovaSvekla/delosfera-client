@@ -1,7 +1,15 @@
 import {useCallback, useEffect, useState} from "react";
+import {useTranslation} from "react-i18next";
+import {toast} from "@/service/toastService.ts";
+import {Users} from "lucide-react";
 import {
     bodyMemberService, type MeetingAttendee,
 } from "@/service/meetingsService/bodyMemberService.ts";
+import {Badge} from "@/components/componentsGeneral/DataTable.tsx";
+import {PlainCheckbox} from "@/components/componentsGeneral/componentsCheckBox/PlainCheckbox.tsx";
+
+const CARD = "mb-4 rounded-2xl border border-[#eef2f7] bg-white p-5 shadow-[0_1px_2px_rgba(16,24,40,0.03)]";
+const CARD_TITLE = "flex items-center gap-2 text-[12px] font-bold uppercase tracking-[.04em] text-[#2d354a]";
 
 /**
  * Явка на заседании.
@@ -11,6 +19,7 @@ import {
  * только тех, кто не пришёл, а не щёлкает по всему составу.
  */
 export function MeetingAttendancePanel({meetingId, canEdit}: {meetingId: number; canEdit: boolean}) {
+    const {t} = useTranslation();
     const [rows, setRows] = useState<MeetingAttendee[]>([]);
     const [error, setError] = useState<string | null>(null);
     const [busy, setBusy] = useState(false);
@@ -21,26 +30,27 @@ export function MeetingAttendancePanel({meetingId, canEdit}: {meetingId: number;
             setRows(await bodyMemberService.attendance(meetingId));
             setError(null);
         } catch {
-            setError("Не удалось загрузить состав органа");
+            setError(t("meetings.attendance.loadError"));
         }
-    }, [meetingId]);
+    }, [meetingId, t]);
 
     useEffect(() => { void load(); }, [load]);
 
     if (rows.length === 0) {
         return (
-            <section className="rounded-[12px] border border-[#e5e9f0] bg-white p-5">
-                <div className="text-[11px] font-semibold uppercase tracking-[.04em] text-[#a3adbd] mb-2">
-                    Состав органа
+            <section className={CARD}>
+                <div className={`${CARD_TITLE} mb-3`}>
+                    <Users className="w-4 h-4" strokeWidth={2}/>
+                    {t("meetings.attendance.membersTitle")}
                 </div>
                 <div className="text-[13px] text-[#8b97ab]">
-                    {error ?? "Состав органа не заведён — заполните его в справочниках."}
+                    {error ?? t("meetings.attendance.noMembers")}
                 </div>
             </section>
         );
     }
 
-    const пришли = rows.filter(r => r.present).length;
+    const presentCount = rows.filter(r => r.present).length;
 
     const mark = async (userId: number, present: boolean) => {
         setBusy(true);
@@ -48,26 +58,29 @@ export function MeetingAttendancePanel({meetingId, canEdit}: {meetingId: number;
         try {
             setRows(await bodyMemberService.markAttendance(
                 meetingId, userId, present, present ? null : note[userId]?.trim() || null));
+            toast.success(t(present ? "meetings.toast.markedPresent" : "meetings.toast.markedAbsent"), undefined, 2500);
         } catch {
-            setError("Не удалось отметить явку");
+            setError(t("meetings.attendance.markError"));
+            toast.error(t("meetings.attendance.markError"));
         } finally {
             setBusy(false);
         }
     };
 
     return (
-        <section className="rounded-[12px] border border-[#e5e9f0] bg-white p-5">
-            <div className="flex items-center justify-between gap-3 mb-3">
-                <div className="text-[11px] font-semibold uppercase tracking-[.04em] text-[#a3adbd]">
-                    Состав органа и явка
+        <section className={CARD}>
+            <div className="mb-3 flex items-center justify-between gap-3">
+                <div className={CARD_TITLE}>
+                    <Users className="w-4 h-4" strokeWidth={2}/>
+                    {t("meetings.attendance.title")}
                 </div>
-                <span className="text-[12.5px] text-[#55617a]">
-                    присутствуют {пришли} из {rows.length}
-                </span>
+                <Badge tone={presentCount === rows.length ? "good" : "info"}>
+                    {t("meetings.attendance.presentCount", {present: presentCount, total: rows.length})}
+                </Badge>
             </div>
 
             {error && (
-                <div className="mb-3 rounded-[9px] border border-[#f0d3d3] bg-[#fdf3f3] px-3 py-2 text-[13px] text-[#a94442]">
+                <div className="mb-3 rounded-[10px] bg-[#fbeae7] px-3 py-2 text-[13px] text-[#c0392b]">
                     {error}
                 </div>
             )}
@@ -76,24 +89,16 @@ export function MeetingAttendancePanel({meetingId, canEdit}: {meetingId: number;
                 {rows.map(r => (
                     <div
                         key={r.userId}
-                        className="flex flex-wrap items-center gap-3 border-b border-[#f4f6f9] py-2.5 last:border-b-0"
+                        className="flex flex-wrap items-center gap-3 border-b border-[#f3f6f9] py-2.5 last:border-b-0"
                     >
                         <div className="min-w-[220px] flex-1">
-                            <div className="text-[13.5px] text-[#0f1b2d]">
+                            <div className="flex flex-wrap items-center gap-2 text-[13.5px] font-medium text-[#1c2740]">
                                 {r.userName}
-                                {r.role === "Chairman" && (
-                                    <span className="ml-2 rounded-[5px] bg-[#eef3ff] px-2 py-0.5 text-[10.5px] font-semibold text-[#2f68f5]">
-                                        председатель
-                                    </span>
-                                )}
-                                {r.role === "Secretary" && (
-                                    <span className="ml-2 rounded-[5px] bg-[#eef2f7] px-2 py-0.5 text-[10.5px] text-[#5b6b85]">
-                                        секретарь
-                                    </span>
-                                )}
+                                {r.role === "Chairman" && <Badge tone="info">{t("meetings.attendance.chairman")}</Badge>}
+                                {r.role === "Secretary" && <Badge>{t("meetings.attendance.secretary")}</Badge>}
                             </div>
                             <div className="text-[12px] text-[#8b97ab]">
-                                {r.position ?? "должность не указана"}
+                                {r.position ?? t("meetings.attendance.noPosition")}
                             </div>
                         </div>
 
@@ -102,28 +107,25 @@ export function MeetingAttendancePanel({meetingId, canEdit}: {meetingId: number;
                                 value={note[r.userId] ?? r.note ?? ""}
                                 onChange={e => setNote(n => ({...n, [r.userId]: e.target.value}))}
                                 onBlur={() => { if (canEdit) void mark(r.userId, false); }}
-                                placeholder="Причина отсутствия"
+                                placeholder={t("meetings.attendance.absenceReason")}
                                 disabled={!canEdit || busy}
-                                className="h-8 min-w-[200px] flex-1 rounded-[8px] border border-[#e5e9f0] px-2.5 text-[12.5px] outline-none focus:border-[#2f68f5]"
+                                className="h-9 min-w-[200px] flex-1 rounded-[9px] border border-[#e5e9f0] bg-white px-3 text-[12.5px] text-[#1c2740] outline-none placeholder:text-[#a3adbd] hover:bg-[#f6f8fb] focus:border-[#4e57d6] focus:bg-white focus:ring-[3px] focus:ring-[#ececfc] disabled:opacity-60"
                             />
                         )}
 
                         {canEdit ? (
-                            <button
+                            <PlainCheckbox
+                                checked={r.present}
                                 disabled={busy}
-                                onClick={() => void mark(r.userId, !r.present)}
-                                className={`h-8 rounded-[8px] border px-3 text-[12.5px] font-semibold cursor-pointer ${
-                                    r.present
-                                        ? "border-[#c9e6d5] bg-[#eef8f2] text-[#1c7a4d] hover:brightness-[.98]"
-                                        : "border-[#e6d3b8] bg-[#fdf6e6] text-[#8a6d1f] hover:brightness-[.98]"
-                                }`}
+                                onChange={present => void mark(r.userId, present)}
+                                className="font-semibold"
                             >
-                                {r.present ? "Присутствовал" : "Отсутствовал"}
-                            </button>
+                                {t("meetings.attendance.present")}
+                            </PlainCheckbox>
                         ) : (
-                            <span className={`text-[12.5px] font-semibold ${r.present ? "text-[#1c7a4d]" : "text-[#8a6d1f]"}`}>
-                                {r.present ? "Присутствовал" : `Отсутствовал${r.note ? ` · ${r.note}` : ""}`}
-                            </span>
+                            <Badge tone={r.present ? "good" : "warn"}>
+                                {r.present ? t("meetings.attendance.present") : (r.note ? t("meetings.attendance.absentWithNote", {note: r.note}) : t("meetings.attendance.absent"))}
+                            </Badge>
                         )}
                     </div>
                 ))}

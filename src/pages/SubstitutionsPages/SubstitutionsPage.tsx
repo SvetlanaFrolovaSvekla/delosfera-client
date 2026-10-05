@@ -1,105 +1,204 @@
 import {useEffect, useState} from "react";
+import {useTranslation} from "react-i18next";
 import {Link, useNavigate} from "react-router-dom";
-import {Plus} from "lucide-react";
-import {PageHeader} from "@/components/componentsGeneral/PageHeader.tsx";
-import {substitutionService, STATUS_LABEL, type SubstitutionListItem, type SubstitutionStatus}
-    from "@/service/substitutionService/substitutionService.ts";
+import {
+    substitutionService,
+    REASON_LABEL,
+    STATUS_LABEL,
+    type SubstitutionListItem,
+    type SubstitutionReason,
+    type SubstitutionStatus,
+} from "@/service/substitutionService/substitutionService.ts";
+import {HighlightText} from "@/utils/highlightText.tsx";
+import {SearchBar} from "@/components/componentsGeneral/SearchBar.tsx";
+import {SelectDropdown} from "@/components/componentsGeneral/selects/SingleSelects/SelectDropdown.tsx";
+import {CheckBoxOne} from "@/components/componentsGeneral/componentsCheckBox/CheckBoxOne.tsx";
+import {SavedFiltersBar} from "@/components/componentsGeneral/SavedFiltersBar.tsx";
+import {Icon} from "@/assets/icons/Icon.tsx";
+import {colors} from "@/design/tokens.ts";
 
-const STATUS_TONE: Record<SubstitutionStatus, string> = {
-    Draft: "#5b6472", OnApproval: "#2f68f5", OnExecution: "#b3730a",
-    Executed: "#1c7a4d", Rejected: "#c0392b", Withdrawn: "#8b97ab",
+const STATUSES = Object.keys(STATUS_LABEL) as SubstitutionStatus[];
+
+const STATUS_TONE: Record<SubstitutionStatus, { fg: string; bg: string }> = {
+    Draft: colors.status.draft,
+    OnApproval: colors.status.review,
+    OnExecution: colors.status.onact,
+    Executed: colors.status.active,
+    Rejected: colors.status.arch,
+    Withdrawn: colors.status.draft,
 };
 
-function period(a: string | null, b: string | null): string {
-    if (!a && !b) return "—";
-    const f = (d: string | null) => d ? new Date(d).toLocaleDateString("ru-RU") : "…";
-    return `${f(a)} — ${f(b)}`;
+/** Бэкенд отдаёт причину русской строкой; по ней находим код, чтобы показать перевод. */
+const REASON_CODE_BY_TITLE = Object.fromEntries(
+    (Object.entries(REASON_LABEL) as [SubstitutionReason, string][]).map(([code, title]) => [title, code]),
+) as Record<string, SubstitutionReason>;
+
+function formatDate(iso: string | null): string {
+    if (!iso) return "…";
+    const [y, m, d] = iso.slice(0, 10).split("-");
+    return `${d}.${m}.${y}`;
 }
 
 export function SubstitutionRequestsPage() {
+    const {t} = useTranslation();
     const navigate = useNavigate();
     const [rows, setRows] = useState<SubstitutionListItem[]>([]);
+    const [total, setTotal] = useState(0);
     const [query, setQuery] = useState("");
+    /** Запрос, по которому получены строки в таблице: подсвечиваем его, а не то, что набрано прямо сейчас. */
+    const [appliedQuery, setAppliedQuery] = useState("");
     const [status, setStatus] = useState<SubstitutionStatus | "">("");
+    const [mineOnly, setMineOnly] = useState(false);
     const [loading, setLoading] = useState(true);
+    const [error, setError] = useState<string | null>(null);
 
     useEffect(() => {
-        setLoading(true);
-        substitutionService.search({query: query.trim() || undefined, status: status || undefined, pageSize: 200})
-            .then((p) => setRows(p.items))
-            .finally(() => setLoading(false));
-    }, [status]);
+        let cancelled = false;
+        // Небольшая задержка, чтобы не слать запрос на каждую букву; устаревший ответ отбрасываем.
+        const timer = setTimeout(() => {
+            const q = query.trim();
+            setLoading(true);
+            setError(null);
+            substitutionService
+                .search({query: q || undefined, status: status || undefined, mineOnly: mineOnly || undefined, pageSize: 200})
+                .then((p) => {
+                    if (cancelled) return;
+                    setRows(p.items);
+                    setTotal(p.total);
+                    setAppliedQuery(q);
+                })
+                .catch(() => {
+                    if (!cancelled) setError(t("substitutionRequests.loadError"));
+                })
+                .finally(() => {
+                    if (!cancelled) setLoading(false);
+                });
+        }, 250);
+        return () => {
+            cancelled = true;
+            clearTimeout(timer);
+        };
+    }, [query, status, mineOnly, t]);
 
-    function runSearch() {
-        setLoading(true);
-        substitutionService.search({query: query.trim() || undefined, status: status || undefined, pageSize: 200})
-            .then((p) => setRows(p.items))
-            .finally(() => setLoading(false));
-    }
+    const reasonText = (title: string): string => {
+        const code = REASON_CODE_BY_TITLE[title];
+        return code ? t(`substitutionRequests.reason.${code}`) : title;
+    };
 
     return (
-        <div className="flex flex-col gap-5 p-6">
-            <PageHeader
-                title="Заявки на замещение"
-                description="Оформление замещения на время отсутствия работника: комиссия приёма-передачи, приказ УЧР"
-                actions={(
-                    <Link to="/substitutions/new"
-                          className="flex items-center gap-2 rounded-[10px] bg-[#2f68f5] px-4 py-2 text-[14px] font-medium !text-white transition hover:bg-[#2554cc] no-underline">
-                        <Plus size={17}/> Создать заявку
-                    </Link>
-                )}
-            />
-
-            <div className="flex items-center gap-2 flex-wrap">
-                <input
-                    className="h-9 flex-1 min-w-[240px] px-3 rounded-[9px] border border-[#e5e9f0] text-[13px] outline-none focus:border-[#2f68f5]"
-                    placeholder="Поиск: тема, ФИО, номер…" value={query}
-                    onChange={(e) => setQuery(e.target.value)}
-                    onKeyDown={(e) => e.key === "Enter" && runSearch()}
-                />
-                <select className="h-9 px-3 rounded-[9px] border border-[#e5e9f0] text-[13px]"
-                        value={status} onChange={(e) => setStatus(e.target.value as SubstitutionStatus | "")}>
-                    <option value="">Все статусы</option>
-                    {(Object.keys(STATUS_LABEL) as SubstitutionStatus[]).map((s) =>
-                        <option key={s} value={s}>{STATUS_LABEL[s]}</option>)}
-                </select>
+        <div className="px-7 py-6">
+            <div className="flex items-start justify-between gap-4">
+                <div>
+                    <h1 className="m-0 text-[23px] font-bold tracking-[-0.02em]">{t("substitutionRequests.title")}</h1>
+                    <p className="mt-[7px] mb-0 text-[13px] text-[#8b97ab]">{t("substitutionRequests.subtitle")}</p>
+                </div>
+                <button
+                    onClick={() => navigate("/substitutions/new")}
+                    className="cursor-pointer inline-flex h-[42px] items-center gap-2 rounded-[11px] bg-[#2f68f5] px-[18px] text-[13.5px] font-semibold text-white shadow-[0_6px_16px_-6px_#2f68f5] hover:brightness-[1.06]">
+                    <Icon name="plus" width={18} height={18} strokeWidth={2}/>
+                    {t("substitutionRequests.create")}
+                </button>
             </div>
 
-            <div className="rounded-[13px] border border-[#e5e9f0] bg-white overflow-hidden">
+            <div className="mt-5 flex flex-wrap items-center gap-2.5">
+                <SearchBar
+                    variant="white"
+                    value={query}
+                    onChange={setQuery}
+                    placeholder={t("substitutionRequests.searchPlaceholder")}
+                    className="min-w-[280px] flex-1"
+                />
+                <SelectDropdown
+                    options={[
+                        {value: "", label: t("substitutionRequests.allStatuses")},
+                        ...STATUSES.map((s) => ({value: s, label: t(`substitutionRequests.status.${s}`)})),
+                    ]}
+                    value={status}
+                    onChange={(v) => setStatus(v as SubstitutionStatus | "")}
+                    minWidth="170px"
+                />
+                <CheckBoxOne checked={mineOnly} onChange={setMineOnly} tone="brand">
+                    {t("substitutionRequests.mineOnly")}
+                </CheckBoxOne>
+                <div className="text-[12.5px] text-[#8b97ab]">
+                    {t("substitutionRequests.found")}: <b className="font-mono text-[#3a4560]">{total}</b>
+                </div>
+            </div>
+
+            <div className="mt-2.5">
+                <SavedFiltersBar
+                    scope="substitution"
+                    current={{query, status: status || null, mineOnly}}
+                    onApply={(p) => {
+                        const f = p as { query?: string; status?: SubstitutionStatus | null; mineOnly?: boolean };
+                        setQuery(f.query ?? "");
+                        setStatus(f.status ?? "");
+                        setMineOnly(!!f.mineOnly);
+                    }}
+                />
+            </div>
+
+            {error && (
+                <div className="mt-4 rounded-[10px] border border-[#f1c9c2] bg-[#fbeae7] px-4 py-2.5 text-[13px] text-[#c0392b]">
+                    {error}
+                </div>
+            )}
+
+            <div className="mt-3 overflow-hidden rounded-[12px] border border-[#e5e9f0] bg-white">
                 <table className="w-full border-collapse text-[13px]">
                     <thead>
-                        <tr className="bg-[#f6f8fb] text-[#8b97ab] text-left">
-                            <th className="px-4 py-2.5 font-semibold">Номер</th>
-                            <th className="px-4 py-2.5 font-semibold">Тема / причина</th>
-                            <th className="px-4 py-2.5 font-semibold">Отсутствующий</th>
-                            <th className="px-4 py-2.5 font-semibold">Замещающий</th>
-                            <th className="px-4 py-2.5 font-semibold">Период</th>
-                            <th className="px-4 py-2.5 font-semibold">Статус</th>
-                        </tr>
+                    <tr className="bg-[#fafbfd] text-[11px] font-bold uppercase tracking-[.04em] text-[#a3adbd]">
+                        <th className="px-4 py-2.5 text-left w-[140px]">{t("substitutionRequests.cols.number")}</th>
+                        <th className="px-4 py-2.5 text-left">{t("substitutionRequests.cols.subject")}</th>
+                        <th className="px-4 py-2.5 text-left w-[190px]">{t("substitutionRequests.cols.absent")}</th>
+                        <th className="px-4 py-2.5 text-left w-[190px]">{t("substitutionRequests.cols.substitute")}</th>
+                        <th className="px-4 py-2.5 text-left w-[190px]">{t("substitutionRequests.cols.period")}</th>
+                        <th className="px-4 py-2.5 text-left w-[170px]">{t("substitutionRequests.cols.status")}</th>
+                    </tr>
                     </thead>
                     <tbody>
-                        {rows.map((r) => (
-                            <tr key={r.id} onClick={() => navigate(`/substitutions/${r.id}`)}
-                                className="border-t border-[#eef2f7] cursor-pointer hover:bg-[#f9fbfe]">
-                                <td className="px-4 py-2.5 font-mono text-[12px] text-[#2f68f5]">{r.regNumber ?? "черновик"}</td>
+                    {loading ? (
+                        <tr><td colSpan={6} className="px-4 py-10 text-center text-[13px] text-[#8b97ab]">{t("general.loading")}</td></tr>
+                    ) : rows.length === 0 ? (
+                        <tr><td colSpan={6} className="px-4 py-10 text-center text-[13px] text-[#8b97ab]">{t("substitutionRequests.empty")}</td></tr>
+                    ) : rows.map((r) => {
+                        const tone = STATUS_TONE[r.status] ?? colors.status.draft;
+                        return (
+                            <tr key={r.id} className="border-t border-[#eef2f7] hover:bg-[#fafbfd]">
                                 <td className="px-4 py-2.5">
-                                    <div className="font-medium text-[#1c2740]">{r.subject || "—"}</div>
-                                    <div className="text-[11.5px] text-[#8b97ab]">{r.reasonTitle}</div>
+                                    <Link to={`/substitutions/${r.id}`}
+                                          className="font-mono text-[12.5px] text-[#2f68f5] no-underline hover:underline">
+                                        {r.regNumber
+                                            ? <HighlightText text={r.regNumber} query={appliedQuery}/>
+                                            : t("substitutionRequests.draftNumber")}
+                                    </Link>
                                 </td>
-                                <td className="px-4 py-2.5 text-[#374253]">{r.absentName || "—"}</td>
-                                <td className="px-4 py-2.5 text-[#374253]">{r.substituteName || "—"}</td>
-                                <td className="px-4 py-2.5 text-[#55617a] whitespace-nowrap">{period(r.startsOn, r.endsOn)}</td>
                                 <td className="px-4 py-2.5">
-                                    <span className="text-[12px] font-semibold" style={{color: STATUS_TONE[r.status]}}>{r.statusTitle}</span>
+                                    <Link to={`/substitutions/${r.id}`} className="text-[#1c2740] no-underline hover:underline">
+                                        {r.subject
+                                            ? <HighlightText text={r.subject} query={appliedQuery}/>
+                                            : "—"}
+                                    </Link>
+                                    <div className="text-[12px] text-[#8b97ab]">{reasonText(r.reasonTitle)}</div>
+                                </td>
+                                <td className="px-4 py-2.5 text-[#55617a]">
+                                    {r.absentName ? <HighlightText text={r.absentName} query={appliedQuery}/> : "—"}
+                                </td>
+                                <td className="px-4 py-2.5 text-[#55617a]">
+                                    {r.substituteName ? <HighlightText text={r.substituteName} query={appliedQuery}/> : "—"}
+                                </td>
+                                <td className="px-4 py-2.5 whitespace-nowrap text-[#55617a]">
+                                    {!r.startsOn && !r.endsOn ? "—" : `${formatDate(r.startsOn)} — ${formatDate(r.endsOn)}`}
+                                </td>
+                                <td className="px-4 py-2.5">
+                                    <span className="inline-flex rounded-full px-[9px] py-0.5 text-[11px] font-semibold"
+                                          style={{color: tone.fg, background: tone.bg}}>
+                                        {t(`substitutionRequests.status.${r.status}`)}
+                                    </span>
                                 </td>
                             </tr>
-                        ))}
-                        {!loading && rows.length === 0 && (
-                            <tr><td colSpan={6} className="px-4 py-8 text-center text-[#8b97ab]">Заявок нет.</td></tr>
-                        )}
-                        {loading && (
-                            <tr><td colSpan={6} className="px-4 py-8 text-center text-[#8b97ab]">Загрузка…</td></tr>
-                        )}
+                        );
+                    })}
                     </tbody>
                 </table>
             </div>

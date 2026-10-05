@@ -1,5 +1,14 @@
+/**
+ * Карточка заседания: реквизиты и повестка дня.
+ *
+ * Повестка показывается только в доступной пользователю части — сервер отдаёт
+ * лишь те вопросы, где сотрудник назван докладчиком, приглашённым или ответственным.
+ */
 import {useCallback, useEffect, useState} from "react";
 import {useNavigate, useParams} from "react-router-dom";
+import {useTranslation} from "react-i18next";
+import {toast} from "@/service/toastService.ts";
+import {AlertTriangle, ArrowLeft, CircleCheck, ClipboardList, Link2, ListChecks, Plus, Send} from "lucide-react";
 import {
     agendaService,
     meetingsService,
@@ -10,16 +19,29 @@ import {formatDate, formatTime} from "@/service/meetingsService/formatMeetingDat
 import {userService, type UserLookupItem} from "@/service/userService/userService.ts";
 import {AgendaItemCard} from "@/components/meetings/AgendaItemCard.tsx";
 import {MeetingAttendancePanel} from "@/components/meetings/MeetingAttendancePanel.tsx";
+import {PageHeader} from "@/components/componentsGeneral/PageHeader.tsx";
+import {Section} from "@/components/componentsGeneral/Section.tsx";
+import {Loader} from "@/components/componentsGeneral/Loader.tsx";
+import {EmptyState} from "@/components/componentsGeneral/EmptyState.tsx";
+import {KpiCard} from "@/components/componentsReport/KpiCard.tsx";
 
-/**
- * Карточка заседания: реквизиты и повестка дня.
- *
- * Повестка показывается только в доступной пользователю части — сервер отдаёт
- * лишь те вопросы, где сотрудник назван докладчиком, приглашённым или ответственным.
- */
+const TEXT_INPUT =
+    "h-9 w-full rounded-[9px] border border-[#e5e9f0] bg-white px-3 text-[12.5px] text-[#1c2740] outline-none " +
+    "placeholder:text-[#a3adbd] hover:bg-[#f6f8fb] focus:border-[#4e57d6] focus:bg-white focus:ring-[3px] focus:ring-[#ececfc]";
+
+const BTN_PRIMARY =
+    "inline-flex items-center gap-2 h-10 px-[15px] rounded-[10px] border-none bg-[#4e57d6] text-white " +
+    "font-semibold text-[13px] cursor-pointer hover:brightness-[1.06] shadow-[0_6px_16px_-6px_#4e57d6] " +
+    "disabled:cursor-not-allowed disabled:bg-[#e5e9f0] disabled:text-[#a3adbd] disabled:shadow-none";
+
+const BTN_SECONDARY =
+    "inline-flex items-center gap-2 h-9 px-4 rounded-[9px] border border-[#e5e9f0] bg-white text-[#3a4560] " +
+    "font-semibold text-[12.5px] cursor-pointer hover:bg-[#f6f8fb] disabled:opacity-60 disabled:cursor-not-allowed";
+
 export const MeetingCardPage = () => {
     const {id} = useParams();
     const navigate = useNavigate();
+    const {t} = useTranslation();
     const meetingId = Number(id);
 
     const [meeting, setMeeting] = useState<Meeting | null>(null);
@@ -34,24 +56,27 @@ export const MeetingCardPage = () => {
             setError(null);
             setMeeting(await meetingsService.get(meetingId));
         } catch {
-            setError("Заседание не найдено или недоступно");
+            setError(t("meetings.card.notFound"));
         }
-    }, [meetingId]);
+    }, [meetingId, t]);
 
     useEffect(() => {
         void load();
         userService.lookup().then(setUsers).catch(() => undefined);
     }, [load]);
 
-    const run = async (action: () => Promise<unknown>) => {
+    /** Действие над заседанием: успех и ошибка показываются тостом (successKey — текст успеха). */
+    const run = async (action: () => Promise<unknown>, successKey?: string) => {
         try {
             setBusy(true);
             setError(null);
             await action();
             await load();
+            if (successKey) toast.success(t(successKey));
         } catch (e) {
             const message = (e as {response?: {data?: {message?: string}}}).response?.data?.message;
-            setError(message ?? "Операция не выполнена");
+            setError(message ?? t("meetings.card.opFailed"));
+            toast.error(t("meetings.card.opFailed"), message);
         } finally {
             setBusy(false);
         }
@@ -59,66 +84,112 @@ export const MeetingCardPage = () => {
 
     const notify = () => run(async () => {
         setNotified(await meetingsService.notify(meetingId));
-    });
+    }, "meetings.toast.notified");
 
     const addItem = () => run(async () => {
         await agendaService.addItem(meetingId, {topic: topic.trim()});
         setTopic("");
-    });
+    }, "meetings.toast.itemAdded");
+
+    const pageClass =
+        "w-full max-w-[1700px] mx-auto px-4 sm:px-6 lg:px-8 xl:px-10 pt-5 sm:pt-[26px] pb-10 sm:pb-[60px]";
 
     if (!meeting) {
         return (
-            <div style={{padding: "22px 26px", color: error ? "#e0483d" : "#8b97ab", fontSize: 13}}>
-                {error ?? "Загрузка…"}
+            <div className={pageClass}>
+                {error ? (
+                    <EmptyState
+                        variant="error"
+                        title={t("meetings.card.unavailableTitle")}
+                        description={error}
+                        actionLabel={t("meetings.card.toRegistry")}
+                        onAction={() => navigate("/meetings")}
+                    />
+                ) : (
+                    <Loader label={t("meetings.card.loading")}/>
+                )}
             </div>
         );
     }
 
     return (
-        <div style={{padding: "22px 26px", display: "flex", flexDirection: "column", gap: 16}}>
-            <div style={{display: "flex", alignItems: "flex-start", gap: 12, flexWrap: "wrap"}}>
-                <div style={{flex: 1, minWidth: 260}}>
-                    <button onClick={() => navigate("/meetings")} style={linkButton}>← Журнал заседаний</button>
-                    <h1 style={{margin: "6px 0 0", fontSize: 19, fontWeight: 700, color: "#0f1b2d"}}>
-                        {meeting.bodyTitle} · заседание № {String(meeting.number).padStart(2, "0")}
-                    </h1>
-                    <div style={{marginTop: 4, fontSize: 12.5, color: "#8b97ab"}}>
-                        {formatDate(meeting.date)} в {formatTime(meeting.time)} · {meeting.formTitle} ·
-                        секретарь {meeting.secretaryName ?? "—"}
-                        {meeting.secretaryUnitTitle && ` (${meeting.secretaryUnitTitle})`}
-                    </div>
-                </div>
+        <div className={pageClass}>
+            <button
+                type="button"
+                onClick={() => navigate("/meetings")}
+                className="mb-2.5 inline-flex items-center gap-1.5 border-none bg-transparent p-0 text-[12.5px] font-semibold text-[#8b97ab] cursor-pointer hover:text-[#4e57d6]"
+            >
+                <ArrowLeft className="w-[14px] h-[14px]" strokeWidth={2}/>
+                {t("meetings.card.back")}
+            </button>
 
-                {meeting.canEdit && (
-                    <button onClick={notify} disabled={busy} style={primaryButton}>
-                        Отправить уведомление
+            <PageHeader
+                title={t("meetings.card.title", {
+                    body: t(`meetings.bodies.${meeting.body}`),
+                    number: String(meeting.number).padStart(2, "0"),
+                })}
+                description={
+                    t("meetings.card.subtitle", {
+                        date: formatDate(meeting.date),
+                        time: formatTime(meeting.time),
+                        form: t(`meetings.forms.${meeting.form}`),
+                        secretary: meeting.secretaryName ?? "—",
+                    }) +
+                    (meeting.secretaryUnitTitle ? ` (${meeting.secretaryUnitTitle})` : "")
+                }
+                actions={meeting.canEdit ? (
+                    <button type="button" onClick={() => void notify()} disabled={busy} className={BTN_PRIMARY}>
+                        <Send className="w-[17px] h-[17px]" strokeWidth={2}/>
+                        {t("meetings.card.notify")}
                     </button>
-                )}
-            </div>
+                ) : undefined}
+            />
 
-            {error && <div style={{color: "#e0483d", fontSize: 13}}>{error}</div>}
+            {error && (
+                <p className="mb-4 rounded-[10px] bg-[#fbeae7] px-3 py-2 text-[13px] text-[#c0392b]">{error}</p>
+            )}
 
             {notified && (
-                <section style={{...card, borderColor: "#c9e2d1", background: "#f6fbf7"}}>
-                    <div style={cardTitle}>Уведомление отправлено · {notified.recipientCount} получателей</div>
-                    <div style={{fontSize: 13, fontWeight: 600, color: "#26324a"}}>{notified.subject}</div>
-                    <div style={{marginTop: 6, fontSize: 12.5, color: "#55617a", lineHeight: 1.6}}>
-                        {notified.body}
+                <section className="mb-4 rounded-[14px] border border-[#cfe6da] bg-[#e6f4ec] p-4">
+                    <div className="mb-2 flex items-center gap-2">
+                        <CircleCheck size={18} className="text-[#1c7a4d]"/>
+                        <h2 className="m-0 text-[14px] font-semibold text-[#1c4d35]">
+                            {t("meetings.card.notified", {count: notified.recipientCount})}
+                        </h2>
                     </div>
-                    <div style={{marginTop: 8, fontSize: 11.5, color: "#8b97ab"}}>
-                        {notified.recipients.join(" · ")}
-                    </div>
+                    <div className="text-[13px] font-semibold text-[#26324a]">{notified.subject}</div>
+                    <div className="mt-1.5 text-[12.5px] leading-[1.6] text-[#55617a]">{notified.body}</div>
+                    <div className="mt-2 text-[11.5px] text-[#8b97ab]">{notified.recipients.join(" · ")}</div>
                 </section>
             )}
 
-            <div style={{display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))", gap: 12}}>
-                <Tile label="Вопросов в повестке" value={String(meeting.items.length)}/>
-                <Tile label="Поручений" value={String(meeting.assignmentCount)}/>
-                <Tile label="Просрочено" value={meeting.overdueCount ? String(meeting.overdueCount) : "нет"}
-                      danger={meeting.overdueCount > 0}/>
-                <Tile label="Материалы"
-                      value={meeting.materialsUrl ? "по ссылке" : "не заданы"}
-                      note={meeting.materialsUrl ?? undefined}/>
+            <div className="mb-4 grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
+                <KpiCard
+                    label={t("meetings.card.kpi.items")} value={meeting.items.length}
+                    icon={ListChecks} color="#4e57d6" bg="#eef0ff"
+                />
+                <KpiCard
+                    label={t("meetings.card.kpi.assignments")} value={meeting.assignmentCount}
+                    icon={ClipboardList} color="#4e57d6" bg="#eef0ff"
+                />
+                {meeting.overdueCount > 0 ? (
+                    <KpiCard
+                        label={t("meetings.card.kpi.overdue")} value={meeting.overdueCount}
+                        icon={AlertTriangle} color="#dc2626" bg="#fdecec"
+                        hint={t("meetings.card.kpi.overdueHint")}
+                    />
+                ) : (
+                    <KpiCard
+                        label={t("meetings.card.kpi.overdue")} value={t("meetings.card.kpi.overdueNone")}
+                        icon={CircleCheck} color="#16a34a" bg="#eef7f0"
+                    />
+                )}
+                <KpiCard
+                    label={t("meetings.card.kpi.materials")}
+                    value={meeting.materialsUrl ? t("meetings.card.kpi.materialsLink") : t("meetings.card.kpi.materialsNone")}
+                    icon={Link2} color="#4e57d6" bg="#eef0ff"
+                    hint={meeting.materialsUrl ?? undefined}
+                />
             </div>
 
             {/* Кто из органа был на заседании: по этому списку считается кворум,
@@ -137,71 +208,35 @@ export const MeetingCardPage = () => {
             ))}
 
             {meeting.items.length === 0 && (
-                <section style={card}>
-                    <div style={{fontSize: 13, color: "#55617a"}}>
-                        Повестка пуста. Доступны только те вопросы, где вы указаны докладчиком,
-                        приглашённым или ответственным.
-                    </div>
-                </section>
+                <div className="mb-4">
+                    <EmptyState
+                        title={t("meetings.card.emptyAgendaTitle")}
+                        description={t("meetings.card.emptyAgendaDesc")}
+                    />
+                </div>
             )}
 
             {meeting.canEdit && (
-                <section style={card}>
-                    <div style={cardTitle}>Добавить вопрос повестки</div>
-                    <div style={{display: "flex", gap: 8, flexWrap: "wrap"}}>
-                        <input value={topic} onChange={e => setTopic(e.target.value)}
-                               placeholder="Тема вопроса" style={{...input, flex: 1, minWidth: 260}}/>
-                        <button onClick={addItem} disabled={busy || !topic.trim()} style={secondaryButton}>
-                            Добавить
+                <Section icon={<Plus className="w-4 h-4 text-[#2d354a]" strokeWidth={2}/>}
+                         title={t("meetings.card.addItem")} noMarginBottom>
+                    <div className="flex flex-wrap gap-2.5">
+                        <input
+                            value={topic}
+                            onChange={e => setTopic(e.target.value)}
+                            onKeyDown={e => {
+                                if (e.key === "Enter" && topic.trim() && !busy) void addItem();
+                            }}
+                            placeholder={t("meetings.card.topicPlaceholder")}
+                            className={`${TEXT_INPUT} flex-1 min-w-[260px] !w-auto`}
+                        />
+                        <button type="button" onClick={() => void addItem()} disabled={busy || !topic.trim()}
+                                className={BTN_SECONDARY}>
+                            <Plus className="w-[15px] h-[15px]" strokeWidth={2.2}/>
+                            {t("meetings.card.add")}
                         </button>
                     </div>
-                </section>
+                </Section>
             )}
         </div>
     );
-};
-
-const Tile = ({label, value, note, danger}: {label: string; value: string; note?: string; danger?: boolean}) => (
-    <div style={{
-        padding: "12px 14px", borderRadius: 12,
-        background: danger ? "#fdf6f5" : "#fff",
-        border: `1px solid ${danger ? "#f3c9c2" : "#e5e9f0"}`,
-    }}>
-        <div style={{fontSize: 11.5, color: "#8b97ab"}}>{label}</div>
-        <div style={{marginTop: 4, fontSize: 17, fontWeight: 700, color: danger ? "#c0392b" : "#0f1b2d"}}>{value}</div>
-        {note && (
-            <div style={{marginTop: 2, fontSize: 11, color: "#8b97ab", overflow: "hidden", textOverflow: "ellipsis"}}>
-                {note}
-            </div>
-        )}
-    </div>
-);
-
-const card: React.CSSProperties = {
-    background: "#fff", border: "1px solid #e5e9f0", borderRadius: 13, padding: 16,
-};
-
-const cardTitle: React.CSSProperties = {
-    fontSize: 11, fontWeight: 700, letterSpacing: ".06em", color: "#8b97ab",
-    textTransform: "uppercase", marginBottom: 10,
-};
-
-const input: React.CSSProperties = {
-    height: 36, padding: "0 11px", border: "1px solid #e5e9f0", borderRadius: 9,
-    background: "#fff", font: "inherit", fontSize: 12.5, outline: "none",
-};
-
-const primaryButton: React.CSSProperties = {
-    height: 36, padding: "0 15px", border: "none", borderRadius: 9,
-    background: "#2f68f5", color: "#fff", font: "inherit", fontSize: 12.5, fontWeight: 600, cursor: "pointer",
-};
-
-const secondaryButton: React.CSSProperties = {
-    height: 36, padding: "0 14px", border: "1px solid #e5e9f0", borderRadius: 9,
-    background: "#fff", color: "#55617a", font: "inherit", fontSize: 12.5, fontWeight: 600, cursor: "pointer",
-};
-
-const linkButton: React.CSSProperties = {
-    border: "none", background: "none", padding: 0, color: "#8b97ab",
-    font: "inherit", fontSize: 12, cursor: "pointer",
 };

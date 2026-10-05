@@ -1227,6 +1227,7 @@
     },
     "items": {
       "vndProposals": "IRD proposals",
+      "vndAuthenticity": "Authenticity check",
       "home": "Dashboard",
       "rubric": "Rubricator",
       "vnd": "VND Registry",
@@ -1260,6 +1261,7 @@
       "calendar": "Deadline Calendar",
       "analytics": "Analytics",
       "szTracker": "Memo Board",
+      "substitution": "Substitution requests",
       "meetings": "Committee Decisions",
       "meetCandidates": "Items for Review",
       "obligations": "Recurring Obligations",
@@ -2320,13 +2322,9 @@
     },
     "procurement": {
       "title": "Procurement",
-      "counterpartyBlacklist": {
-        "title": "Counterparty Blacklist",
-        "subtitle": "Suppliers and contractors that are prohibited from cooperation"
-      },
-      "procurementThreshold": {
-        "title": "Procurement Thresholds",
-        "subtitle": "Amount thresholds determining the procedure and approval level"
+      "suppliers": {
+        "title": "Suppliers and blacklist",
+        "subtitle": "Registry of suppliers and contractors, their ratings and cooperation bans"
       }
     },
     "memos": {
@@ -3390,5 +3388,1140 @@
     "loadError": "Failed to generate the approval sheet",
     "cardHint": "Built from the current decisions — updated after every resolution. Standard or with digital signatures.",
     "open": "Open"
+  },
+  "meetings": {
+    "bodies": {
+      "Board": "Management Board",
+      "Kpa": "Problem Assets Committee",
+      "CreditCommittee": "Credit Committee"
+    },
+    "forms": {
+      "InPerson": "In person",
+      "Absentee": "Absentee"
+    },
+    "executionStatus": {
+      "New": "New",
+      "InProgress": "In progress",
+      "DoneOnTime": "Completed on time",
+      "DoneLate": "Completed late",
+      "NotDone": "Not completed",
+      "Cancelled": "Cancelled",
+      "Excluded": "Excluded / removed from the meeting agenda"
+    },
+    "fileKinds": {
+      "Sz": "Memo",
+      "Protocol": "Minutes",
+      "Execution": "Execution file"
+    },
+    "registry": {
+      "title": "Meetings",
+      "description": "Minutes of the Board, PAC and committees · decision execution",
+      "exportExcel": "Register to Excel",
+      "create": "Create meeting",
+      "searchPlaceholder": "Body, number, date or secretary",
+      "bodyFilter": "Body",
+      "year": "Year",
+      "overdueOnly": "Overdue only",
+      "resetFilters": "Reset filters",
+      "found": "Found: {{count}}",
+      "loading": "Loading the log…",
+      "emptyTitle": "No meetings",
+      "emptyFiltered": "Nothing found for the selected conditions.",
+      "emptyYear": "No meetings have been recorded for {{year}}.",
+      "loadError": "Failed to load the meetings log",
+      "createError": "The meeting was not created",
+      "exportError": "The register export is available to Board and PAC secretaries",
+      "exportFile": "Decisions register {{year}}.xlsx",
+      "notified": "sent",
+      "notNotified": "not sent",
+      "columns": {
+        "body": "Body",
+        "number": "No.",
+        "dateTime": "Date and time",
+        "form": "Form",
+        "secretary": "Secretary",
+        "items": "Items",
+        "assignments": "Assignments",
+        "overdue": "Overdue",
+        "notification": "Notification"
+      },
+      "form": {
+        "title": "New meeting",
+        "body": "Body",
+        "form": "Meeting form",
+        "dateTime": "Date and time",
+        "dateTimePlaceholder": "dd.mm.yyyy hh:mm",
+        "number": "Number",
+        "numberPlaceholder": "Next free number of the year",
+        "numberHint": "Empty — the next free number of the year",
+        "materials": "Materials",
+        "materialsPlaceholder": "Link to the meeting materials",
+        "cancel": "Cancel",
+        "submit": "Create meeting"
+      }
+    },
+    "card": {
+      "back": "Meetings log",
+      "title": "{{body}} · meeting No. {{number}}",
+      "subtitle": "{{date}} at {{time}} · {{form}} · secretary {{secretary}}",
+      "notify": "Send notification",
+      "notified": "Notification sent · recipients: {{count}}",
+      "notFound": "The meeting was not found or is unavailable",
+      "opFailed": "Operation failed",
+      "unavailableTitle": "Meeting unavailable",
+      "toRegistry": "To the meetings log",
+      "loading": "Loading the meeting…",
+      "kpi": {
+        "items": "Agenda items",
+        "assignments": "Assignments",
+        "overdue": "Overdue",
+        "overdueNone": "none",
+        "overdueHint": "assignments past their deadline",
+        "materials": "Materials",
+        "materialsLink": "by link",
+        "materialsNone": "not set"
+      },
+      "emptyAgendaTitle": "The agenda is empty",
+      "emptyAgendaDesc": "Only the items where you are named as speaker, invitee or responsible person are available.",
+      "addItem": "Add an agenda item",
+      "topicPlaceholder": "Item topic",
+      "add": "Add"
+    },
+    "attendance": {
+      "title": "Members and attendance",
+      "membersTitle": "Members of the body",
+      "noMembers": "The body has no members yet — fill them in the directories.",
+      "loadError": "Failed to load the members of the body",
+      "markError": "Failed to mark attendance",
+      "presentCount": "{{present}} of {{total}} present",
+      "chairman": "chairman",
+      "secretary": "secretary",
+      "noPosition": "position not specified",
+      "absenceReason": "Reason for absence",
+      "present": "Present",
+      "absent": "Absent",
+      "absentWithNote": "Absent · {{note}}"
+    },
+    "agenda": {
+      "questionLine": "Item {{order}} · minutes {{protocol}}",
+      "protocolNone": "not set",
+      "protocolDate": " dated {{date}}",
+      "deleteItem": "Delete item",
+      "collapse": "Collapse",
+      "expand": "Expand",
+      "guests": "Invited persons",
+      "inviteEmployee": "Invite an employee",
+      "guestModalTitle": "Invited employee",
+      "invite": "Invite",
+      "searchByName": "Search by name",
+      "notSelected": "Not selected",
+      "main": "General",
+      "protocolNumber": "Minutes No.",
+      "protocolNumberPlaceholder": "yyyy-xx-x",
+      "speaker": "Speaker",
+      "speakerHead": "Speaker's manager",
+      "speakerUnit": "Speaker's department",
+      "deputySecretary": "Deputy secretary",
+      "controller": "Supervisor",
+      "documents": "Documents",
+      "documentsPlaceholder": "Link to the documents",
+      "decision": "Decisions made",
+      "save": "Save",
+      "assignmentsTitle": "Responsible persons and execution",
+      "responsible": "Responsible",
+      "whatAssigned": "What is assigned",
+      "whatAssignedPlaceholder": "Empty — an assignment for the whole decision",
+      "dueDate": "Due date",
+      "dueDatePlaceholder": "dd.mm.yyyy",
+      "assign": "Assign",
+      "remove": "Remove",
+      "noAssignments": "No assignments",
+      "changeStatus": "Change status…",
+      "newStatus": "New status:",
+      "reportPlaceholder": "Execution report (optional)",
+      "cancel": "Cancel",
+      "saveStatus": "Save status",
+      "files": "Files",
+      "attachExecution": "Execution file",
+      "dueNone": "no due date",
+      "due": "due {{date}}"
+    },
+    "candidates": {
+      "title": "Items for review",
+      "description": "Memos marked for submission to a collegial body",
+      "unavailableTitle": "Item selection is unavailable",
+      "unavailableDesc": "The agenda is compiled by the body's secretary. Contact the administrator if you run meetings.",
+      "loading": "Loading the queue…",
+      "emptyTitle": "The queue is empty",
+      "emptyDesc": "There are no memos marked for this body. The mark is set by the memo's author or addressee.",
+      "loadError": "Failed to load the queue.",
+      "pickMeeting": "Select the meeting whose agenda the item should be added to.",
+      "takeError": "Failed to add the item to the agenda.",
+      "declineError": "Failed to decline the request.",
+      "noNumber": "n/a",
+      "from": "dated {{date}}",
+      "requestedLine": "requested by {{by}} · {{date}}",
+      "signedBy": "signed by {{name}}",
+      "questionLabel": "Wording of the agenda item",
+      "meetingPlaceholder": "Which meeting",
+      "meetingOption": "No. {{number}} dated {{date}}",
+      "take": "Add to agenda",
+      "decline": "Decline request"
+    },
+    "toast": {
+      "created": "Meeting created",
+      "exporting": "Preparing the decisions register…",
+      "exportingHint": "Export for {{year}}",
+      "exported": "Register exported to Excel",
+      "tryAgain": "Please try again in a minute",
+      "notified": "Participants have been notified",
+      "itemAdded": "Item added to the agenda",
+      "itemSaved": "Agenda item changes saved",
+      "itemRemoved": "Item removed from the agenda",
+      "guestAdded": "Employee invited",
+      "guestRemoved": "Invitation removed",
+      "assignmentAdded": "Assignment added",
+      "assignmentRemoved": "Assignment removed",
+      "reportSent": "Execution report sent",
+      "fileAttached": "File attached",
+      "fileRemoved": "File removed",
+      "candidateTaken": "Item included in the meeting agenda",
+      "candidateDeclined": "Item declined",
+      "markedPresent": "Marked as present",
+      "markedAbsent": "Marked as absent"
+    }
+  },
+  "obligations": {
+    "title": "Recurring obligations",
+    "description": "Committee meetings, reports, policy reviews, NBKR submission schedule",
+    "export": "Export to Excel",
+    "exporting": "Preparing…",
+    "loading": "Calculating deadlines…",
+    "missedTitle": "Overdue — {{count}}",
+    "soonTitle": "Due within the next two weeks — {{count}}",
+    "allClear": "Nothing is overdue, the next two weeks are clear",
+    "emptyTitle": "No obligations",
+    "emptyDesc": "Add the first one: risk committee meetings, risk service reports, risk appetite review.",
+    "columns": {
+      "obligation": "Obligation",
+      "periodicity": "Frequency",
+      "responsible": "Responsible",
+      "currentPeriod": "Current period",
+      "missed": "Missed"
+    },
+    "until": "until {{date}}",
+    "grace": "grace period {{count}} d.",
+    "collapse": "Collapse",
+    "selfClosingNote": "The period is closed automatically by the body's meeting. There is no need to mark execution manually — just record the meeting in the «Committee decisions» section.",
+    "periods": {
+      "period": "Period",
+      "due": "Due date",
+      "state": "Status",
+      "closedBy": "Closed by",
+      "late": "past the deadline",
+      "meeting": "Meeting No. {{id}}",
+      "fulfil": "Fulfilled"
+    },
+    "periodicity": {
+      "Weekly": "Weekly",
+      "Monthly": "Monthly",
+      "Quarterly": "Quarterly",
+      "SemiAnnual": "Twice a year",
+      "Annual": "Annually"
+    },
+    "kinds": {
+      "MeetingHeld": "Meeting held",
+      "ReportSubmitted": "Report submitted",
+      "DocumentReviewed": "Document reviewed",
+      "Other": "Other"
+    },
+    "periodStatus": {
+      "Pending": "Pending",
+      "Fulfilled": "Fulfilled",
+      "Missed": "Overdue",
+      "Waived": "Waived"
+    },
+    "bodies": {
+      "Board": "Management Board",
+      "Kpa": "Problem Assets Committee",
+      "CreditCommittee": "Credit Committee"
+    },
+    "board": {
+      "title": "Obligations board",
+      "description": "Active obligations by the stage of the current period",
+      "total": "total {{count}}",
+      "missed": "missed {{count}}",
+      "back": "Obligations register",
+      "error": "Failed to load the obligations board",
+      "errorTitle": "Board unavailable",
+      "loading": "Loading the board…",
+      "empty": "empty",
+      "noDue": "no deadline",
+      "missedHistory": "misses in history: {{count}}"
+    },
+    "toast": {
+      "exporting": "Preparing the obligations register…",
+      "exported": "Obligations register exported to Excel",
+      "exportFailed": "Could not export the obligations register",
+      "fulfilled": "Fulfilment recorded",
+      "fulfilFailed": "Could not record fulfilment"
+    }
+  },
+  "vndAuthenticity": {
+    "title": "IRD approval authenticity check",
+    "subtitle": "Upload a revision file — the system will find by its content (SHA-256) which IRD and revision it is, and who signed exactly this text with a digital signature, when and with what decision. The file is not stored anywhere.",
+    "dropHint": "Drag the revision file here or click to choose",
+    "byteExactHint": "The comparison is byte-exact: check the file exactly as downloaded from the system. A file opened and re-saved in Word produces a different hash even if the text has not changed.",
+    "check": "Check",
+    "checking": "Checking…",
+    "checkFailed": "The check could not be performed",
+    "tooMany": "Too many checks in a row — try again in a minute",
+    "notFound": "The file was not found among IRD revisions and digital signatures",
+    "notFoundHint": "Either this text was never uploaded to the system, or the file was changed (including re-saved) after download.",
+    "hiddenMatches": "Some matches are hidden: you do not have access to those documents.",
+    "truncated": "Not all matches are shown.",
+    "redaction": "revision {{code}}",
+    "language": {
+      "ru": "Russian version",
+      "kg": "Kyrgyz version",
+      "en": "English version"
+    },
+    "currentText": "Current text of the revision",
+    "notCurrentText": "Not the current text of the revision",
+    "intermediateVersion": "Intermediate version {{code}}",
+    "openVnd": "Open IRD",
+    "noProcesses": "This text has not been through approval.",
+    "process": "Approval #{{id}}",
+    "status": {
+      "primary": "Primary approval",
+      "revision_needed": "Under revision",
+      "repeated": "Repeated approval",
+      "final_hold": "Final hold",
+      "approved": "Approved",
+      "cancelled": "Withdrawn",
+      "rejected": "Rejected"
+    },
+    "noChangesActualization": "actualization without changes",
+    "signedSummary": "Signed this text with a digital signature: {{signed}} of {{total}}",
+    "columns": {
+      "approver": "Approver",
+      "decision": "Decision",
+      "date": "Date",
+      "signature": "Signature"
+    },
+    "decision": {
+      "pending": "Awaiting decision",
+      "approved": "Approved",
+      "approved_with_comment": "Approved with remarks",
+      "rejected": "Rejected",
+      "auto_approved": "Approved",
+      "removed": "Removed from the route"
+    },
+    "phase": {
+      "primary": "Primary approval",
+      "repeat": "Repeated approval",
+      "finalHold": "Final hold"
+    },
+    "signatureState": {
+      "signed_this_text": "Digital signature on this text",
+      "signed_other_text": "Digital signature on another version of the text",
+      "auto_initiator": "No digital signature — approved automatically (approval initiator)",
+      "auto": "No digital signature — approved automatically",
+      "no_signature": "No digital signature",
+      "pending": "—"
+    },
+    "signaturesTitle": "Digital signatures on this text",
+    "signedHash": "Signed hash",
+    "textDigest": "Text fingerprint",
+    "verifyAtProvider": "Verify with provider",
+    "historyTitle": "Approval history",
+    "initiatorComment": "Initiator's comment on the corrections",
+    "showSignature": "Signature details",
+    "hideSignature": "Hide signature",
+    "downloadSignature": "Download signature (.sig.b64)",
+    "downloadSignedData": "Download signed data (.txt)",
+    "downloadFailed": "The file could not be downloaded",
+    "noExportPermission": "Downloading requires the “Export IRD” permission",
+    "headerHelp": "Every digital signature on a resolution contains the fingerprint (SHA-256) of the revision text. So the file itself tells you which document it is, who signed exactly this text, when and with what decision.",
+    "uploadTitle": "Revision file",
+    "dropTitle": "Drag the revision file here",
+    "dropSubtitle": "or click to choose · DOC, DOCX, PDF — exactly as downloaded from the system",
+    "replaceFile": "click to choose another file",
+    "how": {
+      "step1Title": "Download the file",
+      "step1": "Take the revision file from the IRD card or from an email — exactly as it was exported from the system.",
+      "step2Title": "Upload it here",
+      "step2": "Drag the file into the field below. The file is not stored — the system only computes its fingerprint.",
+      "step3Title": "Check the signatures",
+      "step3": "You will see the document, the approval history and every digital signature on this text."
+    },
+    "verdict": {
+      "confirmedTitle": "Authenticity confirmed",
+      "confirmed": "The text is approved: all approvers ({{total}}) signed exactly this version.",
+      "partialTitle": "Text found, but not signed by everyone",
+      "partial": "{{signed}} of {{total}} signatures are on this version of the text. Check the history: the others may have signed another version or approved without a digital signature."
+    },
+    "fingerprintHelp": "SHA-256 is a fingerprint of the file content. Changing even one byte gives a completely different fingerprint, so a match means a byte-for-byte identical file.",
+    "copy": "Copy",
+    "copied": "Copied to clipboard",
+    "currentTextHelp": "This is the current text of the revision — the one in the IRD card now.",
+    "notCurrentTextHelp": "The file used to be this revision's text: an intermediate version during revision or text replaced later.",
+    "approversTitle": "Approvers",
+    "signatureColumnHelp": "“Digital signature on this text” — the signature is on exactly the uploaded file. “On another version” — the person signed an earlier or later version. “Approved automatically” — the decision was set by the system (approval initiator or deadline expired).",
+    "historyHelp": "All decisions by round: primary approval, repeated approvals, final hold — with comments and the initiator's comments. Green dot — signature on this text, red — on another version.",
+    "verifyHelp": "The signature is re-verified with the digital signature provider (Infocom) and compared with the current state of the document and resolution.",
+    "verifyOk": "The signature is valid",
+    "downloadHelp": "The signature itself (CMS in base64) — for verification on an external site. Requires the “Export IRD” permission.",
+    "downloadDataHelp": "Signed data: decision, comment, text fingerprint and IRD code. Their SHA-256 is the signed hash.",
+    "downloading": "Preparing the file…",
+    "downloadedSignature": "Signature downloaded",
+    "downloadedData": "Signed data downloaded",
+    "fields": {
+      "signer": "Signer",
+      "signedAt": "Signed at",
+      "decision": "Decision",
+      "certificate": "Certificate",
+      "comment": "Comment on the decision"
+    }
+  },
+  "help": {
+    "page": {
+      "title": "How to work in the system",
+      "description": "Step-by-step guides by section. Links in articles lead straight to the right screen — no need to hunt for a menu item by its description.",
+      "newArticle": "New article",
+      "loadError": "Could not load the guides",
+      "openError": "Could not open the article",
+      "noArticlesTitle": "No articles yet",
+      "noArticlesHint": "Create the first article with the “New article” button",
+      "clue": "If an article has a “Go to” button, it opens the screen the article is about. And the help button on those screens leads back here."
+    },
+    "stats": {
+      "articles_one": "article",
+      "articles_other": "articles",
+      "sections_one": "section",
+      "sections_other": "sections",
+      "drafts_one": "draft",
+      "drafts_other": "drafts",
+      "draftsHint": "Drafts are visible only to guide editors"
+    },
+    "search": {
+      "placeholder": "Search: title, summary, article text",
+      "hint": "We search article titles and summaries, and from two characters on — their text too: steps, notes, screenshot captions. Matches are highlighted both in the contents and in the open article.",
+      "indexing": "Searching article texts…",
+      "found_one": "{{count}} article found",
+      "found_other": "{{count}} articles found",
+      "nothingTitle": "Nothing found",
+      "nothingHint": "Try another word — for example, the name of a section or a button",
+      "matchesInArticle": "Matches for “{{query}}” are highlighted in the text",
+      "noMatchInArticle": "“{{query}}” does not appear in this article",
+      "toFirstMatch": "Go to first match"
+    },
+    "sections": {
+      "Start": "Getting started",
+      "Sz": "Memos",
+      "Vnd": "Regulatory documents",
+      "Procurement": "Procurement",
+      "Signing": "Approval and signing",
+      "Meetings": "Meetings",
+      "Administration": "Administration"
+    },
+    "article": {
+      "draftBadge": "draft",
+      "draft": "Draft",
+      "draftHint": "A draft is visible only to guide editors. Publish the article in the editor so that all employees can see it.",
+      "opening": "Opening the article…",
+      "chooseTitle": "Choose an article",
+      "chooseHint": "The contents on the left follow the system's sections. Or find what you need using search.",
+      "updated": "Updated {{date}}",
+      "goTo": "Go to",
+      "goToHint": "Open the screen this article is about",
+      "edit": "Edit",
+      "editHint": "Edit article",
+      "deleteHint": "Delete article"
+    },
+    "toast": {
+      "created": "Article created",
+      "saved": "Changes saved",
+      "deleted": "Article deleted",
+      "deleteFailed": "Could not delete the article"
+    },
+    "delete": {
+      "title": "Delete the article?",
+      "message": "The article “{{title}}” will be deleted permanently."
+    },
+    "editor": {
+      "ariaLabel": "Article editor",
+      "help": "An article is built from blocks: paragraphs, steps, notes, links to sections, screenshots and files. Use the arrows to reorder blocks. Until the article is published, only editors can see it.",
+      "newTitle": "New article",
+      "editTitle": "Edit article",
+      "close": "Close",
+      "aboutTitle": "About the article",
+      "title": "Title",
+      "titlePlaceholder": "How to send a memo for approval",
+      "titleRequired": "The article must have a title",
+      "section": "Section",
+      "summary": "In short — what question the article answers",
+      "summaryPlaceholder": "Whom to choose as approvers and what to do with remarks",
+      "summaryHint": "Shown in the contents under the title and used in search.",
+      "route": "Screen the article refers to",
+      "routeHint": "Page address, e.g. /base-vnd. A help button will appear on that screen, and a “Go to” button in the article.",
+      "order": "Order in section",
+      "orderHint": "Lower means higher.",
+      "contentTitle": "Content",
+      "blocksCount": "Blocks: {{count}}",
+      "empty": "Empty so far",
+      "startHint": "Start with a short paragraph explaining why this guide exists, then add “Steps”. Put anything that must not be missed into a “Note”.",
+      "moveUp": "Move up",
+      "moveDown": "Move down",
+      "removeBlock": "Remove block",
+      "paragraphPlaceholder": "Paragraph text",
+      "stepPlaceholder": "What to do",
+      "removeStep": "Remove step",
+      "addStep": "Add step",
+      "toneInfo": "Explanation",
+      "toneWarning": "Warning",
+      "notePlaceholder": "What is important to know",
+      "linkLabelPlaceholder": "Button label",
+      "vndLabelPlaceholder": "Document title",
+      "vndIdPlaceholder": "id in the IRD base",
+      "publish": "Publish",
+      "publishedHint": "All employees will see the article",
+      "draftHint": "Draft — visible only to guide editors",
+      "cancel": "Cancel",
+      "saving": "Saving…",
+      "save": "Save",
+      "create": "Create article",
+      "saveFailed": "Could not save the article",
+      "uploadImage": "Upload screenshot",
+      "replaceImage": "Replace screenshot",
+      "uploading": "Uploading…",
+      "markerHint": "Click the screenshot to place a callout",
+      "markerPlaceholder": "What to click here",
+      "captionPlaceholder": "Caption under the screenshot — optional",
+      "imageUploadFailed": "Could not upload the screenshot.",
+      "uploadFile": "Upload file",
+      "replaceFile": "Replace file",
+      "fileUploadFailed": "Could not upload the file."
+    },
+    "blocks": {
+      "text": {
+        "label": "Paragraph",
+        "hint": "Explanation"
+      },
+      "steps": {
+        "label": "Steps",
+        "hint": "What to do in order"
+      },
+      "note": {
+        "label": "Note",
+        "hint": "Important point or warning"
+      },
+      "link": {
+        "label": "Go to",
+        "hint": "Button to a system section"
+      },
+      "vnd": {
+        "label": "Document",
+        "hint": "Link to an IRD"
+      },
+      "image": {
+        "label": "Screenshot",
+        "hint": "With callouts: where to click"
+      },
+      "file": {
+        "label": "File",
+        "hint": ".docx or .pdf document — download and preview"
+      }
+    },
+    "view": {
+      "empty": "The article is not filled in yet.",
+      "preview": "Preview",
+      "download": "Download",
+      "downloadFailed": "Could not download the file",
+      "downloadFile": "Download file",
+      "filePreview": "File preview",
+      "loadingDocument": "Loading the document…"
+    },
+    "screenshot": {
+      "alt": "Screenshot",
+      "removeMarker": "Remove callout",
+      "unavailable": "Screenshot unavailable"
+    }
+  },
+  "signingWorkplace": {
+    "title": "Qualified signature workplace",
+    "description": "Check that you are ready to sign — in advance, not when a document is already waiting for your signature. Each step tells you what to do if it fails.",
+    "recheck": "Check again",
+    "recheckHint": "Re-check the crypto provider, the certificate and the certification authorities",
+    "checkFailed": "Could not check the workplace",
+    "privacyClue": "The private key stays on your computer: the system provides the document fingerprint, the crypto provider signs it, and only the signature and the certificate come back.",
+    "overall": {
+      "ready": "Ready to sign",
+      "attention": "Needs attention",
+      "waiting": "Checking…"
+    },
+    "state": {
+      "ready": "Ready",
+      "attention": "Attention",
+      "waiting": "Checking"
+    },
+    "flow": {
+      "title": "How signing works",
+      "hint": "Only the document's fingerprint (hash) is signed, and the key never leaves your workplace.",
+      "fingerprint": "The system provides the document fingerprint",
+      "sign": "The crypto provider signs it with the key on your computer",
+      "result": "Only the signature and the certificate come back"
+    },
+    "steps": {
+      "provider": {
+        "title": "Crypto provider",
+        "help": "The digital signature software on your computer (for example, the Tumar plugin or agent). It signs the document fingerprint with your key.",
+        "searching": "Looking for a digital signature tool on this workplace…",
+        "ready": "{{title}} is responding",
+        "notFound": "No digital signature tool found",
+        "manualHint": "You can still sign: the signing window has a manual path — copy the fingerprint, sign it with your own utility and attach the result."
+      },
+      "certificate": {
+        "title": "Your certificate",
+        "help": "A certificate is bound to you automatically at your first signature. Here you can see which one is bound and until when it is valid.",
+        "checking": "Checking…",
+        "active": "{{subject}} · valid until {{date}}",
+        "allInvalid": "All certificates bound to you are revoked or expired",
+        "notBound": "No certificate is bound yet — it will be bound automatically at your first signature",
+        "expiresSoon_one": "{{count}} day until expiry — time to contact the certification authority.",
+        "expiresSoon_other": "{{count}} days until expiry — time to contact the certification authority."
+      },
+      "authorities": {
+        "title": "Trusted certification authorities",
+        "help": "Root certificates of the certification authorities the bank trusts. The system uses them to verify who issued the signer's certificate.",
+        "configured": "Configured — the certificate chain is verified up to the root",
+        "notConfigured": "Not configured — the chain is not verified, the signature is marked as unverified",
+        "notConfiguredHint": "Until the CA root certificate is uploaded in the “System” section, signatures are accepted, but the system cannot prove who issued the certificate."
+      }
+    },
+    "certificates": {
+      "title": "Certificates bound to you",
+      "help": "All certificates you have ever signed with in the system. The valid one is the one that is neither revoked nor expired.",
+      "subject": "Issued to",
+      "issuer": "Issued by",
+      "validUntil": "Valid until",
+      "registered": "Bound",
+      "state": "Status",
+      "revoked": "Revoked",
+      "revokedWithReason": "Revoked: {{reason}}",
+      "expired": "Expired",
+      "valid": "Valid"
+    }
+  },
+  "savedFilters": {
+    "title": "Saved filters",
+    "applyHint": "Apply a filter",
+    "empty": "No saved filters",
+    "save": "Save filter",
+    "namePlaceholder": "Filter name",
+    "nameRequired": "Enter a filter name",
+    "saveFailed": "Couldn't save the filter",
+    "delete": "Delete filter"
+  },
+  "szRegistry": {
+    "analyticsButton": "Memo analytics",
+    "title": "Service memo registry",
+    "subtitle": "Central registry of service memos · registration, due dates and approval statuses",
+    "create": "Create memo",
+    "analytics": "Memo analytics",
+    "scopes": {
+      "all": "Registry",
+      "inbox": "Memos I approve",
+      "assignments": "My assignments",
+      "originals": "Originals in hand",
+      "mine": "Memos I initiated",
+      "drafts": "Drafts",
+      "approval": "Under approval",
+      "pending": "Awaiting registration",
+      "signing": "Awaiting signature",
+      "archive": "Archive"
+    },
+    "searchPlaceholder": "Search by number, subject and text…",
+    "allKinds": "All types",
+    "kindSearchPlaceholder": "Search type…",
+    "overdueOnly": "Overdue only",
+    "found": "Found",
+    "exportExcel": "Export to Excel",
+    "exporting": "Preparing…",
+    "loadError": "Couldn't load the service memo registry",
+    "exportError": "Couldn't export the registry",
+    "exportErrorHint": "Please try again later",
+    "exportSelectedError": "Couldn't export the selected memos",
+    "cols": {
+      "memo": "Memo",
+      "subject": "Subject",
+      "holder": "Held by",
+      "location": "Storage location",
+      "returnBy": "Return by",
+      "assignment": "Assignment",
+      "due": "Due",
+      "state": "State",
+      "number": "Number",
+      "registeredOn": "Registration date",
+      "kind": "Type",
+      "author": "Author",
+      "dueDate": "Due date",
+      "status": "Status"
+    },
+    "originalsEmpty": "All originals are filed",
+    "assignmentsEmpty": "No assignments",
+    "memosEmpty": "No memos",
+    "selectAll": "Select all",
+    "selectRow": "Select {{name}}",
+    "noNumber": "— no number",
+    "noDueDate": "no due date",
+    "daysOverdue": "−{{n}} d",
+    "daysLeft": "in {{n}} d",
+    "returned": "Returned: {{reason}}",
+    "overdue": "Overdue",
+    "assignmentState": {
+      "Open": "In progress",
+      "Reported": "Report submitted",
+      "Done": "Completed",
+      "Cancelled": "Withdrawn"
+    },
+    "selected": "Selected: {{count}}",
+    "exportSelected": "Export selected",
+    "sendToArchive": "Send to archive",
+    "clearSelection": "Clear selection",
+    "paper": "paper",
+    "archivedToast": "Filed: {{count}}",
+    "status": {
+      "Draft": "Draft",
+      "OnApproval": "Under approval",
+      "PendingRegistration": "Approved, awaiting registration",
+      "OnSigning": "Awaiting signature",
+      "OnBoardReview": "Submitted to meeting",
+      "Registered": "Registered",
+      "OnRevision": "Under revision",
+      "OnAddresseeDecision": "Awaiting addressee's decision",
+      "OnExecution": "In execution",
+      "Executed": "Executed",
+      "Rejected": "Rejected",
+      "Withdrawn": "Withdrawn",
+      "Archived": "Archived"
+    }
+  },
+  "substitutionRequests": {
+    "title": "Substitution requests",
+    "subtitle": "Arranging a substitute for an employee's absence: handover commission, HR order",
+    "create": "Create request",
+    "searchPlaceholder": "Search: subject, name, number…",
+    "allStatuses": "All statuses",
+    "mineOnly": "Only mine",
+    "found": "Found",
+    "loadError": "Couldn't load the requests",
+    "empty": "No requests",
+    "draftNumber": "draft",
+    "cols": {
+      "number": "Number",
+      "subject": "Subject / reason",
+      "absent": "Absent employee",
+      "substitute": "Substitute",
+      "period": "Period",
+      "status": "Status"
+    },
+    "status": {
+      "Draft": "Draft",
+      "OnApproval": "Under approval",
+      "OnExecution": "In execution",
+      "Executed": "Executed",
+      "Rejected": "Rejected",
+      "Withdrawn": "Withdrawn"
+    },
+    "reason": {
+      "Sick": "Sick leave",
+      "Vacation": "Vacation",
+      "Dismissal": "Dismissal",
+      "Other": "Other"
+    }
+  },
+  "substitutionCard": {
+    "loadError": "Couldn't load the request",
+    "saveFailed": "Couldn't save",
+    "newTitle": "New substitution request",
+    "defaultTitle": "Substitution request",
+    "statusLabel": "Status:",
+    "passportWarning": "Warning: the substitute's passport expires before the substitution ends.",
+    "sections": {
+      "general": "General information",
+      "absent": "Absent employee",
+      "substitute": "Substitute employee",
+      "period": "Substitution period",
+      "commission": "Handover commission",
+      "other": "Other",
+      "route": "Approval route"
+    },
+    "fields": {
+      "subject": "Subject",
+      "reason": "Reason for substitution",
+      "employee": "Employee",
+      "findEmployee": "Find an employee",
+      "fullNameManual": "Full name (if not from the directory)",
+      "position": "Position",
+      "unit": "Unit",
+      "unitPlaceholder": "— select a unit —",
+      "passportSeriesNumber": "Passport series and number",
+      "passportIssuedBy": "Issued by",
+      "inn": "Tax ID (14 digits)",
+      "passportIssuedOn": "Passport issue date",
+      "passportValidUntil": "Passport valid until",
+      "addressRegistration": "Registration address",
+      "addressResidence": "Residential address",
+      "startsOn": "Start date",
+      "endsOn": "End date",
+      "daysCount": "Calendar days",
+      "chair": "Commission chair",
+      "chairPosition": "Chair's position",
+      "handoverMoment": "Handover moment",
+      "handoverOn": "Handover date",
+      "members": "Commission members",
+      "description": "Description"
+    },
+    "handover": {
+      "EndOfDay": "At the end of the working day",
+      "StartOfDay": "At the start of the working day"
+    },
+    "approvalState": {
+      "Pending": "Pending",
+      "Active": "Under approval",
+      "Approved": "Approved",
+      "Rejected": "Rejected"
+    },
+    "roles": {
+      "ops": "Operations Department",
+      "hr": "HR Department"
+    },
+    "buttons": {
+      "saveDraft": "Save draft",
+      "submit": "Submit for approval",
+      "saveHr": "Save changes (HR)",
+      "order": "Order",
+      "liability": "Liability agreement",
+      "exportAll": "Export (all fields)",
+      "execute": "Executed (order issued)",
+      "delete": "Delete",
+      "approve": "Approve",
+      "reject": "Reject",
+      "withdraw": "Withdraw",
+      "addMember": "Add a commission member",
+      "removeMember": "Remove from the commission"
+    },
+    "rejectPrompt": "Reason for rejection (optional):",
+    "files": {
+      "order": "Order {{name}}.docx",
+      "liability": "Liability agreement {{name}}.docx",
+      "card": "Substitution request {{name}}.docx"
+    }
+  },
+  "searchPage": {
+    "title": "Document search",
+    "subtitle": "By card details and their text fields. Attachment contents are not indexed yet.",
+    "queryPlaceholder": "What are we looking for: subject, number, decision text…",
+    "find": "Search",
+    "searching": "Searching…",
+    "advanced": "Advanced search",
+    "advancedHint": "Amount applies to procurements and contracts only; unit does not apply to meetings.",
+    "reset": "Reset filters",
+    "scopeAll": "All",
+    "scopes": {
+      "Sz": "Service memos",
+      "Procurement": "Procurements",
+      "Contract": "Contracts",
+      "Meeting": "Meetings",
+      "Vnd": "Regulatory documents (VND)"
+    },
+    "filters": {
+      "from": "Created from",
+      "to": "Created to",
+      "unit": "Unit",
+      "unitSearch": "Search unit…",
+      "allUnits": "All units",
+      "amountFrom": "Amount from",
+      "amountTo": "Amount to"
+    },
+    "chips": {
+      "from": "From {{date}}",
+      "to": "To {{date}}",
+      "amountFrom": "from {{amount}}",
+      "amountTo": "up to {{amount}}"
+    },
+    "removeFilter": "Remove filter",
+    "error": "Search failed",
+    "found": "Found",
+    "currency": "KGS",
+    "empty": "Nothing found. Try part of a word — search matches word beginnings: “serv” finds “server”.",
+    "prev": "Back",
+    "next": "Next",
+    "pageOf": "Page {{page}} of {{pages}}",
+    "statusTitles": {
+      "draft": "Draft",
+      "pendingRegistration": "Awaiting registration",
+      "registered": "Registered",
+      "onApproval": "Under approval",
+      "onRevision": "Under revision",
+      "onAddresseeDecision": "Awaiting addressee's decision",
+      "onExecution": "In execution",
+      "approved": "Approved",
+      "inProcurement": "In procurement procedure",
+      "executed": "Executed",
+      "completed": "Completed",
+      "signed": "Signed",
+      "terminated": "Terminated",
+      "rejected": "Rejected",
+      "withdrawn": "Withdrawn",
+      "cancelled": "Cancelled",
+      "archived": "Archived",
+      "active": "Valid",
+      "onActualization": "Under update review",
+      "onConsolidation": "Awaiting approval"
+    }
+  },
+  "szTracker": {
+    "title": "Memo board",
+    "subtitle": "Active memos by stage",
+    "total": "total {{n}}",
+    "stale": "stuck {{n}}",
+    "back": "Memo registry",
+    "loadError": "Couldn't load the memo board",
+    "loadErrorHint": "Check your connection and try again",
+    "retry": "Retry",
+    "empty": "empty",
+    "draftNumber": "draft",
+    "today": "today",
+    "stages": {
+      "Draft": "Draft",
+      "PendingRegistration": "Awaiting registration",
+      "OnApproval": "Under approval",
+      "OnSigning": "Awaiting signature",
+      "OnRevision": "Under revision",
+      "OnAddresseeDecision": "Addressee's decision",
+      "OnExecution": "In execution"
+    }
+  },
+  "procurementTracker": {
+    "title": "Procurement board",
+    "subtitle": "Active requests by stage",
+    "total": "total {{n}}",
+    "stale": "stuck {{n}}",
+    "back": "Procurement registry",
+    "loadError": "Couldn't load the procurement board",
+    "loadErrorHint": "Check your connection and try again",
+    "retry": "Retry",
+    "empty": "empty",
+    "draftNumber": "draft",
+    "today": "today",
+    "currency": "KGS",
+    "stages": {
+      "Draft": "Draft",
+      "OnApproval": "Under approval",
+      "OnRevision": "Under revision",
+      "Approved": "Approved",
+      "InProcurement": "In procedure",
+      "Completed": "Completed"
+    }
+  },
+  "szStatistics": {
+    "title": "Memo analytics",
+    "subtitle": "How many memos are in progress, how many are overdue, and in which units",
+    "back": "Memo registry",
+    "loadError": "Failed to build the summary",
+    "exportError": "Failed to export the Excel workbook",
+    "reset": "Reset",
+    "exportExcel": "Export to Excel",
+    "searchPlaceholder": "Search by unit, kind or month",
+    "overdueOnly": "Overdue only",
+    "noUnit": "No unit",
+    "noKind": "No kind",
+    "emptyPeriod": "No memos for the selected period",
+    "byUnit": "By unit",
+    "byKind": "By memo kind",
+    "byMonth": "By month",
+    "footnote": "\"Other\" covers drafts, withdrawn and rejected memos: they are neither in progress nor executed and do not count towards the workload.",
+    "filters": {
+      "from": "Registered from",
+      "to": "to",
+      "unit": "Unit",
+      "unitSearch": "Find a unit",
+      "kind": "Memo kind",
+      "kindSearch": "Find a kind",
+      "all": "All"
+    },
+    "cols": {
+      "name": "Name",
+      "total": "Total",
+      "share": "Share",
+      "inWork": "In progress",
+      "overdue": "Overdue",
+      "executed": "Executed"
+    },
+    "kpi": {
+      "total": "Total memos",
+      "inWork": "In progress",
+      "overdue": "Overdue",
+      "executed": "Executed",
+      "other": "Other"
+    }
+  },
+  "riskEvents": {
+    "title": "Operational risk events",
+    "subtitle": "Register of op-risk events from the workflow (Regulation 716-P / NBKR): stage overdue, control failure, bypassing the four-eyes principle and more",
+    "tabAll": "All",
+    "searchPlaceholder": "Search by description…",
+    "searchType": "Find a type",
+    "allTypes": "All types",
+    "allSeverities": "Any severity",
+    "reset": "Reset",
+    "listTitle": "Events",
+    "empty": "No events",
+    "loadError": "Failed to load events",
+    "retry": "Retry",
+    "cols": {
+      "date": "Date",
+      "type": "Type (716-P)",
+      "description": "Description",
+      "severity": "Severity",
+      "loss": "Direct loss",
+      "status": "Status"
+    },
+    "type": {
+      "InternalFraud": "Internal fraud",
+      "ExternalFraud": "External fraud",
+      "EmploymentPractices": "Employment practices and workplace safety",
+      "ClientsProductsBusinessPractices": "Clients, products and business practices",
+      "DamageToPhysicalAssets": "Damage to physical assets",
+      "BusinessDisruptionSystemFailures": "Business disruption and system failures",
+      "ExecutionDeliveryProcessManagement": "Execution, delivery and process management"
+    },
+    "severity": {
+      "Low": "Minor",
+      "Medium": "Moderate",
+      "High": "Significant",
+      "Critical": "Critical"
+    },
+    "status": {
+      "New": "New",
+      "InProgress": "In progress",
+      "Closed": "Closed"
+    },
+    "card": {
+      "eventNo": "Event #{{id}}",
+      "occurredOn": "Event date",
+      "initiator": "Initiator",
+      "document": "Document",
+      "route": "Route",
+      "step": "Step",
+      "loss": "Direct loss",
+      "description": "Description",
+      "resolution": "Resolution / comment",
+      "review": "Event review",
+      "lossPlaceholder": "Loss",
+      "commentPlaceholder": "Comment / measures taken (optional)",
+      "close": "Close",
+      "save": "Save",
+      "saving": "Saving…",
+      "loadError": "Failed to load the event",
+      "saveError": "Failed to save changes"
+    }
+  },
+  "processMining": {
+    "title": "Approval route flow",
+    "subtitle": "How routes really run: path variants, bottlenecks and returns for rework. Durations are in bank working hours",
+    "noAccessTitle": "Insufficient permissions",
+    "noAccessDescription": "You do not have access to process mining analytics",
+    "unitWorkHours": "work h",
+    "searchPlaceholder": "Search by step or approver",
+    "reset": "Reset",
+    "loadError": "Failed to load the report",
+    "emptyFilter": "No started routes match the selected filter",
+    "noData": "No data",
+    "filters": {
+      "documentType": "Document type",
+      "template": "Route template",
+      "allDocumentTypes": "All document types",
+      "allTemplates": "All templates",
+      "find": "Find"
+    },
+    "kpi": {
+      "total": "Routes",
+      "completed": "Completed",
+      "running": "In progress",
+      "variants": "Variants",
+      "reworkRate": "Return rate",
+      "reworkHint": "{{count}} routes with rework",
+      "averageDuration": "Average duration",
+      "median": "median {{value}} {{unit}}"
+    },
+    "variants": {
+      "title": "Route variants",
+      "subtitle": "Actual sequences of completed steps and how often they occur"
+    },
+    "bottleneckSteps": {
+      "title": "Bottlenecks: steps",
+      "subtitle": "Average wait for a decision at a step, {{unit}}"
+    },
+    "rework": {
+      "title": "Returns and rework by step",
+      "subtitle": "Where the route was turned back — rejection or veto at a step"
+    },
+    "stepsTable": {
+      "title": "Steps: review times",
+      "subtitle": "Average / median / maximum wait and share of timeout decisions"
+    },
+    "participants": {
+      "title": "Bottlenecks: participants",
+      "subtitle": "Approvers with the longest average decision time"
+    },
+    "cols": {
+      "step": "Step",
+      "approver": "Approver",
+      "decisions": "Decisions",
+      "average": "Avg, {{unit}}",
+      "median": "Median",
+      "max": "Max",
+      "timeout": "Timeout"
+    }
+  },
+  "supplierRegistry": {
+    "title": "Suppliers",
+    "subtitle": "Reliability and the blacklist of unscrupulous suppliers",
+    "noPermission": "You do not have permission to manage suppliers!",
+    "operationFailed": "Operation failed",
+    "promptReason": "Reason for blacklisting \"{{title}}\" (Appendix No. 4):",
+    "promptUntil": "Restriction end date (YYYY-MM-DD), leave empty for indefinite:",
+    "searchPlaceholder": "Search by name or tax ID…",
+    "onlyBlacklisted": "blacklist only",
+    "newTitlePlaceholder": "Name of the new supplier",
+    "innPlaceholder": "Tax ID",
+    "add": "Add supplier",
+    "cols": {
+      "supplier": "Supplier",
+      "reliability": "Reliability",
+      "blacklist": "Blacklist",
+      "rating": "Rating"
+    },
+    "inn": "Tax ID",
+    "innMissing": "Tax ID not specified",
+    "affiliated": "affiliated party",
+    "director": "Director",
+    "notChecked": "not checked",
+    "reliable": "reliable",
+    "unreliable": "negative conclusion",
+    "checkedOn": "checked on {{date}}",
+    "taxClearance": "tax clearance",
+    "socialFund": "Social Fund",
+    "expired": "expired",
+    "blacklisted": "blacklisted",
+    "until": "until {{date}}",
+    "ratings": "Ratings",
+    "lift": "Lift restriction",
+    "toBlacklist": "Blacklist",
+    "conclusion": "Security conclusion",
+    "empty": "No suppliers — add one manually above, or they will appear when commercial offers are registered"
   }
 }

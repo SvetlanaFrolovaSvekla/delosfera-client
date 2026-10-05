@@ -1,5 +1,15 @@
-import {useCallback, useEffect, useState} from "react";
+/**
+ * Журнал заседаний Правления, КПА и комитетов.
+ *
+ * Сортировка по дате вниз и колонка просроченных поручений: журнал открывают,
+ * чтобы понять, что горит по протоколам, а не, чтоб полистать историю.
+ */
+
+import {useCallback, useEffect, useMemo, useState} from "react";
 import {useNavigate} from "react-router-dom";
+import {useTranslation} from "react-i18next";
+import {toast} from "@/service/toastService.ts";
+import {CalendarPlus, Download, Plus} from "lucide-react";
 import {
     bodyOptions,
     meetingsService,
@@ -8,52 +18,118 @@ import {
     type MeetingListItem,
 } from "@/service/meetingsService/meetingsService.ts";
 import {formatDate, formatTime} from "@/service/meetingsService/formatMeetingDate.ts";
-
-/**
- * Журнал заседаний Правления, КПА и комитетов.
- *
- * Сортировка по дате вниз и колонка просроченных поручений: журнал открывают,
- * чтобы понять, что горит по протоколам, а не чтобы полистать историю.
- */
+import {parseDDMMYYYYToISO} from "@/utils/dateUtils.ts";
+import {HighlightText} from "@/utils/highlightText.tsx";
+import {PageHeader} from "@/components/componentsGeneral/PageHeader.tsx";
+import {Section} from "@/components/componentsGeneral/Section.tsx";
+import {SearchBar} from "@/components/componentsGeneral/SearchBar.tsx";
+import {Loader} from "@/components/componentsGeneral/Loader.tsx";
+import {EmptyState} from "@/components/componentsGeneral/EmptyState.tsx";
+import {Badge, Cell, DataTable, Row} from "@/components/componentsGeneral/DataTable.tsx";
+import {CheckBoxOne} from "@/components/componentsGeneral/componentsCheckBox/CheckBoxOne.tsx";
+import {DatePickerInput} from "@/components/componentsGeneral/datePickers/DatePickerInput.tsx";
+import {MultiSelectField} from "@/components/componentsGeneral/selects/MultiSelects/MultiSelectField.tsx";
+import {SelectDropdown} from "@/components/componentsGeneral/selects/SingleSelects/SelectDropdown.tsx";
 
 const currentYear = new Date().getFullYear();
 
+const yearOptions = [currentYear + 1, currentYear, currentYear - 1, currentYear - 2]
+    .map(y => ({value: String(y), label: String(y)}));
+
+const FIELD_LABEL = "block text-[12px] font-semibold text-[#3a4560] mb-2";
+const TEXT_INPUT =
+    "h-9 w-full rounded-[9px] border border-[#e5e9f0] bg-white px-3 text-[12.5px] text-[#1c2740] outline-none " +
+    "placeholder:text-[#a3adbd] hover:bg-[#f6f8fb] focus:border-[#4e57d6] focus:bg-white focus:ring-[3px] focus:ring-[#ececfc]";
+
+const BTN_BASE =
+    "inline-flex items-center gap-2 rounded-[10px] font-semibold text-[13px] cursor-pointer " +
+    "disabled:cursor-not-allowed";
+const BTN_PRIMARY =
+    `${BTN_BASE} h-10 px-[15px] border-none bg-[#4e57d6] text-white hover:brightness-[1.06] ` +
+    "shadow-[0_6px_16px_-6px_#4e57d6] disabled:bg-[#e5e9f0] disabled:text-[#a3adbd] disabled:shadow-none";
+const BTN_SECONDARY =
+    `${BTN_BASE} h-10 px-[15px] border border-[#e5e9f0] bg-white text-[#3a4560] hover:bg-[#f6f8fb] disabled:opacity-60`;
+
+const emptyForm = {
+    body: "Kpa" as MeetingBody,
+    form: "InPerson" as MeetingForm,
+    /** «дд.мм.гггг чч:мм» - так отдаёт DatePickerInput с withTime. */
+    dateTime: "",
+    number: "",
+    materialsUrl: "",
+};
+
 export const MeetingRegistryPage = () => {
     const navigate = useNavigate();
+    const {t} = useTranslation();
+
+    const bodySelectOptions = useMemo(
+        () => bodyOptions.map(o => ({value: o.value, label: t(`meetings.bodies.${o.value}`)})),
+        [t],
+    );
+    const formOptions = useMemo(
+        () => (["InPerson", "Absentee"] as MeetingForm[]).map(v => ({value: v, label: t(`meetings.forms.${v}`)})),
+        [t],
+    );
 
     const [meetings, setMeetings] = useState<MeetingListItem[]>([]);
-    const [body, setBody] = useState<MeetingBody | "">("");
+    // Пустой выбор = «все органы»
+    const [bodies, setBodies] = useState<MeetingBody[]>([]);
     const [year, setYear] = useState(currentYear);
     const [overdueOnly, setOverdueOnly] = useState(false);
+    const [search, setSearch] = useState("");
+
+    const [loading, setLoading] = useState(true);
     const [busy, setBusy] = useState(false);
     const [error, setError] = useState<string | null>(null);
 
     const [creating, setCreating] = useState(false);
-    const [form, setForm] = useState<{
-        body: MeetingBody;
-        form: MeetingForm;
-        date: string;
-        time: string;
-        number: string;
-        materialsUrl: string;
-    }>({body: "Kpa", form: "InPerson", date: "", time: "10:00", number: "", materialsUrl: ""});
+    const [form, setForm] = useState(emptyForm);
+
+    // Сервис принимает один орган: если выбран ровно один - фильтруем на сервере,
+    // если несколько - грузим все и добираем на клиенте.
+    const singleBody = bodies.length === 1 ? bodies[0] : undefined;
 
     const load = useCallback(async () => {
         try {
+            setLoading(true);
             setError(null);
             setMeetings(await meetingsService.list({
-                body: body || undefined,
+                body: singleBody,
                 year,
                 overdueOnly: overdueOnly || undefined,
             }));
         } catch {
-            setError("Не удалось загрузить журнал заседаний");
+            setError(t("meetings.registry.loadError"));
+        } finally {
+            setLoading(false);
         }
-    }, [body, year, overdueOnly]);
+    }, [singleBody, year, overdueOnly, t]);
 
     useEffect(() => {
         void load();
     }, [load]);
+
+    const query = search.trim().toLowerCase();
+
+    const visibleMeetings = useMemo(() => meetings.filter(m => {
+        if (bodies.length > 1 && !bodies.includes(m.body)) return false;
+        if (!query) return true;
+
+        return [t(`meetings.bodies.${m.body}`), String(m.number), m.secretaryName ?? "", formatDate(m.date)]
+            .some(value => value.toLowerCase().includes(query));
+    }), [meetings, bodies, query, t]);
+
+    const filtersActive = bodies.length > 0 || overdueOnly || query !== "";
+
+    const resetFilters = () => {
+        setBodies([]);
+        setOverdueOnly(false);
+        setSearch("");
+    };
+
+    const date = parseDDMMYYYYToISO(form.dateTime.slice(0, 10));
+    const time = form.dateTime.slice(11, 16) || "10:00";
 
     const create = async () => {
         try {
@@ -63,195 +139,276 @@ export const MeetingRegistryPage = () => {
             const meeting = await meetingsService.create({
                 body: form.body,
                 form: form.form,
-                date: form.date,
-                time: form.time,
+                date,
+                time,
                 number: form.number ? Number(form.number) : undefined,
                 materialsUrl: form.materialsUrl.trim() || undefined,
             });
 
+            toast.success(t("meetings.toast.created"));
             navigate(`/meetings/${meeting.id}`);
         } catch (e) {
-            const message = (e as {response?: {data?: {message?: string}}}).response?.data?.message;
-            setError(message ?? "Заседание не заведено");
+            const message = (e as { response?: { data?: { message?: string } } }).response?.data?.message;
+            setError(message ?? t("meetings.registry.createError"));
+            toast.error(t("meetings.registry.createError"), message);
         } finally {
             setBusy(false);
         }
     };
 
     const exportRegistry = async () => {
+        // Выгрузка за год идёт заметное время — без индикатора кажется, что кнопка не сработала.
+        const toastId = toast.loading(t("meetings.toast.exporting"), t("meetings.toast.exportingHint", {year}));
         try {
             setBusy(true);
             setError(null);
 
             const from = `${year}-01-01`;
             const to = `${year}-12-31`;
-            const blob = await meetingsService.downloadRegistry(from, to, body || undefined);
+            const blob = await meetingsService.downloadRegistry(from, to, singleBody);
 
             // Реестр отдаётся файлом, а не таблицей на экране: по ТЗ его выгружают
             // за период и отправляют дальше как документ.
             const url = URL.createObjectURL(blob);
             const link = document.createElement("a");
             link.href = url;
-            link.download = `Реестр решений ${year}.xlsx`;
+            link.download = t("meetings.registry.exportFile", {year});
             link.click();
             URL.revokeObjectURL(url);
+
+            toast.update(toastId, {
+                variant: "success",
+                title: t("meetings.toast.exported"),
+                description: t("meetings.registry.exportFile", {year}),
+                duration: 4500,
+            });
         } catch {
-            setError("Выгрузка реестра доступна секретарям Правления и КПА");
+            setError(t("meetings.registry.exportError"));
+            toast.update(toastId, {
+                variant: "error",
+                title: t("meetings.registry.exportError"),
+                description: t("meetings.toast.tryAgain"),
+                duration: 6000,
+            });
         } finally {
             setBusy(false);
         }
     };
 
     return (
-        <div style={{padding: "22px 26px", display: "flex", flexDirection: "column", gap: 16}}>
-            <div style={{display: "flex", alignItems: "flex-start", gap: 12, flexWrap: "wrap"}}>
-                <div style={{flex: 1, minWidth: 240}}>
-                    <h1 style={{margin: 0, fontSize: 19, fontWeight: 700, color: "#0f1b2d"}}>Заседания</h1>
-                    <div style={{marginTop: 4, fontSize: 12.5, color: "#8b97ab"}}>
-                        Протоколы Правления, КПА и комитетов · исполнение решений
-                    </div>
-                </div>
-
-                <select value={body} onChange={e => setBody(e.target.value as MeetingBody | "")}
-                        style={{...input, width: 180}}>
-                    <option value="">Все органы</option>
-                    {bodyOptions.map(o => <option key={o.value} value={o.value}>{o.title}</option>)}
-                </select>
-
-                <select value={year} onChange={e => setYear(Number(e.target.value))} style={{...input, width: 110}}>
-                    {[currentYear + 1, currentYear, currentYear - 1, currentYear - 2].map(y => (
-                        <option key={y} value={y}>{y}</option>
-                    ))}
-                </select>
-
-                <button onClick={() => setOverdueOnly(v => !v)}
-                        style={overdueOnly ? {...secondaryButton, ...activeFilter} : secondaryButton}>
-                    Только с просрочкой
-                </button>
-
-                <button onClick={exportRegistry} disabled={busy} style={secondaryButton}>Реестр в Excel</button>
-                <button onClick={() => setCreating(v => !v)} style={primaryButton}>Создать</button>
-            </div>
-
-            {error && <div style={{color: "#e0483d", fontSize: 13}}>{error}</div>}
+        <div
+            className="w-full max-w-[1700px] mx-auto px-4 sm:px-6 lg:px-8 xl:px-10 pt-5 sm:pt-[26px] pb-10 sm:pb-[60px]">
+            <PageHeader
+                title={t("meetings.registry.title")}
+                description={t("meetings.registry.description")}
+                actions={
+                    <>
+                        <button type="button" onClick={() => void exportRegistry()} disabled={busy}
+                                className={BTN_SECONDARY}>
+                            <Download className="w-[17px] h-[17px]" strokeWidth={2}/>
+                            {t("meetings.registry.exportExcel")}
+                        </button>
+                        <button type="button" onClick={() => setCreating(v => !v)} className={BTN_PRIMARY}>
+                            <Plus className="w-[18px] h-[18px]" strokeWidth={2}/>
+                            {t("meetings.registry.create")}
+                        </button>
+                    </>
+                }
+            />
 
             {creating && (
-                <section style={card}>
-                    <div style={cardTitle}>Новое заседание</div>
-                    <div style={{display: "flex", gap: 8, flexWrap: "wrap"}}>
-                        <select value={form.body} onChange={e => setForm({...form, body: e.target.value as MeetingBody})}
-                                style={{...input, width: 190}}>
-                            {bodyOptions.map(o => <option key={o.value} value={o.value}>{o.title}</option>)}
-                        </select>
+                <Section icon={<CalendarPlus className="w-4 h-4 text-[#2d354a]" strokeWidth={2}/>}
+                         title={t("meetings.registry.form.title")}>
+                    <div className="grid [grid-template-columns:repeat(auto-fit,minmax(220px,1fr))] gap-x-[18px] gap-y-3.5">
+                        <div>
+                            <span className={FIELD_LABEL}>{t("meetings.registry.form.body")}</span>
+                            <SelectDropdown
+                                options={bodySelectOptions}
+                                value={form.body}
+                                onChange={value => setForm({...form, body: value as MeetingBody})}
+                                className="w-full"
+                                minWidth="100%"
+                            />
+                        </div>
 
-                        <select value={form.form} onChange={e => setForm({...form, form: e.target.value as MeetingForm})}
-                                style={{...input, width: 130}}>
-                            <option value="InPerson">Очно</option>
-                            <option value="Absentee">Заочно</option>
-                        </select>
+                        <div>
+                            <span className={FIELD_LABEL}>{t("meetings.registry.form.form")}</span>
+                            <SelectDropdown
+                                options={formOptions}
+                                value={form.form}
+                                onChange={value => setForm({...form, form: value as MeetingForm})}
+                                className="w-full"
+                                minWidth="100%"
+                            />
+                        </div>
 
-                        <input type="date" value={form.date} onChange={e => setForm({...form, date: e.target.value})}
-                               style={{...input, width: 165}} title="Дата заседания"/>
-                        <input type="time" value={form.time} onChange={e => setForm({...form, time: e.target.value})}
-                               style={{...input, width: 120}} title="Время заседания"/>
-                        <input value={form.number} onChange={e => setForm({...form, number: e.target.value})}
-                               placeholder="№ (авто)" style={{...input, width: 110}}
-                               title="Номер заседания. Пусто — следующий свободный в году"/>
-                        <input value={form.materialsUrl} onChange={e => setForm({...form, materialsUrl: e.target.value})}
-                               placeholder="Ссылка на материалы" style={{...input, flex: 1, minWidth: 200}}/>
+                        <div>
+                            <span className={FIELD_LABEL}>{t("meetings.registry.form.dateTime")}</span>
+                            <DatePickerInput
+                                withTime
+                                defaultTime="10:00"
+                                value={form.dateTime}
+                                onChange={dateTime => setForm({...form, dateTime})}
+                                placeholder={t("meetings.registry.form.dateTimePlaceholder")}
+                            />
+                        </div>
 
-                        <button onClick={create} disabled={busy || !form.date} style={primaryButton}>Завести</button>
+                        <div>
+                            <span className={FIELD_LABEL}>{t("meetings.registry.form.number")}</span>
+                            <input
+                                value={form.number}
+                                onChange={e => setForm({...form, number: e.target.value.replace(/\D/g, "")})}
+                                placeholder={t("meetings.registry.form.numberPlaceholder")}
+                                className={TEXT_INPUT}
+                                title={t("meetings.registry.form.numberHint")}
+                            />
+                        </div>
+
+                        <div className="[grid-column:1/-1]">
+                            <span className={FIELD_LABEL}>{t("meetings.registry.form.materials")}</span>
+                            <input
+                                value={form.materialsUrl}
+                                onChange={e => setForm({...form, materialsUrl: e.target.value})}
+                                placeholder={t("meetings.registry.form.materialsPlaceholder")}
+                                className={TEXT_INPUT}
+                            />
+                        </div>
                     </div>
-                </section>
+
+                    <div className="mt-5 flex items-center justify-end gap-2.5">
+                        <button type="button" onClick={() => {
+                            setCreating(false);
+                            setForm(emptyForm);
+                        }} className={BTN_SECONDARY}>
+                            {t("meetings.registry.form.cancel")}
+                        </button>
+                        <button type="button" onClick={() => void create()} disabled={busy || !date}
+                                className={BTN_PRIMARY}>
+                            {t("meetings.registry.form.submit")}
+                        </button>
+                    </div>
+                </Section>
             )}
 
-            <section style={{...card, padding: 0, overflow: "hidden"}}>
-                <div style={{overflowX: "auto"}}>
-                    <table style={{width: "100%", borderCollapse: "collapse", fontSize: 12.5}}>
-                        <thead>
-                            <tr style={{background: "#f6f8fb", color: "#55617a", textAlign: "left"}}>
-                                <th style={th}>Орган</th>
-                                <th style={th}>№</th>
-                                <th style={th}>Дата и время</th>
-                                <th style={th}>Форма</th>
-                                <th style={th}>Секретарь</th>
-                                <th style={{...th, textAlign: "right"}}>Вопросов</th>
-                                <th style={{...th, textAlign: "right"}}>Поручений</th>
-                                <th style={{...th, textAlign: "right"}}>Просрочено</th>
-                                <th style={th}>Уведомление</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {meetings.map(m => (
-                                <tr key={m.id}
-                                    onClick={() => navigate(`/meetings/${m.id}`)}
-                                    style={{
-                                        borderTop: "1px solid #eef2f7",
-                                        cursor: "pointer",
-                                        background: m.overdueCount > 0 ? "#fdf6f5" : undefined,
-                                    }}>
-                                    <td style={{...td, fontWeight: 600}}>{m.bodyTitle}</td>
-                                    <td style={td}>{String(m.number).padStart(2, "0")}</td>
-                                    <td style={td}>
-                                        {formatDate(m.date)}
-                                        <div style={{fontSize: 11, color: "#8b97ab"}}>{formatTime(m.time)}</div>
-                                    </td>
-                                    <td style={td}>{m.formTitle}</td>
-                                    <td style={td}>{m.secretaryName ?? "—"}</td>
-                                    <td style={{...td, textAlign: "right"}}>{m.itemCount}</td>
-                                    <td style={{...td, textAlign: "right"}}>{m.assignmentCount}</td>
-                                    <td style={{
-                                        ...td, textAlign: "right", fontWeight: m.overdueCount > 0 ? 700 : 400,
-                                        color: m.overdueCount > 0 ? "#c0392b" : "#8b97ab",
-                                    }}>
-                                        {m.overdueCount || "—"}
-                                    </td>
-                                    <td style={{...td, color: m.notifiedAt ? "#1f8a4c" : "#8b97ab"}}>
-                                        {m.notifiedAt ? "отправлено" : "не отправлено"}
-                                    </td>
-                                </tr>
-                            ))}
-                        </tbody>
-                    </table>
+            <div className="flex items-center gap-2.5 flex-wrap mb-3.5">
+                <SearchBar
+                    variant="white"
+                    value={search}
+                    onChange={setSearch}
+                    placeholder={t("meetings.registry.searchPlaceholder")}
+                    className="min-w-[280px]"
+                />
+            </div>
+
+            <div className="flex items-end gap-3 flex-wrap mb-[15px]">
+                <div className="w-[260px]">
+                    <MultiSelectField
+                        label={t("meetings.registry.bodyFilter")}
+                        modalTitle={t("meetings.registry.bodyFilter")}
+                        options={bodySelectOptions.map(o => ({key: o.value, label: o.label}))}
+                        selectedKeys={bodies}
+                        onChange={keys => setBodies(keys as MeetingBody[])}
+                    />
                 </div>
 
-                {meetings.length === 0 && (
-                    <div style={{padding: 26, textAlign: "center", color: "#8b97ab", fontSize: 13}}>
-                        Заседаний за выбранный период нет
-                    </div>
+                <div>
+                    <span className={FIELD_LABEL}>{t("meetings.registry.year")}</span>
+                    <SelectDropdown
+                        options={yearOptions}
+                        value={String(year)}
+                        onChange={value => setYear(Number(value))}
+                        minWidth="120px"
+                    />
+                </div>
+
+                <CheckBoxOne checked={overdueOnly} onChange={setOverdueOnly} tone="danger">
+                    {t("meetings.registry.overdueOnly")}
+                </CheckBoxOne>
+
+                {filtersActive && (
+                    <button
+                        type="button"
+                        onClick={resetFilters}
+                        className="h-9 px-1 text-[12.5px] font-semibold text-[#4e57d6] cursor-pointer hover:underline"
+                    >
+                        {t("meetings.registry.resetFilters")}
+                    </button>
                 )}
-            </section>
+
+                {!loading && !error && (
+                    <span className="ml-auto pb-2 text-[12.5px] text-[#8b97ab]">
+                        {t("meetings.registry.found", {count: visibleMeetings.length})}
+                    </span>
+                )}
+            </div>
+
+            {error && (
+                <p className="mb-4 rounded-[10px] bg-[#fbeae7] px-3 py-2 text-[13px] text-[#c0392b]">{error}</p>
+            )}
+
+            {loading ? (
+                <Loader label={t("meetings.registry.loading")}/>
+            ) : visibleMeetings.length === 0 ? (
+                <EmptyState
+                    title={t("meetings.registry.emptyTitle")}
+                    description={filtersActive
+                        ? t("meetings.registry.emptyFiltered")
+                        : t("meetings.registry.emptyYear", {year})}
+                    actionLabel={filtersActive ? t("meetings.registry.resetFilters") : undefined}
+                    onAction={filtersActive ? resetFilters : undefined}
+                />
+            ) : (
+                <DataTable
+                    headers={[
+                        t("meetings.registry.columns.body"),
+                        t("meetings.registry.columns.number"),
+                        t("meetings.registry.columns.dateTime"),
+                        t("meetings.registry.columns.form"),
+                        t("meetings.registry.columns.secretary"),
+                        {title: t("meetings.registry.columns.items"), align: "right"},
+                        {title: t("meetings.registry.columns.assignments"), align: "right"},
+                        {title: t("meetings.registry.columns.overdue"), align: "right"},
+                        t("meetings.registry.columns.notification"),
+                    ]}
+                >
+                    {visibleMeetings.map(m => (
+                        <Row key={m.id} onClick={() => navigate(`/meetings/${m.id}`)} alert={m.overdueCount > 0}>
+                            <Cell nowrap>
+                                <Badge tone="info">{t(`meetings.bodies.${m.body}`)}</Badge>
+                            </Cell>
+                            <Cell mono strong>
+                                <HighlightText text={String(m.number).padStart(2, "0")} query={search}/>
+                            </Cell>
+                            <Cell nowrap>
+                                <span className="font-mono text-[12.5px] text-[#1c2740]">
+                                    <HighlightText text={formatDate(m.date)} query={search}/>
+                                </span>
+                                <span className="mt-0.5 block font-mono text-[11.5px] text-[#8b97ab]">
+                                    {formatTime(m.time)}
+                                </span>
+                            </Cell>
+                            <Cell nowrap>{t(`meetings.forms.${m.form}`)}</Cell>
+                            <Cell>
+                                {m.secretaryName
+                                    ? <HighlightText text={m.secretaryName} query={search}/>
+                                    : "—"}
+                            </Cell>
+                            <Cell mono align="right">{m.itemCount}</Cell>
+                            <Cell mono align="right">{m.assignmentCount}</Cell>
+                            <Cell align="right" nowrap>
+                                {m.overdueCount > 0
+                                    ? <Badge tone="bad">{m.overdueCount}</Badge>
+                                    : <span className="text-[#a3adbd]">—</span>}
+                            </Cell>
+                            <Cell nowrap>
+                                <Badge tone={m.notifiedAt ? "good" : "neutral"}>
+                                    {m.notifiedAt ? t("meetings.registry.notified") : t("meetings.registry.notNotified")}
+                                </Badge>
+                            </Cell>
+                        </Row>
+                    ))}
+                </DataTable>
+            )}
         </div>
     );
 };
-
-const card: React.CSSProperties = {
-    background: "#fff", border: "1px solid #e5e9f0", borderRadius: 13, padding: 16,
-};
-
-const cardTitle: React.CSSProperties = {
-    fontSize: 11, fontWeight: 700, letterSpacing: ".06em", color: "#8b97ab",
-    textTransform: "uppercase", marginBottom: 10,
-};
-
-const input: React.CSSProperties = {
-    height: 36, padding: "0 11px", border: "1px solid #e5e9f0", borderRadius: 9,
-    background: "#fff", font: "inherit", fontSize: 12.5, outline: "none",
-};
-
-const primaryButton: React.CSSProperties = {
-    height: 36, padding: "0 15px", border: "none", borderRadius: 9,
-    background: "#2f68f5", color: "#fff", font: "inherit", fontSize: 12.5, fontWeight: 600, cursor: "pointer",
-};
-
-const secondaryButton: React.CSSProperties = {
-    height: 36, padding: "0 14px", border: "1px solid #e5e9f0", borderRadius: 9,
-    background: "#fff", color: "#55617a", font: "inherit", fontSize: 12.5, fontWeight: 600, cursor: "pointer",
-};
-
-const activeFilter: React.CSSProperties = {
-    borderColor: "#f3c9c2", background: "#fdf6f5", color: "#c0392b",
-};
-
-const th: React.CSSProperties = {padding: "10px 12px", fontWeight: 600, whiteSpace: "nowrap"};
-const td: React.CSSProperties = {padding: "10px 12px", verticalAlign: "top", color: "#26324a"};

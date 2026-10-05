@@ -1,12 +1,3 @@
-import {useCallback, useEffect, useState} from "react";
-import {
-    szStatisticsService,
-    type SzStatistics,
-    type SzStatisticsCell,
-} from "@/service/szService/szStatisticsService.ts";
-import {szService, type SzKind} from "@/service/szService/szService.ts";
-import {useDictionaries} from "@/context/DictionariesContext.tsx";
-
 /**
  * Аналитика служебных записок.
  *
@@ -15,46 +6,100 @@ import {useDictionaries} from "@/context/DictionariesContext.tsx";
  * по подразделениям, видам и месяцам, а просрочка вынесена отдельной колонкой:
  * она и есть повод для разговора.
  */
+import React, {useCallback, useEffect, useMemo, useState} from "react";
+import {Link} from "react-router-dom";
+import {useTranslation} from "react-i18next";
+import {
+    szStatisticsService,
+    type SzStatistics,
+    type SzStatisticsCell,
+} from "@/service/szService/szStatisticsService.ts";
+import {szService, type SzKind} from "@/service/szService/szService.ts";
+import {useDictionaries} from "@/context/DictionariesContext.tsx";
+import {HighlightText} from "@/utils/highlightText.tsx";
+import {SearchBar} from "@/components/componentsGeneral/SearchBar.tsx";
+import {SelectDropdown} from "@/components/componentsGeneral/selects/SingleSelects/SelectDropdown.tsx";
+import {CheckBoxOne} from "@/components/componentsGeneral/componentsCheckBox/CheckBoxOne.tsx";
+import {SavedFiltersBar} from "@/components/componentsGeneral/SavedFiltersBar.tsx";
+import {Download, RotateCcw} from "lucide-react";
 
-const пусто: SzStatisticsCell = {total: 0, inWork: 0, overdue: 0, executed: 0, other: 0};
+const EMPTY_CELL: SzStatisticsCell = {total: 0, inWork: 0, overdue: 0, executed: 0, other: 0};
 
-function Разрез({заголовок, строки}: { заголовок: string; строки: Record<string, SzStatisticsCell> }) {
-    const записи = Object.entries(строки).sort((a, b) => b[1].total - a[1].total);
+const NUMBER_LOCALE: Record<string, string> = {ru: "ru-RU", en: "en-US", ky: "ky-KG"};
+
+const FOCUS = "outline-none focus:border-[#2f68f5] focus:ring-[3px] focus:ring-[#e9f0ff]";
+const DATE_FIELD = `h-9 w-[160px] rounded-[9px] border border-[#e5e9f0] bg-white px-3 text-[13px] text-[#0f1b2d] ${FOCUS}`;
+
+/** Сервер отдаёт эти подписи русскими строками — по ним находим ключ перевода. */
+const NO_UNIT = "Без подразделения";
+const NO_KIND = "Без вида";
+
+interface BreakdownRow {
+    key: string;
+    label: string;
+    cell: SzStatisticsCell;
+}
+
+function Breakdown({title, rows, search, emptyText}: {
+    title: string;
+    rows: BreakdownRow[];
+    search: string;
+    emptyText: string;
+}) {
+    const {t} = useTranslation();
+    const max = Math.max(1, ...rows.map(r => r.cell.total));
 
     return (
-        <section className="rounded-[12px] border border-[#e5e9f0] bg-white p-5">
-            <h2 className="m-0 mb-3 text-[15px] font-semibold">{заголовок}</h2>
+        <section className="overflow-hidden rounded-[12px] border border-[#e5e9f0] bg-white">
+            <div className="flex items-center gap-2 border-b border-[#eef2f7] px-5 py-3">
+                <h2 className="m-0 text-[15px] font-semibold text-[#1c2740]">{title}</h2>
+                <span className="rounded-full bg-[#f2f5f9] px-[7px] py-[1px] font-mono text-[11px] font-bold text-[#8b97ab]">
+                    {rows.length}
+                </span>
+            </div>
 
             <div className="overflow-x-auto">
                 <table className="w-full border-collapse text-[13px]">
                     <thead>
-                        <tr className="bg-[#f6f8fb] text-left text-[#55617a]">
-                            <th className="px-3 py-2.5 font-semibold">Наименование</th>
-                            <th className="w-[90px] px-3 py-2.5 text-right font-semibold">Всего</th>
-                            <th className="w-[110px] px-3 py-2.5 text-right font-semibold">В работе</th>
-                            <th className="w-[110px] px-3 py-2.5 text-right font-semibold">Просрочено</th>
-                            <th className="w-[110px] px-3 py-2.5 text-right font-semibold">Исполнено</th>
-                        </tr>
+                    <tr className="bg-[#fafbfd] text-[11px] font-bold uppercase tracking-[.04em] text-[#a3adbd]">
+                        <th className="px-5 py-2.5 text-left">{t("szStatistics.cols.name")}</th>
+                        <th className="w-[90px] px-3 py-2.5 text-right">{t("szStatistics.cols.total")}</th>
+                        <th className="w-[170px] px-3 py-2.5 text-left">{t("szStatistics.cols.share")}</th>
+                        <th className="w-[110px] px-3 py-2.5 text-right">{t("szStatistics.cols.inWork")}</th>
+                        <th className="w-[120px] px-3 py-2.5 text-right">{t("szStatistics.cols.overdue")}</th>
+                        <th className="w-[110px] px-5 py-2.5 text-right">{t("szStatistics.cols.executed")}</th>
+                    </tr>
                     </thead>
                     <tbody>
-                        {записи.length === 0 ? (
-                            <tr>
-                                <td colSpan={5} className="px-3 py-5 text-center text-[#8b97ab]">
-                                    За выбранный период записок нет
-                                </td>
-                            </tr>
-                        ) : записи.map(([имя, я]) => (
-                            <tr key={имя} className="border-t border-[#eef2f7]">
-                                <td className="px-3 py-2.5 text-[#26324a]">{имя}</td>
-                                <td className="px-3 py-2.5 text-right tabular-nums">{я.total}</td>
-                                <td className="px-3 py-2.5 text-right tabular-nums">{я.inWork}</td>
-                                <td className={`px-3 py-2.5 text-right tabular-nums ${
-                                    я.overdue > 0 ? "font-semibold text-[#c0392b]" : "text-[#8b97ab]"}`}>
-                                    {я.overdue}
-                                </td>
-                                <td className="px-3 py-2.5 text-right tabular-nums">{я.executed}</td>
-                            </tr>
-                        ))}
+                    {rows.length === 0 ? (
+                        <tr>
+                            <td colSpan={6} className="px-5 py-8 text-center text-[#8b97ab]">{emptyText}</td>
+                        </tr>
+                    ) : rows.map(({key, label, cell}) => (
+                        <tr key={key} className="border-t border-[#eef2f7] hover:bg-[#fafbfd]">
+                            <td className="px-5 py-2.5 text-[#26324a]">
+                                <HighlightText text={label} query={search}/>
+                            </td>
+                            <td className="px-3 py-2.5 text-right font-semibold tabular-nums text-[#1c2740]">{cell.total}</td>
+                            <td className="px-3 py-2.5">
+                                <div className="h-[6px] w-full overflow-hidden rounded-full bg-[#eef2f7]">
+                                    <div className="h-full rounded-full bg-[#2f68f5]"
+                                         style={{width: `${Math.round((cell.total / max) * 100)}%`}}/>
+                                </div>
+                            </td>
+                            <td className="px-3 py-2.5 text-right tabular-nums text-[#55617a]">{cell.inWork}</td>
+                            <td className="px-3 py-2.5 text-right">
+                                {cell.overdue > 0 ? (
+                                    <span className="inline-flex rounded-full bg-[#fbeae7] px-[9px] py-0.5 text-[12px] font-semibold tabular-nums text-[#c0392b]">
+                                        {cell.overdue}
+                                    </span>
+                                ) : (
+                                    <span className="tabular-nums text-[#a3adbd]">0</span>
+                                )}
+                            </td>
+                            <td className="px-5 py-2.5 text-right tabular-nums text-[#55617a]">{cell.executed}</td>
+                        </tr>
+                    ))}
                     </tbody>
                 </table>
             </div>
@@ -62,137 +107,278 @@ function Разрез({заголовок, строки}: { заголовок: 
     );
 }
 
+function LabeledField({label, children}: { label: string; children: React.ReactNode }) {
+    return (
+        <div>
+            <div className="mb-1 text-[11px] font-bold uppercase tracking-[.04em] text-[#a3adbd]">{label}</div>
+            {children}
+        </div>
+    );
+}
+
+interface Filter {
+    from: string;
+    to: string;
+    orgUnitId: number;
+    kindId: number;
+}
+
+const EMPTY_FILTER: Filter = {from: "", to: "", orgUnitId: 0, kindId: 0};
+
 /** embedded — страница показывается вкладкой раздела «Аналитика», без своей шапки. */
 export function SzStatisticsPage({embedded}: {embedded?: boolean} = {}) {
+    const {t, i18n} = useTranslation();
     const {orgUnits} = useDictionaries();
-    const [виды, setВиды] = useState<SzKind[]>([]);
-    const [сводка, setСводка] = useState<SzStatistics | null>(null);
-    const [занято, setЗанято] = useState(true);
-    const [ошибка, setОшибка] = useState<string | null>(null);
+    const [kinds, setKinds] = useState<SzKind[]>([]);
+    const [summary, setSummary] = useState<SzStatistics | null>(null);
+    const [busy, setBusy] = useState(true);
+    const [error, setError] = useState<string | null>(null);
 
-    const [фильтр, setФильтр] = useState<{from: string; to: string; orgUnitId: number; kindId: number}>({
-        from: "", to: "", orgUnitId: 0, kindId: 0,
-    });
+    const [filter, setFilter] = useState<Filter>(EMPTY_FILTER);
+    /** Поиск и «только с просрочкой» работают по уже полученной сводке и сервер не дёргают. */
+    const [search, setSearch] = useState("");
+    const [overdueOnly, setOverdueOnly] = useState(false);
 
-    const запрос = useCallback(() => ({
-        from: фильтр.from || undefined,
-        to: фильтр.to || undefined,
-        orgUnitId: фильтр.orgUnitId || undefined,
-        kindId: фильтр.kindId || undefined,
-    }), [фильтр]);
+    const request = useCallback(() => ({
+        from: filter.from || undefined,
+        to: filter.to || undefined,
+        orgUnitId: filter.orgUnitId || undefined,
+        kindId: filter.kindId || undefined,
+    }), [filter]);
 
-    const загрузить = useCallback(async () => {
+    const load = useCallback(async () => {
         try {
-            setЗанято(true);
-            setОшибка(null);
-            setСводка(await szStatisticsService.get(запрос()));
+            setBusy(true);
+            setError(null);
+            setSummary(await szStatisticsService.get(request()));
         } catch {
-            setОшибка("Не удалось построить сводку");
+            setError(t("szStatistics.loadError"));
         } finally {
-            setЗанято(false);
+            setBusy(false);
         }
-    }, [запрос]);
-
-    useEffect(() => { void загрузить(); }, [загрузить]);
+    }, [request, t]);
 
     useEffect(() => {
-        szService.kinds().then(setВиды).catch(() => undefined);
+        // eslint-disable-next-line react-hooks/set-state-in-effect
+        void load();
+    }, [load]);
+
+    useEffect(() => {
+        szService.kinds().then(setKinds).catch(() => undefined);
     }, []);
 
-    const выгрузить = async () => {
+    const exportToExcel = async () => {
         try {
-            setОшибка(null);
-            await szStatisticsService.export(запрос());
+            setError(null);
+            await szStatisticsService.export(request());
         } catch {
-            setОшибка("Не удалось выгрузить книгу Excel");
+            setError(t("szStatistics.exportError"));
         }
     };
 
-    const итог = сводка ?? {...пусто, from: null, to: null, byUnit: {}, byKind: {}, byMonth: {}} as SzStatistics;
+    const lang = i18n.language;
+
+    const unitTitle = useCallback((u: { titleRu: string; titleEn: string | null; titleKg: string | null }): string =>
+        (lang === "ky" ? u.titleKg : lang === "en" ? u.titleEn : null) || u.titleRu, [lang]);
+
+    const kindTitle = useCallback((k: SzKind): string =>
+        (lang === "ky" ? k.titleKg : lang === "en" ? k.titleEn : null) || k.titleRu, [lang]);
+
+    // Ключи разрезов приходят с сервера русскими названиями — показываем на языке интерфейса.
+    const unitLabel = useCallback((name: string): string => {
+        if (name === NO_UNIT) return t("szStatistics.noUnit");
+        const u = orgUnits.find(x => x.titleRu === name);
+        return u ? unitTitle(u) : name;
+    }, [orgUnits, t, unitTitle]);
+
+    const kindLabel = useCallback((name: string): string => {
+        if (name === NO_KIND) return t("szStatistics.noKind");
+        const k = kinds.find(x => x.titleRu === name);
+        return k ? kindTitle(k) : name;
+    }, [kinds, t, kindTitle]);
+
+    /** Ключ месяца приходит как «09.2026» — показываем «Сентябрь 2026» на языке интерфейса. */
+    const monthLabel = useCallback((key: string): string => {
+        const m = /^(\d{2})\.(\d{4})$/.exec(key);
+        if (!m) return key;
+        const text = new Date(Number(m[2]), Number(m[1]) - 1, 1)
+            .toLocaleDateString(NUMBER_LOCALE[lang] ?? "ru-RU", {month: "long", year: "numeric"})
+            .replace(/\s*г\.$/, "");
+        return text.charAt(0).toUpperCase() + text.slice(1);
+    }, [lang]);
+
+    const total: SzStatistics = summary
+        ?? {...EMPTY_CELL, from: null, to: null, byUnit: {}, byKind: {}, byMonth: {}};
+
+    const term = search.trim().toLowerCase();
+
+    const toRows = useCallback((
+        cells: Record<string, SzStatisticsCell>,
+        label: (key: string) => string,
+        order: (a: BreakdownRow, b: BreakdownRow) => number,
+    ): BreakdownRow[] => Object.entries(cells)
+        .map(([key, cell]) => ({key, label: label(key), cell}))
+        .filter(r => (!term || r.label.toLowerCase().includes(term)) && (!overdueOnly || r.cell.overdue > 0))
+        .sort(order), [term, overdueOnly]);
+
+    const byTotal = (a: BreakdownRow, b: BreakdownRow) => b.cell.total - a.cell.total;
+    // Месяцы — от свежих к давним, а не по количеству: это динамика, а не рейтинг.
+    const monthValue = (key: string) => {
+        const m = /^(\d{2})\.(\d{4})$/.exec(key);
+        return m ? Number(m[2]) * 12 + Number(m[1]) : 0;
+    };
+    const byMonthDesc = (a: BreakdownRow, b: BreakdownRow) => monthValue(b.key) - monthValue(a.key);
+
+    const unitRows = useMemo(() => toRows(total.byUnit, unitLabel, byTotal), [toRows, total.byUnit, unitLabel]);
+    const kindRows = useMemo(() => toRows(total.byKind, kindLabel, byTotal), [toRows, total.byKind, kindLabel]);
+    const monthRows = useMemo(() => toRows(total.byMonth, monthLabel, byMonthDesc), [toRows, total.byMonth, monthLabel]);
+
+    const emptyText = (cells: Record<string, SzStatisticsCell>) =>
+        Object.keys(cells).length > 0 ? t("general.notFound") : t("szStatistics.emptyPeriod");
+
+    const hasFilter = JSON.stringify(filter) !== JSON.stringify(EMPTY_FILTER) || search !== "" || overdueOnly;
+
+    const reset = () => {
+        setFilter(EMPTY_FILTER);
+        setSearch("");
+        setOverdueOnly(false);
+    };
+
+    const kpis = [
+        {key: "total", value: total.total, color: "#0f1b2d"},
+        {key: "inWork", value: total.inWork, color: "#2f68f5"},
+        {key: "overdue", value: total.overdue, color: total.overdue > 0 ? "#c0392b" : "#8b97ab"},
+        {key: "executed", value: total.executed, color: "#1c7a4d"},
+        {key: "other", value: total.other, color: "#8b97ab"},
+    ];
 
     return (
-        <div className={embedded
-            ? "flex flex-col gap-4 max-w-[1080px]"
-            : "flex flex-col gap-4 p-[22px_26px] max-w-[1080px]"}>
+        <div className={embedded ? "flex flex-col gap-4" : "flex flex-col gap-4 px-7 py-6"}>
             {!embedded && (
-                <div>
-                    <div className="text-[12.5px] text-[#8b97ab]">Служебные записки</div>
-                    <h1 className="m-0 mt-[3px] text-[19px] font-bold text-[#0f1b2d]">Аналитика</h1>
+                <div className="flex flex-wrap items-start justify-between gap-4">
+                    <div>
+                        <h1 className="m-0 text-[23px] font-bold tracking-[-0.02em]">{t("szStatistics.title")}</h1>
+                        <p className="mt-[7px] mb-0 text-[13px] text-[#8b97ab]">{t("szStatistics.subtitle")}</p>
+                    </div>
+                    <Link to="/sz"
+                          className="inline-flex h-10 items-center gap-2 rounded-[10px] border border-[#e5e9f0] bg-white px-4 text-[13px] font-semibold text-[#3a4560] no-underline hover:bg-[#f6f8fb]">
+                        ← {t("szStatistics.back")}
+                    </Link>
                 </div>
             )}
 
-            {ошибка && (
-                <div className="rounded-[9px] border border-[#f1c9c2] bg-[#fbeae7] px-4 py-2.5 text-[13px] text-[#c0392b]">
-                    {ошибка}
+            {error && (
+                <div className="rounded-[10px] border border-[#f1c9c2] bg-[#fbeae7] px-4 py-2.5 text-[13px] text-[#c0392b]">
+                    {error}
                 </div>
             )}
 
-            <section className="flex flex-wrap items-end gap-3 rounded-[12px] border border-[#e5e9f0] bg-white p-4">
-                <label className="flex flex-col gap-1.5">
-                    <span className="text-[11.5px] text-[#8b97ab]">Зарегистрированы с</span>
-                    <input type="date" value={фильтр.from}
-                           onChange={(e) => setФильтр({...фильтр, from: e.target.value})}
-                           className="h-10 rounded-[9px] border border-[#e5e9f0] px-3 text-[13px] outline-none focus:border-[#2f68f5]"/>
-                </label>
-                <label className="flex flex-col gap-1.5">
-                    <span className="text-[11.5px] text-[#8b97ab]">по</span>
-                    <input type="date" value={фильтр.to} min={фильтр.from || undefined}
-                           onChange={(e) => setФильтр({...фильтр, to: e.target.value})}
-                           className="h-10 rounded-[9px] border border-[#e5e9f0] px-3 text-[13px] outline-none focus:border-[#2f68f5]"/>
-                </label>
-                <label className="flex flex-col gap-1.5">
-                    <span className="text-[11.5px] text-[#8b97ab]">Подразделение</span>
-                    <select value={фильтр.orgUnitId}
-                            onChange={(e) => setФильтр({...фильтр, orgUnitId: Number(e.target.value)})}
-                            className="h-10 w-[260px] rounded-[9px] border border-[#e5e9f0] bg-white px-3 text-[13px] outline-none focus:border-[#2f68f5]">
-                        <option value={0}>все</option>
-                        {orgUnits.map((u) => <option key={u.id} value={u.id}>{u.titleRu}</option>)}
-                    </select>
-                </label>
-                <label className="flex flex-col gap-1.5">
-                    <span className="text-[11.5px] text-[#8b97ab]">Вид записки</span>
-                    <select value={фильтр.kindId}
-                            onChange={(e) => setФильтр({...фильтр, kindId: Number(e.target.value)})}
-                            className="h-10 w-[200px] rounded-[9px] border border-[#e5e9f0] bg-white px-3 text-[13px] outline-none focus:border-[#2f68f5]">
-                        <option value={0}>все</option>
-                        {виды.map((k) => <option key={k.id} value={k.id}>{k.titleRu}</option>)}
-                    </select>
-                </label>
+            <section className="rounded-[12px] border border-[#e5e9f0] bg-white p-4">
+                <div className="flex flex-wrap items-end gap-3">
+                    <LabeledField label={t("szStatistics.filters.from")}>
+                        <input type="date" value={filter.from}
+                               onChange={(e) => setFilter({...filter, from: e.target.value})}
+                               className={DATE_FIELD}/>
+                    </LabeledField>
+                    <LabeledField label={t("szStatistics.filters.to")}>
+                        <input type="date" value={filter.to} min={filter.from || undefined}
+                               onChange={(e) => setFilter({...filter, to: e.target.value})}
+                               className={DATE_FIELD}/>
+                    </LabeledField>
+                    <LabeledField label={t("szStatistics.filters.unit")}>
+                        <SelectDropdown
+                            searchable
+                            searchPlaceholder={t("szStatistics.filters.unitSearch")}
+                            minWidth="240px"
+                            options={[
+                                {value: "", label: t("szStatistics.filters.all")},
+                                ...orgUnits.map(u => ({value: String(u.id), label: unitTitle(u)})),
+                            ]}
+                            value={filter.orgUnitId ? String(filter.orgUnitId) : ""}
+                            onChange={(v) => setFilter({...filter, orgUnitId: v ? Number(v) : 0})}
+                        />
+                    </LabeledField>
+                    <LabeledField label={t("szStatistics.filters.kind")}>
+                        <SelectDropdown
+                            searchable
+                            searchPlaceholder={t("szStatistics.filters.kindSearch")}
+                            minWidth="200px"
+                            options={[
+                                {value: "", label: t("szStatistics.filters.all")},
+                                ...kinds.map(k => ({value: String(k.id), label: kindTitle(k)})),
+                            ]}
+                            value={filter.kindId ? String(filter.kindId) : ""}
+                            onChange={(v) => setFilter({...filter, kindId: v ? Number(v) : 0})}
+                        />
+                    </LabeledField>
 
-                <div className="flex-1"/>
+                    <div className="flex-1"/>
 
-                <button onClick={выгрузить} disabled={занято}
-                        className="h-10 rounded-[10px] border border-[#e5e9f0] bg-white px-4 text-[13px] font-semibold text-[#2f68f5] disabled:opacity-50">
-                    Выгрузить в Excel
-                </button>
+                    <button type="button" onClick={reset} disabled={!hasFilter}
+                            className="inline-flex h-9 cursor-pointer items-center gap-1.5 rounded-[9px] border border-[#e5e9f0] bg-white px-3 text-[12.5px] font-semibold text-[#55617a] hover:bg-[#f6f8fb] disabled:cursor-default disabled:opacity-50">
+                        <RotateCcw className="h-3.5 w-3.5"/>
+                        {t("szStatistics.reset")}
+                    </button>
+                    <button type="button" onClick={exportToExcel} disabled={busy}
+                            className="inline-flex h-9 cursor-pointer items-center gap-2 rounded-[9px] border border-[#e5e9f0] bg-white px-3 text-[12.5px] font-semibold text-[#3a4560] hover:bg-[#f6f8fb] disabled:cursor-not-allowed disabled:opacity-50">
+                        <Download className="h-4 w-4"/>
+                        {t("szStatistics.exportExcel")}
+                    </button>
+                </div>
+
+                <div className="mt-3.5 flex flex-wrap items-center gap-2.5 border-t border-[#eef2f7] pt-3.5">
+                    <SearchBar
+                        variant="white"
+                        value={search}
+                        onChange={setSearch}
+                        placeholder={t("szStatistics.searchPlaceholder")}
+                        className="min-w-[260px] max-w-[420px] flex-1"
+                    />
+                    <CheckBoxOne checked={overdueOnly} onChange={setOverdueOnly} tone="brand">
+                        {t("szStatistics.overdueOnly")}
+                    </CheckBoxOne>
+                </div>
+
+                <div className="mt-3">
+                    <SavedFiltersBar
+                        scope="sz-analytics"
+                        current={{...filter, search, overdueOnly}}
+                        onApply={(p) => {
+                            const f = p as Partial<Filter> & { search?: string; overdueOnly?: boolean };
+                            setFilter({
+                                from: f.from ?? "", to: f.to ?? "",
+                                orgUnitId: f.orgUnitId ?? 0, kindId: f.kindId ?? 0,
+                            });
+                            setSearch(f.search ?? "");
+                            setOverdueOnly(!!f.overdueOnly);
+                        }}
+                    />
+                </div>
             </section>
 
-            <section className="grid gap-[1px] overflow-hidden rounded-[12px] border border-[#e5e9f0] bg-[#e5e9f0]"
-                     style={{gridTemplateColumns: "repeat(auto-fit, minmax(150px, 1fr))"}}>
-                {[
-                    {подпись: "Всего записок", значение: итог.total, цвет: "#0f1b2d"},
-                    {подпись: "В работе", значение: итог.inWork, цвет: "#2f68f5"},
-                    {подпись: "Просрочено", значение: итог.overdue, цвет: итог.overdue > 0 ? "#c0392b" : "#8b97ab"},
-                    {подпись: "Исполнено", значение: итог.executed, цвет: "#1c7a4d"},
-                    {подпись: "Прочие", значение: итог.other, цвет: "#8b97ab"},
-                ].map((к) => (
-                    <div key={к.подпись} className="flex flex-col gap-1 bg-white px-4 py-3.5">
-                        <span className="text-[27px] font-semibold tabular-nums leading-none" style={{color: к.цвет}}>
-                            {к.значение}
+            <section className={`grid gap-3 transition-opacity ${busy ? "opacity-60" : ""}`}
+                     style={{gridTemplateColumns: "repeat(auto-fit, minmax(160px, 1fr))"}}>
+                {kpis.map((k) => (
+                    <div key={k.key}
+                         className={`flex flex-col gap-1.5 rounded-[12px] border bg-white px-4 py-3.5 ${
+                             k.key === "overdue" && total.overdue > 0 ? "border-[#f1c9c2] bg-[#fdf6f5]" : "border-[#e5e9f0]"}`}>
+                        <span className="text-[11px] font-bold uppercase tracking-[.04em] text-[#a3adbd]">
+                            {t(`szStatistics.kpi.${k.key}`)}
                         </span>
-                        <span className="text-[12.5px] text-[#8b97ab]">{к.подпись}</span>
+                        <span className="text-[27px] font-semibold leading-none tabular-nums" style={{color: k.color}}>
+                            {k.value}
+                        </span>
                     </div>
                 ))}
             </section>
 
-            <Разрез заголовок="По подразделениям" строки={итог.byUnit}/>
-            <Разрез заголовок="По видам записок" строки={итог.byKind}/>
-            <Разрез заголовок="По месяцам" строки={итог.byMonth}/>
+            <div className={`flex flex-col gap-4 transition-opacity ${busy ? "opacity-60" : ""}`}>
+                <Breakdown title={t("szStatistics.byUnit")} rows={unitRows} search={search} emptyText={emptyText(total.byUnit)}/>
+                <Breakdown title={t("szStatistics.byKind")} rows={kindRows} search={search} emptyText={emptyText(total.byKind)}/>
+                <Breakdown title={t("szStatistics.byMonth")} rows={monthRows} search={search} emptyText={emptyText(total.byMonth)}/>
+            </div>
 
-            <p className="max-w-[68ch] text-[12.5px] text-[#8b97ab]">
-                «Прочие» — черновики, отозванные и забракованные записки: они ни в работе,
-                ни исполнены, и в счёт нагрузки не идут.
-            </p>
+            <p className="max-w-[68ch] text-[12.5px] text-[#8b97ab]">{t("szStatistics.footnote")}</p>
         </div>
     );
 }

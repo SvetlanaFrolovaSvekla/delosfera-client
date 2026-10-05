@@ -1,7 +1,7 @@
 import {apiClient} from "@/service/apiClient.ts";
 
 /** Контур, в котором ищем. Пустой список — во всех доступных. */
-export type SearchScope = "Sz" | "Procurement" | "Contract" | "Meeting";
+export type SearchScope = "Sz" | "Procurement" | "Contract" | "Meeting" | "Vnd";
 
 export interface SearchRequest {
     query?: string;
@@ -49,11 +49,13 @@ export interface SavedSearch {
     createdAt: string;
 }
 
+/** title — русское название контура, как его отдаёт сервер: по нему сопоставляются счётчики countByScope. */
 export const scopeOptions: {value: SearchScope; title: string}[] = [
     {value: "Sz", title: "Служебные записки"},
     {value: "Procurement", title: "Закупки"},
     {value: "Contract", title: "Договоры"},
     {value: "Meeting", title: "Заседания"},
+    {value: "Vnd", title: "Нормативные документы"},
 ];
 
 const BASE = "/search";

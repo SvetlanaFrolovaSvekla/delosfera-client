@@ -1,5 +1,6 @@
 import {useEffect, useState} from "react";
 import {ImageOff} from "lucide-react";
+import {useTranslation} from "react-i18next";
 import {helpService} from "@/service/helpService/helpService.ts";
 
 /**
@@ -30,6 +31,7 @@ interface Props {
 }
 
 export function HelpScreenshot({fileId, caption, markers = [], onPick, onRemoveMarker}: Props) {
+    const {t} = useTranslation();
     const [url, setUrl] = useState<string | null>(null);
     const [failed, setFailed] = useState(false);
 
@@ -73,7 +75,7 @@ export function HelpScreenshot({fileId, caption, markers = [], onPick, onRemoveM
             <div className="flex items-center gap-2 rounded-[10px] border border-dashed
                             border-[#e5e9f0] px-4 py-6 text-[13px] text-[#a8b3c4]">
                 <ImageOff size={16}/>
-                Снимок недоступен
+                {t("help.screenshot.unavailable")}
             </div>
         );
     }
@@ -86,7 +88,7 @@ export function HelpScreenshot({fileId, caption, markers = [], onPick, onRemoveM
                             ${onPick ? "cursor-crosshair" : ""}`}
             >
                 {url ? (
-                    <img src={url} alt={caption ?? "Снимок экрана"} className="block w-full"/>
+                    <img src={url} alt={caption ?? t("help.screenshot.alt")} className="block w-full"/>
                 ) : (
                     <div className="h-[220px] animate-pulse bg-[#f2f5f9]"/>
                 )}
@@ -99,7 +101,7 @@ export function HelpScreenshot({fileId, caption, markers = [], onPick, onRemoveM
                             event.stopPropagation();
                             onRemoveMarker?.(index);
                         }}
-                        title={onRemoveMarker ? "Убрать выноску" : marker.text}
+                        title={onRemoveMarker ? t("help.screenshot.removeMarker") : marker.text}
                         style={{left: `${marker.x}%`, top: `${marker.y}%`}}
                         className={`absolute grid h-6 w-6 -translate-x-1/2 -translate-y-1/2
                                     place-items-center rounded-full border-2 border-white

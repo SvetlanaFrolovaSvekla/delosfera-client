@@ -1,22 +1,17 @@
-import {useCallback, useEffect, useState} from "react";
-import {Link} from "react-router-dom";
-import {szService, type SzTrackerColumn} from "@/service/szService/szService.ts";
-import {EmptyState} from "@/components/componentsGeneral/EmptyState.tsx";
-
 /**
  * Доска записок по стадиям (РС-4). Реестр отвечает «какие записки есть», доска — «на
  * какой стадии каждая и где затор». Завершённые и отклонённые не показываем.
  */
-
-function ageLabel(days: number): string {
-    if (days === 0) return "сегодня";
-    if (days === 1) return "1 день";
-    if (days < 5) return `${days} дня`;
-    return `${days} дней`;
-}
+import {useCallback, useEffect, useState} from "react";
+import {Link} from "react-router-dom";
+import {useTranslation} from "react-i18next";
+import {szService, type SzKind, type SzTrackerColumn} from "@/service/szService/szService.ts";
+import {EmptyState} from "@/components/componentsGeneral/EmptyState.tsx";
 
 export function SzTrackerPage() {
+    const {t, i18n} = useTranslation();
     const [columns, setColumns] = useState<SzTrackerColumn[] | null>(null);
+    const [kinds, setKinds] = useState<SzKind[]>([]);
     const [error, setError] = useState<string | null>(null);
     const [reloadKey, setReloadKey] = useState(0);
 
@@ -27,8 +22,24 @@ export function SzTrackerPage() {
         setError(null);
         szService.tracker()
             .then(setColumns)
-            .catch(() => setError("Не удалось загрузить доску записок"));
-    }, [reloadKey]);
+            .catch(() => setError(t("szTracker.loadError")));
+    }, [reloadKey, t]);
+
+    // Вид записки приходит с сервера русской строкой — показываем на языке интерфейса.
+    useEffect(() => {
+        szService.kinds().then(setKinds).catch(() => {});
+    }, []);
+
+    const ageLabel = (days: number): string =>
+        days === 0 ? t("szTracker.today") : t("time.days", {count: days});
+
+    const kindLabel = (name: string): string => {
+        const k = kinds.find((x) => x.titleRu === name);
+        if (!k) return name;
+        if (i18n.language === "ky") return k.titleKg || name;
+        if (i18n.language === "en") return k.titleEn || name;
+        return name;
+    };
 
     const total = columns?.reduce((s, c) => s + c.count, 0) ?? 0;
     const stale = columns?.reduce((s, c) => s + c.items.filter(i => i.isStale).length, 0) ?? 0;
@@ -37,35 +48,37 @@ export function SzTrackerPage() {
         <div className="w-full max-w-[1700px] mx-auto px-4 sm:px-6 lg:px-8 pt-5 pb-10">
             <div className="flex items-end justify-between gap-4 flex-wrap mb-4">
                 <div>
-                    <h1 className="m-0 text-[19px] font-bold text-[#0f1b2d]">Доска записок</h1>
+                    <h1 className="m-0 text-[19px] font-bold text-[#0f1b2d]">{t("szTracker.title")}</h1>
                     <div className="mt-1 text-[12.5px] text-[#8b97ab]">
-                        Активные записки по стадиям
-                        {columns && ` · всего ${total}`}
-                        {stale > 0 && ` · зависло ${stale}`}
+                        {t("szTracker.subtitle")}
+                        {columns && ` · ${t("szTracker.total", {n: total})}`}
+                        {stale > 0 && ` · ${t("szTracker.stale", {n: stale})}`}
                     </div>
                 </div>
                 <Link to="/sz" className="text-[13px] font-semibold text-[#2f68f5] no-underline hover:underline">
-                    ← Реестр записок
+                    ← {t("szTracker.back")}
                 </Link>
             </div>
 
             {error && (
                 <EmptyState
                     variant="error"
-                    title="Не удалось загрузить доску записок"
-                    description={error}
-                    actionLabel="Повторить"
+                    title={error}
+                    description={t("szTracker.loadErrorHint")}
+                    actionLabel={t("szTracker.retry")}
                     onAction={refetch}
                 />
             )}
-            {!columns && !error && <div className="text-[13px] text-[#8b97ab]">Загрузка…</div>}
+            {!columns && !error && <div className="text-[13px] text-[#8b97ab]">{t("general.loading")}</div>}
 
             {columns && (
                 <div className="flex gap-3 overflow-x-auto pb-3" style={{scrollbarWidth: "thin"}}>
                     {columns.map(col => (
                         <div key={col.code} className="shrink-0 w-[270px] rounded-[13px] bg-[#f6f8fb] border border-[#e5e9f0] flex flex-col">
                             <div className="px-3.5 py-3 border-b border-[#e5e9f0] flex items-center justify-between">
-                                <span className="text-[13px] font-bold text-[#0f1b2d]">{col.title}</span>
+                                <span className="text-[13px] font-bold text-[#0f1b2d]">
+                                    {t(`szTracker.stages.${col.code}`, {defaultValue: col.title})}
+                                </span>
                                 <span className="text-[12px] font-bold text-[#55617a] bg-white border border-[#e5e9f0] rounded-full px-2 py-0.5">
                                     {col.count}
                                 </span>
@@ -73,7 +86,7 @@ export function SzTrackerPage() {
 
                             <div className="p-2.5 flex flex-col gap-2 min-h-[60px]">
                                 {col.items.length === 0 && (
-                                    <div className="text-[12px] text-[#a3adbd] text-center py-4">пусто</div>
+                                    <div className="text-[12px] text-[#a3adbd] text-center py-4">{t("szTracker.empty")}</div>
                                 )}
                                 {col.items.map(it => (
                                     <Link
@@ -84,7 +97,7 @@ export function SzTrackerPage() {
                                         }`}
                                     >
                                         <div className="flex items-baseline justify-between gap-2">
-                                            <span className="font-mono text-[11.5px] text-[#2f68f5]">{it.regNumber ?? "черновик"}</span>
+                                            <span className="font-mono text-[11.5px] text-[#2f68f5]">{it.regNumber ?? t("szTracker.draftNumber")}</span>
                                             <span className="text-[11px] font-semibold whitespace-nowrap"
                                                   style={{color: it.isStale ? "#b3730a" : "#a3adbd"}}>
                                                 {ageLabel(it.ageDays)}
@@ -94,7 +107,7 @@ export function SzTrackerPage() {
                                             {it.title}
                                         </div>
                                         <div className="mt-1 text-[11px] text-[#8b97ab] truncate">
-                                            {it.kind}
+                                            {kindLabel(it.kind)}
                                             {it.addresseeName && ` · ${it.addresseeName}`}
                                         </div>
                                     </Link>

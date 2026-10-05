@@ -1,30 +1,61 @@
-import {useEffect, useMemo, useState} from "react";
+import React, {useEffect, useMemo, useState} from "react";
+import {useTranslation} from "react-i18next";
+import type {TFunction} from "i18next";
 import {useNavigate, useParams} from "react-router-dom";
-import {ArrowLeft, Plus, Printer, Trash2} from "lucide-react";
+import {userService} from "@/service/userService/userService.ts";
+import {
+    organizationUnitService
+} from "@/service/dictionariesService/organizationUnitService/organizationUnitService.ts";
+import {
+    substitutionService, REASON_LABEL, HANDOVER_LABEL,
+    type SubstitutionSaveRequest, type SubstitutionReason, type HandoverMoment,
+    type CommissionMember, type SubstitutionDetails, type SubstitutionStatus,
+} from "@/service/substitutionService/substitutionService.ts";
 import {useAuth} from "@/context/AuthContext.ts";
 import {PermissionCode} from "@/constants/permissions/permissions.ts";
 import {UserPicker, type PickableUser} from "@/components/componentsGeneral/userPicker/UserPicker.tsx";
-import {userService} from "@/service/userService/userService.ts";
-import {organizationUnitService} from "@/service/dictionariesService/organizationUnitService/organizationUnitService.ts";
-import {
-    substitutionService, REASON_LABEL, HANDOVER_LABEL, APPROVAL_STATE_LABEL,
-    type SubstitutionSaveRequest, type SubstitutionReason, type HandoverMoment,
-    type CommissionMember, type SubstitutionDetails,
-} from "@/service/substitutionService/substitutionService.ts";
+import {SelectDropdown} from "@/components/componentsGeneral/selects/SingleSelects/SelectDropdown.tsx";
+import {colors} from "@/design/tokens.ts";
+import {ArrowLeft, Plus, Printer, Trash2} from "lucide-react";
 
 const empty: SubstitutionSaveRequest = {
     subject: "", reason: "Other", absentName: "", substituteName: "",
     handoverMoment: "EndOfDay", commissionMembers: [],
 };
 
+const STATUS_TONE: Record<SubstitutionStatus, { fg: string; bg: string }> = {
+    Draft: colors.status.draft,
+    OnApproval: colors.status.review,
+    OnExecution: colors.status.onact,
+    Executed: colors.status.active,
+    Rejected: colors.status.arch,
+    Withdrawn: colors.status.draft,
+};
+
+/** Роли этапов приходят с бэкенда русской строкой и участвуют в логике — переводим только подпись. */
+const ROLE_KEY: Record<string, string> = {
+    "Операционное управление": "ops",
+    "УЧР": "hr",
+};
+
+// Стили элементов, общие с Реестром СЗ
+const FOCUS = "outline-none focus:border-[#2f68f5] focus:ring-[3px] focus:ring-[#e9f0ff]";
+const FIELD = `w-full h-9 px-3 rounded-[10px] border border-[#e5e9f0] bg-white text-[13px] text-[#0f1b2d] placeholder:text-[#a3adbd] ${FOCUS} disabled:bg-[#f6f8fb] disabled:text-[#8b97ab]`;
+const BTN = "inline-flex items-center gap-2 cursor-pointer disabled:cursor-not-allowed disabled:opacity-50";
+const BTN_PRIMARY = `${BTN} h-[42px] rounded-[11px] border-none bg-[#2f68f5] px-[18px] text-[13.5px] font-semibold text-white shadow-[0_6px_16px_-6px_#2f68f5] hover:brightness-[1.06]`;
+const BTN_SUCCESS = `${BTN} h-[42px] rounded-[11px] border-none bg-[#1c7a4d] px-[18px] text-[13.5px] font-semibold text-white hover:brightness-95`;
+const BTN_SECONDARY = `${BTN} h-10 rounded-[10px] border border-[#e5e9f0] bg-white px-3.5 text-[12.5px] font-semibold text-[#3a4560] hover:bg-[#f6f8fb]`;
+const BTN_DANGER = `${BTN} h-10 rounded-[10px] border border-[#f1c9c2] bg-white px-3.5 text-[12.5px] font-semibold text-[#c0392b] hover:bg-[#fbeae7]`;
+
 export function SubstitutionCardPage() {
-    const {id} = useParams<{id: string}>();
+    const {t, i18n} = useTranslation();
+    const {id} = useParams<{ id: string }>();
     const isNew = !id || id === "new";
     const navigate = useNavigate();
     const {hasPermission, user} = useAuth();
 
     const [users, setUsers] = useState<PickableUser[]>([]);
-    const [filials, setFilials] = useState<{id: number; titleRu: string}[]>([]);
+    const [filials, setFilials] = useState<{ id: number; titleRu: string; label: string }[]>([]);
     const [form, setForm] = useState<SubstitutionSaveRequest>(empty);
     const [details, setDetails] = useState<SubstitutionDetails | null>(null);
     const [busy, setBusy] = useState(false);
@@ -36,25 +67,35 @@ export function SubstitutionCardPage() {
             id: u.id, fullName: u.fullName, position: u.position ?? null,
             orgUnit: u.orgUnit ?? null, orgUnitId: u.orgUnitId ?? null,
             isBoardMember: u.isBoardMember ?? false, isUnitHead: u.isUnitHead ?? false,
-        })))).catch(() => {});
+        })))).catch(() => {
+        });
     }, []);
 
     // Справочник подразделений для выбора: филиалы (сберкассы) из оргструктуры.
+    // Название показываем на языке интерфейса, а в заявку по-прежнему пишем русское.
     useEffect(() => {
         organizationUnitService.getAll()
             .then((list) => setFilials(list
                 .filter((u) => /филиал/i.test(u.titleRu))
-                .map((u) => ({id: u.id, titleRu: u.titleRu}))))
-            .catch(() => {});
-    }, []);
+                .map((u) => ({
+                    id: u.id,
+                    titleRu: u.titleRu,
+                    label: (i18n.language === "ky" ? u.titleKg : i18n.language === "en" ? u.titleEn : null) || u.titleRu,
+                }))))
+            .catch(() => {
+            });
+    }, [i18n.language]);
 
     useEffect(() => {
         if (isNew) return;
         substitutionService.get(Number(id))
-            .then((d) => { setDetails(d); setForm(toForm(d)); })
-            .catch(() => setError("Не удалось загрузить заявку"))
+            .then((d) => {
+                setDetails(d);
+                setForm(toForm(d));
+            })
+            .catch(() => setError(t("substitutionCard.loadError")))
             .finally(() => setLoading(false));
-    }, [id, isNew]);
+    }, [id, isNew, t]);
 
     // УЧР (ViewAllSz) правит заявку после согласования Операционным управлением.
     const opsApproved = details?.approvals?.some(
@@ -72,254 +113,359 @@ export function SubstitutionCardPage() {
         return n > 0 ? n : null;
     }, [form.startsOn, form.endsOn]);
 
+    const unitOptions = useMemo(() => [
+        {value: "", label: t("substitutionCard.fields.unitPlaceholder")},
+        ...filials.map((f) => ({value: String(f.id), label: f.label})),
+    ], [filials, t]);
+
     async function saveDraft(): Promise<number | null> {
-        setBusy(true); setError(null);
+        setBusy(true);
+        setError(null);
         try {
             const d = isNew ? await substitutionService.create(form)
-                            : await substitutionService.update(Number(id), form);
-            if (isNew) { navigate(`/substitutions/${d.id}`, {replace: true}); }
-            else { setDetails(d); setForm(toForm(d)); }
+                : await substitutionService.update(Number(id), form);
+            if (isNew) {
+                navigate(`/substitutions/${d.id}`, {replace: true});
+            } else {
+                setDetails(d);
+                setForm(toForm(d));
+            }
             return d.id;
-        } catch (e) { setError(msgOf(e)); return null; }
-        finally { setBusy(false); }
+        } catch (e) {
+            setError(msgOf(e, t));
+            return null;
+        } finally {
+            setBusy(false);
+        }
     }
 
     async function submit() {
         const sid = await saveDraft();
         if (sid == null) return;
-        setBusy(true); setError(null);
-        try { const d = await substitutionService.submit(sid); setDetails(d); setForm(toForm(d)); }
-        catch (e) { setError(msgOf(e)); }
-        finally { setBusy(false); }
+        setBusy(true);
+        setError(null);
+        try {
+            const d = await substitutionService.submit(sid);
+            setDetails(d);
+            setForm(toForm(d));
+        } catch (e) {
+            setError(msgOf(e, t));
+        } finally {
+            setBusy(false);
+        }
     }
 
     async function act(fn: () => Promise<SubstitutionDetails>) {
-        setBusy(true); setError(null);
-        try { const d = await fn(); setDetails(d); setForm(toForm(d)); }
-        catch (e) { setError(msgOf(e)); }
-        finally { setBusy(false); }
+        setBusy(true);
+        setError(null);
+        try {
+            const d = await fn();
+            setDetails(d);
+            setForm(toForm(d));
+        } catch (e) {
+            setError(msgOf(e, t));
+        } finally {
+            setBusy(false);
+        }
     }
 
     async function remove() {
         if (details == null) return;
-        setBusy(true); setError(null);
-        try { await substitutionService.remove(details.id); navigate("/substitutions"); }
-        catch (e) { setError(msgOf(e)); setBusy(false); }
+        setBusy(true);
+        setError(null);
+        try {
+            await substitutionService.remove(details.id);
+            navigate("/substitutions");
+        } catch (e) {
+            setError(msgOf(e, t));
+            setBusy(false);
+        }
     }
 
-    if (loading) return <div className="p-6 text-[13px] text-[#8b97ab]">Загрузка…</div>;
+    if (loading) return <div className="p-6 text-[13px] text-[#8b97ab]">{t("general.loading")}</div>;
+
+    const pickUserPlaceholder = t("substitutionCard.fields.findEmployee");
+    const docNumber = details?.regNumber ?? details?.id;
+    const statusTone = details ? (STATUS_TONE[details.status] ?? colors.status.draft) : null;
 
     return (
-        <div className="w-full max-w-[1000px] mx-auto px-4 sm:px-6 pt-5 pb-16">
+        <div className="w-full max-w-[1700px] mx-auto px-4 sm:px-6 pt-5 pb-16">
             <button type="button" onClick={() => navigate("/substitutions")}
-                    className="flex items-center gap-1.5 text-[13px] text-[#2f68f5] bg-transparent border-none cursor-pointer hover:underline mb-2">
-                <ArrowLeft size={16}/> Заявки на замещение
+                    className="inline-flex items-center gap-1.5 mb-3 border-none bg-transparent text-[13px] font-medium text-[#55617a] cursor-pointer hover:text-[#2f68f5]"
+            >
+                <ArrowLeft size={16}/> {t("substitutionRequests.title")}
             </button>
             <div className="flex items-end justify-between gap-3 flex-wrap">
                 <div>
-                    <h1 className="m-0 text-[19px] font-bold text-[#0f1b2d]">
-                        {isNew ? "Новая заявка на замещение" : (details?.regNumber ?? "Заявка на замещение")}
+                    <h1 className="m-0 text-[23px] font-bold tracking-[-0.02em] text-[#0f1b2d]">
+                        {isNew ? t("substitutionCard.newTitle") : (details?.regNumber ?? t("substitutionCard.defaultTitle"))}
                     </h1>
-                    {details && <div className="mt-1 text-[12.5px] text-[#8b97ab]">Статус: {details.statusTitle}</div>}
+                    {details && statusTone && (
+                        <div className="mt-[7px] flex items-center gap-2 text-[12.5px] text-[#8b97ab]">
+                            {t("substitutionCard.statusLabel")}
+                            <span className="inline-flex rounded-full px-[9px] py-0.5 text-[11px] font-semibold"
+                                  style={{color: statusTone.fg, background: statusTone.bg}}>
+                                {t(`substitutionRequests.status.${details.status}`)}
+                            </span>
+                        </div>
+                    )}
                 </div>
             </div>
 
             {details?.passportExpiresBeforeEnd && (
-                <div className="mt-3 rounded-[10px] border border-[#f0c8c0] bg-[#fbeae7] px-4 py-2.5 text-[13px] text-[#c0392b]">
-                    Внимание: срок действия паспорта замещающего истекает раньше окончания замещения.
+                <div
+                    className="mt-3 rounded-[10px] border border-[#f1c9c2] bg-[#fbeae7] px-4 py-2.5 text-[13px] text-[#c0392b]">
+                    {t("substitutionCard.passportWarning")}
                 </div>
             )}
-            {error && <div className="mt-3 text-[13px] text-[#c0392b]">{error}</div>}
+            {error && (
+                <div
+                    className="mt-3 rounded-[10px] border border-[#f1c9c2] bg-[#fbeae7] px-4 py-2.5 text-[13px] text-[#c0392b]">
+                    {error}
+                </div>
+            )}
 
             <div className="mt-4 flex flex-col gap-4">
                 {/* Блок 1 */}
-                <Section title="Общие сведения">
+                <Section title={t("substitutionCard.sections.general")}>
                     <Grid>
-                        <Field label="Тема" required>
+                        <Field label={t("substitutionCard.fields.subject")} required>
                             <Input value={form.subject} disabled={!editable} onChange={(v) => set("subject", v)}/>
                         </Field>
-                        <Field label="Причина замещения" required>
+                        <Field label={t("substitutionCard.fields.reason")} required>
                             <Select value={form.reason} disabled={!editable}
                                     onChange={(v) => set("reason", v as SubstitutionReason)}
-                                    options={Object.entries(REASON_LABEL)}/>
+                                    options={(Object.keys(REASON_LABEL) as SubstitutionReason[]).map((c) => ({
+                                        value: c, label: t(`substitutionRequests.reason.${c}`),
+                                    }))}/>
                         </Field>
                     </Grid>
                 </Section>
 
                 {/* Блок 2 */}
-                <Section title="Отсутствующий сотрудник">
+                <Section title={t("substitutionCard.sections.absent")}>
                     <Grid>
-                        <Field label="Сотрудник">
+                        <Field label={t("substitutionCard.fields.employee")}>
                             <UserPicker users={users} value={form.absentUserId ?? null} disabled={!editable} clearable
-                                        placeholder="Найти сотрудника"
-                                        onChange={(u) => setForm((f) => ({...f, absentUserId: u?.id ?? null,
-                                            absentName: u?.fullName ?? f.absentName, absentPosition: u?.position ?? f.absentPosition}))}/>
+                                        placeholder={pickUserPlaceholder}
+                                        onChange={(u) => setForm((f) => ({
+                                            ...f,
+                                            absentUserId: u?.id ?? null,
+                                            absentName: u?.fullName ?? f.absentName,
+                                            absentPosition: u?.position ?? f.absentPosition
+                                        }))}/>
                         </Field>
-                        <Field label="ФИО (если не из справочника)">
+                        <Field label={t("substitutionCard.fields.fullNameManual")}>
                             <Input value={form.absentName} disabled={!editable} onChange={(v) => set("absentName", v)}/>
                         </Field>
-                        <Field label="Должность">
-                            <Input value={form.absentPosition ?? ""} disabled={!editable} onChange={(v) => set("absentPosition", v)}/>
+                        <Field label={t("substitutionCard.fields.position")}>
+                            <Input value={form.absentPosition ?? ""} disabled={!editable}
+                                   onChange={(v) => set("absentPosition", v)}/>
                         </Field>
-                        <Field label="Подразделение">
-                            <select className="w-full h-10 px-3 rounded-[9px] border border-[#e5e9f0] text-[14px] bg-white outline-none focus:border-[#2f68f5] disabled:bg-[#f4f6fa]"
-                                    disabled={!editable} value={form.absentUnitId ?? ""}
-                                    onChange={(e) => {
-                                        const uid = e.target.value ? Number(e.target.value) : null;
+                        <Field label={t("substitutionCard.fields.unit")}>
+                            <Select value={form.absentUnitId ? String(form.absentUnitId) : ""} disabled={!editable}
+                                    searchable
+                                    options={unitOptions}
+                                    onChange={(v) => {
+                                        const uid = v ? Number(v) : null;
                                         const f = filials.find((x) => x.id === uid);
                                         setForm((s) => ({...s, absentUnitId: uid, absentBranch: f?.titleRu ?? null}));
-                                    }}>
-                                <option value="">— выберите подразделение —</option>
-                                {filials.map((f) => <option key={f.id} value={f.id}>{f.titleRu}</option>)}
-                            </select>
+                                    }}/>
                         </Field>
                     </Grid>
                 </Section>
 
                 {/* Блок 3 */}
-                <Section title="Замещающий сотрудник">
+                <Section title={t("substitutionCard.sections.substitute")}>
                     <Grid>
-                        <Field label="Сотрудник">
-                            <UserPicker users={users} value={form.substituteUserId ?? null} disabled={!editable} clearable
-                                        placeholder="Найти сотрудника"
-                                        onChange={(u) => setForm((f) => ({...f, substituteUserId: u?.id ?? null,
-                                            substituteName: u?.fullName ?? f.substituteName, substitutePosition: u?.position ?? f.substitutePosition}))}/>
+                        <Field label={t("substitutionCard.fields.employee")}>
+                            <UserPicker users={users} value={form.substituteUserId ?? null} disabled={!editable}
+                                        clearable
+                                        placeholder={pickUserPlaceholder}
+                                        onChange={(u) => setForm((f) => ({
+                                            ...f,
+                                            substituteUserId: u?.id ?? null,
+                                            substituteName: u?.fullName ?? f.substituteName,
+                                            substitutePosition: u?.position ?? f.substitutePosition
+                                        }))}/>
                         </Field>
-                        <Field label="ФИО (если не из справочника)">
-                            <Input value={form.substituteName} disabled={!editable} onChange={(v) => set("substituteName", v)}/>
+                        <Field label={t("substitutionCard.fields.fullNameManual")}>
+                            <Input value={form.substituteName} disabled={!editable}
+                                   onChange={(v) => set("substituteName", v)}/>
                         </Field>
-                        <Field label="Должность">
-                            <Input value={form.substitutePosition ?? ""} disabled={!editable} onChange={(v) => set("substitutePosition", v)}/>
+                        <Field label={t("substitutionCard.fields.position")}>
+                            <Input value={form.substitutePosition ?? ""} disabled={!editable}
+                                   onChange={(v) => set("substitutePosition", v)}/>
                         </Field>
-                        <Field label="Подразделение">
-                            <select className="w-full h-10 px-3 rounded-[9px] border border-[#e5e9f0] text-[14px] bg-white outline-none focus:border-[#2f68f5] disabled:bg-[#f4f6fa]"
-                                    disabled={!editable} value={form.substituteUnitId ?? ""}
-                                    onChange={(e) => {
-                                        const uid = e.target.value ? Number(e.target.value) : null;
+                        <Field label={t("substitutionCard.fields.unit")}>
+                            <Select value={form.substituteUnitId ? String(form.substituteUnitId) : ""}
+                                    disabled={!editable} searchable
+                                    options={unitOptions}
+                                    onChange={(v) => {
+                                        const uid = v ? Number(v) : null;
                                         const f = filials.find((x) => x.id === uid);
-                                        setForm((s) => ({...s, substituteUnitId: uid, substituteBranch: f?.titleRu ?? null}));
-                                    }}>
-                                <option value="">— выберите подразделение —</option>
-                                {filials.map((f) => <option key={f.id} value={f.id}>{f.titleRu}</option>)}
-                            </select>
+                                        setForm((s) => ({
+                                            ...s,
+                                            substituteUnitId: uid,
+                                            substituteBranch: f?.titleRu ?? null
+                                        }));
+                                    }}/>
                         </Field>
-                        <Field label="Серия и номер паспорта">
-                            <Input value={form.passportSeriesNumber ?? ""} disabled={!editable} onChange={(v) => set("passportSeriesNumber", v)}/>
+                        <Field label={t("substitutionCard.fields.passportSeriesNumber")}>
+                            <Input value={form.passportSeriesNumber ?? ""} disabled={!editable}
+                                   onChange={(v) => set("passportSeriesNumber", v)}/>
                         </Field>
-                        <Field label="Кем выдан">
-                            <Input value={form.passportIssuedBy ?? ""} disabled={!editable} onChange={(v) => set("passportIssuedBy", v)}/>
+                        <Field label={t("substitutionCard.fields.passportIssuedBy")}>
+                            <Input value={form.passportIssuedBy ?? ""} disabled={!editable}
+                                   onChange={(v) => set("passportIssuedBy", v)}/>
                         </Field>
-                        <Field label="ИНН (14 цифр)">
+                        <Field label={t("substitutionCard.fields.inn")}>
                             <Input value={form.inn ?? ""} disabled={!editable} onChange={(v) => set("inn", v)}/>
                         </Field>
-                        <Field label="Дата выдачи паспорта">
-                            <DateInput value={form.passportIssuedOn} disabled={!editable} onChange={(v) => set("passportIssuedOn", v)}/>
+                        <Field label={t("substitutionCard.fields.passportIssuedOn")}>
+                            <DateInput value={form.passportIssuedOn} disabled={!editable}
+                                       onChange={(v) => set("passportIssuedOn", v)}/>
                         </Field>
-                        <Field label="Паспорт действителен до">
-                            <DateInput value={form.passportValidUntil} disabled={!editable} onChange={(v) => set("passportValidUntil", v)}/>
+                        <Field label={t("substitutionCard.fields.passportValidUntil")}>
+                            <DateInput value={form.passportValidUntil} disabled={!editable}
+                                       onChange={(v) => set("passportValidUntil", v)}/>
                         </Field>
-                        <Field label="Адрес по прописке">
-                            <Input value={form.addressRegistration ?? ""} disabled={!editable} onChange={(v) => set("addressRegistration", v)}/>
+                        <Field label={t("substitutionCard.fields.addressRegistration")}>
+                            <Input value={form.addressRegistration ?? ""} disabled={!editable}
+                                   onChange={(v) => set("addressRegistration", v)}/>
                         </Field>
-                        <Field label="Адрес проживания">
-                            <Input value={form.addressResidence ?? ""} disabled={!editable} onChange={(v) => set("addressResidence", v)}/>
+                        <Field label={t("substitutionCard.fields.addressResidence")}>
+                            <Input value={form.addressResidence ?? ""} disabled={!editable}
+                                   onChange={(v) => set("addressResidence", v)}/>
                         </Field>
                     </Grid>
                 </Section>
 
                 {/* Блок 4 */}
-                <Section title="Период замещения">
+                <Section title={t("substitutionCard.sections.period")}>
                     <Grid>
-                        <Field label="Дата начала" required>
+                        <Field label={t("substitutionCard.fields.startsOn")} required>
                             <DateInput value={form.startsOn} disabled={!editable} onChange={(v) => set("startsOn", v)}/>
                         </Field>
-                        <Field label="Дата окончания" required>
+                        <Field label={t("substitutionCard.fields.endsOn")} required>
                             <DateInput value={form.endsOn} disabled={!editable} onChange={(v) => set("endsOn", v)}/>
                         </Field>
-                        <Field label="Календарных дней">
-                            <div className="h-9 flex items-center text-[13px] text-[#374253]">{days ?? "—"}</div>
+                        <Field label={t("substitutionCard.fields.daysCount")}>
+                            <div
+                                className="flex h-9 items-center font-mono text-[13px] font-semibold text-[#3a4560]">{days ?? "—"}</div>
                         </Field>
                     </Grid>
                 </Section>
 
                 {/* Блок 5 */}
-                <Section title="Комиссия приёма-передачи">
+                <Section title={t("substitutionCard.sections.commission")}>
                     <Grid>
-                        <Field label="Председатель комиссии">
-                            <UserPicker users={users} value={form.commissionChairUserId ?? null} disabled={!editable} clearable
-                                        placeholder="Найти сотрудника"
-                                        onChange={(u) => setForm((f) => ({...f, commissionChairUserId: u?.id ?? null,
-                                            commissionChairName: u?.fullName ?? f.commissionChairName, commissionChairPosition: u?.position ?? f.commissionChairPosition}))}/>
+                        <Field label={t("substitutionCard.fields.chair")}>
+                            <UserPicker users={users} value={form.commissionChairUserId ?? null} disabled={!editable}
+                                        clearable
+                                        placeholder={pickUserPlaceholder}
+                                        onChange={(u) => setForm((f) => ({
+                                            ...f,
+                                            commissionChairUserId: u?.id ?? null,
+                                            commissionChairName: u?.fullName ?? f.commissionChairName,
+                                            commissionChairPosition: u?.position ?? f.commissionChairPosition
+                                        }))}/>
                         </Field>
-                        <Field label="Должность председателя">
-                            <Input value={form.commissionChairPosition ?? ""} disabled={!editable} onChange={(v) => set("commissionChairPosition", v)}/>
+                        <Field label={t("substitutionCard.fields.chairPosition")}>
+                            <Input value={form.commissionChairPosition ?? ""} disabled={!editable}
+                                   onChange={(v) => set("commissionChairPosition", v)}/>
                         </Field>
-                        <Field label="Момент приёма-передачи">
-                            <div className="flex items-center gap-4 h-9">
-                                {(Object.entries(HANDOVER_LABEL) as [HandoverMoment, string][]).map(([v, label]) => (
-                                    <label key={v} className="flex items-center gap-1.5 text-[13px] cursor-pointer">
-                                        <input type="radio" name="handover" disabled={!editable}
-                                               checked={form.handoverMoment === v} onChange={() => set("handoverMoment", v)}/>
-                                        {label}
-                                    </label>
-                                ))}
+                        <Field label={t("substitutionCard.fields.handoverMoment")}>
+                            <div
+                                className="inline-flex h-9 rounded-[10px] border border-[#e5e9f0] bg-[#f6f8fb] p-[2px]">
+                                {(Object.keys(HANDOVER_LABEL) as HandoverMoment[]).map((v) => {
+                                    const active = form.handoverMoment === v;
+                                    return (
+                                        <button key={v} type="button" disabled={!editable}
+                                                onClick={() => set("handoverMoment", v)}
+                                                className={`cursor-pointer rounded-[8px] border-none px-3 text-[12.5px] font-semibold disabled:cursor-default ${
+                                                    active ? "bg-white text-[#2f68f5] shadow-sm" : "bg-transparent text-[#8b97ab] hover:text-[#3a4560]"}`}>
+                                            {t(`substitutionCard.handover.${v}`)}
+                                        </button>
+                                    );
+                                })}
                             </div>
                         </Field>
-                        <Field label="День приёма-передачи">
-                            <DateInput value={form.handoverOn} disabled={!editable} onChange={(v) => set("handoverOn", v)}/>
+                        <Field label={t("substitutionCard.fields.handoverOn")}>
+                            <DateInput value={form.handoverOn} disabled={!editable}
+                                       onChange={(v) => set("handoverOn", v)}/>
                         </Field>
                     </Grid>
 
-                    <div className="mt-3">
-                        <div className="text-[12.5px] font-semibold text-[#55617a] mb-1.5">Члены комиссии</div>
+                    <div className="mt-4">
+                        <div className="mb-1.5 text-[11px] font-bold uppercase tracking-[.04em] text-[#a3adbd]">
+                            {t("substitutionCard.fields.members")}
+                        </div>
                         <div className="flex flex-col gap-2">
                             {form.commissionMembers.map((m, i) => (
                                 <div key={i} className="flex items-center gap-2">
-                                    <div className="flex-1"><UserPicker users={users} value={m.userId ?? null} disabled={!editable} clearable
-                                        placeholder="Найти сотрудника"
-                                        onChange={(u) => updateMember(setForm, i, {userId: u?.id ?? null,
-                                            fullName: u?.fullName ?? m.fullName, position: u?.position ?? m.position})}/></div>
-                                    <input className="flex-1 h-9 px-3 rounded-[9px] border border-[#e5e9f0] text-[13px]"
-                                           placeholder="Должность" disabled={!editable} value={m.position ?? ""}
+                                    <div className="flex-1"><UserPicker users={users} value={m.userId ?? null}
+                                                                        disabled={!editable} clearable
+                                                                        placeholder={pickUserPlaceholder}
+                                                                        onChange={(u) => updateMember(setForm, i, {
+                                                                            userId: u?.id ?? null,
+                                                                            fullName: u?.fullName ?? m.fullName,
+                                                                            position: u?.position ?? m.position
+                                                                        })}/></div>
+                                    <input className={`flex-1 ${FIELD}`}
+                                           placeholder={t("substitutionCard.fields.position")} disabled={!editable}
+                                           value={m.position ?? ""}
                                            onChange={(e) => updateMember(setForm, i, {position: e.target.value})}/>
                                     {editable && (
                                         <button type="button" onClick={() => removeMember(setForm, i)}
-                                                className="p-1.5 text-[#c0392b] bg-transparent border-none cursor-pointer"><Trash2 size={16}/></button>
+                                                aria-label={t("substitutionCard.buttons.removeMember")}
+                                                title={t("substitutionCard.buttons.removeMember")}
+                                                className="grid h-9 w-9 flex-none cursor-pointer place-items-center rounded-[9px] border-none bg-transparent text-[#a3adbd] hover:bg-[#fbeae7] hover:text-[#c0392b]">
+                                            <Trash2 size={16}/>
+                                        </button>
                                     )}
                                 </div>
                             ))}
                         </div>
                         {editable && (
                             <button type="button" onClick={() => addMember(setForm)}
-                                    className="mt-2 flex items-center gap-1.5 text-[13px] text-[#2f68f5] bg-transparent border-none cursor-pointer hover:underline">
-                                <Plus size={15}/> Добавить члена комиссии
+                                    className="mt-2.5 inline-flex h-9 cursor-pointer items-center gap-1.5 rounded-[9px] border border-[#cbddff] bg-[#f6f9ff] px-3 text-[13px] font-semibold text-[#2f68f5] hover:bg-[#e9f0ff]">
+                                <Plus size={15}/> {t("substitutionCard.buttons.addMember")}
                             </button>
                         )}
                     </div>
                 </Section>
 
                 {/* Блок 6 */}
-                <Section title="Прочее">
-                    <Field label="Описание">
-                        <textarea className="w-full min-h-[80px] px-3 py-2 rounded-[9px] border border-[#e5e9f0] text-[13px] outline-none focus:border-[#2f68f5]"
-                                  disabled={!editable} value={form.description ?? ""} onChange={(e) => set("description", e.target.value)}/>
+                <Section title={t("substitutionCard.sections.other")}>
+                    <Field label={t("substitutionCard.fields.description")}>
+                        <textarea
+                            className={`w-full min-h-[88px] rounded-[10px] border border-[#e5e9f0] bg-white px-3 py-2 text-[13px] text-[#0f1b2d] ${FOCUS} disabled:bg-[#f6f8fb] disabled:text-[#8b97ab]`}
+                            disabled={!editable} value={form.description ?? ""}
+                            onChange={(e) => set("description", e.target.value)}/>
                     </Field>
                 </Section>
 
                 {/* Маршрут согласования */}
                 {details && details.approvals.length > 0 && (
-                    <Section title="Маршрут согласования">
-                        <div className="flex flex-col gap-2">
+                    <Section title={t("substitutionCard.sections.route")}>
+                        <div className="flex flex-col gap-2.5">
                             {details.approvals.map((a) => {
                                 const color = a.state === "Approved" ? "#1c7a4d"
                                     : a.state === "Rejected" ? "#c0392b"
-                                    : a.state === "Active" ? "#2f68f5" : "#8b97ab";
+                                        : a.state === "Active" ? "#2f68f5" : "#8b97ab";
+                                const roleKey = ROLE_KEY[a.roleLabel];
                                 return (
                                     <div key={a.order} className="flex items-center gap-3 text-[13px]">
-                                        <span className="inline-flex h-6 w-6 items-center justify-center rounded-full text-white text-[12px] font-semibold" style={{background: color}}>{a.order}</span>
-                                        <span className="font-medium text-[#374253] min-w-[170px]">{a.roleLabel}</span>
-                                        <span className="text-[#55617a] flex-1">{a.userName ?? "—"}</span>
-                                        <span className="font-medium" style={{color}}>{APPROVAL_STATE_LABEL[a.state]}</span>
+                                        <span
+                                            className="inline-flex h-6 w-6 flex-none items-center justify-center rounded-full text-white text-[12px] font-semibold"
+                                            style={{background: color}}>{a.order}</span>
+                                        <span className="min-w-[170px] font-semibold text-[#1c2740]">
+                                            {roleKey ? t(`substitutionCard.roles.${roleKey}`) : a.roleLabel}
+                                        </span>
+                                        <span className="flex-1 text-[#55617a]">{a.userName ?? "—"}</span>
+                                        <span className="font-semibold"
+                                              style={{color}}>{t(`substitutionCard.approvalState.${a.state}`)}</span>
                                     </div>
                                 );
                             })}
@@ -331,72 +477,76 @@ export function SubstitutionCardPage() {
                 <div className="flex items-center gap-2.5 flex-wrap">
                     {(isNew || details?.status === "Draft" || details?.status === "Rejected") && (
                         <>
-                            <button type="button" onClick={() => void saveDraft()} disabled={busy}
-                                    className="h-10 px-4 rounded-[10px] border border-[#d5dbe6] bg-white text-[14px] font-medium text-[#374253] cursor-pointer hover:bg-[#f4f6fa] disabled:opacity-50">
-                                Сохранить черновик
+                            <button type="button" onClick={() => void submit()} disabled={busy} className={BTN_PRIMARY}>
+                                {t("substitutionCard.buttons.submit")}
                             </button>
-                            <button type="button" onClick={() => void submit()} disabled={busy}
-                                    className="h-10 px-5 rounded-[10px] bg-[#2f68f5] !text-white text-[14px] font-semibold cursor-pointer hover:bg-[#2554cc] disabled:opacity-50">
-                                Отправить на согласование
+                            <button type="button" onClick={() => void saveDraft()} disabled={busy}
+                                    className={BTN_SECONDARY}>
+                                {t("substitutionCard.buttons.saveDraft")}
                             </button>
                         </>
                     )}
                     {hrCanEdit && (
-                        <button type="button" onClick={() => void saveDraft()} disabled={busy}
-                                className="h-10 px-5 rounded-[10px] bg-[#2f68f5] !text-white text-[14px] font-semibold cursor-pointer hover:bg-[#2554cc] disabled:opacity-50">
-                            Сохранить изменения (УЧР)
+                        <button type="button" onClick={() => void saveDraft()} disabled={busy} className={BTN_PRIMARY}>
+                            {t("substitutionCard.buttons.saveHr")}
                         </button>
                     )}
                     {details && (
                         <>
-                            <button type="button" onClick={() => void substitutionService.print(details.id, "order", `Приказ ${details.regNumber ?? details.id}.docx`)}
-                                    className="h-10 px-4 rounded-[10px] border border-[#d5dbe6] bg-white text-[14px] font-medium text-[#374253] cursor-pointer hover:bg-[#f4f6fa] flex items-center gap-2">
-                                <Printer size={16}/> Приказ
+                            <button type="button"
+                                    onClick={() => void substitutionService.print(details.id, "order", t("substitutionCard.files.order", {name: docNumber}))}
+                                    className={BTN_SECONDARY}>
+                                <Printer size={16}/> {t("substitutionCard.buttons.order")}
                             </button>
-                            <button type="button" onClick={() => void substitutionService.print(details.id, "liability", `Договор МО ${details.regNumber ?? details.id}.docx`)}
-                                    className="h-10 px-4 rounded-[10px] border border-[#d5dbe6] bg-white text-[14px] font-medium text-[#374253] cursor-pointer hover:bg-[#f4f6fa] flex items-center gap-2">
-                                <Printer size={16}/> Договор МО
+                            <button type="button"
+                                    onClick={() => void substitutionService.print(details.id, "liability", t("substitutionCard.files.liability", {name: docNumber}))}
+                                    className={BTN_SECONDARY}>
+                                <Printer size={16}/> {t("substitutionCard.buttons.liability")}
                             </button>
-                            <button type="button" onClick={() => void substitutionService.print(details.id, "card", `Заявка на замещение ${details.regNumber ?? details.id}.docx`)}
-                                    className="h-10 px-4 rounded-[10px] border border-[#d5dbe6] bg-white text-[14px] font-medium text-[#374253] cursor-pointer hover:bg-[#f4f6fa] flex items-center gap-2">
-                                <Printer size={16}/> Выгрузить (все поля)
+                            <button type="button"
+                                    onClick={() => void substitutionService.print(details.id, "card", t("substitutionCard.files.card", {name: docNumber}))}
+                                    className={BTN_SECONDARY}>
+                                <Printer size={16}/> {t("substitutionCard.buttons.exportAll")}
                             </button>
                         </>
                     )}
                     {details?.status === "OnExecution"
                         && (hasPermission(PermissionCode.ViewAllSz)
                             || details.approvals?.some((a) => a.roleLabel === "УЧР" && a.userId === user?.id)) && (
-                        <button type="button" onClick={() => void act(() => substitutionService.execute(details.id))} disabled={busy}
-                                className="h-10 px-5 rounded-[10px] bg-[#1c7a4d] text-white text-[14px] font-semibold cursor-pointer hover:brightness-95 disabled:opacity-50">
-                            Исполнено (приказ оформлен)
-                        </button>
-                    )}
+                            <button type="button"
+                                    onClick={() => void act(() => substitutionService.execute(details.id))}
+                                    disabled={busy}
+                                    className={BTN_SUCCESS}>
+                                {t("substitutionCard.buttons.execute")}
+                            </button>
+                        )}
                     {details?.status === "Draft" && (
-                        <button type="button" onClick={() => void remove()} disabled={busy}
-                                className="h-10 px-4 rounded-[10px] border border-[#f0c8c0] bg-white text-[14px] font-medium text-[#c0392b] cursor-pointer hover:bg-[#fbeae7] disabled:opacity-50 flex items-center gap-2">
-                            <Trash2 size={16}/> Удалить
+                        <button type="button" onClick={() => void remove()} disabled={busy} className={BTN_DANGER}>
+                            <Trash2 size={16}/> {t("substitutionCard.buttons.delete")}
                         </button>
                     )}
                     {details?.status === "OnApproval"
                         && details.approvals.find((a) => a.state === "Active")?.userId === user?.id && (
-                        <>
-                            <button type="button" onClick={() => void act(() => substitutionService.approve(details.id))} disabled={busy}
-                                    className="h-10 px-5 rounded-[10px] bg-[#1c7a4d] !text-white text-[14px] font-semibold cursor-pointer hover:brightness-95 disabled:opacity-50">
-                                Согласовать
-                            </button>
-                            <button type="button" onClick={() => {
-                                const c = window.prompt("Причина отклонения (необязательно):") ?? undefined;
-                                void act(() => substitutionService.reject(details.id, c));
-                            }} disabled={busy}
-                                    className="h-10 px-4 rounded-[10px] border border-[#f0c8c0] bg-white text-[14px] font-medium text-[#c0392b] cursor-pointer hover:bg-[#fbeae7] disabled:opacity-50">
-                                Отклонить
-                            </button>
-                        </>
-                    )}
+                            <>
+                                <button type="button"
+                                        onClick={() => void act(() => substitutionService.approve(details.id))}
+                                        disabled={busy}
+                                        className={BTN_SUCCESS}>
+                                    {t("substitutionCard.buttons.approve")}
+                                </button>
+                                <button type="button" onClick={() => {
+                                    const c = window.prompt(t("substitutionCard.rejectPrompt")) ?? undefined;
+                                    void act(() => substitutionService.reject(details.id, c));
+                                }} disabled={busy} className={BTN_DANGER}>
+                                    {t("substitutionCard.buttons.reject")}
+                                </button>
+                            </>
+                        )}
                     {(details?.status === "OnApproval" || details?.status === "OnExecution") && (
-                        <button type="button" onClick={() => void act(() => substitutionService.withdraw(details.id))} disabled={busy}
-                                className="h-10 px-4 rounded-[10px] border border-[#f0c8c0] bg-white text-[14px] font-medium text-[#c0392b] cursor-pointer hover:bg-[#fbeae7] disabled:opacity-50">
-                            Отозвать
+                        <button type="button" onClick={() => void act(() => substitutionService.withdraw(details.id))}
+                                disabled={busy}
+                                className={BTN_DANGER}>
+                            {t("substitutionCard.buttons.withdraw")}
                         </button>
                     )}
                 </div>
@@ -408,67 +558,107 @@ export function SubstitutionCardPage() {
 // ── helpers ──────────────────────────────────────────────────────────────
 function toForm(d: SubstitutionDetails): SubstitutionSaveRequest {
     return {
-        subject: d.subject, reason: d.reasonCode,
-        absentUserId: d.absentUserId, absentName: d.absentName, absentPosition: d.absentPosition,
-        absentBranch: d.absentBranch, absentUnitId: d.absentUnitId,
-        substituteUserId: d.substituteUserId, substituteName: d.substituteName, substitutePosition: d.substitutePosition,
-        substituteBranch: d.substituteBranch, substituteUnitId: d.substituteUnitId,
-        passportSeriesNumber: d.passportSeriesNumber, passportIssuedBy: d.passportIssuedBy, inn: d.inn,
-        passportIssuedOn: d.passportIssuedOn, passportValidUntil: d.passportValidUntil,
-        addressRegistration: d.addressRegistration, addressResidence: d.addressResidence,
-        daysCount: d.daysCount, startsOn: d.startsOn, endsOn: d.endsOn,
-        commissionChairUserId: d.commissionChairUserId, commissionChairName: d.commissionChairName,
-        commissionChairPosition: d.commissionChairPosition, handoverMoment: d.handoverMoment, handoverOn: d.handoverOn,
-        commissionMembers: d.commissionMembers, description: d.description,
+        subject: d.subject,
+        reason: d.reasonCode,
+        absentUserId: d.absentUserId,
+        absentName: d.absentName,
+        absentPosition: d.absentPosition,
+        absentBranch: d.absentBranch,
+        absentUnitId: d.absentUnitId,
+        substituteUserId: d.substituteUserId,
+        substituteName: d.substituteName,
+        substitutePosition: d.substitutePosition,
+        substituteBranch: d.substituteBranch,
+        substituteUnitId: d.substituteUnitId,
+        passportSeriesNumber: d.passportSeriesNumber,
+        passportIssuedBy: d.passportIssuedBy,
+        inn: d.inn,
+        passportIssuedOn: d.passportIssuedOn,
+        passportValidUntil: d.passportValidUntil,
+        addressRegistration: d.addressRegistration,
+        addressResidence: d.addressResidence,
+        daysCount: d.daysCount,
+        startsOn: d.startsOn,
+        endsOn: d.endsOn,
+        commissionChairUserId: d.commissionChairUserId,
+        commissionChairName: d.commissionChairName,
+        commissionChairPosition: d.commissionChairPosition,
+        handoverMoment: d.handoverMoment,
+        handoverOn: d.handoverOn,
+        commissionMembers: d.commissionMembers,
+        description: d.description,
     };
 }
-function msgOf(e: unknown): string {
-    return (e as {response?: {data?: {message?: string}}})?.response?.data?.message || "Не удалось сохранить";
+
+function msgOf(e: unknown, t: TFunction): string {
+    return (e as {
+        response?: { data?: { message?: string } }
+    })?.response?.data?.message || t("substitutionCard.saveFailed");
 }
+
 type SetForm = React.Dispatch<React.SetStateAction<SubstitutionSaveRequest>>;
+
 function addMember(setForm: SetForm) {
     setForm((f) => ({...f, commissionMembers: [...f.commissionMembers, {fullName: "", position: ""}]}));
 }
+
 function removeMember(setForm: SetForm, i: number) {
     setForm((f) => ({...f, commissionMembers: f.commissionMembers.filter((_, x) => x !== i)}));
 }
+
 function updateMember(setForm: SetForm, i: number, patch: Partial<CommissionMember>) {
     setForm((f) => ({...f, commissionMembers: f.commissionMembers.map((m, x) => x === i ? {...m, ...patch} : m)}));
 }
 
-function Section({title, children}: {title: string; children: React.ReactNode}) {
+function Section({title, children}: { title: string; children: React.ReactNode }) {
     return (
-        <div className="rounded-[13px] border border-[#e5e9f0] bg-white p-4">
-            <div className="text-[14px] font-semibold text-[#0f1b2d] mb-3">{title}</div>
-            {children}
+        <div className="overflow-hidden rounded-[12px] border border-[#e5e9f0] bg-white">
+            <div
+                className="border-b border-[#eef2f7] bg-[#fafbfd] px-5 py-2.5 text-[11px] font-bold uppercase tracking-[.04em] text-[#a3adbd]">
+                {title}
+            </div>
+            <div className="p-5">{children}</div>
         </div>
     );
 }
-function Grid({children}: {children: React.ReactNode}) {
-    return <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-3">{children}</div>;
+
+function Grid({children}: { children: React.ReactNode }) {
+    return <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-3.5">{children}</div>;
 }
-function Field({label, required, children}: {label: string; required?: boolean; children: React.ReactNode}) {
+
+function Field({label, required, children}: { label: string; required?: boolean; children: React.ReactNode }) {
     return (
         <div>
-            <div className="text-[12px] text-[#8b97ab] mb-1">{label}{required && <span className="text-[#c0392b]"> *</span>}</div>
+            <div className="mb-1 text-[12px] font-medium text-[#8b97ab]">{label}{required &&
+                <span className="text-[#c0392b]"> *</span>}</div>
             {children}
         </div>
     );
 }
-function Input({value, onChange, disabled}: {value: string; onChange: (v: string) => void; disabled?: boolean}) {
-    return <input className="w-full h-9 px-3 rounded-[9px] border border-[#e5e9f0] text-[13px] outline-none focus:border-[#2f68f5] disabled:bg-[#f6f8fb]"
-                  value={value} disabled={disabled} onChange={(e) => onChange(e.target.value)}/>;
+
+function Input({value, onChange, disabled}: { value: string; onChange: (v: string) => void; disabled?: boolean }) {
+    return <input className={FIELD} value={value} disabled={disabled} onChange={(e) => onChange(e.target.value)}/>;
 }
-function DateInput({value, onChange, disabled}: {value?: string | null; onChange: (v: string | null) => void; disabled?: boolean}) {
-    return <input type="date" className="w-full h-9 px-3 rounded-[9px] border border-[#e5e9f0] text-[13px] outline-none focus:border-[#2f68f5] disabled:bg-[#f6f8fb]"
+
+function DateInput({value, onChange, disabled}: {
+    value?: string | null;
+    onChange: (v: string | null) => void;
+    disabled?: boolean
+}) {
+    return <input type="date" className={FIELD}
                   value={value ? value.slice(0, 10) : ""} disabled={disabled}
                   onChange={(e) => onChange(e.target.value || null)}/>;
 }
-function Select({value, onChange, options, disabled}: {value: string; onChange: (v: string) => void; options: [string, string][]; disabled?: boolean}) {
+
+/** Выпадающий список проекта (как в Реестре СЗ). У него нет disabled — блокируем оболочкой. */
+function Select({value, onChange, options, disabled, searchable}: {
+    value: string; onChange: (v: string) => void; options: { value: string; label: string }[];
+    disabled?: boolean; searchable?: boolean;
+}) {
     return (
-        <select className="w-full h-9 px-3 rounded-[9px] border border-[#e5e9f0] text-[13px] disabled:bg-[#f6f8fb]"
-                value={value} disabled={disabled} onChange={(e) => onChange(e.target.value)}>
-            {options.map(([v, label]) => <option key={v} value={v}>{label}</option>)}
-        </select>
+        <div className={disabled ? "pointer-events-none opacity-60" : ""}>
+            <SelectDropdown className="w-full" minWidth="100%" options={options} value={value}
+                            onChange={onChange} searchable={searchable}/>
+        </div>
     );
 }

@@ -41,3 +41,43 @@ export function HighlightText({
         </span>
     );
 }
+
+/**
+ * Подсветка по нескольким словам запроса — так же, как ищет сервер: слова независимы,
+ * совпадает начало слова («серв» найдёт «серверное»). Подсвечивается совпавшее начало.
+ */
+// eslint-disable-next-line react-refresh/only-export-components
+export function queryTerms(query: string): string[] {
+    return Array.from(new Set(query.toLowerCase().split(/[^\p{L}\p{Nd}]+/u).filter(Boolean)));
+}
+
+export function HighlightTerms({
+                                   text,
+                                   query,
+                                   className = "",
+                                   highlightClassName = "bg-[#fde3c4] text-[#8a4b00] rounded-[3px] px-[1px]",
+                               }: HighlightTextProps) {
+    const terms = queryTerms(query).sort((a, b) => b.length - a.length);
+
+    if (terms.length === 0) {
+        return <span className={className}>{text}</span>;
+    }
+
+    const regex = new RegExp(`((?<![\\p{L}\\p{Nd}])(?:${terms.map(escapeRegExp).join("|")}))`, "giu");
+    // При split с одной группой захвата совпадения лежат на нечётных местах.
+    const parts = text.split(regex);
+
+    return (
+        <span className={className}>
+            {parts.map((part, i) =>
+                i % 2 === 1 ? (
+                    <mark key={i} className={highlightClassName}>
+                        {part}
+                    </mark>
+                ) : (
+                    <span key={i}>{part}</span>
+                )
+            )}
+        </span>
+    );
+}

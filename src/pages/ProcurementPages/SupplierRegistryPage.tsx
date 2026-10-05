@@ -1,4 +1,5 @@
 import {useCallback, useEffect, useState} from "react";
+import {useTranslation} from "react-i18next";
 import {apiClient} from "@/service/apiClient.ts";
 import {SupplierRatingsModal} from "@/components/procurement/SupplierRatingsModal.tsx";
 import {CheckBoxOne} from "@/components/componentsGeneral/componentsCheckBox/CheckBoxOne.tsx";
@@ -39,9 +40,10 @@ const BASE = "/procurement/suppliers";
 // падает 403 с сырым "Операция не выполнена". Чтобы до этого не доходило, кнопки блокируются
 // на фронте с тултипом-пояснением. Сам просмотр реестра и оценки поставщика (ЗК-9) прав не
 // требуют - там ничего не блокируем.
-const NO_MANAGE_SUPPLIERS_TOOLTIP = "У Вас нет прав на управление поставщиками!";
 
 export const SupplierRegistryPage = () => {
+    const {t} = useTranslation();
+    const NO_MANAGE_SUPPLIERS_TOOLTIP = t("supplierRegistry.noPermission");
     const {hasPermission} = useAuth();
     const canManageSuppliers = hasPermission(PermissionCode.ManageSuppliers);
     const [items, setItems] = useState<Supplier[]>([]);
@@ -73,7 +75,7 @@ export const SupplierRegistryPage = () => {
             await load();
         } catch (e) {
             const message = (e as { response?: { data?: { message?: string } } }).response?.data?.message;
-            setError(message ?? "Операция не выполнена");
+            setError(message ?? t("supplierRegistry.operationFailed"));
         } finally {
             setBusy(false);
         }
@@ -88,30 +90,31 @@ export const SupplierRegistryPage = () => {
     };
 
     const blacklist = (s: Supplier) => {
-        const reason = window.prompt(`Обоснование включения «${s.title}» в чёрный список (приложение №4):`);
+        const reason = window.prompt(t("supplierRegistry.promptReason", {title: s.title}));
         if (!reason?.trim()) return;
-        const until = window.prompt("Срок ограничения (ГГГГ-ММ-ДД), пусто — бессрочно:")?.trim();
+        const until = window.prompt(t("supplierRegistry.promptUntil"))?.trim();
         return run(() => apiClient.post(`${BASE}/${s.id}/blacklist`, {reason: reason.trim(), until: until || undefined}));
     };
 
     return (
         <div style={{padding: "22px 26px", display: "flex", flexDirection: "column", gap: 16}}>
             <div>
-                <h1 style={{margin: 0, fontSize: 19, fontWeight: 700, color: "#0f1b2d"}}>Поставщики</h1>
+                <h1 style={{margin: 0, fontSize: 19, fontWeight: 700, color: "#0f1b2d"}}>{t("supplierRegistry.title")}</h1>
                 <div style={{marginTop: 4, fontSize: 12.5, color: "#8b97ab"}}>
-                    Благонадёжность и чёрный список недобросовестных поставщиков
+                    {t("supplierRegistry.subtitle")}
                 </div>
             </div>
 
             <div style={{display: "flex", gap: 8, flexWrap: "wrap", alignItems: "center"}}>
                 <SearchBar
+                    variant="white"
                     value={query}
                     onChange={setQuery}
-                    placeholder="Поиск по наименованию или ИНН…"
+                    placeholder={t("supplierRegistry.searchPlaceholder")}
                     className="min-w-[240px]"
                 />
-                <CheckBoxOne checked={onlyBlacklisted} onChange={setOnlyBlacklisted}>
-                    только чёрный список
+                <CheckBoxOne checked={onlyBlacklisted} onChange={setOnlyBlacklisted} tone="brand">
+                    {t("supplierRegistry.onlyBlacklisted")}
                 </CheckBoxOne>
             </div>
 
@@ -121,14 +124,14 @@ export const SupplierRegistryPage = () => {
                 <input
                     value={draft.title}
                     onChange={e => setDraft({...draft, title: e.target.value})}
-                    placeholder="Наименование нового поставщика"
+                    placeholder={t("supplierRegistry.newTitlePlaceholder")}
                     style={{minWidth: 260, height: 36, padding: "0 12px", border: "1px solid #e5e9f0",
                         borderRadius: 9, background: "#fff", font: "inherit", fontSize: 12.5, outline: "none"}}
                 />
                 <input
                     value={draft.inn}
                     onChange={e => setDraft({...draft, inn: e.target.value})}
-                    placeholder="ИНН"
+                    placeholder={t("supplierRegistry.innPlaceholder")}
                     style={{width: 160, height: 36, padding: "0 12px", border: "1px solid #e5e9f0",
                         borderRadius: 9, background: "#fff", font: "inherit", fontSize: 12.5, outline: "none"}}
                 />
@@ -137,7 +140,7 @@ export const SupplierRegistryPage = () => {
                         onClick={addSupplier}
                         disabled={busy || !draft.title.trim() || !canManageSuppliers}
                         className="cursor-pointer inline-flex h-[36px] items-center gap-2 rounded-[9px] border-none bg-[#2f68f5] px-[12px] text-[12.5px] font-semibold text-white shadow-[0_6px_16px_-6px_#2f68f5] hover:brightness-[1.06] disabled:opacity-60 disabled:cursor-default disabled:hover:brightness-100">
-                        Добавить поставщика
+                        {t("supplierRegistry.add")}
                     </button>
                 </Tooltip>
             </div>
@@ -148,10 +151,10 @@ export const SupplierRegistryPage = () => {
                 <table style={{width: "100%", borderCollapse: "collapse", fontSize: 12.5}}>
                     <thead>
                         <tr style={{background: "#f6f8fb", color: "#55617a", textAlign: "left"}}>
-                            <th style={th}>Поставщик</th>
-                            <th style={th}>Благонадёжность</th>
-                            <th style={th}>Чёрный список</th>
-                            <th style={th}>Рейтинг</th>
+                            <th style={th}>{t("supplierRegistry.cols.supplier")}</th>
+                            <th style={th}>{t("supplierRegistry.cols.reliability")}</th>
+                            <th style={th}>{t("supplierRegistry.cols.blacklist")}</th>
+                            <th style={th}>{t("supplierRegistry.cols.rating")}</th>
                             <th style={th}/>
                         </tr>
                     </thead>
@@ -162,24 +165,29 @@ export const SupplierRegistryPage = () => {
                                     <div style={{fontWeight: 600}}>
                                         <HighlightText text={s.title} query={query}/>
                                     </div>
+                                    {s.directorName && (
+                                        <div style={{fontSize: 11, color: "#8b97ab"}}>
+                                            {t("supplierRegistry.director")}: <HighlightText text={s.directorName} query={query}/>
+                                        </div>
+                                    )}
                                     <div style={{fontSize: 11, color: "#8b97ab"}}>
                                         {s.inn
-                                            ? <>ИНН <HighlightText text={s.inn} query={query}/></>
-                                            : "ИНН не указан"}
-                                        {s.isAffiliated && " · аффилированное лицо"}
+                                            ? <>{t("supplierRegistry.inn")} <HighlightText text={s.inn} query={query}/></>
+                                            : t("supplierRegistry.innMissing")}
+                                        {s.isAffiliated && ` · ${t("supplierRegistry.affiliated")}`}
                                     </div>
                                 </td>
                                 <td style={td}>
                                     {s.isReliable === null
-                                        ? <span style={{color: "#8b97ab"}}>не проверялась</span>
+                                        ? <span style={{color: "#8b97ab"}}>{t("supplierRegistry.notChecked")}</span>
                                         : s.isReliable
-                                            ? <span style={{color: "#1f8a4c", fontWeight: 600}}>благонадёжен</span>
-                                            : <span style={{color: "#c0392b", fontWeight: 600}}>заключение отрицательное</span>}
+                                            ? <span style={{color: "#1f8a4c", fontWeight: 600}}>{t("supplierRegistry.reliable")}</span>
+                                            : <span style={{color: "#c0392b", fontWeight: 600}}>{t("supplierRegistry.unreliable")}</span>}
                                     {s.reliabilityCheckedOn && (
                                         <div style={{fontSize: 11, color: "#8b97ab"}}>
-                                            проверено {s.reliabilityCheckedOn}
-                                            {s.hasTaxClearance && " · налоговая справка"}
-                                            {s.hasSocialFundClearance && " · Соцфонд"}
+                                            {t("supplierRegistry.checkedOn", {date: s.reliabilityCheckedOn})}
+                                            {s.hasTaxClearance && ` · ${t("supplierRegistry.taxClearance")}`}
+                                            {s.hasSocialFundClearance && ` · ${t("supplierRegistry.socialFund")}`}
                                         </div>
                                     )}
                                 </td>
@@ -189,11 +197,11 @@ export const SupplierRegistryPage = () => {
                                         : (
                                             <>
                                                 <span style={{color: s.blacklistExpired ? "#8b97ab" : "#c0392b", fontWeight: 600}}>
-                                                    {s.blacklistExpired ? "срок истёк" : "в чёрном списке"}
+                                                    {s.blacklistExpired ? t("supplierRegistry.expired") : t("supplierRegistry.blacklisted")}
                                                 </span>
                                                 <div style={{fontSize: 11, color: "#8b97ab"}}>
-                                                    {s.blacklistReason}
-                                                    {s.blacklistedUntil && ` · до ${s.blacklistedUntil}`}
+                                                    {s.blacklistReason && <HighlightText text={s.blacklistReason} query={query}/>}
+                                                    {s.blacklistedUntil && ` · ${t("supplierRegistry.until", {date: s.blacklistedUntil})}`}
                                                 </div>
                                             </>
                                         )}
@@ -211,17 +219,17 @@ export const SupplierRegistryPage = () => {
                                 </td>
                                 <td style={{...td, whiteSpace: "nowrap"}}>
                                     <button onClick={() => setRatingSupplier(s)} disabled={busy} style={{...button, marginRight: 6}}>
-                                        Оценки
+                                        {t("supplierRegistry.ratings")}
                                     </button>
                                     <Tooltip content={NO_MANAGE_SUPPLIERS_TOOLTIP} disabled={canManageSuppliers} side="top">
                                         {s.isBlacklisted ? (
                                             <button onClick={() => run(() => apiClient.delete(`${BASE}/${s.id}/blacklist`))}
                                                     disabled={busy || !canManageSuppliers}
-                                                    style={canManageSuppliers ? button : disabledButton}>Снять ограничение</button>
+                                                    style={canManageSuppliers ? button : disabledButton}>{t("supplierRegistry.lift")}</button>
                                         ) : (
                                             <button onClick={() => blacklist(s)} disabled={busy || !canManageSuppliers}
                                                     style={canManageSuppliers ? button : disabledButton}>
-                                                В чёрный список
+                                                {t("supplierRegistry.toBlacklist")}
                                             </button>
                                         )}
                                     </Tooltip>
@@ -232,7 +240,7 @@ export const SupplierRegistryPage = () => {
                                             disabled={busy || !canManageSuppliers}
                                             style={{...(canManageSuppliers ? button : disabledButton), marginLeft: 6}}
                                         >
-                                            Заключение ДБ
+                                            {t("supplierRegistry.conclusion")}
                                         </button>
                                     </Tooltip>
                                 </td>
@@ -243,7 +251,7 @@ export const SupplierRegistryPage = () => {
 
                 {items.length === 0 && (
                     <div style={{padding: 28, textAlign: "center", color: "#8b97ab", fontSize: 13}}>
-                        Поставщиков нет — заведите вручную выше или они появятся при регистрации коммерческих предложений
+                        {t("supplierRegistry.empty")}
                     </div>
                 )}
             </section>

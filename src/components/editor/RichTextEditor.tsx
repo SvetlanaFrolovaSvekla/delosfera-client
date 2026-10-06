@@ -1,10 +1,12 @@
 import {useEffect} from "react";
+import {useTranslation} from "react-i18next";
 import {EditorContent, useEditor, type Editor} from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
 import {Color, FontFamily, FontSize, TextStyle} from "@tiptap/extension-text-style";
 import Underline from "@tiptap/extension-underline";
 import TextAlign from "@tiptap/extension-text-align";
 import {Table, TableCell, TableHeader, TableRow} from "@tiptap/extension-table";
+import {SelectDropdown} from "@/components/componentsGeneral/selects/SingleSelects/SelectDropdown.tsx";
 import {
     AlignCenter, AlignJustify, AlignLeft, AlignRight,
     Bold, Italic, List, ListOrdered, Redo2,
@@ -37,16 +39,16 @@ interface Props {
 }
 
 /** Шрифты, которые точно есть на рабочих местах банка. */
-const ШРИФТЫ = [
-    {label: "Как в системе", value: ""},
-    {label: "Times New Roman", value: "'Times New Roman', Times, serif"},
-    {label: "Arial", value: "Arial, Helvetica, sans-serif"},
-    {label: "Calibri", value: "Calibri, Candara, sans-serif"},
-    {label: "Georgia", value: "Georgia, serif"},
-    {label: "Courier New", value: "'Courier New', Courier, monospace"},
+const FONT_FAMILIES = [
+    {labelKey: "richTextEditor.fontSystem", label: "", value: ""},
+    {labelKey: "", label: "Times New Roman", value: "'Times New Roman', Times, serif"},
+    {labelKey: "", label: "Arial", value: "Arial, Helvetica, sans-serif"},
+    {labelKey: "", label: "Calibri", value: "Calibri, Candara, sans-serif"},
+    {labelKey: "", label: "Georgia", value: "Georgia, serif"},
+    {labelKey: "", label: "Courier New", value: "'Courier New', Courier, monospace"},
 ];
 
-const РАЗМЕРЫ = ["", "10px", "12px", "14px", "16px", "18px", "20px", "24px", "28px"];
+const FONT_SIZES = ["", "10px", "12px", "14px", "16px", "18px", "20px", "24px", "28px"];
 
 export function RichTextEditor({value, onChange, disabled = false, label, placeholder}: Props) {
     const editor = useEditor({
@@ -96,7 +98,7 @@ export function RichTextEditor({value, onChange, disabled = false, label, placeh
             {label && <span className="mb-[5px] block text-[11.5px] text-[#8b97ab]">{label}</span>}
 
             <div className={`rounded-[9px] border ${disabled ? "border-[#e5e9f0] bg-[#fafbfd]" : "border-[#e5e9f0] bg-white"}`}>
-                {!disabled && <Панель editor={editor}/>}
+                {!disabled && <Toolbar editor={editor}/>}
 
                 <EditorContent editor={editor} placeholder={placeholder}/>
             </div>
@@ -138,23 +140,23 @@ export function RichTextEditor({value, onChange, disabled = false, label, placeh
 
 // ── панель ───────────────────────────────────────────────────────────────────
 
-const кнопка = (активна: boolean) =>
+const buttonClass = (active: boolean) =>
     `flex h-7 w-7 items-center justify-center rounded-[6px] border-none cursor-pointer ${
-        активна ? "bg-[#eaf0ff] text-[#2f68f5]" : "bg-transparent text-[#55617a] hover:bg-[#f2f5fa]"}`;
+        active ? "bg-[#eaf0ff] text-[#2f68f5]" : "bg-transparent text-[#55617a] hover:bg-[#f2f5fa]"}`;
 
-const селект =
-    "h-7 rounded-[6px] border border-[#e5e9f0] bg-white px-1.5 text-[11.5px] text-[#55617a] outline-none";
 
-function Панель({editor}: {editor: Editor}) {
+function Toolbar({editor}: {editor: Editor}) {
+    const {t} = useTranslation();
+
     /**
      * Действия над таблицей собраны в одном меню, а не разложены кнопками:
      * их восемь, и в панели они заняли бы больше места, чем всё остальное
      * форматирование вместе взятое.
      */
-    const таблица = (действие: string) => {
+    const runTableAction = (action: string) => {
         const c = editor.chain().focus();
 
-        switch (действие) {
+        switch (action) {
             case "insert": c.insertTable({rows: 3, cols: 3, withHeaderRow: true}).run(); break;
             case "rowBefore": c.addRowBefore().run(); break;
             case "rowAfter": c.addRowAfter().run(); break;
@@ -167,133 +169,147 @@ function Панель({editor}: {editor: Editor}) {
         }
     };
 
-    const вТаблице = editor.isActive("table");
+    const inTable = editor.isActive("table");
 
     return (
         <div className="flex flex-wrap items-center gap-1 border-b border-[#eef2f7] px-2 py-1.5">
-            <select className={селект} title="Шрифт"
+            <div title={t("richTextEditor.font")}>
+                <SelectDropdown
+                    size="sm"
+                    minWidth="150px"
                     value={editor.getAttributes("textStyle").fontFamily ?? ""}
-                    onChange={(e) => {
-                        const v = e.target.value;
+                    options={FONT_FAMILIES.map((f) => ({value: f.value, label: f.labelKey ? t(f.labelKey) : f.label}))}
+                    onChange={(v) => {
                         const c = editor.chain().focus();
                         v ? c.setFontFamily(v).run() : c.unsetFontFamily().run();
-                    }}>
-                {ШРИФТЫ.map((f) => <option key={f.label} value={f.value}>{f.label}</option>)}
-            </select>
+                    }}
+                />
+            </div>
 
-            <select className={селект} title="Размер"
+            <div title={t("richTextEditor.size")}>
+                <SelectDropdown
+                    size="sm"
+                    minWidth="80px"
                     value={editor.getAttributes("textStyle").fontSize ?? ""}
-                    onChange={(e) => {
-                        const v = e.target.value;
+                    options={FONT_SIZES.map((s) => ({
+                        value: s,
+                        label: s ? s.replace("px", "") : t("richTextEditor.sizeDefault"),
+                    }))}
+                    onChange={(v) => {
                         const c = editor.chain().focus();
                         v ? c.setFontSize(v).run() : c.unsetFontSize().run();
-                    }}>
-                {РАЗМЕРЫ.map((s) => (
-                    <option key={s || "default"} value={s}>{s ? s.replace("px", "") : "размер"}</option>
-                ))}
-            </select>
+                    }}
+                />
+            </div>
 
-            <select className={селект} title="Стиль абзаца"
+            <div title={t("richTextEditor.paragraphStyle")}>
+                <SelectDropdown
+                    size="sm"
+                    minWidth="120px"
                     value={
                         editor.isActive("heading", {level: 1}) ? "h1"
                         : editor.isActive("heading", {level: 2}) ? "h2"
                         : editor.isActive("heading", {level: 3}) ? "h3"
                         : "p"
                     }
-                    onChange={(e) => {
+                    options={[
+                        {value: "p", label: t("richTextEditor.paragraph")},
+                        {value: "h1", label: t("richTextEditor.heading1")},
+                        {value: "h2", label: t("richTextEditor.heading2")},
+                        {value: "h3", label: t("richTextEditor.heading3")},
+                    ]}
+                    onChange={(v) => {
                         const c = editor.chain().focus();
-                        const v = e.target.value;
                         v === "p"
                             ? c.setParagraph().run()
                             : c.toggleHeading({level: Number(v.slice(1)) as 1 | 2 | 3}).run();
-                    }}>
-                <option value="p">Обычный</option>
-                <option value="h1">Заголовок 1</option>
-                <option value="h2">Заголовок 2</option>
-                <option value="h3">Заголовок 3</option>
-            </select>
+                    }}
+                />
+            </div>
 
             <span className="mx-0.5 h-5 w-px bg-[#eef2f7]"/>
 
-            <button type="button" title="Жирный" className={кнопка(editor.isActive("bold"))}
+            <button type="button" title={t("richTextEditor.bold")} className={buttonClass(editor.isActive("bold"))}
                     onClick={() => editor.chain().focus().toggleBold().run()}>
                 <Bold size={14} strokeWidth={2.5}/>
             </button>
-            <button type="button" title="Курсив" className={кнопка(editor.isActive("italic"))}
+            <button type="button" title={t("richTextEditor.italic")} className={buttonClass(editor.isActive("italic"))}
                     onClick={() => editor.chain().focus().toggleItalic().run()}>
                 <Italic size={14} strokeWidth={2.5}/>
             </button>
-            <button type="button" title="Подчёркнутый" className={кнопка(editor.isActive("underline"))}
+            <button type="button" title={t("richTextEditor.underline")} className={buttonClass(editor.isActive("underline"))}
                     onClick={() => editor.chain().focus().toggleUnderline().run()}>
                 <UnderlineIcon size={14} strokeWidth={2.5}/>
             </button>
-            <button type="button" title="Зачёркнутый" className={кнопка(editor.isActive("strike"))}
+            <button type="button" title={t("richTextEditor.strike")} className={buttonClass(editor.isActive("strike"))}
                     onClick={() => editor.chain().focus().toggleStrike().run()}>
                 <Strikethrough size={14} strokeWidth={2.5}/>
             </button>
 
             <span className="mx-0.5 h-5 w-px bg-[#eef2f7]"/>
 
-            <button type="button" title="Маркированный список" className={кнопка(editor.isActive("bulletList"))}
+            <button type="button" title={t("richTextEditor.bulletList")} className={buttonClass(editor.isActive("bulletList"))}
                     onClick={() => editor.chain().focus().toggleBulletList().run()}>
                 <List size={14} strokeWidth={2.5}/>
             </button>
-            <button type="button" title="Нумерованный список" className={кнопка(editor.isActive("orderedList"))}
+            <button type="button" title={t("richTextEditor.orderedList")} className={buttonClass(editor.isActive("orderedList"))}
                     onClick={() => editor.chain().focus().toggleOrderedList().run()}>
                 <ListOrdered size={14} strokeWidth={2.5}/>
             </button>
 
             <span className="mx-0.5 h-5 w-px bg-[#eef2f7]"/>
 
-            <button type="button" title="По левому краю" className={кнопка(editor.isActive({textAlign: "left"}))}
+            <button type="button" title={t("richTextEditor.alignLeft")} className={buttonClass(editor.isActive({textAlign: "left"}))}
                     onClick={() => editor.chain().focus().setTextAlign("left").run()}>
                 <AlignLeft size={14} strokeWidth={2.5}/>
             </button>
-            <button type="button" title="По центру" className={кнопка(editor.isActive({textAlign: "center"}))}
+            <button type="button" title={t("richTextEditor.alignCenter")} className={buttonClass(editor.isActive({textAlign: "center"}))}
                     onClick={() => editor.chain().focus().setTextAlign("center").run()}>
                 <AlignCenter size={14} strokeWidth={2.5}/>
             </button>
-            <button type="button" title="По правому краю" className={кнопка(editor.isActive({textAlign: "right"}))}
+            <button type="button" title={t("richTextEditor.alignRight")} className={buttonClass(editor.isActive({textAlign: "right"}))}
                     onClick={() => editor.chain().focus().setTextAlign("right").run()}>
                 <AlignRight size={14} strokeWidth={2.5}/>
             </button>
-            <button type="button" title="По ширине" className={кнопка(editor.isActive({textAlign: "justify"}))}
+            <button type="button" title={t("richTextEditor.alignJustify")} className={buttonClass(editor.isActive({textAlign: "justify"}))}
                     onClick={() => editor.chain().focus().setTextAlign("justify").run()}>
                 <AlignJustify size={14} strokeWidth={2.5}/>
             </button>
 
             <span className="mx-0.5 h-5 w-px bg-[#eef2f7]"/>
 
-            <select className={`${селект} ${вТаблице ? "border-[#cbddff] text-[#2f68f5]" : ""}`}
-                    title="Таблица" value=""
-                    onChange={(e) => {
-                        таблица(e.target.value);
-                        e.target.value = "";
-                    }}>
-                <option value="">Таблица</option>
-                <option value="insert">Вставить 3×3</option>
-                {вТаблице && (
-                    <>
-                        <option value="rowAfter">Строка ниже</option>
-                        <option value="rowBefore">Строка выше</option>
-                        <option value="delRow">Удалить строку</option>
-                        <option value="colAfter">Столбец справа</option>
-                        <option value="colBefore">Столбец слева</option>
-                        <option value="delCol">Удалить столбец</option>
-                        <option value="merge">Объединить или разделить</option>
-                        <option value="delTable">Удалить таблицу</option>
-                    </>
-                )}
-            </select>
+            <div title={t("richTextEditor.table")}>
+                <SelectDropdown
+                    size="sm"
+                    minWidth="190px"
+                    active={inTable}
+                    value=""
+                    placeholder={t("richTextEditor.table")}
+                    options={[
+                        {value: "insert", label: t("richTextEditor.tableInsert")},
+                        ...(inTable ? [
+                            {value: "rowAfter", label: t("richTextEditor.tableRowAfter")},
+                            {value: "rowBefore", label: t("richTextEditor.tableRowBefore")},
+                            {value: "delRow", label: t("richTextEditor.tableDelRow")},
+                            {value: "colAfter", label: t("richTextEditor.tableColAfter")},
+                            {value: "colBefore", label: t("richTextEditor.tableColBefore")},
+                            {value: "delCol", label: t("richTextEditor.tableDelCol")},
+                            {value: "merge", label: t("richTextEditor.tableMerge")},
+                            {value: "delTable", label: t("richTextEditor.tableDelTable")},
+                        ] : []),
+                    ]}
+                    onChange={runTableAction}
+                />
+            </div>
 
             <span className="flex-1"/>
 
-            <button type="button" title="Отменить" className={кнопка(false)}
+            <button type="button" title={t("richTextEditor.undo")} className={buttonClass(false)}
                     disabled={!editor.can().undo()}
                     onClick={() => editor.chain().focus().undo().run()}>
                 <Undo2 size={14} strokeWidth={2.5}/>
             </button>
-            <button type="button" title="Повторить" className={кнопка(false)}
+            <button type="button" title={t("richTextEditor.redo")} className={buttonClass(false)}
                     disabled={!editor.can().redo()}
                     onClick={() => editor.chain().focus().redo().run()}>
                 <Redo2 size={14} strokeWidth={2.5}/>

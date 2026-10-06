@@ -1,31 +1,36 @@
-import {useCallback, useEffect, useState} from "react";
+/**
+ * Реестр «Заявки и закупки» (экран v8 isPrc). Вкладки — срезы по статусу,
+ * строка ведёт в карточку закупки.
+ */
+import React, {useCallback, useEffect, useState} from "react";
 import {Link, useNavigate} from "react-router-dom";
-import {Plus} from "lucide-react";
-import {colors} from "@/design/tokens";
-import {SavedFiltersBar} from "@/components/componentsGeneral/SavedFiltersBar.tsx";
+import {useTranslation} from "react-i18next";
+import type {TFunction} from "i18next";
 import {
-    PROCUREMENT_STATUS_LABEL,
+    // PROCUREMENT_STATUS_LABEL,
     procurementService,
     type ProcurementCounters,
     type ProcurementListItem,
     type ProcurementStatusCode,
 } from "@/service/procurementService/procurementService.ts";
+import {SavedFiltersBar} from "@/components/componentsGeneral/SavedFiltersBar.tsx";
 import {SearchBar} from "@/components/componentsGeneral/SearchBar.tsx";
-
-/**
- * Реестр «Заявки и закупки» (экран v8 isPrc). Вкладки — срезы по статусу,
- * строка ведёт в карточку закупки.
- */
+import {Download} from "lucide-react";
+import {Icon} from "@/assets/icons/Icon.tsx";
+import {toast} from "@/service/toastService.ts";
+import {HighlightTerms} from "@/utils/highlightText.tsx";
+import {PlainCheckbox} from "@/components/componentsGeneral/componentsCheckBox/PlainCheckbox.tsx";
+import {colors} from "@/design/tokens";
 
 type ScopeId = "all" | "mine" | "drafts" | "approval" | "inprocurement" | "completed";
 
-const SCOPES: { id: ScopeId; label: string; statuses?: ProcurementStatusCode[]; mineOnly?: boolean }[] = [
-    {id: "all", label: "Все закупки"},
-    {id: "mine", label: "Инициирую я", mineOnly: true},
-    {id: "drafts", label: "Черновики", statuses: ["Draft"], mineOnly: true},
-    {id: "approval", label: "На согласовании", statuses: ["OnApproval"]},
-    {id: "inprocurement", label: "В закупке", statuses: ["InProcurement", "Approved"]},
-    {id: "completed", label: "Завершённые", statuses: ["Completed"]},
+const SCOPES: { id: ScopeId; statuses?: ProcurementStatusCode[]; mineOnly?: boolean }[] = [
+    {id: "all"},                                                                // "Все закупки"
+    {id: "mine", mineOnly: true},                                               // "Инициирую я"
+    {id: "drafts", statuses: ["Draft"], mineOnly: true},                        // "Черновики"
+    {id: "approval", statuses: ["OnApproval"]},                                 // "На согласовании"
+    {id: "inprocurement", statuses: ["InProcurement", "Approved"]},             // "В закупке"
+    {id: "completed", statuses: ["Completed"]},                                 // "Завершённые"
 ];
 
 const STATUS_TONE: Partial<Record<ProcurementStatusCode, { fg: string; bg: string }>> = {
@@ -39,8 +44,9 @@ const STATUS_TONE: Partial<Record<ProcurementStatusCode, { fg: string; bg: strin
     Cancelled: colors.status.draft,
 };
 
-function money(value: number): string {
-    return `${value.toLocaleString("ru-RU")} сом`;
+function money(value: number, t: TFunction): string {
+    // return `${value.toLocaleString("ru-RU")} сом`;
+    return `${value.toLocaleString("ru-RU")} ${t("procurementRegistry.som")}`;
 }
 
 function formatDate(iso: string): string {
@@ -48,6 +54,7 @@ function formatDate(iso: string): string {
 }
 
 export const ProcurementRegistryPage = () => {
+    const {t} = useTranslation();
     const navigate = useNavigate();
 
     const [scope, setScope] = useState<ScopeId>("all");
@@ -61,6 +68,7 @@ export const ProcurementRegistryPage = () => {
     const [exporting, setExporting] = useState(false);
 
     useEffect(() => {
+        // eslint-disable-next-line react-hooks/set-state-in-effect
         setSelected(new Set());
     }, [scope, query]);
 
@@ -87,12 +95,18 @@ export const ProcurementRegistryPage = () => {
                 mineOnly: current.mineOnly,
                 ids,
             });
+            // Всплывающее уведомление об успешной выгрузке
+            toast.success(
+                ids ? t("procurementRegistry.exportSelectedDone", {count: ids.length}) : t("procurementRegistry.exportDone"),
+                t("procurementRegistry.exportDoneHint"),
+            );
         } catch {
-            setError("Не удалось выгрузить реестр");
+            // setError("Не удалось выгрузить реестр");
+            toast.error(t("procurementRegistry.exportError"), t("procurementRegistry.exportErrorHint"));
         } finally {
             setExporting(false);
         }
-    }, [scope, query]);
+    }, [scope, query, t]);
 
     const load = useCallback(async () => {
         const current = SCOPES.find(s => s.id === scope)!;
@@ -109,13 +123,15 @@ export const ProcurementRegistryPage = () => {
             setItems(page.items);
             setTotal(page.total);
         } catch {
-            setError("Не удалось загрузить реестр закупок");
+            // setError("Не удалось загрузить реестр закупок");
+            setError(t("procurementRegistry.loadError"));
         } finally {
             setLoading(false);
         }
-    }, [scope, query]);
+    }, [scope, query, t]);
 
     useEffect(() => {
+        // eslint-disable-next-line react-hooks/set-state-in-effect
         void load();
     }, [load]);
 
@@ -127,11 +143,20 @@ export const ProcurementRegistryPage = () => {
         <div style={{padding: "22px 26px", display: "flex", flexDirection: "column", gap: 16}}>
             <div style={{display: "flex", alignItems: "center", gap: 16}}>
                 <div style={{flex: 1}}>
-                    <h1 style={{margin: 0, fontSize: 19, fontWeight: 700, color: "#0f1b2d"}}>Заявки и закупки</h1>
+                    <h1 style={{margin: 0, fontSize: 19, fontWeight: 700, color: "#0f1b2d"}}>
+                        {/* Заявки и закупки */}
+                        {t("procurementRegistry.title")}
+                    </h1>
                     <div style={{marginTop: 4, fontSize: 12.5, color: "#8b97ab"}}>
                         {counters
-                            ? `Всего ${counters.all} · на согласовании ${counters.onApproval} · в закупке ${counters.inProcurement}`
-                            : "Реестр закупок"}
+                            // ? `Всего ${counters.all} · на согласовании ${counters.onApproval} · в закупке ${counters.inProcurement}`
+                            ? t("procurementRegistry.summary", {
+                                all: counters.all,
+                                onApproval: counters.onApproval,
+                                inProcurement: counters.inProcurement,
+                            })
+                            // : "Реестр закупок"}
+                            : t("procurementRegistry.subtitle")}
                     </div>
                 </div>
 
@@ -145,18 +170,19 @@ export const ProcurementRegistryPage = () => {
                         opacity: exporting || total === 0 ? 0.5 : 1,
                     }}
                 >
-                    {exporting ? "Готовим…" : "Выгрузить в Excel"}
+                    <Download size={16}/>
+                    {/* {exporting ? "Готовим…" : "Выгрузить в Excel"} */}
+                    {exporting ? t("procurementRegistry.exporting") : t("procurementRegistry.exportExcel")}
                 </button>
 
+                {/* Стиль кнопки — как у "Создать СЗ" в реестре служебных записок */}
                 <button
                     onClick={() => navigate("/prc/new")}
-                    style={{
-                        display: "flex", alignItems: "center", gap: 7, height: 38, padding: "0 15px",
-                        border: "none", borderRadius: 10, background: "#2f68f5", color: "#fff",
-                        font: "inherit", fontSize: 13, fontWeight: 600, cursor: "pointer",
-                    }}
+                    className="cursor-pointer inline-flex h-[42px] items-center gap-2 rounded-[11px] border-none bg-[#2f68f5] px-[18px] text-[13.5px] font-semibold text-white shadow-[0_6px_16px_-6px_#2f68f5] hover:brightness-[1.06]"
                 >
-                    <Plus size={16}/> Новая заявка
+                    <Icon name="plus" width={18} height={18} strokeWidth={2}/>
+                    {/* Новая заявка */}
+                    {t("procurementRegistry.create")}
                 </button>
             </div>
 
@@ -165,18 +191,23 @@ export const ProcurementRegistryPage = () => {
                     display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap",
                     borderRadius: 12, border: "1px solid #dbe4fb", background: "#eef3ff", padding: "8px 14px",
                 }}>
-                    <span style={{fontSize: 12.5, fontWeight: 600, color: "#2f68f5"}}>Выбрано: {selected.size}</span>
+                    <span style={{fontSize: 12.5, fontWeight: 600, color: "#2f68f5"}}>
+                        {/* Выбрано: {selected.size} */}
+                        {t("procurementRegistry.selected", {count: selected.size})}
+                    </span>
                     <button
                         onClick={() => void doExport([...selected])} disabled={exporting}
                         style={{height: 32, padding: "0 12px", borderRadius: 8, border: "1px solid #c9d6f5", background: "#fff", color: "#2f68f5", font: "inherit", fontSize: 12.5, fontWeight: 600, cursor: "pointer"}}
                     >
-                        Экспорт выбранных
+                        {/* Экспорт выбранных */}
+                        {t("procurementRegistry.exportSelected")}
                     </button>
                     <button
                         onClick={() => setSelected(new Set())}
                         style={{fontSize: 12, color: "#8b97ab", background: "none", border: "none", cursor: "pointer"}}
                     >
-                        Снять выбор
+                        {/* Снять выбор */}
+                        {t("procurementRegistry.clearSelection")}
                     </button>
                 </div>
             )}
@@ -194,7 +225,8 @@ export const ProcurementRegistryPage = () => {
                             color: scope === s.id ? "#2f68f5" : "#55617a",
                         }}
                     >
-                        {s.label}
+                        {/* s.label */}
+                        {t(`procurementRegistry.scopes.${s.id}`)}
                     </button>
                 ))}
 
@@ -202,7 +234,8 @@ export const ProcurementRegistryPage = () => {
                     variant="white"
                     value={query}
                     onChange={setQuery}
-                    placeholder="Поиск по предмету или номеру…"
+                    /* placeholder="Поиск по предмету или номеру…" */
+                    placeholder={t("procurementRegistry.searchPlaceholder")}
                     className="flex-1 min-w-[220px]"
                 />
             </div>
@@ -228,15 +261,39 @@ export const ProcurementRegistryPage = () => {
                         <thead>
                             <tr style={{background: "#f6f8fb", color: "#55617a", textAlign: "left"}}>
                                 <th style={{...th, width: 34}}>
-                                    <input type="checkbox" checked={allOnPageSelected} onChange={toggleAll} aria-label="Выбрать все"/>
+                                    {/* <input type="checkbox" checked={allOnPageSelected} onChange={toggleAll} aria-label="Выбрать все"/> */}
+                                    <PlainCheckbox checked={allOnPageSelected} onChange={toggleAll} tone="brand">
+                                        <span className="sr-only">{t("procurementRegistry.selectAll")}</span>
+                                    </PlainCheckbox>
                                 </th>
-                                <th style={th}>Номер</th>
-                                <th style={th}>Предмет закупки</th>
-                                <th style={th}>Способ</th>
-                                <th style={{...th, textAlign: "right"}}>Сумма</th>
-                                <th style={th}>Инициатор</th>
-                                <th style={th}>Создана</th>
-                                <th style={th}>Статус</th>
+                                <th style={th}>
+                                    {/* Номер */}
+                                    {t("procurementRegistry.cols.number")}
+                                </th>
+                                <th style={th}>
+                                    {/* Предмет закупки */}
+                                    {t("procurementRegistry.cols.subject")}
+                                </th>
+                                <th style={th}>
+                                    {/* Способ */}
+                                    {t("procurementRegistry.cols.method")}
+                                </th>
+                                <th style={{...th, textAlign: "right"}}>
+                                    {/* Сумма */}
+                                    {t("procurementRegistry.cols.amount")}
+                                </th>
+                                <th style={th}>
+                                    {/* Инициатор */}
+                                    {t("procurementRegistry.cols.initiator")}
+                                </th>
+                                <th style={th}>
+                                    {/* Создана */}
+                                    {t("procurementRegistry.cols.created")}
+                                </th>
+                                <th style={th}>
+                                    {/* Статус */}
+                                    {t("procurementRegistry.cols.status")}
+                                </th>
                             </tr>
                         </thead>
                         <tbody>
@@ -245,34 +302,49 @@ export const ProcurementRegistryPage = () => {
                                 return (
                                     <tr key={item.id} style={{borderTop: "1px solid #eef2f7"}}>
                                         <td style={{...td, width: 34}}>
-                                            <input type="checkbox" checked={selected.has(item.id)} onChange={() => toggleRow(item.id)} aria-label="Выбрать"/>
+                                            {/* <input type="checkbox" checked={selected.has(item.id)} onChange={() => toggleRow(item.id)} aria-label="Выбрать"/> */}
+                                            <PlainCheckbox checked={selected.has(item.id)} onChange={() => toggleRow(item.id)} tone="brand">
+                                                <span className="sr-only">{t("procurementRegistry.selectRow")}</span>
+                                            </PlainCheckbox>
                                         </td>
                                         <td style={td}>
                                             <Link to={`/prc/${item.id}`} style={{color: "#2f68f5", fontWeight: 600, textDecoration: "none"}}>
-                                                {item.regNumber ?? "б/н"}
+                                                {/* item.regNumber ?? "б/н" */}
+                                                {item.regNumber
+                                                    ? <HighlightTerms text={item.regNumber} query={query}/>
+                                                    : t("procurementRegistry.noNumber")}
                                             </Link>
                                             {item.sourceSzRegNumber && (
                                                 <div style={{fontSize: 11, color: "#8b97ab"}}>
-                                                    по записке {item.sourceSzRegNumber}
+                                                    {/* по записке {item.sourceSzRegNumber} */}
+                                                    {t("procurementRegistry.fromMemo")} <HighlightTerms text={item.sourceSzRegNumber} query={query}/>
                                                 </div>
                                             )}
                                         </td>
                                         <td style={td}>
-                                            {item.subject}
+                                            <HighlightTerms text={item.subject} query={query}/>
                                             {item.isAffiliated && (
-                                                <span style={{marginLeft: 6, fontSize: 11, color: "#c77700"}}>аффилированное лицо</span>
+                                                <span style={{marginLeft: 6, fontSize: 11, color: "#c77700"}}>
+                                                    {/* аффилированное лицо */}
+                                                    {t("procurementRegistry.affiliated")}
+                                                </span>
                                             )}
                                         </td>
-                                        <td style={td}>{item.methodShortTitle}</td>
+                                        <td style={td}><HighlightTerms text={item.methodShortTitle} query={query}/></td>
                                         <td style={{...td, textAlign: "right", whiteSpace: "nowrap"}}>
-                                            {money(item.amount)}
+                                            {money(item.amount, t)}
                                             {!item.hasBudget && (
-                                                <div style={{fontSize: 11, color: "#c77700"}}>вне бюджета</div>
+                                                <div style={{fontSize: 11, color: "#c77700"}}>
+                                                    {/* вне бюджета */}
+                                                    {t("procurementRegistry.offBudget")}
+                                                </div>
                                             )}
                                         </td>
                                         <td style={td}>
-                                            {item.initiatorName ?? "—"}
-                                            <div style={{fontSize: 11, color: "#8b97ab"}}>{item.initiatorUnit ?? ""}</div>
+                                            {item.initiatorName ? <HighlightTerms text={item.initiatorName} query={query}/> : "—"}
+                                            <div style={{fontSize: 11, color: "#8b97ab"}}>
+                                                {item.initiatorUnit ? <HighlightTerms text={item.initiatorUnit} query={query}/> : ""}
+                                            </div>
                                         </td>
                                         <td style={{...td, whiteSpace: "nowrap"}}>{formatDate(item.createdAt)}</td>
                                         <td style={td}>
@@ -280,7 +352,8 @@ export const ProcurementRegistryPage = () => {
                                                 padding: "4px 9px", borderRadius: 7, fontSize: 11.5, fontWeight: 600,
                                                 color: tone.fg, background: tone.bg,
                                             }}>
-                                                {PROCUREMENT_STATUS_LABEL[item.statusCode]}
+                                                {/* PROCUREMENT_STATUS_LABEL[item.statusCode] */}
+                                                {t(`procurementRegistry.statuses.${item.statusCode}`, {defaultValue: item.statusCode})}
                                             </span>
                                         </td>
                                     </tr>
@@ -292,15 +365,22 @@ export const ProcurementRegistryPage = () => {
 
                 {!loading && items.length === 0 && (
                     <div style={{padding: 28, textAlign: "center", color: "#8b97ab", fontSize: 13}}>
-                        Заявок в этом срезе нет
+                        {/* Заявок в этом срезе нет */}
+                        {t("procurementRegistry.empty")}
                     </div>
                 )}
                 {loading && (
-                    <div style={{padding: 28, textAlign: "center", color: "#8b97ab", fontSize: 13}}>Загрузка…</div>
+                    <div style={{padding: 28, textAlign: "center", color: "#8b97ab", fontSize: 13}}>
+                        {/* Загрузка… */}
+                        {t("general.loading")}
+                    </div>
                 )}
             </section>
 
-            <div style={{fontSize: 11.5, color: "#8b97ab"}}>Показано {items.length} из {total}</div>
+            <div style={{fontSize: 11.5, color: "#8b97ab"}}>
+                {/* Показано {items.length} из {total} */}
+                {t("procurementRegistry.shown", {shown: items.length, total})}
+            </div>
         </div>
     );
 };

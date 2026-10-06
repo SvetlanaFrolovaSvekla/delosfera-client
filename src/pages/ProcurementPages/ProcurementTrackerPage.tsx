@@ -1,16 +1,15 @@
-import {useCallback, useEffect, useState} from "react";
-import {Link} from "react-router-dom";
-import {useTranslation} from "react-i18next";
-import {procurementService, type TrackerColumn} from "@/service/procurementService/procurementService.ts";
-import {EmptyState} from "@/components/componentsGeneral/EmptyState.tsx";
-import {organizationUnitService} from "@/service/dictionariesService/organizationUnitService/organizationUnitService.ts";
-import type {OrganizationUnitResponse} from "@/service/dictionariesService/organizationUnitService/organizationUnitServiceType.ts";
-
 /**
  * Доска закупок по стадиям (ЗК-11). Реестр отвечает «какие заявки есть», доска — «на
  * какой стадии каждая и где затор»: колонки по жизненному циклу, карточки заявок,
  * подсветка зависших. Отклонённые и отменённые не показываем — доска про работу.
  */
+import {useCallback, useEffect, useState} from "react";
+import {Link} from "react-router-dom";
+import {useTranslation} from "react-i18next";
+import {procurementService, type TrackerColumn} from "@/service/procurementService/procurementService.ts";
+import {organizationUnitService} from "@/service/dictionariesService/organizationUnitService/organizationUnitService.ts";
+import type {OrganizationUnitResponse} from "@/service/dictionariesService/organizationUnitService/organizationUnitServiceType.ts";
+import {EmptyState} from "@/components/componentsGeneral/EmptyState.tsx";
 
 const NUMBER_LOCALE: Record<string, string> = {ru: "ru-RU", en: "en-US", ky: "ky-KG"};
 

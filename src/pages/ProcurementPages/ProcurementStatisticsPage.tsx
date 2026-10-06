@@ -1,15 +1,3 @@
-import {useCallback, useEffect, useMemo, useState} from "react";
-import type {CSSProperties} from "react";
-import {colors} from "@/design/tokens";
-import {
-    PROCUREMENT_STATUS_LABEL,
-    procurementService,
-    type ProcurementCounters,
-    type ProcurementListItem,
-    type ProcurementStatusCode,
-} from "@/service/procurementService/procurementService.ts";
-import {planService, type Plan} from "@/service/procurementService/planService.ts";
-
 /**
  * Аналитика «Заявки и закупки».
  *
@@ -19,18 +7,34 @@ import {planService, type Plan} from "@/service/procurementService/planService.t
  * фронте по полному реестру заявок. Плюс исполнение годового Плана закупок:
  * план/факт и перерасход по позициям.
  */
+import {useCallback, useEffect, useMemo, useState} from "react";
+import type {CSSProperties} from "react";
+import {useTranslation} from "react-i18next";
+import type {TFunction} from "i18next";
+import {
+    // PROCUREMENT_STATUS_LABEL,
+    procurementService,
+    type ProcurementCounters,
+    type ProcurementListItem,
+    type ProcurementStatusCode,
+} from "@/service/procurementService/procurementService.ts";
+import {planService, type Plan} from "@/service/procurementService/planService.ts";
+import {colors} from "@/design/tokens";
 
 const PAGE_SIZE = 200;
 const MAX_PAGES = 20; // защита от бесконечного цикла — до 4000 заявок хватит с запасом
 
-function money(value: number): string {
-    return `${Math.round(value).toLocaleString("ru-RU")} сом`;
+function money(value: number, t: TFunction): string {
+    // return `${Math.round(value).toLocaleString("ru-RU")} сом`;
+    return `${Math.round(value).toLocaleString("ru-RU")} ${t("procurementStatistics.som")}`;
 }
 
-function formatMonth(key: string): string {
+const DATE_LOCALES: Record<string, string> = {ru: "ru-RU", en: "en-US", kg: "ky-KG"};
+
+function formatMonth(key: string, language: string): string {
     const [year, month] = key.split("-");
     const date = new Date(Number(year), Number(month) - 1, 1);
-    return date.toLocaleDateString("ru-RU", {month: "short", year: "numeric"});
+    return date.toLocaleDateString(DATE_LOCALES[language] ?? "ru-RU", {month: "short", year: "numeric"});
 }
 
 /** Открытый/закрытый конкурс — конкурентный способ; прямая закупка и упрощённый
@@ -64,6 +68,7 @@ interface BreakdownTableProps {
 }
 
 function BreakdownTable({title, rows, nameHeader, totalCount}: BreakdownTableProps) {
+    const {t} = useTranslation();
     return (
         <section style={cardStyle}>
             <h2 style={sectionTitleStyle}>{title}</h2>
@@ -72,16 +77,26 @@ function BreakdownTable({title, rows, nameHeader, totalCount}: BreakdownTablePro
                     <thead>
                         <tr style={{background: colors.surfaceAlt, color: colors.inkMuted, textAlign: "left"}}>
                             <th style={th}>{nameHeader}</th>
-                            <th style={{...th, textAlign: "right", width: 90}}>Заявок</th>
-                            <th style={{...th, textAlign: "right", width: 90}}>Доля</th>
-                            <th style={{...th, textAlign: "right", width: 150}}>Сумма</th>
+                            <th style={{...th, textAlign: "right", width: 90}}>
+                                {/* Заявок */}
+                                {t("procurementStatistics.cols.requests")}
+                            </th>
+                            <th style={{...th, textAlign: "right", width: 90}}>
+                                {/* Доля */}
+                                {t("procurementStatistics.cols.share")}
+                            </th>
+                            <th style={{...th, textAlign: "right", width: 150}}>
+                                {/* Сумма */}
+                                {t("procurementStatistics.cols.amount")}
+                            </th>
                         </tr>
                     </thead>
                     <tbody>
                         {rows.length === 0 ? (
                             <tr>
                                 <td colSpan={4} style={{...td, textAlign: "center", color: colors.inkSubtle, padding: "20px 14px"}}>
-                                    Данных нет
+                                    {/* Данных нет */}
+                                    {t("procurementStatistics.noData")}
                                 </td>
                             </tr>
                         ) : rows.map(([name, bucket]) => (
@@ -91,7 +106,7 @@ function BreakdownTable({title, rows, nameHeader, totalCount}: BreakdownTablePro
                                 <td style={{...td, textAlign: "right", color: colors.inkSubtle, fontVariantNumeric: "tabular-nums"}}>
                                     {totalCount > 0 ? `${Math.round((bucket.count / totalCount) * 100)}%` : "—"}
                                 </td>
-                                <td style={{...td, textAlign: "right", fontVariantNumeric: "tabular-nums"}}>{money(bucket.amount)}</td>
+                                <td style={{...td, textAlign: "right", fontVariantNumeric: "tabular-nums"}}>{money(bucket.amount, t)}</td>
                             </tr>
                         ))}
                     </tbody>
@@ -103,6 +118,7 @@ function BreakdownTable({title, rows, nameHeader, totalCount}: BreakdownTablePro
 
 /** embedded — страница показывается вкладкой раздела «Аналитика», без своей шапки. */
 export function ProcurementStatisticsPage({embedded}: {embedded?: boolean} = {}) {
+    const {t, i18n} = useTranslation();
     const [counters, setCounters] = useState<ProcurementCounters | null>(null);
     const [items, setItems] = useState<ProcurementListItem[]>([]);
     const [plan, setPlan] = useState<Plan | null>(null);
@@ -136,13 +152,15 @@ export function ProcurementStatisticsPage({embedded}: {embedded?: boolean} = {})
             setPlanYear(latestYear);
             setPlan(latestYear ? await planService.get(latestYear) : null);
         } catch {
-            setError("Не удалось построить аналитику по закупкам");
+            // setError("Не удалось построить аналитику по закупкам");
+            setError(t("procurementStatistics.loadError"));
         } finally {
             setLoading(false);
         }
-    }, []);
+    }, [t]);
 
     useEffect(() => {
+        // eslint-disable-next-line react-hooks/set-state-in-effect
         void load();
     }, [load]);
 
@@ -157,15 +175,15 @@ export function ProcurementStatisticsPage({embedded}: {embedded?: boolean} = {})
 
     const byMethod = useMemo(() => {
         const map = new Map<string, Bucket>();
-        items.forEach((i) => addToBucket(map, i.methodShortTitle || "Не определён", i.amount));
+        items.forEach((i) => addToBucket(map, i.methodShortTitle || t("procurementStatistics.methodUndefined"), i.amount)); // "Не определён"
         return sortedBuckets(map);
-    }, [items]);
+    }, [items, t]);
 
     const byUnit = useMemo(() => {
         const map = new Map<string, Bucket>();
-        items.forEach((i) => addToBucket(map, i.initiatorUnit || "Не указано", i.amount));
+        items.forEach((i) => addToBucket(map, i.initiatorUnit || t("procurementStatistics.unitUndefined"), i.amount)); // "Не указано"
         return sortedBuckets(map);
-    }, [items]);
+    }, [items, t]);
 
     const byMonth = useMemo(() => {
         const map = new Map<string, Bucket>();
@@ -194,17 +212,19 @@ export function ProcurementStatisticsPage({embedded}: {embedded?: boolean} = {})
     );
 
     const tiles = [
-        {label: "Всего заявок", value: counters ? String(counters.all) : "—", color: colors.ink},
-        {label: "Сумма заявок", value: items.length > 0 ? money(totalAmount) : "—", color: colors.ink},
-        {label: "В закупке", value: counters ? String(counters.inProcurement) : "—", color: colors.accent},
-        {label: "Завершено", value: counters ? String(counters.completed) : "—", color: colors.status.active.fg},
+        {label: t("procurementStatistics.tiles.total") /* "Всего заявок" */, value: counters ? String(counters.all) : "—", color: colors.ink},
+        {label: t("procurementStatistics.tiles.amount") /* "Сумма заявок" */, value: items.length > 0 ? money(totalAmount, t) : "—", color: colors.ink},
+        {label: t("procurementStatistics.tiles.inProcurement") /* "В закупке" */, value: counters ? String(counters.inProcurement) : "—", color: colors.accent},
+        {label: t("procurementStatistics.tiles.completed") /* "Завершено" */, value: counters ? String(counters.completed) : "—", color: colors.status.active.fg},
         {
-            label: "Доля конкурсных способов",
+            // label: "Доля конкурсных способов",
+            label: t("procurementStatistics.tiles.competitiveShare"),
             value: competitiveShare !== null ? `${competitiveShare}%` : "—",
             color: colors.status.consol.fg,
         },
         {
-            label: "С аффилированными лицами",
+            // label: "С аффилированными лицами",
+            label: t("procurementStatistics.tiles.affiliated"),
             value: String(affiliatedCount),
             color: affiliatedCount > 0 ? colors.status.onact.fg : colors.inkSubtle,
         },
@@ -214,8 +234,14 @@ export function ProcurementStatisticsPage({embedded}: {embedded?: boolean} = {})
         <div style={embedded ? containerStyle : {...containerStyle, padding: "22px 26px"}}>
             {!embedded && (
                 <div>
-                    <div style={{fontSize: 12.5, color: colors.inkSubtle}}>Заявки и закупки</div>
-                    <h1 style={{margin: 0, marginTop: 3, fontSize: 19, fontWeight: 700, color: colors.ink}}>Аналитика</h1>
+                    <div style={{fontSize: 12.5, color: colors.inkSubtle}}>
+                        {/* Заявки и закупки */}
+                        {t("procurementStatistics.breadcrumb")}
+                    </div>
+                    <h1 style={{margin: 0, marginTop: 3, fontSize: 19, fontWeight: 700, color: colors.ink}}>
+                        {/* Аналитика */}
+                        {t("procurementStatistics.title")}
+                    </h1>
                 </div>
             )}
 
@@ -230,7 +256,8 @@ export function ProcurementStatisticsPage({embedded}: {embedded?: boolean} = {})
 
             {loading ? (
                 <div style={{padding: 28, textAlign: "center", color: colors.inkSubtle, fontSize: 13}}>
-                    Загрузка…
+                    {/* Загрузка… */}
+                    {t("general.loading")}
                 </div>
             ) : (
                 <>
@@ -250,26 +277,40 @@ export function ProcurementStatisticsPage({embedded}: {embedded?: boolean} = {})
                     </section>
 
                     <section style={cardStyle}>
-                        <h2 style={sectionTitleStyle}>По статусам</h2>
+                        <h2 style={sectionTitleStyle}>
+                            {/* По статусам */}
+                            {t("procurementStatistics.byStatus")}
+                        </h2>
                         <div style={{overflowX: "auto"}}>
                             <table style={{width: "100%", borderCollapse: "collapse", fontSize: 12.5}}>
                                 <thead>
                                     <tr style={{background: colors.surfaceAlt, color: colors.inkMuted, textAlign: "left"}}>
-                                        <th style={th}>Статус</th>
-                                        <th style={{...th, textAlign: "right", width: 90}}>Заявок</th>
-                                        <th style={{...th, textAlign: "right", width: 90}}>Доля</th>
+                                        <th style={th}>
+                                            {/* Статус */}
+                                            {t("procurementStatistics.cols.status")}
+                                        </th>
+                                        <th style={{...th, textAlign: "right", width: 90}}>
+                                            {/* Заявок */}
+                                            {t("procurementStatistics.cols.requests")}
+                                        </th>
+                                        <th style={{...th, textAlign: "right", width: 90}}>
+                                            {/* Доля */}
+                                            {t("procurementStatistics.cols.share")}
+                                        </th>
                                     </tr>
                                 </thead>
                                 <tbody>
                                     {byStatus.length === 0 ? (
                                         <tr>
                                             <td colSpan={3} style={{...td, textAlign: "center", color: colors.inkSubtle, padding: "20px 14px"}}>
-                                                Заявок пока нет
+                                                {/* Заявок пока нет */}
+                                                {t("procurementStatistics.noRequests")}
                                             </td>
                                         </tr>
                                     ) : byStatus.map(([status, count]) => (
                                         <tr key={status} style={{borderTop: `1px solid ${colors.borderSoft}`}}>
-                                            <td style={td}>{PROCUREMENT_STATUS_LABEL[status] ?? status}</td>
+                                            {/* <td style={td}>{PROCUREMENT_STATUS_LABEL[status] ?? status}</td> */}
+                                            <td style={td}>{t(`procurementStatistics.statuses.${status}`, {defaultValue: status})}</td>
                                             <td style={{...td, textAlign: "right", fontVariantNumeric: "tabular-nums"}}>{count}</td>
                                             <td style={{...td, textAlign: "right", color: colors.inkSubtle, fontVariantNumeric: "tabular-nums"}}>
                                                 {counters && counters.all > 0 ? `${Math.round((count / counters.all) * 100)}%` : "—"}
@@ -281,25 +322,38 @@ export function ProcurementStatisticsPage({embedded}: {embedded?: boolean} = {})
                         </div>
                     </section>
 
-                    <BreakdownTable title="По способу закупки" nameHeader="Способ" rows={byMethod} totalCount={items.length}/>
-                    <BreakdownTable title="По подразделениям-инициаторам" nameHeader="Подразделение" rows={byUnit} totalCount={items.length}/>
+                    <BreakdownTable title={t("procurementStatistics.byMethod") /* "По способу закупки" */} nameHeader={t("procurementStatistics.cols.method") /* "Способ" */} rows={byMethod} totalCount={items.length}/>
+                    <BreakdownTable title={t("procurementStatistics.byUnit") /* "По подразделениям-инициаторам" */} nameHeader={t("procurementStatistics.cols.unit") /* "Подразделение" */} rows={byUnit} totalCount={items.length}/>
 
                     <section style={cardStyle}>
-                        <h2 style={sectionTitleStyle}>По месяцам</h2>
+                        <h2 style={sectionTitleStyle}>
+                            {/* По месяцам */}
+                            {t("procurementStatistics.byMonth")}
+                        </h2>
                         <div style={{overflowX: "auto"}}>
                             <table style={{width: "100%", borderCollapse: "collapse", fontSize: 12.5}}>
                                 <thead>
                                     <tr style={{background: colors.surfaceAlt, color: colors.inkMuted, textAlign: "left"}}>
-                                        <th style={th}>Месяц</th>
-                                        <th style={{...th, textAlign: "right", width: 90}}>Заявок</th>
-                                        <th style={{...th, textAlign: "right", width: 150}}>Сумма</th>
+                                        <th style={th}>
+                                            {/* Месяц */}
+                                            {t("procurementStatistics.cols.month")}
+                                        </th>
+                                        <th style={{...th, textAlign: "right", width: 90}}>
+                                            {/* Заявок */}
+                                            {t("procurementStatistics.cols.requests")}
+                                        </th>
+                                        <th style={{...th, textAlign: "right", width: 150}}>
+                                            {/* Сумма */}
+                                            {t("procurementStatistics.cols.amount")}
+                                        </th>
                                     </tr>
                                 </thead>
                                 <tbody>
                                     {byMonth.length === 0 ? (
                                         <tr>
                                             <td colSpan={3} style={{...td, textAlign: "center", color: colors.inkSubtle, padding: "20px 14px"}}>
-                                                Данных нет
+                                                {/* Данных нет */}
+                                                {t("procurementStatistics.noData")}
                                             </td>
                                         </tr>
                                     ) : byMonth.map(([key, bucket]) => {
@@ -307,7 +361,7 @@ export function ProcurementStatisticsPage({embedded}: {embedded?: boolean} = {})
                                             <tr key={key} style={{borderTop: `1px solid ${colors.borderSoft}`}}>
                                                 <td style={td}>
                                                     <div style={{display: "flex", alignItems: "center", gap: 10}}>
-                                                        <span style={{width: 62, flexShrink: 0}}>{formatMonth(key)}</span>
+                                                        <span style={{width: 62, flexShrink: 0}}>{formatMonth(key, i18n.language)}</span>
                                                         <span style={{
                                                             display: "block", height: 8, borderRadius: 4,
                                                             background: colors.accent,
@@ -317,7 +371,7 @@ export function ProcurementStatisticsPage({embedded}: {embedded?: boolean} = {})
                                                     </div>
                                                 </td>
                                                 <td style={{...td, textAlign: "right", fontVariantNumeric: "tabular-nums"}}>{bucket.count}</td>
-                                                <td style={{...td, textAlign: "right", fontVariantNumeric: "tabular-nums"}}>{money(bucket.amount)}</td>
+                                                <td style={{...td, textAlign: "right", fontVariantNumeric: "tabular-nums"}}>{money(bucket.amount, t)}</td>
                                             </tr>
                                         );
                                     })}
@@ -328,13 +382,16 @@ export function ProcurementStatisticsPage({embedded}: {embedded?: boolean} = {})
 
                     <section style={cardStyle}>
                         <h2 style={sectionTitleStyle}>
-                            Исполнение Плана закупок{planYear ? ` — ${planYear}` : ""}
+                            {/* Исполнение Плана закупок{planYear ? ` — ${planYear}` : ""} */}
+                            {t("procurementStatistics.planExecution")}{planYear ? ` — ${planYear}` : ""}
                         </h2>
                         {!plan ? (
                             <p style={{margin: 0, fontSize: 13, color: colors.inkSubtle}}>
                                 {planYear
-                                    ? "Не удалось загрузить план на этот год."
-                                    : "План закупок ни на один год ещё не заведён."}
+                                    // ? "Не удалось загрузить план на этот год."
+                                    ? t("procurementStatistics.planLoadError")
+                                    // : "План закупок ни на один год ещё не заведён."
+                                    : t("procurementStatistics.planMissing")}
                             </p>
                         ) : (
                             <>
@@ -344,16 +401,17 @@ export function ProcurementStatisticsPage({embedded}: {embedded?: boolean} = {})
                                     gridTemplateColumns: "repeat(auto-fit, minmax(150px, 1fr))", marginBottom: 16,
                                 }}>
                                     {[
-                                        {label: "План на год", value: money(plan.plannedTotal)},
-                                        {label: "Фактически по заявкам", value: money(plan.actualTotal)},
+                                        {label: t("procurementStatistics.plan.planned") /* "План на год" */, value: money(plan.plannedTotal, t)},
+                                        {label: t("procurementStatistics.plan.actual") /* "Фактически по заявкам" */, value: money(plan.actualTotal, t)},
                                         {
-                                            label: "Исполнение плана",
+                                            // label: "Исполнение плана",
+                                            label: t("procurementStatistics.plan.execution"),
                                             value: plan.plannedTotal > 0
                                                 ? `${Math.round((plan.actualTotal / plan.plannedTotal) * 100)}%`
                                                 : "—",
                                         },
-                                        {label: "Внеплановых заявок", value: `${plan.unplannedRequestCount} · ${money(plan.unplannedAmount)}`},
-                                        {label: "Позиций с перерасходом", value: String(overrunItems.length), color: overrunItems.length > 0 ? colors.ryg.red.fg : colors.inkSubtle},
+                                        {label: t("procurementStatistics.plan.unplanned") /* "Внеплановых заявок" */, value: `${plan.unplannedRequestCount} · ${money(plan.unplannedAmount, t)}`},
+                                        {label: t("procurementStatistics.plan.overruns") /* "Позиций с перерасходом" */, value: String(overrunItems.length), color: overrunItems.length > 0 ? colors.ryg.red.fg : colors.inkSubtle},
                                     ].map((tile) => (
                                         <div key={tile.label} style={{display: "flex", flexDirection: "column", gap: 4, background: colors.surface, padding: "14px 16px"}}>
                                             <span style={{fontSize: 22, fontWeight: 600, lineHeight: 1, fontVariantNumeric: "tabular-nums", color: tile.color ?? colors.ink}}>
@@ -369,10 +427,22 @@ export function ProcurementStatisticsPage({embedded}: {embedded?: boolean} = {})
                                         <table style={{width: "100%", borderCollapse: "collapse", fontSize: 12.5}}>
                                             <thead>
                                                 <tr style={{background: colors.surfaceAlt, color: colors.inkMuted, textAlign: "left"}}>
-                                                    <th style={th}>Позиция плана</th>
-                                                    <th style={{...th, textAlign: "right", width: 130}}>План</th>
-                                                    <th style={{...th, textAlign: "right", width: 130}}>Факт</th>
-                                                    <th style={{...th, textAlign: "right", width: 100}}>Отклонение</th>
+                                                    <th style={th}>
+                                                        {/* Позиция плана */}
+                                                        {t("procurementStatistics.cols.planItem")}
+                                                    </th>
+                                                    <th style={{...th, textAlign: "right", width: 130}}>
+                                                        {/* План */}
+                                                        {t("procurementStatistics.cols.plan")}
+                                                    </th>
+                                                    <th style={{...th, textAlign: "right", width: 130}}>
+                                                        {/* Факт */}
+                                                        {t("procurementStatistics.cols.fact")}
+                                                    </th>
+                                                    <th style={{...th, textAlign: "right", width: 100}}>
+                                                        {/* Отклонение */}
+                                                        {t("procurementStatistics.cols.deviation")}
+                                                    </th>
                                                 </tr>
                                             </thead>
                                             <tbody>
@@ -381,8 +451,8 @@ export function ProcurementStatisticsPage({embedded}: {embedded?: boolean} = {})
                                                         <td style={td}>
                                                             <span style={{fontWeight: 600}}>{item.code}</span> {item.subject}
                                                         </td>
-                                                        <td style={{...td, textAlign: "right", fontVariantNumeric: "tabular-nums"}}>{money(item.plannedAmount)}</td>
-                                                        <td style={{...td, textAlign: "right", fontVariantNumeric: "tabular-nums"}}>{money(item.actualAmount)}</td>
+                                                        <td style={{...td, textAlign: "right", fontVariantNumeric: "tabular-nums"}}>{money(item.plannedAmount, t)}</td>
+                                                        <td style={{...td, textAlign: "right", fontVariantNumeric: "tabular-nums"}}>{money(item.actualAmount, t)}</td>
                                                         <td style={{...td, textAlign: "right", fontWeight: 600, color: colors.ryg.red.fg, fontVariantNumeric: "tabular-nums"}}>
                                                             +{Math.round(item.deviationPercent ?? 0)}%
                                                         </td>
@@ -397,10 +467,15 @@ export function ProcurementStatisticsPage({embedded}: {embedded?: boolean} = {})
                     </section>
 
                     <p style={{margin: 0, maxWidth: "68ch", fontSize: 12.5, color: colors.inkSubtle}}>
-                        «Конкурсные способы» — открытый и закрытый конкурс; остальные способы (прямая закупка,
+                        {/* «Конкурсные способы» — открытый и закрытый конкурс; остальные способы (прямая закупка,
                         упрощённый способ) в долю не входят. Разрезы по способу, подразделению и месяцам считаются
                         по всем загруженным заявкам ({items.length}
-                        {counters && items.length < counters.all ? ` из ${counters.all}` : ""}).
+                        {counters && items.length < counters.all ? ` из ${counters.all}` : ""}). */}
+                        {t("procurementStatistics.footnote", {count: items.length})}
+                        {counters && items.length < counters.all
+                            ? t("procurementStatistics.footnoteOf", {total: counters.all})
+                            : ""}
+                        {t("procurementStatistics.footnoteEnd")}
                     </p>
                 </>
             )}

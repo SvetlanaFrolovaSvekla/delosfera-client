@@ -1,4 +1,10 @@
-import {useCallback, useEffect, useState} from "react";
+/**
+ * Печатная форма протокола закупки (экран v8 isProto2, приложение к Положению).
+ *
+ * Страница печатается как есть: при печати скрываются панель действий и всё,
+ * что не входит в документ, а сам лист верстается под A4.
+ */
+import React, {useCallback, useEffect, useState} from "react";
 import {Link, useParams} from "react-router-dom";
 import {
     protocolService,
@@ -6,13 +12,6 @@ import {
     type Protocol,
     type ProtocolSignerRole,
 } from "@/service/procurementService/protocolService.ts";
-
-/**
- * Печатная форма протокола закупки (экран v8 isProto2, приложение к Положению).
- *
- * Страница печатается как есть: при печати скрываются панель действий и всё,
- * что не входит в документ, а сам лист верстается под A4.
- */
 
 const SIGNER_ROLES: ProtocolSignerRole[] = ["Initiator", "OrganizerCurator", "Approver"];
 
@@ -58,6 +57,7 @@ export const ProcurementProtocolPage = () => {
     }, [requestId]);
 
     useEffect(() => {
+        // eslint-disable-next-line react-hooks/set-state-in-effect
         void load();
     }, [load]);
 

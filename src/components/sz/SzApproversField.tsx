@@ -1,4 +1,6 @@
 import {useMemo, useRef, useState} from "react";
+import {useTranslation} from "react-i18next";
+import {PlainCheckbox} from "@/components/componentsGeneral/componentsCheckBox/PlainCheckbox.tsx";
 import {Check, ChevronDown, ChevronUp, Search, X} from "lucide-react";
 
 export interface ApproverOption {
@@ -51,6 +53,7 @@ interface Props {
 export function SzApproversField({
     value, onChange, users, parallel, onParallelChange, editable,
 }: Props) {
+    const {t} = useTranslation();
     const [открыт, setОткрыт] = useState(false);
     const [поиск, setПоиск] = useState("");
     const область = useRef<HTMLDivElement>(null);
@@ -103,11 +106,9 @@ export function SzApproversField({
                     Согласующие{value.length > 0 && `: ${value.length}`}
                 </span>
                 {editable && (
-                    <label className="flex items-center gap-2 text-[12.5px] text-[#55617a]">
-                        <input type="checkbox" checked={parallel}
-                               onChange={(e) => onParallelChange(e.target.checked)}/>
-                        Согласовать параллельно
-                    </label>
+                    <PlainCheckbox tone="brand" checked={parallel} onChange={onParallelChange}>
+                        {t("szCard.fields.parallel")}
+                    </PlainCheckbox>
                 )}
             </div>
 

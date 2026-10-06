@@ -108,7 +108,7 @@ export function BodyMembersPage() {
                         {t("bodyMembersPage.title") /* Состав коллегиальных органов */}
                     </h1>
                 </div>
-                <p className="mt-1.5 mb-0 text-[13px] text-[#8b97ab] max-w-[70ch]">
+                <p className="mt-1.5 mb-0 text-[13px] text-[#8b97ab]">
                     {t("bodyMembersPage.description")}
                 </p>
             </div>

@@ -27,6 +27,10 @@ interface SelectDropdownProps {
     valueClassName?: string;
     /** Подсветить кнопку как невалидную/незаполненную (жёлтая рамка вместо обычной) */
     invalid?: boolean;
+    /** "md" (по умолчанию) - обычная высота полей формы; "sm" - компактный вариант для панелей инструментов. */
+    size?: "md" | "sm";
+    /** Подсветить кнопку как включённую (синяя рамка и текст), например "курсор в таблице". */
+    active?: boolean;
 }
 
 export function SelectDropdown({
@@ -42,6 +46,8 @@ export function SelectDropdown({
                                    minWidth = "180px",
                                    valueClassName,
                                    invalid = false,
+                                   size = "md",
+                                   active = false,
                                }: SelectDropdownProps) {
     const {t} = useTranslation();
     const [open, setOpen] = useState(false);
@@ -84,12 +90,18 @@ export function SelectDropdown({
                     type="button"
                     onClick={() => setOpen((v) => !v)}
                     style={{minWidth}}
-                    className={`inline-flex items-center justify-between gap-2 h-9 px-3 rounded-[9px] border text-[12.5px] font-medium text-[#3a4560] outline-none cursor-pointer hover:bg-[#f6f8fb] ${
+                    className={`inline-flex items-center justify-between gap-2 border font-medium outline-none cursor-pointer hover:bg-[#f6f8fb] ${
+                        size === "sm"
+                            ? "h-7 px-2 rounded-[6px] text-[11.5px]"
+                            : "h-9 px-3 rounded-[9px] text-[12.5px]"
+                    } ${active ? "text-[#2f68f5]" : "text-[#3a4560]"} ${
                         open
                             ? "border-[#4e57d6] ring-[3px] ring-[#ececfc] bg-[#f6f8fb]"
                             : invalid
                                 ? "border-[#e0b978] bg-white"
-                                : "border-[#e5e9f0] bg-white"
+                                : active
+                                    ? "border-[#cbddff] bg-white"
+                                    : "border-[#e5e9f0] bg-white"
                     }`}
                 >
                   <span
@@ -105,7 +117,7 @@ export function SelectDropdown({
                 {open && (
                     <div
                         style={{minWidth}}
-                        className="absolute top-[42px] left-0 z-30 bg-white border border-[#e5e9f0] rounded-xl shadow-[0_18px_46px_-14px_rgba(15,27,45,.28)] overflow-hidden animate-in fade-in zoom-in-95"
+                        className={`absolute ${size === "sm" ? "top-[32px]" : "top-[42px]"} left-0 z-30 bg-white border border-[#e5e9f0] rounded-xl shadow-[0_18px_46px_-14px_rgba(15,27,45,.28)] overflow-hidden animate-in fade-in zoom-in-95`}
                     >
                         {searchable && (
                             <div className="p-2 border-b border-[#eef2f7]">

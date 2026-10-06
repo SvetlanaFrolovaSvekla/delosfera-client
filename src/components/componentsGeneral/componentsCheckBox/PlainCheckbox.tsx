@@ -8,9 +8,17 @@ interface PlainCheckboxProps {
     children?: ReactNode;
     disabled?: boolean;
     className?: string;
+    /** "accent" (по умолчанию) - прежний индиго; "brand" - фирменный синий #2f68f5, как у CheckBoxOne. */
+    tone?: "accent" | "brand";
 }
 
-export function PlainCheckbox({checked, onChange, children, disabled, className = ""}: PlainCheckboxProps) {
+const TONE_COLOR = {
+    accent: "#4e57d6",
+    brand: "#2f68f5",
+} as const;
+
+export function PlainCheckbox({checked, onChange, children, disabled, className = "", tone = "accent"}: PlainCheckboxProps) {
+    const color = TONE_COLOR[tone];
     return (
         <label
             className={`inline-flex items-center gap-2 cursor-pointer select-none text-[12.5px] text-[#3a4560] ${
@@ -27,8 +35,8 @@ export function PlainCheckbox({checked, onChange, children, disabled, className 
             <span
                 className="w-5 h-5 flex-none rounded-md grid place-items-center border-[1.5px] peer-focus-visible:ring-2 peer-focus-visible:ring-[#cbddff]"
                 style={{
-                    borderColor: checked ? "#4e57d6" : "#cbd3df",
-                    background: checked ? "#4e57d6" : "white",
+                    borderColor: checked ? color : "#cbd3df",
+                    background: checked ? color : "white",
                 }}
             >
                 <Check

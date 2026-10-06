@@ -1,4 +1,4 @@
-import {useCallback, useEffect, useState} from "react";
+import React, {useCallback, useEffect, useState} from "react";
 import {useTranslation} from "react-i18next";
 import {apiClient} from "@/service/apiClient.ts";
 import {SupplierRatingsModal} from "@/components/procurement/SupplierRatingsModal.tsx";

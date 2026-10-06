@@ -1,26 +1,3 @@
-import {useCallback, useEffect, useMemo, useState} from "react";
-import {Link, useNavigate, useParams} from "react-router-dom";
-import {
-    procurementService,
-    SUBJECT_KIND_LABEL,
-    type ProcurementCreateRequest,
-    type SubjectKind,
-} from "@/service/procurementService/procurementService.ts";
-import {
-    authorityMatrixService,
-    type MatrixResolveResult,
-} from "@/service/procurementService/authorityMatrixService.ts";
-import {organizationUnitService} from "@/service/dictionariesService/organizationUnitService/organizationUnitService.ts";
-import {AttachmentsPanel} from "@/components/componentsGeneral/attachments/AttachmentsPanel.tsx";
-import {attachmentService} from "@/service/documentService/attachmentService.ts";
-import type {OrganizationUnitResponse} from "@/service/dictionariesService/organizationUnitService/organizationUnitServiceType.ts";
-import {formatDate} from "@/utils/dateUtils.ts";
-import {MatrixNotesList} from "@/components/procurement/MatrixNotesList.tsx";
-import {OrgUnitPicker} from "@/components/procurement/OrgUnitPicker.tsx";
-import {PlanItemPicker} from "@/components/procurement/PlanItemPicker.tsx";
-import type {PlanItemLookup} from "@/service/procurementService/planItemLookupService.ts";
-import {useAuth} from "@/context/AuthContext.ts";
-
 /**
  * Мастер новой заявки на закупку (экран v8 isPrcNew), три шага:
  * предмет и сумма → обоснование и бюджет → маршрут из Матрицы полномочий.
@@ -29,20 +6,45 @@ import {useAuth} from "@/context/AuthContext.ts";
  * аффилированности, матрица показывает применимый способ и состав согласования,
  * поэтому инициатор видит последствия до отправки.
  */
+import React, {useCallback, useEffect, useMemo, useState} from "react";
+import {Link, useNavigate, useParams} from "react-router-dom";
+import {useTranslation} from "react-i18next";
+import {useAuth} from "@/context/AuthContext.ts";
+import {
+    procurementService,
+    // SUBJECT_KIND_LABEL,
+    type ProcurementCreateRequest,
+    type SubjectKind,
+} from "@/service/procurementService/procurementService.ts";
+import {
+    authorityMatrixService,
+    type MatrixResolveResult,
+} from "@/service/procurementService/authorityMatrixService.ts";
+import {organizationUnitService} from "@/service/dictionariesService/organizationUnitService/organizationUnitService.ts";
+import {attachmentService} from "@/service/documentService/attachmentService.ts";
+import type {OrganizationUnitResponse} from "@/service/dictionariesService/organizationUnitService/organizationUnitServiceType.ts";
+import {formatDate} from "@/utils/dateUtils.ts";
+import {MatrixNotesList} from "@/components/procurement/MatrixNotesList.tsx";
+import {OrgUnitPicker} from "@/components/procurement/OrgUnitPicker.tsx";
+import {PlanItemPicker} from "@/components/procurement/PlanItemPicker.tsx";
+import type {PlanItemLookup} from "@/service/procurementService/planItemLookupService.ts";
+import {AttachmentsPanel} from "@/components/componentsGeneral/attachments/AttachmentsPanel.tsx";
 
-const STEPS = ["Предмет закупки", "Обоснование и бюджет", "Маршрут согласования"];
+// Шаги мастера: подписи берутся из переводов по ключам
+const STEPS = ["subject", "justification", "route"] as const;
 
 const SUBJECT_KINDS: SubjectKind[] = [
     "Goods", "HouseholdGoods", "SpecificGoods", "GoodsWithInstallation", "Works", "Services",
 ];
 
 export const ProcurementNewPage = () => {
+    const {t} = useTranslation();
     const navigate = useNavigate();
 
     // Тот же мастер правит существующую заявку: поля и проверки те же, и
     // разводить два экрана с одними правилами значит однажды поправить один.
     const {id} = useParams<{id: string}>();
-    const правка = !!id;
+    const isEdit = !!id;
 
     const [step, setStep] = useState(0);
     const [saving, setSaving] = useState(false);
@@ -84,8 +86,8 @@ export const ProcurementNewPage = () => {
         const from = form.announcementFrom;
         const to = form.announcementTo;
         if (!from && !to) return null;
-        if (!from || !to) return "Укажите обе даты — «с» и «по»";
-        if (to < from) return "Дата окончания раньше даты начала";
+        if (!from || !to) return t("procurementNew.announcement.bothDates");
+        if (to < from) return t("procurementNew.announcement.endBeforeStart");
         return null;
     })();
 
@@ -116,8 +118,8 @@ export const ProcurementNewPage = () => {
                     methodJustification: card.methodJustification ?? "",
                 });
             })
-            .catch(() => setError("Заявка не найдена"));
-    }, [id]);
+            .catch(() => setError(t("procurementNew.notFound")));
+    }, [id, t]);
 
     // Как только справочник подразделений загрузился, подставляем своё — вместе
     // с его куратором. Инициатор может переопределить выбор: закупку иногда
@@ -125,6 +127,7 @@ export const ProcurementNewPage = () => {
     useEffect(() => {
         if (form.initiatorUnitId || units.length === 0 || ownUnitId === null) return;
         const own = units.find(u => u.id === ownUnitId);
+        // eslint-disable-next-line react-hooks/set-state-in-effect
         if (own) patch({initiatorUnitId: own.id, curatorUserId: own.curatorUserId ?? undefined});
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [units, ownUnitId]);
@@ -154,6 +157,7 @@ export const ProcurementNewPage = () => {
     }, [form.amount, form.isAffiliated, form.preferredMethod]);
 
     useEffect(() => {
+        // eslint-disable-next-line react-hooks/set-state-in-effect
         void resolve();
     }, [resolve]);
 
@@ -167,7 +171,7 @@ export const ProcurementNewPage = () => {
                 methodJustification: form.methodJustification?.trim() || undefined,
             };
 
-            const card = правка
+            const card = isEdit
                 ? await procurementService.update(Number(id), payload)
                 : await procurementService.create(payload);
             // Заявка создана — файлы, собранные в мастере, цепляются к её карточке.
@@ -187,10 +191,10 @@ export const ProcurementNewPage = () => {
             // проверка «ТЗ приложено» его не увидит.
             if (specFile) {
                 try {
-                    const вложение = await attachmentService.upload(card.documentId, specFile);
+                    const attachment = await attachmentService.upload(card.documentId, specFile);
                     await procurementService.update(card.id, {
                         ...payload,
-                        specificationAttachmentId: вложение.id,
+                        specificationAttachmentId: attachment.id,
                         hasSpecification: true,
                     });
                 } catch {
@@ -200,12 +204,12 @@ export const ProcurementNewPage = () => {
 
             navigate(`/prc/${card.id}`, {
                 state: failed.length
-                    ? {attachmentError: `Не приложились файлы: ${failed.join(", ")}`}
+                    ? {attachmentError: t("procurementNew.attachmentsFailed", {files: failed.join(", ")})}
                     : undefined,
             });
         } catch (e) {
             const message = (e as { response?: { data?: { message?: string } } }).response?.data?.message;
-            setError(message ?? "Не удалось создать заявку");
+            setError(message ?? t("procurementNew.createError"));
         } finally {
             setSaving(false);
         }
@@ -219,36 +223,36 @@ export const ProcurementNewPage = () => {
      * «Заявку нельзя отправить на согласование: не указано инициирующее
      * подразделение». Заполнять это надо было до, а не после.
      */
-    const чегоНеХватает = useMemo(() => {
-        const список: string[] = [];
+    const missing = useMemo(() => {
+        const list: string[] = [];
 
-        if (!form.initiatorUnitId) список.push("Инициирующее подразделение");
-        if (!form.justification?.trim()) список.push("Обоснование необходимости закупки");
-        const тзЕсть = specFile !== null
+        if (!form.initiatorUnitId) list.push(t("procurementNew.missing.unit"));
+        if (!form.justification?.trim()) list.push(t("procurementNew.missing.justification"));
+        const hasSpec = specFile !== null
             || form.specificationAttachmentId !== undefined
             || form.hasSpecification;
 
-        if (!тзЕсть) список.push("Техническое задание (спецификация)");
+        if (!hasSpec) list.push(t("procurementNew.missing.specification"));
 
         if (resolved?.requiresJustification && !form.methodJustification?.trim())
-            список.push("Обоснование применения способа закупки");
+            list.push(t("procurementNew.missing.methodJustification"));
 
-        return список;
+        return list;
     }, [specFile, form.specificationAttachmentId,
         form.initiatorUnitId, form.justification, form.hasSpecification,
-        form.methodJustification, resolved?.requiresJustification]);
+        form.methodJustification, resolved?.requiresJustification, t]);
 
     const canNext =
         (step === 0 && form.subject.trim().length > 0 && form.amount > 0) ||
-        (step === 1 && !announcementProblem && чегоНеХватает.length === 0) ||
+        (step === 1 && !announcementProblem && missing.length === 0) ||
         step === 2;
 
     return (
         <div style={{padding: "22px 26px", display: "flex", flexDirection: "column", gap: 18, maxWidth: 1080}}>
             <div>
-                <div style={{fontSize: 12.5, color: "#8b97ab"}}>Реестр закупок</div>
+                <div style={{fontSize: 12.5, color: "#8b97ab"}}>{t("procurementNew.breadcrumb")}</div>
                 <h1 style={{margin: "3px 0 0", fontSize: 19, fontWeight: 700, color: "#0f1b2d"}}>
-                    Новая заявка на закупку
+                    {isEdit ? t("procurementNew.titleEdit") : t("procurementNew.title")}
                 </h1>
             </div>
 
@@ -264,7 +268,7 @@ export const ProcurementNewPage = () => {
                             color: i === step ? "#2f68f5" : i < step ? "#55617a" : "#8b97ab",
                         }}
                     >
-                        {i + 1}. {s}
+                        {i + 1}. {t(`procurementNew.steps.${s}`)}
                     </div>
                 ))}
             </div>
@@ -274,16 +278,16 @@ export const ProcurementNewPage = () => {
                     {step === 0 && (
                         <>
                             <label style={fieldLabel}>
-                                Предмет закупки <span style={{color: "#d14343"}}>*</span>
+                                {t("procurementNew.fields.subject")} <span style={{color: "#d14343"}}>*</span>
                             </label>
                             <input
                                 value={form.subject}
                                 onChange={e => patch({subject: e.target.value})}
-                                placeholder="напр. Ноутбуки бизнес-класса (8 шт.)"
+                                placeholder={t("procurementNew.fields.subjectPlaceholder")}
                                 style={input}
                             />
 
-                            <label style={{...fieldLabel, marginTop: 14}}>Тип предмета</label>
+                            <label style={{...fieldLabel, marginTop: 14}}>{t("procurementNew.fields.subjectKind")}</label>
                             <div style={{display: "flex", flexWrap: "wrap", gap: 6}}>
                                 {SUBJECT_KINDS.map(k => (
                                     <button
@@ -296,13 +300,13 @@ export const ProcurementNewPage = () => {
                                             color: form.subjectKind === k ? "#2f68f5" : "#55617a",
                                         }}
                                     >
-                                        {SUBJECT_KIND_LABEL[k]}
+                                        {t(`procurementNew.subjectKinds.${k}`)}
                                     </button>
                                 ))}
                             </div>
 
                             <label style={{...fieldLabel, marginTop: 14}}>
-                                Ориентировочная сумма, сом <span style={{color: "#d14343"}}>*</span>
+                                {t("procurementNew.fields.amount")} <span style={{color: "#d14343"}}>*</span>
                             </label>
                             <input
                                 type="number"
@@ -320,7 +324,7 @@ export const ProcurementNewPage = () => {
                             />
                             {form.amount <= 0 && (
                                 <div style={{marginTop: 6, fontSize: 12.5, color: "#a94442"}}>
-                                    Укажите сумму — по ней определяются способ закупки и орган утверждения
+                                    {t("procurementNew.fields.amountHint")}
                                 </div>
                             )}
 
@@ -332,11 +336,11 @@ export const ProcurementNewPage = () => {
 
                     {step === 1 && (
                         <>
-                            <label style={fieldLabel}>Обоснование необходимости закупки</label>
+                            <label style={fieldLabel}>{t("procurementNew.fields.justification")}</label>
                             <textarea
                                 value={form.justification}
                                 onChange={e => patch({justification: e.target.value})}
-                                placeholder="Цель приобретения, риски при непринятии решения, ожидаемая эффективность, наличие в бюджете…"
+                                placeholder={t("procurementNew.fields.justificationPlaceholder")}
                                 rows={5}
                                 style={{...input, height: "auto", padding: "10px 12px", resize: "vertical"}}
                             />
@@ -344,14 +348,14 @@ export const ProcurementNewPage = () => {
                             <AttachmentsPanel
                                 documentId={null}
                                 editable
-                                title="Вложения к обоснованию"
-                                hint="необязательно"
+                                title={t("procurementNew.attachments.title")}
+                                hint={t("procurementNew.attachments.hint")}
                                 pending={files}
                                 onPendingChange={setFiles}
                             />
 
                             <label style={{...fieldLabel, marginTop: 14}}>
-                                Техническое задание (спецификация)
+                                {t("procurementNew.spec.label")}
                             </label>
                             <div style={{
                                 border: "1px dashed #cfd8e6", borderRadius: 10, padding: "12px 14px",
@@ -378,12 +382,12 @@ export const ProcurementNewPage = () => {
                                                 color: "#8b97ab", font: "inherit", fontSize: 12.5, flexShrink: 0,
                                             }}
                                         >
-                                            Убрать
+                                            {t("procurementNew.spec.remove")}
                                         </button>
                                     </div>
                                 ) : form.specificationAttachmentId ? (
                                     <div style={{fontSize: 13, color: "#26324a"}}>
-                                        Задание уже приложено к заявке
+                                        {t("procurementNew.spec.alreadyAttached")}
                                     </div>
                                 ) : (
                                     <>
@@ -393,8 +397,7 @@ export const ProcurementNewPage = () => {
                                             style={{fontSize: 12.5}}
                                         />
                                         <div style={{marginTop: 6, fontSize: 11.5, color: "#8b97ab"}}>
-                                            Характеристики, объём, требования к продукции и поставщику.
-                                            Без задания заявку не отправить на согласование.
+                                            {t("procurementNew.spec.hint")}
                                         </div>
                                     </>
                                 )}
@@ -408,12 +411,12 @@ export const ProcurementNewPage = () => {
                                     style={checkbox}
                                 />
                                 <span>
-                                    <span style={checkboxTitle}>Предусмотрено бюджетом Банка</span>
-                                    <span style={checkboxHint}>Согласование с УПиА на соответствие бюджету</span>
+                                    <span style={checkboxTitle}>{t("procurementNew.budget.title")}</span>
+                                    <span style={checkboxHint}>{t("procurementNew.budget.hint")}</span>
                                 </span>
                             </label>
 
-                            <label style={{...fieldLabel, marginTop: 14}}>Инициирующее подразделение</label>
+                            <label style={{...fieldLabel, marginTop: 14}}>{t("procurementNew.unit.label")}</label>
                             <OrgUnitPicker
                                 units={units}
                                 value={form.initiatorUnitId ?? null}
@@ -422,17 +425,16 @@ export const ProcurementNewPage = () => {
                             />
                             {ownUnitId === null && !form.initiatorUnitId && (
                                 <div style={{marginTop: 5, fontSize: 11.5, color: "#c77700"}}>
-                                    В вашем профиле подразделение не указано — выберите его здесь.
-                                    Без него заявку не отправить на согласование.
+                                    {t("procurementNew.unit.noProfileUnit")}
                                 </div>
                             )}
                             {form.curatorUserId && (
                                 <div style={{marginTop: 5, fontSize: 11.5, color: "#8b97ab"}}>
-                                    Куратор подразделения подставлен как куратор закупки
+                                    {t("procurementNew.unit.curatorHint")}
                                 </div>
                             )}
 
-                            <label style={{...fieldLabel, marginTop: 14}}>Позиция Плана закупок</label>
+                            <label style={{...fieldLabel, marginTop: 14}}>{t("procurementNew.plan.label")}</label>
                             <PlanItemPicker
                                 value={planItem}
                                 onChange={item => { setPlanItem(item); patch({planItemId: item?.id}); }}
@@ -441,7 +443,7 @@ export const ProcurementNewPage = () => {
                             />
                             {!form.hasBudget && planItem === null && (
                                 <div style={{marginTop: 6, fontSize: 11.5, color: "#c77700"}}>
-                                    Закупка вне бюджета и без позиции Плана пойдёт по ветке внеплановой закупки (PRC-03)
+                                    {t("procurementNew.plan.unplannedBranch")}
                                     {resolved?.regulationDocumentId && (
                                         <>
                                             {" — "}
@@ -449,14 +451,14 @@ export const ProcurementNewPage = () => {
                                                 to={`/base-vnd/${resolved.regulationDocumentId}`}
                                                 style={{color: "#2f68f5", textDecoration: "underline"}}
                                             >
-                                                раздел 7 Положения — планирование закупок и бюджет
+                                                {t("procurementNew.plan.regulationLink")}
                                             </Link>
                                         </>
                                     )}
                                 </div>
                             )}
 
-                            <label style={{...fieldLabel, marginTop: 14}}>Сроки объявления закупки</label>
+                            <label style={{...fieldLabel, marginTop: 14}}>{t("procurementNew.announcement.label")}</label>
                             <div style={{display: "flex", gap: 10, alignItems: "center"}}>
                                 <input
                                     type="date"
@@ -464,7 +466,7 @@ export const ProcurementNewPage = () => {
                                     onChange={e => patch({announcementFrom: e.target.value || null})}
                                     style={{...input, flex: 1}}
                                 />
-                                <span style={{fontSize: 12.5, color: "#8b97ab"}}>по</span>
+                                <span style={{fontSize: 12.5, color: "#8b97ab"}}>{t("procurementNew.announcement.to")}</span>
                                 <input
                                     type="date"
                                     value={form.announcementTo ?? ""}
@@ -474,7 +476,7 @@ export const ProcurementNewPage = () => {
                                 />
                             </div>
                             <div style={{marginTop: 5, fontSize: 11.5, color: "#8b97ab"}}>
-                                Объявление публикуется на сайте Банка и tenders.kg, конкурсный период — не менее 5 рабочих дней
+                                {t("procurementNew.announcement.hint")}
                             </div>
                             {announcementProblem && (
                                 <div style={{marginTop: 6, fontSize: 11.5, color: "#c0392b"}}>
@@ -486,7 +488,7 @@ export const ProcurementNewPage = () => {
 
                     {step === 2 && (
                         <>
-                            <div style={cardTitle}>Маршрут по Матрице полномочий</div>
+                            <div style={cardTitle}>{t("procurementNew.route.title")}</div>
 
                             {resolved ? (
                                 <>
@@ -494,21 +496,21 @@ export const ProcurementNewPage = () => {
                                         {resolved.methodTitle}
                                     </div>
                                     <div style={{marginTop: 10, fontSize: 13, color: "#26324a", lineHeight: 1.8}}>
-                                        Согласование: <b>{resolved.approvalChain}</b><br/>
-                                        Утверждение расхода: <b>{resolved.approvalAuthorityTitle}</b><br/>
+                                        {t("procurementNew.route.approval")}: <b>{resolved.approvalChain}</b><br/>
+                                        {t("procurementNew.route.expenseApproval")}: <b>{resolved.approvalAuthorityTitle}</b><br/>
                                         {resolved.commissionRequired && (
-                                            <>Комиссия: <b>{resolved.commissionSize} членов</b>
+                                            <>{t("procurementNew.route.commission")}: <b>{t("procurementNew.route.members", {count: resolved.commissionSize ?? 0})}</b>
                                                 {resolved.commissionMinBoardMembers
-                                                    ? `, не менее ${resolved.commissionMinBoardMembers} членов Правления`
+                                                    ? t("procurementNew.route.boardMembers", {count: resolved.commissionMinBoardMembers})
                                                     : ""}<br/></>
                                         )}
-                                        Протокол закупки: <b>{resolved.protocolRequired ? "требуется" : "не требуется"}</b>
+                                        {t("procurementNew.route.protocol")}: <b>{resolved.protocolRequired ? t("procurementNew.route.required") : t("procurementNew.route.notRequired")}</b>
                                     </div>
 
                                     {resolved.requiresJustification && (
                                         <>
                                             <label style={{...fieldLabel, marginTop: 14}}>
-                                                Обоснование применения способа (п. 6.6 Положения)
+                                                {t("procurementNew.route.methodJustification")}
                                             </label>
                                             <textarea
                                                 value={form.methodJustification}
@@ -528,7 +530,7 @@ export const ProcurementNewPage = () => {
                                 </>
                             ) : (
                                 <div style={{color: "#8b97ab", fontSize: 13}}>
-                                    Укажите сумму закупки — матрица подберёт способ и состав согласования
+                                    {t("procurementNew.route.enterAmount")}
                                 </div>
                             )}
                         </>
@@ -541,38 +543,38 @@ export const ProcurementNewPage = () => {
                             onClick={() => (step === 0 ? navigate("/prc") : setStep(step - 1))}
                             style={secondaryButton}
                         >
-                            {step === 0 ? "Отмена" : "Назад"}
+                            {step === 0 ? t("general.cancel") : t("procurementNew.back")}
                         </button>
 
-                        {step > 0 && чегоНеХватает.length > 0 && (
+                        {step > 0 && missing.length > 0 && (
                             <div style={{
                                 flex: 1, margin: "0 16px", fontSize: 12,
                                 color: "#8a5a00", lineHeight: 1.5,
                             }}>
-                                Заполните, иначе заявку не отправить на согласование:{" "}
-                                {чегоНеХватает.join(", ").toLowerCase()}
+                                {t("procurementNew.missing.prefix")}{" "}
+                                {missing.join(", ").toLowerCase()}
                             </div>
                         )}
 
-                        {(step === 0 || чегоНеХватает.length === 0) && <div style={{flex: 1}}/>}
+                        {(step === 0 || missing.length === 0) && <div style={{flex: 1}}/>}
                         {step < STEPS.length - 1 ? (
                             <button
                                 onClick={() => setStep(step + 1)}
                                 disabled={!canNext}
                                 style={{...primaryButton, opacity: canNext ? 1 : 0.5}}
                             >
-                                Далее
+                                {t("procurementNew.next")}
                             </button>
                         ) : (
                             <button
                                 onClick={submit}
-                                disabled={saving || !resolved || чегоНеХватает.length > 0}
+                                disabled={saving || !resolved || missing.length > 0}
                                 style={{
                                     ...primaryButton,
-                                    opacity: saving || !resolved || чегоНеХватает.length > 0 ? 0.5 : 1,
+                                    opacity: saving || !resolved || missing.length > 0 ? 0.5 : 1,
                                 }}
                             >
-                                {saving ? "Сохранение…" : правка ? "Сохранить заявку" : "Создать заявку"}
+                                {saving ? t("general.saving") : isEdit ? t("procurementNew.save") : t("procurementNew.submit")}
                             </button>
                         )}
                     </div>
@@ -580,24 +582,27 @@ export const ProcurementNewPage = () => {
 
                 {/* сводка справа — видна на всех шагах */}
                 <aside style={card}>
-                    <div style={cardTitle}>Сводка заявки</div>
-                    <Row label="Предмет" value={form.subject || "—"}/>
-                    <Row label="Тип предмета" value={SUBJECT_KIND_LABEL[form.subjectKind]}/>
-                    <Row label="Сумма" value={form.amount ? `${form.amount.toLocaleString("ru-RU")} сом` : "—"}/>
-                    <Row label="Бюджет" value={form.hasBudget ? "предусмотрено" : "вне бюджета"}/>
+                    <div style={cardTitle}>{t("procurementNew.summary.title")}</div>
+                    <Row label={t("procurementNew.summary.subject")} value={form.subject || "—"}/>
+                    <Row label={t("procurementNew.summary.subjectKind")} value={t(`procurementNew.subjectKinds.${form.subjectKind}`)}/>
+                    <Row label={t("procurementNew.summary.amount")} value={form.amount ? `${form.amount.toLocaleString("ru-RU")} ${t("procurementNew.som")}` : "—"}/>
+                    <Row label={t("procurementNew.summary.budget")} value={form.hasBudget ? t("procurementNew.summary.inBudget") : t("procurementNew.summary.offBudget")}/>
                     <Row
-                        label="Инициирующее СП"
+                        label={t("procurementNew.summary.unit")}
                         value={units.find(u => u.id === form.initiatorUnitId)?.titleRu ?? "—"}
                     />
-                    <Row label="ТЗ приложено" value={specFile?.name ?? (form.specificationAttachmentId || form.hasSpecification ? "да" : "нет")}/>
                     <Row
-                        label="Объявление"
+                        label={t("procurementNew.summary.spec")}
+                        value={specFile?.name ?? (form.specificationAttachmentId || form.hasSpecification ? t("procurementNew.yes") : t("procurementNew.no"))}
+                    />
+                    <Row
+                        label={t("procurementNew.summary.announcement")}
                         value={form.announcementFrom && form.announcementTo
                             ? `${formatDate(form.announcementFrom)} — ${formatDate(form.announcementTo)}`
                             : "—"}
                     />
-                    <Row label="Способ" value={resolved?.methodShortTitle ?? "—"}/>
-                    <Row label="Утверждает" value={resolved?.approvalAuthorityTitle ?? "—"}/>
+                    <Row label={t("procurementNew.summary.method")} value={resolved?.methodShortTitle ?? "—"}/>
+                    <Row label={t("procurementNew.summary.approvedBy")} value={resolved?.approvalAuthorityTitle ?? "—"}/>
                 </aside>
             </div>
         </div>

@@ -27,7 +27,7 @@ const UnitCuratorsPage = lazy(() => import("@/pages/ManagementPages/SettingsPage
 const PositionPage = lazy(() => import("@/pages/DictionariesPages/General/PositionPage.tsx").then(m => ({default: m.PositionPage})));
 const BodyMembersPage = lazy(() => import("@/pages/DictionariesPages/General/BodyMembersPage.tsx").then(m => ({default: m.BodyMembersPage})));
 const RouteTemplatesPage = lazy(() => import("@/pages/DictionariesPages/General/RouteTemplatesPage.tsx").then(m => ({default: m.RouteTemplatesPage})));
-const AuthorityMatrixSettingsPage = lazy(() => import("@/pages/ProcurementPages/AuthorityMatrixSettingsPage.tsx").then(m => ({default: m.AuthorityMatrixSettingsPage})));
+const AuthorityMatrixSettingsPage = lazy(() => import("@/pages/DictionariesPages/Procurement/AuthorityMatrixSettingsPage.tsx").then(m => ({default: m.AuthorityMatrixSettingsPage})));
 const TypeVndPage = lazy(() => import("@/pages/DictionariesPages/VND/TypeVndPage.tsx").then(m => ({default: m.TypeVndPage})));
 const SecurityLevelPage = lazy(() => import("@/pages/DictionariesPages/VND/SecurityLevelPage.tsx").then(m => ({default: m.SecurityLevelPage})));
 const UserGroupPage = lazy(() => import("@/pages/DictionariesPages/VND/UserGroupPage.tsx").then(m => ({default: m.UserGroupPage})));

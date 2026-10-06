@@ -1,7 +1,6 @@
 // Разделы и карточки для страницы "Справочники"
 import type {TFunction} from "i18next";
 import {
-    Ban,
     Briefcase,
     CalendarDays,
     Building2,
@@ -69,14 +68,6 @@ export const getRefSections = (t: TFunction): RefSection[] => [
                 subtitle: "Кто согласует, в каком порядке и до кого доходит документ",
                 icon: Waypoints,
                 path: "/management/route-templates",
-            },
-            {
-                key: "matrix-settings",
-                code: "03",
-                title: "Матрица полномочий",
-                subtitle: "Пороги сумм, минимум КП и состав согласования по закупкам",
-                icon: Scale,
-                path: "/management/matrix-settings",
             },
             {
                 key: "position",
@@ -191,14 +182,12 @@ export const getRefSections = (t: TFunction): RefSection[] => [
         title: t("refSections.procurement.title"),
         items: [
             {
-                key: "suppliers",
+                key: "matrix-settings",
                 code: "01",
-                // Поставщики и чёрный список
-                title: t("refSections.procurement.suppliers.title"),
-                // Реестр поставщиков и подрядчиков, их рейтинги и запрет на сотрудничество
-                subtitle: t("refSections.procurement.suppliers.subtitle"),
-                icon: Ban,
-                path: "/prc/suppliers",
+                title: t("refSections.procurement.matrixSettings.title"),
+                subtitle: t("refSections.procurement.matrixSettings.subtitle"),
+                icon: Scale,
+                path: "/management/matrix-settings",
             },
         ],
     },

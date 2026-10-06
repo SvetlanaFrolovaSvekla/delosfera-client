@@ -1,21 +1,26 @@
-import {useCallback, useEffect, useState} from "react";
-import {planService, type Plan} from "@/service/procurementService/planService.ts";
-import {organizationUnitService} from "@/service/dictionariesService/organizationUnitService/organizationUnitService.ts";
-import type {OrganizationUnitResponse} from "@/service/dictionariesService/organizationUnitService/organizationUnitServiceType.ts";
-import {SelectDropdown} from "@/components/componentsGeneral/selects/SingleSelects/SelectDropdown.tsx";
-
 /**
  * Годовой План закупок и отчёт об исполнении (PRC-22, приложение №5).
  *
  * Факт по позиции считает сервер из заявок, сославшихся на её номер, поэтому
  * отчёт всегда сходится с реестром закупок, а не ведётся отдельно.
  */
+import React, {useCallback, useEffect, useMemo, useState} from "react";
+import {useTranslation} from "react-i18next";
+import {ShieldCheck} from "lucide-react";
+import {planService, type Plan} from "@/service/procurementService/planService.ts";
+import {organizationUnitService} from "@/service/dictionariesService/organizationUnitService/organizationUnitService.ts";
+import type {OrganizationUnitResponse} from "@/service/dictionariesService/organizationUnitService/organizationUnitServiceType.ts";
+import {SelectDropdown} from "@/components/componentsGeneral/selects/SingleSelects/SelectDropdown.tsx";
+import {SingleSelectListField} from "@/components/componentsGeneral/selects/SingleSelects/SingleSelectListField.tsx";
+import type {TreeSelectOption} from "@/components/componentsGeneral/selects/SingleSelects/TreeSingleSelectModal.tsx";
+import {ConfirmActionModal} from "@/components/componentsGeneral/modal/ConfirmActionModal.tsx";
 
 function money(value: number): string {
     return value.toLocaleString("ru-RU");
 }
 
 export const ProcurementPlanPage = () => {
+    const {t, i18n} = useTranslation();
     const currentYear = new Date().getFullYear();
 
     const [year, setYear] = useState(currentYear);
@@ -27,15 +32,34 @@ export const ProcurementPlanPage = () => {
 
     const [form, setForm] = useState({code: "", subject: "", amount: 0, quarter: "", unitId: ""});
 
+    // Окно утверждения плана: протокол Правления вводится здесь, а не в window.prompt
+    const [approveOpen, setApproveOpen] = useState(false);
+    const [protocolInput, setProtocolInput] = useState("");
+    const [approveError, setApproveError] = useState<string | null>(null);
+
+    // Подразделения для модального выбора — деревом, название по языку интерфейса
+    const unitOptions = useMemo<TreeSelectOption[]>(() => units.map(u => ({
+        key: String(u.id),
+        label: (i18n.language === "en" ? u.titleEn : i18n.language === "kg" ? u.titleKg : null) || u.titleRu,
+        parentId: u.parentId != null ? String(u.parentId) : undefined,
+    })), [units, i18n.language]);
+
+    const quarterOptions = useMemo<TreeSelectOption[]>(() => [1, 2, 3, 4].map(q => ({
+        key: String(q),
+        label: t("procurementPlan.quarterValue", {n: q}),
+    })), [t]);
+
     const load = useCallback(async () => {
         try {
             setPlan(await planService.get(year));
         } catch {
-            setError("Не удалось загрузить план закупок");
+            // setError("Не удалось загрузить план закупок");
+            setError(t("procurementPlan.loadError"));
         }
-    }, [year]);
+    }, [year, t]);
 
     useEffect(() => {
+        // eslint-disable-next-line react-hooks/set-state-in-effect
         void load();
     }, [load]);
 
@@ -51,26 +75,56 @@ export const ProcurementPlanPage = () => {
             setPlan(await action());
         } catch (e) {
             const message = (e as { response?: { data?: { message?: string } } }).response?.data?.message;
-            setError(message ?? "Операция не выполнена");
+            // setError(message ?? "Операция не выполнена");
+            setError(message ?? t("procurementPlan.operationFailed"));
         } finally {
             setBusy(false);
         }
     };
 
-    const approve = () => {
+    const openApprove = () => {
+        setProtocolInput("");
+        setApproveError(null);
+        setApproveOpen(true);
+    };
+
+    // const approve = () => {
+    //     if (!plan) return;
+    //     const protocol = window.prompt("Протокол Правления, которым утверждён план:");
+    //     if (!protocol?.trim()) return;
+    //     return run(() => planService.approve(plan.id, protocol.trim()));
+    // };
+    const confirmApprove = async () => {
         if (!plan) return;
-        const protocol = window.prompt("Протокол Правления, которым утверждён план:");
-        if (!protocol?.trim()) return;
-        return run(() => planService.approve(plan.id, protocol.trim()));
+        const protocol = protocolInput.trim();
+        if (!protocol) {
+            setApproveError(t("procurementPlan.approve.protocolRequired"));
+            return;
+        }
+        try {
+            setBusy(true);
+            setApproveError(null);
+            setPlan(await planService.approve(plan.id, protocol));
+            setApproveOpen(false);
+        } catch (e) {
+            const message = (e as { response?: { data?: { message?: string } } }).response?.data?.message;
+            setApproveError(message ?? t("procurementPlan.operationFailed"));
+        } finally {
+            setBusy(false);
+        }
     };
 
     return (
         <div style={{padding: "22px 26px", display: "flex", flexDirection: "column", gap: 16}}>
             <div style={{display: "flex", alignItems: "flex-start", gap: 16, flexWrap: "wrap"}}>
                 <div style={{flex: 1}}>
-                    <h1 style={{margin: 0, fontSize: 19, fontWeight: 700, color: "#0f1b2d"}}>План закупок</h1>
+                    <h1 style={{margin: 0, fontSize: 19, fontWeight: 700, color: "#0f1b2d"}}>
+                        {/* План закупок */}
+                        {t("procurementPlan.title")}
+                    </h1>
                     <div style={{marginTop: 4, fontSize: 12.5, color: "#8b97ab"}}>
-                        Приложение №5 к Положению · отчёт об исполнении считается из заявок года
+                        {/* Приложение №5 к Положению · отчёт об исполнении считается из заявок года */}
+                        {t("procurementPlan.subtitle")}
                     </div>
                 </div>
 
@@ -85,10 +139,11 @@ export const ProcurementPlanPage = () => {
 
                 {plan?.status === "Draft" && (
                     <button
-                        onClick={approve}
+                        onClick={openApprove}
                         disabled={busy}
                         className="cursor-pointer inline-flex h-[42px] items-center gap-2 rounded-[11px] bg-[#2f68f5] px-[18px] text-[13.5px] font-semibold text-white shadow-[0_6px_16px_-6px_#2f68f5] hover:brightness-[1.06] disabled:cursor-not-allowed disabled:opacity-60 disabled:shadow-none">
-                        Утвердить план
+                        {/* Утвердить план */}
+                        {t("procurementPlan.approve.button")}
                     </button>
                 )}
             </div>
@@ -98,35 +153,44 @@ export const ProcurementPlanPage = () => {
             {!plan ? (
                 <section style={card}>
                     <div style={{fontSize: 13, color: "#55617a", lineHeight: 1.7}}>
-                        План закупок на {year} год не заведён. Заявки без позиции плана считаются
-                        внеплановыми и идут по отдельной ветке согласования (PRC-03).
+                        {/* План закупок на {year} год не заведён. Заявки без позиции плана считаются
+                        внеплановыми и идут по отдельной ветке согласования (PRC-03). */}
+                        {t("procurementPlan.notCreated", {year})}
                     </div>
                     <button
                         onClick={() => run(() => planService.create(year))}
                         disabled={busy}
                         style={{...primaryButton, marginTop: 12}}
                     >
-                        Завести план на {year} год
+                        {/* Завести план на {year} год */}
+                        {t("procurementPlan.create", {year})}
                     </button>
                 </section>
             ) : (
                 <>
                     <div style={{display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(190px, 1fr))", gap: 12}}>
-                        <Tile label="Статус" value={plan.statusTitle}
+                        <Tile label={t("procurementPlan.tiles.status") /* "Статус" */} value={plan.statusTitle}
                               note={plan.approvalProtocol ?? undefined}/>
-                        <Tile label="Плановая сумма" value={`${money(plan.plannedTotal)} сом`}/>
-                        <Tile label="Фактически по заявкам" value={`${money(plan.actualTotal)} сом`}/>
+                        <Tile label={t("procurementPlan.tiles.planned") /* "Плановая сумма" */} value={`${money(plan.plannedTotal)} ${t("procurementPlan.som")}`}/>
+                        <Tile label={t("procurementPlan.tiles.actual") /* "Фактически по заявкам" */} value={`${money(plan.actualTotal)} ${t("procurementPlan.som")}`}/>
                         <Tile
-                            label="Законтрактовано"
-                            value={`${money(plan.contractedTotal)} сом`}
+                            // label="Законтрактовано"
+                            label={t("procurementPlan.tiles.contracted")}
+                            value={`${money(plan.contractedTotal)} ${t("procurementPlan.som")}`}
                             note={plan.plannedTotal > 0
-                                ? `${Math.round((plan.contractedTotal / plan.plannedTotal) * 100)}% плана`
+                                // ? `${Math.round(...)}% плана`
+                                ? t("procurementPlan.tiles.ofPlan", {percent: Math.round((plan.contractedTotal / plan.plannedTotal) * 100)})
                                 : undefined}
                         />
                         <Tile
-                            label="Внеплановые закупки"
-                            value={`${plan.unplannedRequestCount} шт.`}
-                            note={plan.unplannedAmount > 0 ? `на ${money(plan.unplannedAmount)} сом` : undefined}
+                            // label="Внеплановые закупки"
+                            label={t("procurementPlan.tiles.unplanned")}
+                            // value={`${plan.unplannedRequestCount} шт.`}
+                            value={t("procurementPlan.tiles.pieces", {count: plan.unplannedRequestCount})}
+                            // note={plan.unplannedAmount > 0 ? `на ${money(plan.unplannedAmount)} сом` : undefined}
+                            note={plan.unplannedAmount > 0
+                                ? t("procurementPlan.tiles.forAmount", {amount: money(plan.unplannedAmount)})
+                                : undefined}
                             danger={plan.unplannedRequestCount > 0}
                         />
                     </div>
@@ -136,14 +200,38 @@ export const ProcurementPlanPage = () => {
                             <table style={{width: "100%", borderCollapse: "collapse", fontSize: 12.5}}>
                                 <thead>
                                     <tr style={{background: "#f6f8fb", color: "#55617a", textAlign: "left"}}>
-                                        <th style={th}>Позиция</th>
-                                        <th style={th}>Предмет закупки</th>
-                                        <th style={th}>Подразделение</th>
-                                        <th style={th}>Кв.</th>
-                                        <th style={{...th, textAlign: "right"}}>План</th>
-                                        <th style={{...th, textAlign: "right"}}>Факт</th>
-                                        <th style={{...th, textAlign: "right"}}>Законтрактовано</th>
-                                        <th style={{...th, textAlign: "right"}}>Отклонение</th>
+                                        <th style={th}>
+                                            {/* Позиция */}
+                                            {t("procurementPlan.cols.item")}
+                                        </th>
+                                        <th style={th}>
+                                            {/* Предмет закупки */}
+                                            {t("procurementPlan.cols.subject")}
+                                        </th>
+                                        <th style={th}>
+                                            {/* Подразделение */}
+                                            {t("procurementPlan.cols.unit")}
+                                        </th>
+                                        <th style={th}>
+                                            {/* Кв. */}
+                                            {t("procurementPlan.cols.quarter")}
+                                        </th>
+                                        <th style={{...th, textAlign: "right"}}>
+                                            {/* План */}
+                                            {t("procurementPlan.cols.plan")}
+                                        </th>
+                                        <th style={{...th, textAlign: "right"}}>
+                                            {/* Факт */}
+                                            {t("procurementPlan.cols.fact")}
+                                        </th>
+                                        <th style={{...th, textAlign: "right"}}>
+                                            {/* Законтрактовано */}
+                                            {t("procurementPlan.cols.contracted")}
+                                        </th>
+                                        <th style={{...th, textAlign: "right"}}>
+                                            {/* Отклонение */}
+                                            {t("procurementPlan.cols.deviation")}
+                                        </th>
                                         <th style={th}/>
                                     </tr>
                                 </thead>
@@ -163,7 +251,9 @@ export const ProcurementPlanPage = () => {
                                             <td style={{...td, textAlign: "right", whiteSpace: "nowrap"}}>{money(i.plannedAmount)}</td>
                                             <td style={{...td, textAlign: "right", whiteSpace: "nowrap"}}>
                                                 {money(i.actualAmount)}
-                                                <div style={{fontSize: 11, color: "#8b97ab"}}>{i.requestCount} заявок</div>
+                                                <div style={{fontSize: 11, color: "#8b97ab"}}>{/* {i.requestCount} заявок */}
+                                                {t("procurementPlan.requestsCount", {count: i.requestCount})}
+                                                </div>
                                             </td>
                                             <td style={{...td, textAlign: "right", whiteSpace: "nowrap", fontWeight: 600}}>
                                                 {money(i.contractedAmount)}
@@ -179,7 +269,10 @@ export const ProcurementPlanPage = () => {
                                             <td style={td}>
                                                 {plan.status === "Draft" && i.requestCount === 0 && (
                                                     <button onClick={() => run(() => planService.removeItem(i.id))}
-                                                            disabled={busy} style={linkButton}>исключить</button>
+                                                            disabled={busy} style={linkButton}>
+                                                        {/* исключить */}
+                                                        {t("procurementPlan.exclude")}
+                                                    </button>
                                                 )}
                                             </td>
                                         </tr>
@@ -190,38 +283,68 @@ export const ProcurementPlanPage = () => {
 
                         {plan.items.length === 0 && (
                             <div style={{padding: 24, textAlign: "center", color: "#8b97ab", fontSize: 13}}>
-                                Позиций пока нет
+                                {/* Позиций пока нет */}
+                                {t("procurementPlan.noItems")}
                             </div>
                         )}
                     </section>
 
                     {plan.status === "Draft" && (
                         <section style={card}>
-                            <div style={cardTitle}>Добавить позицию</div>
-                            <div style={{display: "flex", gap: 8, flexWrap: "wrap"}}>
-                                <input value={form.code} onChange={e => setForm({...form, code: e.target.value})}
-                                       placeholder="№ позиции, напр. п. 4.2" style={{...input, width: 180}}/>
-                                <input value={form.subject} onChange={e => setForm({...form, subject: e.target.value})}
-                                       placeholder="Предмет закупки" style={{...input, flex: 1, minWidth: 200}}/>
-                                <input type="number" value={form.amount || ""}
-                                       onChange={e => setForm({...form, amount: Number(e.target.value) || 0})}
-                                       placeholder="Плановая сумма" style={{...input, width: 160}}/>
-                                <SelectDropdown
-                                    options={units.map(u => ({value: String(u.id), label: u.titleRu}))}
-                                    value={form.unitId}
-                                    onChange={(v) => setForm({...form, unitId: v})}
-                                    placeholder="— подразделение —"
-                                    searchable
-                                    searchPlaceholder="Поиск подразделения…"
-                                    minWidth="120px"
-                                />
-                                <SelectDropdown
-                                    options={[1, 2, 3, 4].map(q => ({value: String(q), label: `${q} кв.`}))}
-                                    value={form.quarter}
-                                    onChange={(v) => setForm({...form, quarter: v})}
-                                    placeholder="квартал"
-                                    minWidth="110px"
-                                />
+                            <div style={cardTitle}>
+                                {/* Добавить позицию */}
+                                {t("procurementPlan.add.title")}
+                            </div>
+                            <div style={{display: "flex", gap: 10, flexWrap: "wrap", alignItems: "flex-end"}}>
+                                <FormField label={t("procurementPlan.add.code")} width={180}>
+                                    <input value={form.code} onChange={e => setForm({...form, code: e.target.value})}
+                                           /* placeholder="№ позиции, напр. п. 4.2" */
+                                           placeholder={t("procurementPlan.add.codePlaceholder")}
+                                           style={{...input, width: "100%"}}/>
+                                </FormField>
+                                <FormField label={t("procurementPlan.add.subject")} flex>
+                                    <input value={form.subject} onChange={e => setForm({...form, subject: e.target.value})}
+                                           /* placeholder="Предмет закупки" */
+                                           placeholder={t("procurementPlan.add.subjectPlaceholder")}
+                                           style={{...input, width: "100%"}}/>
+                                </FormField>
+                                <FormField label={t("procurementPlan.add.amount")} width={160}>
+                                    <input type="number" value={form.amount || ""}
+                                           onChange={e => setForm({...form, amount: Number(e.target.value) || 0})}
+                                           /* placeholder="Плановая сумма" */
+                                           placeholder={t("procurementPlan.add.amountPlaceholder")}
+                                           style={{...input, width: "100%"}}/>
+                                </FormField>
+
+                                {/* Подразделение и квартал выбираются в модальных окнах */}
+                                <div style={{width: 240}}>
+                                    <SingleSelectListField
+                                        label={t("procurementPlan.add.unit")}
+                                        boldLabel={false}
+                                        modalTitle={t("procurementPlan.add.unitModalTitle")}
+                                        options={unitOptions}
+                                        selectedKey={form.unitId || null}
+                                        onChange={(key) => setForm({...form, unitId: key ?? ""})}
+                                        /* placeholder="— подразделение —" */
+                                        placeholder={t("procurementPlan.add.unitPlaceholder")}
+                                        searchPlaceholder={t("procurementPlan.add.unitSearch")}
+                                        clearLabel={t("procurementPlan.add.clearChoice")}
+                                    />
+                                </div>
+                                <div style={{width: 150}}>
+                                    <SingleSelectListField
+                                        label={t("procurementPlan.add.quarter")}
+                                        boldLabel={false}
+                                        modalTitle={t("procurementPlan.add.quarterModalTitle")}
+                                        options={quarterOptions}
+                                        selectedKey={form.quarter || null}
+                                        onChange={(key) => setForm({...form, quarter: key ?? ""})}
+                                        /* placeholder="квартал" */
+                                        placeholder={t("procurementPlan.add.quarterPlaceholder")}
+                                        clearLabel={t("procurementPlan.add.clearChoice")}
+                                    />
+                                </div>
+
                                 <button
                                     onClick={() => run(() => planService.addItem(plan.id, {
                                         code: form.code.trim(),
@@ -231,18 +354,61 @@ export const ProcurementPlanPage = () => {
                                         orgUnitId: form.unitId ? Number(form.unitId) : undefined,
                                     })).then(() => setForm({code: "", subject: "", amount: 0, quarter: "", unitId: ""}))}
                                     disabled={busy || !form.code.trim() || !form.subject.trim() || form.amount <= 0}
-                                    style={secondaryButton}
+                                    style={{...secondaryButton, height: 40}}
                                 >
-                                    Добавить
+                                    {/* Добавить */}
+                                    {t("procurementPlan.add.submit")}
                                 </button>
                             </div>
                         </section>
                     )}
                 </>
             )}
+
+            {/* Окно утверждения плана (вместо window.prompt) */}
+            <ConfirmActionModal
+                open={approveOpen}
+                onClose={() => setApproveOpen(false)}
+                onConfirm={() => void confirmApprove()}
+                title={t("procurementPlan.approve.title", {year})}
+                message={t("procurementPlan.approve.message")}
+                confirmLabel={t("procurementPlan.approve.confirm")}
+                loadingLabel={t("procurementPlan.approve.loading")}
+                loading={busy}
+                error={approveError}
+                variant="primary"
+                icon={ShieldCheck}
+            >
+                <label style={{display: "block", fontSize: 11.5, color: "#8b97ab", marginBottom: 5}}>
+                    {/* Протокол Правления */}
+                    {t("procurementPlan.approve.protocolLabel")}
+                </label>
+                <input
+                    autoFocus
+                    value={protocolInput}
+                    onChange={e => {
+                        setProtocolInput(e.target.value);
+                        setApproveError(null);
+                    }}
+                    onKeyDown={e => {
+                        if (e.key === "Enter") void confirmApprove();
+                    }}
+                    placeholder={t("procurementPlan.approve.protocolPlaceholder")}
+                    style={{...input, width: "100%", height: 40, boxSizing: "border-box"}}
+                />
+            </ConfirmActionModal>
         </div>
     );
 };
+
+const FormField = ({label, width, flex, children}: {
+    label: string; width?: number; flex?: boolean; children: React.ReactNode;
+}) => (
+    <div style={flex ? {flex: 1, minWidth: 200} : {width}}>
+        <span style={{display: "block", fontSize: 11.5, color: "#8b97ab", marginBottom: 5}}>{label}</span>
+        {children}
+    </div>
+);
 
 const Tile = ({label, value, note, danger}: { label: string; value: string; note?: string; danger?: boolean }) => (
     <div style={{
@@ -266,7 +432,7 @@ const cardTitle: React.CSSProperties = {
 };
 
 const input: React.CSSProperties = {
-    height: 36, padding: "0 11px", border: "1px solid #e5e9f0", borderRadius: 9,
+    height: 40, padding: "0 11px", border: "1px solid #e5e9f0", borderRadius: 9,
     background: "#fff", font: "inherit", fontSize: 12.5, outline: "none",
 };
 

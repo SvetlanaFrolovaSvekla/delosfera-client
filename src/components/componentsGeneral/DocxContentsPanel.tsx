@@ -7,8 +7,40 @@ import {useEffect, useRef, useState} from "react";
 import {useTranslation} from "react-i18next";
 import {useDocxHeadings} from "@/hooks/vndHooks/useDocxHeadings.ts";
 import type {DocxHeadingItem} from "@/utils/docxWork/docxHeadings.ts";
+import {textMatchKey} from "@/utils/docxWork/docxOoxml.ts";
 import {Tooltip} from "@/components/componentsGeneral/Tooltip.tsx";
 import {ListTree, Loader2, X} from "lucide-react";
+
+/** Абзац тела документа: docx-preview рисует колонтитулы (<header>/<footer>) на КАЖДЫЙ раздел и
+ * сноски (<ol>) — их абзацы с тем же стилем раньше сдвигали порядковый номер (⚠ 06.10.2026:
+ * "Заголовок 1" в шапке-таблице колонтитула → клик по "1. ..." вёл на "2. ...", а в документах с
+ * несколькими разделами, например альбомной таблицей, — ещё дальше). */
+function isBodyParagraph(el: Element): boolean {
+    return el.tagName === "P" && !el.closest("header, footer, ol");
+}
+
+/** Находит DOM-узел заголовка: сперва по классу стиля + порядковому номеру среди абзацев тела
+ * (с проверкой текста), иначе — по тексту абзаца. */
+function findHeadingElement(container: HTMLElement, heading: DocxHeadingItem): HTMLElement | null {
+    const matchesText = (el: Element) => {
+        if (!heading.textKey) return true;
+        const key = textMatchKey(el.textContent ?? "");
+        return key === heading.textKey || key.startsWith(heading.textKey) || (key.length > 0 && heading.textKey.startsWith(key));
+    };
+
+    if (heading.styleClass) {
+        const byClass = Array.from(container.getElementsByClassName(heading.styleClass)).filter(isBodyParagraph);
+        const candidate = byClass[heading.occurrenceIndex];
+        if (candidate && matchesText(candidate)) return candidate as HTMLElement;
+    }
+
+    if (!heading.textKey) return null;
+    const paragraphs = Array.from(container.querySelectorAll("p")).filter(isBodyParagraph);
+    const exact = paragraphs.filter((el) => textMatchKey(el.textContent ?? "") === heading.textKey);
+    if (exact.length > 0) return (exact[heading.textOccurrenceIndex] ?? exact[0]) as HTMLElement;
+    const partial = paragraphs.find(matchesText);
+    return (partial as HTMLElement | undefined) ?? null;
+}
 
 const LEVEL_PADDING: Record<DocxHeadingItem["level"], string> = {
     1: "pl-0",
@@ -79,8 +111,7 @@ export function DocxContentsPanel({
     const handleClick = (heading: DocxHeadingItem) => {
         const container = getContainer();
         if (!container) return;
-        const matches = container.getElementsByClassName(heading.styleClass);
-        const target = matches[heading.occurrenceIndex] as HTMLElement | undefined;
+        const target = findHeadingElement(container, heading);
         target?.scrollIntoView({behavior: "smooth", block: "start"});
     };
 

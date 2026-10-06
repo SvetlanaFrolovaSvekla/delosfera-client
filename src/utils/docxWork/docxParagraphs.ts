@@ -1,33 +1,42 @@
 // Извлечение текстов абзацев редакции ВНД для построения строк ТИД (см. VndUploadTidModal /
-// useTidDiffRows) — автосравнение действующей и новой редакции построчно (по абзацам), в духе
-// того, как docxHeadings.ts извлекает заголовки: тот же прямой разбор OOXML через JSZip, в обход
+// useTidDiffRows) — автосравнение действующей и новой редакции построчно (по абзацам). Тот же
+// прямой разбор OOXML через JSZip, что и в docxHeadings.ts (общий код — docxOoxml.ts), в обход
 // docx-preview (который абзацы как отдельные текстовые единицы не отдаёт).
-import JSZip from "jszip";
+//
+// ⚠ 06.10.2026: текст абзаца берётся так, как его ВИДИТ читатель в Word, а не как он хранится:
+//  - номер автонумерации ("1.", "2.3.", "а)") ставится перед текстом — заголовок, у которого в
+//    одной редакции номер набран руками ("1. Общие положения"), а в другой — стилем "Заголовок 1"
+//    с многоуровневым списком, больше не считается изменённым;
+//  - "Все прописные" (w:caps) из стиля/прогона применяется к тексту — "ОБЩИЕ ПОЛОЖЕНИЯ" набранное
+//    капсом и оформленное стилем совпадают;
+//  - скрытый текст (w:vanish — в т.ч. метки структуры документов isrib) не участвует;
+//  - табы/неразрывные/двойные пробелы схлопываются в один пробел.
+import {collectParagraphs, displayText, loadDocx} from "@/utils/docxWork/docxOoxml.ts";
 
-/** OOXML-элементы всегда с префиксом "w:" в документах, реально созданных Word — но на всякий
- * случай (нестандартный экспорт без префикса) падаем на бестпрефиксный тег. См. docxHeadings.ts. */
-function elementsByAnyTag(root: Document | Element, localName: string): Element[] {
-    const prefixed = root.getElementsByTagName(`w:${localName}`);
-    if (prefixed.length > 0) return Array.from(prefixed);
-    return Array.from(root.getElementsByTagName(localName));
-}
-
-function paragraphText(p: Element): string {
-    return elementsByAnyTag(p, "t").map((t) => t.textContent ?? "").join("");
+/** Ключ абзаца для сопоставления редакций в ТИД: без номера в начале (набранного руками или
+ * автонумерации), без регистра и без точки в конце. Иначе вставка одного пункта в
+ * автонумерованный список "сдвигала" номера всех следующих пунктов, и каждый из них попадал в ТИД
+ * как изменённый; а заголовок "1. ОБЩИЕ ПОЛОЖЕНИЯ" (текстом) и "Общие положения" (стиль
+ * "Заголовок 1" с автономером) считались разными. Сам текст в строке ТИД остаётся полным — с
+ * номером, как в документе. */
+export function tidParagraphKey(text: string): string {
+    return text
+        .replace(/^(?:(?:часть|раздел|подраздел|глава|параграф|статья|пункт|п\.)\s+)?(?:(?:\d{1,3}\.)*\d{1,3}\.?\)?|[IVXLC]{1,6}\.|[а-яa-z]\))(?:\s+|$)/i, "")
+        .replace(/[.\s]+$/, "")
+        .replace(/\s+/g, " ")
+        .trim()
+        .toLowerCase();
 }
 
 /** Тексты всех непустых абзацев документа, в порядке следования по документу. */
 export async function extractDocxParagraphs(blob: Blob): Promise<string[]> {
-    const zip = await JSZip.loadAsync(blob);
-    const documentEntry = zip.file("word/document.xml");
-    if (!documentEntry) return [];
-
-    const parser = new DOMParser();
-    const documentXml = parser.parseFromString(await documentEntry.async("text"), "application/xml");
+    const parsed = await loadDocx(blob);
+    if (!parsed) return [];
 
     const paragraphs: string[] = [];
-    for (const p of elementsByAnyTag(documentXml, "p")) {
-        const text = paragraphText(p).trim();
+    for (const p of collectParagraphs(parsed)) {
+        if (p.hidden || !p.visibleText) continue;
+        const text = displayText(p);
         if (text) paragraphs.push(text);
     }
     return paragraphs;

@@ -1,7 +1,7 @@
 // Автоформирование строк таблицы ТИД
 import {useEffect, useState} from "react";
 import {fetchFileBlob} from "@/utils/downloadFiles/downloadFile.ts";
-import {extractDocxParagraphs} from "@/utils/docxWork/docxParagraphs.ts";
+import {extractDocxParagraphs, tidParagraphKey} from "@/utils/docxWork/docxParagraphs.ts";
 import {diffArrays} from "@/utils/docxWork/diffDocx/arrayDiff.ts";
 import {diffWords} from "@/utils/docxWork/diffDocx/textDiff.ts";
 
@@ -47,7 +47,9 @@ function buildSegments(oldText: string, newText: string): {oldSegments: TidDiffS
  * абзацы схлопываются в одну строку таблицы; неизменные абзацы (type "equal") в таблицу не
  * попадают, как и в матрице разногласий показываются только расхождения. */
 function buildRows(oldParagraphs: string[], newParagraphs: string[]): TidAutoRow[] | null {
-    const ops = diffArrays(oldParagraphs, newParagraphs);
+    // Сравниваем по ключам (без номера/регистра — см. tidParagraphKey), а в строку ТИД кладём
+    // полный текст абзаца, как в документе.
+    const ops = diffArrays(oldParagraphs.map(tidParagraphKey), newParagraphs.map(tidParagraphKey));
     if (ops === null) return null;
 
     const rows: TidAutoRow[] = [];

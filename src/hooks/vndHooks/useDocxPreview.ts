@@ -25,6 +25,31 @@ interface UseDocxPreviewOptions {
     pathSuffix?: string;
 }
 
+/**
+ * ⚠ 06.10.2026: изолирует счётчики автонумерации Word внутри одного контейнера.
+ *
+ * docx-preview рисует номера списков ("1.", "1.1.") CSS-счётчиками, а сбрасывает их правилом
+ * `:root { counter-reset: ... }` — то есть счётчики ОБЩИЕ на всю страницу. Если на странице
+ * отрендерено больше одного документа (вкладка "Редакции" под модалкой "Масштабный просмотр" /
+ * "Сравнение редакций", две колонки сравнения), нумерация второго документа продолжала
+ * первую: редакция с двумя разделами под модалкой → в модалке та же редакция начиналась с
+ * "3. ОБЩИЕ ПОЛОЖЕНИЯ", "3.1." и т.д. Плюс у двух документов правило `:root` одно на двоих,
+ * и стартовые значения брались из того, что отрендерен последним.
+ *
+ * counter-reset на самом контейнере создаёт для его потомков собственные экземпляры этих
+ * счётчиков (CSS counters scoping) — нумерация считается строго внутри документа.
+ */
+function scopeNumberingCounters(container: HTMLElement): void {
+    const resets: string[] = [];
+    for (const styleEl of Array.from(container.querySelectorAll("style"))) {
+        const css = styleEl.textContent ?? "";
+        const re = /:root\s*\{[^}]*?counter-reset\s*:\s*([^;}]+)/g;
+        let m: RegExpExecArray | null;
+        while ((m = re.exec(css)) !== null) resets.push(m[1].trim());
+    }
+    container.style.counterReset = resets.join(" ");
+}
+
 export function useDocxPreview(
     fileId: number | null,
     options: UseDocxPreviewOptions = {},
@@ -62,6 +87,7 @@ export function useDocxPreview(
 
                 // Очищаем контейнер перед новым рендером (переключение редакции/языка)
                 containerRef.current.innerHTML = "";
+                containerRef.current.style.counterReset = "";
 
                 await renderAsync(blob, containerRef.current, undefined, {
                     className: DOCX_PREVIEW_CLASS_NAME,
@@ -75,6 +101,7 @@ export function useDocxPreview(
                     renderFootnotes: true,
                     experimental: true,
                 });
+                if (!cancelled && containerRef.current) scopeNumberingCounters(containerRef.current);
             } catch (err) {
                 if (cancelled || (err instanceof DOMException && err.name === "AbortError")) return;
                 setError(err instanceof Error ? err.message : "Ошибка загрузки документа");

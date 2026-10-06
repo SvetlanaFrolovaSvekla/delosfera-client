@@ -94,8 +94,8 @@ const VndProposalsPage = lazy(() => import("@/pages/VndPages/VndProposalsPage.ts
 const VndAuthenticityPage = lazy(() => import("@/pages/VndPages/VndAuthenticityPage.tsx").then(m => ({default: m.VndAuthenticityPage})));
 const FeedbackInboxPage = lazy(() => import("@/pages/ManagementPages/SettingsPages/Observation/FeedbackInboxPage.tsx").then(m => ({default: m.FeedbackInboxPage})));
 const UsageAnalyticsPage = lazy(() => import("@/pages/ManagementPages/SettingsPages/Observation/UsageAnalyticsPage.tsx").then(m => ({default: m.UsageAnalyticsPage})));
-const PoaRegistryPage = lazy(() => import("@/pages/ChancelleryPages/PoaRegistryPage.tsx").then(m => ({default: m.PoaRegistryPage})));
-const CorrespondencePage = lazy(() => import("@/pages/ChancelleryPages/CorrespondencePage.tsx").then(m => ({default: m.CorrespondencePage})));
+const PoaRegistryPage = lazy(() => import("@/pages/ChancelleryPagesSection/PoaRegistryPage.tsx").then(m => ({default: m.PoaRegistryPage})));
+const CorrespondencePage = lazy(() => import("@/pages/ChancelleryPagesSection/CorrespondencePage.tsx").then(m => ({default: m.CorrespondencePage})));
 const ObligationsPage = lazy(() => import("@/pages/MeetingsPages/ObligationsPage.tsx").then(m => ({default: m.ObligationsPage})));
 const AgendaCandidatesPage = lazy(() => import("@/pages/MeetingsPages/AgendaCandidatesPage.tsx").then(m => ({default: m.AgendaCandidatesPage})));
 const ActualizationBucketSettingsPage = lazy(() => import("@/pages/DictionariesPages/VND/ActualizationBucketSettingsPage.tsx").then(m => ({default: m.ActualizationBucketSettingsPage})));

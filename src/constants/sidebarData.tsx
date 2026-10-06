@@ -95,7 +95,7 @@ export const navGroups: NavGroup[] = [
         titleKey: "sidebar.groups.office",
         items: [
             // Книга регистрации: входящие, исходящие, запросы НБКР, обращения клиентов
-            { id: "correspondence", icon: "sz", labelKey: "sidebar.items.correspondence", path: "/correspondence", permission: PermissionCode.ViewCorrespondence },
+            { id: "componentsCorrespondence", icon: "sz", labelKey: "sidebar.items.correspondence", path: "/correspondence", permission: PermissionCode.ViewCorrespondence },
             // «Вправе ли этот человек подписать вот это сегодня»
             { id: "poa", icon: "shield", labelKey: "sidebar.items.poa", path: "/poa", permission: PermissionCode.ViewPowersOfAttorney },
         ],

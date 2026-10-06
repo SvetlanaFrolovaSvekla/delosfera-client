@@ -1,21 +1,27 @@
 /**
+ * Секция "Канцелярия"
  * Книга регистрации корреспонденции.
  *
  * Одна книга на все категории, а не три реестра: письмо из НБКР, жалоба клиента и
  * счёт от поставщика различаются сроками и доступом, но не устройством. Искать
  * письмо в трёх местах хуже, чем отфильтровать в одном.
  *
- * Просроченное — сверху и отдельно. Это первый вопрос к книге каждое утро, и он не
+ * Просроченное - сверху и отдельно. Это первый вопрос к книге каждое утро, и он не
  * должен требовать фильтра.
  */
 import {useEffect, useState} from "react";
 import {useTranslation} from "react-i18next";
-import {ArrowDownLeft, ArrowUpRight, Download, Plus, TriangleAlert} from "lucide-react";
+import {useAuth} from "@/context/AuthContext.ts";
 import {
     correspondenceService,
     CATEGORY_ORDER,
     type Letter, type LetterCategory, type LetterDirection,
 } from "@/service/correspondenceService/correspondenceService.ts";
+import {toast} from "@/service/toastService.ts";
+import {PermissionCode} from "@/constants/permissions/permissions.ts";
+import {HighlightText} from "@/utils/highlightText.tsx";
+import {LetterCardModal} from "@/components/componentsCorrespondence/LetterCardModal.tsx";
+import {LetterRegisterModal} from "@/components/componentsCorrespondence/LetterRegisterModal.tsx";
 import {PageHeader} from "@/components/componentsGeneral/PageHeader.tsx";
 import {Loader} from "@/components/componentsGeneral/Loader.tsx";
 import {EmptyState} from "@/components/componentsGeneral/EmptyState.tsx";
@@ -27,11 +33,7 @@ import {
     Badge, Cell, DataTable, Row,
     formatDate, formatDaysLeft, type BadgeTone,
 } from "@/components/componentsGeneral/DataTable.tsx";
-import {HighlightText} from "@/utils/highlightText.tsx";
-import {LetterCardModal} from "@/components/correspondence/LetterCardModal.tsx";
-import {LetterRegisterModal} from "@/components/correspondence/LetterRegisterModal.tsx";
-import {useAuth} from "@/context/AuthContext.ts";
-import {PermissionCode} from "@/constants/permissions/permissions.ts";
+import {ArrowDownLeft, ArrowUpRight, Download, Plus, TriangleAlert} from "lucide-react";
 
 const CATEGORY_TONE: Record<LetterCategory, BadgeTone> = {
     RegulatorRequest: "bad",
@@ -73,8 +75,25 @@ export function CorrespondencePage() {
 
     const doExport = async () => {
         setExporting(true);
+        // Один тост на всю выгрузку: «готовим» -> «готово» или «ошибка»
+        const toastId = toast.loading(
+            t("correspondencePage.exportPreparing", {defaultValue: "Готовим выгрузку…"}),
+        );
         try {
             await correspondenceService.exportRegistry(currentFilter());
+            toast.update(toastId, {
+                variant: "success",
+                title: t("correspondencePage.exportDone", {defaultValue: "Выгрузка готова"}),
+                description: t("correspondencePage.exportDoneHint", {defaultValue: "Файл Excel скачан"}),
+                duration: 4500,
+            });
+        } catch {
+            toast.update(toastId, {
+                variant: "error",
+                title: t("correspondencePage.exportFailed", {defaultValue: "Не удалось выгрузить реестр"}),
+                description: t("correspondencePage.exportFailedHint", {defaultValue: "Попробуйте ещё раз"}),
+                duration: 6000,
+            });
         } finally {
             setExporting(false);
         }
@@ -310,8 +329,12 @@ export function CorrespondencePage() {
             {registering && (
                 <LetterRegisterModal
                     onClose={() => setRegistering(false)}
-                    onSaved={() => {
+                    onSaved={(letter) => {
                         setRegistering(false);
+                        toast.success(
+                            t("correspondencePage.registered", {defaultValue: "Письмо зарегистрировано"}),
+                            letter.regNumber ? `№ ${letter.regNumber}` : letter.subject,
+                        );
                         void load();
                     }}
                 />

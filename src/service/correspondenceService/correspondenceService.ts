@@ -176,7 +176,7 @@ export interface LetterFilter {
     pageSize?: number;
 }
 
-const BASE = "/correspondence";
+const BASE = "/componentsCorrespondence";
 
 export const correspondenceService = {
     async search(filter: LetterFilter = {}) {

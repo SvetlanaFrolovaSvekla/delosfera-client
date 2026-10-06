@@ -1,5 +1,6 @@
 /**
- * Реестр доверенностей.
+ * Секция "Канцелярия"
+ * Реестр доверенностей, страница "Доверенности"
  *
  * Сверху — истекающие. Доверенность, о которой вспомнили в день окончания, уже
  * стоила кому-то сорванной сделки: продлевают заранее, и список должен об этом
@@ -7,13 +8,17 @@
  */
 import {useEffect, useState} from "react";
 import {useTranslation} from "react-i18next";
-import {AlertTriangle, Plus} from "lucide-react";
+import {useAuth} from "@/context/AuthContext.ts";
 import {
     poaService,
     POA_STATUS_ORDER,
     type Poa,
     type PoaStatus,
 } from "@/service/poaService/poaService.ts";
+import {PermissionCode} from "@/constants/permissions/permissions.ts";
+import {HighlightText} from "@/utils/highlightText.tsx";
+import {PoaEditModal} from "@/components/poa/PoaEditModal.tsx";
+import {PoaCardModal} from "@/components/poa/PoaCardModal.tsx";
 import {PageHeader} from "@/components/componentsGeneral/PageHeader.tsx";
 import {Loader} from "@/components/componentsGeneral/Loader.tsx";
 import {EmptyState} from "@/components/componentsGeneral/EmptyState.tsx";
@@ -23,11 +28,7 @@ import {
     Badge, Cell, DataTable, Row,
     formatDate, formatDaysLeft, type BadgeTone,
 } from "@/components/componentsGeneral/DataTable.tsx";
-import {HighlightText} from "@/utils/highlightText.tsx";
-import {PoaEditModal} from "@/components/poa/PoaEditModal.tsx";
-import {PoaCardModal} from "@/components/poa/PoaCardModal.tsx";
-import {useAuth} from "@/context/AuthContext.ts";
-import {PermissionCode} from "@/constants/permissions/permissions.ts";
+import {AlertTriangle, Plus} from "lucide-react";
 
 const STATUS_TONE: Record<PoaStatus, BadgeTone> = {
     Active: "good",
@@ -76,11 +77,13 @@ export function PoaRegistryPage() {
     };
 
     useEffect(() => {
+        // eslint-disable-next-line react-hooks/set-state-in-effect
         void load();
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [status]);
 
     const daysUntil = (validTo: string) =>
+        // eslint-disable-next-line react-hooks/purity
         Math.round((new Date(validTo).getTime() - Date.now()) / 86_400_000);
 
     const noNumber = t("poaRegistryPage.noNumber"); /* б/н */

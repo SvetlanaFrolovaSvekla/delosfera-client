@@ -2,15 +2,8 @@
 import {useTranslation} from "react-i18next";
 import type {CalendarEvent} from "@/service/analyticsService/calendarService.ts";
 import {Link} from "react-router-dom";
-import {eventColors, LINKS, STATIC_LINKS} from "@/constants/calendarPageConst.ts";
+import {eventColors, eventLink} from "@/utils/calendar/calendarUtils.ts";
 import {AlertCircle} from "lucide-react";
-
-// STATIC_LINKS - когда нет конкретной записи у события
-function eventLink(e: CalendarEvent): string {
-    if (STATIC_LINKS[e.documentType]) return STATIC_LINKS[e.documentType];
-    if (e.entityId === null) return "/tasks";
-    return LINKS[e.documentType]?.(e.entityId) ?? "/tasks";
-}
 
 export function EventChip({e, compact, onClick}: { e: CalendarEvent; compact?: boolean; onClick?: () => void }) {
     const {t} = useTranslation();

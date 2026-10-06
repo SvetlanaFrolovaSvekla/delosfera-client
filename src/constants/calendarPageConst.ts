@@ -1,21 +1,16 @@
-// Максимальное число видимых строк событий в календаре
-import type {CalendarEvent} from "@/service/analyticsService/calendarService.ts";
-
+// Максимальное число видимых строк событий в ячейке дня (остальные - в «+N ещё»)
 export const MAX_VISIBLE = 3;
 
-// Цвета просроченных/выполненных в срок задач/событий
+// Цвета: просроченные / предстоящие (срок ещё не прошёл) события
 export const COLORS = {
     overdue: {bg: "#fdecea", fg: "#c0392b"},
     upcoming: {bg: "#eef3ff", fg: "#2f68f5"},
 } as const;
 
-// Хелпер, который по событию возвращает нужную пару цветов
-export const eventColors = (e: CalendarEvent) => (e.isOverdue ? COLORS.overdue : COLORS.upcoming);
-
 // Куда вести клик по событию, когда у типа документа нет страницы конкретной записи
 export const STATIC_LINKS: Record<string, string> = {
     Acknowledgement: "/hr-ack",
-    Letter: "/correspondence",
+    Letter: "/componentsCorrespondence",
     Obligation: "/obligations",
 };
 

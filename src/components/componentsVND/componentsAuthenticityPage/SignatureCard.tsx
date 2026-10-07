@@ -1,27 +1,20 @@
 import {useState} from "react";
 import {useTranslation} from "react-i18next";
-import {useAuth} from "@/context/AuthContext.ts";
-import {
-    vndAuthenticityService,
-    type VndAuthenticitySignature,
-} from "@/service/vndService/vndAuthenticityService.ts";
+import {type VndAuthenticitySignature} from "@/service/vndService/vndAuthenticityService.ts";
 import {coordinationService} from "@/service/coordinationService/coordinationService.ts";
 import type {ResolutionSignatureVerifyResponse} from "@/service/coordinationService/coordinationServiceTypes.ts";
 import {toast} from "@/service/toastService.ts";
 import {formatDateTime} from "@/utils/vndProcess/authenticityUtils.ts";
-import {PermissionCode} from "@/constants/permissions/permissions.ts";
 import {Field} from "./Field.tsx";
 import {HashLine} from "./HashLine.tsx";
 import {Tooltip} from "@/components/componentsGeneral/Tooltip.tsx";
-import {CheckCircle2, Download, ShieldCheck, XCircle} from "lucide-react";
+import {CheckCircle2, ShieldCheck, XCircle} from "lucide-react";
 import {BTN_SECONDARY, STATE_STYLE, VERIFY_STYLE} from "./styles/authenticityStyles.ts";
 
 export function SignatureCard({vndId, signature, locale}: {
     vndId: number; signature: VndAuthenticitySignature; locale: string;
 }) {
     const {t} = useTranslation();
-    const {hasPermission} = useAuth();
-    const canExport = hasPermission(PermissionCode.ExportVnd);
     const [verifying, setVerifying] = useState(false);
     const [verifyResult, setVerifyResult] = useState<ResolutionSignatureVerifyResponse | string | null>(null);
 
@@ -44,27 +37,6 @@ export function SignatureCard({vndId, signature, locale}: {
         }
     };
 
-    const download = async (file: "signature" | "data") => {
-        const toastId = toast.loading(t("vndAuthenticity.downloading"));
-        try {
-            await vndAuthenticityService.downloadSignatureFile(vndId, signature.id, file);
-            toast.update(toastId, {
-                variant: "success",
-                title: file === "signature" ? t("vndAuthenticity.downloadedSignature") : t("vndAuthenticity.downloadedData"),
-                duration: 3000,
-            });
-        } catch (e) {
-            const status = (e as { response?: { status?: number } }).response?.status;
-            toast.update(toastId, {
-                variant: "error",
-                title: status === 403
-                    ? t("vndAuthenticity.noExportPermission")
-                    : status === 429 ? t("vndAuthenticity.tooMany") : t("vndAuthenticity.downloadFailed"),
-                duration: 6000,
-            });
-        }
-    };
-
     const signer = signature.personFio ?? signature.certCommonName ?? signature.accountFullName ?? "—";
 
     return (
@@ -84,23 +56,6 @@ export function SignatureCard({vndId, signature, locale}: {
                             {verifying ? t("ecp.journal.verifying") : t("vndAuthenticity.verifyAtProvider")}
                         </button>
                     </Tooltip>
-                    {canExport && (
-                        <>
-                            <Tooltip content={t("vndAuthenticity.downloadHelp")}>
-                                <button type="button" onClick={() => void download("signature")}
-                                        className={BTN_SECONDARY}>
-                                    <Download className="h-3.5 w-3.5" strokeWidth={2}/>
-                                    .sig.b64
-                                </button>
-                            </Tooltip>
-                            <Tooltip content={t("vndAuthenticity.downloadDataHelp")}>
-                                <button type="button" onClick={() => void download("data")} className={BTN_SECONDARY}>
-                                    <Download className="h-3.5 w-3.5" strokeWidth={2}/>
-                                    .txt
-                                </button>
-                            </Tooltip>
-                        </>
-                    )}
                 </div>
             </div>
 
@@ -129,7 +84,6 @@ export function SignatureCard({vndId, signature, locale}: {
                     <div className="text-[11px] text-[#8b97ab]">
                         {[signature.organizationName,
                             signature.certIssuerCommonName && t("ecp.journal.issuer", {name: signature.certIssuerCommonName}),
-                            signature.certValidNotAfter && t("ecp.journal.certUntil", {date: signature.certValidNotAfter}),
                         ].filter(Boolean).join(" · ")}
                     </div>
                 </Field>

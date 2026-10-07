@@ -5,9 +5,6 @@ import type {
     ResolutionSignatureVerifyResponse,
     VndResolutionSignatureResponse,
 } from "@/service/coordinationService/coordinationServiceTypes.ts";
-import {vndAuthenticityService} from "@/service/vndService/vndAuthenticityService.ts";
-import {useAuth} from "@/context/AuthContext.ts";
-import {PermissionCode} from "@/constants/permissions/permissions.ts";
 
 /**
  * "Журнал подписей" — резолюции "Согласовать", подписанные ЭЦП ГП «Инфоком», по документу:
@@ -45,23 +42,6 @@ export function VndSignatureJournal({vndId, refreshKey}: { vndId: number; refres
     const [loadError, setLoadError] = useState(false);
     const [checking, setChecking] = useState<number | null>(null);
     const [results, setResults] = useState<Record<number, ResolutionSignatureVerifyResponse | string>>({});
-    // Скачать подпись (.sig.b64) и подписанные данные (.txt) для проверки вне системы — право «Экспорт ВНД»
-    // (в CMS лежит сертификат подписанта с его персональными данными).
-    const {hasPermission} = useAuth();
-    const canExport = hasPermission(PermissionCode.ExportVnd);
-
-    const download = useCallback(async (id: number, file: "signature" | "data") => {
-        try {
-            await vndAuthenticityService.downloadSignatureFile(vndId, id, file);
-        } catch (e) {
-            const status = (e as { response?: { status?: number } }).response?.status;
-            setResults((prev) => ({
-                ...prev,
-                [id]: status === 403 ? t("vndAuthenticity.noExportPermission")
-                    : status === 429 ? t("ecp.journal.tooMany") : t("vndAuthenticity.downloadFailed"),
-            }));
-        }
-    }, [vndId, t]);
 
     useEffect(() => {
         let cancelled = false;
@@ -121,7 +101,6 @@ export function VndSignatureJournal({vndId, refreshKey}: { vndId: number; refres
                                     <div className="text-[11.5px] text-[#8b97ab]">
                                         {item.verified ? t("ecp.journal.verified") : t("ecp.journal.notVerified")}
                                         {item.certIssuerCommonName && ` · ${t("ecp.journal.issuer", {name: item.certIssuerCommonName})}`}
-                                        {item.certValidNotAfter && ` · ${t("ecp.journal.certUntil", {date: item.certValidNotAfter})}`}
                                     </div>
                                     <div className="truncate font-mono text-[10.5px] text-[#aab3c2]" title={item.hash}>
                                         SHA-256 ({item.hashSchemaVersion}): {item.hash}
@@ -133,18 +112,6 @@ export function VndSignatureJournal({vndId, refreshKey}: { vndId: number; refres
                                             className="cursor-pointer rounded-[8px] border border-[#e5e9f0] bg-white px-3 py-1 text-[12px] font-semibold text-[#2f68f5] disabled:opacity-50">
                                         {checking === item.id ? t("ecp.journal.verifying") : t("ecp.journal.verify")}
                                     </button>
-                                    {canExport && (
-                                        <>
-                                            <button type="button" onClick={() => void download(item.id, "signature")}
-                                                    className="cursor-pointer rounded-[8px] border border-[#e5e9f0] bg-white px-3 py-1 text-[12px] font-semibold text-[#55617a]">
-                                                {t("vndAuthenticity.downloadSignature")}
-                                            </button>
-                                            <button type="button" onClick={() => void download(item.id, "data")}
-                                                    className="cursor-pointer rounded-[8px] border border-[#e5e9f0] bg-white px-3 py-1 text-[12px] font-semibold text-[#55617a]">
-                                                {t("vndAuthenticity.downloadSignedData")}
-                                            </button>
-                                        </>
-                                    )}
                                 </div>
                             </div>
                             {result && (

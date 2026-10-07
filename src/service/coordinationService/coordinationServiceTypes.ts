@@ -122,12 +122,9 @@ export interface VndResolutionSignatureResponse {
     roundNumber: number;
     userId: number;
     userFullName: string | null;
-    personIdnp: string;
     personFio: string | null;
     organizationName: string | null;
     certCommonName: string | null;
-    certKeyIdentifier: string | null;
-    certValidNotAfter: string | null;
     certIssuerCommonName: string | null;
     hashSchemaVersion: string;
     hash: string;

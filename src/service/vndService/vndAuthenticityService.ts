@@ -29,7 +29,6 @@ export interface VndAuthenticitySignature {
     organizationName: string | null;
     certCommonName: string | null;
     certIssuerCommonName: string | null;
-    certValidNotAfter: string | null;
     signedAt: string;
     cmsSigningTime: string | null;
     verified: boolean;
@@ -105,44 +104,12 @@ export interface VndAuthenticityCheckResponse {
     matches: VndAuthenticityRedactionMatch[];
 }
 
-/** Имя файла из Content-Disposition (сначала filename* — RFC 5987, в нём кириллица не искажается). */
-function fileNameFrom(disposition: string | undefined): string | null {
-    if (!disposition) return null;
-    const star = /filename\*=UTF-8''([^;]+)/i.exec(disposition);
-    if (star) return decodeURIComponent(star[1].trim());
-    const plain = /filename="?([^";]+)"?/i.exec(disposition);
-    return plain ? plain[1].trim() : null;
-}
-
 class VndAuthenticityService {
     async check(file: File): Promise<VndAuthenticityCheckResponse> {
         const form = new FormData();
         form.append("file", file);
         const {data} = await axiosInstance.post<VndAuthenticityCheckResponse>("/vnd/authenticity/check", form);
         return data;
-    }
-
-    /**
-     * Скачать файл подписи резолюции для проверки вне системы (нужно право «Экспорт ВНД»):
-     * "signature" — CMS-подпись в base64 ({код}-resolution-{id}.sig.b64);
-     * "data" — подписанные данные ({код}-resolution-{id}.txt), SHA-256 которых и подписан.
-     */
-    async downloadSignatureFile(vndId: number, signatureId: number, file: "signature" | "data"): Promise<void> {
-        const response = await axiosInstance.get<Blob>(`/vnd/${vndId}/signatures/${signatureId}/download`, {
-            params: {file},
-            responseType: "blob",
-        });
-        const name = fileNameFrom(response.headers["content-disposition"] as string | undefined)
-            ?? `resolution-${signatureId}${file === "data" ? ".txt" : ".sig.b64"}`;
-
-        const url = URL.createObjectURL(response.data);
-        const link = document.createElement("a");
-        link.href = url;
-        link.download = name;
-        document.body.appendChild(link);
-        link.click();
-        link.remove();
-        URL.revokeObjectURL(url);
     }
 }
 

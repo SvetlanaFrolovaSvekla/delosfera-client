@@ -18,6 +18,19 @@ import {parseContentDispositionFileName, saveBlob} from "@/utils/downloadFiles/d
 
 const API_BASE = `${import.meta.env.VITE_API_BASE_URL ?? ""}/api`;
 
+/** Мягко удалённая ВНД в списке «Удалённые». */
+export interface DeletedVndItem {
+    id: number;
+    code: string;
+    titleRu: string;
+    titleEn: string | null;
+    titleKg: string | null;
+    /** Статус на момент удаления: active / onact / review / consol / arch / draft. */
+    status: string;
+    deletedAt: string | null;
+    deletedByName: string | null;
+}
+
 function authHeaders(): HeadersInit {
     const token = getAccessToken();
     return token ? {Authorization: `Bearer ${token}`} : {};
@@ -191,11 +204,43 @@ export const vndService = {
         return handleResponse<VndLinkItem>(response);
     },
 
-    /** Удалить ВНД (только черновик; проверка прав и статуса — на бэке) */
-    async remove(id: number): Promise<void> {
+    /** Мягко удалённые ВНД (вкладка «Черновики» → «Удалённые»; право DeleteAnyVnd) */
+    async listDeleted(): Promise<DeletedVndItem[]> {
+        const response = await fetch(`${API_BASE}/vnd/deleted`, {headers: authHeaders()});
+        return handleResponse<DeletedVndItem[]>(response);
+    },
+
+    /** Восстановить мягко удалённую ВНД (право DeleteAnyVnd) */
+    async restore(id: number): Promise<void> {
+        const response = await fetch(`${API_BASE}/vnd/${id}/restore`, {
+            method: "POST",
+            headers: authHeaders(),
+        });
+        if (!response.ok) {
+            const errorBody = await response.json().catch(() => null);
+            throw new Error(errorBody?.message ?? `Ошибка запроса: ${response.status}`);
+        }
+    },
+
+    /** Первый шаг подтверждения удаления: проверить пароль текущего пользователя */
+    async verifyDeletePassword(password: string): Promise<void> {
+        const response = await fetch(`${API_BASE}/vnd/verify-password`, {
+            method: "POST",
+            headers: {"Content-Type": "application/json", ...authHeaders()},
+            body: JSON.stringify({password}),
+        });
+        if (!response.ok) {
+            const errorBody = await response.json().catch(() => null);
+            throw new Error(errorBody?.message ?? `Ошибка запроса: ${response.status}`);
+        }
+    },
+
+    /** Удалить ВНД (черновик — физически, иначе мягко с правом DeleteAnyVnd; проверка прав и статуса — на бэке) */
+    async remove(id: number, password: string): Promise<void> {
         const response = await fetch(`${API_BASE}/vnd/${id}`, {
             method: "DELETE",
-            headers: authHeaders(),
+            headers: {"Content-Type": "application/json", ...authHeaders()},
+            body: JSON.stringify({password}),
         });
         if (!response.ok) {
             const errorBody = await response.json().catch(() => null);

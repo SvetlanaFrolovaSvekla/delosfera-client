@@ -52,6 +52,8 @@ interface ConfirmActionModalProps {
     error?: string | null;
     variant?: ConfirmActionVariant;
     icon?: LucideIcon;
+    /** Шире обычного (760px) — для окон с подробным пояснением внутри. */
+    wide?: boolean;
     /** Произвольный доп. контент между текстом и блоком ошибки —
      * например, подсказка (Clue) о том, какие роли дают это право. */
     children?: ReactNode;
@@ -69,6 +71,7 @@ export function ConfirmActionModal({
                                        error = null,
                                        variant = "warning",
                                        icon,
+                                       wide = false,
                                        children,
                                    }: ConfirmActionModalProps) {
     const {t} = useTranslation();
@@ -87,7 +90,7 @@ export function ConfirmActionModal({
             <div
                 ref={panelRef}
                 onClick={(e) => e.stopPropagation()}
-                className="relative w-[380px] max-w-[90vw] bg-white rounded-2xl px-7 pt-8 pb-6 shadow-[0_30px_70px_-20px_rgba(15,27,45,.35)] animate-in zoom-in-95 slide-in-from-bottom-2 duration-300"
+                className={`relative ${wide ? "w-[860px] px-10" : "w-[380px] px-7"} max-w-[92vw] max-h-[92vh] overflow-y-auto bg-white rounded-2xl pt-8 pb-6 shadow-[0_30px_70px_-20px_rgba(15,27,45,.35)] animate-in zoom-in-95 slide-in-from-bottom-2 duration-300`}
             >
                 <div className={`mx-auto mb-4 w-14 h-14 rounded-full ${style.haloBg} grid place-items-center`}>
                     <div

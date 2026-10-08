@@ -23,6 +23,7 @@ import {STATUS_META, STATUS_OPTIONS_BY_SCOPE} from "@/constants/vndStatus.ts";
 
 import {VndPageHeader} from "@/components/componentsVND/componentsBaseVndPage/VndPageHeader.tsx";
 import {VndFilters} from "@/components/componentsVND/componentsBaseVndPage/VndFilters.tsx";
+import {DeletedVndList} from "@/components/componentsVND/componentsBaseVndPage/DeletedVndList.tsx";
 import {VndTable} from "@/components/componentsVND/componentsBaseVndPage/VndTable.tsx";
 import {VndSortDropdown} from "@/components/componentsVND/componentsBaseVndPage/VndSortDropdown.tsx";
 
@@ -33,13 +34,15 @@ import {JournalViewPicker} from "@/components/componentsGeneral/JournalViewPicke
 
 import {FileEdit, Star} from "lucide-react";
 
-type DraftOwnerScope = "mine" | "others" | "allDraft";
+type DraftOwnerScope = "mine" | "others" | "allDraft" | "deleted";
 
 export function BaseVndPage() {
     const navigate = useNavigate();
     const {t} = useTranslation();
     const {hasPermission} = useAuth();
     const canViewOtherUsersDrafts = hasPermission(PermissionCode.ViewOtherUsersDrafts);
+    // Право удалять ВНД на любом статусе: открывает подвкладку «Удалённые» в «Черновиках» (восстановление)
+    const canDeleteAnyVnd = hasPermission(PermissionCode.DeleteAnyVnd);
     // Право создавать ВНД - от него зависит видимость вкладки "Черновики", состав таба "Все"
     // и активность кнопки "Создать ВНД" (см. useCanCreateVnd)
     const canCreateVnd = useCanCreateVnd();
@@ -60,7 +63,7 @@ export function BaseVndPage() {
 
     const filters = useVndFilters(
         scope,
-        scope === "draft" && draftOwnerScope !== "allDraft" ? draftOwnerScope : undefined,
+        scope === "draft" && (draftOwnerScope === "mine" || draftOwnerScope === "others") ? draftOwnerScope : undefined,
         canCreateVnd
     );
 
@@ -84,6 +87,7 @@ export function BaseVndPage() {
         useVndDictionaryResolvers();
 
     const isArchScope = scope === "arch";
+    const showDeleted = scope === "draft" && draftOwnerScope === "deleted" && canDeleteAnyVnd;
 
     // Набор значений фильтра "Статус последней редакции" — свой для каждой вкладки (см.
     // STATUS_OPTIONS_BY_SCOPE): на "Действующих"/"Ещё не действующих" документ не может быть
@@ -112,7 +116,7 @@ export function BaseVndPage() {
             : []),
         // Архивированные
         {id: "arch" as VndScope, label: t("registry.tabs.arch"), n: counts.arch},
-        ...(canCreateVnd
+        ...(canCreateVnd || canDeleteAnyVnd
             // Черновики
             ? [{id: "draft" as VndScope, label: t("registry.tabs.draft"), n: counts.draft, icon: <FileEdit size={14}/>}]
             : []),
@@ -126,15 +130,23 @@ export function BaseVndPage() {
 
             <Tabs<VndScope> tabs={scopeTabs} value={scope} onChange={setScope}/>
 
-            {scope === "draft" && canViewOtherUsersDrafts && (
+            {scope === "draft" && (canViewOtherUsersDrafts || canDeleteAnyVnd) && (
                 <div className="flex items-center gap-2 mb-3.5">
                     {([
-                        // Все черновики
-                        {key: "allDraft" as const, label: t("registry.draftOwnerScope.allDraft")},
-                        // Мои черновики
-                        {key: "mine" as const, label: t("registry.draftOwnerScope.mine")},
-                        // Черновики других пользователей
-                        {key: "others" as const, label: t("registry.draftOwnerScope.others")},
+                        ...(canViewOtherUsersDrafts ? [
+                            // Все черновики
+                            {key: "allDraft" as const, label: t("registry.draftOwnerScope.allDraft")},
+                            // Мои черновики
+                            {key: "mine" as const, label: t("registry.draftOwnerScope.mine")},
+                            // Черновики других пользователей
+                            {key: "others" as const, label: t("registry.draftOwnerScope.others")},
+                        ] : [
+                            {key: "allDraft" as const, label: t("registry.tabs.draft")},
+                        ]),
+                        ...(canDeleteAnyVnd ? [
+                            // Удалённые (мягко) — восстановление из системы
+                            {key: "deleted" as const, label: t("registry.draftOwnerScope.deleted")},
+                        ] : []),
                     ]).map((opt) => {
                         const active = draftOwnerScope === opt.key;
                         return (
@@ -154,6 +166,9 @@ export function BaseVndPage() {
                 </div>
             )}
 
+            {showDeleted ? (
+                <DeletedVndList/>
+            ) : (<>
             <VndFilters
                 canViewExtended={canViewVndRegistryExtended}
                 organFilters={filters.organFilters}
@@ -288,6 +303,7 @@ export function BaseVndPage() {
                     onResetFilters={filters.resetFilters}
                 />
             )}
+            </>)}
         </div>
     );
 }

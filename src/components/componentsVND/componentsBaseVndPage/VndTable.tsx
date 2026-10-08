@@ -12,7 +12,6 @@ import {EmptyState} from "@/components/componentsGeneral/EmptyState.tsx";
 import {Tooltip} from "@/components/componentsGeneral/Tooltip.tsx";
 
 import {Clock, Lock, Star} from "lucide-react";
-import {toast} from "@/service/toastService.ts";
 
 interface VndTableProps {
     columns: ColDef[];
@@ -102,11 +101,8 @@ export function VndTable({
                                 if (selection && selection.toString().length > 0) {
                                     e.preventDefault();
                                 }
-                                // Секретный документ без допуска: в реестре виден (с замочком), но не открывается
-                                if (r.secretAccessDenied) {
-                                    e.preventDefault();
-                                    toast.error(t("vndTable.secretDeniedTitle"), t("vndTable.secretDeniedDescription"));
-                                }
+                                // Секретный документ без допуска открывается как обычно: страница сама
+                                // покажет блок «нет доступа» (сервер не отдаёт содержимое).
                             }}
                             className="group no-underline w-full grid gap-3 items-start px-5 py-3.5 border-b border-[#f3f6f9] bg-transparent text-left cursor-pointer hover:bg-[#f8fafc] select-text"
                             style={{gridTemplateColumns: gridTemplate}}

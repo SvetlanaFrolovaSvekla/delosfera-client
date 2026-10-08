@@ -1670,6 +1670,12 @@
     }
   },
   "openVndPage": {
+    "accessDenied": {
+      "title": "Access to this document is restricted",
+      "description": "You do not have access to this document.",
+      "hint": "The document is marked as secret: its content is available only to the administrator, the chief editor and users who have been granted access. If you need it for your work, contact the VND chief editor.",
+      "back": "Back to the VND registry"
+    },
     "vndCodeLabel": "IRD code:",
     "lastRedactionStatusLabel": "Latest redaction status:",
     "documentStatusLabel": "Document status:",

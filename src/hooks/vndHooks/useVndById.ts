@@ -1,11 +1,13 @@
 import {useCallback, useEffect, useState} from "react";
-import {vndService} from "@/service/vndService/vndService.ts";
+import {vndService, VndAccessDeniedError} from "@/service/vndService/vndService.ts";
 import type {VndResponse} from "@/service/vndService/vndServiceType.ts";
 
 interface UseVndByIdResult {
     data: VndResponse | null;
     loading: boolean;
     error: string | null;
+    /** Секретный документ без допуска: показываем страницу «нет доступа», а не ошибку загрузки. */
+    accessDenied: boolean;
     refetch: () => void;
 }
 
@@ -13,6 +15,7 @@ export function useVndById(id: number | undefined): UseVndByIdResult {
     const [data, setData] = useState<VndResponse | null>(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
+    const [accessDenied, setAccessDenied] = useState(false);
 
     const fetchVnd = useCallback(() => {
         if (id === undefined || Number.isNaN(id)) {
@@ -25,13 +28,19 @@ export function useVndById(id: number | undefined): UseVndByIdResult {
         let cancelled = false;
         setLoading(true);
         setError(null);
+        setAccessDenied(false);
 
         vndService.getById(id)
             .then((result) => {
                 if (!cancelled) setData(result);
             })
             .catch((e: unknown) => {
-                if (!cancelled) setError(e instanceof Error ? e.message : "Не удалось загрузить документ");
+                if (cancelled) return;
+                if (e instanceof VndAccessDeniedError) {
+                    setAccessDenied(true);
+                    return;
+                }
+                setError(e instanceof Error ? e.message : "Не удалось загрузить документ");
             })
             .finally(() => {
                 if (!cancelled) setLoading(false);
@@ -47,5 +56,5 @@ export function useVndById(id: number | undefined): UseVndByIdResult {
         return fetchVnd();
     }, [fetchVnd]);
 
-    return {data, loading, error, refetch: fetchVnd};
+    return {data, loading, error, accessDenied, refetch: fetchVnd};
 }

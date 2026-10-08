@@ -36,9 +36,20 @@ function authHeaders(): HeadersInit {
     return token ? {Authorization: `Bearer ${token}`} : {};
 }
 
+/** Документ секретный, а у пользователя нет допуска (сервер отвечает 403 с кодом vnd_secret). */
+export class VndAccessDeniedError extends Error {
+    constructor(message: string) {
+        super(message);
+        this.name = "VndAccessDeniedError";
+    }
+}
+
 async function handleResponse<T>(response: Response): Promise<T> {
     if (!response.ok) {
         const errorBody = await response.json().catch(() => null);
+        if (errorBody?.code === "vnd_secret") {
+            throw new VndAccessDeniedError(errorBody?.message ?? "Документ имеет ограниченный доступ");
+        }
         const message = errorBody?.message ?? `Ошибка запроса: ${response.status}`;
         throw new Error(message);
     }

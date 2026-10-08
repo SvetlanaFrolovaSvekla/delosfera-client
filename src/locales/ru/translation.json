@@ -2001,7 +2001,8 @@
         "approved": "Согласовано",
         "approved_with_comment": "Согласовано с замечаниями",
         "rejected": "Отклонено",
-        "auto_approved_timeout": "Согласовано автоматически (истёк срок)"
+        "auto_approved_timeout": "Согласовано автоматически (истёк срок)",
+        "removed_by_editor": "Удалён редактором"
       },
       "auditLogTitle": "Журнал аудита",
       "auditLogSubtitle": "История всех действий с данным ВНД",
@@ -2066,7 +2067,8 @@
           "approved": "Согласовано",
           "approved_with_comment": "С замечаниями",
           "rejected": "Отклонено",
-          "auto_approved_timeout": "Автосогласовано"
+          "auto_approved_timeout": "Автосогласовано",
+          "removed_by_editor": "Удалено"
         },
         "versionLabel": "Версия {{code}}",
         "openVersionButton": "Открыть версию",

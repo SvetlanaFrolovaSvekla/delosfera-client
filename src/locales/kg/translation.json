@@ -1990,7 +1990,8 @@
         "approved": "Макулдашылды",
         "approved_with_comment": "Эскертүүлөр менен макулдашылды",
         "rejected": "Четке кагылды",
-        "auto_approved_timeout": "Автоматтык түрдө макулдашылды (мөөнөтү бүттү)"
+        "auto_approved_timeout": "Автоматтык түрдө макулдашылды (мөөнөтү бүттү)",
+        "removed_by_editor": "Редактор тарабынан алынып салынды"
       },
       "auditLogTitle": "Аудит журналы",
       "auditLogSubtitle": "Бул ВНД боюнча бардык аракеттердин тарыхы",
@@ -2055,7 +2056,8 @@
           "approved": "Макулдашылды",
           "approved_with_comment": "Эскертүүлөр менен",
           "rejected": "Четке кагылды",
-          "auto_approved_timeout": "Автоматтык макулдашылды"
+          "auto_approved_timeout": "Автоматтык макулдашылды",
+          "removed_by_editor": "Алынып салынды"
         },
         "versionLabel": "{{code}} версиясы",
         "openVersionButton": "Версияны ачуу",

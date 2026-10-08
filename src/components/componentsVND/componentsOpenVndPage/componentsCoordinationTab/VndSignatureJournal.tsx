@@ -40,7 +40,7 @@ export function VndSignatureJournal({vndId, refreshKey}: { vndId: number; refres
     const [items, setItems] = useState<VndResolutionSignatureResponse[]>([]);
     const [loaded, setLoaded] = useState(false);
     const [loadError, setLoadError] = useState(false);
-    const [checking, setChecking] = useState<number | null>(null);
+    const [checking, setChecking] = useState<ReadonlySet<number>>(new Set());
     const [results, setResults] = useState<Record<number, ResolutionSignatureVerifyResponse | string>>({});
 
     useEffect(() => {
@@ -52,7 +52,7 @@ export function VndSignatureJournal({vndId, refreshKey}: { vndId: number; refres
     }, [vndId, refreshKey]);
 
     const verify = useCallback(async (id: number) => {
-        setChecking(id);
+        setChecking((prev) => new Set(prev).add(id));
         try {
             const result = await coordinationService.verifySignature(vndId, id);
             setResults((prev) => ({...prev, [id]: result}));
@@ -65,7 +65,11 @@ export function VndSignatureJournal({vndId, refreshKey}: { vndId: number; refres
                     : message?.data?.message ?? t("ecp.journal.verifyFailed"),
             }));
         } finally {
-            setChecking(null);
+            setChecking((prev) => {
+                const next = new Set(prev);
+                next.delete(id);
+                return next;
+            });
         }
     }, [vndId, t]);
 
@@ -108,9 +112,9 @@ export function VndSignatureJournal({vndId, refreshKey}: { vndId: number; refres
                                 </div>
                                 <div className="flex shrink-0 flex-col items-stretch gap-1.5">
                                     <button type="button" onClick={() => void verify(item.id)}
-                                            disabled={checking !== null}
+                                            disabled={checking.has(item.id)}
                                             className="cursor-pointer rounded-[8px] border border-[#e5e9f0] bg-white px-3 py-1 text-[12px] font-semibold text-[#2f68f5] disabled:opacity-50">
-                                        {checking === item.id ? t("ecp.journal.verifying") : t("ecp.journal.verify")}
+                                        {checking.has(item.id) ? t("ecp.journal.verifying") : t("ecp.journal.verify")}
                                     </button>
                                 </div>
                             </div>

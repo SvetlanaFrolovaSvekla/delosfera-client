@@ -1996,7 +1996,8 @@
         "approved": "Approved",
         "approved_with_comment": "Approved with comments",
         "rejected": "Rejected",
-        "auto_approved_timeout": "Auto-approved (timed out)"
+        "auto_approved_timeout": "Auto-approved (timed out)",
+        "removed_by_editor": "Removed by editor"
       },
       "auditLogTitle": "Audit log",
       "auditLogSubtitle": "History of all actions on this document",
@@ -2061,7 +2062,8 @@
           "approved": "Approved",
           "approved_with_comment": "With comments",
           "rejected": "Rejected",
-          "auto_approved_timeout": "Auto-approved"
+          "auto_approved_timeout": "Auto-approved",
+          "removed_by_editor": "Removed"
         },
         "versionLabel": "Version {{code}}",
         "openVersionButton": "Open version",

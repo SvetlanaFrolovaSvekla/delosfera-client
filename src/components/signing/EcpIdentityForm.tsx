@@ -129,6 +129,7 @@ export function EcpIdentityForm({ident, submitLabel, submitBusyLabel, onSubmit, 
                                     );
                                 })}
                             </div>
+                            <p className="mt-[6px] text-[11.5px] leading-snug text-[#8b97ab]">{t("ecp.identity.methodEmailHint")}</p>
                         </div>
                     )}
                 </>

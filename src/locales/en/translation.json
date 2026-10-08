@@ -3849,6 +3849,7 @@
       "method": "Code delivery method",
       "methodSms": "SMS",
       "methodEmail": "Email",
+      "methodEmailHint": "Email: the PIN code is sent to the email address linked to Tunduk.",
       "codeSent": "Code sent ({{method}}). Enter it below.",
       "code": "Code",
       "wait": "Please wait…",

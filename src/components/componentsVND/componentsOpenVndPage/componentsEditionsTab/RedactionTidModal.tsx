@@ -81,7 +81,6 @@ export function RedactionTidModal({vnd, redaction, downloadingId, onDownload, on
                             activeLanguage="tid"
                             downloadingId={downloadingId}
                             onDownload={onDownload}
-                            scrollX
                         />
                     )}
                 </div>

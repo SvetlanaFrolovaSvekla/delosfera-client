@@ -24,6 +24,8 @@ interface NewRedactionRecipientsPickerModalProps {
     initial: VndNewRedactionMailingRecipient[];
     onClose: () => void;
     onConfirm: (recipients: VndNewRedactionMailingRecipient[]) => void;
+    /** Заголовок окна (по умолчанию — про получателей рассылки о новых редакциях). */
+    title?: string;
 }
 
 const toRecipient = (u: UserResponse): VndNewRedactionMailingRecipient => ({
@@ -38,7 +40,7 @@ const toRecipient = (u: UserResponse): VndNewRedactionMailingRecipient => ({
 /** Сколько записей тянуть за раз при «Выбрать всех найденных» (MaxPageSize на сервере). */
 const BULK_PAGE_SIZE = 200;
 
-export function NewRedactionRecipientsPickerModal({initial, onClose, onConfirm}: NewRedactionRecipientsPickerModalProps) {
+export function NewRedactionRecipientsPickerModal({initial, onClose, onConfirm, title}: NewRedactionRecipientsPickerModalProps) {
     const {t} = useTranslation();
 
     const SOURCE_OPTIONS: (MultiSelectOption & { key: UserSource })[] = [
@@ -127,7 +129,7 @@ export function NewRedactionRecipientsPickerModal({initial, onClose, onConfirm}:
         <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/30 p-4">
             <div className="flex h-[86vh] w-full max-w-[720px] flex-col rounded-[16px] bg-white shadow-2xl">
                 <div className="flex flex-none items-center justify-between border-b border-[#eef0f5] px-6 py-4">
-                    <h2 className="text-[15px] font-bold text-[#1c2740]">Получатели рассылки о новых редакциях</h2>
+                    <h2 className="text-[15px] font-bold text-[#1c2740]">{title ?? "Получатели рассылки о новых редакциях"}</h2>
                     <button onClick={onClose} className="cursor-pointer text-[#8b97ab] hover:text-[#3a4560]">
                         <X size={20}/>
                     </button>

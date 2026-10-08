@@ -15,6 +15,7 @@ import {
 import {Loader} from "@/components/componentsGeneral/Loader";
 import {EmptyState} from "@/components/componentsGeneral/EmptyState.tsx";
 import {Building2, ChevronRight, Users2} from "lucide-react";
+import {HighlightText} from "@/utils/highlightText.tsx";
 
 export function OrgStructureTree() {
     const [tree, setTree] = useState<OrgTree | null>(null);
@@ -96,6 +97,7 @@ export function OrgStructureTree() {
                             collapsed={collapsed}
                             toggle={toggle}
                             forceOpen={searching}
+                            search={search}
                         />
                     ))}
                 </div>
@@ -104,12 +106,14 @@ export function OrgStructureTree() {
     );
 }
 
-function Node({node, depth, collapsed, toggle, forceOpen}: {
+function Node({node, depth, collapsed, toggle, forceOpen, search}: {
     node: OrgTreeNode;
     depth: number;
     collapsed: Set<number>;
     toggle: (id: number) => void;
     forceOpen: boolean;
+    /** Строка поиска: совпадения в названии, начальнике, кураторе, ФИО и должности подсвечиваются. */
+    search: string;
 }) {
     const staff = node.staff ?? [];
 
@@ -162,7 +166,7 @@ function Node({node, depth, collapsed, toggle, forceOpen}: {
 
                 <span className="min-w-0 flex-1">
                     <span className="block truncate text-[13.5px] font-semibold text-[#101a2c]">
-                        {node.title}
+                        <HighlightText text={node.title} query={search}/>
                     </span>
                     <span className="block truncate text-[11.5px] text-[#8593a8]">
                         {node.isPerson ? (
@@ -174,9 +178,9 @@ function Node({node, depth, collapsed, toggle, forceOpen}: {
                             <>
                                 {node.kind && <>{node.kind} · </>}
                                 {node.head
-                                    ? <>нач. {node.head}</>
+                                    ? <>нач. <HighlightText text={node.head} query={search}/></>
                                     : <span className="text-[#a8b3c4]">начальник не назначен</span>}
-                                {node.curator && <> · куратор {node.curator}</>}
+                                {node.curator && <> · куратор <HighlightText text={node.curator} query={search}/></>}
                                 {node.staffCount > 0 && <> · {node.staffCount} чел.</>}
                                 {hasChildren && inside !== node.staffCount && <> · всего {inside}</>}
                             </>
@@ -209,6 +213,7 @@ function Node({node, depth, collapsed, toggle, forceOpen}: {
                     collapsed={collapsed}
                     toggle={toggle}
                     forceOpen={forceOpen}
+                    search={search}
                 />
             ))}
 
@@ -230,10 +235,12 @@ function Node({node, depth, collapsed, toggle, forceOpen}: {
 
                     <span className="min-w-0 flex-1">
                         <span className="block truncate text-[12.5px] text-[#101a2c]">
-                            {человек.fullName}
+                            <HighlightText text={человек.fullName} query={search}/>
                         </span>
                         <span className="block truncate text-[11px] text-[#8593a8]">
-                            {человек.position ?? "должность не указана"}
+                            {человек.position
+                                ? <HighlightText text={человек.position} query={search}/>
+                                : "должность не указана"}
                         </span>
                     </span>
 

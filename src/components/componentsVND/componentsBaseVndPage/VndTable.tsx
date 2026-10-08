@@ -11,7 +11,8 @@ import {type ColDef} from "@/constants/columnsFilters/vndColumns.ts";
 import {EmptyState} from "@/components/componentsGeneral/EmptyState.tsx";
 import {Tooltip} from "@/components/componentsGeneral/Tooltip.tsx";
 
-import {Clock, Star} from "lucide-react";
+import {Clock, Lock, Star} from "lucide-react";
+import {toast} from "@/service/toastService.ts";
 
 interface VndTableProps {
     columns: ColDef[];
@@ -101,6 +102,11 @@ export function VndTable({
                                 if (selection && selection.toString().length > 0) {
                                     e.preventDefault();
                                 }
+                                // Секретный документ без допуска: в реестре виден (с замочком), но не открывается
+                                if (r.secretAccessDenied) {
+                                    e.preventDefault();
+                                    toast.error(t("vndTable.secretDeniedTitle"), t("vndTable.secretDeniedDescription"));
+                                }
                             }}
                             className="group no-underline w-full grid gap-3 items-start px-5 py-3.5 border-b border-[#f3f6f9] bg-transparent text-left cursor-pointer hover:bg-[#f8fafc] select-text"
                             style={{gridTemplateColumns: gridTemplate}}
@@ -110,14 +116,24 @@ export function VndTable({
                                     case "statusIcon":
                                         return (
                                             <div key={c.key} className="min-w-0">
-                                                <Tooltip content={r.isFavorite
-                                                    ? `${t(meta.label)} · ${t("favorites.inFavorites")}`
-                                                    : t(meta.label)}>
+                                                <Tooltip content={[
+                                                    t(meta.label),
+                                                    r.isFavorite ? t("favorites.inFavorites") : null,
+                                                    r.isSecret ? t(r.secretAccessDenied ? "vndTable.secretDenied" : "vndTable.secretAllowed") : null,
+                                                ].filter(Boolean).join(" · ")}>
                                                     <span
                                                         className="relative w-7 h-7 rounded-lg grid place-items-center"
                                                         style={{background: meta.bg, color: meta.color}}
                                                     >
                                                         <StatusIcon className="w-[15px] h-[15px]" strokeWidth={2}/>
+                                                        {/* Замочек секретного ВНД — бейджем в нижнем углу: закрытый (красный) —
+                                                            нет доступа, открытый (индиго) — доступ есть */}
+                                                        {r.isSecret && (
+                                                            <span className="absolute -bottom-[5px] -right-[5px] grid h-[15px] w-[15px] place-items-center rounded-full bg-white shadow-[0_1px_3px_rgba(15,27,45,0.25)]">
+                                                                <Lock className="h-[9px] w-[9px]" strokeWidth={2.6}
+                                                                      color={r.secretAccessDenied ? "#c0392b" : "#4e57d6"}/>
+                                                            </span>
+                                                        )}
                                                         {/* Звёздочка "Избранное" — бейджем в углу значка статуса */}
                                                         {r.isFavorite && (
                                                             <span className="absolute -right-[5px] -top-[5px] grid h-[15px] w-[15px] place-items-center rounded-full bg-white shadow-[0_1px_3px_rgba(15,27,45,0.25)]">
@@ -132,8 +148,12 @@ export function VndTable({
                                     case "code":
                                         return (
                                             <div key={c.key} className="min-w-0">
-                                                <span className="font-mono text-[12px] font-semibold text-[#4e57d6]">
+                                                <span className="inline-flex items-center gap-1 font-mono text-[12px] font-semibold text-[#4e57d6]">
                                                     <HighlightText text={r.code} query={searchQuery}/>
+                                                    {r.isSecret && (
+                                                        <Lock className="h-3 w-3 flex-none" strokeWidth={2.4}
+                                                              color={r.secretAccessDenied ? "#c0392b" : "#8b97ab"}/>
+                                                    )}
                                                 </span>
                                             </div>
                                         );

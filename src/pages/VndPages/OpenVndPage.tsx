@@ -46,7 +46,8 @@ import {ConfirmActionModal} from "@/components/componentsGeneral/modal/ConfirmAc
 import {Tooltip} from "@/components/componentsGeneral/Tooltip.tsx";
 import {VndProposalModal} from "@/components/componentsVND/componentsOpenVndPage/VndProposalModal.tsx";
 import {VndFavoriteButton} from "@/components/componentsVND/componentsOpenVndPage/VndFavoriteButton.tsx";
-import {AlertTriangle, Archive, CheckCircle2, Eye, EyeOff, Lightbulb, RotateCcw, Trash2} from "lucide-react";
+import {AlertTriangle, Archive, CheckCircle2, Eye, EyeOff, Lightbulb, Lock, RotateCcw, Trash2} from "lucide-react";
+import {VndSecrecyModal} from "@/components/componentsVND/componentsOpenVndPage/VndSecrecyModal.tsx";
 import {VndActionsMenu, type VndActionsMenuItem} from "@/components/componentsVND/componentsOpenVndPage/VndActionsMenu.tsx";
 
 // Переход с одного ВНД на другой (ссылка в тексте, "Связанные документы") идёт по тому же
@@ -126,6 +127,8 @@ function OpenVndPageContent() {
     const [consolidateError, setConsolidateError] = useState<string | null>(null);
 
     const [deleteOpen, setDeleteOpen] = useState(false);
+    // Модалка «Настройки секретности» (три точки, право ManageVndSecrecy)
+    const [secrecyOpen, setSecrecyOpen] = useState(false);
     const [deleting, setDeleting] = useState(false);
     const [deleteError, setDeleteError] = useState<string | null>(null);
     const [deletePassword, setDeletePassword] = useState("");
@@ -340,6 +343,14 @@ function OpenVndPageContent() {
     // мягкое удаление) и архивация (любой статус, кроме черновика и архива, право CancelVnd).
     const actionItems: VndActionsMenuItem[] = [];
     if (vnd) {
+        if (hasPermission(PermissionCode.ManageVndSecrecy)) {
+            actionItems.push({
+                key: "secrecy",
+                label: t("openVndPage.secrecySettingsButton"),
+                icon: <Lock className="w-3.5 h-3.5" strokeWidth={2}/>,
+                onClick: () => setSecrecyOpen(true),
+            });
+        }
         if ((vnd.status === "draft" && hasPermission(PermissionCode.DeleteVnd))
             || hasPermission(PermissionCode.DeleteAnyVnd)) {
             actionItems.push({
@@ -396,6 +407,14 @@ function OpenVndPageContent() {
                 <h1 className="min-w-0 text-[13px] font-bold leading-tight text-[#1c2740]">
                     {vnd.name}
                 </h1>
+                {vnd.isSecret && (
+                    <Tooltip content={t("openVndPage.secretBadgeHint")}>
+                        <span className="inline-flex flex-none items-center gap-1 rounded-full bg-[#fdf3e7] px-2.5 py-[3px] text-[11px] font-semibold text-[#9a6408]">
+                            <Lock className="h-3 w-3" strokeWidth={2.2}/>
+                            {t("openVndPage.secretBadge")}
+                        </span>
+                    </Tooltip>
+                )}
             </div>
 
             {/* Табы - состав зависит от статуса, «Реквизиты» есть всегда */}
@@ -574,6 +593,16 @@ function OpenVndPageContent() {
                         setCancelError(null);
                     }}
                     onConfirm={handleCancel}
+                />
+            )}
+
+            {/* Настройки секретности */}
+            {secrecyOpen && (
+                <VndSecrecyModal
+                    vndId={vnd.id}
+                    vndCode={vnd.code}
+                    onClose={() => setSecrecyOpen(false)}
+                    onSaved={() => void refetch()}
                 />
             )}
 

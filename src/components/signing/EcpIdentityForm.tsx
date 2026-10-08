@@ -6,7 +6,6 @@
 import type {ReactNode} from "react";
 import {useTranslation} from "react-i18next";
 import {CharCounter} from "@/components/componentsGeneral/CharCounter.tsx";
-import {SelectDropdown} from "@/components/componentsGeneral/selects/SingleSelects/SelectDropdown.tsx";
 import {
     ORGANIZATION_INN_MAX_LENGTH, PERSON_IDNP_LENGTH, type EcpIdentification,
 } from "@/hooks/useEcpIdentification.ts";
@@ -95,11 +94,42 @@ export function EcpIdentityForm({ident, submitLabel, submitBusyLabel, onSubmit, 
                         onEnter={() => { if (ident.canNext && !busy) void ident.next(); }}
                     />
                     {ident.methodsLoaded && (
-                        <SelectDropdown
-                            label={t("ecp.identity.method")} labelPosition="top" className="w-full" minWidth="0"
-                            options={ident.methods.map((m) => ({value: m, label: ecpMethodLabel(t, m)}))}
-                            value={ident.method} onChange={ident.setMethod}
-                        />
+                        <div className="min-w-0" role="radiogroup" aria-label={t("ecp.identity.method")}>
+                            <span className="block text-[11.5px] text-[#8b97ab] mb-[6px]">{t("ecp.identity.method")}</span>
+                            <div className="flex flex-wrap gap-2.5">
+                                {ident.methods.map((m) => {
+                                    const checked = ident.method === m;
+                                    return (
+                                        <label
+                                            key={m}
+                                            className={`flex h-10 flex-1 min-w-[120px] items-center gap-2.5 rounded-[9px] border px-3 text-[13px] select-none transition-colors ${
+                                                busy ? "cursor-default opacity-60" : "cursor-pointer"} ${
+                                                checked
+                                                    ? "border-[#4e57d6] bg-[#f5f6fd] font-semibold text-[#1c2740]"
+                                                    : "border-[#e5e9f0] bg-white text-[#3a4560] hover:bg-[#f8fafc]"}`}
+                                        >
+                                            <input
+                                                type="radio"
+                                                name="ecp-code-method"
+                                                value={m}
+                                                checked={checked}
+                                                disabled={busy}
+                                                onChange={() => ident.setMethod(m)}
+                                                className="sr-only peer"
+                                            />
+                                            <span
+                                                className={`grid h-[18px] w-[18px] flex-none place-items-center rounded-full border-[1.5px] bg-white peer-focus-visible:ring-2 peer-focus-visible:ring-[#cbddff] ${
+                                                    checked ? "border-[#4e57d6]" : "border-[#cbd3df]"}`}
+                                            >
+                                                <span className={`h-[8px] w-[8px] rounded-full bg-[#4e57d6] transition-opacity ${
+                                                    checked ? "opacity-100" : "opacity-0"}`}/>
+                                            </span>
+                                            {ecpMethodLabel(t, m)}
+                                        </label>
+                                    );
+                                })}
+                            </div>
+                        </div>
                     )}
                 </>
             )}

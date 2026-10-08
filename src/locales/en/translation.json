@@ -914,7 +914,7 @@
       "consolidation": "The document is at the consolidation stage following an update. Once this stage is complete, the displayed revision will become effective (this version of the revision is currently visible only to the document's editors).",
       "outdated": "Warning! You are viewing the text of an outdated document revision. Using this revision's text may lead to errors in decision-making.",
       "outdatedCurrentRevision": "The current revision is R{currentNumber}",
-      "outdatedNoCurrentRevision": "There is no current revision at this time!"
+      "outdatedNoCurrent": "There is no current revision at this time!"
     }
   },
   "calendar": {

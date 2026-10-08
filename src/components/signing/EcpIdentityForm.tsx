@@ -129,7 +129,14 @@ export function EcpIdentityForm({ident, submitLabel, submitBusyLabel, onSubmit, 
                                     );
                                 })}
                             </div>
-                            <p className="mt-[6px] text-[11.5px] leading-snug text-[#8b97ab]">{t("ecp.identity.methodEmailHint")}</p>
+                            <div className="mt-2.5 flex items-start gap-2 rounded-[9px] border border-[#d6dcf7] bg-[#f5f6fd] px-3 py-2.5 text-[12px] leading-snug text-[#3a4560]">
+                                <svg className="mt-px h-4 w-4 flex-none text-[#4e57d6]" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" aria-hidden="true">
+                                    <circle cx="10" cy="10" r="8"/>
+                                    <path d="M10 9v5"/>
+                                    <circle cx="10" cy="6.3" r="0.6" fill="currentColor"/>
+                                </svg>
+                                <span>{t("ecp.identity.methodEmailHint")}</span>
+                            </div>
                         </div>
                     )}
                 </>

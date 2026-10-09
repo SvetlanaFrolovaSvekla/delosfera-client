@@ -84,7 +84,7 @@ export function NotificationRow({
                 className={
                     "group flex cursor-pointer gap-3 border-b border-slate-100 px-5 py-4 transition last:border-b-0 " +
                     (selected
-                        ? "bg-[#eceefc]"
+                        ? "bg-[#f0f2ff]"
                         : !n.isRead ? "bg-[#F6F7FE] hover:bg-[#f3f4fb]" : "hover:bg-slate-50")
                 }
             >

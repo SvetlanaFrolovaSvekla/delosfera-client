@@ -5,9 +5,6 @@ import {
 import {ShieldCheck, User} from "lucide-react";
 import {getWorkDayMinutes} from "@/utils/workCalendar.ts";
 
-// Максимальное число согласующих
-export const MAX_STAGES = 10;
-
 // Максимальное число файлов, которые согласующий может приложить к своей резолюции
 export const MAX_RESOLUTION_ATTACHMENTS = 5;
 

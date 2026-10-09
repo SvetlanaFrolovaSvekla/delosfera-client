@@ -3,7 +3,6 @@ import {useState} from "react";
 import {createPortal} from "react-dom";
 import {useTranslation} from "react-i18next";
 import type {ApprovalProcessResponse} from "@/service/coordinationService/coordinationServiceTypes.ts";
-import {MAX_STAGES} from "@/constants/coordinationParams.ts";
 import {useStageDrafts} from "@/hooks/coordinationHooks/useStageDrafts.ts";
 import {useApprovalNorms} from "@/hooks/coordinationHooks/useApprovalNorms.ts";
 import {addWorkingMinutes, formatBankDateTime, useWorkCalendar} from "@/utils/workCalendar.ts";
@@ -19,7 +18,6 @@ import {
 import {
     RouteHintsPanel, type RouteHint
 } from "@/components/componentsCoordination/CoordinationRouteConstructor/functionalComponents/RouteHintsPanel.tsx";
-import {HelpTooltip} from "@/components/componentsGeneral/knowledgeBaseComponents/HelpTooltip.tsx";
 import {Tooltip} from "@/components/componentsGeneral/Tooltip.tsx";
 import {Loader} from "@/components/componentsGeneral/Loader.tsx";
 
@@ -217,14 +215,8 @@ export function VndStartApprovalModal({
                             {t("vndStartApprovalModal.routeConstructorTitle")}
                         </h3>
                         <span className="flex items-center gap-0.5 text-[11.5px] text-[#8b97ab]">
-                            {/* Добавлено {stages.length} из {MAX_STAGES} согласующих максимум */}
-                            {t("vndStartApprovalModal.stagesAddedCount", {count: stages.length, max: MAX_STAGES})}
-                            <HelpTooltip
-                                // Максимальное количество согласующих ограничено, чтобы процесс не растягивался на слишком долгий срок (фиксированные СП также учитываются).
-                                content={t("vndStartApprovalModal.maxStagesTooltip")}
-                                side="bottom"
-                                className="h-5 w-5"
-                            />
+                            {/* Добавлено согласующих: {stages.length} */}
+                            {t("vndStartApprovalModal.stagesAddedCount", {count: stages.length})}
                         </span>
                     </div>
 
@@ -259,19 +251,17 @@ export function VndStartApprovalModal({
                                     />
                                 ))}
 
-                                {stages.length < MAX_STAGES && (
-                                    <button
-                                        type="button"
-                                        onClick={addCustomStage}
-                                        className="flex h-[110px] w-[210px] flex-none cursor-pointer flex-col items-center justify-center gap-2 rounded-[14px] border border-dashed border-[#d5dae3] bg-white text-[#8b97ab] transition-colors hover:border-[#4e57d6]/50 hover:bg-[#f6f8fb]"
-                                    >
-                                        <Plus size={18}/>
-                                        <span className="text-[12px] font-medium">
-                                            {/* Добавить согласующего */}
-                                            {t("vndStartApprovalModal.addApprover")}
-                                        </span>
-                                    </button>
-                                )}
+                                <button
+                                    type="button"
+                                    onClick={addCustomStage}
+                                    className="flex h-[110px] w-[210px] flex-none cursor-pointer flex-col items-center justify-center gap-2 rounded-[14px] border border-dashed border-[#d5dae3] bg-white text-[#8b97ab] transition-colors hover:border-[#4e57d6]/50 hover:bg-[#f6f8fb]"
+                                >
+                                    <Plus size={18}/>
+                                    <span className="text-[12px] font-medium">
+                                        {/* Добавить согласующего */}
+                                        {t("vndStartApprovalModal.addApprover")}
+                                    </span>
+                                </button>
                             </div>
                         )}
 

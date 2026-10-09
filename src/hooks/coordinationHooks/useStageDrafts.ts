@@ -1,5 +1,5 @@
 import {useEffect, useState} from "react";
-import {MAX_STAGES, CUSTOM_STAGE_LABEL} from "@/constants/coordinationParams.ts";
+import {CUSTOM_STAGE_LABEL} from "@/constants/coordinationParams.ts";
 import type {ApproverOption} from "@/components/componentsCoordination/CoordinationRouteConstructor/functionalComponents/VndSelectApproverModal.tsx";
 
 import {
@@ -88,7 +88,6 @@ export function useStageDrafts() {
 
     const addCustomStage = () => {
         setStages((prev) => {
-            if (prev.length >= MAX_STAGES) return prev;
             return [
                 ...prev,
                 {

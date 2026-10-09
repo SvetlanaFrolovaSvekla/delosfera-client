@@ -1,4 +1,4 @@
-import { useEffect, useState, type SetStateAction} from "react";
+import { useEffect, useRef, useState, type SetStateAction} from "react";
 import { useTranslation } from "react-i18next";
 import {notificationsService} from "@/service/notificationsService/notificationsService.ts";
 import type {Notification, NotificationFilter, NotificationSeverity} from "@/service/notificationsService/notificationsServiceType.ts";
@@ -41,10 +41,20 @@ export function useNotificationRows(
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
 
+    // Запрос из-за смены reloadKey (отметили прочитанным, в избранное, удалили) - "тихий":
+    // список остаётся на экране и обновляется на месте. Раньше тут тоже включался loading, и страница
+    // подменяла весь список лоадером - высота схлопывалась, и прокрутка прыгала вверх.
+    // Смена фильтров, страницы или языка по-прежнему показывает лоадер.
+    const lastReloadKeyRef = useRef(reloadKey);
+
     useEffect(() => {
         let cancelled = false;
-        // eslint-disable-next-line react-hooks/set-state-in-effect
-        setLoading(true);
+        const silent = lastReloadKeyRef.current !== reloadKey;
+        lastReloadKeyRef.current = reloadKey;
+        if (!silent) {
+            // eslint-disable-next-line react-hooks/set-state-in-effect
+            setLoading(true);
+        }
         setError(null);
 
         notificationsService

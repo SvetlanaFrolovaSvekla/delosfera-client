@@ -10,7 +10,7 @@ export const COLORS = {
 // Куда вести клик по событию, когда у типа документа нет страницы конкретной записи
 export const STATIC_LINKS: Record<string, string> = {
     Acknowledgement: "/hr-ack",
-    Letter: "/componentsCorrespondence",
+    Letter: "/correspondence",
     Obligation: "/obligations",
 };
 

@@ -1442,6 +1442,24 @@
     "confirmDelete": "Delete this notification?",
     "removeFromFavorites": "Remove from favorites",
     "addToFavorites": "Add to favorites",
+    "markAsRead": "Mark as read",
+    "bulk": {
+      "selected": "Selected: {{n}}",
+      "markRead": "Mark as read",
+      "addFavorite": "Add to favorites",
+      "removeFavorite": "Remove from favorites",
+      "delete": "Delete",
+      "clear": "Clear selection",
+      "selectAll": "Select all on this page",
+      "selectRow": "Select notification",
+      "deleteConfirmTitle": "Delete the selected notifications?",
+      "deleteConfirmMessage": "{{n}} notification(s) will be deleted. This cannot be undone."
+    },
+    "markAllConfirm": {
+      "title": "Mark all notifications as read?",
+      "message": "All unread notifications will be marked as read.",
+      "confirm": "Mark all as read"
+    },
     "delete": "Delete",
     "attachment": "Attachment",
     "defaultFileName": "file.xlsx",
@@ -1455,7 +1473,7 @@
       "Vnd": "VND",
       "Sz": "Memos",
       "Procurement": "Procurement",
-      "Acknowledgement": "Acknowledgment",
+      "Acknowledgement": "Acknowledgments",
       "Other": "Other",
       "Approval": "Approval",
       "Task": "Task"
@@ -1476,6 +1494,7 @@
       "resetFilters": "Reset filters"
     },
     "row": {
+      "unread": "Unread",
       "hasAttachment": "Has attachment",
       "goTo": "Go",
       "deleteConfirmTitle": "Delete this notification?",
@@ -4316,6 +4335,8 @@
     "dropTitle": "Drag the revision file here",
     "dropSubtitle": "or click to choose · DOC, DOCX, PDF — exactly as downloaded from the system",
     "replaceFile": "click to choose another file",
+    "pickAnotherFile": "Click to choose another file",
+    "pressCheckHint": "Click “Check” to start the verification",
     "how": {
       "step1Title": "Download the file",
       "step1": "Take the revision file from the IRD card or from an email — exactly as it was exported from the system.",

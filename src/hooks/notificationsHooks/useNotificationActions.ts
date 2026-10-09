@@ -65,5 +65,43 @@ export function useNotificationActions({ rows, setRows, categoryTab, onMutated }
         }
     };
 
-    return { markAsRead, markAllAsRead, toggleFavorite, deleteNotification };
+    // Массовые действия над отмеченными строками. Оптимистично правим список, шлём запросы по
+    // одному (пакетных методов на бэке нет) и обновляем страницу один раз в конце - если часть
+    // запросов упала, тихая перезагрузка вернёт реальное состояние.
+    const bulkMarkAsRead = async (ids: number[]) => {
+        const targets = rows.filter((n) => ids.includes(n.id) && !n.isRead).map((n) => n.id);
+        if (targets.length === 0) return;
+        const set = new Set(targets);
+        setRows((prev) => prev.map((n) => (set.has(n.id) ? { ...n, isRead: true } : n)));
+        await Promise.allSettled(targets.map((id) => notificationsService.markAsRead(id)));
+        onMutated();
+    };
+
+    // favorite=true - добавить в избранное тех, кто там ещё не лежит; false - убрать из избранного.
+    const bulkSetFavorite = async (ids: number[], favorite: boolean) => {
+        const targets = rows.filter((n) => ids.includes(n.id) && n.isFavorite !== favorite).map((n) => n.id);
+        if (targets.length === 0) return;
+        const set = new Set(targets);
+        setRows((prev) => prev.map((n) => (set.has(n.id) ? { ...n, isFavorite: favorite } : n)));
+        await Promise.allSettled(targets.map((id) => notificationsService.toggleFavorite(id)));
+        onMutated();
+    };
+
+    const bulkDelete = async (ids: number[]) => {
+        if (ids.length === 0) return;
+        const set = new Set(ids);
+        setRows((prev) => prev.filter((n) => !set.has(n.id)));
+        await Promise.allSettled(ids.map((id) => notificationsService.delete(id)));
+        onMutated();
+    };
+
+    return {
+        markAsRead,
+        markAllAsRead,
+        toggleFavorite,
+        deleteNotification,
+        bulkMarkAsRead,
+        bulkSetFavorite,
+        bulkDelete,
+    };
 }

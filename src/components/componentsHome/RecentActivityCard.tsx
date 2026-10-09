@@ -8,6 +8,7 @@ import {useRecentActivity} from "@/hooks/activityLogHooks/useRecentActivity.ts";
 import {timeAgo} from "@/utils/dateUtils.ts";
 import {Loader} from "@/components/componentsGeneral/Loader.tsx";
 import {EmptyState} from "@/components/componentsGeneral/EmptyState.tsx";
+import {EmptyPanelPattern} from "@/components/componentsGeneral/EmptyPanelPattern.tsx";
 import {Tooltip} from "@/components/componentsGeneral/Tooltip.tsx";
 import {Icon} from "@/assets/icons/Icon";
 import {History, Lock} from "lucide-react";
@@ -67,9 +68,9 @@ export function RecentActivityCard({limit = 15, module}: RecentActivityCardProps
                             onClick={() => setSection(s.id)}
                             className="cursor-pointer rounded-full px-2.5 py-[3px] text-[11px] font-semibold transition-colors"
                             style={{
-                                border: `1px solid ${section === s.id ? "#2f68f5" : "#e5e9f0"}`,
-                                background: section === s.id ? "#eef3ff" : "#fff",
-                                color: section === s.id ? "#2f68f5" : "#55617a",
+                                border: `1px solid ${section === s.id ? "#4e57d6" : "#e5e9f0"}`,
+                                background: section === s.id ? "#eceefc" : "#fff",
+                                color: section === s.id ? "#4e57d6" : "#55617a",
                             }}
                         >
                             {t(s.labelKey)}
@@ -84,19 +85,23 @@ export function RecentActivityCard({limit = 15, module}: RecentActivityCardProps
                     </button>
                 </div>
             </div>
-            <div className="min-h-0 flex-1 overflow-y-auto px-[18px] pb-[14px] pt-1.5">
+            <div className={`relative min-h-0 flex-1 px-[18px] pb-[14px] pt-1.5 ${!isLoading && !error && items.length === 0 ? "overflow-hidden" : "overflow-y-auto"}`}>
                 {isLoading ? (
                     // Загрузка активности…
                     <Loader label={t("home.recentActivity.loading")} fullHeight={false}/>
                 ) : error ? (
                     <div className="py-6 text-center text-[13px] text-[#c0392b]">{error}</div>
                 ) : items.length === 0 ? (
-                    <EmptyState
-                        embedded
-                        icon={History}
-                        title={t("home.recentActivity.empty")}
-                        description={t("home.recentActivity.emptyDescription")}
-                    />
+                    <>
+                        <EmptyState
+                            embedded
+                            icon={History}
+                            title={t("home.recentActivity.empty")}
+                            description={t("home.recentActivity.emptyDescription")}
+                        />
+                        {/* Серый узор внизу пустой панели, чтобы она не выглядела совсем пустой */}
+                        <EmptyPanelPattern className="absolute inset-x-0 bottom-0 h-[430px]"/>
+                    </>
                 ) : (
                     items.map((item) => {
                         const style = ICON_STYLE[item.icon] ?? ICON_STYLE.info;

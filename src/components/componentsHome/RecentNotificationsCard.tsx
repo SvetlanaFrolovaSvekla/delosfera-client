@@ -12,6 +12,7 @@ import {NOTIFICATION_CATEGORY_META, DEFAULT_CATEGORY_META} from "@/constants/not
 
 import {Loader} from "@/components/componentsGeneral/Loader.tsx";
 import {EmptyState} from "@/components/componentsGeneral/EmptyState.tsx";
+import {EmptyPanelPattern} from "@/components/componentsGeneral/EmptyPanelPattern.tsx";
 
 import {Bell, BellOff, ChevronRight} from "lucide-react"
 
@@ -67,9 +68,9 @@ export function RecentNotificationsCard({limit = 15}: RecentNotificationsCardPro
                                 onClick={() => setSection(s.id)}
                                 className="cursor-pointer rounded-full px-2.5 py-[3px] text-[11px] font-semibold transition-colors"
                                 style={{
-                                    border: `1px solid ${section === s.id ? "#2f68f5" : "#e5e9f0"}`,
-                                    background: section === s.id ? "#eef3ff" : "#fff",
-                                    color: section === s.id ? "#2f68f5" : "#55617a",
+                                    border: `1px solid ${section === s.id ? "#4e57d6" : "#e5e9f0"}`,
+                                    background: section === s.id ? "#eceefc" : "#fff",
+                                    color: section === s.id ? "#4e57d6" : "#55617a",
                                 }}
                             >
                                 {t(s.labelKey)}
@@ -85,19 +86,23 @@ export function RecentNotificationsCard({limit = 15}: RecentNotificationsCardPro
                     </button>
                 </div>
             </div>
-            <div className="min-h-0 flex-1 overflow-y-auto px-[18px] pb-[14px] pt-1.5">
+            <div className={`relative min-h-0 flex-1 px-[18px] pb-[14px] pt-1.5 ${!isLoading && !error && items.length === 0 ? "overflow-hidden" : "overflow-y-auto"}`}>
                 {isLoading ? (
                     // Загрузка уведомлений…
                     <Loader label={t("home.recentNotifications.loading")} fullHeight={false}/>
                 ) : error ? (
                     <div className="py-6 text-center text-[13px] text-[#c0392b]">{error}</div>
                 ) : items.length === 0 ? (
-                    <EmptyState
-                        embedded
-                        icon={BellOff}
-                        title={t("home.recentNotifications.empty")}
-                        description={t("home.recentNotifications.emptyDescription")}
-                    />
+                    <>
+                        <EmptyState
+                            embedded
+                            icon={BellOff}
+                            title={t("home.recentNotifications.empty")}
+                            description={t("home.recentNotifications.emptyDescription")}
+                        />
+                        {/* Серый узор внизу пустой панели, чтобы она не выглядела совсем пустой */}
+                        <EmptyPanelPattern className="absolute inset-x-0 bottom-0 h-[430px]"/>
+                    </>
                 ) : (
                     items.map((n) => {
                         const meta = NOTIFICATION_CATEGORY_META[n.category] ?? DEFAULT_CATEGORY_META;

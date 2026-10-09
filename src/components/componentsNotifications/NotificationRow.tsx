@@ -8,8 +8,9 @@ import { toast } from "@/service/toastService.ts";
 import { HighlightText } from "@/utils/highlightText.tsx";
 import { SeverityDot } from "../componentsGeneral/dots/SeverityDot.tsx";
 import { Tooltip } from "../componentsGeneral/Tooltip.tsx";
+import { PlainCheckbox } from "@/components/componentsGeneral/componentsCheckBox/PlainCheckbox.tsx";
 import { ConfirmDeleteModal } from "@/components/componentsGeneral/modal/ConfirmDeleteModal.tsx";
-import { Bell, ChevronRight, Paperclip, Star, Trash2 } from "lucide-react";
+import { Bell, Check, ChevronRight, Paperclip, Star, Trash2 } from "lucide-react";
 
 interface NotificationRowProps {
     notification: Notification;
@@ -18,6 +19,8 @@ interface NotificationRowProps {
     onRead: (id: number) => void;
     onToggleFavorite: (id: number) => void;
     onDelete: (id: number) => Promise<void>;
+    selected?: boolean;
+    onToggleSelect?: (id: number) => void;
 }
 
 // Локаль для форматирования даты/времени — следует за текущим языком интерфейса
@@ -35,6 +38,8 @@ export function NotificationRow({
                                     onRead,
                                     onToggleFavorite,
                                     onDelete,
+                                    selected = false,
+                                    onToggleSelect,
                                 }: NotificationRowProps) {
     const navigate = useNavigate();
     const { t, i18n } = useTranslation();
@@ -77,10 +82,23 @@ export function NotificationRow({
             <div
                 onClick={handleClick}
                 className={
-                    "group flex cursor-pointer gap-3 border-b border-slate-100 px-5 py-4 transition last:border-b-0 hover:bg-slate-50 " +
-                    (!n.isRead ? "bg-[#f7f7fd]" : "")
+                    "group flex cursor-pointer gap-3 border-b border-slate-100 px-5 py-4 transition last:border-b-0 " +
+                    (selected
+                        ? "bg-[#eceefc]"
+                        : !n.isRead ? "bg-[#F6F7FE] hover:bg-[#f3f4fb]" : "hover:bg-slate-50")
                 }
             >
+                {/* Чекбокс выбора для массовых действий - клик не открывает уведомление */}
+                {onToggleSelect && (
+                    <div className="mt-[7px] flex-none" onClick={(e) => e.stopPropagation()}>
+                        <PlainCheckbox
+                            checked={selected}
+                            onChange={() => onToggleSelect(n.id)}
+                            ariaLabel={t("notifications.bulk.selectRow", { defaultValue: "Выбрать уведомление" })}
+                        />
+                    </div>
+                )}
+
                 <div className="mt-2.5 flex flex-none flex-col items-center gap-1">
                     <SeverityDot severity={n.severity} />
                     {!n.isRead && <span className="h-1 w-1 rounded-full bg-[#4e57d6]" />}
@@ -111,6 +129,12 @@ export function NotificationRow({
                                 {categoryLabel}
                             </span>
                         )}
+                        {/* Метка "Непрочитано" - только у непрочитанных уведомлений */}
+                        {!n.isRead && (
+                            <span className="flex-none rounded-full bg-[#e8eafc] px-2 py-[1px] text-[10.5px] font-semibold text-[#4e57d6]">
+                                {t("notifications.row.unread", { defaultValue: "Непрочитано" })}
+                            </span>
+                        )}
                         {n.attachmentFileId && (
                             <Tooltip content={n.attachmentFileName ?? t("notifications.row.hasAttachment")} side="top">
                                 <Paperclip className="h-3.5 w-3.5 flex-none text-slate-400" />
@@ -138,6 +162,21 @@ export function NotificationRow({
                 </div>
 
                 <div className="flex flex-none items-start gap-1">
+                    {/* Галочка: отметить прочитанным, не открывая уведомление (только у непрочитанных) */}
+                    {!n.isRead && (
+                        <Tooltip content={t("notifications.markAsRead", { defaultValue: "Отметить прочитанным" })} side="top">
+                            <button
+                                onClick={(e) => {
+                                    e.stopPropagation();
+                                    onRead(n.id);
+                                }}
+                                className="cursor-pointer rounded-md p-1.5 text-slate-300 transition hover:bg-[#e8eafc] hover:text-[#4e57d6]"
+                                aria-label={t("notifications.markAsRead", { defaultValue: "Отметить прочитанным" })}
+                            >
+                                <Check className="h-4 w-4" />
+                            </button>
+                        </Tooltip>
+                    )}
                     <Tooltip
                         content={n.isFavorite ? t("notifications.removeFromFavorites") : t("notifications.addToFavorites")}
                         side="top"

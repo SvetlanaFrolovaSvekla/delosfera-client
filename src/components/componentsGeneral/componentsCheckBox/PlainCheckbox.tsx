@@ -10,6 +10,8 @@ interface PlainCheckboxProps {
     className?: string;
     /** "accent" (по умолчанию) - прежний индиго; "brand" - фирменный синий #2f68f5, как у CheckBoxOne. */
     tone?: "accent" | "brand";
+    /** Подпись для скринридера, когда у чекбокса нет видимого текста (чекбоксы в строках таблиц). */
+    ariaLabel?: string;
 }
 
 const TONE_COLOR = {
@@ -17,11 +19,11 @@ const TONE_COLOR = {
     brand: "#2f68f5",
 } as const;
 
-export function PlainCheckbox({checked, onChange, children, disabled, className = "", tone = "accent"}: PlainCheckboxProps) {
+export function PlainCheckbox({checked, onChange, children, disabled, className = "", tone = "accent", ariaLabel}: PlainCheckboxProps) {
     const color = TONE_COLOR[tone];
     return (
         <label
-            className={`inline-flex items-center gap-2 cursor-pointer select-none text-[12.5px] text-[#3a4560] ${
+            className={`relative  inline-flex items-center gap-2 cursor-pointer select-none text-[12.5px] text-[#3a4560] ${
                 disabled ? "opacity-60 cursor-default" : ""
             } ${className}`}
         >
@@ -29,6 +31,7 @@ export function PlainCheckbox({checked, onChange, children, disabled, className 
                 type="checkbox"
                 checked={checked}
                 disabled={disabled}
+                aria-label={ariaLabel}
                 onChange={(e) => onChange(e.target.checked)}
                 className="sr-only peer"
             />

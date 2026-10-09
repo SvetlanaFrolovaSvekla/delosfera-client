@@ -2,19 +2,21 @@ import {useRef, useState, type DragEvent} from "react";
 import {useTranslation} from "react-i18next";
 import {formatSize} from "@/utils/vndProcess/authenticityUtils.ts";
 import {Clue} from "@/components/componentsGeneral/knowledgeBaseComponents/Clue.tsx";
-import {AlertTriangle, FileSearch, FileText, Search, Upload} from "lucide-react";
+import {AlertTriangle, FileSearch, FileText, RefreshCw, Search, Upload} from "lucide-react";
 import {BTN_PRIMARY, CARD, CARD_TITLE} from "./styles/authenticityStyles.ts";
 
 interface Props {
     file: File | null;
     checking: boolean;
     error: string | null;
+    /** Файл уже проверен (есть результат) - иначе подсказка "нажмите Проверить". */
+    checked?: boolean;
     onPick: (file: File | null | undefined) => void;
     onCheck: () => void;
 }
 
 /** Карточка загрузки файла: дропзона, подсказка, кнопка «Проверить», ошибка. */
-export function UploadCard({file, checking, error, onPick, onCheck}: Props) {
+export function UploadCard({file, checking, error, checked = false, onPick, onCheck}: Props) {
     const {t} = useTranslation();
     const inputRef = useRef<HTMLInputElement>(null);
     const [dragOver, setDragOver] = useState(false);
@@ -45,7 +47,7 @@ export function UploadCard({file, checking, error, onPick, onCheck}: Props) {
                 onDragLeave={() => setDragOver(false)}
                 onDrop={onDrop}
                 onClick={() => inputRef.current?.click()}
-                className={`flex cursor-pointer flex-col items-center rounded-[14px] border-2 border-dashed px-4 py-8 text-center transition-colors ${
+                className={`flex min-h-[420px] cursor-pointer flex-col items-center justify-center rounded-[14px] border-2 border-dashed px-4 py-12 text-center transition-colors ${
                     dragOver ? "border-[#4e57d6] bg-[#f4f5ff]" : "border-[#dfe4ec] bg-[#fafbfd] hover:border-[#c5cbe0] hover:bg-[#f6f8fb]"
                 }`}
             >
@@ -55,9 +57,20 @@ export function UploadCard({file, checking, error, onPick, onCheck}: Props) {
                             <FileText className="h-6 w-6" strokeWidth={1.8}/>
                         </span>
                         <div className="mt-3 max-w-full truncate text-[14px] font-semibold text-[#1c2740]">{file.name}</div>
-                        <div className="mt-0.5 text-[12px] text-[#8b97ab]">
-                            {formatSize(file.size)} · {t("vndAuthenticity.replaceFile")}
-                        </div>
+                        <div className="mt-0.5 text-[12px] text-[#8b97ab]">{formatSize(file.size)}</div>
+                        {checked ? (
+                            // Проверка уже выполнена - можно выбрать другой файл.
+                            <span
+                                className="mt-3.5 inline-flex items-center gap-1.5 rounded-full border border-[#d9dcf6] bg-white px-3 py-[5px] text-[12px] font-semibold text-[#4e57d6] shadow-[0_1px_2px_rgba(78,87,214,.08)] transition-colors hover:bg-[#f4f5ff]">
+                                <RefreshCw className="h-3.5 w-3.5" strokeWidth={2.2}/>
+                                {t("vndAuthenticity.pickAnotherFile", {defaultValue: "Нажмите, чтобы выбрать другой файл"})}
+                            </span>
+                        ) : (
+                            // Файл загружен, но ещё не проверен.
+                            <span className="mt-3.5 text-[12.5px] font-medium text-[#4e57d6]">
+                                {t("vndAuthenticity.pressCheckHint", {defaultValue: "Нажмите «Проверить», чтобы начать проверку"})}
+                            </span>
+                        )}
                     </>
                 ) : (
                     <>

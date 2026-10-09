@@ -7,6 +7,7 @@ import type {VndTaskResponse} from "@/service/tasksVndService/tasksServiceTypes.
 import type {InboxTask} from "@/service/workflowService/taskInboxService.ts";
 import {Loader} from "@/components/componentsGeneral/Loader.tsx";
 import {EmptyState} from "@/components/componentsGeneral/EmptyState.tsx";
+import {EmptyPanelPattern} from "@/components/componentsGeneral/EmptyPanelPattern.tsx";
 import {VndTaskCard} from "@/components/componentsTasks/VndTaskCard.tsx";
 import {SzTaskCard} from "@/components/componentsTasks/SzTaskCard.tsx";
 import {HOME_TOP_ROW_HEIGHT} from "@/constants/homeConst.ts";
@@ -102,7 +103,7 @@ export function MyTasksCard({tasks, szTasks = [], prcTasks = [], ackTasks = [], 
                     {/* Кружок с числом задач - значение меняется вместе с активным табом ниже
                         (см. sectionCount): "Все" - сумма по всем контурам, иначе - только свой. */}
                     {sectionCount !== null && (
-                        <span className="grid h-[20px] min-w-[20px] place-items-center rounded-full bg-[#eef3ff] px-1.5 text-[11px] font-semibold text-[#2f68f5]">
+                        <span className="grid h-[20px] min-w-[20px] place-items-center rounded-full bg-[#eceefc] px-1.5 text-[11px] font-semibold text-[#4e57d6]">
                             {sectionCount}
                         </span>
                     )}
@@ -115,9 +116,9 @@ export function MyTasksCard({tasks, szTasks = [], prcTasks = [], ackTasks = [], 
                                 onClick={() => setSection(s.id)}
                                 className="cursor-pointer rounded-full px-2.5 py-[3px] text-[11px] font-semibold transition-colors"
                                 style={{
-                                    border: `1px solid ${section === s.id ? "#2f68f5" : "#e5e9f0"}`,
-                                    background: section === s.id ? "#eef3ff" : "#fff",
-                                    color: section === s.id ? "#2f68f5" : "#55617a",
+                                    border: `1px solid ${section === s.id ? "#4e57d6" : "#e5e9f0"}`,
+                                    background: section === s.id ? "#eceefc" : "#fff",
+                                    color: section === s.id ? "#4e57d6" : "#55617a",
                                 }}
                             >
                                 {t(s.labelKey)}
@@ -136,20 +137,25 @@ export function MyTasksCard({tasks, szTasks = [], prcTasks = [], ackTasks = [], 
             {/* Список сам занимает оставшееся место в карточке фиксированной высоты
                 (HOME_TOP_ROW_HEIGHT) и скроллится, если не помещается — см. комментарий у
                 style={{height}} карточки выше. */}
-            <div className="min-h-0 flex-1 overflow-y-auto">
+            {/* Пустое состояние / загрузка - без скролла (overflow-hidden), скролл только у реального списка. */}
+            <div className={`relative min-h-0 flex-1 ${isEmpty || isLoading ? "flex flex-col justify-center overflow-hidden" : "overflow-y-auto"}`}>
                 {isLoading ? (
                     // Загрузка задач…
                     <Loader label={t("tasks.myTasks.loading")} fullHeight={false}/>
                 ) : isEmpty ? (
-                    <EmptyState
-                        embedded
-                        icon={ListChecks}
-                        title={t("tasks.myTasks.empty")}
-                        description={t("tasks.myTasks.emptyDescription")}
-                    />
+                    <>
+                        <EmptyState
+                            embedded
+                            icon={ListChecks}
+                            title={t("tasks.myTasks.empty")}
+                            description={t("tasks.myTasks.emptyDescription")}
+                        />
+                        {/* Серый узор внизу пустой панели (карточка низкая - узор тоже ниже, чем в нижних панелях) */}
+                        <EmptyPanelPattern className="absolute inset-x-0 bottom-0 h-[45px]"/>
+                    </>
                 ) : (
                     <>
-                        {/* square - без скруглённых углов: строки идут впритык друг к другу без
+                        {/* Square - без скруглённых углов: строки идут впритык друг к другу без
                             отступа, скруглённые углы каждой смотрелись неаккуратно на стыках.
                             noTopBorder - явно только у самой первой строки списка (по индексу,
                             а не через CSS :first-child - тут первой может оказаться карточка

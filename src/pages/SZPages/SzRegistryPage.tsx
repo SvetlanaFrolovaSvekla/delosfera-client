@@ -21,6 +21,7 @@ import {
 import {szPaperService, type SzOriginal} from "@/service/szService/szPaperService.ts";
 import {SelectDropdown} from "@/components/componentsGeneral/selects/SingleSelects/SelectDropdown.tsx";
 import {CheckBoxOne} from "@/components/componentsGeneral/componentsCheckBox/CheckBoxOne.tsx";
+import {PlainCheckbox} from "@/components/componentsGeneral/componentsCheckBox/PlainCheckbox.tsx";
 import {SearchBar} from "@/components/componentsGeneral/SearchBar.tsx";
 import {Icon} from "@/assets/icons/Icon.tsx";
 
@@ -503,8 +504,8 @@ export function SzRegistryPage() {
                             <thead>
                             <tr className="bg-[#fafbfd] text-[11px] font-bold uppercase tracking-[.04em] text-[#a3adbd]">
                                 <th className="px-3 py-2.5 text-left w-[40px]">
-                                    <input type="checkbox" checked={allOnPageSelected} onChange={toggleAll}
-                                           aria-label={t("szRegistry.selectAll")}/>
+                                    <PlainCheckbox tone="brand" checked={allOnPageSelected} onChange={toggleAll}
+                                                   ariaLabel={t("szRegistry.selectAll")}/>
                                 </th>
                                 <th className="px-4 py-2.5 text-left w-[140px]">{t("szRegistry.cols.number")}</th>
                                 <th className="px-4 py-2.5 text-left w-[130px]">{t("szRegistry.cols.registeredOn")}</th>
@@ -531,11 +532,11 @@ export function SzRegistryPage() {
                                 return (
                                     <tr key={i.id} className="border-t border-[#eef2f7] hover:bg-[#fafbfd]">
                                         <td className="px-3 py-2.5">
-                                            <input
-                                                type="checkbox"
+                                            <PlainCheckbox
+                                                tone="brand"
                                                 checked={selected.has(i.id)}
                                                 onChange={() => toggleRow(i.id)}
-                                                aria-label={t("szRegistry.selectRow", {name: i.regNumber ?? i.title})}
+                                                ariaLabel={t("szRegistry.selectRow", {name: i.regNumber ?? i.title})}
                                             />
                                         </td>
                                         <td className="px-4 py-2.5">

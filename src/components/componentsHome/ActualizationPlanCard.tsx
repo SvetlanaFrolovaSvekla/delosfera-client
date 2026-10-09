@@ -5,6 +5,12 @@ import type {VndActualizationSummaryResponse} from "@/service/vndService/vndServ
 import {HOME_TOP_ROW_HEIGHT} from "@/constants/homeConst.ts";
 import {ACTUALIZATION_BUCKET_ORDER, useActualizationBucketMeta} from "@/hooks/actualizationHooks/useActualizationBucketMeta.ts";
 
+// Порядок блика (как у KPI-карточек, см. HomeKpiSection.tsx): В норме -> Просрочено ->
+// Критичный срок -> Приближается срок. Слоты по SHINE_SLOT_SECONDS внутри общего цикла 18с
+// (animation kpiShine в index.css); нечётные слоты, чтобы блики не шли вместе в одном ряду.
+const SHINE_SLOT_SECONDS = 2;
+const PLAN_SHINE_SLOTS: Record<string, number> = {normal: 1, overdue: 3, critical: 5, approaching: 7};
+
 interface ActualizationPlanCardProps {
     summary: VndActualizationSummaryResponse | null | undefined;
     isLoading: boolean;
@@ -47,9 +53,14 @@ export function ActualizationPlanCard({summary, isLoading}: ActualizationPlanCar
                         return (
                             <div
                                 key={key}
-                                className="rounded-[11px] border px-1.5 py-[12px] text-center"
+                                className="relative overflow-hidden rounded-[11px] border px-1.5 py-[12px] text-center"
                                 style={{borderColor: meta.color + "33", background: meta.bg}}
                             >
+                                <span
+                                    className="kpi-shine-sweep"
+                                    style={{animationDelay: `${(PLAN_SHINE_SLOTS[key] ?? 0) * -SHINE_SLOT_SECONDS}s`}}
+                                    aria-hidden="true"
+                                />
                                 <div className="flex items-center justify-center gap-1.5">
                                     <BucketIcon className="w-[13px] h-[13px]" style={{color: meta.color}} strokeWidth={2}/>
                                     <div

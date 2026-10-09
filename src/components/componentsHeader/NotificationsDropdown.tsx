@@ -202,7 +202,7 @@ export function NotificationsDropdown() {
                                     key={n.id}
                                     onClick={() => handleRowClick(n)}
                                     className={`flex cursor-pointer gap-[11px] border-b border-[#f3f6f9] px-4 py-[11px] hover:bg-[#f8fafc] ${
-                                        !n.isRead ? "bg-[#f8faff]" : ""
+                                        !n.isRead ? "bg-[#f3f4fb] hover:bg-[#e2e4f8]" : ""
                                     }`}
                                 >
                                     <span

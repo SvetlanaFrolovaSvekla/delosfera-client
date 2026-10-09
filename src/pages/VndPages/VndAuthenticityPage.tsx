@@ -70,6 +70,7 @@ export function VndAuthenticityPage() {
                 file={file}
                 checking={checking}
                 error={error}
+                checked={result !== null}
                 onPick={pick}
                 onCheck={() => void check()}
             />

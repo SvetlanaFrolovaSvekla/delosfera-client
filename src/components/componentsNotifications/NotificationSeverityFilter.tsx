@@ -2,16 +2,9 @@
 import {useTranslation} from "react-i18next";
 import type {NotificationSeverity} from "@/service/notificationsService/notificationsServiceType.ts";
 import {NOTIFICATION_SEVERITY_META} from "@/constants/notificationSeverity.ts";
-import {Info, CheckCircle2, AlertTriangle, AlertCircle, RotateCcw} from "lucide-react";
+import {RotateCcw} from "lucide-react";
 
 const SEVERITY_ORDER: NotificationSeverity[] = ["Info", "Success", "Warning", "Urgent"];
-
-const SEVERITY_ICONS: Record<NotificationSeverity, typeof Info> = {
-    Info: Info,
-    Success: CheckCircle2,
-    Warning: AlertTriangle,
-    Urgent: AlertCircle,
-};
 
 interface NotificationSeverityFilterProps {
     value: NotificationSeverity[];
@@ -36,7 +29,7 @@ export function NotificationSeverityFilter({
 
     return (
         <div
-            className="mb-5 flex flex-wrap items-center gap-2.5 rounded-2xl border border-slate-200 bg-white px-3.5 py-3">
+            className="mb-5 flex flex-wrap items-center gap-2.5 rounded-2xl border border-slate-200 bg-white/50 px-3.5 py-3">
             <span className="mr-0.5 flex-none text-[11px] font-bold uppercase tracking-wider text-slate-400">
                 {t("notifications.severityFilter.label")}
             </span>
@@ -46,7 +39,6 @@ export function NotificationSeverityFilter({
             <div className="flex flex-wrap items-center gap-1.5">
                 {SEVERITY_ORDER.map((severity) => {
                     const meta = NOTIFICATION_SEVERITY_META[severity];
-                    const Icon = SEVERITY_ICONS[severity];
                     const active = value.includes(severity);
                     const count = countBySeverity?.[severity];
                     const label = t(meta.labelKey);
@@ -65,16 +57,16 @@ export function NotificationSeverityFilter({
                                 active
                                     ? {
                                         backgroundColor: meta.bg,
-                                        color: meta.dot,
+                                        color: meta.text,
                                         borderColor: meta.border,
                                     }
                                     : undefined
                             }
                         >
-                            <Icon
-                                className="h-3.5 w-3.5 flex-none transition-transform group-hover:scale-110"
-                                style={{color: meta.dot}}
-                                strokeWidth={2.3}
+                            {/* Шарик - тот же, что у самих уведомлений в списке (см. SeverityDot) */}
+                            <span
+                                className="inline-block h-2.5 w-2.5 flex-none rounded-full transition-transform group-hover:scale-110"
+                                style={{backgroundColor: meta.dot, boxShadow: `0 0 0 3px ${meta.bg}`}}
                             />
                             {label}
                             {!!count && (
@@ -82,7 +74,7 @@ export function NotificationSeverityFilter({
                                     className="ml-0.5 rounded-full px-1.5 py-px font-mono text-[10px] font-bold"
                                     style={{
                                         backgroundColor: active ? "#fff" : "#f2f5f9",
-                                        color: active ? meta.dot : "#8b97ab",
+                                        color: active ? meta.text : "#8b97ab",
                                     }}
                                 >
                                     {count}

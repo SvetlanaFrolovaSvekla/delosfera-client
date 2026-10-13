@@ -1,4 +1,4 @@
-import {useRef, useState} from "react";
+import {useRef, useState, type ReactNode} from "react";
 import {useTranslation} from "react-i18next";
 import {HighlightText} from "@/utils/highlightText.tsx";
 import {SearchBar} from "@/components/componentsGeneral/SearchBar.tsx";
@@ -20,6 +20,11 @@ interface MultiSelectModalProps {
 
     searchPlaceholder?: string;
     selectedCountLabel?: string; // например "Выбрано видов"
+
+    /** Пояснение под заголовком окна (над поиском) */
+    hint?: ReactNode;
+    /** Доп. действие справа в строке списка (например, кнопка "?"); клик по нему не меняет выбор */
+    renderOptionAction?: (key: string) => ReactNode;
 }
 
 export function MultiSelectModal({
@@ -31,6 +36,8 @@ export function MultiSelectModal({
                                      onApply,
                                      searchPlaceholder,
                                      selectedCountLabel,
+                                     hint,
+                                     renderOptionAction,
                                  }: MultiSelectModalProps) {
     const {t} = useTranslation();
     const [draft, setDraft] = useState<string[]>(selectedKeys);
@@ -106,6 +113,12 @@ export function MultiSelectModal({
                     </button>
                 </div>
 
+                {hint && (
+                    <div className="mx-5 mt-4 flex-none rounded-[10px] border border-[#d9e3fb] bg-[#f3f6ff] px-3 py-2.5 text-[12px] leading-[1.5] text-[#3a4a9e]">
+                        {hint}
+                    </div>
+                )}
+
                 {/* Фильтр — сверху, через SearchBar */}
                 <div className="px-5 pt-4 pb-2 flex-none">
                     <SearchBar
@@ -154,11 +167,11 @@ export function MultiSelectModal({
                     {filteredOptions.map((o) => {
                         const on = draft.includes(o.key);
                         return (
+                            <div key={o.key} className="flex items-center rounded-lg hover:bg-[#f6f8fb]">
                             <button
-                                key={o.key}
                                 type="button"
                                 onClick={() => toggle(o.key)}
-                                className="w-full flex items-center gap-[11px] px-2.5 py-[10px] rounded-lg bg-transparent text-left cursor-pointer hover:bg-[#f6f8fb]"
+                                className="min-w-0 flex-1 flex items-center gap-[11px] px-2.5 py-[10px] rounded-lg bg-transparent text-left cursor-pointer"
                             >
                                 <span
                                     className={`w-5 h-5 flex-none rounded-md grid place-items-center ${
@@ -177,6 +190,8 @@ export function MultiSelectModal({
                                     <HighlightText text={o.label} query={query}/>
                                 </span>
                             </button>
+                            {renderOptionAction && <span className="flex-none pr-2">{renderOptionAction(o.key)}</span>}
+                            </div>
                         );
                     })}
                 </div>

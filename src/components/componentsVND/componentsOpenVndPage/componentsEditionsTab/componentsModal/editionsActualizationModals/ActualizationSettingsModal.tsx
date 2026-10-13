@@ -1,13 +1,12 @@
-// Модалка «Настройки актуализации» — открывается ссылкой под основной кнопкой сайдбара
-// редакций, пока цикл актуализации идёт (vnd.status === "onact" && vnd.actualizationPerformed).
+// Модалка «Настройки актуализации» - открывается ссылкой под основной кнопкой сайдбара
+// редакций, пока цикл актуализации идёт.
 // Содержимое то же, что раньше показывалось прямо во вкладке «Редакции» без окна
-// (см. ActualizationSettingsPanel) - по просьбе вернули как модалку, открываемую по клику.
 import {createPortal} from "react-dom";
 import {useTranslation} from "react-i18next";
-import {Settings2, X} from "lucide-react";
 import {
     ActualizationSettingsPanel
-} from "@/components/componentsVND/componentsOpenVndPage/componentsEditionsTab/ActualizationSettingsPanel.tsx";
+} from "@/components/componentsVND/componentsOpenVndPage/componentsEditionsTab/componentsModal/editionsActualizationModals/ActualizationSettingsPanel.tsx";
+import {Settings2, X} from "lucide-react";
 
 interface ActualizationSettingsModalProps {
     plannedNoChanges: boolean;

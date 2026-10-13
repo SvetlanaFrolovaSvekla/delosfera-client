@@ -140,7 +140,7 @@ export function VndCoordinationTab({vnd, onVndChanged}: VndCoordinationTabProps)
             stageId: stage?.id ?? 0,
             approverName: stage?.approverName ?? "",
             approverUserId: currentUserId ?? 0,
-            phaseLabel: "Ваше замечание",
+            phaseLabel: t("coordinationUi.yourRemark"),
             decision: "pending",
             decidedAt: null,
             comment: "",
@@ -148,7 +148,7 @@ export function VndCoordinationTab({vnd, onVndChanged}: VndCoordinationTabProps)
             allQuotes: [],
             revisionIndex: getLiveRevisionIndex(process),
         }));
-    }, [process, draftRemarks, currentUserId]);
+    }, [process, draftRemarks, currentUserId, t]);
 
     if (loading || redactionsLoading) {
         return <Loader label={t("openVndPage.coordinationTab.loadingLabel")} fullHeight={false}/>;

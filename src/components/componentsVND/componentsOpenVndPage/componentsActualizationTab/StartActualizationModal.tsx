@@ -1,5 +1,4 @@
-// Модалка «Начать актуализацию» — для пользователей с правом брать любую ВНД
-// в актуализацию напрямую (ActualizeAnyVndWithApproval / ActualizeAnyVndWithoutApproval).
+// Модалка «Начать актуализацию» - для пользователей с правом брать любую ВНД в актуализацию напрямую
 import {useMemo, useState} from "react";
 import {createPortal} from "react-dom";
 import {useTranslation} from "react-i18next";

@@ -4,6 +4,7 @@ import {
 } from "@/service/coordinationService/coordinationServiceTypes.ts";
 import {ShieldCheck, User} from "lucide-react";
 import {getWorkDayMinutes} from "@/utils/workCalendar.ts";
+import i18n from "i18next";
 
 // Максимальное число файлов, которые согласующий может приложить к своей резолюции
 export const MAX_RESOLUTION_ATTACHMENTS = 5;
@@ -41,7 +42,9 @@ export const FIXED_STAGE_ICON = ShieldCheck;
 export const CUSTOM_STAGE_ICON = User;
 
 // Название для произвольного (не из справочника) этапа, добавленного инициатором вручную
-export const CUSTOM_STAGE_LABEL = "Доп. согласующий";
+// (геттер, а не константа: текст должен меняться вместе с языком интерфейса)
+export const CUSTOM_STAGE_LABEL_KEY = "coordinationUi.customStage";
+export const getCustomStageLabel = () => i18n.t(CUSTOM_STAGE_LABEL_KEY);
 
 /** true, если ответ бэка описывает произвольный (не обязательный) этап маршрута */
 export function isCustomStageKind(kind: ApprovalStageKindResponse): boolean {
@@ -57,32 +60,32 @@ interface DecisionMeta {
 
 export const STAGE_DECISION_META: Record<ApprovalStageDecisionResponse, DecisionMeta> = {
     pending: {
-        label: "В ожидании",
+        get label() { return i18n.t("coordinationUi.decision.pending"); },
         borderClass: "border-[#e5e9f0]",
         badgeClass: "bg-[#f1f2f6] text-[#6b7488]",
     },
     approved: {
-        label: "Согласовано",
+        get label() { return i18n.t("coordinationUi.decision.approved"); },
         borderClass: "border-[#34a853]",
         badgeClass: "bg-[#e8f6ec] text-[#1e8e3e]",
     },
     approved_with_comment: {
-        label: "Согласовано с замечаниями",
+        get label() { return i18n.t("coordinationUi.decision.approved_with_comment"); },
         borderClass: "border-[#e0a13e]",
         badgeClass: "bg-[#fdf3e3] text-[#b3791b]",
     },
     rejected: {
-        label: "Отклонено",
+        get label() { return i18n.t("coordinationUi.decision.rejected"); },
         borderClass: "border-[#e0473e]",
         badgeClass: "bg-[#fdecec] text-[#c0392b]",
     },
     auto_approved_timeout: {
-        label: "Просрочка (авто)",
+        get label() { return i18n.t("coordinationUi.decision.auto_approved_timeout"); },
         borderClass: "border-[#7c8fe0]",
         badgeClass: "bg-[#eef0fd] text-[#4e57d6]",
     },
     removed_by_editor: {
-        label: "Недействующий (убран главным редактором)",
+        get label() { return i18n.t("coordinationUi.decision.removed_by_editor"); },
         borderClass: "border-[#c7cad1]",
         badgeClass: "bg-[#f1f2f6] text-[#8a8f9c]",
     },
@@ -95,31 +98,31 @@ interface ProcessStatusMeta {
 
 export const PROCESS_STATUS_META: Record<ApprovalProcessStatus, ProcessStatusMeta> = {
     primary: {
-        label: "Первичное согласование",
+        get label() { return i18n.t("coordinationUi.status.primary"); },
         badgeClass: "bg-[#e9f0ff] text-[#2f68f5]",
     },
     revision_needed: {
-        label: "На доработке",
+        get label() { return i18n.t("coordinationUi.status.revision_needed"); },
         badgeClass: "bg-[#fdf3e3] text-[#b3791b]",
     },
     repeated: {
-        label: "Согласование после внесённых изменений",
+        get label() { return i18n.t("coordinationUi.status.repeated"); },
         badgeClass: "bg-[#e9f0ff] text-[#2f68f5]",
     },
     final_hold: {
-        label: "Финальная выдержка",
+        get label() { return i18n.t("coordinationUi.status.final_hold"); },
         badgeClass: "bg-[#eef0fd] text-[#4e57d6]",
     },
     approved: {
-        label: "Согласовано",
+        get label() { return i18n.t("coordinationUi.status.approved"); },
         badgeClass: "bg-[#e8f6ec] text-[#1e8e3e]",
     },
     cancelled: {
-        label: "Отозвано",
+        get label() { return i18n.t("coordinationUi.status.cancelled"); },
         badgeClass: "bg-[#f1f2f6] text-[#6b7488]",
     },
     rejected: {
-        label: "Отклонено",
+        get label() { return i18n.t("coordinationUi.status.rejected"); },
         badgeClass: "bg-[#fdecec] text-[#c0392b]",
     },
 };
@@ -128,15 +131,15 @@ export type ApprovalPhase = "primary" | "repeat" | "finalHold";
 
 export const PHASE_LABELS: Record<ApprovalPhase, { started: string; deadline: string }> = {
     primary: {
-        started: "Первичное согласование начато",
-        deadline: "Дедлайн первичного согласования",
+        get started() { return i18n.t("coordinationUi.phase.primaryStarted"); },
+        get deadline() { return i18n.t("coordinationUi.phase.primaryDeadline"); },
     },
     repeat: {
-        started: "Повторное согласование начато",
-        deadline: "Дедлайн повторного согласования",
+        get started() { return i18n.t("coordinationUi.phase.repeatStarted"); },
+        get deadline() { return i18n.t("coordinationUi.phase.repeatDeadline"); },
     },
     finalHold: {
-        started: "Финальная выдержка начата",
-        deadline: "Дедлайн финальной выдержки",
+        get started() { return i18n.t("coordinationUi.phase.finalHoldStarted"); },
+        get deadline() { return i18n.t("coordinationUi.phase.finalHoldDeadline"); },
     },
 };

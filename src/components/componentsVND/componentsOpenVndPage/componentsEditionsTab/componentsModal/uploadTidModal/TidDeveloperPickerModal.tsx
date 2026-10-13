@@ -4,16 +4,11 @@
 import {useMemo} from "react";
 import {createPortal} from "react-dom";
 import {useTranslation} from "react-i18next";
-import {useDictionaries} from "@/context/DictionariesContext.tsx";
-import type {UserResponse, UserSource} from "@/service/userService/userServiceType.ts";
+import type {UserResponse} from "@/service/userService/userServiceType.ts";
 import {useUsersList} from "@/hooks/userHooks/useUsersList.ts";
 import {HighlightText} from "@/utils/highlightText.tsx";
-import {
-    MultiSelectDropdown, type MultiSelectOption
-} from "@/components/componentsGeneral/selects/MultiSelects/MultiSelectDropdown.tsx";
-import {MultiSelectField} from "@/components/componentsGeneral/selects/MultiSelects/MultiSelectField.tsx";
 import {EmptyState} from "@/components/componentsGeneral/EmptyState.tsx";
-import {SearchBar} from "@/components/componentsGeneral/SearchBar.tsx";
+import {UserListFilters} from "@/components/componentsGeneral/userPicker/UserListFilters.tsx";
 import {Loader2, User as UserIcon, X} from "lucide-react";
 
 export interface TidDeveloperOption {
@@ -30,27 +25,8 @@ interface TidDeveloperPickerModalProps {
 export function TidDeveloperPickerModal({onClose, onSelect}: TidDeveloperPickerModalProps) {
     const {t} = useTranslation();
 
-    // Те же подписи и цвета, что и у бейджа источника в столбце "Источник" на странице
-    // "Пользователи" (см. SOURCE_LABEL/SOURCE_STYLE в UsersTable.tsx) - чтобы чипс выбора в фильтре
-    // выглядел так же, как сам признак у пользователя.
-    const SOURCE_OPTIONS: (MultiSelectOption & { key: UserSource })[] = [
-        // Локальный
-        {key: "Local", label: t("tidDeveloperPickerModal.sourceLocal"), chipClassName: "text-[#7a4fd6] bg-[#f3edfd]"},
-        // LDAP
-        {key: "Ldap", label: t("tidDeveloperPickerModal.sourceLdap"), chipClassName: "text-[#3b6fd6] bg-[#eaf1fd]"},
-    ];
-
-    const {
-        search, setSearch,
-        sourceFilters, toggleSourceFilter,
-        orgUnitFilters, setOrgUnitFilters,
-        positionFilters, setPositionFilters,
-        roleFilters, setRoleFilters,
-        roles, users, loading, error,
-    } = useUsersList();
-
-    const dictionaries = useDictionaries();
-    const roleOptions = useMemo(() => roles.map((r) => ({key: String(r.id), label: r.titleRu})), [roles]);
+    const usersList = useUsersList();
+    const {search, users, loading, error} = usersList;
 
     // Заблокированных и отключённых (в т.ч. пришедших неактивными из LDAP) в выбор не пускаем —
     // назначать разработчиком отключённую учётную запись бессмысленно (тот же принцип, что и в
@@ -86,75 +62,8 @@ export function TidDeveloperPickerModal({onClose, onSelect}: TidDeveloperPickerM
                     </button>
                 </div>
 
-                {/* Filters — как на странице "Пользователи": поиск, источник, должность, СП, роли */}
-                <div className="flex flex-none flex-col gap-2.5 border-b border-[#eef0f5] px-6 py-4">
-                    <SearchBar
-                        variant="white"
-                        value={search}
-                        onChange={setSearch}
-                        // Поиск по ФИО или логину…
-                        placeholder={t("tidDeveloperPickerModal.searchPlaceholder")}
-                        autoFocus
-                    />
-
-                    <MultiSelectDropdown
-                        // Источник
-                        triggerLabel={t("tidDeveloperPickerModal.sourceTriggerLabel")}
-                        // Источник учётной записи
-                        label={t("tidDeveloperPickerModal.sourceFieldLabel")}
-                        showFieldLabel
-                        options={SOURCE_OPTIONS}
-                        selectedKeys={sourceFilters}
-                        onToggle={(key) => toggleSourceFilter(key as UserSource)}
-                        onSelectAll={() => {
-                            (["Local", "Ldap"] as UserSource[]).forEach((s) => {
-                                if (!sourceFilters.includes(s)) toggleSourceFilter(s);
-                            });
-                        }}
-                        onDeselectAll={() => sourceFilters.forEach((s) => toggleSourceFilter(s))}
-                        searchable={false}
-                        searchThreshold={Infinity}
-                        className="self-start"
-                    />
-
-                    <div className="grid [grid-template-columns:repeat(auto-fit,minmax(160px,1fr))] gap-x-3 gap-y-2.5">
-                        <MultiSelectField
-                            // Должность
-                            label={t("tidDeveloperPickerModal.positionLabel")}
-                            modalTitle={t("tidDeveloperPickerModal.positionLabel")}
-                            options={dictionaries.positionOptions}
-                            selectedKeys={positionFilters}
-                            onChange={setPositionFilters}
-                            // Поиск должности…
-                            searchPlaceholder={t("tidDeveloperPickerModal.positionSearchPlaceholder")}
-                            boldLabel={false}
-                        />
-                        <MultiSelectField
-                            // СП
-                            label={t("tidDeveloperPickerModal.orgUnitLabel")}
-                            // Структурное подразделение
-                            modalTitle={t("tidDeveloperPickerModal.orgUnitModalTitle")}
-                            options={dictionaries.orgUnitOptions}
-                            selectedKeys={orgUnitFilters}
-                            onChange={setOrgUnitFilters}
-                            // Поиск подразделения…
-                            searchPlaceholder={t("tidDeveloperPickerModal.orgUnitSearchPlaceholder")}
-                            hierarchical
-                            boldLabel={false}
-                        />
-                        <MultiSelectField
-                            // Роли
-                            label={t("tidDeveloperPickerModal.rolesLabel")}
-                            modalTitle={t("tidDeveloperPickerModal.rolesLabel")}
-                            options={roleOptions}
-                            selectedKeys={roleFilters}
-                            onChange={setRoleFilters}
-                            // Поиск роли…
-                            searchPlaceholder={t("tidDeveloperPickerModal.rolesSearchPlaceholder")}
-                            boldLabel={false}
-                        />
-                    </div>
-                </div>
+                {/* Фильтры - как на странице "Пользователи" */}
+                <UserListFilters filters={usersList}/>
 
                 {/* List */}
                 <div className="flex-1 overflow-y-auto px-3 py-2">

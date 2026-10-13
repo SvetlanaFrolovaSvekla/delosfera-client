@@ -1,6 +1,7 @@
 import type { VndRedactionResponse } from "@/service/vndService/vndServiceType.ts";
 import type { VndStatusKey } from "@/constants/vndTabs.ts";
 import { isVndPendingEffective } from "@/constants/vndStatus.ts";
+import i18n from "i18next";
 
 export type RedactionDisplayStatus =
     "current" | "pendingEffective" | "draft" | "pending" | "rejected" | "consolidation" | "outdated";
@@ -53,15 +54,25 @@ export function isRedactionVisibleToRegularUser(
     return getRedactionDisplayStatus(r, vndStatus, isLatest, effectiveDate) === "outdated";
 }
 
+// Подпись статуса берётся из переводов при каждом обращении (геттер), чтобы она менялась
+// вместе с языком интерфейса - вызывающему коду ничего менять не нужно.
+const statusMeta = (status: RedactionDisplayStatus, color: string, bg: string) => ({
+    get label() {
+        return i18n.t(`redactionStatusLabel.${status}`);
+    },
+    color,
+    bg,
+});
+
 export const REDACTION_STATUS_META: Record<
-RedactionDisplayStatus,
-    { label: string; color: string; bg: string }
-    > = {
-        current: { label: "актуальная", color: "#1c7a4d", bg: "#e2f4ea" },
-        pendingEffective: { label: "ожидание вступления в силу", color: "#c2410c", bg: "#ffedd5" },
-        draft: { label: "требует согласования", color: "#4e57d6", bg: "#ececfc" },
-        pending: { label: "на согласовании", color: "#9a6408", bg: "#fdf6e8" },
-        rejected: { label: "отклонена", color: "#c0392b", bg: "#fdf1f1" },
-        consolidation: { label: "консолидация", color: "#4e57d6", bg: "#ececfc" },
-        outdated: { label: "неактуальна", color: "#8b97ab", bg: "#f2f5f9" },
-    };
+    RedactionDisplayStatus,
+    { readonly label: string; color: string; bg: string }
+> = {
+    current: statusMeta("current", "#1c7a4d", "#e2f4ea"),
+    pendingEffective: statusMeta("pendingEffective", "#c2410c", "#ffedd5"),
+    draft: statusMeta("draft", "#4e57d6", "#ececfc"),
+    pending: statusMeta("pending", "#9a6408", "#fdf6e8"),
+    rejected: statusMeta("rejected", "#c0392b", "#fdf1f1"),
+    consolidation: statusMeta("consolidation", "#4e57d6", "#ececfc"),
+    outdated: statusMeta("outdated", "#8b97ab", "#f2f5f9"),
+};

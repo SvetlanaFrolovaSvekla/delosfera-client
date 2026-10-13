@@ -1,11 +1,11 @@
 // Панель с перечнем редакций документа
-import {useCanExportVnd, NO_EXPORT_VND_HINT} from "@/hooks/vndHooks/useCanExportVnd.ts";
 import {useTranslation} from "react-i18next";
 import {Fragment} from "react";
 import type {VndRedactionResponse} from "@/service/vndService/vndServiceType.ts";
+import type {VndStatusKey} from "@/constants/vndTabs.ts";
+import {useCanExportVnd, NO_EXPORT_VND_HINT} from "@/hooks/vndHooks/useCanExportVnd.ts";
 import {formatDate} from "@/utils/dateUtils.ts";
 import {getRedactionDisplayStatus, REDACTION_STATUS_META} from "@/utils/vndProcess/redactionStatus.ts";
-import type {VndStatusKey} from "@/constants/vndTabs.ts";
 import {HelpTooltip} from "@/components/componentsGeneral/knowledgeBaseComponents/HelpTooltip.tsx";
 import {Tooltip} from "@/components/componentsGeneral/Tooltip.tsx";
 import {
@@ -25,11 +25,8 @@ import {
 } from "lucide-react";
 
 /** Компактный формат для строки "Актуализация {дата} №{код}" / "Первая редакция {дата} №{код}" —
- * ДД.ММ.ГГг. (двузначный год), как на макете. Отдельно от formatDate (там полный год) — это
- * не дата загрузки файла, а дата ПРИНЯТИЯ конкретной редакции (реквизит редакции).
- * Суффикс "г." — русскоязычный, оставлен как есть (формат даты сам по себе не переведён на
- * en/ky; если понадобится локализовать и его, эту функцию тоже нужно будет параметризовать
- * через t/locale). */
+ * ДД.ММ.ГГг. (двузначный год). Отдельно от formatDate (там полный год) - это
+ * не дата загрузки файла, а дата ПРИНЯТИЯ конкретной редакции (реквизит редакции) */
 function formatShortYearDate(iso: string): string {
     const [y, m, d] = iso.slice(0, 10).split("-");
     if (!y || !m || !d) return "";
@@ -39,12 +36,8 @@ function formatShortYearDate(iso: string): string {
 /** Какое действие выполняет главная кнопка сайдбара:
  * - "new" — добавить редакцию напрямую (у ВНД ещё нет действующей редакции)
  * - "actualize" — начать актуализацию (открывает StartActualizationModal/RequestActualizationAccessModal)
- * - "performActualization" — выполнить актуализацию (открывает PerformActualizationModal прямо
- *   здесь, во вкладке «Редакции» — без перехода на вкладку «Актуализация»): либо цикл уже начат
- *   напрямую и шаг ещё не пройден (needsPerform), либо есть одобренная заявка и цикл нужно
- *   стартовать (needsConfirmStartAfterRequest)
- * - "uploadActualized" — загрузить актуализированную версию (цикл начат, шаг "Выполнить
- *   актуализацию" пройден, и заявлено, что будут изменения — нужна новая редакция)
+ * - "performActualization" — выполнить актуализацию
+ * - "uploadActualized" — загрузить актуализированную версию
  * - "startApprovalNoChanges" — заявлено "без изменений" + цикл требует согласования: новая
  *   редакция не нужна, действующая редакция отправляется на согласование как есть
  * - "confirmNoChanges" — заявлено "без изменений" + согласование не требуется: подтвердить
@@ -59,32 +52,24 @@ export type RedactionsPrimaryActionVariant =
 
 interface RedactionsSidebarProps {
     /** Список редакций к показу - для рядового пользователя (не редактора ВНД) это уже
-     * ОТФИЛЬТРОВАННОЕ подмножество без черновиков/на согласовании/на консолидации (см.
-     * isRedactionVisibleToRegularUser и VndEditionsTab). */
+     * ОТФИЛЬТРОВАННОЕ подмножество без черновиков/на согласовании/на консолидации. */
     redactions: VndRedactionResponse[];
     vndStatus: VndStatusKey;
-    /** Дата вступления в силу ВНД — определяет, показывать ли действующей редакции статус
-     * "ожидание вступления в силу" вместо "актуальная" (см. getRedactionDisplayStatus). */
+    /** Дата вступления в силу ВНД - определяет, показывать ли действующей редакции статус
+     * "ожидание вступления в силу" вместо "актуальная". */
     effectiveDate?: string | null;
-    /** Настоящий id самой свежой ПО НОМЕРУ редакции документа - независимо от того, что
-     * реально попало в `redactions` выше. Нужен, чтобы отметка "это последняя редакция" при
-     * расчёте статуса КАЖДОЙ строки (см. RedactionListItem → getRedactionDisplayStatus) не
-     * съезжала на самую свежую из ВИДИМЫХ, если настоящая последняя скрыта от рядового
-     * пользователя - иначе более старая (уже принятая, "неактуальная") редакция могла бы по
-     * ошибке показать статус "консолидация". Если не передан, берётся `redactions[0]` (старое
-     * поведение - подходит, только когда `redactions` не отфильтрован). */
+    /** Настоящий id самой свежей ПО НОМЕРУ редакции документа. */
     lastRedactionId?: number;
     selectedId: number | undefined;
     /** id редакции, чей последний процесс согласования был отклонён - под ней покажем
-     * подсказку "отредактируйте, чтобы отправить вновь" (см. VndEditionsTab) */
+     * подсказку "отредактируйте, чтобы отправить вновь"*/
     rejectedRedactionId?: number;
-    /** Открыть модалку "Подробнее" по отклонённому процессу согласования (см.
-     * RejectedApprovalDetailsModal в VndEditionsTab) - ссылка рисуется только рядом с подсказкой
-     * об отклонении (см. rejectedRedactionId выше), если передан этот колбэк. */
+    /** Открыть модалку "Подробнее" по отклонённому процессу согласования - ссылка рисуется только рядом с подсказкой
+     * об отклонении. */
     onShowRejectedDetails?: () => void;
     onSelect: (id: number) => void;
     /** Спрятать основную кнопку (и её подсказку) целиком - например, "Взять в актуализацию"
-     * у пользователя без каких-либо прав на актуализацию (см. VndEditionsTab.primaryHidden). */
+     * у пользователя без каких-либо прав на актуализацию. */
     primaryActionHidden?: boolean;
     primaryActionVariant: RedactionsPrimaryActionVariant;
     primaryActionDisabled: boolean;
@@ -92,8 +77,7 @@ interface RedactionsSidebarProps {
     /** Тултип-пояснение к primaryActionHint - показывается рядом с текстом подсказки, если задан. */
     primaryActionHintTooltip?: string;
     onPrimaryAction: () => void;
-    /** Надпись-кнопка под подсказкой основного действия — например, "Изменить настройки
-     * актуализации" в сценарии startApprovalNoChanges. Показывается, только если задан label. */
+    /** Надпись-кнопка под подсказкой основного действия. */
     secondaryActionLabel?: string;
     onSecondaryAction?: () => void;
     secondaryActionTooltip?: string;
@@ -183,24 +167,6 @@ export function RedactionsSidebar({
                                 isLatest={e.id === lastRedactionId}
                                 active={e.id === selectedId}
                                 onClick={() => onSelect(e.id)}
-                                // Раньше кнопка "Редактировать" показывалась только у последней редакции — прямое
-                                // редактирование (VndEditLastRevisionModal → EditRedactionDirectlyAsync на бэке)
-                                // теперь работает для любой редакции документа, а не только последней (по просьбе
-                                // главного редактора: нужно править файлы/специальные вложения и старых редакций).
-                                // Ограничение на "на согласовании" (Pending) остаётся - пока редакция ожидает
-                                // решения согласующих, подменять её файлы напрямую нельзя (см. ту же проверку
-                                // на бэке в EditRedactionDirectlyAsync).
-                                //
-                                // canEditLastRevision (право EditLastRevisionDirectly) даёт кнопку на ЛЮБОЙ
-                                // непринятой на согласование редакции. Без этого права кнопка всё равно
-                                // показывается на черновике (approvalStatus === "Draft") - иначе у обычного
-                                // инициатора после отклонения редакции согласующим (см. wasRejected/
-                                // rejectedRedactionId - она возвращается именно в статус "Draft") нет вообще
-                                // никакого способа поправить содержимое перед повторной отправкой, кроме как
-                                // отправить на согласование тот же файл заново (см. VndApprovalService.
-                                // RejectApprovalAsync/AddRedactionAsync - зациклится на том же замечании).
-                                // Итоговое право проверяет бэк (EditRedactionDirectlyCoreAsync) - там же
-                                // отдельно ограничено только своим/связанным ВНД, тут кнопку просто не прячем.
                                 showEditButton={
                                     (canEditLastRevision || e.approvalStatus === "Draft") &&
                                     e.approvalStatus !== "Pending"
@@ -341,12 +307,7 @@ function RedactionListItem({
     const {t} = useTranslation();
     const status = getRedactionDisplayStatus(redaction, vndStatus, isLatest, effectiveDate);
     const meta = REDACTION_STATUS_META[status];
-    // Кнопка-скрепка открывает "Вложения редакции" (RedactionAttachmentsModal), где помимо
-    // обычных вложений теперь показываются и "Специальные вложения" - ТИД и Лист согласования
-    // (см. RedactionAttachmentsModal). Раньше кнопка/счётчик учитывали только обычные вложения,
-    // из-за чего редакция без обычных вложений, но с уже сформированным Листом согласования
-    // (после консолидации), выглядела так, будто вложений нет вовсе, и открыть модалку было
-    // нельзя - посмотреть лист согласования можно было только со страницы согласования.
+    // Кнопка-скрепка открывает "Вложения редакции"
     const specialAttachmentsCount =
         (redaction.tidFileId !== null ? 1 : 0)
         // Листов согласования может быть несколько (актуализация без изменений) - считаем все.

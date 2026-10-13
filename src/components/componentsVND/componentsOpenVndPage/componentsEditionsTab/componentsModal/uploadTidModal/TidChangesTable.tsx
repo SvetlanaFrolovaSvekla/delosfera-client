@@ -11,8 +11,8 @@ import {
 } from "@/components/componentsVND/componentsOpenVndPage/componentsEditionsTab/RichDiffEditor.tsx";
 import {
     TidDeveloperPickerModal, type TidDeveloperOption
-} from "@/components/componentsVND/componentsOpenVndPage/componentsEditionsTab/TidDeveloperPickerModal.tsx";
-import {colors} from "@/design/tokens";
+} from "@/components/componentsVND/componentsOpenVndPage/componentsEditionsTab/componentsModal/uploadTidModal/TidDeveloperPickerModal.tsx";
+import {colors} from "@/design/tokens.ts";
 import {ChevronDown, Download, Loader2, Trash2, Wand2, X} from "lucide-react";
 
 const REMOVE_COLOR = colors.ryg.red.fg;

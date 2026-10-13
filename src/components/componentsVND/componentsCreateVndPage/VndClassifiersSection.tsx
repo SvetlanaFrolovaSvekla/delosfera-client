@@ -1,7 +1,8 @@
 // Секция с классификаторами на странице "Разработка нового ВНД"
 import {useTranslation} from "react-i18next";
 import {MultiSelectField} from "@/components/componentsGeneral/selects/MultiSelects/MultiSelectField.tsx";
-import {SingleSelectListField} from "@/components/componentsGeneral/selects/SingleSelects/SingleSelectListField.tsx";
+import {SecrecyLevelSelectField} from "@/components/componentsVND/componentsOpenVndPage/SecrecyLevelSelectField.tsx";
+import {UserGroupMultiSelectField} from "@/components/componentsVND/componentsOpenVndPage/UserGroupMultiSelectField.tsx";
 
 interface DictOption {
     key: string;
@@ -51,7 +52,7 @@ export function VndClassifiersSection({
                     hierarchical
                     boldLabel={false}
                 />
-                <SingleSelectListField
+                <SecrecyLevelSelectField
                     label={t("createVnd.classifiers.secrecyLevel")} // Уровень секретности
                     modalTitle={t("createVnd.classifiers.secrecyLevel")} // Уровень секретности
                     options={secrecyOptions}
@@ -60,7 +61,7 @@ export function VndClassifiersSection({
                     searchPlaceholder={t("createVnd.classifiers.secrecyLevelSearchPlaceholder")} // Поиск уровня…
                     boldLabel={false}
                 />
-                <MultiSelectField
+                <UserGroupMultiSelectField
                     label={t("createVnd.classifiers.userGroups")} // Группы доступа
                     modalTitle={t("createVnd.classifiers.userGroups")} // Группы доступа
                     options={userGroupOptions}

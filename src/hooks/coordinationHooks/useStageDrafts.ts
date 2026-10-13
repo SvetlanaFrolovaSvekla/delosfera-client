@@ -1,11 +1,11 @@
 import {useEffect, useState} from "react";
-import {CUSTOM_STAGE_LABEL} from "@/constants/coordinationParams.ts";
 import type {ApproverOption} from "@/components/componentsCoordination/CoordinationRouteConstructor/functionalComponents/VndSelectApproverModal.tsx";
 
 import {
     coordinationApproverService
 } from "@/service/dictionariesService/coordinationDefaultApproverService/coordinationDefaultApproverService.ts";
 import {useAuth} from "@/context/AuthContext.ts";
+import {CUSTOM_STAGE_LABEL_KEY} from "@/constants/coordinationParams.ts";
 
 // crypto.randomUUID() доступен только в secure context (https или localhost).
 // На http-проде (edo-test.keremetbank.kg) его нет — используем фолбэк.
@@ -93,7 +93,7 @@ export function useStageDrafts() {
                 {
                     localId: generateUUID(),
                     coordinationStageId: null,
-                    title: CUSTOM_STAGE_LABEL,
+                    title: CUSTOM_STAGE_LABEL_KEY,
                     approverUserId: null,
                     approverName: null,
                 },

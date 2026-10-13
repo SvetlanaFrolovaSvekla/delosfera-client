@@ -1,27 +1,26 @@
-// Подробный лог одной редакции + история её маршрута согласования — открывается кнопкой
-// "Смотреть подробно" на панели "Редакции и юридическая значимость" (см. VndHistoryTab), и
+// Подробный лог одной редакции + история её маршрута согласования - открывается кнопкой
+// "Смотреть подробно" на панели "Редакции и юридическая значимость", и
 // занимает на вкладке "История" место, где обычно стоят панели "Журнал аудита" и "Редакции
-// и юридическая значимость" (см. use-сайт).
+// и юридическая значимость".
 //
 // Строится целиком из уже загруженных на вкладке "История" процессов согласования
-// (coordinationService.getHistory) — отдельного запроса к серверу не делает. У технического
-// журнала аудита (activityLogService) нет привязки к конкретной редакции (только к ВНД в
-// целом), поэтому как основа для "лога редакции" не годится — вместо этого лог строится из
-// самих процессов согласования этой редакции, которые уже и есть подробная, привязанная
-// именно к ней история: кто и когда что решил, на какой фазе, с каким комментарием.
+// - отдельного запроса к серверу не делает.
 import {useTranslation} from "react-i18next";
 import type {TFunction} from "i18next";
-import {ArrowLeft, Download, Route as RouteIcon} from "lucide-react";
-import {useCanExportVnd, NO_EXPORT_VND_HINT} from "@/hooks/vndHooks/useCanExportVnd.ts";
-import {downloadWithToast} from "@/utils/downloadFiles/downloadFile.ts";
-import {approvalSheetCaption, getRedactionApprovalSheets} from "@/utils/vndProcess/approvalSheets.ts";
-import {formatDateTime} from "@/utils/dateUtils.ts";
-import {EmptyState} from "@/components/componentsGeneral/EmptyState.tsx";
 import type {VndRedactionResponse, VndResponse} from "@/service/vndService/vndServiceType.ts";
 import type {
     ApprovalProcessResponse,
     ApprovalProcessStatus,
 } from "@/service/coordinationService/coordinationServiceTypes.ts";
+
+import {useCanExportVnd, NO_EXPORT_VND_HINT} from "@/hooks/vndHooks/useCanExportVnd.ts";
+
+import {downloadWithToast} from "@/utils/downloadFiles/downloadFile.ts";
+import {approvalSheetCaption, getRedactionApprovalSheets} from "@/utils/vndProcess/approvalSheets.ts";
+import {formatDateTime} from "@/utils/dateUtils.ts";
+import type {RedactionDisplayStatus} from "@/utils/vndProcess/redactionStatus.ts";
+import {REDACTION_STATUS_META} from "@/utils/vndProcess/redactionStatus.ts";
+
 import {
     VndApprovalSummary
 } from "@/components/componentsCoordination/CoordinationRouteConstructor/viewComponents/VndApprovalSummary.tsx";
@@ -29,14 +28,16 @@ import {
     FormattedResolutionComment
 } from "@/components/componentsCoordination/CoordinationRouteConstructor/viewComponents/FormattedResolutionComment.tsx";
 import {ApprovalRouteHistoryCarousel} from "./ApprovalRouteHistoryCarousel.tsx";
-import type {RedactionDisplayStatus} from "@/utils/vndProcess/redactionStatus.ts";
-import {REDACTION_STATUS_META} from "@/utils/vndProcess/redactionStatus.ts";
+import {EmptyState} from "@/components/componentsGeneral/EmptyState.tsx";
+
+import {ArrowLeft, Download, Route as RouteIcon} from "lucide-react";
+
 
 interface VndRedactionHistoryDetailProps {
     vnd: VndResponse;
     redaction: VndRedactionResponse;
     displayStatus: RedactionDisplayStatus;
-    /** Все процессы согласования этой редакции (в любом порядке — сортируются здесь) — если
+    /** Все процессы согласования этой редакции (в любом порядке - сортируются здесь) - если
      * редакцию отзывали и запускали заново, циклов может быть несколько. */
     processes: ApprovalProcessResponse[];
     onBack: () => void;
@@ -49,12 +50,9 @@ interface TimelineEvent {
     detail?: string | null;
 }
 
-/** Разворачивает один процесс согласования в плоский список событий по времени — ровно то
+/** Разворачивает один процесс согласования в плоский список событий по времени - ровно то
  * место, где "что-то менялось": старт этапа, каждое решение согласующего на каждой фазе,
- * переход на повторное согласование, начало финальной выдержки, итог процесса.
- *
- * Принимает t() снаружи (а не вызывает useTranslation здесь) — это обычная функция, а не
- * компонент/хук, ей нельзя пользоваться хуками напрямую. */
+ * переход на повторное согласование, начало финальной выдержки, итог процесса. */
 function buildProcessTimeline(t: TFunction, process: ApprovalProcessResponse, attemptPrefix: string): TimelineEvent[] {
     const decisionVerb = (key: string) => t(`openVndPage.historyTab.timeline.decisionVerbs.${key}`);
     const events: TimelineEvent[] = [];
@@ -80,8 +78,7 @@ function buildProcessTimeline(t: TFunction, process: ApprovalProcessResponse, at
         }
     }
 
-    // Круги, которые уже завершились и были перезаписаны следующими (см. VndApprovalPhaseRound
-    // на бэке) - без них при нескольких кругах доработки подряд в одном и том же процессе в
+    // Круги, которые уже завершились и были перезаписаны следующими - без них при нескольких кругах доработки подряд в одном и том же процессе в
     // журнале был бы виден только самый последний круг, промежуточные "пропадали" бы, хотя на
     // самом деле происходили.
     const stageLookup = new Map(process.stages.map((s) => [s.id, s]));
@@ -190,8 +187,7 @@ export function VndRedactionHistoryDetail({
     const canExportVnd = useCanExportVnd();
     const meta = REDACTION_STATUS_META[displayStatus];
 
-    // Хронологический порядок попыток (старые → новые) — так понятнее читается история, чем
-    // "по убыванию", в котором её отдаёт сервер для панели со сводкой последнего цикла.
+    // Хронологический порядок попыток
     const sortedProcesses = [...processes].sort(
         (a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime(),
     );
@@ -204,8 +200,7 @@ export function VndRedactionHistoryDetail({
 
     const processStatusLabel = (status: ApprovalProcessStatus) => t(`openVndPage.historyTab.processStatuses.${status}`);
 
-    // Все листы согласования этой редакции (от нового к старому) - у редакции, которую
-    // актуализировали без изменений, их несколько.
+    // Все листы согласования этой редакции (от нового к старому)
     const approvalSheets = [...getRedactionApprovalSheets(redaction)].reverse();
 
     return (

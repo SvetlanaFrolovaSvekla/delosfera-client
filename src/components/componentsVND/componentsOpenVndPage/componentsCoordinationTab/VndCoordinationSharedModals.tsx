@@ -66,10 +66,10 @@ export function VndCoordinationSharedModals({
                 open={!!removingStage}
                 onClose={onRemovingStageClose}
                 onConfirm={onConfirmRemoveApprover}
-                title="Убрать согласующего?"
-                message={removingStage ? `${removingStage.approverName} будет убран из маршрута согласования, его задача снимется. Действие необратимо.` : ""}
-                confirmLabel="Убрать"
-                loadingLabel="Убираем…"
+                title={t("coordinationUi.removeApprover.title")}
+                message={removingStage ? t("coordinationUi.removeApprover.message", {name: removingStage.approverName}) : ""}
+                confirmLabel={t("coordinationUi.removeApprover.confirm")}
+                loadingLabel={t("coordinationUi.removeApprover.loading")}
                 loading={removingApprover}
                 variant="danger"
                 icon={AlertTriangle}

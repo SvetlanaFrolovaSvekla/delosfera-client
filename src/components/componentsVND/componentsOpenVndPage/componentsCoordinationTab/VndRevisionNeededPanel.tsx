@@ -1,4 +1,5 @@
 import React, {useRef, useState} from "react";
+import {useTranslation} from "react-i18next";
 
 import {coordinationService} from "@/service/coordinationService/coordinationService.ts";
 import {RemarksAgreement} from "@/service/coordinationService/coordinationServiceTypes.ts";
@@ -43,7 +44,7 @@ import {
 } from "@/components/componentsGeneral/modal/AttachmentDocxPreviewModal.tsx";
 import {
     VndUploadTidModal
-} from "@/components/componentsVND/componentsOpenVndPage/componentsEditionsTab/VndUploadTidModal.tsx";
+} from "@/components/componentsVND/componentsOpenVndPage/componentsEditionsTab/componentsModal/uploadTidModal/VndUploadTidModal.tsx";
 
 import {
     AlertCircle,
@@ -98,7 +99,7 @@ interface RemarkItem {
     stageId: number;
     approverName: string;
     approverUserId: number;
-    phase: string;
+    phase: RevisionPhaseKey;
     comment: string;
     decidedAt: string | null;
     attachments: ApprovalStageAttachmentResponse[];
@@ -112,12 +113,6 @@ interface RemarkItem {
 }
 
 type RevisionPhaseKey = "primary" | "repeat" | "finalHold";
-
-const PHASE_LABEL_BY_KEY: Record<RevisionPhaseKey, string> = {
-    primary: "Первичное согласование",
-    repeat: "Повторное согласование",
-    finalHold: "Финальная выдержка",
-};
 
 /** Каким этапом вызван ТЕКУЩИЙ статус "На доработке" - нужно, чтобы отделить ещё не устранённые
  * замечания (с этого этапа) от уже устранённых (с более раннего этапа - см. RemarkCard ниже,
@@ -151,7 +146,7 @@ function collectRemarks(process: ApprovalProcessResponse): RemarkItem[] {
                 stageId: stage.id,
                 approverName: stage.approverName,
                 approverUserId: stage.approverUserId,
-                phase: "Первичное согласование",
+                phase: "primary",
                 comment: stage.primaryComment,
                 decidedAt: stage.primaryDecidedAt,
                 attachments: stage.primaryAttachments,
@@ -163,7 +158,7 @@ function collectRemarks(process: ApprovalProcessResponse): RemarkItem[] {
                 stageId: stage.id,
                 approverName: stage.approverName,
                 approverUserId: stage.approverUserId,
-                phase: "Повторное согласование",
+                phase: "repeat",
                 comment: stage.repeatComment,
                 decidedAt: stage.repeatDecidedAt,
                 attachments: stage.repeatAttachments,
@@ -175,7 +170,7 @@ function collectRemarks(process: ApprovalProcessResponse): RemarkItem[] {
                 stageId: stage.id,
                 approverName: stage.approverName,
                 approverUserId: stage.approverUserId,
-                phase: "Финальная выдержка",
+                phase: "finalHold",
                 comment: stage.finalHoldComment,
                 decidedAt: stage.finalHoldDecidedAt,
                 attachments: stage.finalHoldAttachments,
@@ -211,7 +206,7 @@ function collectApprovalComments(process: ApprovalProcessResponse): RemarkItem[]
                 stageId: stage.id,
                 approverName: stage.approverName,
                 approverUserId: stage.approverUserId,
-                phase: "Первичное согласование",
+                phase: "primary",
                 comment: stage.primaryComment,
                 decidedAt: stage.primaryDecidedAt,
                 attachments: stage.primaryAttachments,
@@ -227,7 +222,7 @@ function collectApprovalComments(process: ApprovalProcessResponse): RemarkItem[]
                 stageId: stage.id,
                 approverName: stage.approverName,
                 approverUserId: stage.approverUserId,
-                phase: "Повторное согласование",
+                phase: "repeat",
                 comment: stage.repeatComment,
                 decidedAt: stage.repeatDecidedAt,
                 attachments: stage.repeatAttachments,
@@ -243,7 +238,7 @@ function collectApprovalComments(process: ApprovalProcessResponse): RemarkItem[]
                 stageId: stage.id,
                 approverName: stage.approverName,
                 approverUserId: stage.approverUserId,
-                phase: "Финальная выдержка",
+                phase: "finalHold",
                 comment: stage.finalHoldComment,
                 decidedAt: stage.finalHoldDecidedAt,
                 attachments: stage.finalHoldAttachments,
@@ -252,15 +247,6 @@ function collectApprovalComments(process: ApprovalProcessResponse): RemarkItem[]
         }
         return comments;
     });
-}
-
-// Корректное склонение "замечание/замечания/замечаний" по числу
-function pluralizeRemarkCount(n: number): string {
-    const mod10 = n % 10;
-    const mod100 = n % 100;
-    if (mod10 === 1 && mod100 !== 11) return "замечание";
-    if (mod10 >= 2 && mod10 <= 4 && (mod100 < 12 || mod100 > 14)) return "замечания";
-    return "замечаний";
 }
 
 /** Карточка одного замечания/комментария - в духе StageCardView: обрезанный текст,
@@ -281,11 +267,12 @@ function RemarkCard({
     onOpenFull: () => void;
     onOpenAttachment: (fileId: number, fileName: string) => void;
 }) {
+    const {t} = useTranslation();
     const isLong = item.comment.length > COMMENT_TRUNCATE_LENGTH;
     const displayedComment = isLong
         ? item.comment.slice(0, COMMENT_TRUNCATE_LENGTH).trimEnd() + "…"
         : item.comment;
-    const buttonLabel = isRemark ? "См. замечания полностью" : "См. комментарий полностью";
+    const buttonLabel = isRemark ? t("coordinationUi.revision.viewFullRemarks") : t("coordinationUi.revision.viewFullComment");
 
     return (
         <div
@@ -299,7 +286,7 @@ function RemarkCard({
                 <span className={`text-[12.5px] font-semibold ${resolved ? "text-[#8b97ab]" : "text-[#1c2740]"}`}>
                     {item.approverName}
                 </span>
-                <span className="text-[11px] font-medium text-[#8b97ab]">{item.phase}</span>
+                <span className="text-[11px] font-medium text-[#8b97ab]">{t(item.phase === "primary" ? "coordinationUi.revision.phasePrimary" : item.phase === "repeat" ? "coordinationUi.revision.phaseRepeat" : "coordinationUi.revision.phaseFinalHold")}</span>
             </div>
 
             <div className={`whitespace-pre-wrap text-[12.5px] leading-[1.55] ${resolved ? "text-[#8b97ab]" : "text-[#3c424a]"}`}>
@@ -309,7 +296,7 @@ function RemarkCard({
             {item.attachments.length > 0 && (
                 <div className="rounded-[9px] border border-[#eef2f7] bg-white p-2">
                     <div className="mb-1 text-[10px] font-semibold text-[#8b97ab]">
-                        Прикреплённые файлы:
+                        {t("coordinationUi.revision.attachedFiles")}
                     </div>
                     <div className="flex flex-col gap-1">
                         {item.attachments.map((a) => (
@@ -401,6 +388,7 @@ function DocReplaceRow({slot, state, onToggleReplace, onToggleRemove, onFileSele
     onFileSelected: (file: File) => void;
     onClearFile: () => void;
 }) {
+    const {t} = useTranslation();
     const inputRef = useRef<HTMLInputElement>(null);
     const isUpdated = state.file !== null;
     const willBeRemoved = state.remove;
@@ -420,14 +408,14 @@ function DocReplaceRow({slot, state, onToggleReplace, onToggleRemove, onFileSele
                         {slot.label}
                     </span>
                     <span className="truncate text-[13px] text-[#8b97ab]">
-                        {isUpdated ? state.file!.name : "Документ не загружен"}
+                        {isUpdated ? state.file!.name : t("coordinationUi.revision.docNotLoaded")}
                     </span>
                 </span>
 
                 {isUpdated && (
                     <span className="flex-none inline-flex items-center gap-1 text-[11px] font-semibold text-[#1e8e3e]">
                         <CheckCircle2 size={12} className="flex-none"/>
-                        Добавлено
+                        {t("coordinationUi.revision.added")}
                     </span>
                 )}
 
@@ -436,7 +424,7 @@ function DocReplaceRow({slot, state, onToggleReplace, onToggleRemove, onFileSele
                         type="button"
                         onClick={onClearFile}
                         className="cursor-pointer flex-none text-[#8b97ab] hover:text-[#c0392b]"
-                        title="Убрать выбранный файл"
+                        title={t("coordinationUi.revision.removeSelectedFile")}
                     >
                         <Trash2 size={14}/>
                     </button>
@@ -448,7 +436,7 @@ function DocReplaceRow({slot, state, onToggleReplace, onToggleRemove, onFileSele
                     className="flex-none cursor-pointer inline-flex items-center gap-1.5 rounded-[7px] border border-[#d7dee8] bg-white px-2.5 py-[6px] text-[11.5px] font-semibold text-[#4e57d6] hover:bg-[#ececfc]"
                 >
                     <Paperclip size={13}/>
-                    {isUpdated ? "Заменить" : "Добавить документ"}
+                    {isUpdated ? t("coordinationUi.revision.replace") : t("coordinationUi.revision.addDocument")}
                 </button>
                 <input ref={inputRef} type="file" accept={DOC_ACCEPT} className="hidden" onChange={handlePick}/>
             </div>
@@ -482,7 +470,7 @@ function DocReplaceRow({slot, state, onToggleReplace, onToggleRemove, onFileSele
                 }`}
             >
                 {!willBeRemoved && isUpdated && <CheckCircle2 size={12} className="flex-none"/>}
-                {willBeRemoved ? "Будет удалено" : isUpdated ? "Обновлено" : "Не обновлено"}
+                {willBeRemoved ? t("coordinationUi.revision.willBeRemoved") : isUpdated ? t("coordinationUi.revision.updated") : t("coordinationUi.revision.notUpdated")}
             </span>
 
             {isUpdated && !willBeRemoved && (
@@ -490,7 +478,7 @@ function DocReplaceRow({slot, state, onToggleReplace, onToggleRemove, onFileSele
                     type="button"
                     onClick={onClearFile}
                     className="cursor-pointer flex-none text-[#8b97ab] hover:text-[#c0392b]"
-                    title="Убрать выбранный файл"
+                    title={t("coordinationUi.revision.removeSelectedFile")}
                 >
                     <Trash2 size={14}/>
                 </button>
@@ -499,7 +487,7 @@ function DocReplaceRow({slot, state, onToggleReplace, onToggleRemove, onFileSele
             <CheckToggleButton
                 checked={state.requiresReplace}
                 onChange={onToggleReplace}
-                label="требует замены"
+                label={t("coordinationUi.revision.requiresReplace")}
                 disabled={willBeRemoved}
             />
 
@@ -514,7 +502,7 @@ function DocReplaceRow({slot, state, onToggleReplace, onToggleRemove, onFileSele
                 }`}
             >
                 <RefreshCcw size={13}/>
-                Заменить
+                {t("coordinationUi.revision.replace")}
             </button>
             <input ref={inputRef} type="file" accept={DOC_ACCEPT} className="hidden" onChange={handlePick}/>
 
@@ -529,7 +517,7 @@ function DocReplaceRow({slot, state, onToggleReplace, onToggleRemove, onFileSele
                     }`}
                 >
                     <Trash2 size={13}/>
-                    {willBeRemoved ? "Отменить удаление" : "Удалить"}
+                    {willBeRemoved ? t("coordinationUi.revision.cancelRemoval") : t("coordinationUi.revision.delete")}
                 </button>
             )}
         </div>
@@ -542,6 +530,7 @@ export function VndRevisionNeededPanel({
                                             tidPreviousFileId, tidDefaultResponsibleUserId,
                                             tidDefaultResponsibleUserName, tidCanSelectResponsible,
                                         }: VndRevisionNeededPanelProps) {
+    const {t} = useTranslation();
     const [docState, setDocState] = useState<Record<DocLang, DocSlotState>>({
         ru: EMPTY_DOC_STATE,
         kg: EMPTY_DOC_STATE,
@@ -591,7 +580,7 @@ export function VndRevisionNeededPanel({
     };
 
     const allRemarks = collectRemarks(process);
-    const activePhaseLabel = PHASE_LABEL_BY_KEY[getActiveRevisionPhase(process)];
+    const activePhaseLabel = getActiveRevisionPhase(process);
     // Замечания, требующие исправления ПРЯМО СЕЙЧАС (с последнего пройденного этапа) - отдельно
     // от уже устранённых замечаний более раннего этапа (см. resolvedRemarks ниже - те остаются
     // видны для истории/контекста, но серым отдельным блоком, не как активное "надо исправить").
@@ -603,16 +592,16 @@ export function VndRevisionNeededPanel({
     const docSlots: DocSlot[] = redaction
         ? [
             {
-                lang: "ru", label: "Русский", fileId: redaction.docFileRuId, exists: true, deletable: false,
+                lang: "ru", label: t("vndEditLastRevisionModal.langRu"), fileId: redaction.docFileRuId, exists: true, deletable: false,
                 title: resolveVndDocTitle(vnd, "ru"),
             },
             {
-                lang: "kg", label: "Кыргызча", fileId: redaction.docFileKgId,
+                lang: "kg", label: t("vndEditLastRevisionModal.langKg"), fileId: redaction.docFileKgId,
                 exists: redaction.docFileKgId !== null, deletable: true,
                 title: resolveVndDocTitle(vnd, "kg"),
             },
             {
-                lang: "en", label: "English", fileId: redaction.docFileEnId,
+                lang: "en", label: t("vndEditLastRevisionModal.langEn"), fileId: redaction.docFileEnId,
                 exists: redaction.docFileEnId !== null, deletable: true,
                 title: resolveVndDocTitle(vnd, "en"),
             },
@@ -643,22 +632,22 @@ export function VndRevisionNeededPanel({
     // не изменилось.
     let disabledReason: string | null = null;
     if (remarksAgreement === null) {
-        disabledReason = "Сначала укажите, согласны ли вы со всеми замечаниями";
+        disabledReason = t("coordinationUi.revision.reasonAnswerFirst");
     } else if (
         remarksAgreement === RemarksAgreement.FullyAgree
         && !hasAnyDocChange && !hasAnyAttachmentChange
     ) {
-        disabledReason = "Отметьте хотя бы один документ как «требует замены» (или добавьте/удалите вложение) и загрузите обновлённый файл";
+        disabledReason = t("coordinationUi.revision.reasonChangeDoc");
     } else if (
         remarksAgreement !== RemarksAgreement.FullyAgree && matrixMode === "generate" && rows.length === 0
     ) {
-        disabledReason = "Добавьте хотя бы одну строку в матрицу разногласий, чтобы отправить";
+        disabledReason = t("coordinationUi.revision.reasonAddMatrixRow");
     } else if (
         remarksAgreement !== RemarksAgreement.FullyAgree && matrixMode === "upload" && !matrixFile
     ) {
-        disabledReason = "Загрузите файл матрицы разногласий, чтобы отправить";
+        disabledReason = t("coordinationUi.revision.reasonUploadMatrix");
     } else if (tidMissing) {
-        disabledReason = "Приложите файл ТИД (Таблица изменений и дополнений) — он обязателен при актуализации ВНД";
+        disabledReason = t("coordinationUi.revision.reasonTid");
     }
 
     const canSubmit = disabledReason === null && !submitting;
@@ -708,7 +697,7 @@ export function VndRevisionNeededPanel({
 
     const setDocFile = (lang: DocLang, file: File) => {
         if (file.size > MAX_FILE_SIZE) {
-            setError(`Файл «${file.name}» превышает допустимый размер (${formatFileSize(MAX_FILE_SIZE)})`);
+            setError(t("coordinationUi.revision.fileTooLarge", {name: file.name, size: formatFileSize(MAX_FILE_SIZE)}));
             return;
         }
         setError(null);
@@ -725,7 +714,7 @@ export function VndRevisionNeededPanel({
 
         const oversized = incoming.find((f) => f.size > MAX_FILE_SIZE);
         if (oversized) {
-            setError(`Файл «${oversized.name}» превышает допустимый размер (${formatFileSize(MAX_FILE_SIZE)})`);
+            setError(t("coordinationUi.revision.fileTooLarge", {name: oversized.name, size: formatFileSize(MAX_FILE_SIZE)}));
             return;
         }
 
@@ -814,7 +803,7 @@ export function VndRevisionNeededPanel({
             });
             await onResubmitted();
         } catch (err) {
-            setError(err instanceof Error ? err.message : "Не удалось отправить редакцию");
+            setError(err instanceof Error ? err.message : t("coordinationUi.revision.submitFailed"));
         } finally {
             setSubmitting(false);
         }
@@ -828,8 +817,8 @@ export function VndRevisionNeededPanel({
                     <AlertCircle className="h-3.5 w-3.5 shrink-0 text-[#d62815]"/>
                     <span className="text-[13.5px] font-bold text-[#d62815]">
                         {remarks.length === 0
-                            ? "Замечаний нет"
-                            : `Необходимо исправить: ${remarks.length} ${pluralizeRemarkCount(remarks.length)}`}
+                            ? t("coordinationUi.revision.noRemarks")
+                            : t("coordinationUi.revision.mustFix", {count: remarks.length, noun: t("coordinationUi.revision.remarksCount", {count: remarks.length})})}
                     </span>
                 </div>
                 {remarks.length > 0 && (
@@ -855,7 +844,7 @@ export function VndRevisionNeededPanel({
                     <div className="flex items-center gap-1.5 border-b border-[#eef2f7] px-5 py-[13px]">
                         <CheckCircle2 className="h-3.5 w-3.5 shrink-0 text-[#a3adbd]"/>
                         <span className="text-[13.5px] font-bold text-[#8b97ab]">
-                            Устранённые замечания предыдущего этапа
+                            {t("coordinationUi.revision.resolvedTitle")}
                         </span>
                     </div>
                     <div className="flex flex-col gap-3 p-4">
@@ -878,7 +867,7 @@ export function VndRevisionNeededPanel({
                     <div className="flex items-center gap-1.5 border-b border-[#eef2f7] px-5 py-[13px]">
                         <MessageSquareText className="h-3.5 w-3.5 shrink-0 text-[#4e57d6]"/>
                         <span className="text-[13.5px] font-bold text-[#1c2740]">
-                            Также посмотрите пришедшие комментарии по согласованию:
+                            {t("coordinationUi.revision.alsoComments")}
                         </span>
                     </div>
                     <div className="flex flex-col gap-3 p-4">
@@ -897,7 +886,8 @@ export function VndRevisionNeededPanel({
 
             {openRemark && (
                 <CommentViewModal
-                    title={openRemark.isRemark ? "См. замечания полностью" : "См. комментарий полностью"}
+                    isComment={!openRemark.isRemark}
+                    title={openRemark.isRemark ? t("coordinationUi.revision.viewFullRemarks") : t("coordinationUi.revision.viewFullComment")}
                     approverName={openRemark.item.approverName}
                     approverUserId={openRemark.item.approverUserId}
                     decidedAt={openRemark.item.decidedAt}
@@ -922,14 +912,14 @@ export function VndRevisionNeededPanel({
             {/* Единый блок: вопрос "согласны ли" + (при "Нет") матрица разногласий сразу внутри него */}
             <div className="overflow-hidden rounded-[14px] border border-[#e9edf3] bg-white">
                 <div className="border-b border-[#eef2f7] px-5 py-[13px] text-[13.5px] font-bold text-[#1c2740]">
-                    Согласны ли вы со всеми замечаниями?
+                    {t("coordinationUi.revision.agreeQuestion")}
                 </div>
                 <div className="px-5 py-4">
                     <div role="radiogroup" className="flex flex-wrap gap-3">
                         {([
-                            {label: "Да", value: RemarksAgreement.FullyAgree},
-                            {label: "Частично согласен", value: RemarksAgreement.PartiallyAgree},
-                            {label: "Нет", value: RemarksAgreement.FullyDisagree},
+                            {label: t("coordinationUi.revision.agreeYes"), value: RemarksAgreement.FullyAgree},
+                            {label: t("coordinationUi.revision.agreePartial"), value: RemarksAgreement.PartiallyAgree},
+                            {label: t("coordinationUi.revision.agreeNo"), value: RemarksAgreement.FullyDisagree},
                         ] as const).map(({label, value}) => {
                             const isSelected = remarksAgreement === value;
                             return (
@@ -963,17 +953,16 @@ export function VndRevisionNeededPanel({
                     || remarksAgreement === RemarksAgreement.PartiallyAgree) && (
                     <>
                     <div className="border-t border-[#eef2f7] px-5 py-[13px] text-[13.5px] font-bold text-[#1c2740]">
-                        Загрузить редакцию с исправленными замечаниями:
+                        {t("coordinationUi.revision.uploadTitle")}
                     </div>
 
                     <div className="flex flex-col gap-2 px-5 py-4">
                         <div className="mb-1 rounded-[10px] border border-[#e5e9f0] bg-[#f9fafc] px-3 py-[10px] text-[11.5px] leading-[1.5] text-[#8b97ab]">
-                            Допустимый формат: DOCX. Максимальный
-                            размер каждого файла — {formatFileSize(MAX_FILE_SIZE)}.
+                            {t("coordinationUi.revision.formatNote", {size: formatFileSize(MAX_FILE_SIZE)})}
                         </div>
                         {docSlots.length === 0 && (
                             <div className="text-[12.5px] text-[#8b97ab]">
-                                Не удалось загрузить документы текущей редакции — обновите страницу.
+                                {t("coordinationUi.revision.docsLoadFailed")}
                             </div>
                         )}
                         {docSlots.map((slot) => (
@@ -997,12 +986,12 @@ export function VndRevisionNeededPanel({
                         <div className="mt-3">
                             <div className="mb-[6px] flex items-center justify-between gap-2">
                                 <span className="text-[12.5px] font-semibold text-[#26324a]">
-                                    Вложения редакции <span className="text-[#8b97ab] font-normal">(необязательно)</span>
+                                    {t("coordinationUi.revision.attachmentsTitle")} <span className="text-[#8b97ab] font-normal">{t("coordinationUi.revision.optional")}</span>
                                 </span>
                                 <span className="flex items-center gap-0.5 text-[11.5px] text-[#8b97ab]">
-                                    Добавлено {totalAttachmentCount} из {VND_REDACTION_MAX_ATTACHMENTS} файлов максимум
+                                    {t("coordinationUi.revision.attachmentsCount", {count: totalAttachmentCount, max: VND_REDACTION_MAX_ATTACHMENTS})}
                                     <HelpTooltip
-                                        content={`Количество вложений к редакции ограничено — не более ${VND_REDACTION_MAX_ATTACHMENTS}.`}
+                                        content={t("coordinationUi.revision.attachmentsLimitTip", {max: VND_REDACTION_MAX_ATTACHMENTS})}
                                         side="top"
                                         className="h-5 w-5"
                                     />
@@ -1046,7 +1035,7 @@ export function VndRevisionNeededPanel({
                                                             : "border-[#e5e9f0] bg-white text-[#8b97ab] hover:border-[#e0473e]/50 hover:text-[#c0392b]"
                                                     }`}
                                                 >
-                                                    {willBeRemoved ? "Отменить удаление" : "Удалить"}
+                                                    {willBeRemoved ? t("coordinationUi.revision.cancelRemoval") : t("coordinationUi.revision.delete")}
                                                 </button>
                                             </div>
                                         );
@@ -1068,7 +1057,7 @@ export function VndRevisionNeededPanel({
                                             </span>
                                             <span className="flex-none inline-flex items-center gap-1 text-[11px] font-semibold text-[#1e8e3e]">
                                                 <CheckCircle2 size={12} className="flex-none"/>
-                                                Добавлено
+                                                {t("coordinationUi.revision.added")}
                                             </span>
                                             <button
                                                 type="button"
@@ -1084,7 +1073,7 @@ export function VndRevisionNeededPanel({
 
                             {attachmentLimitReached ? (
                                 <Tooltip
-                                    content={`Достигнут максимум — ${VND_REDACTION_MAX_ATTACHMENTS} вложений на редакцию`}
+                                    content={t("coordinationUi.revision.attachmentsMaxTip", {max: VND_REDACTION_MAX_ATTACHMENTS})}
                                     side="top"
                                     className="mt-[6px] w-full"
                                 >
@@ -1092,7 +1081,7 @@ export function VndRevisionNeededPanel({
                                         className="flex h-[42px] w-full cursor-not-allowed items-center justify-center gap-1.5 rounded-[9px] border border-dashed border-[#e5e9f0] bg-[#f6f8fb] text-[11.5px] text-[#b7bfcc]"
                                     >
                                         <Paperclip size={14}/>
-                                        Добавить файлы
+                                        {t("coordinationUi.revision.addFiles")}
                                     </span>
                                 </Tooltip>
                             ) : (
@@ -1100,7 +1089,7 @@ export function VndRevisionNeededPanel({
                                     className="mt-[6px] flex h-[42px] w-full cursor-pointer items-center justify-center gap-1.5 rounded-[9px] border border-dashed border-[#d5dae3] bg-[#fbfcfe] text-[11.5px] text-[#8b97ab] transition-colors hover:border-[#4e57d6]/50 hover:bg-[#f6f8fb]"
                                 >
                                     <Paperclip size={14}/>
-                                    Добавить файлы
+                                    {t("coordinationUi.revision.addFiles")}
                                     <input
                                         type="file"
                                         multiple
@@ -1118,7 +1107,7 @@ export function VndRevisionNeededPanel({
                                 <div className="mt-2 flex items-start gap-1.5 text-[11.5px] text-[#d62815]">
                                     <AlertCircle className="mt-[1px] h-3.5 w-3.5 shrink-0"/>
                                     <span>
-                                        Часть выбранных файлов не добавлена — максимум {VND_REDACTION_MAX_ATTACHMENTS} вложений на редакцию.
+                                        {t("coordinationUi.revision.attachmentsPartial", {max: VND_REDACTION_MAX_ATTACHMENTS})}
                                     </span>
                                 </div>
                             )}
@@ -1126,7 +1115,7 @@ export function VndRevisionNeededPanel({
 
                         <div className="mt-3 mb-[6px] flex items-center justify-between">
                             <span className="text-[12.5px] font-semibold text-[#26324a]">
-                                Комментарий о внесённых исправлениях
+                                {t("coordinationUi.revision.commentTitle")}
                             </span>
                             <CharCounter length={comment.length} max={MAX_RESOLUTION_COMMENT_LENGTH}/>
                         </div>
@@ -1140,9 +1129,9 @@ export function VndRevisionNeededPanel({
 
                         <div className="mt-2 flex items-center justify-between gap-3">
                             <span className="flex items-center gap-0.5 text-[11px] text-[#8b97ab]">
-                                Добавлено {commentAttachments.length} из {MAX_RESOLUTION_ATTACHMENTS} файлов максимум
+                                {t("coordinationUi.revision.attachmentsCount", {count: commentAttachments.length, max: MAX_RESOLUTION_ATTACHMENTS})}
                                 <HelpTooltip
-                                    content={`Файлы, приложенные к комментарию — не более ${MAX_RESOLUTION_ATTACHMENTS}, каждый не больше ${formatFileSize(MAX_RESOLUTION_ATTACHMENT_SIZE_BYTES)}. Сохраняются в истории согласования бессрочно, наравне с текстом комментария.`}
+                                    content={t("coordinationUi.revision.commentFilesTip", {max: MAX_RESOLUTION_ATTACHMENTS, size: formatFileSize(MAX_RESOLUTION_ATTACHMENT_SIZE_BYTES)})}
                                     side="top"
                                     className="h-5 w-5"
                                 />
@@ -1150,12 +1139,12 @@ export function VndRevisionNeededPanel({
 
                             {commentAttachmentLimitReached ? (
                                 <Tooltip
-                                    content={`Достигнут максимум — ${MAX_RESOLUTION_ATTACHMENTS} файлов на комментарий`}
+                                    content={t("coordinationUi.revision.commentFilesMaxTip", {max: MAX_RESOLUTION_ATTACHMENTS})}
                                     side="top"
                                 >
                                     <span className="cursor-not-allowed inline-flex items-center gap-1.5 rounded-[8px] border border-[#e5e9f0] bg-[#f6f8fb] px-3 py-[6px] text-[11.5px] font-semibold text-[#b7bfcc]">
                                         <Paperclip size={13}/>
-                                        Прикрепить файл
+                                        {t("coordinationUi.revision.attachFile")}
                                     </span>
                                 </Tooltip>
                             ) : (
@@ -1170,7 +1159,7 @@ export function VndRevisionNeededPanel({
                                         }}
                                     />
                                     <Paperclip size={13}/>
-                                    Прикрепить файл
+                                    {t("coordinationUi.revision.attachFile")}
                                 </label>
                             )}
                         </div>
@@ -1179,7 +1168,7 @@ export function VndRevisionNeededPanel({
                             <div className="mt-2 flex items-start gap-1.5 text-[11.5px] text-[#d62815]">
                                 <AlertCircle className="mt-[1px] h-3.5 w-3.5 shrink-0"/>
                                 <span>
-                                    Часть выбранных файлов не добавлена — максимум {MAX_RESOLUTION_ATTACHMENTS} файлов на комментарий.
+                                    {t("coordinationUi.revision.commentFilesPartial", {max: MAX_RESOLUTION_ATTACHMENTS})}
                                 </span>
                             </div>
                         )}
@@ -1188,8 +1177,11 @@ export function VndRevisionNeededPanel({
                             <div className="mt-2 flex items-start gap-1.5 text-[11.5px] text-[#d62815]">
                                 <AlertCircle className="mt-[1px] h-3.5 w-3.5 shrink-0"/>
                                 <span>
-                                    Не добавлен{oversizedCommentFileNames.length > 1 ? "ы" : ""} «{oversizedCommentFileNames.join("», «")}»
-                                    {" "}— размер файла не должен превышать {formatFileSize(MAX_RESOLUTION_ATTACHMENT_SIZE_BYTES)}.
+                                    {t("coordinationUi.revision.oversizedFiles", {
+                                        count: oversizedCommentFileNames.length,
+                                        names: oversizedCommentFileNames.join("», «"),
+                                        size: formatFileSize(MAX_RESOLUTION_ATTACHMENT_SIZE_BYTES),
+                                    })}
                                 </span>
                             </div>
                         )}
@@ -1242,12 +1234,11 @@ export function VndRevisionNeededPanel({
             {requiresTid && (
                 <div className="overflow-hidden rounded-[14px] border border-[#e9edf3] bg-white">
                     <div className="border-b border-[#eef2f7] px-5 py-[13px] text-[13.5px] font-bold text-[#1c2740]">
-                        Таблица изменений и дополнений (ТИД)
+                        {t("coordinationUi.revision.tidTitle")}
                     </div>
                     <div className="px-5 py-4">
                         <p className="mb-3 text-[12.5px] leading-[1.5] text-[#8b97ab]">
-                            Обязательна при актуализации ВНД — прикладывайте обновлённый ТИД на каждом круге
-                            доработки вместе с исправленной редакцией.
+                            {t("coordinationUi.revision.tidNote")}
                         </p>
 
                         {!tid ? (
@@ -1261,7 +1252,7 @@ export function VndRevisionNeededPanel({
                                 }`}
                             >
                                 <FileSpreadsheet size={14}/>
-                                Сформировать или загрузить ТИД
+                                {t("coordinationUi.revision.tidCreate")}
                             </button>
                         ) : (
                             <div className="flex items-center gap-2 rounded-[9px] border border-[#e5e9f0] bg-[#fbfcfe] px-3 py-[8px]">
@@ -1272,7 +1263,7 @@ export function VndRevisionNeededPanel({
                                     onClick={() => setTidModalOpen(true)}
                                     className="cursor-pointer flex-none text-[11.5px] font-semibold text-[#4e57d6] hover:underline"
                                 >
-                                    Изменить
+                                    {t("coordinationUi.revision.tidChange")}
                                 </button>
                                 <button
                                     type="button"
@@ -1287,7 +1278,7 @@ export function VndRevisionNeededPanel({
                         {tidMissing && (
                             <div className="mt-2 flex items-start gap-1.5 text-[11.5px] text-[#d62815]">
                                 <AlertCircle className="mt-[1px] h-3.5 w-3.5 shrink-0"/>
-                                <span>Файл ТИД обязателен для отправки</span>
+                                <span>{t("coordinationUi.revision.tidRequired")}</span>
                             </div>
                         )}
                     </div>
@@ -1315,10 +1306,10 @@ export function VndRevisionNeededPanel({
                         className="hover:brightness-[1.06] cursor-pointer rounded-[10px] bg-[#4e57d6] px-5 py-[10px] text-[13px] font-semibold text-white disabled:cursor-not-allowed disabled:opacity-40"
                     >
                         {submitting
-                            ? "Отправка…"
+                            ? t("coordinationUi.revision.sending")
                             : remarksAgreement === RemarksAgreement.FullyAgree
-                                ? "Отправить на повторное согласование"
-                                : "Отправить на финальную выдержку"}
+                                ? t("coordinationUi.revision.sendRepeat")
+                                : t("coordinationUi.revision.sendFinalHold")}
                     </button>
                 </Tooltip>
 
@@ -1336,15 +1327,13 @@ export function VndRevisionNeededPanel({
                 onConfirm={confirmPendingRemoval}
                 variant="danger"
                 icon={Trash2}
-                title="Удалить документ?"
+                title={t("coordinationUi.revision.removeDocTitle")}
                 message={
                     pendingRemoval?.kind === "doc"
-                        ? `Документ «${pendingRemoval.label}» будет помечен на удаление — редакция останется без него. ` +
-                          "Само удаление произойдёт при отправке на согласование, до этого можно отменить."
-                        : `Вложение «${pendingRemoval?.label ?? ""}» будет помечено на удаление. ` +
-                          "Само удаление произойдёт при отправке на согласование, до этого можно отменить."
+                        ? t("coordinationUi.revision.removeDocMessage", {label: pendingRemoval.label})
+                        : t("coordinationUi.revision.removeAttachmentMessage", {label: pendingRemoval?.label ?? ""})
                 }
-                confirmLabel="Удалить"
+                confirmLabel={t("coordinationUi.revision.delete")}
             />
 
             {/* Сформировать или загрузить ТИД - то же окно, что и при загрузке новой редакции на

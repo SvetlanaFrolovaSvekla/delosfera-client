@@ -9,6 +9,7 @@ import type {
     ApprovalStageResponse,
 } from "@/service/coordinationService/coordinationServiceTypes.ts";
 import type {VndRedactionResponse, VndResponse} from "@/service/vndService/vndServiceType.ts";
+import {useCanExportVnd, NO_EXPORT_VND_HINT} from "@/hooks/vndHooks/useCanExportVnd.ts";
 import {getRedactionDisplayStatus, REDACTION_STATUS_META} from "@/utils/vndProcess/redactionStatus.ts";
 import {approvalSheetCaption, getRedactionApprovalSheets} from "@/utils/vndProcess/approvalSheets.ts";
 import {downloadWithToast} from "@/utils/downloadFiles/downloadFile.ts";
@@ -20,7 +21,6 @@ import {
 } from "@/components/componentsCoordination/CoordinationRouteConstructor/viewComponents/FormattedResolutionComment.tsx";
 import {EmptyState} from "@/components/componentsGeneral/EmptyState.tsx";
 import {Eye, FileStack, Loader2, Shield} from "lucide-react";
-import {useCanExportVnd, NO_EXPORT_VND_HINT} from "@/hooks/vndHooks/useCanExportVnd.ts";
 
 interface VndHistoryTabProps {
     vnd: VndResponse;
@@ -35,6 +35,10 @@ const ICON_DOT_COLOR: Record<string, string> = {
     trash: "bg-red-500",
     info: "bg-[#c3ccd8]",
 };
+
+// Фиксированная высота панелей "Журнал аудита" и "Редакции и юридическая значимость":
+// обе одинаковые, при переполнении содержимое скроллится внутри панели.
+const PANEL_SIZE = "h-[560px] lg:h-[calc(100vh-280px)] lg:min-h-[480px] lg:max-h-[760px]";
 
 function formatDateTime(iso: string): string {
     return new Date(iso).toLocaleString("ru-RU", {dateStyle: "short", timeStyle: "short"});
@@ -67,8 +71,7 @@ export function VndHistoryTab({vnd, redactions}: VndHistoryTabProps) {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
     // Id редакции, для которой открыт подробный лог (кнопка "Смотреть подробно" на панели
-    // "Редакции и юридическая значимость") — вместо самой редакции храним id, чтобы после
-    // перезагрузки/изменения списка редакций деталка всегда показывала актуальные данные.
+    // "Редакции и юридическая значимость") - вместо самой редакции храним id
     const [detailRedactionId, setDetailRedactionId] = useState<number | null>(null);
 
     useEffect(() => {
@@ -98,8 +101,7 @@ export function VndHistoryTab({vnd, redactions}: VndHistoryTabProps) {
         };
     }, [vnd.id, t]);
 
-    // Открытая по кнопке "Смотреть подробно" редакция относится к конкретному ВНД — при
-    // переключении на другой документ (без размонтирования таба) детальный лог нужно закрыть.
+    // Открытая по кнопке "Смотреть подробно" редакция относится к конкретному ВНД
     useEffect(() => {
         // eslint-disable-next-line react-hooks/set-state-in-effect
         setDetailRedactionId(null);
@@ -126,7 +128,7 @@ export function VndHistoryTab({vnd, redactions}: VndHistoryTabProps) {
         );
     }
 
-    // Подробный лог выбранной редакции — занимает место обеих панелей (аудит + редакции),
+    // Подробный лог выбранной редакции - занимает место обеих панелей (аудит + редакции),
     // пока не нажата стрелочка "Назад к истории" (см. VndRedactionHistoryDetail.onBack).
     if (detailRedaction) {
         const displayStatus = getRedactionDisplayStatus(
@@ -153,14 +155,15 @@ export function VndHistoryTab({vnd, redactions}: VndHistoryTabProps) {
         <div className="px-4 sm:px-6 grid grid-cols-1 lg:grid-cols-2 gap-[18px] items-start">
             {/* Левая колонка: журнал аудита */}
             <div className="flex flex-col gap-[18px]">
-                <div className="bg-white border border-[#e9edf3] rounded-2xl overflow-hidden">
-                    <div className="px-5 pt-4 pb-3 border-b border-[#eef2f7] flex items-center gap-[9px]">
+                {/* Панель фиксированной высоты - если записей много, скроллится содержимое */}
+                <div className={`${PANEL_SIZE} bg-white border border-[#e9edf3] rounded-2xl overflow-hidden flex flex-col`}>
+                    <div className="flex-none px-5 pt-4 pb-3 border-b border-[#eef2f7] flex items-center gap-[9px]">
                         <Shield size={17} strokeWidth={1.8} className="text-[#8b97ab]"/>
                         <h2 className="m-0 text-sm font-semibold">{t("openVndPage.historyTab.auditLogTitle")}</h2>
                         <span
                             className="ml-auto text-[11px] text-[#a3adbd]">{t("openVndPage.historyTab.auditLogSubtitle")}</span>
                     </div>
-                    <div className="px-5 pt-1.5 pb-3.5">
+                    <div className="min-h-0 flex-1 overflow-y-auto px-5 pt-1.5 pb-3.5">
                         {(auditEntries?.length ?? 0) === 0 ? (
                             <div
                                 className="py-4 text-[12.5px] text-[#a3adbd]">{t("openVndPage.historyTab.auditLogEmpty")}</div>
@@ -172,8 +175,6 @@ export function VndHistoryTab({vnd, redactions}: VndHistoryTabProps) {
                                         className={`w-[7px] h-[7px] flex-none rounded-full mt-1.5 ${ICON_DOT_COLOR[a.icon] ?? "bg-[#c3ccd8]"}`}
                                     />
                                     <div className="min-w-0">
-                                        {/* whitespace-pre-line — сервер разносит длинный список изменённых
-                                            реквизитов по строкам через \n (см. VndService.BuildChangedFieldsList) */}
                                         <div
                                             className="whitespace-pre-line text-[12.5px] text-[#26324a] leading-[1.4]">{a.text}</div>
                                         <div
@@ -187,11 +188,11 @@ export function VndHistoryTab({vnd, redactions}: VndHistoryTabProps) {
             </div>
 
             {/* Правая колонка: редакции и юридическая значимость */}
-            <div className="bg-white border border-[#e9edf3] rounded-2xl overflow-hidden">
-                <div className="px-5 pt-4 pb-3 border-b border-[#eef2f7]">
+            <div className={`${PANEL_SIZE} bg-white border border-[#e9edf3] rounded-2xl overflow-hidden flex flex-col`}>
+                <div className="flex-none px-5 pt-4 pb-3 border-b border-[#eef2f7]">
                     <h2 className="m-0 text-sm font-semibold">{t("openVndPage.historyTab.redactionsPanelTitle")}</h2>
                 </div>
-                <div className="px-5 pt-1.5 pb-3.5">
+                <div className="min-h-0 flex-1 overflow-y-auto px-5 pt-1.5 pb-3.5">
                     {sortedRedactions.length === 0 ? (
                         <EmptyState
                             embedded
@@ -205,7 +206,7 @@ export function VndHistoryTab({vnd, redactions}: VndHistoryTabProps) {
                                 r, vnd.status, r.number === maxNumber, vnd.effectiveDate,
                             );
                             const meta = REDACTION_STATUS_META[displayStatus];
-                            // approvalHistory отсортирован сервером по убыванию CreatedAt — первое
+                            // approvalHistory отсортирован сервером по убыванию CreatedAt - первое
                             // совпадение по redactionId и есть последний цикл согласования этой редакции.
                             const process = approvalHistory?.find((p) => p.redactionId === r.id) ?? null;
                             // Все листы согласования редакции - у "актуализированной без изменений"

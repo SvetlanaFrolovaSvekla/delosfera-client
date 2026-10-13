@@ -11,7 +11,7 @@ import {formatBytes} from "@/utils/formatBytes.ts";
 import {MAX_FILE_SIZE} from "@/constants/validation/totalValidatuon.ts";
 import {
     TidChangesTable
-} from "@/components/componentsVND/componentsOpenVndPage/componentsEditionsTab/TidChangesTable.tsx";
+} from "@/components/componentsVND/componentsOpenVndPage/componentsEditionsTab/componentsModal/uploadTidModal/TidChangesTable.tsx";
 import {Clue} from "@/components/componentsGeneral/knowledgeBaseComponents/Clue.tsx";
 
 import tidTemplateBlankUrl from "@/assets/tid/tidTemplateBlank.docx?url";

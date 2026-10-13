@@ -105,6 +105,7 @@ export function VndApprovalRouteView({
     process, highlightStageId, frameless, onShowQuoteInText,
     canEditRoute, onRemoveApprover, onReplaceApprover, onAddApprover,
 }: VndApprovalRouteViewProps) {
+    const {t} = useTranslation();
     const [initiatorCommentOpen, setInitiatorCommentOpen] = useState(false);
     // Свёрнут ли по умолчанию блок "Убранные согласующие" ниже основного ряда карточек -
     // см. пояснение у activeStages/removedStages ниже.
@@ -200,8 +201,8 @@ export function VndApprovalRouteView({
                             className={`flex-none transition-transform ${showRemovedHistory ? "rotate-180" : ""}`}
                         />
                         {showRemovedHistory
-                            ? "Скрыть убранных согласующих"
-                            : `Убранные согласующие (${removedStages.length})`}
+                            ? t("coordinationUi.route.hideRemoved")
+                            : t("coordinationUi.route.showRemoved", {count: removedStages.length})}
                     </button>
 
                     {showRemovedHistory && (
@@ -245,7 +246,7 @@ export function VndApprovalRouteView({
                         </span>
                         <span className="inline-flex items-center gap-1 text-[11px] font-medium text-[#4e57d6]">
                             <MessageSquareText size={12} className="flex-none"/>
-                            комментарий к исправлениям
+                            {t("coordinationUi.route.fixesComment")}
                         </span>
                     </div>
                     <div className="whitespace-pre-wrap break-words text-[12px] leading-snug text-[#3c424a]">
@@ -274,7 +275,7 @@ export function VndApprovalRouteView({
                             onClick={() => setInitiatorCommentOpen(true)}
                             className="cursor-pointer self-start rounded-[7px] border border-[#d7dee8] bg-white px-2.5 py-[6px] text-[11px] font-semibold text-[#4e57d6] hover:bg-[#ececfc]"
                         >
-                            См. комментарий полностью
+                            {t("coordinationUi.route.viewFullComment")}
                         </button>
                     )}
                 </div>
@@ -282,7 +283,8 @@ export function VndApprovalRouteView({
 
             {initiatorCommentOpen && (
                 <CommentViewModal
-                    title="См. комментарий полностью"
+                    title={t("coordinationUi.route.viewFullComment")}
+                    isComment
                     approverName={process.initiatorName}
                     approverUserId={process.initiatorUserId}
                     comment={process.repeatInitiatorComment ?? ""}
@@ -335,7 +337,7 @@ export function VndApprovalRouteView({
                         className="cursor-pointer flex h-[fit-content] w-[220px] flex-none flex-col items-center justify-center gap-2 self-stretch rounded-2xl border border-dashed border-[#c9cee0] bg-white/60 p-4 text-[#4e57d6] hover:border-[#4e57d6]/60 hover:bg-white"
                     >
                         <UserPlus size={18}/>
-                        <span className="text-[12.5px] font-semibold">Добавить согласующего</span>
+                        <span className="text-[12.5px] font-semibold">{t("coordinationUi.route.addApprover")}</span>
                     </button>
                 )}
             </div>
@@ -357,7 +359,7 @@ export function VndApprovalRouteView({
             <div className="mx-auto mt-10 flex w-[280px] flex-col items-center gap-4">
                 <div className="relative w-full">
                     <NormBlockView
-                        label="Первичное согласование"
+                        label={t("coordinationUi.route.primary")}
                         value={process.primaryDeadlineMinutes}
                         workingTime={process.usesWorkingTime}
                         phaseStatus={primaryPhaseStatus}
@@ -377,7 +379,7 @@ export function VndApprovalRouteView({
 
                 <div className="relative w-full">
                     <NormBlockView
-                        label="Согласование после внесённых изменений"
+                        label={t("coordinationUi.route.repeated")}
                         value={process.repeatDeadlineMinutes}
                         workingTime={process.usesWorkingTime}
                         phaseStatus={repeatPhaseStatus}
@@ -396,7 +398,7 @@ export function VndApprovalRouteView({
 
                 <div className="relative w-full">
                     <NormBlockView
-                        label="Финальная выдержка"
+                        label={t("coordinationUi.route.finalHold")}
                         value={process.finalHoldDeadlineMinutes}
                         workingTime={process.usesWorkingTime}
                         phaseStatus={finalHoldPhaseStatus}

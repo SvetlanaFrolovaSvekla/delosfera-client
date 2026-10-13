@@ -464,6 +464,7 @@ export function StageCardView({
 
             {openCommentEntry && (
                 <CommentViewModal
+                    isComment={openCommentEntry.decision === "approved"}
                     title={
                         openCommentEntry.decision === "approved"
                             ? t("stageCard.viewFullComment")

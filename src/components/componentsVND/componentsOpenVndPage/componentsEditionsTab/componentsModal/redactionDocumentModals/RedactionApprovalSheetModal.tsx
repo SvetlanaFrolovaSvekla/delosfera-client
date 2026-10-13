@@ -1,21 +1,14 @@
-// Модалка "Просмотр Листа согласования" — устроена так же, как RedactionTidModal (одиночный
-// специальный документ редакции без языковых вкладок), только для файла, который формируется
-// автоматически по завершении согласования (см. VndApprovalService.GenerateApprovalSheetAsync).
-// Если у редакции несколько листов (повторные согласования в рамках актуализации без изменений,
-// см. approvalSheets.ts) - над документом переключатель между ними, по умолчанию последний.
-// Лист, сформированный системой по процессу согласования, показывается в двух режимах - "Обычный"
-// (фактические решения) и "С подписями ЭЦП" (штамп в колонке "Подпись") - см. ApprovalSheetLiveView.
-// Приложенный вручную лист показывается как есть (сохранённый файл).
+// Модалка "Просмотр Листа согласования"
 import {useState} from "react";
 import {createPortal} from "react-dom";
 import {useTranslation} from "react-i18next";
 import type {VndRedactionResponse, VndResponse} from "@/service/vndService/vndServiceType.ts";
-import {RedactionTextView} from "@/components/componentsVND/componentsOpenVndPage/componentsEditionsTab/RedactionTextView.tsx";
-import {Tooltip} from "@/components/componentsGeneral/Tooltip.tsx";
-import {ClipboardCheck, Download, Loader2, X} from "lucide-react";
 import {useCanExportVnd, NO_EXPORT_VND_HINT} from "@/hooks/vndHooks/useCanExportVnd.ts";
 import {approvalSheetCaption, getRedactionApprovalSheets} from "@/utils/vndProcess/approvalSheets.ts";
+import {RedactionTextView} from "@/components/componentsVND/componentsOpenVndPage/componentsEditionsTab/RedactionTextView.tsx";
 import {ApprovalSheetLiveView} from "@/components/componentsVND/approvalSheet/ApprovalSheetLiveView.tsx";
+import {Tooltip} from "@/components/componentsGeneral/Tooltip.tsx";
+import {ClipboardCheck, Download, Loader2, X} from "lucide-react";
 
 interface RedactionApprovalSheetModalProps {
     vnd: VndResponse;

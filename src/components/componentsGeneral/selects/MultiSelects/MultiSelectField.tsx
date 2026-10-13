@@ -1,5 +1,5 @@
 // Может выводить и модалку с деревом с множественным выбором и плоский список (множественный выбор)
-import {useLayoutEffect, useRef, useState} from "react";
+import {useLayoutEffect, useRef, useState, type ReactNode} from "react";
 import {useTranslation} from "react-i18next";
 import {MultiSelectModal} from "./MultiSelectModal.tsx";
 import {TreeMultiSelectModal, type TreeSelectOption} from "./TreeMultiSelectModal.tsx";
@@ -18,6 +18,10 @@ interface SelectListFieldProps {
     boldLabel?: boolean;
     required?: boolean;
     showChevron?: boolean;
+    /** Пояснение сверху окна выбора (только для плоского списка) */
+    modalHint?: ReactNode;
+    /** Доп. действие справа в строке окна выбора (только для плоского списка) */
+    renderOptionAction?: (key: string) => ReactNode;
 }
 
 const MAX_VISIBLE_CHIPS = 5;
@@ -66,6 +70,8 @@ export function MultiSelectField({
                                      boldLabel = true,
                                      required = false,
                                      showChevron = true,
+                                     modalHint,
+                                     renderOptionAction,
                                  }: SelectListFieldProps) {
     const {t} = useTranslation();
     const [modalOpen, setModalOpen] = useState(false);
@@ -171,6 +177,8 @@ export function MultiSelectField({
                     onApply={onChange}
                     searchPlaceholder={searchPlaceholder}
                     selectedCountLabel={selectedCountLabel}
+                    hint={modalHint}
+                    renderOptionAction={renderOptionAction}
                 />
             )}
         </>

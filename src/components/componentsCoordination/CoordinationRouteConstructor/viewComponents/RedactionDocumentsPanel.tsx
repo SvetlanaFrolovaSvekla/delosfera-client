@@ -10,7 +10,7 @@ import {
     AttachmentDocxPreviewModal
 } from "@/components/componentsGeneral/modal/AttachmentDocxPreviewModal.tsx";
 import {Tooltip} from "@/components/componentsGeneral/Tooltip.tsx";
-import {useCanExportVnd, NO_EXPORT_VND_HINT} from "@/hooks/vndHooks/useCanExportVnd.ts";
+import {useCanExportVnd} from "@/hooks/vndHooks/useCanExportVnd.ts";
 import {approvalSheetCaption, getRedactionApprovalSheets} from "@/utils/vndProcess/approvalSheets.ts";
 
 interface RedactionDocumentsPanelProps {
@@ -26,14 +26,14 @@ interface RedactionDocumentsPanelProps {
 }
 
 const DOC_LABELS: {
-    label: string;
+    labelKey: string;
     lang: RedactionLanguage;
     fileKey: "docFileRuId" | "docFileKgId" | "docFileEnId";
     updatedAtKey: "docRuUpdatedAt" | "docKgUpdatedAt" | "docEnUpdatedAt";
 }[] = [
-    {label: "Русский", lang: "ru", fileKey: "docFileRuId", updatedAtKey: "docRuUpdatedAt"},
-    {label: "Кыргызча", lang: "kg", fileKey: "docFileKgId", updatedAtKey: "docKgUpdatedAt"},
-    {label: "English", lang: "en", fileKey: "docFileEnId", updatedAtKey: "docEnUpdatedAt"},
+    {labelKey: "vndEditLastRevisionModal.langRu", lang: "ru", fileKey: "docFileRuId", updatedAtKey: "docRuUpdatedAt"},
+    {labelKey: "vndEditLastRevisionModal.langKg", lang: "kg", fileKey: "docFileKgId", updatedAtKey: "docKgUpdatedAt"},
+    {labelKey: "vndEditLastRevisionModal.langEn", lang: "en", fileKey: "docFileEnId", updatedAtKey: "docEnUpdatedAt"},
 ];
 
 export function RedactionDocumentsPanel({
@@ -61,9 +61,9 @@ export function RedactionDocumentsPanel({
     const documents = DOC_LABELS
         .filter((d) => selected[d.fileKey] !== null)
         .map((d) => ({
-            key: d.label,
+            key: d.lang,
             fileId: selected[d.fileKey] as number,
-            label: d.label,
+            label: t(d.labelKey),
             lang: d.lang,
             fileName: buildRedactionFileName(selected.code, vnd.name, d.lang),
             displayTitle: resolveVndDocTitle(vnd, d.lang),
@@ -94,7 +94,7 @@ export function RedactionDocumentsPanel({
     return (
         <>
         <div className="p-[20px]">
-            <SectionLabel>Документы редакции</SectionLabel>
+            <SectionLabel>{t("redactionDocumentsPanel.documents")}</SectionLabel>
             <div className="flex flex-col gap-2">
                 {documents.map((doc) => (
                     <DownloadRow
@@ -112,7 +112,7 @@ export function RedactionDocumentsPanel({
                         </span>
                         {doc.updatedAt && (
                             <span className="flex-none rounded-full bg-[#e7f6ec] px-2 py-[3px] text-[10.5px] font-semibold text-[#1f9254]">
-                                Обновлено, {formatDate(doc.updatedAt)}
+                                {t("redactionDocumentsPanel.updated", {date: formatDate(doc.updatedAt)})}
                             </span>
                         )}
                     </DownloadRow>
@@ -121,7 +121,7 @@ export function RedactionDocumentsPanel({
 
             {selected.tidFileId !== null && (
                 <>
-                    <SectionLabel className="mt-5">ТИД</SectionLabel>
+                    <SectionLabel className="mt-5">{t("redactionDocumentsPanel.tid")}</SectionLabel>
                     <div className="flex flex-col gap-2">
                         <DownloadRow
                             icon={<FileText size={16} className="flex-none text-[#4e57d6]"/>}
@@ -131,10 +131,10 @@ export function RedactionDocumentsPanel({
                         >
                             <span className="flex min-w-0 flex-1 flex-col">
                                 <span className="text-[9.5px] font-bold uppercase tracking-[0.04em] text-[#a3adbd]">
-                                    ТИД
+                                    {t("redactionDocumentsPanel.tid")}
                                 </span>
                                 <span className="truncate text-[13px] text-[#26324a]">
-                                    Таблица изменений и дополнений
+                                    {t("redactionDocumentsPanel.tidFull")}
                                 </span>
                             </span>
                         </DownloadRow>
@@ -144,7 +144,7 @@ export function RedactionDocumentsPanel({
 
             {(approvalSheets.length > 0 || selected.disagreementMatrixFileId !== null) && (
                 <>
-                    <SectionLabel className="mt-5">Специальные вложения</SectionLabel>
+                    <SectionLabel className="mt-5">{t("redactionDocumentsPanel.special")}</SectionLabel>
                     <div className="flex flex-col gap-2">
                         {approvalSheets.map((sheet) => {
                             const isLatest = sheet.fileId === selected.approvalSheetFileId;
@@ -160,7 +160,7 @@ export function RedactionDocumentsPanel({
                                 >
                                     <span className="flex min-w-0 flex-1 flex-col">
                                         <span className="text-[9.5px] font-bold uppercase tracking-[0.04em] text-[#a3adbd]">
-                                            Лист согласования
+                                            {t("redactionDocumentsPanel.approvalSheet")}
                                             {approvalSheets.length > 1 && isLatest ? ` · ${t("approvalSheets.latest")}` : ""}
                                         </span>
                                         <span className="truncate text-[13px] text-[#26324a]">
@@ -184,7 +184,7 @@ export function RedactionDocumentsPanel({
                             >
                                 <span className="flex min-w-0 flex-1 flex-col">
                                     <span className="text-[9.5px] font-bold uppercase tracking-[0.04em] text-[#a3adbd]">
-                                        Матрица разногласий
+                                        {t("redactionDocumentsPanel.disagreementMatrix")}
                                     </span>
                                     <span className="truncate text-[13px] text-[#26324a]">
                                         {disagreementMatrixFileName}
@@ -199,7 +199,7 @@ export function RedactionDocumentsPanel({
             {selected.attachments.length > 0 && (
                 <>
                     <SectionLabel className="mt-5">
-                        Вложения ({selected.attachments.length})
+                        {t("redactionDocumentsPanel.attachments", {count: selected.attachments.length})}
                     </SectionLabel>
                     <div className="flex flex-col gap-2">
                         {selected.attachments.map((attachment) => (
@@ -211,7 +211,7 @@ export function RedactionDocumentsPanel({
                                 onView={isPreviewableFile(attachment.fileName)
                                     ? () => setPreviewAttachment({fileId: attachment.fileId, fileName: attachment.fileName})
                                     : undefined}
-                                viewTooltip="Просмотреть вложение"
+                                viewTooltip={t("redactionDocumentsPanel.viewAttachment")}
                             >
                                 <span className="flex-1 truncate">{attachment.fileName}</span>
                             </DownloadRow>
@@ -228,7 +228,7 @@ export function RedactionDocumentsPanel({
                 downloadingId={downloadingId}
                 onDownload={onDownload}
                 downloadDisabled={!canExportVnd}
-                downloadDisabledHint={NO_EXPORT_VND_HINT}
+                downloadDisabledHint={t("redactionDocumentsPanel.noExportHint")}
                 onClose={() => setPreviewAttachment(null)}
             />
         )}
@@ -250,7 +250,7 @@ function DownloadRow({
                          isDownloading,
                          onClick,
                          onView,
-                         viewTooltip = "Просмотреть документ",
+                         viewTooltip,
                      }: {
     icon: React.ReactNode;
     children: React.ReactNode;
@@ -262,6 +262,7 @@ function DownloadRow({
      * вложение"). */
     viewTooltip?: string;
 }) {
+    const {t} = useTranslation();
     const canExportVnd = useCanExportVnd();
     return (
         <div className="flex items-center gap-2 rounded-[9px] border border-[#e5e9f0] pr-2 hover:border-[#4e57d6]/40 hover:bg-[#f6f8fb]">
@@ -269,7 +270,7 @@ function DownloadRow({
                 type="button"
                 disabled={isDownloading || !canExportVnd}
                 onClick={onClick}
-                title={canExportVnd ? undefined : NO_EXPORT_VND_HINT}
+                title={canExportVnd ? undefined : t("redactionDocumentsPanel.noExportHint")}
                 className="cursor-pointer flex min-w-0 flex-1 items-center gap-2 px-3 py-[10px] text-left text-[13px] text-[#26324a] disabled:opacity-60 disabled:cursor-not-allowed"
             >
                 {icon}
@@ -282,7 +283,7 @@ function DownloadRow({
             </button>
 
             {onView && (
-                <Tooltip content={viewTooltip} side="top">
+                <Tooltip content={viewTooltip ?? t("redactionDocumentsPanel.viewDocument")} side="top">
                     <button
                         type="button"
                         onClick={onView}

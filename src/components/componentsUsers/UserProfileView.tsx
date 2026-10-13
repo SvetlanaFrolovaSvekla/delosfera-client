@@ -4,7 +4,10 @@ import {useTranslation} from "react-i18next";
 import {userService} from "@/service/userService/userService.ts";
 import type {UserActivityResponse, UserResponse} from "@/service/userService/userServiceType.ts";
 import {Tabs} from "@/components/componentsGeneral/Tabs";
-import {Check, KeyRound, User as UserIcon} from "lucide-react";
+import {Check, KeyRound, Pencil, User as UserIcon} from "lucide-react";
+import {useNavigate} from "react-router-dom";
+import {useAuth} from "@/context/AuthContext";
+import {PermissionCode} from "@/constants/permissions/permissions.ts";
 import {Avatar} from "@/components/componentsGeneral/Avatar.tsx";
 import {EcpCredentialCard} from "@/components/componentsUsers/EcpCredentialCard.tsx";
 
@@ -37,6 +40,11 @@ interface UserProfileViewProps {
  */
 export function UserProfileView({user, isOwnProfile}: UserProfileViewProps) {
     const {t} = useTranslation();
+    const navigate = useNavigate();
+    // Правка учётной записи (Управление → Пользователи → карточка) - только с правом
+    // ManageUsers, как и на сервере (PUT /users/{id}).
+    const {hasPermission} = useAuth();
+    const canEditUser = hasPermission(PermissionCode.ManageUsers);
     const [activeTab, setActiveTab] = useState<string>(ALL_TAB);
     const [activity, setActivity] = useState<UserActivityResponse | null>(null);
     const [activityLoading, setActivityLoading] = useState(true);
@@ -146,19 +154,33 @@ export function UserProfileView({user, isOwnProfile}: UserProfileViewProps) {
                         </span>
                     </div>
                 </div>
-                <span
-                    className={`inline-flex items-center gap-[7px] h-[34px] px-[13px] rounded-[9px] text-[12.5px] font-semibold ${
-                        user.isActive ? "bg-[#e2f4ea] text-[#1c7a4d]" : "bg-[#fbe3e3] text-[#a12b2b]"
-                    }`}
-                >
+                <div className="flex items-center gap-2.5 flex-wrap">
                     <span
-                        className={`w-[7px] h-[7px] rounded-full ${
-                            user.isActive ? "bg-[#1c7a4d]" : "bg-[#a12b2b]"
+                        className={`inline-flex items-center gap-[7px] h-[34px] px-[13px] rounded-[9px] text-[12.5px] font-semibold ${
+                            user.isActive ? "bg-[#e2f4ea] text-[#1c7a4d]" : "bg-[#fbe3e3] text-[#a12b2b]"
                         }`}
-                    />
-                    {/* {user.isActive ? "Учётная запись активна" : "Учётная запись деактивирована"} */}
-                    {user.isActive ? t("userProfile.accountActive") : t("userProfile.accountDeactivated")}
-                </span>
+                    >
+                        <span
+                            className={`w-[7px] h-[7px] rounded-full ${
+                                user.isActive ? "bg-[#1c7a4d]" : "bg-[#a12b2b]"
+                            }`}
+                        />
+                        {/* {user.isActive ? "Учётная запись активна" : "Учётная запись деактивирована"} */}
+                        {user.isActive ? t("userProfile.accountActive") : t("userProfile.accountDeactivated")}
+                    </span>
+
+                    {canEditUser && (
+                        <button
+                            type="button"
+                            onClick={() => navigate(`/management/users/${user.id}`)}
+                            className="inline-flex items-center gap-[7px] h-[34px] px-[13px] rounded-[9px] border border-[#e5e9f0] bg-white text-[12.5px] font-semibold text-[#4e57d6] cursor-pointer hover:bg-[#ececfc]"
+                        >
+                            <Pencil size={14} strokeWidth={2}/>
+                            {/* Редактировать */}
+                            {t("userProfile.editButton")}
+                        </button>
+                    )}
+                </div>
             </div>
 
             <div className="grid grid-cols-1 lg:grid-cols-[1fr_360px] gap-[18px]">

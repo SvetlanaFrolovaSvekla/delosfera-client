@@ -19,17 +19,7 @@
 import {useState} from "react";
 import {useTranslation} from "react-i18next";
 import type {TFunction} from "i18next";
-import {ChevronLeft, ChevronRight, Download, Eye, Paperclip} from "lucide-react";
-import {useCanExportVnd, NO_EXPORT_VND_HINT} from "@/hooks/vndHooks/useCanExportVnd.ts";
-import {formatDateTime} from "@/utils/dateUtils.ts";
-import {getInitials} from "@/utils/namingUsers/getInitials.ts";
-import {downloadWithToast} from "@/utils/downloadFiles/downloadFile.ts";
-import {
-    FormattedResolutionComment, type FormattedCommentQuoteRef,
-} from "@/components/componentsCoordination/CoordinationRouteConstructor/viewComponents/FormattedResolutionComment.tsx";
-import {
-    RedactionViewModal
-} from "@/components/componentsCoordination/CoordinationRouteConstructor/viewComponents/RedactionViewModal.tsx";
+
 import type {
     ApprovalPhaseRoundResponse,
     ApprovalProcessResponse,
@@ -39,11 +29,25 @@ import type {
     VndRedactionRevisionSnapshotResponse,
 } from "@/service/coordinationService/coordinationServiceTypes.ts";
 import type {VndRedactionResponse, VndResponse} from "@/service/vndService/vndServiceType.ts";
+
+import {useCanExportVnd, NO_EXPORT_VND_HINT} from "@/hooks/vndHooks/useCanExportVnd.ts";
+import {formatDateTime} from "@/utils/dateUtils.ts";
+import {getInitials} from "@/utils/namingUsers/getInitials.ts";
+import {downloadWithToast} from "@/utils/downloadFiles/downloadFile.ts";
 import {
     getLiveRevisionIndex, getRevisionLabel, getSnapshotRevisionIndex,
 } from "@/utils/vndProcess/redactionRevisions.ts";
 import {buildRedactionFileName} from "@/utils/downloadFiles/fileNaming.ts";
 import type {RedactionViewTarget} from "@/utils/vndProcess/redactionLanguagePanelUtils.ts";
+
+import {
+    FormattedResolutionComment, type FormattedCommentQuoteRef,
+} from "@/components/componentsCoordination/CoordinationRouteConstructor/viewComponents/FormattedResolutionComment.tsx";
+import {
+    RedactionViewModal
+} from "@/components/componentsCoordination/CoordinationRouteConstructor/viewComponents/RedactionViewModal.tsx";
+
+import {ChevronLeft, ChevronRight, Download, Eye, Paperclip} from "lucide-react";
 
 const DECISION_COLORS: Record<ApprovalStageDecisionResponse, { color: string; bg: string }> = {
     pending: {color: "#8b97ab", bg: "#f1f3f6"},
@@ -71,9 +75,7 @@ interface SchemaPage {
     completedAt: string | null;
     initiatorComment: string | null;
     decisions: SchemaStageDecision[];
-    /** Снимок файлов редакции, к которому относятся комментарии этой страницы (см.
-     * VndRedactionRevisionSnapshotResponse) — null, если снимка нет (страница "Текущий этап":
-     * это ещё живая, не архивная версия документа) или процесс ни разу не отправляли повторно. */
+    /** Снимок файлов редакции, к которому относятся комментарии этой страницы */
     snapshot: VndRedactionRevisionSnapshotResponse | null;
     /** "primary"/"repeat"/"finalHold" - фаза страницы (для выборки цитат её решений). */
     phaseKey: "primary" | "repeat" | "finalHold";
@@ -82,8 +84,7 @@ interface SchemaPage {
     revisionIndex: number | null;
 }
 
-/** Ключ снимка в формате, совпадающем с SchemaPage.key ("primary"/"repeat-1"/"finalHold-2" и
- * т.д.) — так снимок находится для нужной страницы карусели одним поиском по массиву. */
+/** Ключ снимка в формате, совпадающем с SchemaPage.key */
 function snapshotPageKey(s: VndRedactionRevisionSnapshotResponse): string {
     return s.phase === "primary" ? "primary" : `${s.phase}-${s.roundNumber}`;
 }
@@ -247,7 +248,7 @@ function quotesForPage(process: ApprovalProcessResponse, page: SchemaPage): Map<
 }
 
 /** Файлы ТЕКУЩЕЙ ("живой") версии редакции - для страницы текущего/последнего круга, у которой
- * архивного снимка нет (см. SchemaPage.snapshot). */
+ * архивного снимка нет. */
 function liveRedactionFiles(redaction: VndRedactionResponse, vndName: string): {fileId: number; label: string; name: string}[] {
     const entries: {fileId: number | null; label: string; name: string}[] = [
         {fileId: redaction.docFileRuId, label: "RU", name: buildRedactionFileName(redaction.code, vndName, "ru")},

@@ -1,5 +1,6 @@
 // Рендерит текст резолюции/комментария согласующего, выделяя жирным цитаты
 import {Fragment} from "react";
+import {useTranslation} from "react-i18next";
 import {Search} from "lucide-react";
 import {Tooltip} from "@/components/componentsGeneral/Tooltip.tsx";
 import {escapeRegExp} from "@/utils/highlightText.tsx";
@@ -90,6 +91,7 @@ export function FormattedResolutionComment({
      * к активному совпадению кнопками "вверх/вниз" в CommentViewModal). */
     onRegisterMatchRef?: (index: number, el: HTMLElement | null) => void;
 }) {
+    const {t} = useTranslation();
     const lines = text.split(/\r\n|\r|\n/);
     let quoteIndex = 0;
     const query = searchQuery ?? "";
@@ -115,7 +117,7 @@ export function FormattedResolutionComment({
                                     {renderWithSearch(line, `q-${i}`, query, activeMatchIndex, matchCounter, onRegisterMatchRef)}
                                 </span>
                                 {quote && onShowInText && (
-                                    <Tooltip content="Показать в тексте" side="top">
+                                    <Tooltip content={t("coordinationUi.showInText")} side="top">
                                         <button
                                             type="button"
                                             onClick={() => onShowInText(quote)}

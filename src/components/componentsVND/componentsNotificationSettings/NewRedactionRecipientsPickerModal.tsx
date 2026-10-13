@@ -1,20 +1,15 @@
 // Выбор получателей рассылки «Новые редакции ВНД» — список сотрудников с теми же фильтрами,
 // что на странице «Пользователи» (поиск, источник, должность, СП, роль), множественный выбор
 // галочками и «Выбрать всех найденных» — чтобы одним действием добавить, например, всё СП.
-import {useEffect, useMemo, useState} from "react";
+import {useEffect, useState} from "react";
 import {createPortal} from "react-dom";
 import {useTranslation} from "react-i18next";
-import {useDictionaries} from "@/context/DictionariesContext.tsx";
-import type {UserResponse, UserSource} from "@/service/userService/userServiceType.ts";
+import type {UserResponse} from "@/service/userService/userServiceType.ts";
 import {userService} from "@/service/userService/userService.ts";
 import {useUsersList} from "@/hooks/userHooks/useUsersList.ts";
 import {HighlightText} from "@/utils/highlightText.tsx";
-import {
-    MultiSelectDropdown, type MultiSelectOption
-} from "@/components/componentsGeneral/selects/MultiSelects/MultiSelectDropdown.tsx";
-import {MultiSelectField} from "@/components/componentsGeneral/selects/MultiSelects/MultiSelectField.tsx";
 import {EmptyState} from "@/components/componentsGeneral/EmptyState.tsx";
-import {SearchBar} from "@/components/componentsGeneral/SearchBar.tsx";
+import {UserListFilters} from "@/components/componentsGeneral/userPicker/UserListFilters.tsx";
 import {toast} from "@/service/toastService.ts";
 import {Check, ChevronLeft, ChevronRight, Loader2, X} from "lucide-react";
 import type {VndNewRedactionMailingRecipient} from "@/service/vndNewRedactionMailingService/vndNewRedactionMailingService.ts";
@@ -43,30 +38,21 @@ const BULK_PAGE_SIZE = 200;
 export function NewRedactionRecipientsPickerModal({initial, onClose, onConfirm, title}: NewRedactionRecipientsPickerModalProps) {
     const {t} = useTranslation();
 
-    const SOURCE_OPTIONS: (MultiSelectOption & { key: UserSource })[] = [
-        {key: "Local", label: t("tidDeveloperPickerModal.sourceLocal"), chipClassName: "text-[#7a4fd6] bg-[#f3edfd]"},
-        {key: "Ldap", label: t("tidDeveloperPickerModal.sourceLdap"), chipClassName: "text-[#3b6fd6] bg-[#eaf1fd]"},
-    ];
-
+    const usersList = useUsersList();
     const {
-        search, setSearch,
+        search,
         setStatusScope,
-        sourceFilters, toggleSourceFilter,
-        orgUnitFilters, setOrgUnitFilters,
-        positionFilters, setPositionFilters,
-        roleFilters, setRoleFilters,
-        roles, users, loading, error,
+        // Текущие фильтры нужны и здесь - для "Выбрать всех найденных"
+        sourceFilters, orgUnitFilters, positionFilters, roleFilters,
+        users, loading, error,
         page, setPage, total, pageSize,
-    } = useUsersList();
+    } = usersList;
 
     // Заблокированным письмо всё равно не уйдёт (MailQueue их пропускает) — показываем только
     // незаблокированных, как в остальных пикерах.
     useEffect(() => {
         setStatusScope("active");
     }, [setStatusScope]);
-
-    const dictionaries = useDictionaries();
-    const roleOptions = useMemo(() => roles.map((r) => ({key: String(r.id), label: r.titleRu})), [roles]);
 
     const [selected, setSelected] = useState<Map<number, VndNewRedactionMailingRecipient>>(
         () => new Map(initial.map((r) => [r.userId, r])),
@@ -135,63 +121,8 @@ export function NewRedactionRecipientsPickerModal({initial, onClose, onConfirm, 
                     </button>
                 </div>
 
-                {/* Фильтры — как на странице «Пользователи» */}
-                <div className="flex flex-none flex-col gap-2.5 border-b border-[#eef0f5] px-6 py-4">
-                    <SearchBar
-                        variant="white"
-                        value={search}
-                        onChange={setSearch}
-                        placeholder={t("tidDeveloperPickerModal.searchPlaceholder")}
-                        autoFocus
-                    />
-                    <MultiSelectDropdown
-                        triggerLabel={t("tidDeveloperPickerModal.sourceTriggerLabel")}
-                        label={t("tidDeveloperPickerModal.sourceFieldLabel")}
-                        showFieldLabel
-                        options={SOURCE_OPTIONS}
-                        selectedKeys={sourceFilters}
-                        onToggle={(key) => toggleSourceFilter(key as UserSource)}
-                        onSelectAll={() => {
-                            (["Local", "Ldap"] as UserSource[]).forEach((s) => {
-                                if (!sourceFilters.includes(s)) toggleSourceFilter(s);
-                            });
-                        }}
-                        onDeselectAll={() => sourceFilters.forEach((s) => toggleSourceFilter(s))}
-                        searchable={false}
-                        searchThreshold={Infinity}
-                        className="self-start"
-                    />
-                    <div className="grid [grid-template-columns:repeat(auto-fit,minmax(160px,1fr))] gap-x-3 gap-y-2.5">
-                        <MultiSelectField
-                            label={t("tidDeveloperPickerModal.positionLabel")}
-                            modalTitle={t("tidDeveloperPickerModal.positionLabel")}
-                            options={dictionaries.positionOptions}
-                            selectedKeys={positionFilters}
-                            onChange={setPositionFilters}
-                            searchPlaceholder={t("tidDeveloperPickerModal.positionSearchPlaceholder")}
-                            boldLabel={false}
-                        />
-                        <MultiSelectField
-                            label={t("tidDeveloperPickerModal.orgUnitLabel")}
-                            modalTitle={t("tidDeveloperPickerModal.orgUnitModalTitle")}
-                            options={dictionaries.orgUnitOptions}
-                            selectedKeys={orgUnitFilters}
-                            onChange={setOrgUnitFilters}
-                            searchPlaceholder={t("tidDeveloperPickerModal.orgUnitSearchPlaceholder")}
-                            hierarchical
-                            boldLabel={false}
-                        />
-                        <MultiSelectField
-                            label={t("tidDeveloperPickerModal.rolesLabel")}
-                            modalTitle={t("tidDeveloperPickerModal.rolesLabel")}
-                            options={roleOptions}
-                            selectedKeys={roleFilters}
-                            onChange={setRoleFilters}
-                            searchPlaceholder={t("tidDeveloperPickerModal.rolesSearchPlaceholder")}
-                            boldLabel={false}
-                        />
-                    </div>
-                </div>
+                {/* Фильтры - как на странице "Пользователи" */}
+                <UserListFilters filters={usersList}/>
 
                 {/* Массовые действия */}
                 <div className="flex flex-none flex-wrap items-center gap-2 border-b border-[#eef0f5] px-6 py-2.5 text-[12px]">

@@ -21,12 +21,15 @@ import {
 } from "@/components/componentsGeneral/modal/AttachmentDocxPreviewModal.tsx";
 import {Tooltip} from "@/components/componentsGeneral/Tooltip.tsx";
 import {SearchBar} from "@/components/componentsGeneral/SearchBar.tsx";
-import {ChevronDown, ChevronUp, MessageSquareText, X} from "lucide-react";
+import {ChevronDown, ChevronUp, Download, Loader2, MessageSquareText, X} from "lucide-react";
 import {useTranslation} from "react-i18next";
+import {generateCommentDocx, safeDocxFileName} from "@/utils/docxWork/docxCommentExport.ts";
+import {downloadBlob} from "@/utils/docxWork/docxTidExport.ts";
 
 
 export function CommentViewModal({
                                      title,
+                                     isComment: isCommentProp,
                                      approverName,
                                      approverUserId,
                                      decidedAt,
@@ -39,6 +42,8 @@ export function CommentViewModal({
                                      onShowInText,
                                  }: {
     title: string;
+    /** true - это комментарий (одобрение), false - замечания. Если не задан, определяется по заголовку. */
+    isComment?: boolean;
     approverName: string;
     approverUserId?: number;
     decidedAt?: string | null;
@@ -55,8 +60,8 @@ export function CommentViewModal({
     const isMeApprover = approverUserId !== undefined && approverUserId === user?.id;
     const profileUrl = isMeApprover ? "/profile" : `/users/${approverUserId}`;
 
-    // Заголовок сюда приходит в виде "См. комментарий полностью" / "См. замечания полностью" —
-    const isComment = title.toLowerCase().includes("коммент");
+    // Явный флаг важен: заголовок переводится, и определять тип по русскому слову нельзя
+    const isComment = isCommentProp ?? title.toLowerCase().includes("коммент");
 
     const authorLabel = isComment
         ? t("commentViewModal.authorComment") // Автор комментария:
@@ -67,6 +72,40 @@ export function CommentViewModal({
         : t("commentViewModal.remarkCreatedAt"); // Дата создания замечания
 
     const [previewAttachment, setPreviewAttachment] = useState<{ fileId: number; fileName: string } | null>(null);
+
+    // Скачивание текста замечаний/комментария в обычном .docx (собирается на клиенте).
+    const [exporting, setExporting] = useState(false);
+    const [exportError, setExportError] = useState(false);
+    const handleDownloadDocx = async () => {
+        if (exporting) return;
+        setExporting(true);
+        setExportError(false);
+        try {
+            const info: Array<[string, string]> = [
+                [authorLabel, approverName],
+            ];
+            if (decidedAt) info.push([`${t("commentViewModal.docxDate")}:`, formatDateTime(decidedAt)]);
+            if (decisionLabel) info.push([t("commentViewModal.resolutionByApprover"), decisionLabel]);
+
+            const docTitle = isComment
+                ? t("commentViewModal.docxCommentTitle")
+                : t("commentViewModal.docxRemarksTitle");
+            const blob = await generateCommentDocx(
+                {
+                    title: docTitle,
+                    info,
+                    attachmentNames: attachments.map((a) => a.fileName),
+                    attachmentsLabel: t("commentViewModal.docxFiles"),
+                },
+                comment,
+            );
+            downloadBlob(blob, safeDocxFileName(`${docTitle} - ${approverName}`));
+        } catch {
+            setExportError(true);
+        } finally {
+            setExporting(false);
+        }
+    };
 
     // Поиск по тексту замечания/комментария - текст резолюции может доходить до 35000
     // символов (см. лимит в VndApproverResolutionPanel), пролистывать его вручную неудобно.
@@ -141,12 +180,25 @@ export function CommentViewModal({
                             </div>
                         </div>
 
-                        <button
-                            onClick={onClose}
-                            className="cursor-pointer flex-none text-[#8b97ab] hover:text-[#3a4560]"
-                        >
-                            <X size={20}/>
-                        </button>
+                        <div className="flex flex-none items-center gap-2">
+                            <Tooltip content={exportError ? t("commentViewModal.docxError") : t("commentViewModal.downloadDocx")} side="bottom">
+                                <button
+                                    type="button"
+                                    onClick={() => void handleDownloadDocx()}
+                                    disabled={exporting}
+                                    className={`inline-flex h-8 cursor-pointer items-center gap-1.5 rounded-[8px] border bg-white px-2.5 text-[12px] font-semibold hover:bg-[#ececfc] disabled:cursor-wait disabled:opacity-60 ${exportError ? "border-red-300 text-red-600" : "border-[#e5e9f0] text-[#4e57d6]"}`}
+                                >
+                                    {exporting ? <Loader2 size={14} className="animate-spin"/> : <Download size={14}/>}
+                                    DOCX
+                                </button>
+                            </Tooltip>
+                            <button
+                                onClick={onClose}
+                                className="cursor-pointer flex-none text-[#8b97ab] hover:text-[#3a4560]"
+                            >
+                                <X size={20}/>
+                            </button>
+                        </div>
                     </div>
 
                     {/* Информация */}

@@ -1,12 +1,11 @@
-// Модалка "Просмотр матрицы разногласий" — устроена так же, как RedactionTidModal/
-// RedactionApprovalSheetModal (одиночный специальный документ редакции без языковых вкладок).
+// Модалка "Просмотр матрицы разногласий"
+import {createPortal} from "react-dom";
 import {useTranslation} from "react-i18next";
 import type {VndRedactionResponse, VndResponse} from "@/service/vndService/vndServiceType.ts";
-import {RedactionTextView} from "@/components/componentsVND/componentsOpenVndPage/componentsEditionsTab/RedactionTextView.tsx";
-import {createPortal} from "react-dom";
-import {Download, Loader2, Scale, X} from "lucide-react";
 import {useCanExportVnd, NO_EXPORT_VND_HINT} from "@/hooks/vndHooks/useCanExportVnd.ts";
+import {RedactionTextView} from "@/components/componentsVND/componentsOpenVndPage/componentsEditionsTab/RedactionTextView.tsx";
 import {Tooltip} from "@/components/componentsGeneral/Tooltip.tsx";
+import {Download, Loader2, Scale, X} from "lucide-react";
 
 interface RedactionDisagreementMatrixModalProps {
     vnd: VndResponse;

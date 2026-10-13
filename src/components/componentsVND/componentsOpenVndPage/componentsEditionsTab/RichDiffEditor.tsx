@@ -84,7 +84,7 @@ export function RichDiffEditor({
     const emitChange = () => {
         if (!ref.current) return;
         // Некоторые браузеры оставляют пустой <br> или текстовый узел в contentEditable после
-        // удаления всего текста - div тогда не попадает под CSS-селектор :empty, и плейсхолдер
+        // удаления всего текста - div тогда не попадает под CSS-селектор:empty, и плейсхолдер
         // (data-placeholder) не показывается, хотя текста реально не осталось. Принудительно
         // чистим innerHTML в этом случае, чтобы плейсхолдер всегда возвращался после стирания.
         if (!ref.current.textContent?.trim() && ref.current.innerHTML !== "") {

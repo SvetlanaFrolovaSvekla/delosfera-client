@@ -1,5 +1,5 @@
 /**
- * Карточка учётной записи: просмотр и правка.
+ * Карточка учётной записи (редактирование): просмотр и правка.
  */
 import React, {useCallback, useEffect, useMemo, useState} from "react";
 import {useNavigate, useParams} from "react-router-dom";
@@ -12,15 +12,27 @@ import type {
     UpdateUserRequest,
     UserResponse,
 } from "@/service/userService/userServiceType.ts";
-import {ArrowLeft} from "lucide-react";
+import {ArrowLeft, CircleHelp} from "lucide-react";
+import {SelectDropdown} from "@/components/componentsGeneral/selects/SingleSelects/SelectDropdown.tsx";
+import {SingleSelectListField} from "@/components/componentsGeneral/selects/SingleSelects/SingleSelectListField.tsx";
+import {CheckBoxOne} from "@/components/componentsGeneral/componentsCheckBox/CheckBoxOne.tsx";
+import {SearchBar} from "@/components/componentsGeneral/SearchBar.tsx";
+import {Tooltip} from "@/components/componentsGeneral/Tooltip.tsx";
+import {HighlightText} from "@/utils/highlightText.tsx";
+import {RolePermissionsModal} from "@/components/componentsUsers/RolePermissionsModal.tsx";
 
 const inputClass =
     "w-full h-10 px-3 rounded-[9px] border border-[#e5e9f0] bg-white text-[13px] outline-none focus:border-[#2f68f5] disabled:bg-[#fafbfd] disabled:text-[#8b97ab]";
 const labelClass = "block text-[11.5px] text-[#8b97ab] mb-[5px]";
 
-function Field({label, hint, children}: { label: string; hint?: string; children: React.ReactNode }) {
+function Field({label, hint, children, className = ""}: {
+    label: string;
+    hint?: string;
+    children: React.ReactNode;
+    className?: string;
+}) {
     return (
-        <label className="block">
+        <label className={`block ${className}`}>
             <span className={labelClass}>{label}</span>
             {children}
             {hint && <span className="mt-1 block text-[11.5px] text-[#a6b0c2]">{hint}</span>}
@@ -41,7 +53,19 @@ export function UserCardPage() {
     const isNew = !id || id === "new";
     const navigate = useNavigate();
 
-    const {orgUnits, positions} = useDictionaries();
+    const {orgUnitOptions, positions} = useDictionaries();
+
+    // Должности для SelectDropdown: первым пунктом - "Не задана" (пустое значение)
+    const positionSelectOptions = useMemo(
+        () => [
+            {value: "", label: t("userCardPage.positionNotSet")},
+            ...positions.map((p) => ({value: String(p.id), label: p.titleRu})),
+        ],
+        [positions, t]);
+
+    // Поиск по ролям и роль, для которой открыта модалка с полномочиями
+    const [roleQuery, setRoleQuery] = useState("");
+    const [infoRole, setInfoRole] = useState<RoleResponse | null>(null);
 
     const [user, setUser] = useState<UserResponse | null>(null);
     const [roles, setRoles] = useState<RoleResponse[]>([]);
@@ -162,6 +186,11 @@ export function UserCardPage() {
             ? form.roleIds.filter((x) => x !== roleId)
             : [...(form.roleIds ?? []), roleId]);
 
+    const visibleRoles = useMemo(() => {
+        const q = roleQuery.trim().toLowerCase();
+        return q ? roles.filter((r) => r.titleRu.toLowerCase().includes(q)) : roles;
+    }, [roles, roleQuery]);
+
     const title = useMemo(
         // "Новый пользователь" / "Учётная запись"
         () => (isNew ? t("userCardPage.newUserTitle") : user?.fullName ?? t("userCardPage.fallbackTitle")),
@@ -209,8 +238,7 @@ export function UserCardPage() {
                 <button
                     onClick={save}
                     disabled={busy}
-                    className="h-9 px-4 rounded-[9px] border-none bg-[#2f68f5] text-white font-semibold text-[12.5px] cursor-pointer hover:brightness-[1.06] disabled:opacity-50"
-                >
+                    className="cursor-pointer inline-flex h-[42px] items-center gap-2 rounded-[11px] bg-[#2f68f5] px-[18px] text-[13.5px] font-semibold text-white shadow-[0_6px_16px_-6px_#2f68f5] hover:brightness-[1.06]">
                     {/* "Сохранить" */}
                     {t("userCardPage.save")}
                 </button>
@@ -272,42 +300,50 @@ export function UserCardPage() {
                     </Field>
 
                     {/* "Должность" */}
-                    <Field label={t("userCardPage.positionLabel")}>
-                        <select className={inputClass} value={form.positionId ?? ""}
-                                onChange={(e) => set("positionId", e.target.value ? Number(e.target.value) : null)}>
-                            {/* "Не задана" */}
-                            <option value="">{t("userCardPage.positionNotSet")}</option>
-                            {positions.map((p) => (
-                                <option key={p.id} value={p.id}>{p.titleRu}</option>
-                            ))}
-                        </select>
-                    </Field>
+                    <div>
+                        <span className={labelClass}>{t("userCardPage.positionLabel")}</span>
+                        <SelectDropdown
+                            className="w-full"
+                            minWidth="100%"
+                            searchable
+                            searchPlaceholder={t("userCardPage.positionSearchPlaceholder")}
+                            options={positionSelectOptions}
+                            value={form.positionId != null ? String(form.positionId) : ""}
+                            onChange={(v) => set("positionId", v ? Number(v) : null)}
+                        />
+                    </div>
 
-                    {/* "Структурное подразделение" */}
-                    <Field label={t("userCardPage.orgUnitLabel")}>
-                        <select className={inputClass} value={form.orgUnitId ?? ""}
-                                onChange={(e) => set("orgUnitId", e.target.value ? Number(e.target.value) : null)}>
-                            {/* "Не задано" */}
-                            <option value="">{t("userCardPage.orgUnitNotSet")}</option>
-                            {orgUnits.map((u) => (
-                                <option key={u.id} value={u.id}>{u.name}</option>
-                            ))}
-                        </select>
-                    </Field>
+                    {/* "Структурное подразделение" - выбор из модального окна с деревом */}
+                    <SingleSelectListField
+                        boldLabel={false}
+                        label={t("userCardPage.orgUnitLabel")}
+                        modalTitle={t("userCardPage.orgUnitModalTitle")}
+                        searchPlaceholder={t("userCardPage.orgUnitSearchPlaceholder")}
+                        placeholder={t("userCardPage.orgUnitNotSet")}
+                        clearLabel={t("userCardPage.orgUnitClear")}
+                        options={orgUnitOptions}
+                        selectedKey={form.orgUnitId != null ? String(form.orgUnitId) : null}
+                        onChange={(key) => set("orgUnitId", key ? Number(key) : null)}
+                    />
 
                     {!isNew && (
-                        <label className="flex items-end gap-2 pb-2.5 text-[13px] text-[#55617a]">
-                            <input type="checkbox" checked={form.isActive} disabled={fromDirectory}
-                                   onChange={(e) => set("isActive", e.target.checked)}/>
-                            {/* "Учётная запись активна" */}
-                            {t("userCardPage.isActiveLabel")}
+                        <div className="flex items-end gap-2.5">
+                            <CheckBoxOne
+                                tone="brand"
+                                checked={!!form.isActive}
+                                disabled={fromDirectory}
+                                onChange={(v) => set("isActive", v)}
+                            >
+                                {/* "Учётная запись активна" */}
+                                {t("userCardPage.isActiveLabel")}
+                            </CheckBoxOne>
                             {fromDirectory && (
-                                <span className="text-[11.5px] text-[#a6b0c2]">
+                                <span className="pb-2.5 text-[11.5px] text-[#a6b0c2]">
                                     {/* "(задаётся службой каталогов)" */}
                                     {t("userCardPage.isActiveDirectoryHint")}
                                 </span>
                             )}
-                        </label>
+                        </div>
                     )}
                 </div>
             </div>
@@ -322,25 +358,56 @@ export function UserCardPage() {
                     {t("userCardPage.rolesDescription")}
                 </div>
 
+                {/* Поиск по названию роли: совпадения подсвечиваются в чипсах ниже */}
+                <div className="mb-3 flex">
+                    <SearchBar
+                        variant="white"
+                        value={roleQuery}
+                        onChange={setRoleQuery}
+                        placeholder={t("userCardPage.rolesSearchPlaceholder")}
+                    />
+                </div>
+
                 <div className="flex flex-wrap gap-2">
-                    {roles.map((role) => {
+                    {visibleRoles.length === 0 && (
+                        <div className="py-2 text-[13px] text-[#a3adbd]">{t("general.notFound")}</div>
+                    )}
+                    {visibleRoles.map((role) => {
                         const on = form.roleIds?.includes(role.id);
 
                         return (
-                            <button
+                            <div
                                 key={role.id}
-                                onClick={() => toggleRole(role.id)}
-                                className={`h-8 px-3 rounded-full border text-[12.5px] font-semibold cursor-pointer ${
+                                className={`inline-flex h-8 items-center rounded-full border text-[12.5px] font-semibold ${
                                     on
                                         ? "border-[#cbddff] bg-[#e9f0ff] text-[#2f68f5]"
                                         : "border-[#e5e9f0] bg-white text-[#55617a]"}`}
                             >
-                                {role.titleRu}
-                            </button>
+                                <button
+                                    type="button"
+                                    onClick={() => toggleRole(role.id)}
+                                    className="h-full cursor-pointer rounded-l-full pl-3 pr-1.5 font-semibold"
+                                >
+                                    <HighlightText text={role.titleRu} query={roleQuery}/>
+                                </button>
+                                {/* "?" - описание полномочий роли в модалке */}
+                                <Tooltip content={t("userCardPage.roleInfoTooltip")} side="top">
+                                    <button
+                                        type="button"
+                                        aria-label={t("userCardPage.roleInfoTooltip")}
+                                        onClick={() => setInfoRole(role)}
+                                        className="mr-1.5 grid h-5 w-5 cursor-pointer place-items-center rounded-full opacity-70 hover:bg-black/5 hover:opacity-100"
+                                    >
+                                        <CircleHelp size={15} strokeWidth={2}/>
+                                    </button>
+                                </Tooltip>
+                            </div>
                         );
                     })}
                 </div>
             </div>
+
+            {infoRole && <RolePermissionsModal role={infoRole} onClose={() => setInfoRole(null)}/>}
 
             {user && (
                 <div className="mt-4 rounded-[12px] border border-[#e5e9f0] bg-white p-5">
@@ -395,24 +462,29 @@ export function UserCardPage() {
                             </button>
                         </div>
                     ) : (
-                        <div className="mt-4 flex items-end gap-2">
-                            <Field
-                                // "Причина блокировки"
-                                label={t("userCardPage.blockReasonLabel")}
-                                // "Останется в журнале и в карточке"
-                                hint={t("userCardPage.blockReasonHint")}
-                            >
-                                <input className={`${inputClass} w-[420px]`} value={blockReason}
+                        <div className="mt-4">
+                            {/* Подпись сверху, поле и кнопка в одной строке (одной высоты),
+                                подсказка под ними - так кнопка стоит ровно по полю */}
+                            <span className={labelClass}>
+                                {/* "Причина блокировки" */}
+                                {t("userCardPage.blockReasonLabel")}
+                            </span>
+                            <div className="flex items-center gap-2">
+                                <input className={`${inputClass} min-w-0 flex-1`} value={blockReason}
                                        onChange={(e) => setBlockReason(e.target.value)}/>
-                            </Field>
-                            <button
-                                onClick={block}
-                                disabled={busy}
-                                className="h-10 px-4 rounded-[9px] border border-[#f3c9c2] bg-white text-[12.5px] font-semibold text-[#c0392b] cursor-pointer hover:bg-[#fdeeec] disabled:opacity-50"
-                            >
-                                {/* "Заблокировать" */}
-                                {t("userCardPage.blockButton")}
-                            </button>
+                                <button
+                                    onClick={block}
+                                    disabled={busy}
+                                    className="h-10 flex-none whitespace-nowrap px-4 rounded-[9px] border border-[#f3c9c2] bg-white text-[12.5px] font-semibold text-[#c0392b] cursor-pointer hover:bg-[#fdeeec] disabled:opacity-50"
+                                >
+                                    {/* "Заблокировать" */}
+                                    {t("userCardPage.blockButton")}
+                                </button>
+                            </div>
+                            <span className="mt-1 block text-[11.5px] text-[#a6b0c2]">
+                                {/* "Останется в журнале и в карточке" */}
+                                {t("userCardPage.blockReasonHint")}
+                            </span>
                         </div>
                     )}
                 </div>

@@ -1,5 +1,5 @@
 // Поле, открывающее модалку с деревом, с одиночным выбором
-import {useState} from "react";
+import {useState, type ReactNode} from "react";
 import {useTranslation} from "react-i18next";
 import {ChevronDown} from "lucide-react";
 import {TreeSingleSelectModal, type TreeSelectOption} from "./TreeSingleSelectModal.tsx";
@@ -18,6 +18,7 @@ interface SingleSelectListFieldProps {
     boldLabel?: boolean;
     required?: boolean;
     showChevron?: boolean; // показывать ли стрелочку-шеврон справа в поле
+    modalHint?: ReactNode; // пояснение сверху в окне выбора
 }
 
 export function SingleSelectListField({
@@ -33,6 +34,7 @@ export function SingleSelectListField({
                                           boldLabel = true,
                                           required = false,
                                           showChevron = true,
+                                          modalHint,
                                       }: SingleSelectListFieldProps) {
     const {t} = useTranslation();
     const [modalOpen, setModalOpen] = useState(false);
@@ -93,6 +95,7 @@ export function SingleSelectListField({
                 searchPlaceholder={searchPlaceholder}
                 clearLabel={clearLabel}
                 clearedLabel={clearedLabel}
+                hint={modalHint}
             />
         </>
     );

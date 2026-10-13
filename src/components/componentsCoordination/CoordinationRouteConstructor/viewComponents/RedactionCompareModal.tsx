@@ -1,4 +1,4 @@
-// Модалка "Просмотр и сравнение редакций" — параллельный просмотр
+// Модалка "Просмотр и сравнение редакций" - параллельный просмотр
 // текста новой и предыдущей редакции ВНД,
 // с подсветкой пословных различий между документами.
 // Слева и справа редакцию можно поменять на любую другую из списка (выпадающий список с
@@ -10,6 +10,7 @@ import {createPortal} from "react-dom";
 import {useTranslation} from "react-i18next";
 import type {VndRedactionResponse, VndResponse} from "@/service/vndService/vndServiceType.ts";
 import {useDocxDiffHighlight} from "@/hooks/vndHooks/useDocxDiffHighlight.ts";
+import {useCanExportVnd, NO_EXPORT_VND_HINT} from "@/hooks/vndHooks/useCanExportVnd.ts";
 import {
     getAvailableLanguages, getRedactionFileId, type RedactionLanguage
 } from "@/utils/vndProcess/redactionLanguagePanelUtils.ts";
@@ -20,7 +21,6 @@ import {
     RedactionContentsPanel
 } from "@/components/componentsVND/componentsOpenVndPage/componentsEditionsTab/RedactionContentsPanel.tsx";
 import {ChevronDown, Columns2, Download, ListTree, Loader2, Table2, X, ZoomIn, ZoomOut} from "lucide-react";
-import {useCanExportVnd, NO_EXPORT_VND_HINT} from "@/hooks/vndHooks/useCanExportVnd.ts";
 
 interface RedactionCompareModalProps {
     vnd: VndResponse;
@@ -30,10 +30,8 @@ interface RedactionCompareModalProps {
     initialLeft: VndRedactionResponse;
     /** Редакция, которая по умолчанию открывается справа (обычно предыдущая по номеру). */
     initialRight: VndRedactionResponse;
-    /** Если задано - id редакции, которая сейчас на согласовании: у неё подпись получает
-     * эмфасис " (необходимо согласовать)", если она выбрана хоть с одной стороны (например, из
-     * вкладки "Согласование"). Не задавайте, если у сравнения нет контекста согласования
-     * (например, при открытии из вкладки "Редакции") - тогда эмфасис нигде не показывается. */
+    /** Если задано - id редакции, которая сейчас на согласовании: у неё подпись
+     * получает (необходимо согласовать)", если она выбрана хоть с одной стороны (например, из вкладки "Согласование"). */
     reviewedRedactionId?: number;
     downloadingId: number | null;
     onDownload: (fileId: number, name: string) => void;
@@ -50,8 +48,8 @@ interface TextViewReadyState {
 const NOT_READY: TextViewReadyState = {ready: false, container: null};
 
 /** Опрашивает handle RedactionTextView, пока документ не отрендерится (isReady не даёт события,
- * только императивный метод — поэтому дожидаемся его коротким поллингом), и вместе с готовностью
- * забирает DOM-контейнер. Ref читается только внутри эффекта — не во время рендера. */
+ * только императивный метод - поэтому дожидаемся его коротким поллингом), и вместе с готовностью
+ * забирает DOM-контейнер. Ref читается только внутри эффекта - не во время рендера. */
 function useTextViewReady(
     handleRef: React.RefObject<RedactionTextViewHandle | null>,
     resetKey: string,
@@ -86,7 +84,7 @@ function useTextViewReady(
 }
 
 /** Подпись колонки по номеру выбранной там редакции относительно другой стороны - "новая" не
- * закреплена за левой/правой стороной, а определяется по факту: у кого номер больше. Эмфасис
+ * закреплена за левой/правой стороной, а определяется по факту: у кого номер больше. Надпись
  * "(необходимо согласовать)" показывается только у реально согласуемой редакции (reviewedId),
  * если она выбрана хоть с одной стороны, и только когда reviewedId вообще задан. */
 function columnLabel(

@@ -54,9 +54,39 @@ export async function refreshSession(): Promise<LoginResponse> {
     return refreshPromise;
 }
 
+/**
+ * Текст ошибки, который сервер положил в тело ответа: контроллеры отдают
+ * { message: "..." } (400/404/409), а встроенные ответы ASP.NET Core - ProblemDetails
+ * (detail/title) или ошибки валидации (errors). Нужен, чтобы пользователь видел причину
+ * ("У пользователей нет права выступать в роли согласующего: ..."), а не стандартное
+ * "Request failed with status code 409".
+ */
+function extractServerMessage(data: unknown): string | null {
+    if (typeof data === "string") return data.trim() && data.length < 500 ? data.trim() : null;
+    if (!data || typeof data !== "object") return null;
+
+    const body = data as Record<string, unknown>;
+    for (const key of ["message", "detail", "title"]) {
+        const value = body[key];
+        if (typeof value === "string" && value.trim()) return value.trim();
+    }
+
+    const errors = body.errors;
+    if (errors && typeof errors === "object") {
+        const first = Object.values(errors as Record<string, unknown>).flat().find((v) => typeof v === "string");
+        if (typeof first === "string") return first;
+    }
+    return null;
+}
+
 apiClient.interceptors.response.use(
     (response) => response,
     async (error) => {
+        // Подменяем стандартное сообщение axios на текст ответа сервера (если он есть) - так
+        // `e.message` в catch-блоках компонентов сразу содержит понятную причину.
+        const serverMessage = extractServerMessage(error.response?.data);
+        if (serverMessage) error.message = serverMessage;
+
         const originalRequest = error.config;
         const requestUrl = originalRequest?.url ?? "";
         const isRefreshCall = requestUrl.includes("/auth/refresh");

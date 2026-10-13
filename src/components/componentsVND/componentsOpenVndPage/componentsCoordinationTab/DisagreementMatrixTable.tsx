@@ -1,4 +1,5 @@
-import {useState} from "react";
+import {useMemo, useState} from "react";
+import {useTranslation} from "react-i18next";
 import type {DisagreementMatrixRowResponse} from "@/service/coordinationService/coordinationServiceTypes.ts";
 import {
     RichDiffEditor
@@ -12,10 +13,6 @@ const POSITIVE_COLOR = colors.ryg.green.fg;
 // Обе кнопки покраски (красным/зелёным) доступны в каждой ячейке - как и при формировании ТИД,
 // но здесь сразу в одном и том же поле (см. требование "должно быть в каждой строке ещё
 // «выделить красным», «выделить зеленым» «выделить черным», как при формировании ТИД-а").
-const HIGHLIGHT_OPTIONS = [
-    {color: NEGATIVE_COLOR, label: "красным"},
-    {color: POSITIVE_COLOR, label: "зелёным"},
-];
 
 interface DisagreementMatrixTableProps {
     rows: DisagreementMatrixRowResponse[];
@@ -60,6 +57,11 @@ export function DisagreementMatrixTable({
                                              rows, onAddRow, onUpdateRow, onDeleteRow, disabled,
                                              vndTitle, exportFileName,
                                          }: DisagreementMatrixTableProps) {
+    const {t} = useTranslation();
+    const HIGHLIGHT_OPTIONS = useMemo(() => [
+        {color: NEGATIVE_COLOR, label: t("coordinationUi.matrix.highlightRed")},
+        {color: POSITIVE_COLOR, label: t("coordinationUi.matrix.highlightGreen")},
+    ], [t]);
     const [draft, setDraft] = useState<DraftHtml>(EMPTY_DRAFT);
     const [draftKey, setDraftKey] = useState(0);
     const [adding, setAdding] = useState(false);
@@ -88,7 +90,7 @@ export function DisagreementMatrixTable({
             setDraft(EMPTY_DRAFT);
             setDraftKey((k) => k + 1); // пересоздаёт RichDiffEditor черновиков пустыми
         } catch (err) {
-            setError(err instanceof Error ? err.message : "Не удалось добавить строку");
+            setError(err instanceof Error ? err.message : t("coordinationUi.matrix.addError"));
         } finally {
             setAdding(false);
         }
@@ -124,7 +126,7 @@ export function DisagreementMatrixTable({
             });
             setEditingId(null);
         } catch (err) {
-            setError(err instanceof Error ? err.message : "Не удалось изменить строку");
+            setError(err instanceof Error ? err.message : t("coordinationUi.matrix.updateError"));
         } finally {
             setSaving(false);
         }
@@ -137,7 +139,7 @@ export function DisagreementMatrixTable({
             await onDeleteRow(rowId);
             if (editingId === rowId) setEditingId(null);
         } catch (err) {
-            setError(err instanceof Error ? err.message : "Не удалось удалить строку");
+            setError(err instanceof Error ? err.message : t("coordinationUi.matrix.deleteError"));
         } finally {
             setDeletingId(null);
         }
@@ -159,7 +161,7 @@ export function DisagreementMatrixTable({
             );
             downloadBlob(blob, exportFileName ?? "Матрица разногласий.docx");
         } catch (err) {
-            setError(err instanceof Error ? err.message : "Не удалось сформировать файл матрицы разногласий");
+            setError(err instanceof Error ? err.message : t("coordinationUi.matrix.exportError"));
         } finally {
             setExporting(false);
         }
@@ -169,7 +171,7 @@ export function DisagreementMatrixTable({
         <div className="px-5">
             <div className="mb-3 flex items-center justify-between gap-3">
                 <div className="flex items-center justify-center text-[13.5px] font-bold text-[#1c2740]">
-                    Матрица разногласий
+                    {t("coordinationUi.matrix.title")}
                 </div>
                 <button
                     type="button"
@@ -178,7 +180,7 @@ export function DisagreementMatrixTable({
                     className="flex cursor-pointer items-center gap-1.5 rounded-[8px] border border-[#4e57d6] px-3 py-[6px] text-[12px] font-semibold text-[#4e57d6] transition-colors hover:bg-[#4e57d6]/5 disabled:cursor-default disabled:opacity-40"
                 >
                     {exporting ? <Loader2 size={13} className="animate-spin"/> : <Download size={13}/>}
-                    Скачать сформированную матрицу Разногласий в формате DOCX
+                    {t("coordinationUi.matrix.download")}
                 </button>
             </div>
 
@@ -186,13 +188,13 @@ export function DisagreementMatrixTable({
                 <table className="w-full border-collapse text-[13px]">
                     <thead>
                     <tr className="bg-[#e9ebf0] text-center text-[12.5px] font-bold text-[#1c2740]">
-                        <th className="border border-[#c9ced8] px-2 py-2 w-[52px]">№<br/>п/п</th>
-                        <th className="border border-[#c9ced8] px-3 py-2">Редакция разработчика</th>
+                        <th className="border border-[#c9ced8] px-2 py-2 w-[52px]">{t("coordinationUi.matrix.rowNumber")}</th>
+                        <th className="border border-[#c9ced8] px-3 py-2">{t("coordinationUi.matrix.colDeveloper")}</th>
                         <th className="border border-[#c9ced8] px-3 py-2">
-                            Редакция и комментарии оппонента
+                            {t("coordinationUi.matrix.colOpponent")}
                         </th>
                         <th className="border border-[#c9ced8] px-3 py-2">
-                            Комментарии (обоснование) разработчика
+                            {t("coordinationUi.matrix.colJustification")}
                         </th>
                         {!disabled && <th className="border border-[#c9ced8] px-2 py-2 w-[86px]"/>}
                     </tr>
@@ -204,7 +206,7 @@ export function DisagreementMatrixTable({
                                 colSpan={disabled ? 4 : 5}
                                 className="border border-[#c9ced8] px-4 py-4 text-center text-[#8b97ab]"
                             >
-                                Строк пока нет
+                                {t("coordinationUi.matrix.noRows")}
                             </td>
                         </tr>
                     )}
@@ -221,7 +223,7 @@ export function DisagreementMatrixTable({
                                             <RichDiffEditor
                                                 key={`edit-dev-${editKey}`}
                                                 initialHtml={editDraft.developerPositionHtml}
-                                                placeholder="Редакция разработчика"
+                                                placeholder={t("coordinationUi.matrix.placeholderDeveloper")}
                                                 highlightOptions={HIGHLIGHT_OPTIONS}
                                                 heightClass="h-[120px]"
                                                 onChangeText={(text, html) => setEditDraft((prev) => ({
@@ -233,7 +235,7 @@ export function DisagreementMatrixTable({
                                             <RichDiffEditor
                                                 key={`edit-opp-${editKey}`}
                                                 initialHtml={editDraft.opponentPositionHtml}
-                                                placeholder="Редакция и комментарий оппонента"
+                                                placeholder={t("coordinationUi.matrix.placeholderOpponent")}
                                                 highlightOptions={HIGHLIGHT_OPTIONS}
                                                 heightClass="h-[120px]"
                                                 onChangeText={(text, html) => setEditDraft((prev) => ({
@@ -245,7 +247,7 @@ export function DisagreementMatrixTable({
                                             <RichDiffEditor
                                                 key={`edit-just-${editKey}`}
                                                 initialHtml={editDraft.developerJustificationHtml}
-                                                placeholder="Комментарий (обоснование) разработчика"
+                                                placeholder={t("coordinationUi.matrix.placeholderJustification")}
                                                 highlightOptions={HIGHLIGHT_OPTIONS}
                                                 heightClass="h-[120px]"
                                                 onChangeText={(_text, html) => setEditDraft((prev) => ({
@@ -261,7 +263,7 @@ export function DisagreementMatrixTable({
                                                     disabled={!canSaveEdit || saving}
                                                     className="cursor-pointer text-[12px] font-semibold text-[#4e57d6] hover:underline disabled:opacity-50"
                                                 >
-                                                    {saving ? "…" : "Сохранить"}
+                                                    {saving ? "…" : t("coordinationUi.matrix.save")}
                                                 </button>
                                                 <button
                                                     type="button"
@@ -269,7 +271,7 @@ export function DisagreementMatrixTable({
                                                     disabled={saving}
                                                     className="cursor-pointer text-[12px] text-[#8b97ab] hover:underline disabled:opacity-50"
                                                 >
-                                                    Отмена
+                                                    {t("coordinationUi.matrix.cancel")}
                                                 </button>
                                             </div>
                                         </td>
@@ -295,7 +297,7 @@ export function DisagreementMatrixTable({
                                                         onClick={() => startEdit(row)}
                                                         className="cursor-pointer text-[12px] text-[#4e57d6] hover:underline"
                                                     >
-                                                        Изменить
+                                                        {t("coordinationUi.matrix.edit")}
                                                     </button>
                                                     <button
                                                         type="button"
@@ -303,7 +305,7 @@ export function DisagreementMatrixTable({
                                                         disabled={deletingId === row.id}
                                                         className="cursor-pointer text-[12px] text-[#c0392b] hover:underline disabled:opacity-50"
                                                     >
-                                                        {deletingId === row.id ? "…" : "Удалить"}
+                                                        {deletingId === row.id ? "…" : t("coordinationUi.matrix.delete")}
                                                     </button>
                                                 </div>
                                             </td>
@@ -319,11 +321,11 @@ export function DisagreementMatrixTable({
 
             {!disabled && (
                 <div className="mt-4 rounded-[10px] px-4 py-4">
-                    <div className="mb-3 text-[12.5px] font-semibold text-[#1c2740]">Добавить строку</div>
+                    <div className="mb-3 text-[12.5px] font-semibold text-[#1c2740]">{t("coordinationUi.matrix.addRow")}</div>
                     <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
                         <RichDiffEditor
                             key={`draft-dev-${draftKey}`}
-                            placeholder="Редакция разработчика"
+                            placeholder={t("coordinationUi.matrix.placeholderDeveloper")}
                             highlightOptions={HIGHLIGHT_OPTIONS}
                             heightClass="h-[120px]"
                             onChangeText={(text, html) => setDraft((prev) => ({
@@ -332,7 +334,7 @@ export function DisagreementMatrixTable({
                         />
                         <RichDiffEditor
                             key={`draft-opp-${draftKey}`}
-                            placeholder="Редакция и комментарий оппонента"
+                            placeholder={t("coordinationUi.matrix.placeholderOpponent")}
                             highlightOptions={HIGHLIGHT_OPTIONS}
                             heightClass="h-[120px]"
                             onChangeText={(text, html) => setDraft((prev) => ({
@@ -341,7 +343,7 @@ export function DisagreementMatrixTable({
                         />
                         <RichDiffEditor
                             key={`draft-just-${draftKey}`}
-                            placeholder="Комментарий (обоснование) разработчика"
+                            placeholder={t("coordinationUi.matrix.placeholderJustification")}
                             highlightOptions={HIGHLIGHT_OPTIONS}
                             heightClass="h-[120px]"
                             onChangeText={(_text, html) => setDraft((prev) => ({
@@ -358,7 +360,7 @@ export function DisagreementMatrixTable({
                         disabled={!canAdd || adding}
                         className="cursor-pointer mt-3 rounded-[10px] bg-[#4e57d6] px-4 py-2 text-[12.5px] font-semibold text-white disabled:opacity-40 hover:brightness-[1.06]"
                     >
-                        {adding ? "Добавление…" : "Добавить строку"}
+                        {adding ? t("coordinationUi.matrix.adding") : t("coordinationUi.matrix.addRow")}
                     </button>
                 </div>
             )}

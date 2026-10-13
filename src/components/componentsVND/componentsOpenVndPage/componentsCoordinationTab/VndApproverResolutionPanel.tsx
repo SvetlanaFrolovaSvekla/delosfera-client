@@ -1,4 +1,5 @@
-import {forwardRef, Fragment, useEffect, useImperativeHandle, useMemo, useRef, useState} from "react";
+import {useTranslation} from "react-i18next";
+import {forwardRef, useEffect, useImperativeHandle, useMemo, useRef, useState} from "react";
 import {Check, MessageSquare, Paperclip, Quote, X, AlertCircle, Search, Trash2, TextQuote} from "lucide-react";
 import {ConfirmActionModal} from "@/components/componentsGeneral/modal/ConfirmActionModal.tsx";
 import {formatFileSize} from "@/service/documentService/attachmentService.ts";
@@ -34,6 +35,7 @@ export type {ResolutionEcpSignature};
 /** Обратный отсчёт до истечения ЭЦП-сессии (статичный токен ГП «Инфоком») — опциональная
  * подсказка, пока действует сессия можно "Согласовать" ещё раз без повторного пин-кода. */
 function EcpSessionCountdown({expireAt}: { expireAt: string }) {
+    const {t} = useTranslation();
     const [msLeft, setMsLeft] = useState(() => new Date(expireAt).getTime() - Date.now());
 
     useEffect(() => {
@@ -52,7 +54,7 @@ function EcpSessionCountdown({expireAt}: { expireAt: string }) {
 
     return (
         <span className="rounded-full border border-[#cfe3d6] bg-[#f2f9f5] px-2.5 py-1 text-[11px] font-medium text-[#1c7a4d]">
-            ЭЦП активна ещё {formatEcpCountdown(msLeft)}
+            {t("resolutionPanel.ecpCountdown", {time: formatEcpCountdown(msLeft)})}
         </span>
     );
 }
@@ -122,11 +124,6 @@ export interface VndApproverResolutionPanelHandle {
     ) => void;
 }
 
-const TARGET_LABELS: Record<RedactionViewTarget, string> = {
-    ru: "RU", kg: "KG", en: "EN", tid: "ТИД", approvalSheet: "Лист согласования",
-    disagreementMatrix: "Матрица разногласий",
-};
-
 // Строка, начинающаяся с "Цитата: «", при отображении резолюции считается цитатой и
 // сопоставляется со списком сохранённых цитат ПО ПОРЯДКУ (см. FormattedResolutionComment). Если
 // пользователь сам напечатает такую строку в комментарии/замечании, порядок собьётся - поэтому в
@@ -191,12 +188,6 @@ function nextDraftId(): number {
     return -(Date.now() * 1000 + draftIdSeq);
 }
 
-interface OptionConfig {
-    id: ResolutionChoice;
-    title: string;
-    subtitle: string;
-}
-
 // approve и approveWithComment — зелёная тема (оба позитивные исходы), reject — красная
 const CHOICE_THEME: Record<ResolutionChoice, {
     border: string; bg: string; dot: string; buttonBg: string; buttonHover: string; icon: typeof Check;
@@ -215,64 +206,21 @@ const CHOICE_THEME: Record<ResolutionChoice, {
     },
 };
 
-const DEFAULT_OPTIONS: OptionConfig[] = [
-    {
-        id: "approve",
-        title: "Согласовать",
-        subtitle: "Выбирая данный вариант Вы подтверждаете согласование данной редакции.",
-    },
-    {
-        id: "approveWithComment",
-        title: "Согласовать с замечаниями",
-        subtitle: "Текст замечания/комментариев является обязательным.",
-    },
-    {
-        id: "reject",
-        title: "Отклонить",
-        subtitle: "Причина отклонения данной редакции ВНД является обязательной для указания. В случае выбора этого варианта - ВНД с данной редакцией вернется инициатору, он должен будет создать новую редакцию и заново её согласовывать. ",
-    },
-];
+// Мягкая цветная тень под кнопками решений (в цвет самой кнопки)
+const DECISION_BUTTON_SHADOW: Record<ResolutionChoice, string> = {
+    approve: "shadow-[0_8px_16px_-8px_rgba(31,122,76,.7)] hover:shadow-[0_10px_20px_-8px_rgba(31,122,76,.8)]",
+    approveWithComment: "shadow-[0_8px_16px_-8px_rgba(31,122,76,.7)] hover:shadow-[0_10px_20px_-8px_rgba(31,122,76,.8)]",
+    reject: "shadow-[0_8px_16px_-8px_rgba(192,57,43,.7)] hover:shadow-[0_10px_20px_-8px_rgba(192,57,43,.8)]",
+};
 
-// На финальной выдержке замечание/отклонение НЕ создают новую редакцию — инициатор дорабатывает
-// ту же самую и отправляет заново, минуя финальную выдержку, сразу на повторное согласование
-// (т.к. финальная выдержка идёт только после круга с замечаниями)
-const FINAL_HOLD_OPTIONS: OptionConfig[] = [
-    {
-        id: "approve",
-        title: "Согласовать",
-        subtitle: "Замечаний нет. Этот шаг необязателен — если ничего не сделать, документ пройдёт дальше сам.",
-    },
-    {
-        id: "approveWithComment",
-        title: "Согласовать с замечаниями",
-        subtitle: "Текст замечания/комментариев является обязательным. Документ вернётся инициатору на доработку — той же редакции, без создания новой — и после исправлений снова придёт вам на повторное согласование.",
-    },
-    {
-        id: "reject",
-        title: "Отклонить",
-        subtitle: "Причина отклонения является обязательной. Документ вернётся инициатору на доработку той же редакции и после исправлений снова придёт на повторное согласование.",
-    },
-];
-
-const OPTIONS_BY_PHASE: Record<ResolutionPhase, OptionConfig[]> = {
-    primary: DEFAULT_OPTIONS,
-    repeated: DEFAULT_OPTIONS,
-    finalHold: FINAL_HOLD_OPTIONS,
+// Цвет вертикальной черты у пояснения - в тон кнопки
+const HINT_ACCENT: Record<ResolutionChoice, string> = {
+    approve: "border-[#7fd4a3]",
+    approveWithComment: "border-[#7fd4a3]",
+    reject: "border-[#e8a6a6]",
 };
 
 const ACTIONS: ResolutionChoice[] = ["approve", "approveWithComment", "reject"];
-
-const ECP_ACTION_LABEL: Record<ResolutionChoice, string> = {
-    approve: "Согласовать (ЭЦП)",
-    approveWithComment: "Согласовать с замечаниями (ЭЦП)",
-    reject: "Отклонить (ЭЦП)",
-};
-
-const TEST_ACTION_LABEL: Record<ResolutionChoice, string> = {
-    approve: "Согласовать (без ЭЦП, тест)",
-    approveWithComment: "С замечаниями (без ЭЦП, тест)",
-    reject: "Отклонить (без ЭЦП, тест)",
-};
 
 const TEST_ACTION_STYLE: Record<ResolutionChoice, string> = {
     approve: "border-[#9fd3b4] text-[#1f7a45] hover:bg-[#f1faf4]",
@@ -284,12 +232,6 @@ const CHOICE_TO_DECISION: Record<ResolutionChoice, ApprovalDecisionType> = {
     approve: ApprovalDecisionType.Approve,
     approveWithComment: ApprovalDecisionType.ApproveWithComment,
     reject: ApprovalDecisionType.Reject,
-};
-
-const COMMENT_PLACEHOLDER: Record<ResolutionChoice, string> = {
-    approve: "Комментарий…",
-    approveWithComment: "Комментарий / текст замечаний…",
-    reject: "Причина отклонения…",
 };
 
 export const VndApproverResolutionPanel = forwardRef<
@@ -369,7 +311,7 @@ export const VndApproverResolutionPanel = forwardRef<
         return () => clearTimeout(timer);
     }, [choice, comment, remarks, draftStorageKey]);
 
-    const options = OPTIONS_BY_PHASE[phase];
+    const {t} = useTranslation();
 
     const composedComment = useMemo(() => composeResolutionComment(comment, remarks), [comment, remarks]);
     const composedTooLong = composedComment.length > MAX_RESOLUTION_COMMENT_LENGTH;
@@ -561,15 +503,14 @@ export const VndApproverResolutionPanel = forwardRef<
     return (
         <div className="rounded-[16px] border border-[#e9edf3] bg-white p-5">
             <div className="flex items-center justify-between gap-2">
-                <div className="text-[15px] font-bold text-[#1c2740]">Ваша резолюция</div>
+                <div className="text-[15px] font-bold text-[#1c2740]">{t("resolutionPanel.title")}</div>
                 {ecpSession && ecpSessionValid() && <EcpSessionCountdown expireAt={ecpSession.expireAt}/>}
             </div>
 
             {draftRestoredNoticeVisible && (
                 <div className="mt-3 flex flex-wrap items-center justify-between gap-2 rounded-[10px] border border-[#d4d6f8] bg-[#f5f6fd] px-3.5 py-2 text-[12px] text-[#3c424a]">
                     <span>
-                        Восстановлен несохранённый черновик резолюции. Прикреплённые файлы в черновике не
-                        сохраняются — при необходимости приложите их заново.
+                        {t("resolutionPanel.draftRestored")}
                     </span>
                     <span className="flex items-center gap-3">
                         <button
@@ -577,32 +518,18 @@ export const VndApproverResolutionPanel = forwardRef<
                             onClick={() => setDraftRestoredNoticeVisible(false)}
                             className="cursor-pointer font-semibold text-[#4e57d6] hover:text-[#3f47bd]"
                         >
-                            Продолжить
+                            {t("resolutionPanel.draftContinue")}
                         </button>
                         <button
                             type="button"
                             onClick={handleDiscardDraft}
                             className="cursor-pointer font-semibold text-[#8b97ab] hover:text-[#c0392b]"
                         >
-                            Начать заново
+                            {t("resolutionPanel.draftDiscard")}
                         </button>
                     </span>
                 </div>
             )}
-
-            {/* Что означает каждое решение - подсказки для фазы (раньше были подписями у переключателя). */}
-            <details className="mt-4 rounded-[12px] border border-[#e9edf3] bg-[#fbfcfe] px-4 py-2.5 text-[12px] text-[#8b97ab]">
-                <summary className="cursor-pointer select-none font-semibold text-[#5b6680]">
-                    Что означает каждое решение
-                </summary>
-                <ul className="m-0 mt-2 flex list-none flex-col gap-1.5 p-0">
-                    {options.map((opt) => (
-                        <li key={opt.id}>
-                            <span className="font-semibold text-[#1c2740]">{opt.title}.</span> {opt.subtitle}
-                        </li>
-                    ))}
-                </ul>
-            </details>
 
             {/* --- Замечания к тексту --- */}
             {(onCiteRequest || remarks.length > 0) && (
@@ -610,9 +537,9 @@ export const VndApproverResolutionPanel = forwardRef<
                     <div className="flex flex-wrap items-center justify-between gap-2">
                         <span className="flex items-center gap-1 text-[12.5px] font-semibold text-[#1c2740]">
                             <TextQuote size={14} className="text-[#4e57d6]"/>
-                            Замечания к тексту{remarks.length > 0 ? ` (${remarks.length})` : ""}
+                            {t("resolutionPanel.remarksTitle")}{remarks.length > 0 ? ` (${remarks.length})` : ""}
                             <HelpTooltip
-                                content="Выделите фрагмент в тексте редакции — он будет прикреплён к замечанию. Проверяющие и инициатор увидят подсветку именно этого места в документе и смогут перейти к нему кнопкой «Показать в тексте»."
+                                content={t("resolutionPanel.remarksHelp")}
                                 side="bottom"
                                 className="h-5 w-5"
                             />
@@ -624,16 +551,14 @@ export const VndApproverResolutionPanel = forwardRef<
                                 className="cursor-pointer inline-flex items-center gap-1.5 rounded-[8px] border border-[#d7dee8] bg-white px-3 py-[6px] text-[12px] font-semibold text-[#4e57d6] hover:bg-[#ececfc]"
                             >
                                 <Quote size={13}/>
-                                Добавить замечание к тексту
+                                {t("resolutionPanel.addRemark")}
                             </button>
                         )}
                     </div>
 
                     {remarks.length === 0 ? (
                         <div className="mt-2 text-[11.5px] leading-[1.5] text-[#8b97ab]">
-                            Нажмите «Добавить замечание к тексту», выделите нужный фрагмент в документе и
-                            нажмите «Сослаться на выделенное» — фрагмент появится здесь, и к нему можно
-                            будет написать замечание.
+                            {t("resolutionPanel.remarksEmptyHint")}
                         </div>
                     ) : (
                         <div className="mt-2.5 flex flex-col gap-2">
@@ -652,7 +577,7 @@ export const VndApproverResolutionPanel = forwardRef<
                                         </span>
                                         <div className="min-w-0 flex-1">
                                             <div className="flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-[.03em] text-[#a3adbd]">
-                                                Фрагмент · {TARGET_LABELS[r.documentTarget] ?? r.documentTarget}
+                                                {t("resolutionPanel.fragment")} · {t(`resolutionPanel.targets.${r.documentTarget}`, {defaultValue: r.documentTarget})}
                                             </div>
                                             <Tooltip content={r.displayText} side="top" className="block min-w-0">
                                                 <div className="mt-0.5 line-clamp-3 break-words border-l-2 border-[#4e57d6]/50 pl-2 text-[12px] italic leading-[1.45] text-[#3a4560]">
@@ -662,7 +587,7 @@ export const VndApproverResolutionPanel = forwardRef<
                                         </div>
                                         <div className="flex flex-none items-center gap-1">
                                             {onJumpToQuote && (
-                                                <Tooltip content="Показать в тексте" side="top">
+                                                <Tooltip content={t("resolutionPanel.showInText")} side="top">
                                                     <button
                                                         type="button"
                                                         onClick={() => onJumpToQuote(r)}
@@ -672,7 +597,7 @@ export const VndApproverResolutionPanel = forwardRef<
                                                     </button>
                                                 </Tooltip>
                                             )}
-                                            <Tooltip content="Удалить замечание" side="top">
+                                            <Tooltip content={t("resolutionPanel.deleteRemark")} side="top">
                                                 <button
                                                     type="button"
                                                     onClick={() => handleRemoveRemark(r.id)}
@@ -690,7 +615,7 @@ export const VndApproverResolutionPanel = forwardRef<
                                         }}
                                         value={r.note}
                                         onChange={(e) => updateRemarkNote(r.id, e.target.value)}
-                                        placeholder="Замечание к этому фрагменту…"
+                                        placeholder={t("resolutionPanel.remarkPlaceholder")}
                                         rows={2}
                                         className="mt-2 w-full resize-y rounded-[8px] border border-[#e9edf3] bg-[#fbfcfe] px-3 py-2 text-[12.5px] text-[#1c2740] outline-none focus:border-[#4e57d6] focus:bg-white"
                                     />
@@ -703,12 +628,12 @@ export const VndApproverResolutionPanel = forwardRef<
 
             <div className="mt-3 flex flex-wrap items-center justify-between gap-2">
                 <span className="text-[12px] font-semibold text-[#1c2740]">
-                    {remarks.length > 0 ? "Общий комментарий" : "Комментарий"}
+                    {remarks.length > 0 ? t("resolutionPanel.commentGeneral") : t("resolutionPanel.comment")}
                     {commentRequired && remarks.length === 0
                         ? <span className="text-[#d62815]"> *</span>
-                        : <span className="font-normal text-[#8b97ab]"> (необязательно)</span>}
+                        : <span className="font-normal text-[#8b97ab]"> {t("resolutionPanel.optional")}</span>}
                 </span>
-                <Tooltip content="Длина всей резолюции — общего комментария вместе с замечаниями к тексту" side="top">
+                <Tooltip content={t("resolutionPanel.lengthTooltip")} side="top">
                     <span><CharCounter length={composedComment.length} max={MAX_RESOLUTION_COMMENT_LENGTH}/></span>
                 </Tooltip>
             </div>
@@ -716,7 +641,7 @@ export const VndApproverResolutionPanel = forwardRef<
             <textarea
                 value={comment}
                 onChange={(e) => setComment(e.target.value.slice(0, MAX_RESOLUTION_COMMENT_LENGTH))}
-                placeholder={remarks.length > 0 ? "Общий комментарий к редакции (необязательно)…" : COMMENT_PLACEHOLDER[choice]}
+                placeholder={remarks.length > 0 ? t("resolutionPanel.commentGeneralPlaceholder") : t(`resolutionPanel.commentPlaceholder.${choice}`)}
                 maxLength={MAX_RESOLUTION_COMMENT_LENGTH}
                 rows={3}
                 className={`mt-1.5 w-full resize-y rounded-[10px] border bg-[#fbfcfe] px-3.5 py-2.5 text-[13px] text-[#1c2740] outline-none focus:border-[#4e57d6] ${
@@ -727,9 +652,9 @@ export const VndApproverResolutionPanel = forwardRef<
             <div className="mt-3">
                 <div className="flex items-center justify-between gap-3">
                     <span className="flex items-center gap-0.5 text-[11.5px] text-[#8b97ab]">
-                        Добавлено {files.length} из {MAX_RESOLUTION_ATTACHMENTS} файлов максимум
+                        {t("resolutionPanel.filesAdded", {count: files.length, max: MAX_RESOLUTION_ATTACHMENTS})}
                         <HelpTooltip
-                            content={`Количество файлов, прикладываемых к резолюции, ограничено — не более ${MAX_RESOLUTION_ATTACHMENTS}, и каждый файл не больше ${formatFileSize(MAX_RESOLUTION_ATTACHMENT_SIZE_BYTES)}. Вложения сохраняются в истории согласования бессрочно, наравне с текстом комментария.`}
+                            content={t("resolutionPanel.filesHelp", {max: MAX_RESOLUTION_ATTACHMENTS, size: formatFileSize(MAX_RESOLUTION_ATTACHMENT_SIZE_BYTES)})}
                             side="bottom"
                             className="h-5 w-5"
                         />
@@ -742,14 +667,14 @@ export const VndApproverResolutionPanel = forwardRef<
                         его после каждого выбора (см. fileInputKey выше). */}
                     {attachmentLimitReached ? (
                         <Tooltip
-                            content={`Достигнут максимум — ${MAX_RESOLUTION_ATTACHMENTS} файлов на резолюцию`}
+                            content={t("resolutionPanel.filesLimitReached", {max: MAX_RESOLUTION_ATTACHMENTS})}
                             side="top"
                         >
                             <span
                                 className="cursor-not-allowed inline-flex items-center gap-1.5 rounded-[8px] border border-[#e9edf3] bg-[#f6f8fb] px-3 py-[7px] text-[12.5px] font-semibold text-[#b7bfcc]"
                             >
                                 <Paperclip size={14}/>
-                                Прикрепить файл
+                                {t("resolutionPanel.attachFile")}
                             </span>
                         </Tooltip>
                     ) : (
@@ -764,7 +689,7 @@ export const VndApproverResolutionPanel = forwardRef<
                                 onChange={(e) => handleFilesPicked(e.target.files)}
                             />
                             <Paperclip size={14}/>
-                            Прикрепить файл
+                            {t("resolutionPanel.attachFile")}
                         </label>
                     )}
                 </div>
@@ -773,7 +698,7 @@ export const VndApproverResolutionPanel = forwardRef<
                     <div className="mt-2 flex items-start gap-1.5 text-[11.5px] text-[#d62815]">
                         <AlertCircle className="mt-[1px] h-3.5 w-3.5 shrink-0"/>
                         <span>
-                            Часть выбранных файлов не добавлена — максимум {MAX_RESOLUTION_ATTACHMENTS} файлов на резолюцию.
+                            {t("resolutionPanel.filesNotAdded", {max: MAX_RESOLUTION_ATTACHMENTS})}
                         </span>
                     </div>
                 )}
@@ -782,8 +707,10 @@ export const VndApproverResolutionPanel = forwardRef<
                     <div className="mt-2 flex items-start gap-1.5 text-[11.5px] text-[#d62815]">
                         <AlertCircle className="mt-[1px] h-3.5 w-3.5 shrink-0"/>
                         <span>
-                            Не добавлен{oversizedFileNames.length > 1 ? "ы" : ""} «{oversizedFileNames.join("», «")}»
-                            {" "}— размер файла не должен превышать {formatFileSize(MAX_RESOLUTION_ATTACHMENT_SIZE_BYTES)}.
+                            {t(oversizedFileNames.length > 1 ? "resolutionPanel.oversizedMany" : "resolutionPanel.oversizedOne", {
+                                names: oversizedFileNames.join("», «"),
+                                size: formatFileSize(MAX_RESOLUTION_ATTACHMENT_SIZE_BYTES),
+                            })}
                         </span>
                     </div>
                 )}
@@ -791,7 +718,7 @@ export const VndApproverResolutionPanel = forwardRef<
                 {files.length > 0 && (
                     <div className="mt-3 rounded-[10px] border border-[#e9edf3] bg-[#fbfcfe] p-3">
                         <div className="mb-2 text-[11.5px] font-semibold text-[#8b97ab]">
-                            Ваши прикреплённые файлы:
+                            {t("resolutionPanel.yourFiles")}
                         </div>
                         <div className="flex flex-col gap-1.5">
                             {files.map((file, index) => (
@@ -804,7 +731,7 @@ export const VndApproverResolutionPanel = forwardRef<
                                         <span className="block truncate">{file.name}</span>
                                     </Tooltip>
                                     <span className="flex-none text-[#8b97ab]">{formatFileSize(file.size)}</span>
-                                    <Tooltip content="Удалить файл" side="top">
+                                    <Tooltip content={t("resolutionPanel.deleteFile")} side="top">
                                         <button
                                             type="button"
                                             onClick={() => handleRemoveFile(index)}
@@ -830,57 +757,58 @@ export const VndApproverResolutionPanel = forwardRef<
                 <div className="mt-2 flex items-center justify-between gap-3 rounded-md border border-[#f3dfb0] bg-[#fdf7e8] px-3.5 py-2 text-[12.5px] text-[#8a6100]">
                     <span>
                         {resignNeeded === "resign"
-                            ? "Подпись не соответствует текущему документу или тексту резолюции. Подпишите резолюцию заново."
-                            : "Подпись принадлежит другому лицу. Подпишите заново своей ЭЦП — потребуется ввести ПИН."}
+                            ? t("resolutionPanel.resignStale")
+                            : t("resolutionPanel.resignOtherPerson")}
                     </span>
                     <button type="button" onClick={() => handleAction(choice, true)}
                             disabled={busy}
                             className="cursor-pointer shrink-0 rounded-[8px] border border-[#e0c47a] bg-white px-3 py-1 text-[12px] font-semibold text-[#8a6100] disabled:opacity-50">
-                        Подписать заново
+                        {t("resolutionPanel.resignAgain")}
                     </button>
                 </div>
             )}
 
-            {/* Решения: левая колонка - с подписью ЭЦП (обязательна для любого решения), правая -
-                тестовые без ЭЦП (только пока на сервере включён EcpSigning:AllowWithoutEcp). */}
-            <div className={`mt-4 grid gap-2.5 ${testMode ? "sm:grid-cols-2" : "grid-cols-1"}`}>
-                {testMode && (
-                    <>
-                        <div className="hidden text-[11px] font-bold uppercase tracking-[.04em] text-[#a3adbd] sm:block">
-                            С подписью ЭЦП
-                        </div>
-                        <div className="hidden text-[11px] font-bold uppercase tracking-[.04em] text-[#a3adbd] sm:block">
-                            Без ЭЦП — тестовый режим
-                        </div>
-                    </>
-                )}
+            {/* Решения: слева кнопки с подписью ЭЦП (обязательна для любого решения; в тестовом режиме
+                рядом - кнопки без ЭЦП, только пока на сервере включён EcpSigning:AllowWithoutEcp),
+                справа - пояснение, к чему приведёт именно это решение на текущей фазе. */}
+            <div className="mt-5 flex flex-col gap-3">
                 {ACTIONS.map((c) => {
                     const actionTheme = CHOICE_THEME[c];
                     const Icon = actionTheme.icon;
                     const isRunning = submitting && lastAction?.choice === c;
+                    const hint = t(`resolutionPanel.hints.${phase}.${c}`);
                     return (
-                        <Fragment key={c}>
-                            <button
-                                type="button"
-                                onClick={() => handleAction(c, true)}
-                                disabled={busy || composedTooLong}
-                                className={`cursor-pointer flex w-full items-center justify-center gap-2 rounded-[10px] px-4 py-3 text-[13.5px] font-semibold text-white transition-colors disabled:cursor-not-allowed disabled:opacity-50 ${actionTheme.buttonBg} ${actionTheme.buttonHover}`}
-                            >
-                                <Icon className="h-4 w-4" strokeWidth={2.5}/>
-                                {isRunning && lastAction?.withEcp ? "Отправка…" : ECP_ACTION_LABEL[c]}
-                            </button>
-                            {testMode && (
+                        <div key={c} className="flex flex-wrap items-center gap-x-4 gap-y-2">
+                            <div className="flex flex-none flex-wrap items-center gap-2.5">
                                 <button
                                     type="button"
-                                    onClick={() => handleAction(c, false)}
+                                    onClick={() => handleAction(c, true)}
                                     disabled={busy || composedTooLong}
-                                    className={`cursor-pointer flex w-full items-center justify-center gap-2 rounded-[10px] border border-dashed bg-white px-4 py-3 text-[13.5px] font-semibold transition-colors disabled:cursor-not-allowed disabled:opacity-50 ${TEST_ACTION_STYLE[c]}`}
+                                    className={`group cursor-pointer flex w-[380px] max-w-full items-center justify-center gap-2.5 rounded-[12px] px-5 py-[11px] text-[13.5px] font-semibold text-white transition-all duration-150 hover:-translate-y-px active:translate-y-0 disabled:translate-y-0 disabled:cursor-not-allowed disabled:opacity-50 disabled:shadow-none ${DECISION_BUTTON_SHADOW[c]} ${actionTheme.buttonBg} ${actionTheme.buttonHover}`}
                                 >
-                                    <Icon className="h-4 w-4" strokeWidth={2.5}/>
-                                    {isRunning && !lastAction?.withEcp ? "Отправка…" : TEST_ACTION_LABEL[c]}
+                                    <span className="grid h-6 w-6 flex-none place-items-center rounded-full bg-white/20 transition-colors group-hover:bg-white/30">
+                                        <Icon className="h-[14px] w-[14px]" strokeWidth={2.6}/>
+                                    </span>
+                                    {isRunning && lastAction?.withEcp ? t("resolutionPanel.sending") : t(`resolutionPanel.ecpLabel.${c}`)}
                                 </button>
+                                {testMode && (
+                                    <button
+                                        type="button"
+                                        onClick={() => handleAction(c, false)}
+                                        disabled={busy || composedTooLong}
+                                        className={`cursor-pointer flex w-[300px] max-w-full items-center justify-center gap-2 rounded-[12px] border border-dashed bg-white px-4 py-[11px] text-[13px] font-semibold transition-colors disabled:cursor-not-allowed disabled:opacity-50 ${TEST_ACTION_STYLE[c]}`}
+                                    >
+                                        <Icon className="h-4 w-4" strokeWidth={2.5}/>
+                                        {isRunning && !lastAction?.withEcp ? t("resolutionPanel.sending") : t(`resolutionPanel.testLabel.${c}`)}
+                                    </button>
+                                )}
+                            </div>
+                            {hint && (
+                                <div className={`min-w-[220px] flex-1 border-l-2 pl-3 text-[12px] leading-[1.45] text-[#6b7688] ${HINT_ACCENT[c]}`}>
+                                    {hint}
+                                </div>
                             )}
-                        </Fragment>
+                        </div>
                     );
                 })}
             </div>
@@ -890,8 +818,8 @@ export const VndApproverResolutionPanel = forwardRef<
                     <AlertCircle className="mt-[1px] h-3.5 w-3.5 shrink-0"/>
                     <span>
                         {choice === "reject"
-                            ? "Укажите причину отклонения — в общем комментарии или в замечании к фрагменту текста"
-                            : "Укажите комментарий или замечание хотя бы к одному фрагменту текста — при данном выборе это обязательно"}
+                            ? t("resolutionPanel.commentMissingReject")
+                            : t("resolutionPanel.commentMissingOther")}
                     </span>
                 </div>
             )}
@@ -900,8 +828,7 @@ export const VndApproverResolutionPanel = forwardRef<
                 <div className="mt-3 flex items-start gap-1.5 text-[11.5px] text-[#d62815]">
                     <AlertCircle className="mt-[1px] h-3.5 w-3.5 shrink-0"/>
                     <span>
-                        Резолюция вместе с замечаниями к тексту длиннее {MAX_RESOLUTION_COMMENT_LENGTH} символов —
-                        сократите текст.
+                        {t("resolutionPanel.tooLong", {max: MAX_RESOLUTION_COMMENT_LENGTH})}
                     </span>
                 </div>
             )}
@@ -910,10 +837,10 @@ export const VndApproverResolutionPanel = forwardRef<
                 open={pendingReject !== null}
                 onClose={() => setPendingReject(null)}
                 onConfirm={handleConfirmReject}
-                title="Отклонить редакцию?"
-                message="ВНД вернётся инициатору — потребуется создать новую редакцию и заново пройти согласование."
-                confirmLabel="Отклонить"
-                loadingLabel="Отклоняю…"
+                title={t("resolutionPanel.rejectConfirm.title")}
+                message={t("resolutionPanel.rejectConfirm.message")}
+                confirmLabel={t("resolutionPanel.rejectConfirm.confirm")}
+                loadingLabel={t("resolutionPanel.rejectConfirm.loading")}
                 loading={submitting}
                 variant="danger"
                 icon={X}

@@ -1,5 +1,7 @@
 // Сводка по процессу согласования: статус, инициатор, прогресс резолюций, дата запуска
 import {useMemo, useState} from "react";
+import {useTranslation} from "react-i18next";
+import i18n from "i18next";
 import {useNavigate} from "react-router-dom";
 import {useAuth} from "@/context/AuthContext.ts";
 import type {ApprovalProcessResponse} from "@/service/coordinationService/coordinationServiceTypes.ts";
@@ -54,12 +56,17 @@ function getRelevantPhase(process: ApprovalProcessResponse): ApprovalPhase {
     }
 }
 
+function getDateLocale(): string {
+    return i18n.language === "ky" ? "ky-KG" : i18n.language === "en" ? "en-GB" : "ru-RU";
+}
+
 // Дата + время в формате "25.08.2026" / "11:21"
 function formatDateParts(iso: string): { date: string; time: string } {
     const d = new Date(iso);
+    const locale = getDateLocale();
     return {
-        date: d.toLocaleDateString("ru-RU"),
-        time: d.toLocaleTimeString("ru-RU", {hour: "2-digit", minute: "2-digit"}),
+        date: d.toLocaleDateString(locale),
+        time: d.toLocaleTimeString(locale, {hour: "2-digit", minute: "2-digit"}),
     };
 }
 
@@ -71,14 +78,15 @@ function getPreciseElapsedLabel(iso: string): string {
     const minutes = totalMinutes % 60;
 
     const parts: string[] = [];
-    if (days > 0) parts.push(`${days} д.`);
-    if (hours > 0) parts.push(`${hours} ч.`);
-    if (minutes > 0) parts.push(`${minutes} мин.`);
+    if (days > 0) parts.push(`${days} ${i18n.t("coordinationUi.summary.d")}`);
+    if (hours > 0) parts.push(`${hours} ${i18n.t("coordinationUi.summary.h")}`);
+    if (minutes > 0) parts.push(`${minutes} ${i18n.t("coordinationUi.summary.min")}`);
 
-    return parts.length > 0 ? parts.join(" ") : "меньше минуты";
+    return parts.length > 0 ? parts.join(" ") : i18n.t("coordinationUi.summary.lessThanMinute");
 }
 
 export function VndApprovalSummary({process}: VndApprovalSummaryProps) {
+    const {t} = useTranslation();
     const {user} = useAuth();
     const navigate = useNavigate();
     const isMeInitiator = process.initiatorUserId === user?.id;
@@ -123,7 +131,7 @@ export function VndApprovalSummary({process}: VndApprovalSummaryProps) {
             <div className="flex flex-wrap items-center justify-center gap-x-6 gap-y-3">
                 <div className="flex items-center gap-2.5">
                     <User size={15} className="flex-none text-[#8b97ab]"/>
-                    <span className="text-[12.5px] text-[#8b97ab]">Инициатор текущего согласования:</span>
+                    <span className="text-[12.5px] text-[#8b97ab]">{t("coordinationUi.summary.initiator")}</span>
                     <button
                         type="button"
                         onClick={handleInitiatorClick}
@@ -148,7 +156,7 @@ export function VndApprovalSummary({process}: VndApprovalSummaryProps) {
                                 className="ml-0.5 inline-flex items-center self-start rounded-full px-2 py-[2px] text-[10.5px] font-semibold"
                                 style={{color: "#2f68f5", backgroundColor: "#e9f0ff"}}
                             >
-                                я
+                                {t("coordinationUi.summary.me")}
                             </span>
                         )}
                     </button>
@@ -157,11 +165,11 @@ export function VndApprovalSummary({process}: VndApprovalSummaryProps) {
                 {/* Строка "Процесс согласования редакции запущен" */}
                 <div className="flex items-center gap-[7px] text-[12.5px] text-[#8b97ab]">
                     <Calendar size={15} className="flex-none"/>
-                    <span>Процесс согласования редакции запущен:</span>
+                    <span>{t("coordinationUi.summary.started")}</span>
                     <span>
                         {formatDateParts(process.createdAt).date}
-                        {" "}({getPreciseElapsedLabel(process.createdAt)} назад)
-                        {" "}(в {formatDateParts(process.createdAt).time})
+                        {" "}({getPreciseElapsedLabel(process.createdAt)} {t("coordinationUi.summary.ago")})
+                        {" "}({t("coordinationUi.summary.at")} {formatDateParts(process.createdAt).time})
                     </span>
                 </div>
             </div>
@@ -172,7 +180,7 @@ export function VndApprovalSummary({process}: VndApprovalSummaryProps) {
 
                 <div>
                     <div className="flex items-center gap-[7px] text-[12.5px] text-[#8b97ab]">
-                        <span> Текущий этап согласования:</span>
+                        <span>{t("coordinationUi.summary.currentStage")}</span>
                         <span
                             className={`inline-flex items-center rounded-full px-[11px] py-1 text-[12px] font-semibold ${statusMeta.badgeClass}`}>
                             {statusMeta.label}
@@ -186,8 +194,8 @@ export function VndApprovalSummary({process}: VndApprovalSummaryProps) {
                         {phaseStartedAt
                             ? <>
                                 {formatDateParts(phaseStartedAt).date}
-                                {" "}({getPreciseElapsedLabel(phaseStartedAt)} назад)
-                                {" "}(в {formatDateParts(phaseStartedAt).time})
+                                {" "}({getPreciseElapsedLabel(phaseStartedAt)} {t("coordinationUi.summary.ago")})
+                                {" "}({t("coordinationUi.summary.at")} {formatDateParts(phaseStartedAt).time})
                             </>
                             : "—"}
                     </span>
@@ -196,7 +204,7 @@ export function VndApprovalSummary({process}: VndApprovalSummaryProps) {
                     <span>{phaseLabels.deadline}:</span>
                     <span>
                         {phaseDeadlineAt
-                            ? <>{formatDateParts(phaseDeadlineAt).date} (в {formatDateParts(phaseDeadlineAt).time})</>
+                            ? <>{formatDateParts(phaseDeadlineAt).date} ({t("coordinationUi.summary.at")} {formatDateParts(phaseDeadlineAt).time})</>
                             : "—"}
                     </span>
                 </div>
@@ -205,19 +213,19 @@ export function VndApprovalSummary({process}: VndApprovalSummaryProps) {
             {/* Резолюции текущего этапа — сгруппированы в два мини-блока: поставленные и ожидающие */}
             <div className="mt-3 border-t border-[#eef0f5] pt-3 text-center">
                 <div className="mb-2 text-[11.5px] text-[#8b97ab]">
-                    Резолюций на данном этапе выставлено:
+                    {t("coordinationUi.summary.resolutionsPosted")}
                 </div>
                 <div className="flex flex-wrap items-center justify-center gap-2.5">
                     <div className="flex items-center gap-2.5 rounded-[10px] bg-[#e2f4ea] px-3.5 py-2">
                         <CheckCircle2 size={16} className="flex-none text-[#1c7a4d]"/>
                         <span className="text-[14px] font-bold leading-none text-[#1c7a4d]">{resolved}</span>
-                        <span className="text-[12px] font-medium text-[#1c7a4d]">согласовано</span>
+                        <span className="text-[12px] font-medium text-[#1c7a4d]">{t("coordinationUi.summary.resolved")}</span>
                     </div>
                     <span className="text-[13px] font-medium text-[#c3c9d4]">/</span>
                     <div className="flex items-center gap-2.5 rounded-[10px] bg-[#fbeecf] px-3.5 py-2">
                         <Hourglass size={16} className="flex-none text-[#b3730a]"/>
                         <span className="text-[14px] font-bold leading-none text-[#b3730a]">{pending}</span>
-                        <span className="text-[12px] font-medium text-[#b3730a]">ожидает решения</span>
+                        <span className="text-[12px] font-medium text-[#b3730a]">{t("coordinationUi.summary.pending")}</span>
                     </div>
                 </div>
             </div>
@@ -229,7 +237,7 @@ export function VndApprovalSummary({process}: VndApprovalSummaryProps) {
                 <div className="mt-3 border-t border-[#eef0f5] pt-3">
                     <div className="mb-1.5 flex items-center gap-[7px] text-[11.5px] font-bold uppercase tracking-[.04em] text-[#a3adbd]">
                         <MessageSquareText size={14} className="flex-none text-[#4e57d6]"/>
-                        Комментарий инициатора о внесённых исправлениях
+                        {t("coordinationUi.summary.initiatorComment")}
                     </div>
                     <div className="rounded-[10px] bg-[#f6f8fb] px-3.5 py-3">
                         <p className="whitespace-pre-wrap text-[13px] leading-[1.6] text-[#3c424a]">
@@ -258,7 +266,7 @@ export function VndApprovalSummary({process}: VndApprovalSummaryProps) {
                                 onClick={() => setInitiatorCommentOpen(true)}
                                 className="cursor-pointer mt-2 rounded-[7px] border border-[#d7dee8] bg-white px-2.5 py-[6px] text-[11.5px] font-semibold text-[#4e57d6] hover:bg-[#ececfc]"
                             >
-                                См. комментарий полностью
+                                {t("coordinationUi.summary.viewFullComment")}
                             </button>
                         )}
                     </div>
@@ -267,18 +275,8 @@ export function VndApprovalSummary({process}: VndApprovalSummaryProps) {
 
             {initiatorCommentOpen && (
                 <CommentViewModal
-                    title="См. комментарий полностью"
-                    approverName={process.initiatorName}
-                    approverUserId={process.initiatorUserId}
-                    comment={process.repeatInitiatorComment ?? ""}
-                    attachments={process.repeatInitiatorCommentAttachments}
-                    onClose={() => setInitiatorCommentOpen(false)}
-                />
-            )}
-
-            {initiatorCommentOpen && (
-                <CommentViewModal
-                    title="См. комментарий полностью"
+                    title={t("coordinationUi.summary.viewFullComment")}
+                    isComment
                     approverName={process.initiatorName}
                     approverUserId={process.initiatorUserId}
                     comment={process.repeatInitiatorComment ?? ""}

@@ -1,5 +1,5 @@
 // Модалка с иерархическим списком, одиночным выбором
-import {useRef, useState} from "react";
+import {useRef, useState, type ReactNode} from "react";
 import {useTranslation} from "react-i18next";
 import {ChevronRight, X} from "lucide-react";
 import {HighlightText} from "@/utils/highlightText.tsx";
@@ -32,6 +32,8 @@ interface TreeSingleSelectModalProps {
     // по умолчанию используется тот же clearLabel, но, например, в фильтре СП внутри
     // AssignResponsiblesModal здесь показывается развёрнутое пояснение вместо ярлыка действия.
     clearedLabel?: string;
+    /** Пояснение в рамке под заголовком окна (над поиском) */
+    hint?: ReactNode;
 }
 
 function buildTree(options: TreeSelectOption[]): TreeNode[] {
@@ -106,6 +108,7 @@ export function TreeSingleSelectModal({
                                           searchPlaceholder,
                                           clearLabel,
                                           clearedLabel,
+                                          hint,
                                       }: TreeSingleSelectModalProps) {
     const {t} = useTranslation();
     const [query, setQuery] = useState("");
@@ -250,6 +253,12 @@ export function TreeSingleSelectModal({
                         <X className="w-[16px] h-[16px]" strokeWidth={2}/>
                     </button>
                 </div>
+
+                {hint && (
+                    <div className="mx-5 mt-4 flex-none rounded-[10px] border border-[#d9e3fb] bg-[#f3f6ff] px-3 py-2.5 text-[12px] leading-[1.5] text-[#3a4a9e]">
+                        {hint}
+                    </div>
+                )}
 
                 {/* Поиск */}
                 <div className="px-5 pt-4 pb-2 flex-none">

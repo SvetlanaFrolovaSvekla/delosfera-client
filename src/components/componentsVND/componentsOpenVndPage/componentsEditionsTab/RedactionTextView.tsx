@@ -8,19 +8,22 @@ import {useDocxQuoteMarks, type QuoteMarkFocusRequest} from "@/hooks/vndHooks/us
 import {
     useDocxLegacyLinks, type LegacyAttachmentInfo, type LegacyLinkHover,
 } from "@/hooks/vndHooks/useDocxLegacyLinks.ts";
-import {AttachmentDocxPreviewModal} from "@/components/componentsGeneral/modal/AttachmentDocxPreviewModal.tsx";
-import {isPreviewableFile} from "@/utils/downloadFiles/fileNaming.ts";
+import {useCanExportVnd, NO_EXPORT_VND_HINT} from "@/hooks/vndHooks/useCanExportVnd.ts";
 import {useDocxLinkMarks, type DocLinkFocusRequest, type DocLinkMark} from "@/hooks/vndHooks/useDocxLinkMarks.ts";
-import {
-    LegacyLinkHoverCard, VndLinkHoverCard,
-} from "@/components/componentsVND/componentsOpenVndPage/componentsLinks/VndLinkHoverCard.tsx";
+
+import {isPreviewableFile} from "@/utils/downloadFiles/fileNaming.ts";
 import {buildLinkFocusUrl} from "@/utils/vndProcess/vndLinkNavigation.ts";
 import type {VndLinkSide} from "@/utils/vndProcess/vndLinkNavigation.ts";
 import type {QuoteMarkInfo} from "@/utils/vndProcess/redactionQuoteMarks.ts";
 import {buildRedactionFileName} from "@/utils/downloadFiles/fileNaming.ts";
 import type {RedactionLanguage, RedactionViewTarget} from "@/utils/vndProcess/redactionLanguagePanelUtils.ts";
 import {FileText, Loader2, ChevronUp, ChevronDown, X} from "lucide-react";
-import {useCanExportVnd, NO_EXPORT_VND_HINT} from "@/hooks/vndHooks/useCanExportVnd.ts";
+
+import {
+    LegacyLinkHoverCard, VndLinkHoverCard,
+} from "@/components/componentsVND/componentsOpenVndPage/componentsLinks/VndLinkHoverCard.tsx";
+import {AttachmentDocxPreviewModal} from "@/components/componentsGeneral/modal/AttachmentDocxPreviewModal.tsx";
+
 
 interface RedactionTextViewProps {
     vnd: VndResponse;

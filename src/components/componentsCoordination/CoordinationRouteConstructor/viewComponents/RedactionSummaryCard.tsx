@@ -4,8 +4,9 @@ import type {RedactionViewTarget} from "@/utils/vndProcess/redactionLanguagePane
 import {formatDate} from "@/utils/dateUtils.ts";
 import {
     RedactionDocumentsPanel
-} from "@/components/componentsVND/componentsOpenVndPage/componentsEditionsTab/RedactionDocumentsPanel.tsx";
+} from "@/components/componentsCoordination/CoordinationRouteConstructor/viewComponents/RedactionDocumentsPanel.tsx";
 import {FileText, Calendar} from "lucide-react";
+import {useTranslation} from "react-i18next";
 import {Tooltip} from "@/components/componentsGeneral/Tooltip.tsx";
 
 interface RedactionSummaryCardProps {
@@ -28,6 +29,7 @@ export function RedactionSummaryCard({
                                          onDownload,
                                          onView,
                                      }: RedactionSummaryCardProps) {
+    const {t} = useTranslation();
     return (
         <div
             className="mx-auto mb-5 w-full max-w-[1240px] overflow-hidden rounded-[14px] border border-[#e9edf3] bg-white">
@@ -42,8 +44,8 @@ export function RedactionSummaryCard({
                     <RedactionColumn
                         vnd={vnd}
                         redaction={redaction}
-                        label="Новая редакция"
-                        labelEmphasis=" (необходимо согласовать)"
+                        label={t("coordinationUi.redactionSummary.newRedaction")}
+                        labelEmphasis={t("coordinationUi.redactionSummary.needApproval")}
                         downloadingId={downloadingId}
                         onDownload={onDownload}
                         onView={onView ? (lang) => onView(redaction, lang) : undefined}
@@ -52,7 +54,7 @@ export function RedactionSummaryCard({
                     <RedactionColumn
                         vnd={vnd}
                         redaction={previousRedaction}
-                        label="Предыдущая редакция"
+                        label={t("coordinationUi.redactionSummary.previous")}
                         downloadingId={downloadingId}
                         onDownload={onDownload}
                         onView={onView ? (lang) => onView(previousRedaction, lang) : undefined}
@@ -84,6 +86,7 @@ function RedactionColumn({
     onView?: (target: RedactionViewTarget) => void;
     className?: string;
 }) {
+    const {t} = useTranslation();
     return (
         <div className={className}>
             {/* Шапка: код редакции и дата создания */}
@@ -102,7 +105,7 @@ function RedactionColumn({
                             )}
                         </div>
                     )}
-                    <Tooltip content="Дата создания редакции" side="top">
+                    <Tooltip content={t("coordinationUi.redactionSummary.createdAt")} side="top">
                         <div className="mt-[2px] flex items-center gap-[5px] text-[11.5px] text-[#8b97ab]">
                             <Calendar size={12} className="flex-none"/>
                             {formatDate(redaction.createdAt)} {/* Дата создания */}
@@ -114,7 +117,7 @@ function RedactionColumn({
             {redaction.description && (
                 <div className="border-b border-[#eef2f7] px-5 py-4">
                     <div className="mb-1.5 text-[11px] font-bold uppercase tracking-[.04em] text-[#a3adbd]">
-                        Описание редакции
+                        {t("coordinationUi.redactionSummary.description")}
                     </div>
                     <p className="text-[13px] leading-[1.6] text-[#3c424a]">{redaction.description}</p>
                 </div>

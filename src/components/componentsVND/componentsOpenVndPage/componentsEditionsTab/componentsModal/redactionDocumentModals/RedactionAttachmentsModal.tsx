@@ -14,20 +14,16 @@ import {useCanExportVnd, NO_EXPORT_VND_HINT} from "@/hooks/vndHooks/useCanExport
 import {approvalSheetCaption, getRedactionApprovalSheets} from "@/utils/vndProcess/approvalSheets.ts";
 
 /** Специальные вложения открываются просмотрщиком (RedactionTidModal/RedactionApprovalSheetModal
- * из VndEditionsTab), а не просто скачиваются. Обычные вложения произвольного формата (см. ниже,
- * redaction.attachments) в общем случае тоже не имеют предпросмотра — кроме .docx/.xlsx/.pptx,
- * для которых он доступен через AttachmentDocxPreviewModal (см. isPreviewableFile в
- * utils/fileNaming.ts). */
+ * из VndEditionsTab), а не просто скачиваются. Обычные вложения произвольного формата
+ * в общем случае тоже не имеют предпросмотра — кроме .docx/.xlsx/.pptx,
+ * для которых он доступен через AttachmentDocxPreviewModal. */
 export type SpecialAttachmentTarget = "tid" | "approvalSheet" | "disagreementMatrix";
 
 interface RedactionAttachmentsModalProps {
     redaction: VndRedactionResponse;
     downloadingId: number | null;
     onDownload: (fileId: number, name: string) => void;
-    /** Открыть просмотр указанного специального вложения (ТИД/Лист согласования). Кнопка
-     * "Просмотр" показывается только у специальных вложений - у обычных вложений произвольного
-     * формата (см. redaction.attachments ниже) её нет и не будет: непонятно, чем и как их
-     * показывать в браузере, поэтому там доступно только скачивание. */
+    /** Открыть просмотр указанного специального вложения (ТИД/Лист согласования). */
     onView?: (target: SpecialAttachmentTarget) => void;
     onClose: () => void;
 }
@@ -57,10 +53,7 @@ export function RedactionAttachmentsModal({
 
     // "Специальные вложения" - служебные документы редакции, которые формируются автоматически
     // (или отдельно загружаются) в рамках процесса согласования/актуализации, а не добавляются
-    // пользователем вручную, как обычные вложения ниже. Остаются частью редакции и после того,
-    // как ВНД проходит консолидацию (см. VndActualizationService.PublishAsync на бэке - поля
-    // TidFileId/ApprovalSheetFileId консолидацией не затрагиваются), поэтому должны быть видны
-    // здесь и для уже действующих ВНД, а не только со страницы согласования.
+    // пользователем вручную, как обычные вложения ниже.
     const specialAttachments: SpecialAttachment[] = [
         ...(redaction.tidFileId !== null
             ? [{
@@ -71,7 +64,7 @@ export function RedactionAttachmentsModal({
                 fileName: `${redaction.code}_ТИД.docx`,
             }]
             : []),
-        // Все листы согласования редакции (их бывает несколько - см. approvalSheets.ts), от
+        // Все листы согласования редакции, от
         // нового к старому, с подписью "Актуализация без изменений · дата" и т.п.
         ...(() => {
             const sheets = [...getRedactionApprovalSheets(redaction)].reverse();
@@ -115,10 +108,6 @@ export function RedactionAttachmentsModal({
 
     return createPortal(
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 p-4">
-            {/* max-h + flex-col с прокруткой только у списка вложений: раньше карточка не была
-                ничем ограничена по высоте, и у редакции с большим числом вложений (специальные +
-                обычные) модалка вылезала за пределы экрана вместо того, чтобы скроллиться. Шапка
-                и кнопка "Закрыть" остаются на месте, скроллится только середина. */}
             <div className="flex max-h-[85vh] w-full max-w-[460px] flex-col rounded-[16px] bg-white shadow-xl">
                 <div className="flex flex-none items-start justify-between gap-3 p-6 pb-4">
                     <div className="flex items-center gap-3">

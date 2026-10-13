@@ -1,6 +1,7 @@
 // Модалка выбора файлов и комментария к исправленной редакции (RU обязателен, KG/EN опционально)
 import {useState} from "react";
 import {createPortal} from "react-dom";
+import {useTranslation} from "react-i18next";
 import {FileUp, Trash2, X} from "lucide-react";
 
 interface RevisionFiles {
@@ -27,6 +28,7 @@ interface FileSlotProps {
 }
 
 function FileSlot({label, required, file, onChange}: FileSlotProps) {
+    const {t} = useTranslation();
     const inputId = `revision-file-${label}`;
 
     return (
@@ -40,7 +42,7 @@ function FileSlot({label, required, file, onChange}: FileSlotProps) {
                     className="flex h-[70px] cursor-pointer flex-col items-center justify-center gap-1 rounded-[10px] border border-dashed border-[#d5dae3] bg-[#fbfcfe] text-[#8b97ab] transition-colors hover:border-[#4e57d6]/50 hover:bg-[#f6f8fb]"
                 >
                     <FileUp size={18}/>
-                    <span className="text-[11.5px]">Выбрать файл (DOCX)</span>
+                    <span className="text-[11.5px]">{t("coordinationUi.upload.chooseFile")}</span>
                     <input
                         id={inputId}
                         type="file"
@@ -66,6 +68,7 @@ function FileSlot({label, required, file, onChange}: FileSlotProps) {
 }
 
 export function VndUploadRevisionFilesModal({initial, onClose, onConfirm}: VndUploadRevisionFilesModalProps) {
+    const {t} = useTranslation();
     const [docRu, setDocRu] = useState<File | null>(initial.docRu);
     const [docKg, setDocKg] = useState<File | null>(initial.docKg);
     const [docEn, setDocEn] = useState<File | null>(initial.docEn);
@@ -82,19 +85,19 @@ export function VndUploadRevisionFilesModal({initial, onClose, onConfirm}: VndUp
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 p-4">
             <div className="max-h-[90vh] w-full max-w-[520px] overflow-y-auto rounded-[16px] bg-white p-6 shadow-xl">
                 <div className="mb-5 flex items-center justify-between">
-                    <h2 className="text-[16px] font-bold text-[#1c2740]">Загрузка исправленной редакции</h2>
+                    <h2 className="text-[16px] font-bold text-[#1c2740]">{t("coordinationUi.upload.title")}</h2>
                     <button onClick={onClose} className="cursor-pointer text-[#8b97ab] hover:text-[#3a4560]">
                         <X size={20}/>
                     </button>
                 </div>
 
                 <div className="flex flex-col gap-4">
-                    <FileSlot label="Русский" required file={docRu} onChange={setDocRu}/>
-                    <FileSlot label="Кыргызча" file={docKg} onChange={setDocKg}/>
-                    <FileSlot label="English" file={docEn} onChange={setDocEn}/>
+                    <FileSlot label={t("vndEditLastRevisionModal.langRu")} required file={docRu} onChange={setDocRu}/>
+                    <FileSlot label={t("vndEditLastRevisionModal.langKg")} file={docKg} onChange={setDocKg}/>
+                    <FileSlot label={t("vndEditLastRevisionModal.langEn")} file={docEn} onChange={setDocEn}/>
 
                     <label className="block text-[12.5px] font-semibold text-[#26324a]">
-                        Комментарий о внесённых исправлениях
+                        {t("coordinationUi.upload.comment")}
                         <textarea
                             value={comment}
                             onChange={(e) => setComment(e.target.value)}
@@ -109,14 +112,14 @@ export function VndUploadRevisionFilesModal({initial, onClose, onConfirm}: VndUp
                         onClick={onClose}
                         className="cursor-pointer h-[38px] rounded-[10px] border border-[#e5e9f0] px-4 text-[13px] font-semibold text-[#3a4560] hover:bg-[#f6f8fb]"
                     >
-                        Отмена
+                        {t("coordinationUi.upload.cancel")}
                     </button>
                     <button
                         onClick={handleConfirm}
                         disabled={!canConfirm}
                         className="cursor-pointer h-[38px] rounded-[10px] bg-[#4e57d6] px-4 text-[13px] font-semibold text-white hover:bg-[#3f47bd] disabled:cursor-not-allowed disabled:opacity-50"
                     >
-                        Прикрепить
+                        {t("coordinationUi.upload.attach")}
                     </button>
                 </div>
             </div>

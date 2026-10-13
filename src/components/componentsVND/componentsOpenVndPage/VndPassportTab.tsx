@@ -1,3 +1,4 @@
+/* Реквизиты ВНД */
 import {useEffect, useMemo, useState} from "react";
 import {useTranslation} from "react-i18next";
 import {useAuth} from "@/context/AuthContext";
@@ -8,6 +9,9 @@ import {describePeriod, formatDate} from "@/utils/dateUtils.ts";
 import { useVndDictionaryResolvers } from "@/hooks/vndHooks/useVndDictionaryResolvers.ts";
 import {useVndRequisitesForm} from "@/hooks/useVndRequisitesForm.ts";
 import {ACTUALIZATION_MODE_OPTIONS} from "@/hooks/useVndRequisitesForm.ts";
+
+import {SecrecyLevelSelectField} from "@/components/componentsVND/componentsOpenVndPage/SecrecyLevelSelectField.tsx";
+import {UserGroupMultiSelectField} from "@/components/componentsVND/componentsOpenVndPage/UserGroupMultiSelectField.tsx";
 
 import {Section} from "@/components/componentsGeneral/Section.tsx";
 import {ReadOnlyField} from "@/components/componentsGeneral/readOnlySelects/ReadOnlyField.tsx";
@@ -24,9 +28,9 @@ import {
 } from "@/components/componentsGeneral/RequisitesEditFields.tsx";
 import {DatePickerInput} from "@/components/componentsGeneral/datePickers/DatePickerInput.tsx";
 import {Clue} from "@/components/componentsGeneral/knowledgeBaseComponents/Clue.tsx";
+import {PlainCheckbox} from "@/components/componentsGeneral/componentsCheckBox/PlainCheckbox.tsx";
 
 import {Archive, CalendarCheck, FileText, History, Pencil, RotateCw, Tags, Type, X, Loader2} from "lucide-react";
-import {PlainCheckbox} from "@/components/componentsGeneral/componentsCheckBox/PlainCheckbox.tsx";
 
 interface DictOption {
     key: string;
@@ -64,8 +68,7 @@ export function VndPassportTab({
                                }: VndPassportTabProps) {
     const {t} = useTranslation();
     const {user: authUser, hasPermission} = useAuth();
-    // Правка реквизитов — только с правом EditVndRequisites (сервер проверяет то же право,
-    // PUT /vnd/{id}/requisites). Раньше кнопка показывалась всем, включая рядового пользователя.
+    // Правка реквизитов - только с правом EditVndRequisites
     const canEditRequisites = hasPermission(PermissionCode.EditVndRequisites);
     const isInitiatorMe = Boolean(authUser && vnd.createdByUserId && authUser.id === vnd.createdByUserId);
 
@@ -82,9 +85,6 @@ export function VndPassportTab({
         userGroupNames,
     } = useVndDictionaryResolvers();
 
-    // --- Реквизиты по редакциям (вкладки Р1/Р2/.../Рn) — см. миграцию "реквизиты по редакции".
-    // TitleRu/En/Kg и TypeId остаются общими на весь документ (vnd), всё остальное показываем/
-    // редактируем по конкретной редакции.
     const [redactions, setRedactions] = useState<VndRedactionResponse[]>([]);
     const [selectedRedactionId, setSelectedRedactionId] = useState<number | null>(null);
     const [showDiff, setShowDiff] = useState(false);
@@ -117,8 +117,8 @@ export function VndPassportTab({
         loadRedactions();
     });
 
-    // Реквизиты, которые сейчас показываем — из выбранной редакции, либо (пока у ВНД ещё нет
-    // ни одной редакции — черновик) из самого документа, как было раньше.
+    // Реквизиты, которые сейчас показываем - из выбранной редакции, либо (пока у ВНД ещё нет
+    // ни одной редакции - черновик) из самого документа
     const activeRequisites = useMemo(() => ({
         titleRu: selectedRedaction?.titleRu ?? vnd.titleRu,
         titleEn: selectedRedaction?.titleEn ?? vnd.titleEn,
@@ -132,26 +132,9 @@ export function VndPassportTab({
         curatorDeveloperId: selectedRedaction?.curatorDeveloperId ?? vnd.curatorDeveloperId,
         curatorDeveloperName: selectedRedaction?.curatorDeveloperName ?? vnd.curatorDeveloperName,
         responsibleExecutorIds: selectedRedaction?.responsibleExecutorIds ?? vnd.responsibleExecutorIds,
-        // ⚠ 07.09.2026: раньше здесь был "?? vnd.adoptionDate/adoptionCode/effectiveDate" — с `??`
-        // это срабатывало не только когда selectedRedaction === null (черновик без единой редакции —
-        // тут фолбэк на vnd.* по-прежнему нужен, см. комментарий выше), но и когда редакция ВЫБРАНА,
-        // а её собственное значение легитимно пустое (у прошлых редакций adoptionCode/effectiveDate
-        // намеренно null — см. миграцию, там должен быть прочерк). `??` не различает эти два случая —
-        // подставлял значения ТЕКУЩЕЙ редакции (vnd.* всегда равны её значениям) вместо прочерка при
-        // просмотре Р1/Р2/.../Рn. Явная проверка на selectedRedaction вместо `??` разруливает оба
-        // случая правильно: нет редакции вообще -> vnd.*; редакция выбрана -> ровно её значение,
-        // пусть даже пустое.
         adoptionDate: selectedRedaction ? selectedRedaction.adoptionDate : vnd.adoptionDate,
         adoptionCode: selectedRedaction ? selectedRedaction.adoptionCode : vnd.adoptionCode,
         effectiveDate: selectedRedaction ? selectedRedaction.effectiveDate : vnd.effectiveDate,
-        // "Изменение редакции": момент, когда файл ИМЕННО ЭТОЙ редакции реально заменялся в
-        // системе (docRuUpdatedAt — проставляется в EditLastRevisionDirectlyAsync /
-        // ResubmitAfterRevisionAsync на бэке). Если редакцию ни разу не трогали после переноса/
-        // создания (docRuUpdatedAt === null — типичный случай для мигрированных из isrib
-        // документов), берём дату принятия этой же редакции — для старых документов файл и есть
-        // "дата принятия", отдельного факта изменения не было. Раньше здесь было document-level
-        // vnd.revisionChangedDate — одно значение на весь документ, поэтому во всех вкладках
-        // Р1/Р2/.../Рn показывалась одна и та же (последняя) дата вместо даты именно этой редакции.
         revisionChangedDate: selectedRedaction
             ? (selectedRedaction.docRuUpdatedAt ?? selectedRedaction.adoptionDate ?? selectedRedaction.createdAt)
             : vnd.revisionChangedDate,
@@ -160,7 +143,7 @@ export function VndPassportTab({
         secrecyLevelId: selectedRedaction?.secrecyLevelId ?? vnd.secrecyLevelId,
     }), [selectedRedaction, vnd]);
 
-    // Подсветка отличий от предыдущей редакции (чекбокс "Показать изменения") — работает только
+    // Подсветка отличий от предыдущей редакции (чекбокс "Показать изменения") - работает только
     // когда обе редакции загружены и есть с чем сравнивать (для Р1 предыдущей нет).
     const canShowDiff = Boolean(selectedRedaction && previousRedaction);
 
@@ -277,10 +260,7 @@ export function VndPassportTab({
 
                 {/* Основная информация */}
                 <Section icon={<FileText className="w-[15px] h-[15px]" strokeWidth={1.9}/>} title={t("openVndPage.passportTab.sections.mainInfo")}>
-                    {/* Инициатор и ответственный за актуализацию — всегда read-only,
-                        независимо от режима редактирования: проставляются автоматически системой.
-                        Ответственного за актуализацию не показываем для черновиков — там его
-                        просто не может быть (документ ещё ни разу не проходил цикл актуализации). */}
+                    {/* Инициатор и ответственный за актуализацию - всегда read-only */}
                     <div className={`grid grid-cols-1 gap-4 mb-4 ${isDraft ? "" : "sm:grid-cols-2"}`}>
                         <ReadOnlyField
                             label={t("openVndPage.passportTab.initiatorLabel")}
@@ -414,7 +394,7 @@ export function VndPassportTab({
                     )}
                 </Section>
 
-                {/* Принятие и вступление в силу / Изменения — в два столбца */}
+                {/* Принятие и вступление в силу / Изменения - в два столбца */}
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-4">
                     <Section
                         icon={<CalendarCheck className="w-[15px] h-[15px]" strokeWidth={1.9}/>}
@@ -528,14 +508,8 @@ export function VndPassportTab({
                             </div>
                         </>
                     ) : (
-                        // ⚠ 08.09.2026: "Дата посл. актуализации"/"Последняя актуализация с изменениями" —
-                        // это факт о ДОКУМЕНТЕ в целом (когда его в последний раз актуализировали), а не о
-                        // конкретной старой редакции. У самой первой редакции (Р1, как и у любой не-текущей)
-                        // актуализации ещё не было/не относится к ней — раньше эти два поля всё равно
-                        // показывались (значения vnd.* одинаковы на любой вкладке), из-за чего на Р1 виден
-                        // был "факт актуализации", которого для неё быть не может. "Срок актуализации" и
-                        // "Период" остаются документ-уровневыми и показываются всегда — вопрос "когда
-                        // следующая актуализация" не зависит от того, какую редакцию сейчас смотрят.
+                        // "Дата посл. Актуализации"/"Последняя актуализация с изменениями" -
+                        // это факт о ДОКУМЕНТЕ в целом (когда его в последний раз актуализировали)
                         <div className={`grid grid-cols-2 gap-4 ${isViewingCurrentRedaction ? "lg:grid-cols-4" : "lg:grid-cols-2"}`}>
                             <ReadOnlyField label={t("openVndPage.passportTab.dueActualizationDateLabel")} value={formatDate(vnd.dueActualizationDate)}/>
                             {isViewingCurrentRedaction && (
@@ -598,7 +572,7 @@ export function VndPassportTab({
                                 hierarchical
                                 boldLabel={false}
                             />
-                            <MultiSelectField
+                            <UserGroupMultiSelectField
                                 label={t("createVnd.classifiers.userGroups")}
                                 modalTitle={t("createVnd.classifiers.userGroups")}
                                 options={userGroupOptions}
@@ -606,7 +580,7 @@ export function VndPassportTab({
                                 onChange={(ids) => update("userGroupIds", ids)}
                                 boldLabel={false}
                             />
-                            <SingleSelectListField
+                            <SecrecyLevelSelectField
                                 label={t("createVnd.classifiers.secrecyLevel")}
                                 modalTitle={t("createVnd.classifiers.secrecyLevel")}
                                 options={secrecyOptions}

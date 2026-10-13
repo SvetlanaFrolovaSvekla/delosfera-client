@@ -3,6 +3,7 @@
 // покраской красным/зелёным/чёрным, как в ТИД) либо загрузить уже готовый файл DOCX.
 // Встраивается внутри VndRevisionNeededPanel, когда инициатор выбрал "Частично согласен" или
 // "Полностью не согласен" (см. RemarksAgreement).
+import {useTranslation} from "react-i18next";
 import {Download, FileUp, Trash2} from "lucide-react";
 import type {DisagreementMatrixRowResponse} from "@/service/coordinationService/coordinationServiceTypes.ts";
 import {DisagreementMatrixTable} from "@/components/componentsVND/componentsOpenVndPage/componentsCoordinationTab/DisagreementMatrixTable.tsx";
@@ -75,23 +76,24 @@ export function VndDisagreementMatrixSection({
                                                   uploadedFile, onUploadedFileChange, fileError, onFileError,
                                                   vndTitle, exportFileName, disabled,
                                               }: VndDisagreementMatrixSectionProps) {
+    const {t} = useTranslation();
     const handleDownloadTemplate = async () => {
         try {
             const response = await fetch(disagreementMatrixTemplateBlankUrl);
             if (!response.ok) {
-                onFileError("Не удалось скачать шаблон матрицы разногласий");
+                onFileError(t("coordinationUi.matrixSection.templateError"));
                 return;
             }
             const blob = await response.blob();
             downloadBlob(blob, "Матрица разногласий_шаблон.docx");
         } catch (e) {
-            onFileError(e instanceof Error ? e.message : "Не удалось скачать шаблон матрицы разногласий");
+            onFileError(e instanceof Error ? e.message : t("coordinationUi.matrixSection.templateError"));
         }
     };
 
     const handlePick = (picked: File | null) => {
         if (picked && picked.size > MAX_FILE_SIZE) {
-            onFileError(`Файл «${picked.name}» превышает допустимый размер (${formatBytes(MAX_FILE_SIZE)})`);
+            onFileError(t("coordinationUi.matrixSection.fileTooLarge", {name: picked.name, size: formatBytes(MAX_FILE_SIZE)}));
             return;
         }
         onFileError(null);
@@ -101,25 +103,19 @@ export function VndDisagreementMatrixSection({
     return (
         <div className="border-t border-[#e9edf3] px-5 py-4">
             <Clue className="mb-4">
-                Матрица разногласий — документ, в котором по каждому несогласованному замечанию
-                фиксируются редакция разработчика, редакция и комментарии оппонента, а также
-                обоснование позиции разработчика. Она нужна, чтобы согласующие на финальной
-                выдержке видели, по каким именно пунктам стороны не пришли к согласию, и могли
-                принять решение с учётом позиций обеих сторон. Матрицу можно либо сформировать
-                прямо здесь, построчно, либо подготовить заранее по шаблону и загрузить готовым
-                файлом DOCX.
+                {t("coordinationUi.matrixSection.clue")}
             </Clue>
 
             <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
                 <div role="radiogroup" className="flex flex-wrap gap-2">
                     <ModeRadio
-                        label="Сформировать матрицу разногласий в системе"
+                        label={t("coordinationUi.matrixSection.generate")}
                         selected={mode === "generate"}
                         onClick={() => onModeChange("generate")}
                         disabled={disabled}
                     />
                     <ModeRadio
-                        label="Загрузить матрицу разногласий в формате DOCX"
+                        label={t("coordinationUi.matrixSection.upload")}
                         selected={mode === "upload"}
                         onClick={() => onModeChange("upload")}
                         disabled={disabled}
@@ -131,7 +127,7 @@ export function VndDisagreementMatrixSection({
                     className="flex flex-none cursor-pointer items-center gap-[6px] rounded-[8px] border border-[#e5e9f0] bg-white px-[10px] py-[5px] text-[11.5px] font-semibold text-[#4e57d6] hover:bg-[#f6f8fb]"
                 >
                     <Download size={13}/>
-                    Скачать шаблон матрицы разногласий
+                    {t("coordinationUi.matrixSection.downloadTemplate")}
                 </button>
             </div>
 
@@ -155,7 +151,7 @@ export function VndDisagreementMatrixSection({
                             className="flex h-[64px] cursor-pointer flex-col items-center justify-center gap-1 rounded-[10px] border border-dashed border-[#d5dae3] bg-white text-[#8b97ab] transition-colors hover:border-[#4e57d6]/50 hover:bg-[#f6f8fb]"
                         >
                             <FileUp size={18}/>
-                            <span className="text-[11.5px]">Выбрать файл матрицы разногласий (DOCX)</span>
+                            <span className="text-[11.5px]">{t("coordinationUi.matrixSection.chooseFile")}</span>
                             <input
                                 id="upload-disagreement-matrix-file"
                                 type="file"

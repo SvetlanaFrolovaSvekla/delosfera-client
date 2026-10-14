@@ -5,13 +5,13 @@ import type {EditionsActualization} from "@/hooks/vndHooks/useEditionsActualizat
 import {ConfirmActionModal} from "@/components/componentsGeneral/modal/ConfirmActionModal.tsx";
 import {
     StartActualizationModal
-} from "@/components/componentsVND/componentsOpenVndPage/componentsActualizationTab/StartActualizationModal.tsx";
+} from "@/components/componentsVND/componentsOpenVndPage/componentsActualizationTab/componentsModal/StartActualizationModal.tsx";
 import {
     RequestActualizationAccessModal
-} from "@/components/componentsVND/componentsOpenVndPage/componentsActualizationTab/RequestActualizationAccessModal.tsx";
+} from "@/components/componentsVND/componentsOpenVndPage/componentsActualizationTab/componentsModal/RequestActualizationAccessModal.tsx";
 import {
     PerformActualizationModal
-} from "@/components/componentsVND/componentsOpenVndPage/componentsActualizationTab/PerformActualizationModal.tsx";
+} from "@/components/componentsVND/componentsOpenVndPage/componentsActualizationTab/componentsModal/PerformActualizationModal.tsx";
 import {
     ActualizationSettingsModal
 } from "@/components/componentsVND/componentsOpenVndPage/componentsEditionsTab/componentsModal/editionsActualizationModals/ActualizationSettingsModal.tsx";

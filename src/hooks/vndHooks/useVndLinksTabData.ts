@@ -11,7 +11,7 @@ import type {RedactionLanguage} from "@/utils/vndProcess/redactionLanguagePanelU
 import {anchorLanguage} from "@/utils/vndProcess/vndLinkNavigation.ts";
 import {
     groupByDocument, isLegacyLink, type RedactionFilter
-} from "@/components/componentsVND/componentsOpenVndPage/componentsLinks/vndLinksTabUtils.ts";
+} from "@/components/componentsVND/componentsOpenVndPage/componentsLinksTab/vndLinksTabUtils.ts";
 
 const HIDDEN_FOR_REGULAR_USER = new Set(["Draft", "Pending", "Rejected"]);
 

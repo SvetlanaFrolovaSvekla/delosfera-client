@@ -5,9 +5,15 @@ import {formatDate} from "@/utils/dateUtils.ts";
 import {
     RedactionDocumentsPanel
 } from "@/components/componentsCoordination/CoordinationRouteConstructor/viewComponents/RedactionDocumentsPanel.tsx";
-import {FileText, Calendar} from "lucide-react";
+import {useState} from "react";
+import {FileText, Calendar, Printer} from "lucide-react";
 import {useTranslation} from "react-i18next";
 import {Tooltip} from "@/components/componentsGeneral/Tooltip.tsx";
+import {countPrintBundleFiles} from "@/utils/vndProcess/printBundleItems.ts";
+import {VndHeaderButton} from "@/components/componentsVND/componentsOpenVndPage/VndHeaderButton.tsx";
+import {
+    PrintVndBundleModal
+} from "@/components/componentsVND/componentsOpenVndPage/componentsModal/PrintVndBundleModal.tsx";
 
 interface RedactionSummaryCardProps {
     vnd: VndResponse;
@@ -49,6 +55,8 @@ export function RedactionSummaryCard({
                         downloadingId={downloadingId}
                         onDownload={onDownload}
                         onView={onView ? (lang) => onView(redaction, lang) : undefined}
+                        printContextLabel={t("printBundle.contextNew")}
+                        printContextTone="new"
                         className="border-b border-[#eef2f7] md:border-b-0"
                     />
                     <RedactionColumn
@@ -58,6 +66,8 @@ export function RedactionSummaryCard({
                         downloadingId={downloadingId}
                         onDownload={onDownload}
                         onView={onView ? (lang) => onView(previousRedaction, lang) : undefined}
+                        printContextLabel={t("printBundle.contextPrevious")}
+                        printContextTone="previous"
                     />
                 </div>
             ) : (
@@ -76,6 +86,7 @@ export function RedactionSummaryCard({
 /* Если редакция является первой для этого ВНД */
 function RedactionColumn({
                              vnd, redaction, label, labelEmphasis, downloadingId, onDownload, onView, className = "",
+                             printContextLabel, printContextTone,
                          }: {
     vnd: VndResponse;
     redaction: VndRedactionResponse;
@@ -85,8 +96,13 @@ function RedactionColumn({
     onDownload: (fileId: number, name: string) => void;
     onView?: (target: RedactionViewTarget) => void;
     className?: string;
+    /** Плашка в модалке "Документ для печати" - какая это редакция (новая / предыдущая) */
+    printContextLabel?: string;
+    printContextTone?: "new" | "previous";
 }) {
     const {t} = useTranslation();
+    // "Документ для печати" по редакции ЭТОЙ панели - у новой и предыдущей своя модалка
+    const [printOpen, setPrintOpen] = useState(false);
     return (
         <div className={className}>
             {/* Шапка: код редакции и дата создания */}
@@ -112,7 +128,28 @@ function RedactionColumn({
                         </div>
                     </Tooltip>
                 </div>
+
+                {/* Справа от кода и даты: собрать файлы этой редакции в один .docx для печати.
+                    Если у редакции один файл - склеивать нечего, кнопки нет. */}
+                {countPrintBundleFiles(redaction) > 1 && (
+                    <VndHeaderButton
+                        tooltip={t("printBundle.panelTooltip", {code: redaction.code})}
+                        onClick={() => setPrintOpen(true)}
+                        icon={<Printer className="w-3.5 h-3.5" strokeWidth={2}/>}
+                    />
+                )}
             </div>
+
+            {printOpen && (
+                <PrintVndBundleModal
+                    vnd={vnd}
+                    redactions={[redaction]}
+                    initialRedactionId={redaction.id}
+                    contextLabel={printContextLabel}
+                    contextTone={printContextTone}
+                    onClose={() => setPrintOpen(false)}
+                />
+            )}
 
             {redaction.description && (
                 <div className="border-b border-[#eef2f7] px-5 py-4">

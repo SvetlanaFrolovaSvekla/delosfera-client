@@ -1,18 +1,15 @@
 import {useMemo, useState} from "react";
 import {useTranslation} from "react-i18next";
 import type {DisagreementMatrixRowResponse} from "@/service/coordinationService/coordinationServiceTypes.ts";
+import {downloadBlob, generateDisagreementMatrixDocx} from "@/utils/docxWork/docxDisagreementMatrixExport.ts";
 import {
     RichDiffEditor
 } from "@/components/componentsVND/componentsOpenVndPage/componentsEditionsTab/RichDiffEditor.tsx";
 import {colors} from "@/design/tokens";
-import {downloadBlob, generateDisagreementMatrixDocx} from "@/utils/docxWork/docxDisagreementMatrixExport.ts";
 import {Download, Loader2} from "lucide-react";
 
 const NEGATIVE_COLOR = colors.ryg.red.fg;
 const POSITIVE_COLOR = colors.ryg.green.fg;
-// Обе кнопки покраски (красным/зелёным) доступны в каждой ячейке - как и при формировании ТИД,
-// но здесь сразу в одном и том же поле (см. требование "должно быть в каждой строке ещё
-// «выделить красным», «выделить зеленым» «выделить черным», как при формировании ТИД-а").
 
 interface DisagreementMatrixTableProps {
     rows: DisagreementMatrixRowResponse[];

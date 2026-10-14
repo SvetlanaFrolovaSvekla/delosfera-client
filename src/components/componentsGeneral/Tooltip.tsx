@@ -38,9 +38,7 @@ function findBlockingZIndex(trigger: HTMLElement): number | null {
         const z = parseInt(style.zIndex, 10);
         if (Number.isNaN(z)) continue;
 
-        // Полноэкранный оверлей — сверяемся по фактическим размерам через
-        // getBoundingClientRect, а не по строковому значению top/left/right/bottom из
-        // getComputedStyle (то сравнение оказалось слишком хрупким и не срабатывало).
+        // Полноэкранный оверлей
         const rect = child.getBoundingClientRect();
         const coversViewport = rect.top <= 1 && rect.left <= 1
             && rect.width >= window.innerWidth - 2 && rect.height >= window.innerHeight - 2;

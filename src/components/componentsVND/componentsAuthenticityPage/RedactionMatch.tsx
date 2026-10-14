@@ -1,13 +1,16 @@
+// Одна найденная редакция ВНД, совпавшая с файлом: код, название, язык, актуальность текста,
+// промежуточные версии, ссылка на ВНД и процессы согласования этой редакции.
 import {useTranslation} from "react-i18next";
 import {Link} from "react-router-dom";
 import type {VndAuthenticityRedactionMatch} from "@/service/vndService/vndAuthenticityService.ts";
 import {vndTitle} from "@/utils/vndProcess/authenticityUtils.ts";
-import {Tooltip} from "@/components/componentsGeneral/Tooltip.tsx";
-import {Clue} from "@/components/componentsGeneral/knowledgeBaseComponents/Clue.tsx";
+
 import {Pill} from "./Pill.tsx";
 import {ProcessBlock} from "./ProcessBlock.tsx";
-import {ArrowRight} from "lucide-react";
+import {Tooltip} from "@/components/componentsGeneral/Tooltip.tsx";
+import {Clue} from "@/components/componentsGeneral/knowledgeBaseComponents/Clue.tsx";
 import {CARD} from "./styles/authenticityStyles.ts";
+import {ArrowRight} from "lucide-react";
 
 export function RedactionMatch({match}: { match: VndAuthenticityRedactionMatch }) {
     const {t, i18n} = useTranslation();

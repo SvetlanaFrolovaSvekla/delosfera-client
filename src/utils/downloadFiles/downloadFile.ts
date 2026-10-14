@@ -5,6 +5,7 @@
 
 import {toast} from "@/service/toastService.ts";
 import {getAccessToken} from "@/service/tokenStore.ts";
+import {refreshSession} from "@/service/apiClient.ts";
 import i18n from "i18next";
 
 const API_BASE = `${import.meta.env.VITE_API_BASE_URL ?? ""}/api`;
@@ -59,10 +60,20 @@ export async function fetchFileBlob(
      * (см. DownloadAttachment: /api/documents/attachments/{id}/download). */
     pathSuffix = "",
 ): Promise<{ blob: Blob; fileName: string }> {
-    const response = await fetch(`${API_BASE}/${endpoint}/${fileId}${pathSuffix}`, {
-        headers: authHeaders(),
-        signal,
-    });
+    const url = `${API_BASE}/${endpoint}/${fileId}${pathSuffix}`;
+    let response = await fetch(url, {headers: authHeaders(), signal});
+
+    // Access-токен живёт недолго, а обычный fetch (в отличие от apiClient) сам его не обновляет:
+    // просмотр вложения падал с 401, хотя скачивание через axios работало. Один раз обновляем
+    // сессию и повторяем запрос.
+    if (response.status === 401) {
+        try {
+            await refreshSession();
+            response = await fetch(url, {headers: authHeaders(), signal});
+        } catch {
+            // сессия не обновилась — ниже отработает обычная ошибка по исходному статусу
+        }
+    }
 
     if (!response.ok) {
         // 403 на явное скачивание — обычно нет права «Экспорт ВНД»: говорим это прямо,

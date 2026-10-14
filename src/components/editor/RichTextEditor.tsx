@@ -82,13 +82,15 @@ export function RichTextEditor({value, onChange, disabled = false, label, placeh
     // Карточка перечитывается после действий — текст мог смениться снаружи.
     // Сравниваем перед установкой: setContent на каждый рендер сбрасывал бы курсор.
     useEffect(() => {
-        if (editor && value !== editor.getHTML()) {
+        // isDestroyed: при перезагрузке страницы/HMR/StrictMode эффект успевает увидеть уже
+        // уничтоженный редактор — у него схема обнулена, и getHTML() падает (белый экран).
+        if (editor && !editor.isDestroyed && value !== editor.getHTML()) {
             editor.commands.setContent(value || "", {emitUpdate: false});
         }
     }, [value, editor]);
 
     useEffect(() => {
-        editor?.setEditable(!disabled);
+        if (editor && !editor.isDestroyed) editor.setEditable(!disabled);
     }, [disabled, editor]);
 
     if (!editor) return null;

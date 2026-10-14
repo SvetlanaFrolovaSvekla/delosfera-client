@@ -23,34 +23,38 @@ import {collapseDocumentStatus, DOCUMENT_STATUS_META, getVndDisplayMeta} from "@
 import {getVndTabs, type VndTabId} from "@/constants/vndTabs.ts";
 import {PermissionCode} from "@/constants/permissions/permissions.ts";
 
-import {VndEditionsTab} from "@/components/componentsVND/componentsOpenVndPage/VndEditionsTab.tsx";
-import {VndPassportTab} from "@/components/componentsVND/componentsOpenVndPage/VndPassportTab.tsx";
-import {VndLinksTab} from "@/components/componentsVND/componentsOpenVndPage/VndLinksTab.tsx";
-import {VndHistoryTab} from "@/components/componentsVND/componentsOpenVndPage/VndHistoryTab.tsx";
-import {VndActualizationTab} from "@/components/componentsVND/componentsOpenVndPage/VndActualizationTab.tsx";
-import {VndCoordinationTab} from "@/components/componentsVND/componentsOpenVndPage/VndCoordinationTab.tsx";
-import {ConsolidateVndModal} from "@/components/componentsVND/componentsOpenVndPage/ConsolidateVndModal.tsx";
-import {CancelVndModal} from "@/components/componentsVND/componentsOpenVndPage/CancelVndModal.tsx";
-import {VndProposalModal} from "@/components/componentsVND/componentsOpenVndPage/VndProposalModal.tsx";
+import {VndEditionsTab} from "@/components/componentsVND/componentsOpenVndPage/Tabs/VndEditionsTab.tsx";
+import {VndPassportTab} from "@/components/componentsVND/componentsOpenVndPage/Tabs/VndPassportTab.tsx";
+import {VndLinksTab} from "@/components/componentsVND/componentsOpenVndPage/Tabs/VndLinksTab.tsx";
+import {VndHistoryTab} from "@/components/componentsVND/componentsOpenVndPage/Tabs/VndHistoryTab.tsx";
+import {VndActualizationTab} from "@/components/componentsVND/componentsOpenVndPage/Tabs/VndActualizationTab.tsx";
+import {VndCoordinationTab} from "@/components/componentsVND/componentsOpenVndPage/Tabs/VndCoordinationTab.tsx";
+import {ConsolidateVndModal} from "@/components/componentsVND/componentsOpenVndPage/componentsModal/ConsolidateVndModal.tsx";
+import {CancelVndModal} from "@/components/componentsVND/componentsOpenVndPage/componentsModal/CancelVndModal.tsx";
+import {ProposalVndModal} from "@/components/componentsVND/componentsOpenVndPage/componentsModal/ProposalVndModal.tsx";
 import {VndFavoriteButton} from "@/components/componentsVND/componentsOpenVndPage/VndFavoriteButton.tsx";
-import {VndSecrecyModal} from "@/components/componentsVND/componentsOpenVndPage/VndSecrecyModal.tsx";
+import {SecrecyVndModal} from "@/components/componentsVND/componentsOpenVndPage/componentsModal/SecrecyVndModal.tsx";
 import {VndActionsMenu, type VndActionsMenuItem} from "@/components/componentsVND/componentsOpenVndPage/VndActionsMenu.tsx";
 import {VndAccessDenied} from "@/components/componentsVND/componentsOpenVndPage/VndAccessDenied.tsx";
-import {VndDeleteModal} from "@/components/componentsVND/componentsOpenVndPage/VndDeleteModal.tsx";
 import {VndHeaderButton} from "@/components/componentsVND/componentsOpenVndPage/VndHeaderButton.tsx";
+import {countPrintBundleFiles} from "@/utils/vndProcess/printBundleItems.ts";
 import { MetaItem } from "@/components/componentsVND/componentsOpenVndPage/MetaItem";
 import {StatusPill} from "@/components/componentsVND/componentsOpenVndPage/StatusPill.tsx";
+import {
+    PrintVndBundleModal
+} from "@/components/componentsVND/componentsOpenVndPage/componentsModal/PrintVndBundleModal.tsx";
 
 import {
     RedactionViewModal
 } from "@/components/componentsCoordination/CoordinationRouteConstructor/viewComponents/RedactionViewModal.tsx";
+import {DeleteVndModal} from "@/components/componentsVND/componentsOpenVndPage/componentsModal/DeleteVndModal.tsx";
 
 import {Loader} from "@/components/componentsGeneral/Loader.tsx";
 import {EmptyState} from "@/components/componentsGeneral/EmptyState.tsx";
 import {VndStatusBanner} from "@/components/componentsGeneral/knowledgeBaseComponents/VndStatusBanner.tsx";
 import {Tooltip} from "@/components/componentsGeneral/Tooltip.tsx";
 
-import {Archive, Eye, Lightbulb, Lock, Trash2} from "lucide-react";
+import {Archive, Eye, Lightbulb, Lock, Printer, Trash2} from "lucide-react";
 
 // Переход с одного ВНД на другой
 export function OpenVndPage() {
@@ -122,6 +126,8 @@ function OpenVndPageContent() {
     const [viewRedactionOpen, setViewRedactionOpen] = useState(false);
     // Окно "+ Предложения по ВНД" (VndProposalModal)
     const [proposalOpen, setProposalOpen] = useState(false);
+    // Кнопка-принтер "Документ для печати" - склейка выбранных файлов редакции в один .docx
+    const [printBundleOpen, setPrintBundleOpen] = useState(false);
     const viewRedactionDownload = useAsyncAction<number>();
     const handleViewRedactionDownload = (fileId: number, name: string) =>
         viewRedactionDownload.run(fileId, () => downloadWithToast(fileId, name), t("openVndPage.editionsTab.downloadError"));
@@ -311,6 +317,16 @@ function OpenVndPageContent() {
                             />
                         )}
 
+                        {/* Документ для печати: выбранные тексты редакции, специальные вложения и
+                            вложения в заданном порядке - одним .docx */}
+                        {latestRedaction && redactions.some((r) => countPrintBundleFiles(r) > 1) && (
+                            <VndHeaderButton
+                                tooltip={t("printBundle.buttonTooltip")}
+                                onClick={() => setPrintBundleOpen(true)}
+                                icon={<Printer {...iconProps}/>}
+                            />
+                        )}
+
                         <VndFavoriteButton vndId={vnd.id} isFavorite={vnd.isFavorite}/>
 
                         {/* + Предложения по ВНД - предложение получает главный редактор ВНД */}
@@ -391,7 +407,7 @@ function OpenVndPageContent() {
 
             {/* Настройки секретности */}
             {secrecyOpen && (
-                <VndSecrecyModal
+                <SecrecyVndModal
                     vndId={vnd.id}
                     vndCode={vnd.code}
                     onClose={() => setSecrecyOpen(false)}
@@ -400,7 +416,7 @@ function OpenVndPageContent() {
             )}
 
             {/* Удаление */}
-            <VndDeleteModal flow={deleteFlow} vnd={vnd}/>
+            <DeleteVndModal flow={deleteFlow} vnd={vnd}/>
 
             {/* Масштабный просмотр редакции - без approvalProcess, без кнопки "Комментарии" */}
             {viewRedactionOpen && latestRedaction && (
@@ -413,9 +429,19 @@ function OpenVndPageContent() {
                 />
             )}
 
+            {/* Документ для печати */}
+            {printBundleOpen && latestRedaction && (
+                <PrintVndBundleModal
+                    vnd={vnd}
+                    redactions={redactions}
+                    initialRedactionId={latestRedaction.id}
+                    onClose={() => setPrintBundleOpen(false)}
+                />
+            )}
+
             {/* Предложения по ВНД */}
             {proposalOpen && proposalRedaction && (
-                <VndProposalModal
+                <ProposalVndModal
                     vnd={vnd}
                     redaction={proposalRedaction}
                     downloadingId={viewRedactionDownload.activeId}

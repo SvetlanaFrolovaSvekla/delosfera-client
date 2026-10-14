@@ -1,11 +1,11 @@
 import {useTranslation} from "react-i18next";
+import type {ActualizationBucketKey, VndActualizationSummaryResponse} from "@/service/vndService/vndServiceType.ts";
+import type {ActualizationBucketSettings} from "@/service/actualizationBucketSettingsService/actualizationBucketSettingsService.ts";
 import {
     ACTUALIZATION_BUCKET_ORDER,
     useActualizationBucketMeta,
     useActualizationBucketThresholdText,
 } from "@/hooks/actualizationHooks/useActualizationBucketMeta.ts";
-import type {ActualizationBucketKey, VndActualizationSummaryResponse} from "@/service/vndService/vndServiceType.ts";
-import type {ActualizationBucketSettings} from "@/service/actualizationBucketSettingsService/actualizationBucketSettingsService.ts";
 import {HelpTooltip} from "@/components/componentsGeneral/knowledgeBaseComponents/HelpTooltip.tsx";
 
 interface ActualizationSummaryCardsProps {
@@ -13,12 +13,12 @@ interface ActualizationSummaryCardsProps {
     loading: boolean;
     activeBucket: ActualizationBucketKey | "all";
     onSelectBucket: (bucket: ActualizationBucketKey) => void;
-    /** Клик по карточке "Всего действующих ВНД" — выбирает таб "Все" */
+    /** Клик по карточке "Всего действующих ВНД" - выбирает таб "Все" */
     onSelectAll: () => void;
-    /** Клик по карточке "Ни разу не актуализированные" — выбирает таб "Все" + ставит галочку в чекбоксе */
+    /** Клик по карточке "Ни разу не актуализированные" - выбирает таб "Все" + ставит галочку в чекбоксе */
     onSelectNeverActualized: () => void;
     neverActualizedOnly: boolean;
-    /** Пороги индикации сроков актуализации — для тултипов на карточках бакетов */
+    /** Пороги индикации сроков актуализации - для тултипов на карточках бакетов */
     bucketSettings: ActualizationBucketSettings | null;
 }
 
@@ -76,7 +76,7 @@ export function ActualizationSummaryCards({
                         }`}
                         style={{borderColor: isActive ? meta.color : "#e9edf3"}}
                     >
-                        {/* Тултип с порогом — отдельный интерактивный элемент, поэтому гасим всплытие клика,
+                        {/* Тултип с порогом - отдельный интерактивный элемент, поэтому гасим всплытие клика,
                             чтобы он не переключал выбор бакета */}
                         <span
                             className="absolute top-1.5 right-1.5"

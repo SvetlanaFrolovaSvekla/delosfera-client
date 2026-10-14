@@ -1,16 +1,14 @@
+/* Таблица с ВНД */
 import {useTranslation} from "react-i18next";
 import {Link} from "react-router-dom";
 import type {VndResponse} from "@/service/vndService/vndServiceType.ts";
-import {HighlightText} from "@/utils/highlightText.tsx";
-import {useActualizationBucketMeta} from "@/hooks/actualizationHooks/useActualizationBucketMeta.ts";
-
 import {collapseDocumentStatus, DOCUMENT_STATUS_META, getVndDisplayMeta, STATUS_META} from "@/constants/vndStatus.ts";
 import {LINKED_TO_ME_RELATION_META, type LinkedToMeRelationKey} from "@/constants/linkedToMeRelations.ts";
 import {type ColDef} from "@/constants/columnsFilters/vndColumns.ts";
-
+import {HighlightText} from "@/utils/highlightText.tsx";
+import {useActualizationBucketMeta} from "@/hooks/actualizationHooks/useActualizationBucketMeta.ts";
 import {EmptyState} from "@/components/componentsGeneral/EmptyState.tsx";
 import {Tooltip} from "@/components/componentsGeneral/Tooltip.tsx";
-
 import {Clock, Lock, Star} from "lucide-react";
 
 interface VndTableProps {
@@ -25,7 +23,7 @@ interface VndTableProps {
     onResetFilters: () => void;
     rubricNames: (ids: number[]) => string;
     searchQuery: string;
-    /** Право ViewVndRegistryExtended — без него значок статуса упрощается до
+    /** Право ViewVndRegistryExtended - без него значок статуса упрощается до
      * действующий/архивированный/черновик, без деталей о стадии жизненного цикла */
     canViewExtended: boolean;
 }
@@ -101,7 +99,7 @@ export function VndTable({
                                 if (selection && selection.toString().length > 0) {
                                     e.preventDefault();
                                 }
-                                // Секретный документ без допуска открывается как обычно: страница сама
+                                // Секретный документ без допуска открывается, как обычно: страница сама
                                 // покажет блок «нет доступа» (сервер не отдаёт содержимое).
                             }}
                             className="group no-underline w-full grid gap-3 items-start px-5 py-3.5 border-b border-[#f3f6f9] bg-transparent text-left cursor-pointer hover:bg-[#f8fafc] select-text"

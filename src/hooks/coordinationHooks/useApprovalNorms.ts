@@ -1,5 +1,5 @@
 import {useEffect, useRef, useState} from "react";
-import {getDefaultNormMinutes, getMaxDeadlineMinutes} from "@/constants/coordinationParams.ts";
+import {getDefaultNormMinutes, getMaxDeadlineMinutes} from "@/constants/validation/coordinationValidatuon.ts";
 import {vndApprovalNormSettingsService} from "@/service/vndApprovalNormSettingsService/vndApprovalNormSettingsService.ts";
 
 export function useApprovalNorms() {

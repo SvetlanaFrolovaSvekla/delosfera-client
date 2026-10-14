@@ -5,7 +5,7 @@ import {useAuth} from "@/context/AuthContext.ts";
 import {rolesPermissionService} from "@/service/rolesPermissionService/rolesPermissionService.ts";
 import type {PermissionResponse, RoleResponse} from "@/service/rolesPermissionService/rolesPermissionTypeService.ts";
 import {toast} from "@/service/toastService.ts";
-import {CreateRoleModal, type CreateRoleData} from "@/components/componentsModal/CreateRoleModal.tsx";
+import {CreateRoleModal, type CreateRoleData} from "@/components/componentsManagement/CreateRoleModal.tsx";
 import {ConfirmDeleteModal} from "@/components/componentsGeneral/modal/ConfirmDeleteModal.tsx";
 import {Loader} from "@/components/componentsGeneral/Loader.tsx";
 import {SearchBar} from "@/components/componentsGeneral/SearchBar.tsx";

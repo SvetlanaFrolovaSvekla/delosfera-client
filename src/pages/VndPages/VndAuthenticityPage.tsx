@@ -11,12 +11,12 @@ import {
     type VndAuthenticityCheckResponse,
 } from "@/service/vndService/vndAuthenticityService.ts";
 import {toast} from "@/service/toastService.ts";
-import {PageHeader} from "@/components/componentsGeneral/PageHeader.tsx";
-import {HelpTooltip} from "@/components/componentsGeneral/knowledgeBaseComponents/HelpTooltip.tsx";
+import {verdictOf} from "@/utils/vndProcess/authenticityUtils.ts";
 import {HowItWorks} from "@/components/componentsVND/componentsAuthenticityPage/HowItWorks.tsx";
 import {UploadCard} from "@/components/componentsVND/componentsAuthenticityPage/UploadCard.tsx";
 import {CheckResult} from "@/components/componentsVND/componentsAuthenticityPage/CheckResult.tsx";
-import {verdictOf} from "@/utils/vndProcess/authenticityUtils.ts";
+import {PageHeader} from "@/components/componentsGeneral/PageHeader.tsx";
+import {HelpTooltip} from "@/components/componentsGeneral/knowledgeBaseComponents/HelpTooltip.tsx";
 
 export function VndAuthenticityPage() {
     const {t} = useTranslation();

@@ -1,3 +1,4 @@
+// Пара «подпись сверху - значение снизу» для полей SignatureCard.
 import type {ReactNode} from "react";
 
 export function Field({label, children}: { label: string; children: ReactNode }) {

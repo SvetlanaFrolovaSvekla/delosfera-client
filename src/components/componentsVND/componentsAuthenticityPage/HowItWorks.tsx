@@ -1,8 +1,8 @@
+// Блок "Как это работает" над проверкой: три пронумерованных шага с иконками.
 import {useTranslation} from "react-i18next";
-import {Download, ShieldCheck, Upload, type LucideIcon} from "lucide-react";
 import {CARD} from "./styles/authenticityStyles.ts";
+import {Download, ShieldCheck, Upload, type LucideIcon} from "lucide-react";
 
-/** Блок «Как это работает» - три шага. */
 export function HowItWorks() {
     const {t} = useTranslation();
 

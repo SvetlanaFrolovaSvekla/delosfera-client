@@ -1,6 +1,6 @@
 // Один элемент рубрикатора (надпись с чекбоксом)
 import React, {memo} from "react";
-import type {TreeNodeOf} from "@/utils/treeSelectUtils.ts";
+import type {TreeNodeOf} from "@/utils/dictionaries/treeSelectUtils.ts";
 import {HighlightText} from "@/utils/highlightText.tsx";
 import type {RubricTreeOption} from "./RubricTreeModal";
 import {TreeCheckbox} from "@/components/componentsGeneral/rubricator/TreeCheckbox.tsx";

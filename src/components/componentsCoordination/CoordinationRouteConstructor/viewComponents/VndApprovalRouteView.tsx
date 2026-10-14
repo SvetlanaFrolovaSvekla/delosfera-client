@@ -10,7 +10,7 @@ import {ArrowDown, ArrowLeft, ChevronDown, MessageSquareText, UserPlus} from "lu
 import {getElapsedLabel, getRemainingLabel} from "@/utils/dateUtils.ts";
 import {isWorkingNow, useWorkCalendar} from "@/utils/workCalendar.ts";
 import {getInitials} from "@/utils/namingUsers/getInitials.ts";
-import {COMMENT_TRUNCATE_LENGTH} from "@/constants/coordinationParams.ts";
+import {COMMENT_TRUNCATE_LENGTH} from "@/constants/validation/coordinationValidatuon.ts";
 import {
     AttachmentRow
 } from "@/components/componentsCoordination/CoordinationRouteConstructor/functionalComponents/AttachmentRow.tsx";

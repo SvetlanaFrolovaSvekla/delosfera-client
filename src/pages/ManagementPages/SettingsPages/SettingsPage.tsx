@@ -10,6 +10,8 @@ import {NavLink, Outlet, useLocation} from "react-router-dom";
 import {useTranslation} from "react-i18next";
 import {useAuth} from "@/context/AuthContext.ts";
 import {getGroupsManagement} from "@/utils/management/getGroupsManagement.ts";
+import {useFeedbackNewCount} from "@/hooks/feedbackHooks/useFeedbackNewCount.ts";
+import {CountBadge} from "@/components/componentsSidebar/CountBadge.tsx";
 import {Users} from "lucide-react";
 
 export interface Item {
@@ -24,6 +26,11 @@ export function SettingsPage() {
     const {t} = useTranslation();
     const {hasPermission} = useAuth();
     const {pathname} = useLocation();
+    // Неразобранные пожелания и замечания - число у пункта "Пожелания и замечания"
+    const feedbackNew = useFeedbackNewCount();
+    const badgeFor = (path: string) => path === "/management/feedback" && feedbackNew > 0
+        ? <CountBadge count={feedbackNew} tooltip={t("sidebar.badgeTooltips.feedback", {count: feedbackNew})}/>
+        : null;
 
     const groups = getGroupsManagement(t)
         .map((g) => ({
@@ -59,7 +66,8 @@ export function SettingsPage() {
                                             : "text-[#4d5a72] hover:bg-[#f2f5f9]"}`}
                                 >
                                     <item.icon size={16} className="mt-0.5 flex-none"/>
-                                    <span>{item.title}</span>
+                                    <span className="flex-1">{item.title}</span>
+                                    {badgeFor(item.path)}
                                 </NavLink>
                             ))}
                         </div>
@@ -97,8 +105,9 @@ export function SettingsPage() {
                                         >
                                             <item.icon size={18} className="mt-0.5 flex-none text-[#2f68f5]"/>
                                             <span className="min-w-0">
-                                                <span className="block text-[14px] font-semibold text-[#101a2c]">
+                                                <span className="flex items-center gap-2 text-[14px] font-semibold text-[#101a2c]">
                                                     {item.title}
+                                                    {badgeFor(item.path)}
                                                 </span>
                                                 <span className="block text-[12.5px] leading-[1.5] text-[#8593a8]">
                                                     {item.hint}

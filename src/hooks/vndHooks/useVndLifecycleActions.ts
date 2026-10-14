@@ -5,8 +5,8 @@ import {actualizationService} from "@/service/actualizationService/actualization
 import {vndService} from "@/service/vndService/vndService.ts";
 import {toast} from "@/service/toastService.ts";
 import type {VndResponse} from "@/service/vndService/vndServiceType.ts";
-import type {ConsolidateRequisites} from "@/components/componentsVND/componentsOpenVndPage/ConsolidateVndModal.tsx";
-import type {CancelVndFields} from "@/components/componentsVND/componentsOpenVndPage/CancelVndModal.tsx";
+import type {ConsolidateRequisites} from "@/components/componentsVND/componentsOpenVndPage/componentsModal/ConsolidateVndModal.tsx";
+import type {CancelVndFields} from "@/components/componentsVND/componentsOpenVndPage/componentsModal/CancelVndModal.tsx";
 
 export function useVndLifecycleActions(vnd: VndResponse | null | undefined, onChanged: () => void) {
     const {t} = useTranslation();

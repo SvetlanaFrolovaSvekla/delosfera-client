@@ -1,3 +1,4 @@
+// Общие классы страницы проверки подлинности
 import type {VndAuthenticitySignatureState} from "@/service/vndService/vndAuthenticityService.ts";
 import type {ResolutionSignatureVerifyResponse} from "@/service/coordinationService/coordinationServiceTypes.ts";
 

@@ -1,13 +1,14 @@
 // Панель для главного редактора ВНД: заявки на доступ к актуализации, ожидающие решения.
 import {useEffect, useState} from "react";
 import {useTranslation} from "react-i18next";
-import {ChevronDown, ChevronUp, Inbox, Loader2} from "lucide-react";
 import {actualizationService} from "@/service/actualizationService/actualizationService.ts";
 import type {VndActualizationRequestResponse} from "@/service/actualizationService/actualizationServiceTypes.ts";
-import {ApproveActualizationRequestModal} from
-    "@/components/componentsVND/componentsOpenVndPage/componentsActualizationTab/ApproveActualizationRequestModal.tsx";
 import {toast} from "@/service/toastService.ts";
 import {formatDate} from "@/utils/dateUtils.ts";
+import {ApproveActualizationRequestModal} from
+        "@/components/componentsVND/componentsOpenVndPage/componentsActualizationTab/componentsModal/ApproveActualizationRequestModal.tsx";
+import {ChevronDown, ChevronUp, Inbox, Loader2} from "lucide-react";
+
 
 export function ActualizationRequestsPanel() {
     const {t} = useTranslation();
@@ -19,19 +20,25 @@ export function ActualizationRequestsPanel() {
     const [approveTarget, setApproveTarget] = useState<VndActualizationRequestResponse | null>(null);
     const [approveError, setApproveError] = useState<string | null>(null);
 
-    const load = () => {
-        setLoading(true);
-        setError(null);
-        actualizationService.getPendingRequests()
-            .then(setRequests)
-            .catch((e: unknown) =>
-                setError(e instanceof Error ? e.message : t("actualizationPage.requestsPanel.loadError")))
-            .finally(() => setLoading(false));
-    };
-
+    // Загрузка заявок при открытии панели. Loading изначально true, error - null, поэтому
+    // сбрасывать их перед запросом не нужно: setState вызывается только в ответе (асинхронно).
+    // Cancelled - чтобы ответ, пришедший после размонтирования, не трогал состояние.
     useEffect(() => {
-        load();
-    }, []);
+        let cancelled = false;
+        actualizationService.getPendingRequests()
+            .then((data) => {
+                if (!cancelled) setRequests(data);
+            })
+            .catch((e: unknown) => {
+                if (!cancelled) setError(e instanceof Error ? e.message : t("actualizationPage.requestsPanel.loadError"));
+            })
+            .finally(() => {
+                if (!cancelled) setLoading(false);
+            });
+        return () => {
+            cancelled = true;
+        };
+    }, [t]);
 
     const handleApprove = async (requestId: number, shiftNextPeriod: boolean) => {
         setDecidingId(requestId);

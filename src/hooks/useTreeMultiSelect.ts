@@ -9,7 +9,7 @@ import {
     getAllKeysInTree,
     type BaseTreeOption,
     type TreeNodeOf,
-} from "@/utils/treeSelectUtils.ts";
+} from "@/utils/dictionaries/treeSelectUtils.ts";
 
 interface UseTreeMultiSelectParams<T extends BaseTreeOption> {
     open: boolean;

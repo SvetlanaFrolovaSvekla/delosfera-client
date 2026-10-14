@@ -117,7 +117,7 @@ export const PARTICIPANT_STATE_LABEL: Record<ParticipantState, string> = {
     Cancelled: "Аннулировано",
 };
 
-const BASE = "/workflow";
+const BASE = "/componentsWorkflow";
 
 export const workflowService = {
     async instance(id: number): Promise<RouteInstance> {

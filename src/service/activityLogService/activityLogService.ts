@@ -1,5 +1,5 @@
 import {apiClient} from "@/service/apiClient.ts";
-import type {ActivityLogEntryResponse} from "./activityLogServiceType.ts";
+import type {ActivityFeedQuery, ActivityFeedResponse, ActivityLogEntryResponse} from "./activityLogServiceType.ts";
 
 export const activityLogService = {
     /**
@@ -12,6 +12,23 @@ export const activityLogService = {
         const {data} = await apiClient.get<ActivityLogEntryResponse[]>("/activity-log/recent", {
             params: module ? {limit, module} : {limit},
         });
+        return data;
+    },
+
+    /**
+     * Лента "Активность на портале" с поиском, периодом, типом события и разделом - по
+     * страницам (nextCursor из ответа - в cursor следующего запроса).
+     */
+    async getFeed(query: ActivityFeedQuery): Promise<ActivityFeedResponse> {
+        const {icons, ...rest} = query;
+        const params: Record<string, string | number> = {};
+        for (const [key, value] of Object.entries(rest)) {
+            if (value !== undefined && value !== "") params[key] = value;
+        }
+        // Типы одной строкой через запятую: массив axios отправил бы как icons[]=..., а
+        // ASP.NET такую запись не свяжет
+        if (icons && icons.length > 0) params.icons = icons.join(",");
+        const {data} = await apiClient.get<ActivityFeedResponse>("/activity-log/feed", {params});
         return data;
     },
 

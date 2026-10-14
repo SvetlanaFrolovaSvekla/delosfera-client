@@ -1,3 +1,4 @@
+// Ряд кнопок-фильтров "В норме", "Приближается срок", "Критичный срок", "Просрочено"
 import {useTranslation} from "react-i18next";
 import {ACTUALIZATION_BUCKET_ORDER, useActualizationBucketMeta} from "@/hooks/actualizationHooks/useActualizationBucketMeta.ts";
 import type {ActualizationBucketKey, VndActualizationSummaryResponse} from "@/service/vndService/vndServiceType.ts";

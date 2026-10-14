@@ -1,3 +1,5 @@
+// Результат проверки подлинности: итоговый вердикт (подтверждено / частично / не найдено),
+// отпечаток проверяемого файла и список найденных редакций ВНД с этим текстом.
 import {useTranslation} from "react-i18next";
 import type {VndAuthenticityCheckResponse} from "@/service/vndService/vndAuthenticityService.ts";
 import {type Verdict, verdictOf} from "@/utils/vndProcess/authenticityUtils.ts";

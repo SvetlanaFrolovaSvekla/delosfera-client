@@ -1,5 +1,5 @@
 import {useState} from "react";
-import {ACTUALIZATION_COLUMNS, getToggleableActualizationColumns} from "@/constants/actualizationColumns.ts";
+import {ACTUALIZATION_COLUMNS, getToggleableActualizationColumns} from "@/constants/vndConstants/actualizationColumns.ts";
 
 // Доп. колонки, включённые по умолчанию (обязательные и так всегда видны).
 // "Вид" и "Разработчик" по умолчанию выключены — их включают вручную при необходимости.

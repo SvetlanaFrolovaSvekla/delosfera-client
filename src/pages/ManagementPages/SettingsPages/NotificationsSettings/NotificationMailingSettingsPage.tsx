@@ -4,11 +4,11 @@
 import {useState} from "react";
 import {useTranslation} from "react-i18next";
 
-import {ActualizationResponsiblesSection} from "@/components/componentsVND/componentsNotificationSettings/ActualizationResponsiblesSection.tsx";
-import {ActualizationMonthlyDigestSection} from "@/components/componentsVND/componentsNotificationSettings/ActualizationMonthlyDigestSection.tsx";
-import {ActualizationCriticalRemindersSection} from "@/components/componentsVND/componentsNotificationSettings/ActualizationCriticalRemindersSection.tsx";
-import {ActualizationOneTimeMailingSection} from "@/components/componentsVND/componentsNotificationSettings/ActualizationOneTimeMailingSection.tsx";
-import {NewRedactionMailingSection} from "@/components/componentsVND/componentsNotificationSettings/NewRedactionMailingSection.tsx";
+import {ActualizationResponsiblesSection} from "@/components/componentsVND/componentsNotificationSettings/AssignResponsibles/ActualizationResponsiblesSection.tsx";
+import {ActualizationMonthlyDigestSection} from "@/components/componentsVND/componentsNotificationSettings/MonthlyDigest/ActualizationMonthlyDigestSection.tsx";
+import {ActualizationCriticalRemindersSection} from "@/components/componentsVND/componentsNotificationSettings/CriticalReminders/ActualizationCriticalRemindersSection.tsx";
+import {ActualizationOneTimeMailingSection} from "@/components/componentsVND/componentsNotificationSettings/OneTimeMailing/ActualizationOneTimeMailingSection.tsx";
+import {NewRedactionMailingSection} from "@/components/componentsVND/componentsNotificationSettings/NewRedactions/NewRedactionMailingSection.tsx";
 
 const SECTION_IDS = ["responsibles", "monthly", "criticalReminders", "oneTimeMailing", "newRedactions"] as const;
 

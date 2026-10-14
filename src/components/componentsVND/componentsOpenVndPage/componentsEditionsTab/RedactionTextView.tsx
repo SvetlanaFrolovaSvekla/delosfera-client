@@ -21,7 +21,7 @@ import {FileText, Loader2, ChevronUp, ChevronDown, X} from "lucide-react";
 
 import {
     LegacyLinkHoverCard, VndLinkHoverCard,
-} from "@/components/componentsVND/componentsOpenVndPage/componentsLinks/VndLinkHoverCard.tsx";
+} from "@/components/componentsVND/componentsOpenVndPage/componentsLinksTab/VndLinkHoverCard.tsx";
 import {AttachmentDocxPreviewModal} from "@/components/componentsGeneral/modal/AttachmentDocxPreviewModal.tsx";
 
 

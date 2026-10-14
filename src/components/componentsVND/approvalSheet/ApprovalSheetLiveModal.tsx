@@ -1,9 +1,8 @@
-// Модалка "Лист согласования" для текущего (или любого) процесса согласования ВНД - оформление как
-// у RedactionApprovalSheetModal, внутри ApprovalSheetLiveView с двумя режимами.
+// Модалка "Лист согласования" для текущего (или любого) процесса согласования ВНД
 import {createPortal} from "react-dom";
 import {useTranslation} from "react-i18next";
-import {ClipboardCheck, X} from "lucide-react";
 import {ApprovalSheetLiveView} from "./ApprovalSheetLiveView.tsx";
+import {ClipboardCheck, X} from "lucide-react";
 
 interface ApprovalSheetLiveModalProps {
     vndId: number;

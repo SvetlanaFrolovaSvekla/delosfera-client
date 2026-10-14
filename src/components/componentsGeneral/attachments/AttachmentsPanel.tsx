@@ -26,6 +26,9 @@ import {
 } from "@/components/componentsGeneral/modal/AttachmentDocxPreviewModal.tsx";
 import {Paperclip, Trash2, Download, Eye, Loader2, Users} from "lucide-react";
 import {isCoauthorable} from "@/service/coauthoringService/coauthoringService.ts";
+
+/** Кнопка «Открыть для совместного редактирования» временно скрыта; вернуть — поставить true. */
+const COEDIT_ENABLED = false;
 import {OnlyOfficeEditor} from "@/components/editor/OnlyOfficeEditor.tsx";
 
 
@@ -278,11 +281,13 @@ export function AttachmentsPanel({
                             <Paperclip size={14} className="text-[#8b97ab] shrink-0"/>
                             <span className="flex-1 truncate text-[#1c2740]">{f.name}</span>
                             <span className="text-[11.5px] text-[#8b97ab]">{formatFileSize(f.size)}</span>
-                            <button type="button" title={t("attachments.remove")}
-                                    onClick={() => onPendingChange!(pending!.filter((_, x) => x !== i))}
-                                    className="border-none bg-transparent p-1 text-[#55617a] cursor-pointer hover:text-[#c0392b]">
-                                <Trash2 size={14}/>
-                            </button>
+                            <Tooltip content={t("attachments.remove")} side="top">
+                                <button type="button" aria-label={t("attachments.remove")}
+                                        onClick={() => onPendingChange!(pending!.filter((_, x) => x !== i))}
+                                        className="border-none bg-transparent p-1 text-[#55617a] cursor-pointer hover:text-[#c0392b]">
+                                    <Trash2 size={14}/>
+                                </button>
+                            </Tooltip>
                         </div>
                     ))}
                 </div>
@@ -304,16 +309,17 @@ export function AttachmentsPanel({
                                 </span>
                             )}
                             {a.hasRevokedSignatures && (
-                                <span className="text-[11.5px] font-semibold text-[#b3730a]"
-                                      title={t("attachments.signaturesRevokedTitle")}>
-                                    {/* Файл заменялся — прежние подписи аннулированы */}
-                                    {t("attachments.signaturesRevoked")}
-                                </span>
+                                <Tooltip content={t("attachments.signaturesRevokedTitle")} side="top">
+                                    <span className="text-[11.5px] font-semibold text-[#b3730a]">
+                                        {/* Файл заменялся — прежние подписи аннулированы */}
+                                        {t("attachments.signaturesRevoked")}
+                                    </span>
+                                </Tooltip>
                             )}
 
                             {isPreviewableFile(a.fileName) && (
                                 <Tooltip content={t("attachments.preview")} side="top">
-                                    <button type="button"
+                                    <button type="button" aria-label={t("attachments.preview")}
                                             onClick={() => setPreviewAttachment({fileId: a.id, fileName: a.fileName})}
                                             className="border-none bg-transparent p-1 text-[#55617a] cursor-pointer hover:text-[#2f68f5]">
                                         <Eye size={14}/>
@@ -321,30 +327,36 @@ export function AttachmentsPanel({
                                 </Tooltip>
                             )}
 
-                            {isCoauthorable(a.fileName) && (
-                                <button type="button" onClick={() => setCoEdit(a)}
-                                        title={t("attachments.coEdit")}
-                                        className="border-none bg-transparent p-1 text-[#55617a] cursor-pointer hover:text-[#2f68f5]">
-                                    <Users size={14}/>
-                                </button>
+                            {COEDIT_ENABLED && isCoauthorable(a.fileName) && (
+                                <Tooltip content={t("attachments.coEdit")} side="top">
+                                    <button type="button" onClick={() => setCoEdit(a)}
+                                            aria-label={t("attachments.coEdit")}
+                                            className="border-none bg-transparent p-1 text-[#55617a] cursor-pointer hover:text-[#2f68f5]">
+                                        <Users size={14}/>
+                                    </button>
+                                </Tooltip>
                             )}
 
-                            <button type="button" onClick={() => void handleDownload(a.id, a.fileName)}
-                                    disabled={downloadingId === a.id}
-                                    title={t("attachments.download")}
-                                    className="border-none bg-transparent p-1 text-[#55617a] cursor-pointer hover:text-[#2f68f5] disabled:opacity-50">
-                                {downloadingId === a.id ? (
-                                    <Loader2 size={14} className="animate-spin"/>
-                                ) : (
-                                    <Download size={14}/>
-                                )}
-                            </button>
-                            {editable && (
-                                <button type="button" onClick={() => void remove(a)} disabled={busy}
-                                        title={t("attachments.delete")}
-                                        className="border-none bg-transparent p-1 text-[#55617a] cursor-pointer hover:text-[#c0392b] disabled:opacity-50">
-                                    <Trash2 size={14}/>
+                            <Tooltip content={t("attachments.download")} side="top">
+                                <button type="button" onClick={() => void handleDownload(a.id, a.fileName)}
+                                        disabled={downloadingId === a.id}
+                                        aria-label={t("attachments.download")}
+                                        className="border-none bg-transparent p-1 text-[#55617a] cursor-pointer hover:text-[#2f68f5] disabled:opacity-50">
+                                    {downloadingId === a.id ? (
+                                        <Loader2 size={14} className="animate-spin"/>
+                                    ) : (
+                                        <Download size={14}/>
+                                    )}
                                 </button>
+                            </Tooltip>
+                            {editable && (
+                                <Tooltip content={t("attachments.delete")} side="top">
+                                    <button type="button" onClick={() => void remove(a)} disabled={busy}
+                                            aria-label={t("attachments.delete")}
+                                            className="border-none bg-transparent p-1 text-[#55617a] cursor-pointer hover:text-[#c0392b] disabled:opacity-50">
+                                        <Trash2 size={14}/>
+                                    </button>
+                                </Tooltip>
                             )}
                         </div>
                     ))}

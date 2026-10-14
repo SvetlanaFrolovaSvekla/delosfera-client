@@ -1,3 +1,5 @@
+// Страница "Проверка подлинности ВНД": карточка загрузки файла,
+// подсказка про побайтовое сравнение, кнопка "Проверить" и ошибка проверки
 import {useRef, useState, type DragEvent} from "react";
 import {useTranslation} from "react-i18next";
 import {formatSize} from "@/utils/vndProcess/authenticityUtils.ts";
@@ -15,7 +17,7 @@ interface Props {
     onCheck: () => void;
 }
 
-/** Карточка загрузки файла: дропзона, подсказка, кнопка «Проверить», ошибка. */
+/** Карточка загрузки файла: подсказка, кнопка "Проверить", ошибка. */
 export function UploadCard({file, checking, error, checked = false, onPick, onCheck}: Props) {
     const {t} = useTranslation();
     const inputRef = useRef<HTMLInputElement>(null);

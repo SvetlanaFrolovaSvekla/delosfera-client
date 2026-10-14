@@ -1,3 +1,4 @@
+// Скруглённая метка-«таблетка» с тонами neutral / good / warn / accent (статусы, язык, версии).
 import type {ReactNode} from "react";
 
 export function Pill({tone = "neutral", children}: {

@@ -1,8 +1,9 @@
+// Общий файл утилит для работы с задачами
 import type {TFunction} from "i18next";
 import {formatDurationMinutes, getDeadlineUrgency, getRemainingLabel} from "@/utils/dateUtils.ts";
-import {DEADLINE_URGENCY_META} from "@/constants/vndStatus.ts";
 import type {VndTaskResponse} from "@/service/tasksVndService/tasksServiceTypes.ts";
 import type {InboxTask} from "@/service/workflowService/taskInboxService.ts";
+import {DEADLINE_URGENCY_META} from "@/constants/vndStatus.ts";
 
 export function getDeadlineTone(
     deadlineAt: string | null,

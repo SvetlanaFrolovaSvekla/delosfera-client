@@ -6,9 +6,9 @@ import {useNavigate} from "react-router-dom";
 import {notificationsService} from "@/service/notificationsService/notificationsService.ts";
 import {useRecentNotifications} from "@/hooks/notificationsHooks/useRecentNotifications.ts";
 import type {NotificationCategory} from "@/service/notificationsService/notificationsServiceType.ts";
-import {timeAgo} from "@/utils/dateUtils.ts";
 import {HOME_BOTTOM_ROW_HEIGHT} from "@/constants/homeConst.ts";
 import {NOTIFICATION_CATEGORY_META, DEFAULT_CATEGORY_META} from "@/constants/notificationCategory.ts";
+import {timeAgo} from "@/utils/dateUtils.ts";
 
 import {Loader} from "@/components/componentsGeneral/Loader.tsx";
 import {EmptyState} from "@/components/componentsGeneral/EmptyState.tsx";
@@ -20,10 +20,7 @@ interface RecentNotificationsCardProps {
     limit?: number;
 }
 
-// Табы панели (как на "Последняя активность"/"Мои задачи"): все / по категориям
-// уведомлений (см. NotificationCategoryCatalog на бэке). labelKey - ключ i18n
-// (см. home.recentNotifications.tabs.* в translation.json), а не готовый текст:
-// иначе табы оставались русскими при переключении языка интерфейса.
+// Табы панели (как на "Последняя активность"/"Мои задачи")
 const SECTIONS: { id: string; labelKey: string; category?: NotificationCategory }[] = [
     {id: "all", labelKey: "home.recentNotifications.tabs.all"},
     {id: "System", labelKey: "home.recentNotifications.tabs.componentsSystemSettings", category: "System"},

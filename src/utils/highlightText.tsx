@@ -1,3 +1,4 @@
+// Подсветка при поиске
 interface HighlightTextProps {
     text: string;
     query: string;
@@ -79,5 +80,33 @@ export function HighlightTerms({
                 )
             )}
         </span>
+    );
+}
+
+/** Слова поискового запроса для поиска "подстрокой": запись подходит, если в ней есть ВСЕ
+ * слова - в любом месте и порядке (журнал аудита ВНД, "Активность на портале"). */
+// eslint-disable-next-line react-refresh/only-export-components
+export function splitSearchTerms(query: string): string[] {
+    return Array.from(new Set(query.toLowerCase().split(/\s+/).filter(Boolean)));
+}
+
+/** Подсветка каждого слова запроса где угодно в тексте (в отличие от HighlightTerms, где
+ * совпадение только с начала слова). */
+export function HighlightSubstrings({
+                                        text,
+                                        terms,
+                                        highlightClassName = "bg-[#fde3c4] text-[#8a4b00] rounded-[3px] px-[1px]",
+                                    }: { text: string; terms: string[]; highlightClassName?: string }) {
+    if (terms.length === 0) return <>{text}</>;
+    const regex = new RegExp(`(${[...terms].sort((a, b) => b.length - a.length).map(escapeRegExp).join("|")})`, "gi");
+    // С одной группой захвата в split совпадения лежат на нечётных местах
+    return (
+        <>
+            {text.split(regex).map((part, i) =>
+                i % 2 === 1
+                    ? <mark key={i} className={highlightClassName}>{part}</mark>
+                    : <span key={i}>{part}</span>,
+            )}
+        </>
     );
 }

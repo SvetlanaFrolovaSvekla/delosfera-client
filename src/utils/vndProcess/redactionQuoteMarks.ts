@@ -10,7 +10,7 @@ import type {
     ApprovalStageDecisionResponse,
     ApprovalStageResponse,
 } from "@/service/coordinationService/coordinationServiceTypes.ts";
-import {STAGE_DECISION_META} from "@/constants/coordinationParams.ts";
+import {STAGE_DECISION_META} from "@/constants/validation/coordinationValidatuon.ts";
 import type {RedactionViewTarget} from "@/utils/vndProcess/redactionLanguagePanelUtils.ts";
 import {findSnapshotForRevision, getLiveRevisionIndex} from "@/utils/vndProcess/redactionRevisions.ts";
 

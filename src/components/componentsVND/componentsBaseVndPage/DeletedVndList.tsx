@@ -1,18 +1,18 @@
-import {useCallback, useEffect, useState} from "react";
-import {useTranslation} from "react-i18next";
-import {Info, RotateCcw} from "lucide-react";
-import {vndService, type DeletedVndItem} from "@/service/vndService/vndService.ts";
-import {STATUS_META} from "@/constants/vndStatus.ts";
-import type {VndStatusKey} from "@/constants/vndTabs.ts";
-import {toast} from "@/service/toastService.ts";
-import {Loader} from "@/components/componentsGeneral/Loader";
-import {EmptyState} from "@/components/componentsGeneral/EmptyState.tsx";
-
 /**
- * Вкладка «Черновики» → «Удалённые»: мягко удалённые ВНД (право DeleteAnyVnd — главный редактор и
- * администратор). Документ можно восстановить прямо из системы — он вернётся в реестр в том же
+ * Вкладка "Черновики" - "Удалённые": мягко удалённые ВНД (есть право DeleteAnyVnd).
+ * Документ можно восстановить прямо из системы - он вернётся в реестр в том же
  * статусе, со всеми редакциями и журналом подписей.
  */
+import {useCallback, useEffect, useState} from "react";
+import {useTranslation} from "react-i18next";
+import {vndService, type DeletedVndItem} from "@/service/vndService/vndService.ts";
+import {toast} from "@/service/toastService.ts";
+import {STATUS_META} from "@/constants/vndStatus.ts";
+import type {VndStatusKey} from "@/constants/vndTabs.ts";
+import {Loader} from "@/components/componentsGeneral/Loader";
+import {EmptyState} from "@/components/componentsGeneral/EmptyState.tsx";
+import {Info, RotateCcw} from "lucide-react";
+
 export function DeletedVndList() {
     const {t, i18n} = useTranslation();
     const locale = i18n.language === "ky" || i18n.language === "kg" ? "ky-KG" : i18n.language === "en" ? "en-GB" : "ru-RU";
@@ -34,6 +34,7 @@ export function DeletedVndList() {
     }, [t]);
 
     useEffect(() => {
+        // eslint-disable-next-line react-hooks/set-state-in-effect
         void load();
     }, [load]);
 

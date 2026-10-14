@@ -1,6 +1,5 @@
-import {Link} from "react-router-dom";
-import {taskLink, type InboxTask} from "@/service/workflowService/taskInboxService.ts";
-import {Icon} from "@/assets/icons/Icon.tsx";
+import type {InboxTask} from "@/service/workflowService/taskInboxService.ts";
+import {InboxTaskCard} from "@/components/componentsTasks/InboxTaskCard.tsx";
 
 interface SzTaskCardProps {
     task: InboxTask;
@@ -9,78 +8,10 @@ interface SzTaskCardProps {
     noTopBorder?: boolean;
 }
 
-function formatDue(iso: string | null): string {
-    if (!iso) return "без срока";
-    return new Date(iso).toLocaleString("ru-RU", {day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit"});
-}
-
-// Карточка задачи по служебной записке в виджете "Мои задачи" на главной.
-// Записки живут вне контура ВНД, поэтому у них своя карточка: ссылка ведёт на
-// /sz/{entityId}, а не на карточку ВНД.
-// Без скруглённых углов - единственное место использования этой карточки: плотный список
-// виджета "Мои задачи" на главной (см. VndTaskCard.square рядом, тот же приём). Тонкий
-// разделитель сверху вместо рамки по всем 4 сторонам — иначе на стыке двух строк выходит
-// удвоенной толщины линия (нижняя рамка одной строки плюс верхняя рамка следующей).
+// Карточка задачи сводного реестра (записки, закупки, ознакомление) в виджете "Мои задачи" на
+// главной. Та же карточка, что и на странице "Мои задачи" (InboxTaskCard) — те же значки
+// контуров и подписи, — только плотная: без скруглений, с тонким разделителем сверху
+// (см. VndTaskCard.square рядом, тот же приём).
 export function SzTaskCard({task, noTopBorder = false}: SzTaskCardProps) {
-    return (
-        <Link
-            to={taskLink(task)}
-            draggable={false}
-            className={
-                `cursor-pointer flex w-full items-center gap-[13px] border-t border-[#f3f6f9] ${
-                    noTopBorder ? "border-t-0" : ""
-                } bg-white px-[18px] py-[13px] text-left transition-colors hover:bg-[#f8fafc]`
-            }
-        >
-            <span
-                className="grid h-9 w-9 flex-none place-items-center rounded-[10px]"
-                style={{background: "#eef3ff", color: "#2f68f5"}}
-            >
-                <Icon name="vnd" width={18} height={18}/>
-            </span>
-
-            <span className="min-w-0 flex-1">
-                <span className="flex flex-wrap items-center gap-2">
-                    <span
-                        className="text-[11.5px] font-semibold text-[var(--app-accent,_#2f68f5)]"
-                        style={{fontFamily: "'IBM Plex Mono', monospace"}}
-                    >
-                        {task.regNumber ?? "без номера"}
-                    </span>
-                    <span
-                        className="rounded-full px-[9px] py-[2px] text-[11px] font-semibold"
-                        style={{background: "#eef3ff", color: "#2f68f5"}}
-                    >
-                        {task.documentTypeTitle}
-                    </span>
-                    <span
-                        className="rounded-full px-[9px] py-[2px] text-[11px] font-semibold"
-                        style={{background: "#f2f5f9", color: "#55617a"}}
-                    >
-                        {task.taskType}
-                    </span>
-                </span>
-
-                <span className="mt-[3px] block truncate text-[13.5px] font-semibold text-[#1c2740]">
-                    «{task.documentTitle}»
-                </span>
-
-                {task.onBehalfOf && (
-                    <span className="mt-0.5 block truncate text-[11.5px] text-[#8b97ab]">
-                        по замещению за {task.onBehalfOf}
-                    </span>
-                )}
-            </span>
-
-            <span
-                className="flex flex-none items-center gap-1.5 text-[11.5px] font-semibold"
-                style={{color: task.isOverdue ? "#c0392b" : "#55617a"}}
-            >
-                <Icon name="clock" width={14} height={14}/>
-                {task.isOverdue ? "просрочено" : formatDue(task.dueAt)}
-            </span>
-
-            <Icon name="chevr" width={17} height={17} className="flex-none text-[#c3ccd8]"/>
-        </Link>
-    );
+    return <InboxTaskCard task={task} square noTopBorder={noTopBorder}/>;
 }

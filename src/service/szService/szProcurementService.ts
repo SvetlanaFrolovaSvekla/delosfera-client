@@ -23,6 +23,9 @@ export interface SzProcurement {
 
     /** Чего не хватает для запуска; пусто — можно передавать. */
     blockers: string[];
+
+    /** Можно запустить закупку; смотреть состояние может любой, кто видит записку. */
+    canManage: boolean;
 }
 
 const BASE = "/sz";

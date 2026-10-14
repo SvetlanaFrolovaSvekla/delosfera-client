@@ -13,6 +13,13 @@ import type {
     VndSearchRequest
 } from "./vndServiceType.ts";
 
+/** Тело POST /api/vnd/{id}/print-bundle - файлы в порядке, в котором они пойдут в документ. */
+export interface VndPrintBundleRequest {
+    fileIds: number[];
+    /** Только для имени итогового файла ({код редакции}_для_печати.docx). */
+    redactionId?: number;
+}
+
 import {getAccessToken} from "@/service/tokenStore.ts";
 import {parseContentDispositionFileName, saveBlob} from "@/utils/downloadFiles/downloadFile.ts";
 
@@ -367,6 +374,25 @@ export const vndService = {
             response.headers.get("Content-Disposition"),
             "Планирование актуализации.xlsx",
         );
+        saveBlob(await response.blob(), fileName);
+    },
+
+    /** "Сформировать документ для печати" (кнопка в шапке ВНД, см. VndPrintBundleModal): сервер
+     * склеивает выбранные файлы редакции в один .docx в переданном порядке (см.
+     * VndPrintBundleController) и отдаёт его на скачивание. */
+    async downloadPrintBundle(vndId: number, request: VndPrintBundleRequest, fallbackName: string): Promise<void> {
+        const response = await fetch(`${API_BASE}/vnd/${vndId}/print-bundle`, {
+            method: "POST",
+            headers: {"Content-Type": "application/json", ...authHeaders()},
+            body: JSON.stringify(request),
+        });
+
+        if (!response.ok) {
+            const errorBody = await response.json().catch(() => null);
+            throw new Error(errorBody?.message ?? `Ошибка запроса: ${response.status}`);
+        }
+
+        const fileName = parseContentDispositionFileName(response.headers.get("Content-Disposition"), fallbackName);
         saveBlob(await response.blob(), fileName);
     },
 };

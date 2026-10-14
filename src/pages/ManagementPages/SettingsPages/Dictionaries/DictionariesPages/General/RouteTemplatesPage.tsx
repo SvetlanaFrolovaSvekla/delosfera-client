@@ -30,7 +30,7 @@ import {
     type RouteRoleOption, type RouteConditionOption, type RolePreviewItem,
     type RouteTemplateDetails, type TemplateStep,
 } from "@/service/workflowService/workflowService.ts";
-import {RouteGraphBuilder} from "@/components/workflow/RouteGraphBuilder.tsx";
+import {RouteGraphBuilder} from "@/components/componentsWorkflow/RouteGraphBuilder.tsx";
 
 /** Виды документов, для которых настраиваются маршруты; подписи — в локалях. */
 const DOC_TYPES = ["Sz", "Procurement", "Vnd"];

@@ -458,6 +458,13 @@ export interface HrFieldSchema {
 }
 
 export interface HrFormSchema {
+    /**
+     * Id вида в справочнике sz_hr_kind, к которому привязана форма. Есть у видов,
+     * которые заводит сервер; по нему форма находится и после переименования вида.
+     * Старый сервер поле не отдаёт — тогда ищем по названию (см. findHrFormSchema).
+     */
+    hrKindId?: number | null;
+
     allowMultipleEmployees: boolean;
 
     /** Сотрудника нет в системе — записка о приёме: ФИО вводится строкой. */
@@ -466,7 +473,7 @@ export interface HrFormSchema {
     fields: HrFieldSchema[];
 }
 
-/** Схема полей по видам кадровых записок — ключ совпадает с названием вида. */
+/** Схема полей по видам кадровых записок — ключ совпадает с названием вида; искать через findHrFormSchema. */
 export async function hrForms(): Promise<Record<string, HrFormSchema>> {
     const {data} = await apiClient.get<Record<string, HrFormSchema>>("/sz/hr-forms");
     return data;

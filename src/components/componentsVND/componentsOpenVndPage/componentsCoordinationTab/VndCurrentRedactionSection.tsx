@@ -2,12 +2,12 @@
 // сравнивать) и карточка редакции. Общий для видов согласующего и инициатора в
 // VndCoordinationTab.
 import {useTranslation} from "react-i18next";
-import {Columns2} from "lucide-react";
+import type {VndRedactionResponse, VndResponse} from "@/service/vndService/vndServiceType.ts";
+import type {RedactionViewTarget} from "@/utils/vndProcess/redactionLanguagePanelUtils.ts";
 import {
     RedactionSummaryCard
 } from "@/components/componentsCoordination/CoordinationRouteConstructor/viewComponents/RedactionSummaryCard.tsx";
-import type {VndRedactionResponse, VndResponse} from "@/service/vndService/vndServiceType.ts";
-import type {RedactionViewTarget} from "@/utils/vndProcess/redactionLanguagePanelUtils.ts";
+import {Columns2} from "lucide-react";
 
 interface VndCurrentRedactionSectionProps {
     vnd: VndResponse;
@@ -22,10 +22,7 @@ interface VndCurrentRedactionSectionProps {
     /** У редакции уже есть промежуточные версии ("Р2.1", "Р2.2"... - после согласования с
      * замечаниями) - сравнение доступно, даже если это первая редакция ВНД. */
     hasRevisions?: boolean;
-    /** Отступ снизу у заголовка - у видов согласующего и инициатора он исторически отличался
-     * (mb-2 / mb-4 в оригинальном файле) - явно передаётся вызывающей стороной, а не зашит
-     * здесь, чтобы визуально ничего не изменилось при переносе. Стоит присмотреться, не
-     * опечатка ли это - см. сопроводительное сообщение к рефакторингу. */
+    /** Отступ снизу у заголовка */
     headerClassName: string;
 }
 

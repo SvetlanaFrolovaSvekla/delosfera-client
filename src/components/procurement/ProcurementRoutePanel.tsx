@@ -8,7 +8,7 @@ import {
 } from "@/service/workflowService/workflowService.ts";
 import {useAuth} from "@/context/AuthContext";
 import {dashboardService} from "@/service/dashboardService/dashboardService.ts";
-import {RouteFlowView} from "@/components/workflow/RouteFlowView.tsx";
+import {RouteFlowView} from "@/components/componentsWorkflow/RouteFlowView.tsx";
 
 /**
  * Маршрут согласования заявки на закупку (PRC-08) на карточке.

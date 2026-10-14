@@ -1,3 +1,5 @@
+// Один процесс согласования найденной редакции: статус, даты, сколько согласующих подписали
+// именно этот текст (прогресс-бар), таблица согласующих и лента истории.
 import {useTranslation} from "react-i18next";
 import type {VndAuthenticityProcess} from "@/service/vndService/vndAuthenticityService.ts";
 import {formatDateTime} from "@/utils/vndProcess/authenticityUtils.ts";
@@ -5,8 +7,8 @@ import {Pill} from "./Pill.tsx";
 import {ApproverRow} from "./ApproverRow.tsx";
 import {HistoryTimeline} from "./HistoryTimeline.tsx";
 import {HelpTooltip} from "@/components/componentsGeneral/knowledgeBaseComponents/HelpTooltip.tsx";
-import {CheckCircle2, Users} from "lucide-react";
 import {CARD_TITLE} from "./styles/authenticityStyles.ts";
+import {CheckCircle2, Users} from "lucide-react";
 
 function useLocale() {
     const {i18n} = useTranslation();

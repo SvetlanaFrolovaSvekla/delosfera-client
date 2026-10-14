@@ -74,13 +74,15 @@ export function SettingsChangesPage() {
     }, [area, kind]);
 
     return (
-        <div className="flex flex-col gap-5">
+        // Те же отступы, что у остальных страниц "Наблюдения" (как "Пожелания и замечания");
+        // расстояния между блоками - отступами, а не gap: у PageHeader уже свой нижний отступ
+        <div className="w-full max-w-[1700px] mx-auto px-4 sm:px-6 lg:px-8 xl:px-10 pt-5 sm:pt-[26px] pb-10 sm:pb-[60px]">
             <PageHeader
                 title={t("settingsChanges.title") /* Журнал изменений настроек */}
                 description={t("settingsChanges.description") /* Кто и когда правил справочники и настройки */}
             />
 
-            <div className="flex flex-wrap items-center gap-2">
+            <div className="mb-5 flex flex-wrap items-center gap-2">
                 <FilterChip active={kind === ""} onClick={() => setKind("")}>
                     {t("settingsChanges.allKinds") /* Все */}
                 </FilterChip>
@@ -131,7 +133,7 @@ export function SettingsChangesPage() {
                     </div>
 
                     {total > rows.length && (
-                        <p className="text-[12.5px] text-[#8593a8]">
+                        <p className="mt-4 text-[12.5px] text-[#8593a8]">
                             {t("settingsChanges.truncatedNotice", {
                                 shown: rows.length,
                                 total,

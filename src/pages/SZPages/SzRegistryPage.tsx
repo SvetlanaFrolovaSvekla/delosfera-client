@@ -3,7 +3,7 @@ import {useTranslation} from "react-i18next";
 import {Link, useNavigate} from "react-router-dom";
 import {Archive, ChartLine, Download} from "lucide-react";
 import {toast} from "@/service/toastService.ts";
-import {SzBulkArchiveModal} from "@/components/componentsSz/SzBulkArchiveModal.tsx";
+import {SzBulkArchiveModal} from "@/components/componentsSz/componentsModal/SzBulkArchiveModal.tsx";
 import {SavedFiltersBar} from "@/components/componentsGeneral/SavedFiltersBar.tsx";
 import {colors} from "@/design/tokens.ts";
 import {HighlightText} from "@/utils/highlightText.tsx";
@@ -34,11 +34,23 @@ const SCOPES: { id: ScopeId; statuses?: SzStatusCode[]; mineOnly?: boolean }[] =
     {id: "assignments"},
     {id: "originals"},
     {id: "mine", mineOnly: true},
-    {id: "drafts", statuses: ["Draft"], mineOnly: true},
+    // Отозванная записка возвращается автору на правку — лежит вместе с черновиками.
+    {id: "drafts", statuses: ["Draft", "Withdrawn"], mineOnly: true},
     {id: "approval", statuses: ["OnApproval"]},
     {id: "pending", statuses: ["PendingRegistration"]},
     {id: "signing", statuses: ["OnSigning"]},
     {id: "archive", statuses: ["Archived"]},
+];
+
+/**
+ * Статусы для фильтра реестра — в порядке хода записки: регистрация идёт до
+ * согласования. «Зарегистрирована» (Registered) — прежний статус, новые записки
+ * его не получают, поэтому в фильтре его нет.
+ */
+const FILTER_STATUSES: SzStatusCode[] = [
+    "Draft", "PendingRegistration", "OnApproval", "OnRevision", "OnSigning",
+    "OnAddresseeDecision", "OnBoardReview", "OnExecution", "Executed",
+    "Withdrawn", "Rejected", "Archived",
 ];
 
 const STATUS_TONE: Partial<Record<SzStatusCode, { fg: string; bg: string }>> = {
@@ -72,6 +84,8 @@ export function SzRegistryPage() {
     const [appliedQuery, setAppliedQuery] = useState("");
     const [kindId, setKindId] = useState<number | "">("");
     const [overdueOnly, setOverdueOnly] = useState(false);
+    /** Фильтр по статусу — только на вкладках без своего набора статусов («Все», «Мои»). */
+    const [statusFilter, setStatusFilter] = useState<SzStatusCode | "">("");
 
     const [items, setItems] = useState<SzListItem[]>([]);
     const [assignments, setAssignments] = useState<SzAssignment[]>([]);
@@ -108,6 +122,13 @@ export function SzRegistryPage() {
         });
     }, []);
 
+    /** Вкладка со своим набором статусов (черновики, архив…) — фильтр по статусу к ней не применяется. */
+    const scopeHasStatuses = (id: ScopeId): boolean => !!SCOPES.find((x) => x.id === id)?.statuses;
+
+    /** Статусы для запроса: свои у вкладки, иначе выбранный в фильтре, иначе — по умолчанию сервера. */
+    const effectiveStatuses = (id: ScopeId): SzStatusCode[] | undefined =>
+        SCOPES.find((x) => x.id === id)?.statuses ?? (statusFilter ? [statusFilter] : undefined);
+
     const load = useCallback(async () => {
         setLoading(true);
         setError(null);
@@ -138,7 +159,7 @@ export function SzRegistryPage() {
                     ? szService.inbox(1, 100)
                     : szService.search({
                         query: query.trim() || undefined,
-                        statuses: s.statuses,
+                        statuses: effectiveStatuses(scope),
                         mineOnly: s.mineOnly,
                         kindIds: kindId ? [Number(kindId)] : undefined,
                         overdueOnly: overdueOnly || undefined,
@@ -156,7 +177,8 @@ export function SzRegistryPage() {
         } finally {
             setLoading(false);
         }
-    }, [scope, query, kindId, overdueOnly, t]);
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [scope, query, kindId, overdueOnly, statusFilter, t]);
 
     useEffect(() => {
         // eslint-disable-next-line react-hooks/set-state-in-effect
@@ -167,7 +189,7 @@ export function SzRegistryPage() {
     useEffect(() => {
         // eslint-disable-next-line react-hooks/set-state-in-effect
         setSelected(new Set());
-    }, [scope, query, kindId, overdueOnly]);
+    }, [scope, query, kindId, overdueOnly, statusFilter]);
 
     const toggleRow = (id: number) => setSelected((prev) => {
         const next = new Set(prev);
@@ -192,7 +214,7 @@ export function SzRegistryPage() {
         try {
             await szService.exportRegistry({
                 query: query.trim() || undefined,
-                statuses: s.statuses,
+                statuses: effectiveStatuses(scope),
                 mineOnly: s.mineOnly,
                 kindIds: kindId ? [Number(kindId)] : undefined,
                 overdueOnly: overdueOnly || undefined,
@@ -203,7 +225,8 @@ export function SzRegistryPage() {
         } finally {
             setExporting(false);
         }
-    }, [scope, query, kindId, overdueOnly, selected, t]);
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [scope, query, kindId, overdueOnly, statusFilter, selected, t]);
 
     // Выгрузка реестра в Excel — по текущему фильтру, весь набор. Особые вкладки
     // (поручения, оригиналы, «согласую я») — не реестр, у них кнопки нет.
@@ -213,7 +236,7 @@ export function SzRegistryPage() {
         try {
             await szService.exportRegistry({
                 query: query.trim() || undefined,
-                statuses: s.statuses,
+                statuses: effectiveStatuses(scope),
                 mineOnly: s.mineOnly,
                 kindIds: kindId ? [Number(kindId)] : undefined,
                 overdueOnly: overdueOnly || undefined,
@@ -223,7 +246,8 @@ export function SzRegistryPage() {
         } finally {
             setExporting(false);
         }
-    }, [scope, query, kindId, overdueOnly, t]);
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [scope, query, kindId, overdueOnly, statusFilter, t]);
 
     const scopeCount = (id: ScopeId): number | undefined => {
         if (!counters) return undefined;
@@ -308,6 +332,18 @@ export function SzRegistryPage() {
                     searchPlaceholder={t("szRegistry.kindSearchPlaceholder")}
                     minWidth="150px"
                 />
+                {/* Фильтр по статусу: на вкладках со своим набором статусов он не нужен */}
+                {!scopeHasStatuses(scope) && (
+                    <SelectDropdown
+                        options={[
+                            {value: "", label: t("szRegistry.allStatuses")}, // Все статусы
+                            ...FILTER_STATUSES.map((code) => ({value: code, label: t(`szRegistry.status.${code}`)})),
+                        ]}
+                        value={statusFilter}
+                        onChange={(v) => setStatusFilter(v as SzStatusCode | "")}
+                        minWidth="180px"
+                    />
+                )}
                 <CheckBoxOne
                     checked={overdueOnly}
                     onChange={setOverdueOnly}
@@ -333,18 +369,23 @@ export function SzRegistryPage() {
                 <div className="mt-2.5">
                     <SavedFiltersBar
                         scope="sz"
-                        current={{scope, query, kindId: kindId === "" ? null : kindId, overdueOnly}}
+                        current={{
+                            scope, query, kindId: kindId === "" ? null : kindId, overdueOnly,
+                            status: statusFilter || null,
+                        }}
                         onApply={(p) => {
                             const f = p as {
                                 scope?: ScopeId;
                                 query?: string;
                                 kindId?: number | null;
-                                overdueOnly?: boolean
+                                overdueOnly?: boolean;
+                                status?: SzStatusCode | null;
                             };
                             if (f.scope) setScope(f.scope);
                             setQuery(f.query ?? "");
                             setKindId(f.kindId == null ? "" : f.kindId);
                             setOverdueOnly(!!f.overdueOnly);
+                            setStatusFilter(f.status ?? "");
                         }}
                     />
                 </div>

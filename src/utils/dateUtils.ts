@@ -1,8 +1,9 @@
+// Общий файл утилит для работы с датами и временем
 import type {TFunction} from "i18next";
 import type {DateRangeFilter} from "@/service/vndService/vndServiceType.ts";
 import type {DeadlineUrgencyKey} from "@/constants/vndStatus.ts";
-import type {DateFilterValue} from "@/components/componentsGeneral/datePickers/DateFilterGroup.tsx";
 import {getWorkDayMinutes, workingMinutesBetween} from "@/utils/workCalendar.ts";
+import type {DateFilterValue} from "@/components/componentsGeneral/datePickers/DateFilterGroup.tsx";
 
 export function formatDateTime(iso: string): string {
     return new Date(iso).toLocaleString("ru-RU", {
@@ -19,7 +20,7 @@ export function keyOf(d: Date): string {
     return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
 }
 
-// "только что" / "N мин назад" / "N ч назад" / "N дн назад" - переиспользует те же
+// "Только что" / "N мин назад" / "N ч назад" / "N дн назад" - переиспользует те же
 // ключи time.justNow/time.minutes/time.hours/time.days/time.ago, что и getElapsedLabel,
 // только без комбинирования двух единиц (напр. "2 дня 5 часов") - тут всегда одна.
 export function timeAgo(iso: string, t: TFunction): string {
@@ -58,7 +59,7 @@ export function formatRelativeTime(iso: string, t: TFunction): string {
 // Сроки согласования ВНД (новые процессы, usesWorkingTime) считаются только в рабочее время
 // банка: пн–пт в рабочие часы банка без праздников, 1 д. = рабочий день банка — см. utils/workCalendar.ts.
 // Для них все функции ниже принимают {workingTime: true}: "осталось", "прошло", срочность и
-// сам норматив считаются в рабочих минутах, а дни подписываются как рабочие ("2 раб. дня").
+// сам норматив считаются в рабочих минутах, а дни подписываются как рабочие ("2 раб. Дня").
 export interface DurationOptions {
     workingTime?: boolean;
 }
@@ -126,7 +127,7 @@ export function getRemainingLabel(
 }
 
 // Норматив срока (в минутах, как хранится и приходит с бэка). workingTime — рабочие минуты:
-// 1 д. = 9 ч, подпись "раб. дн.".
+// 1 д. = 9 ч, подпись "раб. Дн.".
 export function formatDurationMinutes(totalMinutes: number, t: TFunction, options?: DurationOptions): string {
     return formatSpan(totalMinutes, t, options?.workingTime) ?? t("time.minutes", {count: 0});
 }

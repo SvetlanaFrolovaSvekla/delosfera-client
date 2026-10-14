@@ -2,19 +2,19 @@
 import {useState} from "react";
 import {useTranslation} from "react-i18next";
 import {useNavigate} from "react-router-dom";
-import {ListChecks} from "lucide-react";
 import type {VndTaskResponse} from "@/service/tasksVndService/tasksServiceTypes.ts";
-import type {InboxTask} from "@/service/workflowService/taskInboxService.ts";
+import {taskKey, type InboxTask} from "@/service/workflowService/taskInboxService.ts";
+import {HOME_TOP_ROW_HEIGHT} from "@/constants/homeConst.ts";
+import {VndTaskCard} from "@/components/componentsTasks/VndTaskCard.tsx";
+import {SzTaskCard} from "@/components/componentsTasks/SzTaskCard.tsx";
 import {Loader} from "@/components/componentsGeneral/Loader.tsx";
 import {EmptyState} from "@/components/componentsGeneral/EmptyState.tsx";
 import {EmptyPanelPattern} from "@/components/componentsGeneral/EmptyPanelPattern.tsx";
-import {VndTaskCard} from "@/components/componentsTasks/VndTaskCard.tsx";
-import {SzTaskCard} from "@/components/componentsTasks/SzTaskCard.tsx";
-import {HOME_TOP_ROW_HEIGHT} from "@/constants/homeConst.ts";
+import {ListChecks} from "lucide-react";
 
 interface MyTasksCardProps {
     tasks: VndTaskResponse[];
-    // Задачи по служебным запискам из сводного реестра — живут вне контура ВНД,
+    // Задачи по служебным запискам из сводного реестра - живут вне контура ВНД,
     // поэтому передаются отдельно и рисуются своей карточкой.
     szTasks?: InboxTask[];
     // Задачи по закупкам — тоже из сводного реестра, вне контура ВНД.
@@ -167,21 +167,21 @@ export function MyTasksCard({tasks, szTasks = [], prcTasks = [], ackTasks = [], 
                         ))}
                         {visibleSzTasks.map((task, i) => (
                             <SzTaskCard
-                                key={`sz-${task.taskId}`}
+                                key={taskKey(task)}
                                 task={task}
                                 noTopBorder={visibleTasks.length === 0 && i === 0}
                             />
                         ))}
                         {visiblePrcTasks.map((task, i) => (
                             <SzTaskCard
-                                key={`prc-${task.taskId}`}
+                                key={taskKey(task)}
                                 task={task}
                                 noTopBorder={visibleTasks.length === 0 && visibleSzTasks.length === 0 && i === 0}
                             />
                         ))}
                         {visibleAckTasks.map((task, i) => (
                             <SzTaskCard
-                                key={`ack-${task.taskId}`}
+                                key={taskKey(task)}
                                 task={task}
                                 noTopBorder={
                                     visibleTasks.length === 0 && visibleSzTasks.length === 0

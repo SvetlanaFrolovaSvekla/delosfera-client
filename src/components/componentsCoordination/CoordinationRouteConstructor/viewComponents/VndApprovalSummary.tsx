@@ -5,7 +5,7 @@ import i18n from "i18next";
 import {useNavigate} from "react-router-dom";
 import {useAuth} from "@/context/AuthContext.ts";
 import type {ApprovalProcessResponse} from "@/service/coordinationService/coordinationServiceTypes.ts";
-import {COMMENT_TRUNCATE_LENGTH, PHASE_LABELS, PROCESS_STATUS_META, type ApprovalPhase} from "@/constants/coordinationParams.ts";
+import {COMMENT_TRUNCATE_LENGTH, PHASE_LABELS, PROCESS_STATUS_META, type ApprovalPhase} from "@/constants/validation/coordinationValidatuon.ts";
 import {User, Calendar, CheckCircle2, Hourglass, MessageSquareText} from "lucide-react";
 import {getInitials} from "@/utils/namingUsers/getInitials.ts";
 import {

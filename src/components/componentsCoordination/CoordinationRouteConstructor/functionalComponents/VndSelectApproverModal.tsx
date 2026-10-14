@@ -5,7 +5,7 @@ import {useAuth} from "@/context/AuthContext.ts";
 import {axiosInstance} from "@/service/axiosInstance.ts";
 import {useOrgUnitFilter} from "@/hooks/vndHooks/useOrgUnitFilter.ts";
 import {OrgUnitMultiSelectFilter} from "@/components/componentsGeneral/selects/OrgUnitMultiSelectFilter.tsx";
-import {collectSubtreeKeys} from "@/utils/treeSelectUtils.ts";
+import {collectSubtreeKeys} from "@/utils/dictionaries/treeSelectUtils.ts";
 import {userService, type UserLookupItem} from "@/service/userService/userService.ts";
 import {
     UserPickerModalShell,

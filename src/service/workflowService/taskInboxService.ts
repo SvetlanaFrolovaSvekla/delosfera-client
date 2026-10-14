@@ -25,6 +25,15 @@ export interface InboxTask {
     stepOrder: number | null;
     stepKind: string | null;
 
+    /** Этап служебной записки — по нему строятся вкладки раздела СЗ. У других контуров null. */
+    stage: SzTaskStage | null;
+
+    /**
+     * Не задача, а своя записка инициатора, которая ждёт других (регистрации,
+     * согласования, подписи...). Действия не требует — только отслеживание.
+     */
+    isOwn: boolean;
+
     dueAt: string | null;
     isOverdue: boolean;
 
@@ -37,11 +46,17 @@ export interface InboxTask {
     createdAt: string;
 }
 
+/** Этапы служебной записки (см. SzStage на сервере). */
+export type SzTaskStage = "Registration" | "Approval" | "Signing" | "Revision" | "Decision" | "Board" | "Execution";
+
 export interface TaskInbox {
     tasks: InboxTask[];
+    /** Реальные задачи — свои записки на отслеживании сюда не входят. */
     total: number;
     overdue: number;
     delegated: number;
+    /** Сколько своих записок на отслеживании (приходят только при includeOwn). */
+    own: number;
 }
 
 /** Группа в статистике задач: контур или тип, со счётчиком и просрочкой (ЗД-1). */
@@ -64,9 +79,16 @@ export interface TaskStats {
 }
 
 export const taskInboxService = {
-    async get(documentType?: string): Promise<TaskInbox> {
+    /**
+     * includeOwn — добавить свои записки инициатора, которые ждут других. Нужно только
+     * на странице «Мои задачи»: рабочий стол и счётчики считают реальную работу.
+     */
+    async get(documentType?: string, options?: {includeOwn?: boolean}): Promise<TaskInbox> {
+        const params: Record<string, string | boolean> = {};
+        if (documentType) params.documentType = documentType;
+        if (options?.includeOwn) params.includeOwn = true;
         const {data} = await apiClient.get<TaskInbox>("/workflow/inbox", {
-            params: documentType ? {documentType} : undefined,
+            params: Object.keys(params).length ? params : undefined,
         });
         return data;
     },
@@ -119,5 +141,8 @@ export function taskLink(task: InboxTask): string {
  * разных таблицах и могут совпасть числом. Без контура в ключе React путает строки.
  */
 export function taskKey(task: InboxTask): string {
-    return `${task.documentType}-${task.taskId}`;
+    // Тип задачи в ключе обязателен: у регистрации СЗ taskId — это id записки, и он
+    // может совпасть с id задачи согласования по другой записке.
+    // Своя записка на отслеживании тоже идёт под id записки — помечаем отдельно.
+    return `${task.documentType}-${task.isOwn ? "own-" : ""}${task.taskType}-${task.taskId}`;
 }

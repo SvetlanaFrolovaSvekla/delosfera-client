@@ -2,6 +2,7 @@ import type {TFunction} from "i18next";
 import {PermissionCode} from "@/constants/permissions/permissions.ts";
 import type {Item} from "@/pages/ManagementPages/SettingsPages/SettingsPage.tsx";
 import {
+    Activity,
     Bell,
     Building2,
     Eye, FileCog,
@@ -126,6 +127,17 @@ export function getGroupsManagement(t: TFunction): { title: string; items: Item[
                     hint: t("management.items.feedback.hint"),
                     icon: MessageSquareWarning,
                     permission: PermissionCode.ManageSystemSettings,
+                },
+                {
+                    // Лента событий документов простым языком - та же, что "Активность" в
+                    // боковом меню. Рядом с "Журналом действий" - в чём разница, объяснено
+                    // прямо на странице (см. ActivityVsAuditNote в ActivityFeedPage).
+                    path: "/management/activity",
+                    // "Активность на портале"
+                    title: t("management.items.activity.title"),
+                    // "Что происходит с документами — простым языком, для всех"
+                    hint: t("management.items.activity.hint"),
+                    icon: Activity,
                 },
                 {
                     path: "/management/audit",

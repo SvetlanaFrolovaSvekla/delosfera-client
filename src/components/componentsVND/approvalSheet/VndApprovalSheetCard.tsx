@@ -1,9 +1,8 @@
-// Карточка "Лист согласования" на вкладке "Ход согласования": лист формируется по текущим решениям,
-// поэтому после каждой резолюции открывается уже обновлённым. Открывает ApprovalSheetLiveModal.
+// Карточка "Лист согласования" на вкладке "Ход согласования"
 import {useState} from "react";
 import {useTranslation} from "react-i18next";
-import {ClipboardCheck} from "lucide-react";
 import {ApprovalSheetLiveModal} from "./ApprovalSheetLiveModal.tsx";
+import {ClipboardCheck} from "lucide-react";
 
 interface VndApprovalSheetCardProps {
     vndId: number;

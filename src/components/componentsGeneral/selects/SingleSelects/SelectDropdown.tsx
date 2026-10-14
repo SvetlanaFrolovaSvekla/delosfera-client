@@ -31,6 +31,8 @@ interface SelectDropdownProps {
     size?: "md" | "sm";
     /** Подсветить кнопку как включённую (синяя рамка и текст), например "курсор в таблице". */
     active?: boolean;
+    /* Жирность лейбла */
+    labelClassName?: string;
 }
 
 export function SelectDropdown({
@@ -48,6 +50,7 @@ export function SelectDropdown({
                                    invalid = false,
                                    size = "md",
                                    active = false,
+                                   labelClassName = "font-bold",
                                }: SelectDropdownProps) {
     const {t} = useTranslation();
     const [open, setOpen] = useState(false);
@@ -77,7 +80,7 @@ export function SelectDropdown({
             className={`${labelPosition === "top" ? "flex flex-col gap-1 items-start" : "flex items-center gap-2"} ${className}`}
         >
             {label && (
-                <span className="text-[11px] font-bold tracking-[.04em] uppercase text-[#a3adbd] whitespace-nowrap">
+                <span className={`text-[11px] tracking-[.04em] uppercase text-[#a3adbd] whitespace-nowrap ${labelClassName}`}>
                     {label}
                 </span>
             )}

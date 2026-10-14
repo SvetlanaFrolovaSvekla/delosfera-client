@@ -15,7 +15,7 @@ import {
     CUSTOM_STAGE_ICON,
     FIXED_STAGE_ICON,
     isCustomStageKind,
-} from "@/constants/coordinationParams.ts";
+} from "@/constants/validation/coordinationValidatuon.ts";
 import {formatDateTime} from "@/utils/dateUtils.ts";
 import {getInitials} from "@/utils/namingUsers/getInitials.ts";
 import {downloadWithToast} from "@/utils/downloadFiles/downloadFile.ts";

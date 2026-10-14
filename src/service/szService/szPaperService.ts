@@ -19,6 +19,9 @@ export interface SzOriginal {
     isOut: boolean;
     isOverdue: boolean;
     daysLeft: number | null;
+
+    /** Можно выдавать и принимать оригинал; смотреть может любой, кто видит записку. */
+    canManage: boolean;
 }
 
 export interface SzHandoverRequest {

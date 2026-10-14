@@ -2,7 +2,7 @@
 import {useTranslation} from "react-i18next";
 import {useTreeMultiSelect} from "@/hooks//useTreeMultiSelect.ts";
 import {useModalShake} from "@/hooks//useModalShake.ts";
-import type {BaseTreeOption, TreeNodeOf} from "@/utils/treeSelectUtils.ts";
+import type {BaseTreeOption, TreeNodeOf} from "@/utils/dictionaries/treeSelectUtils.ts";
 import {HighlightText} from "@/utils/highlightText.tsx";
 import {SearchBar} from "@/components/componentsGeneral/SearchBar.tsx";
 import {Check, ChevronRight, Minus, X} from "lucide-react";

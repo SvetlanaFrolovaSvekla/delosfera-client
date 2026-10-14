@@ -16,7 +16,7 @@ interface LinkedToMeRelationDropdownProps {
     triggerLabel: string;
 }
 
-// Лёгкая подложка под блок группы — цвет группы с низкой непрозрачностью (hex alpha).
+// Лёгкая подложка под блок группы - цвет группы с низкой непрозрачностью
 const GROUP_BG_ALPHA = "14"; // ~8%
 
 export function LinkedToMeRelationDropdown({

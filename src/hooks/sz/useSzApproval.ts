@@ -5,7 +5,7 @@ import {useTranslation} from "react-i18next";
 import {useAuth} from "@/context/AuthContext.ts";
 import {oepSigningService} from "@/service/signingService/oepSigningService.ts";
 import {workflowService, type ResolutionType, type RouteInstance} from "@/service/workflowService/workflowService.ts";
-import {serverMessage} from "@/components/componentsSzCard/szCardUtils.ts";
+import {serverMessage} from "@/utils/szProcess/szCardUtils.ts";
 
 interface Params {
     route: RouteInstance | null;

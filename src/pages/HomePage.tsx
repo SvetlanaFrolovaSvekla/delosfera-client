@@ -13,7 +13,7 @@ import {transliterate} from "@/utils/translations/transliterate.ts";
 import {HOME_TASKS_LIMIT} from "@/constants/validation/HomeTasksLimit.ts";
 
 import {Loader} from "@/components/componentsGeneral/Loader.tsx";
-import {CreateDocumentModal} from "@/components/componentsModal/CreateDocumentModal.tsx";
+import {CreateDocumentModal} from "@/components/componentsHome/CreateDocumentModal.tsx";
 import {HomePageHeader} from "@/components/componentsHome/HomePageHeader.tsx";
 import {HomeKpiSection} from "@/components/componentsHome/HomeKpiSection.tsx";
 import {MyTasksCard} from "@/components/componentsHome/MyTasksCard.tsx";

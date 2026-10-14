@@ -3,7 +3,7 @@ import {useState, type ReactNode} from "react";
 import {useTranslation} from "react-i18next";
 import {ChevronDown} from "lucide-react";
 import {TreeSingleSelectModal, type TreeSelectOption} from "./TreeSingleSelectModal.tsx";
-import {getAncestorPath} from "@/utils/treeSelectUtils.ts";
+import {getAncestorPath} from "@/utils/dictionaries/treeSelectUtils.ts";
 
 interface SingleSelectListFieldProps {
     label: string;

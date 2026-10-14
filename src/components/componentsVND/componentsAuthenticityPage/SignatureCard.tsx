@@ -1,3 +1,5 @@
+// Карточка ЭЦП-подписи решения: кто и когда подписал, решение, сертификат, комментарий,
+// хэши и кнопка повторной проверки подписи у провайдера.
 import {useState} from "react";
 import {useTranslation} from "react-i18next";
 import {type VndAuthenticitySignature} from "@/service/vndService/vndAuthenticityService.ts";
@@ -8,8 +10,8 @@ import {formatDateTime} from "@/utils/vndProcess/authenticityUtils.ts";
 import {Field} from "./Field.tsx";
 import {HashLine} from "./HashLine.tsx";
 import {Tooltip} from "@/components/componentsGeneral/Tooltip.tsx";
-import {CheckCircle2, ShieldCheck, XCircle} from "lucide-react";
 import {BTN_SECONDARY, STATE_STYLE, VERIFY_STYLE} from "./styles/authenticityStyles.ts";
+import {CheckCircle2, ShieldCheck, XCircle} from "lucide-react";
 
 export function SignatureCard({vndId, signature, locale}: {
     vndId: number; signature: VndAuthenticitySignature; locale: string;

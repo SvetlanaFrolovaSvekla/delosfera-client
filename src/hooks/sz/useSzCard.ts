@@ -6,6 +6,7 @@ import {useTranslation} from "react-i18next";
 import {useAuth} from "@/context/AuthContext.ts";
 import {PermissionCode} from "@/constants/permissions/permissions.ts";
 import {attachmentService} from "@/service/documentService/attachmentService.ts";
+import {toast} from "@/service/toastService.ts";
 import {workflowService, type RouteInstance} from "@/service/workflowService/workflowService.ts";
 import {
     hrForms as szHrForms,
@@ -17,7 +18,7 @@ import {
     type SzSaveRequest,
     type SzStatusCode,
 } from "@/service/szService/szService.ts";
-import {EDITABLE_STATUSES, formatDate, serverMessage} from "@/components/componentsSzCard/szCardUtils.ts";
+import {EDITABLE_STATUSES, formatDate, serverMessage} from "@/utils/szProcess/szCardUtils.ts";
 
 const EMPTY_FORM: SzSaveRequest = {
     title: "", kindId: 0, body: "", correspondentUnitId: null, rubricIds: [],
@@ -80,8 +81,13 @@ export function useSzCard(id: string | undefined) {
             hrKindId: d.hrKindId, employeeName: d.employeeName,
             employeeUnitId: d.employeeUnitId, transferUnitId: d.transferUnitId,
             hasBudget: d.hasBudget, amount: d.amount, travelExpenses: d.travelExpenses,
+            planItemId: d.planItemId,
             employees: d.employees ?? [],
         });
+
+        // Общие поля кадровой записки лежат в extraFields. Раньше их не читали обратно,
+        // и в форме после открытия карточки они были пустыми.
+        setHrValues(d.extraFields ?? {});
 
         // Маршрут нужен и после завершения: карточка показывает, кто и как решил.
         if (d.currentRouteInstanceId) {
@@ -120,6 +126,11 @@ export function useSzCard(id: string | undefined) {
     // этой возможности такие записки правят прямо в базе.
     const canForceStatus = hasPermission(PermissionCode.ManageSystemSettings);
 
+    // Регистрировать записку (присвоить номер) — право Сектора делопроизводства.
+    // Сервер проверяет его сам, но без этой проверки кнопку видел каждый, кто
+    // открыл записку «на регистрации», и получал отказ уже после нажатия.
+    const canRegister = hasPermission(PermissionCode.RegisterSz);
+
     const set = <K extends keyof SzSaveRequest>(key: K, value: SzSaveRequest[K]) =>
         setForm((f) => ({...f, [key]: value}));
 
@@ -150,9 +161,15 @@ export function useSzCard(id: string | undefined) {
         setSaving(true);
         setError(null);
         try {
+            // Общие поля кадровой записки (hrValues) живут отдельно от формы — раньше
+            // они вообще не уходили на сервер и терялись при каждом сохранении.
+            // Галочка «Бумажный носитель» показывает умолчание вида, пока её не трогали;
+            // на сервер уходит то же значение, что видит человек.
+            const shown: SzSaveRequest = {...form, isPaperCarrier: form.isPaperCarrier ?? kind?.isPaperByDefault ?? false};
+            const payload: SzSaveRequest = formKey === "Hr" ? {...shown, extraFields: hrValues} : shown;
             const saved = isNew
-                ? await szService.create(form)
-                : await szService.update(Number(id), form);
+                ? await szService.create(payload)
+                : await szService.update(Number(id), payload);
 
             // Записка создана — файлы, собранные в мастере, цепляются к её карточке.
             // Сбой загрузки записку не отменяет: недостающий файл прикладывается на
@@ -170,9 +187,14 @@ export function useSzCard(id: string | undefined) {
             }
 
             applyDetails(saved);
-            setNotice(failed.length
-                ? t("szCard.notices.savedFilesFailed", {files: failed.join(", ")})
-                : t("szCard.notices.saved"));
+            // Итог сохранения — всплывающим уведомлением, а не строкой над формой:
+            // что делать с запиской дальше, подсказывает плашка статуса (SzStatusBanner).
+            setNotice(null);
+            if (failed.length) {
+                toast.warning(t("szCard.notices.saved"), t("szCard.notices.filesFailed", {files: failed.join(", ")}));
+            } else {
+                toast.success(t("szCard.notices.saved"));
+            }
             if (isNew) navigate(`/sz/${saved.id}`, {replace: true});
         } catch {
             setError(t("szCard.errors.saveFailed"));
@@ -201,14 +223,17 @@ export function useSzCard(id: string | undefined) {
             // иначе лист согласования появится только после перезагрузки страницы.
             applyDetails(updated);
             await reload();
-            setNotice(action === "submit"
-                ? t(updated.statusCode === "PendingRegistration"
+            if (action === "submit") {
+                // Отправка — всплывающим уведомлением, как и сохранение.
+                toast.success(t(updated.statusCode === "PendingRegistration"
                     ? "szCard.notices.sentToRegistration"
-                    : "szCard.notices.sentToApproval")
-                : t("szCard.notices.registered", {
+                    : "szCard.notices.sentToApproval"));
+            } else {
+                setNotice(t("szCard.notices.registered", {
                     regNumber: updated.regNumber,
                     dueDate: formatDate(updated.dueDate),
                 }));
+            }
         } catch (e) {
             // Сервер объясняет отказ по существу: не выбран согласующий, не задан
             // маршрут, записка не в том статусе. Подменяя это общей фразой, мы
@@ -264,7 +289,7 @@ export function useSzCard(id: string | undefined) {
     return {
         isNew, sz, form, setForm, set, kind, formKey, kinds, hrKinds, hrForms, hrValues, setHrValues,
         pendingFiles, setPendingFiles, loading, saving, setSaving, error, setError, notice, setNotice,
-        route, isAuthor, editable, canForceStatus, approversFromTemplate,
+        route, isAuthor, editable, canForceStatus, canRegister, approversFromTemplate,
         applyKind, applyDetails, reload, save, runAction, withdraw, forceStatus,
     };
 }

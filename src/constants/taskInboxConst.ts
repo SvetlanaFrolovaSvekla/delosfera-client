@@ -1,4 +1,5 @@
 import {ChartColumn, FileText, Layers, ShoppingCart, StickyNote, type LucideIcon} from "lucide-react";
+import type {SzTaskStage} from "@/service/workflowService/taskInboxService.ts";
 
 // Вкладки сводного реестра задач
 export type InboxFilterId = "all" | "vnd" | "sz" | "prc" | "ack";
@@ -55,4 +56,23 @@ export const INBOX_EMPTY_META: Record<Exclude<InboxFilterId, "vnd">, { icon: Luc
         titleKey: "tasks.inbox.empty.ack.title",
         descriptionKey: "tasks.inbox.empty.ack.description",
     },
+};
+
+// Подвкладки раздела «Служебные записки»: по этапу записки. В каждую попадают и задачи
+// пользователя (зарегистрировать, согласовать, подписать...), и его собственные записки,
+// которые на этом этапе ждут других, — инициатор видит, где сейчас его СЗ.
+export type SzInboxSubTab = "all" | SzTaskStage;
+export const SZ_INBOX_SUB_TAB_IDS: SzInboxSubTab[] = [
+    "all", "Registration", "Approval", "Signing", "Revision", "Decision", "Board", "Execution",
+];
+
+export const SZ_INBOX_SUB_TAB_LABEL_KEYS: Record<SzInboxSubTab, string> = {
+    all: "tasks.inbox.szTabs.all",
+    Registration: "tasks.inbox.szTabs.registration",
+    Approval: "tasks.inbox.szTabs.approval",
+    Signing: "tasks.inbox.szTabs.signing",
+    Revision: "tasks.inbox.szTabs.revision",
+    Decision: "tasks.inbox.szTabs.decision",
+    Board: "tasks.inbox.szTabs.board",
+    Execution: "tasks.inbox.szTabs.execution",
 };

@@ -1,8 +1,8 @@
 // Секция с классификаторами на странице "Разработка нового ВНД"
 import {useTranslation} from "react-i18next";
+import {SecrecyLevelSelectField} from "@/components/componentsVND/componentsOpenVndPage/componentsPassportTab/SecrecyLevelSelectField.tsx";
+import {UserGroupMultiSelectField} from "@/components/componentsVND/componentsOpenVndPage/componentsPassportTab/UserGroupMultiSelectField.tsx";
 import {MultiSelectField} from "@/components/componentsGeneral/selects/MultiSelects/MultiSelectField.tsx";
-import {SecrecyLevelSelectField} from "@/components/componentsVND/componentsOpenVndPage/SecrecyLevelSelectField.tsx";
-import {UserGroupMultiSelectField} from "@/components/componentsVND/componentsOpenVndPage/UserGroupMultiSelectField.tsx";
 
 interface DictOption {
     key: string;

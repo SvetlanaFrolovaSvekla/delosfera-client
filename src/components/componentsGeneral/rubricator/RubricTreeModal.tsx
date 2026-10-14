@@ -3,7 +3,7 @@ import React from "react";
 import {useTranslation} from "react-i18next";
 import {useTreeMultiSelect} from "@/hooks//useTreeMultiSelect.ts";
 import {useModalShake} from "@/hooks//useModalShake.ts";
-import type {BaseTreeOption, TreeNodeOf} from "@/utils/treeSelectUtils.ts";
+import type {BaseTreeOption, TreeNodeOf} from "@/utils/dictionaries/treeSelectUtils.ts";
 import {SearchBar} from "@/components/componentsGeneral/SearchBar.tsx";
 import {ModalHeader} from "@/components/componentsGeneral/rubricator/ModalHeader.tsx";
 import {SelectAllBar} from "@/components/componentsGeneral/rubricator/SelectAllBar.tsx";

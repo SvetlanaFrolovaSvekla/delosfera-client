@@ -13,6 +13,7 @@ import {useVndTaskCounts} from "@/hooks/tasksVndHooks/useVndTaskCounts.ts";
 import {navGroups} from "@/constants/sidebarData.tsx";
 import {PermissionCode} from "@/constants/permissions/permissions.ts";
 import {CountBadge} from "@/components/componentsSidebar/CountBadge.tsx";
+import {useFeedbackNewCount} from "@/hooks/feedbackHooks/useFeedbackNewCount.ts";
 import {RubricTreeModal} from "@/components/componentsGeneral/rubricator/RubricTreeModal.tsx";
 import {Icon} from "@/assets/icons/Icon";
 import {ChevronRight, PanelLeftClose, PanelLeftOpen} from "lucide-react";
@@ -23,6 +24,9 @@ type RubricVariant = "vnd" | "sz";
 
 const COLLAPSED_KEY = "delosfera.sidebar.collapsed";
 const HIDDEN_KEY = "delosfera.sidebar.hidden";
+
+/** Пункты, у которых вместо цифры - просто красная точка ("есть новое"), а число - в подсказке */
+const DOT_BADGE_IDS = ["management"];
 
 function readFlag(key: string): boolean {
     return localStorage.getItem(key) === "1";
@@ -102,7 +106,13 @@ export function Sidebar() {
         };
     }, [canSeeProposals]);
 
+    // Пожелания и замечания, ещё не разобранные (статус «Новое») - красная точка у "Настройки
+    // системы": сама страница разбора живёт внутри них. Только у тех, кто её видит (право
+    // ManageSystemSettings) - у остальных хук отдаёт 0 и ничего не запрашивает.
+    const feedbackNew = useFeedbackNewCount();
+
     const dynamicBadges: Record<string, number> = {
+        management: feedbackNew,
         "vnd-proposals": canSeeProposals ? proposalsUnread : 0,
         pln: planningBadge,
         tasks: tasksBadge,
@@ -114,6 +124,7 @@ export function Sidebar() {
         pln: t("sidebar.badgeTooltips.planning", {count: planningBadge}),
         tasks: t("sidebar.badgeTooltips.tasks", {count: tasksBadge}),
         notif: t("sidebar.badgeTooltips.notif", {count: unreadCount}),
+        management: t("sidebar.badgeTooltips.feedback", {count: feedbackNew}),
     };
 
     const toggleCollapsed = () => {
@@ -222,7 +233,8 @@ export function Sidebar() {
                                     <span className="relative flex-none">
                                         <Icon name={it.icon} width={19} height={19}/>
                                         {collapsed && !!it.badge && (
-                                            <CountBadge count={it.badge} tooltip={dynamicBadgeTooltips[it.id]} tooltipSide="right"/>
+                                            <CountBadge count={it.badge} tooltip={dynamicBadgeTooltips[it.id]} tooltipSide="right"
+                                                        dot={DOT_BADGE_IDS.includes(it.id)}/>
                                         )}
                                     </span>
                                     {!collapsed && (
@@ -237,7 +249,8 @@ export function Sidebar() {
                                                     strokeWidth={2}/>
                                             ) : (
                                                 !!it.badge &&
-                                                <CountBadge count={it.badge} tooltip={dynamicBadgeTooltips[it.id]}/>
+                                                <CountBadge count={it.badge} tooltip={dynamicBadgeTooltips[it.id]}
+                                                            dot={DOT_BADGE_IDS.includes(it.id)} inline={DOT_BADGE_IDS.includes(it.id)}/>
                                             )}
                                         </>
                                     )}

@@ -1,3 +1,5 @@
+// Одна запись ленты истории: комментарий инициатора или решение согласующего со статусом
+// подписи; у подписанных решений - "Показать подпись" (раскрывает SignatureCard).
 import {useState} from "react";
 import {useTranslation} from "react-i18next";
 import type {VndAuthenticityHistoryEntry} from "@/service/vndService/vndAuthenticityService.ts";

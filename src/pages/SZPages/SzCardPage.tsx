@@ -1,25 +1,34 @@
 // Карточка служебной записки: создание, правка автором, согласование, подписание и ведение
-// записки по стадиям. Состояние — в хуках useSzCard / useSzApproval, части страницы — в componentsSzCard.
+// записки по стадиям.
+// Состояние - в хуках useSzCard / useSzApproval,
+// части страницы - в componentsSzCard.
 import {useState} from "react";
 import {useParams} from "react-router-dom";
 import {useTranslation} from "react-i18next";
 import {useAuth} from "@/context/AuthContext.ts";
-import {Loader} from "@/components/componentsGeneral/Loader.tsx";
-import {SzTemplateBar} from "@/components/componentsSz/SzTemplateBar.tsx";
-import {SzTracePanel} from "@/components/componentsSz/SzTracePanel.tsx";
-import {SzDuplicateWarning} from "@/components/componentsSz/SzDuplicateWarning.tsx";
-import {SzAddresseeDecisionPanel} from "@/components/sz/SzAddresseeDecisionPanel.tsx";
+
 import {useSzCard} from "@/hooks/sz/useSzCard.ts";
 import {useSzApproval} from "@/hooks/sz/useSzApproval.ts";
 import {useSzUsers} from "@/hooks/sz/useSzUsers.ts";
-import {SzCardHeader} from "@/components/componentsSzCard/SzCardHeader.tsx";
-import {SzCardNotices, SzWithdrawnBanner} from "@/components/componentsSzCard/SzCardNotices.tsx";
-import {SzForceStatusPanel} from "@/components/componentsSzCard/SzForceStatusPanel.tsx";
-import {SzWithdrawPanel} from "@/components/componentsSzCard/SzWithdrawPanel.tsx";
-import {SzMainForm} from "@/components/componentsSzCard/SzMainForm.tsx";
-import {SzRegistrationInfo} from "@/components/componentsSzCard/SzRegistrationInfo.tsx";
-import {SzStatusPanels} from "@/components/componentsSzCard/SzStatusPanels.tsx";
-import {SzApprovalSection} from "@/components/componentsSzCard/SzApprovalSection.tsx";
+
+import {SzTemplateBar} from "@/components/componentsSz/componentsSzCard/SzTemplateBar.tsx";
+import {SzTracePanel} from "@/components/componentsSz/componentsSzCard/panels/SzTracePanel.tsx";
+import {SzDuplicateWarning} from "@/components/componentsSz/componentsSzCard/SzDuplicateWarning.tsx";
+
+import {SzCardHeader} from "@/components/componentsSz/componentsSzCard/SzCardHeader.tsx";
+import {
+    SzCardNotices,
+    SzStatusBanner,
+    SzWithdrawnBanner
+} from "@/components/componentsSz/componentsSzCard/SzCardNotices.tsx";
+import {SzForceStatusPanel} from "@/components/componentsSz/componentsSzCard/panels/SzForceStatusPanel.tsx";
+import {SzWithdrawPanel} from "@/components/componentsSz/componentsSzCard/panels/SzWithdrawPanel.tsx";
+import {SzMainForm} from "@/components/componentsSz/componentsSzCard/form/SzMainForm.tsx";
+import {SzRegistrationPanel} from "@/components/componentsSz/componentsSzCard/panels/SzRegistrationPanel.tsx";
+import {SzStatusPanels} from "@/components/componentsSz/componentsSzCard/panels/SzStatusPanels.tsx";
+import {SzApprovalSection} from "@/components/componentsSz/componentsApprovals/SzApprovalSection.tsx";
+import {SzAddresseeDecisionPanel} from "@/components/componentsSz/componentsSzCard/panels/SzAddresseeDecisionPanel.tsx";
+import {Loader} from "@/components/componentsGeneral/Loader.tsx";
 
 export function SzCardPage() {
     const {t} = useTranslation();
@@ -44,14 +53,21 @@ export function SzCardPage() {
 
     return (
         <div className="px-7 py-6 max-w-[1700px]">
+
+            {/* Название, статус, код, кнопки */}
             <SzCardHeader
                 card={card}
                 onToggleWithdraw={() => setWithdrawOpen((v) => !v)}
                 onToggleForce={() => setForceOpen((v) => !v)}
             />
 
+
+            {/* Статус, сообщения */}
+            {sz && <SzStatusBanner statusCode={sz.statusCode} isAuthor={card.isAuthor}/>}
+
             <SzCardNotices notice={notice} error={error}/>
 
+            {/* Ручной перевод статуса записки */}
             {forceOpen && (
                 <SzForceStatusPanel
                     saving={saving}
@@ -60,6 +76,7 @@ export function SzCardPage() {
                 />
             )}
 
+            {/* Отзыв СЗ */}
             {withdrawOpen && (
                 <SzWithdrawPanel
                     saving={saving}
@@ -68,10 +85,12 @@ export function SzCardPage() {
                 />
             )}
 
+            {/* Сообщение об отзыве */}
             {sz?.withdrawReason && sz.statusCode === "Draft" && (
                 <SzWithdrawnBanner text={t("szCard.withdraw.banner", {reason: sz.withdrawReason})}/>
             )}
 
+            {/* Фильтр, шаблон */}
             {isNew && (
                 <SzTemplateBar
                     form={form}
@@ -80,10 +99,13 @@ export function SzCardPage() {
                 />
             )}
 
+            {/* Предупреждение о возможном дубликате записки*/}
             {isNew && <SzDuplicateWarning kindId={form.kindId} title={form.title}/>}
 
+            {/* Основная форма записки (создания/редактирования) */}
             <SzMainForm card={card} userList={userList}/>
 
+            {/* Решение адресата по существу вопроса */}
             {sz && (
                 <SzAddresseeDecisionPanel
                     sz={sz}
@@ -93,12 +115,16 @@ export function SzCardPage() {
                 />
             )}
 
-            {sz && <SzRegistrationInfo sz={sz}/>}
+            {/* Регистрация и сроки: автор, подразделение, дата регистрации, срок исполнения */}
+            {sz && <SzRegistrationPanel sz={sz}/>}
 
+            {/* Статус: Бумажный оригинал */}
             {sz && <SzStatusPanels sz={sz} formKey={formKey} onChanged={card.reload}/>}
 
-            {!isNew && id && <SzTracePanel szId={Number(id)}/>}
+            {/* Путь записки */}
+            {!isNew && id && <SzTracePanel szId={Number(id)} statusCode={sz?.statusCode}/>}
 
+            {/* Блок "Согласование" */}
             {route && sz && (
                 <SzApprovalSection
                     sz={sz}

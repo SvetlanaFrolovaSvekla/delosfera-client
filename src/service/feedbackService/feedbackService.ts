@@ -93,6 +93,10 @@ export interface FeedbackSummary {
 
 const BASE = "/feedback";
 
+/** Событие "статус сообщения поменяли" - чтобы красная точка в боковом меню погасла сразу,
+ * а не при следующем опросе (см. useFeedbackNewCount). */
+export const FEEDBACK_CHANGED_EVENT = "delosfera:feedback-changed";
+
 export const feedbackService = {
     /** Отправить сообщение с текущего экрана. Контекст берётся из окна браузера здесь же. */
     async send(kind: FeedbackKind, text: string, pageTitle?: string) {
@@ -135,5 +139,12 @@ export const feedbackService = {
 
     async handle(id: number, status: FeedbackStatus, comment?: string) {
         await apiClient.patch(`${BASE}/${id}`, {status, comment});
+        window.dispatchEvent(new Event(FEEDBACK_CHANGED_EVENT));
+    },
+
+    /** Сколько сообщений со статусом «Новое» - для красной точки в меню (право ManageSystemSettings). */
+    async newCount() {
+        const {data} = await apiClient.get<{ count: number }>(`${BASE}/new-count`);
+        return data.count;
     },
 };

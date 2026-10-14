@@ -28,7 +28,7 @@ import {
 } from "@/components/componentsVND/componentsActualizationPage/ActualizationRequestsPanel.tsx";
 import {
     ActualizationExportModal
-} from "@/components/componentsVND/componentsActualizationPage/ActualizationExportModal.tsx";
+} from "@/components/componentsVND/componentsActualizationPage/componentsModal/ActualizationExportModal.tsx";
 import {useAuth} from "@/context/AuthContext.ts";
 import {PermissionCode} from "@/constants/permissions/permissions.ts";
 import {useDictionaries} from "@/context/DictionariesContext.tsx";

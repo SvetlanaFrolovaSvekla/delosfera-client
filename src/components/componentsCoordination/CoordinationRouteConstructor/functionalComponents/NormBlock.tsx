@@ -1,7 +1,7 @@
 // Блок с нормативными значениями для согласования в модалке конструктора маршрутов
 import React from "react";
 import {HelpTooltip} from "@/components/componentsGeneral/knowledgeBaseComponents/HelpTooltip.tsx";
-import {getMaxDeadlineMinutes, MAX_DEADLINE_WORK_DAYS} from "@/constants/coordinationParams.ts";
+import {getMaxDeadlineMinutes, MAX_DEADLINE_WORK_DAYS} from "@/constants/validation/coordinationValidatuon.ts";
 import {getWorkDayMinutes, useWorkCalendar} from "@/utils/workCalendar.ts";
 
 interface NormBlockProps {
@@ -31,7 +31,7 @@ export function NormBlock({label, value, onChange, blockRef, helpText, disabled 
     const hours = Math.floor((totalMinutes % DAY) / 60);
     const minutes = totalMinutes % 60;
 
-    // Верхняя граница - getMaxDeadlineMinutes() (90 рабочих дней), см. constants/coordinationParams.ts.
+    // Верхняя граница - getMaxDeadlineMinutes() (90 рабочих дней), см. constants/coordinationValidatuon.ts.
     // Без неё в поле можно вписать любое число, которое потом не проходит на бэкенде
     // и там же ломает расчёт дедлайна при переполнении DateTime.
     const clampTotal = (totalValue: number) => Math.min(Math.max(0, totalValue), MAX_DEADLINE_MINUTES);

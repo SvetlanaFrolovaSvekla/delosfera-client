@@ -6,7 +6,7 @@ import {
     type HrOrderKind, type HrOrderKindInfo,
 } from "@/service/hrOrderService/hrOrderService.ts";
 import {hrForms, type HrFormSchema} from "@/service/szService/szService.ts";
-import {SzHrForm} from "@/components/sz/SzHrForm.tsx";
+import {SzHrForm} from "@/components/componentsSz/componentsSzCard/form/SzHrForm.tsx";
 import {SearchSelect} from "@/components/componentsGeneral/selects/SearchSelect.tsx";
 import {RichTextEditor} from "@/components/editor/RichTextEditor.tsx";
 import {Loader} from "@/components/componentsGeneral/Loader.tsx";

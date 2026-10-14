@@ -1,3 +1,4 @@
+// Строка с хэшем (подпись: значение) и кнопкой "Скопировать" - используется в SignatureCard
 import {useTranslation} from "react-i18next";
 import {copyToClipboard} from "@/utils/vndProcess/authenticityUtils.ts";
 import {Tooltip} from "@/components/componentsGeneral/Tooltip.tsx";

@@ -1,9 +1,10 @@
+// Лента истории процесса согласования (вертикальная линия с точками) - список HistoryItem.
 import {useTranslation} from "react-i18next";
 import type {VndAuthenticityHistoryEntry} from "@/service/vndService/vndAuthenticityService.ts";
-import {HelpTooltip} from "@/components/componentsGeneral/knowledgeBaseComponents/HelpTooltip.tsx";
 import {HistoryItem} from "./HistoryItem.tsx";
-import {History} from "lucide-react";
+import {HelpTooltip} from "@/components/componentsGeneral/knowledgeBaseComponents/HelpTooltip.tsx";
 import {CARD_TITLE} from "./styles/authenticityStyles.ts";
+import {History} from "lucide-react";
 
 export function HistoryTimeline({vndId, entries, locale}: {
     vndId: number; entries: VndAuthenticityHistoryEntry[]; locale: string;

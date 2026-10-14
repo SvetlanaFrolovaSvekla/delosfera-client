@@ -1,10 +1,10 @@
 import {useEffect, useRef, useState} from "react";
 import {useTranslation} from "react-i18next";
-import {X} from "lucide-react";
 import {
     coauthoringService,
     type OnlyOfficeConfig,
 } from "@/service/coauthoringService/coauthoringService.ts";
+import {X} from "lucide-react";
 
 interface Props {
     /** Вложение карточки, которое открываем на соредактирование. */

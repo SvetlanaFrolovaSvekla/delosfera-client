@@ -1,72 +1,45 @@
-import React, {useRef, useState} from "react";
+import {useState} from "react";
 import {useTranslation} from "react-i18next";
-
 import {coordinationService} from "@/service/coordinationService/coordinationService.ts";
-import {RemarksAgreement} from "@/service/coordinationService/coordinationServiceTypes.ts";
-import type {
-    ApprovalProcessResponse,
-    ApprovalStageAttachmentResponse,
-} from "@/service/coordinationService/coordinationServiceTypes.ts";
+import {RemarksAgreement, type ApprovalProcessResponse} from "@/service/coordinationService/coordinationServiceTypes.ts";
 import type {VndRedactionResponse, VndResponse} from "@/service/vndService/vndServiceType.ts";
-import {formatFileSize} from "@/service/documentService/attachmentService.ts"
-
-import {
-    COMMENT_TRUNCATE_LENGTH,
-    MAX_RESOLUTION_ATTACHMENTS,
-    MAX_RESOLUTION_ATTACHMENT_SIZE_BYTES,
-    MAX_RESOLUTION_COMMENT_LENGTH,
-    STAGE_DECISION_META,
-} from "@/constants/coordinationParams.ts";
+import {formatFileSize} from "@/service/documentService/attachmentService.ts";
+import {MAX_RESOLUTION_ATTACHMENTS, MAX_RESOLUTION_ATTACHMENT_SIZE_BYTES, STAGE_DECISION_META} from "@/constants/validation/coordinationValidatuon.ts";
 import {VND_REDACTION_MAX_ATTACHMENTS} from "@/constants/validation/vndValidation.ts";
-
-
 import {resolveVndDocTitle} from "@/utils/downloadFiles/fileNaming.ts";
 import {downloadWithToast} from "@/utils/downloadFiles/downloadFile.ts";
-
-import {Tooltip} from "@/components/componentsGeneral/Tooltip.tsx";
-import {HelpTooltip} from "@/components/componentsGeneral/knowledgeBaseComponents/HelpTooltip.tsx";
-import {ConfirmActionModal} from "@/components/componentsGeneral/modal/ConfirmActionModal.tsx";
-import {CharCounter} from "@/components/componentsGeneral/CharCounter.tsx";
-
-import {
-    VndDisagreementMatrixSection, type DisagreementMatrixMode
-} from "./VndDisagreementMatrixSection.tsx";
 import {generateDisagreementMatrixDocx} from "@/utils/docxWork/docxDisagreementMatrixExport.ts";
-import {
-    AttachmentRow
-} from "@/components/componentsCoordination/CoordinationRouteConstructor/functionalComponents/AttachmentRow.tsx";
-import {
-    CommentViewModal
-} from "@/components/componentsCoordination/CoordinationRouteConstructor/viewComponents/CommentViewModal.tsx";
+import {VndDisagreementMatrixSection, type DisagreementMatrixMode} from "./VndDisagreementMatrixSection.tsx";
+import {CommentViewModal} from "@/components/componentsCoordination/CoordinationRouteConstructor/viewComponents/CommentViewModal.tsx";
 import type {FormattedCommentQuoteRef} from "@/components/componentsCoordination/CoordinationRouteConstructor/viewComponents/FormattedResolutionComment.tsx";
+import {VndUploadTidModal} from "@/components/componentsVND/componentsOpenVndPage/componentsEditionsTab/componentsModal/uploadTidModal/VndUploadTidModal.tsx";
 import {
-    AttachmentDocxPreviewModal
-} from "@/components/componentsGeneral/modal/AttachmentDocxPreviewModal.tsx";
+    collectApprovalComments, collectRemarks, getActiveRevisionPhase, type RemarkItem,
+} from "./revisionPanel/revisionRemarks.ts";
 import {
-    VndUploadTidModal
-} from "@/components/componentsVND/componentsOpenVndPage/componentsEditionsTab/componentsModal/uploadTidModal/VndUploadTidModal.tsx";
+    EMPTY_DOC_STATE, MAX_FILE_SIZE, type DocLang, type DocSlot, type DocSlotState,
+} from "./revisionPanel/revisionDocs.ts";
+import {DocReplaceRow} from "./revisionPanel/DocReplaceRow.tsx";
+import {RevisionRemarksGroups} from "./revisionPanel/RevisionRemarksGroups.tsx";
+import {RevisionAgreementChoice} from "./revisionPanel/RevisionAgreementChoice.tsx";
+import {RevisionRedactionAttachments} from "./revisionPanel/RevisionRedactionAttachments.tsx";
+import {RevisionComment} from "./revisionPanel/RevisionComment.tsx";
+import {RevisionTidSection} from "./revisionPanel/RevisionTidSection.tsx";
+import {AttachmentDocxPreviewModal} from "@/components/componentsGeneral/modal/AttachmentDocxPreviewModal.tsx";
+import {Tooltip} from "@/components/componentsGeneral/Tooltip.tsx";
+import {ConfirmActionModal} from "@/components/componentsGeneral/modal/ConfirmActionModal.tsx";
+import {AlertCircle, Trash2} from "lucide-react";
 
-import {
-    AlertCircle,
-    Check,
-    CheckCircle2,
-    FileCheck2,
-    FileText,
-    MessageSquareText,
-    FileSpreadsheet,
-    Paperclip,
-    RefreshCcw,
-    Trash2,
-} from "lucide-react";
+export type {DocLang};
 
 interface VndRevisionNeededPanelProps {
     vndId: number;
     vnd: VndResponse;
     process: ApprovalProcessResponse;
-    /** Редакция, вынесенная на согласование — берём отсюда текущие файлы документа
+    /** Редакция, вынесенная на согласование - берём отсюда текущие файлы документа
      * (RU/KG/EN) и вложения, чтобы дать возможность заменить/удалить только нужное. */
     redaction: VndRedactionResponse | undefined;
-    /** Требуется ли обязательно приложить ТИД вместе с исправленной редакцией — true, если
+    /** Требуется ли обязательно приложить ТИД вместе с исправленной редакцией - true, если
      * у ВНД уже была предыдущая редакция (см. VndRedactionResponse.number > 1 на родительской
      * странице). Для первой редакции нового ВНД ТИД не нужен. */
     requiresTid: boolean;
@@ -87,441 +60,8 @@ interface VndRevisionNeededPanelProps {
      * которые придут со свежими данными) и всплывающее уведомление. */
     onResubmitted: () => Promise<void>;
     /** Кнопка-лупа "Показать в тексте" рядом с цитатой внутри модалки "См. замечания/комментарий
-     * полностью" (см. CommentViewModal/FormattedResolutionComment) - открывает просмотр редакции
-     * на нужной вкладке с прокруткой к месту цитаты (тот же приём, что и StageCardView/
-     * VndApprovalRouteView.onShowQuoteInText - см. VndCoordinationTab.handleShowQuoteInText).
-     * Без этого пропа лупы рядом с цитатами в блоках "Необходимо исправить"/"Также посмотрите
-     * пришедшие комментарии" не рисуются - только жирное/цветное выделение самой цитаты. */
+     * полностью" */
     onShowQuoteInText?: (quote: FormattedCommentQuoteRef) => void;
-}
-
-interface RemarkItem {
-    stageId: number;
-    approverName: string;
-    approverUserId: number;
-    phase: RevisionPhaseKey;
-    comment: string;
-    decidedAt: string | null;
-    attachments: ApprovalStageAttachmentResponse[];
-    /** Цитаты, вставленные в этот комментарий/замечание (см. "+ Сослаться на текст редакции" у
-     * согласующего) - в том же порядке, что и строки "Цитата: «...»" в тексте. Нужны, чтобы в
-     * модалке "См. замечания/комментарий полностью" (CommentViewModal) рядом с КАЖДОЙ такой
-     * строкой нарисовать свою кнопку-лупу "Показать в тексте" (см. FormattedResolutionComment) -
-     * раньше эти карточки вообще не передавали цитаты в модалку, из-за чего цитаты там
-     * подсвечивались (сама подсветка не требует quotes), но без луп рядом. */
-    quotes: FormattedCommentQuoteRef[];
-}
-
-type RevisionPhaseKey = "primary" | "repeat" | "finalHold";
-
-/** Каким этапом вызван ТЕКУЩИЙ статус "На доработке" - нужно, чтобы отделить ещё не устранённые
- * замечания (с этого этапа) от уже устранённых (с более раннего этапа - см. RemarkCard ниже,
- * блок "Устранённые замечания"). Согласование может возвращаться на доработку несколько раз
- * подряд (первичное → доработка → повторное → снова доработка → снова повторное → ... →
- * финальная выдержка → доработка и т.д. - см. CompleteRepeatPhaseAsync/
- * ReturnToRevisionFromFinalHoldAsync на бэке), и при каждой повторной отправке (resubmit)
- * комментарии предыдущего "своего" круга обнуляются (RepeatComment/FinalHoldComment) - то есть
- * непустой repeatComment/finalHoldComment у этапа всегда относится именно к последнему кругу.
- * Поэтому "последний начавшийся из двух" (по repeatStartedAt/finalHoldStartedAt) и есть источник
- * текущих активных замечаний; всё, что осталось непустым в более ранних этапах (чаще всего -
- * первичное согласование) - уже устранённая история. */
-function getActiveRevisionPhase(process: ApprovalProcessResponse): RevisionPhaseKey {
-    const repeatTs = process.repeatStartedAt ? new Date(process.repeatStartedAt).getTime() : -1;
-    const finalHoldTs = process.finalHoldStartedAt ? new Date(process.finalHoldStartedAt).getTime() : -1;
-    if (finalHoldTs > -1 && finalHoldTs > repeatTs) return "finalHold";
-    if (repeatTs > -1) return "repeat";
-    return "primary";
-}
-
-/** Собираем замечания по редакции - с любого этапа (первичный / повторный / финальная
- * выдержка), т.к. RevisionNeeded может наступить после любого из них. Замечанием
- * считается комментарий именно к решению "approved_with_comment" (отправлено на
- * устранение замечаний) - комментарий к простому "approved" сюда не попадает. */
-function collectRemarks(process: ApprovalProcessResponse): RemarkItem[] {
-    return process.stages.flatMap((stage) => {
-        const remarks: RemarkItem[] = [];
-
-        if (stage.primaryComment && stage.primaryDecision === "approved_with_comment") {
-            remarks.push({
-                stageId: stage.id,
-                approverName: stage.approverName,
-                approverUserId: stage.approverUserId,
-                phase: "primary",
-                comment: stage.primaryComment,
-                decidedAt: stage.primaryDecidedAt,
-                attachments: stage.primaryAttachments,
-                quotes: stage.primaryQuotes,
-            });
-        }
-        if (stage.repeatComment && stage.repeatDecision === "approved_with_comment") {
-            remarks.push({
-                stageId: stage.id,
-                approverName: stage.approverName,
-                approverUserId: stage.approverUserId,
-                phase: "repeat",
-                comment: stage.repeatComment,
-                decidedAt: stage.repeatDecidedAt,
-                attachments: stage.repeatAttachments,
-                quotes: stage.repeatQuotes,
-            });
-        }
-        if (stage.finalHoldComment && stage.finalHoldDecision === "approved_with_comment") {
-            remarks.push({
-                stageId: stage.id,
-                approverName: stage.approverName,
-                approverUserId: stage.approverUserId,
-                phase: "finalHold",
-                comment: stage.finalHoldComment,
-                decidedAt: stage.finalHoldDecidedAt,
-                attachments: stage.finalHoldAttachments,
-                quotes: stage.finalHoldQuotes,
-            });
-        }
-        return remarks;
-    });
-}
-
-/** Системные автосгенерированные тексты комментариев (см. AutoApproveInitiatorStages,
- * ResetFinalHoldDecisions в VndApprovalService.cs на бэке) — это не пояснение от
- * реального согласующего, а техническая пометка "решение проставлено автоматически".
- * В блоке "пришедшие комментарии" такие записи только сбивают с толку, поэтому
- * не показываем их там (сами решения/статусы этапов при этом никак не скрываются). */
-const AUTO_GENERATED_COMMENT_TEXTS = new Set([
-    "Согласовано автоматически — инициатор является согласующим на этом этапе",
-    "Согласовано автоматически",
-]);
-
-/** Комментарии к простому согласованию ("approved") - не замечания, а просто
- * пояснения согласующего. Показываем отдельным блоком, и только если они есть. */
-function collectApprovalComments(process: ApprovalProcessResponse): RemarkItem[] {
-    return process.stages.flatMap((stage) => {
-        const comments: RemarkItem[] = [];
-
-        if (
-            stage.primaryComment &&
-            stage.primaryDecision === "approved" &&
-            !AUTO_GENERATED_COMMENT_TEXTS.has(stage.primaryComment)
-        ) {
-            comments.push({
-                stageId: stage.id,
-                approverName: stage.approverName,
-                approverUserId: stage.approverUserId,
-                phase: "primary",
-                comment: stage.primaryComment,
-                decidedAt: stage.primaryDecidedAt,
-                attachments: stage.primaryAttachments,
-                quotes: stage.primaryQuotes,
-            });
-        }
-        if (
-            stage.repeatComment &&
-            stage.repeatDecision === "approved" &&
-            !AUTO_GENERATED_COMMENT_TEXTS.has(stage.repeatComment)
-        ) {
-            comments.push({
-                stageId: stage.id,
-                approverName: stage.approverName,
-                approverUserId: stage.approverUserId,
-                phase: "repeat",
-                comment: stage.repeatComment,
-                decidedAt: stage.repeatDecidedAt,
-                attachments: stage.repeatAttachments,
-                quotes: stage.repeatQuotes,
-            });
-        }
-        if (
-            stage.finalHoldComment &&
-            stage.finalHoldDecision === "approved" &&
-            !AUTO_GENERATED_COMMENT_TEXTS.has(stage.finalHoldComment)
-        ) {
-            comments.push({
-                stageId: stage.id,
-                approverName: stage.approverName,
-                approverUserId: stage.approverUserId,
-                phase: "finalHold",
-                comment: stage.finalHoldComment,
-                decidedAt: stage.finalHoldDecidedAt,
-                attachments: stage.finalHoldAttachments,
-                quotes: stage.finalHoldQuotes,
-            });
-        }
-        return comments;
-    });
-}
-
-/** Карточка одного замечания/комментария - в духе StageCardView: обрезанный текст,
- * кнопка на полный просмотр (модалка) и список прикреплённых файлов.
- * resolved=true - замечание уже устранено на более раннем круге доработки (см. resolvedRemarks
- * в VndRevisionNeededPanel) - оформляем серым, не жёлтым/красным, чтобы визуально не путать
- * с тем, что требует исправления прямо сейчас. */
-function RemarkCard({
-                        item,
-                        isRemark,
-                        resolved,
-                        onOpenFull,
-                        onOpenAttachment,
-                    }: {
-    item: RemarkItem;
-    isRemark: boolean;
-    resolved?: boolean;
-    onOpenFull: () => void;
-    onOpenAttachment: (fileId: number, fileName: string) => void;
-}) {
-    const {t} = useTranslation();
-    const isLong = item.comment.length > COMMENT_TRUNCATE_LENGTH;
-    const displayedComment = isLong
-        ? item.comment.slice(0, COMMENT_TRUNCATE_LENGTH).trimEnd() + "…"
-        : item.comment;
-    const buttonLabel = isRemark ? t("coordinationUi.revision.viewFullRemarks") : t("coordinationUi.revision.viewFullComment");
-
-    return (
-        <div
-            className={`flex flex-col gap-2 rounded-[12px] border p-3.5 ${
-                resolved
-                    ? "border-[#e9edf3] bg-[#fafbfc]"
-                    : isRemark ? "border-[#f0dcae] bg-[#fffcf5]" : "border-[#e9edf3] bg-white"
-            }`}
-        >
-            <div className="flex flex-wrap items-center justify-between gap-2">
-                <span className={`text-[12.5px] font-semibold ${resolved ? "text-[#8b97ab]" : "text-[#1c2740]"}`}>
-                    {item.approverName}
-                </span>
-                <span className="text-[11px] font-medium text-[#8b97ab]">{t(item.phase === "primary" ? "coordinationUi.revision.phasePrimary" : item.phase === "repeat" ? "coordinationUi.revision.phaseRepeat" : "coordinationUi.revision.phaseFinalHold")}</span>
-            </div>
-
-            <div className={`whitespace-pre-wrap text-[12.5px] leading-[1.55] ${resolved ? "text-[#8b97ab]" : "text-[#3c424a]"}`}>
-                {displayedComment}
-            </div>
-
-            {item.attachments.length > 0 && (
-                <div className="rounded-[9px] border border-[#eef2f7] bg-white p-2">
-                    <div className="mb-1 text-[10px] font-semibold text-[#8b97ab]">
-                        {t("coordinationUi.revision.attachedFiles")}
-                    </div>
-                    <div className="flex flex-col gap-1">
-                        {item.attachments.map((a) => (
-                            <AttachmentRow key={a.id} fileId={a.fileId} fileName={a.fileName} onView={() => onOpenAttachment(a.fileId, a.fileName)}/>
-                        ))}
-                    </div>
-                </div>
-            )}
-
-            <button
-                type="button"
-                onClick={onOpenFull}
-                className="cursor-pointer flex-none self-start rounded-[7px] border border-[#d7dee8] bg-white px-2.5 py-[6px] text-[11.5px] font-semibold text-[#4e57d6] hover:bg-[#ececfc]"
-            >
-                {buttonLabel}
-            </button>
-        </div>
-    );
-}
-
-/** Кнопка-чекбокс единого стиля с "Требуется согласование" (VndUploadRedactionModal) /
- * "Только связанные со мной" (VndFilters) — квадрат со скруглением и галочкой вместо
- * нативного input[type=checkbox]. */
-function CheckToggleButton({checked, onChange, label, disabled}: {
-    checked: boolean;
-    onChange: () => void;
-    label: string;
-    disabled?: boolean;
-}) {
-    return (
-        <button
-            type="button"
-            disabled={disabled}
-            onClick={onChange}
-            className="inline-flex flex-none items-center gap-2 rounded-[9px] bg-white text-[#3a4560] font-semibold text-[12.5px] cursor-pointer select-none disabled:cursor-not-allowed disabled:opacity-50"
-        >
-            <span
-                className="w-5 h-5 flex-none rounded-md grid place-items-center border-[1.5px]"
-                style={{
-                    borderColor: checked ? "#4e57d6" : "#cbd3df",
-                    background: checked ? "#4e57d6" : "white",
-                }}
-            >
-                <Check
-                    className="w-[13px] h-[13px] text-white"
-                    strokeWidth={3}
-                    style={{opacity: checked ? 1 : 0}}
-                />
-            </span>
-            {label}
-        </button>
-    );
-}
-
-export type DocLang = "ru" | "kg" | "en";
-
-interface DocSlotState {
-    requiresReplace: boolean;
-    file: File | null;
-    remove: boolean;
-}
-
-const EMPTY_DOC_STATE: DocSlotState = {requiresReplace: false, file: null, remove: false};
-
-interface DocSlot {
-    lang: DocLang;
-    label: string;
-    fileId: number | null;
-    exists: boolean;
-    /** RU обязателен - его нельзя удалить, только заменить */
-    deletable: boolean;
-    title: string;
-}
-
-const DOC_ACCEPT = ".doc,.docx,.pdf,.xls,.xlsx,.ppt,.pptx";
-
-// Максимальный размер одного файла (документа редакции или вложения) — совпадает с
-// ограничением в VndUploadRedactionModal, см. formatFileSize для вывода в UI.
-const MAX_FILE_SIZE = 100 * 1024 * 1024; // 100 МБ
-
-/** Строка одного документа редакции: для существующего - "требует замены" (открывает
- * "Заменить") либо удаление (для необязательных KG/EN); для отсутствующего языка -
- * простая загрузка "Добавить документ". */
-function DocReplaceRow({slot, state, onToggleReplace, onToggleRemove, onFileSelected, onClearFile}: {
-    slot: DocSlot;
-    state: DocSlotState;
-    onToggleReplace: () => void;
-    onToggleRemove?: () => void;
-    onFileSelected: (file: File) => void;
-    onClearFile: () => void;
-}) {
-    const {t} = useTranslation();
-    const inputRef = useRef<HTMLInputElement>(null);
-    const isUpdated = state.file !== null;
-    const willBeRemoved = state.remove;
-
-    const handlePick = (e: React.ChangeEvent<HTMLInputElement>) => {
-        const file = e.target.files?.[0];
-        if (file) onFileSelected(file);
-        e.target.value = "";
-    };
-
-    if (!slot.exists) {
-        return (
-            <div className="flex flex-wrap items-center gap-2.5 rounded-[9px] border border-dashed border-[#d5dae3] bg-[#fbfcfe] px-3 py-[10px]">
-                <FileText size={16} className="flex-none text-[#c3c9d4]"/>
-                <span className="flex min-w-0 flex-1 flex-col">
-                    <span className="text-[9.5px] font-bold uppercase tracking-[0.04em] text-[#a3adbd]">
-                        {slot.label}
-                    </span>
-                    <span className="truncate text-[13px] text-[#8b97ab]">
-                        {isUpdated ? state.file!.name : t("coordinationUi.revision.docNotLoaded")}
-                    </span>
-                </span>
-
-                {isUpdated && (
-                    <span className="flex-none inline-flex items-center gap-1 text-[11px] font-semibold text-[#1e8e3e]">
-                        <CheckCircle2 size={12} className="flex-none"/>
-                        {t("coordinationUi.revision.added")}
-                    </span>
-                )}
-
-                {isUpdated && (
-                    <button
-                        type="button"
-                        onClick={onClearFile}
-                        className="cursor-pointer flex-none text-[#8b97ab] hover:text-[#c0392b]"
-                        title={t("coordinationUi.revision.removeSelectedFile")}
-                    >
-                        <Trash2 size={14}/>
-                    </button>
-                )}
-
-                <button
-                    type="button"
-                    onClick={() => inputRef.current?.click()}
-                    className="flex-none cursor-pointer inline-flex items-center gap-1.5 rounded-[7px] border border-[#d7dee8] bg-white px-2.5 py-[6px] text-[11.5px] font-semibold text-[#4e57d6] hover:bg-[#ececfc]"
-                >
-                    <Paperclip size={13}/>
-                    {isUpdated ? t("coordinationUi.revision.replace") : t("coordinationUi.revision.addDocument")}
-                </button>
-                <input ref={inputRef} type="file" accept={DOC_ACCEPT} className="hidden" onChange={handlePick}/>
-            </div>
-        );
-    }
-
-    return (
-        <div
-            className={`flex flex-wrap items-center gap-2.5 rounded-[9px] border px-3 py-[10px] ${
-                willBeRemoved ? "border-[#f0c4c4] bg-[#fdf5f5]" : "border-[#e5e9f0] bg-white"
-            }`}
-        >
-            <FileText size={16} className="flex-none text-[#4e57d6]"/>
-
-            <span className="flex min-w-0 flex-1 flex-col">
-                <span className="text-[9.5px] font-bold uppercase tracking-[0.04em] text-[#a3adbd]">
-                    {slot.label}
-                </span>
-                <span
-                    className={`truncate text-[13px] ${
-                        willBeRemoved ? "text-[#c0392b] line-through" : "text-[#26324a]"
-                    }`}
-                >
-                    {isUpdated ? state.file!.name : slot.title}
-                </span>
-            </span>
-
-            <span
-                className={`flex-none inline-flex items-center gap-1 text-[11px] font-semibold ${
-                    willBeRemoved ? "text-[#c0392b]" : isUpdated ? "text-[#1e8e3e]" : "text-[#8b97ab]"
-                }`}
-            >
-                {!willBeRemoved && isUpdated && <CheckCircle2 size={12} className="flex-none"/>}
-                {willBeRemoved ? t("coordinationUi.revision.willBeRemoved") : isUpdated ? t("coordinationUi.revision.updated") : t("coordinationUi.revision.notUpdated")}
-            </span>
-
-            {isUpdated && !willBeRemoved && (
-                <button
-                    type="button"
-                    onClick={onClearFile}
-                    className="cursor-pointer flex-none text-[#8b97ab] hover:text-[#c0392b]"
-                    title={t("coordinationUi.revision.removeSelectedFile")}
-                >
-                    <Trash2 size={14}/>
-                </button>
-            )}
-
-            <CheckToggleButton
-                checked={state.requiresReplace}
-                onChange={onToggleReplace}
-                label={t("coordinationUi.revision.requiresReplace")}
-                disabled={willBeRemoved}
-            />
-
-            <button
-                type="button"
-                disabled={!state.requiresReplace || willBeRemoved}
-                onClick={() => inputRef.current?.click()}
-                className={`flex-none inline-flex items-center gap-1.5 rounded-[7px] border px-2.5 py-[6px] text-[11.5px] font-semibold transition-colors ${
-                    state.requiresReplace && !willBeRemoved
-                        ? "cursor-pointer border-[#d7dee8] bg-white text-[#4e57d6] hover:bg-[#ececfc]"
-                        : "cursor-not-allowed border-[#e5e9f0] bg-[#f3f4f7] text-[#b7bdc9]"
-                }`}
-            >
-                <RefreshCcw size={13}/>
-                {t("coordinationUi.revision.replace")}
-            </button>
-            <input ref={inputRef} type="file" accept={DOC_ACCEPT} className="hidden" onChange={handlePick}/>
-
-            {slot.deletable && onToggleRemove && (
-                <button
-                    type="button"
-                    onClick={onToggleRemove}
-                    className={`flex-none cursor-pointer inline-flex items-center gap-1.5 rounded-[7px] border px-2.5 py-[6px] text-[11.5px] font-semibold transition-colors ${
-                        willBeRemoved
-                            ? "border-[#e0473e] bg-[#fdecec] text-[#c0392b]"
-                            : "border-[#e5e9f0] bg-white text-[#8b97ab] hover:border-[#e0473e]/50 hover:text-[#c0392b]"
-                    }`}
-                >
-                    <Trash2 size={13}/>
-                    {willBeRemoved ? t("coordinationUi.revision.cancelRemoval") : t("coordinationUi.revision.delete")}
-                </button>
-            )}
-        </div>
-    );
 }
 
 export function VndRevisionNeededPanel({
@@ -610,7 +150,11 @@ export function VndRevisionNeededPanel({
 
     const hasAnyDocChange = Object.values(docState).some((s) => s.file !== null || s.remove);
 
-    const existingAttachmentIds = (redaction?.attachmentFileIds ?? []).filter((id) => !removedAttachmentIds.has(id));
+    // attachments, а не устаревший attachmentFileIds: бэкенд заполняет оба поля из одного и того же
+    // списка вложений редакции (VndService, маппинг VndRedactionResponse), так что набор id тот же.
+    const existingAttachmentIds = (redaction?.attachments ?? [])
+        .map((a) => a.fileId)
+        .filter((id) => !removedAttachmentIds.has(id));
     const totalAttachmentCount = existingAttachmentIds.length + newAttachments.length;
     const attachmentSlotsLeft = VND_REDACTION_MAX_ATTACHMENTS - totalAttachmentCount;
     const attachmentLimitReached = attachmentSlotsLeft <= 0;
@@ -619,17 +163,6 @@ export function VndRevisionNeededPanel({
     const tidMissing = requiresTid && !tid;
 
     // Причина, по которой отправка сейчас заблокирована - показываем тултипом на кнопке
-    //
-    // ВАЖНО: требование "измените хотя бы один документ" раньше применялось и к PartiallyAgree
-    // ("Частично согласен"), из-за чего кнопка "Отправить на финальную выдержку" оставалась
-    // неактивной, даже если инициатор полностью заполнил матрицу разногласий - единственным
-    // выходом было отозвать согласование целиком и запускать процесс заново (см. описание бага).
-    // На бэке (VndApprovalService.ResubmitAfterRevisionAsync) замена файлов документа
-    // НЕОБЯЗАТЕЛЬНА ни при каком RemarksAgreement - требуется только матрица разногласий
-    // (DisagreementMatrix) при PartiallyAgree/FullyDisagree и ТИД, если он обязателен. Для
-    // FullyAgree требование "что-то поменяли в документе" оставляем - иначе бессмысленно
-    // отправлять на повторное согласование "исправленную" редакцию, в которой по факту ничего
-    // не изменилось.
     let disabledReason: string | null = null;
     if (remarksAgreement === null) {
         disabledReason = t("coordinationUi.revision.reasonAnswerFirst");
@@ -811,78 +344,13 @@ export function VndRevisionNeededPanel({
 
     return (
         <div className="mt-6 space-y-5">
-            {/* Замечания при согласовании - карточки в духе StageCardView, с количеством красным */}
-            <div className="overflow-hidden rounded-[14px] border border-[#e9edf3] bg-white">
-                <div className="flex items-center gap-1.5 border-b border-[#eef2f7] px-5 py-[13px]">
-                    <AlertCircle className="h-3.5 w-3.5 shrink-0 text-[#d62815]"/>
-                    <span className="text-[13.5px] font-bold text-[#d62815]">
-                        {remarks.length === 0
-                            ? t("coordinationUi.revision.noRemarks")
-                            : t("coordinationUi.revision.mustFix", {count: remarks.length, noun: t("coordinationUi.revision.remarksCount", {count: remarks.length})})}
-                    </span>
-                </div>
-                {remarks.length > 0 && (
-                    <div className="flex flex-col gap-3 p-4">
-                        {remarks.map((r, i) => (
-                            <RemarkCard
-                                key={i}
-                                item={r}
-                                isRemark
-                                onOpenFull={() => setOpenRemark({item: r, isRemark: true})}
-                                onOpenAttachment={(fileId, fileName) => setPreviewAttachment({fileId, fileName})}
-                            />
-                        ))}
-                    </div>
-                )}
-            </div>
-
-            {/* Замечания более раннего круга доработки - уже устранены (иначе согласование не
-                дошло бы до следующего этапа и не вернулось сюда заново) - показываем для
-                контекста отдельным серым блоком, не смешивая с тем, что нужно исправить сейчас. */}
-            {resolvedRemarks.length > 0 && (
-                <div className="overflow-hidden rounded-[14px] border border-[#e9edf3] bg-[#fbfcfe]">
-                    <div className="flex items-center gap-1.5 border-b border-[#eef2f7] px-5 py-[13px]">
-                        <CheckCircle2 className="h-3.5 w-3.5 shrink-0 text-[#a3adbd]"/>
-                        <span className="text-[13.5px] font-bold text-[#8b97ab]">
-                            {t("coordinationUi.revision.resolvedTitle")}
-                        </span>
-                    </div>
-                    <div className="flex flex-col gap-3 p-4">
-                        {resolvedRemarks.map((r, i) => (
-                            <RemarkCard
-                                key={i}
-                                item={r}
-                                isRemark
-                                resolved
-                                onOpenFull={() => setOpenRemark({item: r, isRemark: true})}
-                                onOpenAttachment={(fileId, fileName) => setPreviewAttachment({fileId, fileName})}
-                            />
-                        ))}
-                    </div>
-                </div>
-            )}
-
-            {approvalComments.length > 0 && (
-                <div className="overflow-hidden rounded-[14px] border border-[#e9edf3] bg-white">
-                    <div className="flex items-center gap-1.5 border-b border-[#eef2f7] px-5 py-[13px]">
-                        <MessageSquareText className="h-3.5 w-3.5 shrink-0 text-[#4e57d6]"/>
-                        <span className="text-[13.5px] font-bold text-[#1c2740]">
-                            {t("coordinationUi.revision.alsoComments")}
-                        </span>
-                    </div>
-                    <div className="flex flex-col gap-3 p-4">
-                        {approvalComments.map((c, i) => (
-                            <RemarkCard
-                                key={i}
-                                item={c}
-                                isRemark={false}
-                                onOpenFull={() => setOpenRemark({item: c, isRemark: false})}
-                                onOpenAttachment={(fileId, fileName) => setPreviewAttachment({fileId, fileName})}
-                            />
-                        ))}
-                    </div>
-                </div>
-            )}
+            <RevisionRemarksGroups
+                remarks={remarks}
+                resolvedRemarks={resolvedRemarks}
+                approvalComments={approvalComments}
+                onOpenRemark={setOpenRemark}
+                onOpenAttachment={setPreviewAttachment}
+            />
 
             {openRemark && (
                 <CommentViewModal
@@ -915,34 +383,10 @@ export function VndRevisionNeededPanel({
                     {t("coordinationUi.revision.agreeQuestion")}
                 </div>
                 <div className="px-5 py-4">
-                    <div role="radiogroup" className="flex flex-wrap gap-3">
-                        {([
-                            {label: t("coordinationUi.revision.agreeYes"), value: RemarksAgreement.FullyAgree},
-                            {label: t("coordinationUi.revision.agreePartial"), value: RemarksAgreement.PartiallyAgree},
-                            {label: t("coordinationUi.revision.agreeNo"), value: RemarksAgreement.FullyDisagree},
-                        ] as const).map(({label, value}) => {
-                            const isSelected = remarksAgreement === value;
-                            return (
-                                <button
-                                    key={label}
-                                    type="button"
-                                    role="radio"
-                                    aria-checked={isSelected}
-                                    onClick={() => setRemarksAgreement(value)}
-                                    className={`bg-white text-[#3a4560] font-medium hover:bg-[#f6f8fb] inline-flex items-center gap-2 h-9 px-4 rounded-[9px] text-[13px] cursor-pointer transition-colors`}
-                                >
-                                    <span
-                                        className={`grid h-[16px] w-[16px] flex-none place-items-center rounded-full border-2 ${
-                                            isSelected ? "border-[#4e57d6]" : "border-[#c3c9d4]"
-                                        }`}
-                                    >
-                                        {isSelected && <span className="h-[8px] w-[8px] rounded-full bg-[#4e57d6]"/>}
-                                    </span>
-                                    {label}
-                                </button>
-                            );
-                        })}
-                    </div>
+                    <RevisionAgreementChoice
+                        remarksAgreement={remarksAgreement}
+                        onChange={setRemarksAgreement}
+                    />
                 </div>
 
                 {/* Раньше это была отдельная карточка ниже - визуально "отваливалась" от блока
@@ -983,232 +427,29 @@ export function VndRevisionNeededPanel({
                         ))}
 
                         {/* Вложения редакции - существующие (с возможностью удалить) + новые */}
-                        <div className="mt-3">
-                            <div className="mb-[6px] flex items-center justify-between gap-2">
-                                <span className="text-[12.5px] font-semibold text-[#26324a]">
-                                    {t("coordinationUi.revision.attachmentsTitle")} <span className="text-[#8b97ab] font-normal">{t("coordinationUi.revision.optional")}</span>
-                                </span>
-                                <span className="flex items-center gap-0.5 text-[11.5px] text-[#8b97ab]">
-                                    {t("coordinationUi.revision.attachmentsCount", {count: totalAttachmentCount, max: VND_REDACTION_MAX_ATTACHMENTS})}
-                                    <HelpTooltip
-                                        content={t("coordinationUi.revision.attachmentsLimitTip", {max: VND_REDACTION_MAX_ATTACHMENTS})}
-                                        side="top"
-                                        className="h-5 w-5"
-                                    />
-                                </span>
-                            </div>
-
-                            {(redaction?.attachments.length ?? 0) > 0 && (
-                                <div className="flex flex-col gap-[6px]">
-                                    {(redaction?.attachments ?? []).map((attachment) => {
-                                        const willBeRemoved = removedAttachmentIds.has(attachment.fileId);
-                                        return (
-                                            <div
-                                                key={attachment.fileId}
-                                                className={`flex items-center gap-2 rounded-[9px] border px-3 py-[8px] ${
-                                                    willBeRemoved ? "border-[#f0c4c4] bg-[#fdf5f5]" : "border-[#e5e9f0] bg-white"
-                                                }`}
-                                            >
-                                                <Paperclip size={14} className="flex-none text-[#8b97ab]"/>
-                                                <button
-                                                    type="button"
-                                                    onClick={() => downloadWithToast(attachment.fileId, attachment.fileName)}
-                                                    className={`flex-1 truncate text-left text-[12.5px] cursor-pointer hover:underline ${
-                                                        willBeRemoved ? "text-[#c0392b] line-through" : "text-[#26324a]"
-                                                    }`}
-                                                >
-                                                    {attachment.fileName}
-                                                </button>
-                                                <button
-                                                    type="button"
-                                                    onClick={() => {
-                                                        if (willBeRemoved) toggleRemoveExistingAttachment(attachment.fileId);
-                                                        else setPendingRemoval({
-                                                            kind: "attachment",
-                                                            fileId: attachment.fileId,
-                                                            label: attachment.fileName,
-                                                        });
-                                                    }}
-                                                    className={`cursor-pointer flex-none rounded-[7px] border px-2.5 py-[5px] text-[11px] font-semibold transition-colors ${
-                                                        willBeRemoved
-                                                            ? "border-[#e0473e] bg-[#fdecec] text-[#c0392b]"
-                                                            : "border-[#e5e9f0] bg-white text-[#8b97ab] hover:border-[#e0473e]/50 hover:text-[#c0392b]"
-                                                    }`}
-                                                >
-                                                    {willBeRemoved ? t("coordinationUi.revision.cancelRemoval") : t("coordinationUi.revision.delete")}
-                                                </button>
-                                            </div>
-                                        );
-                                    })}
-                                </div>
-                            )}
-
-                            {newAttachments.length > 0 && (
-                                <div className="mt-[6px] flex flex-col gap-[6px]">
-                                    {newAttachments.map((file, index) => (
-                                        <div
-                                            key={`${file.name}-${index}`}
-                                            className="flex items-center gap-2 rounded-[9px] border border-[#e5e9f0] bg-[#fbfcfe] px-3 py-[8px]"
-                                        >
-                                            <Paperclip size={14} className="flex-none text-[#8b97ab]"/>
-                                            <span className="flex-1 truncate text-[12.5px] text-[#26324a]">{file.name}</span>
-                                            <span className="flex-none text-[11px] text-[#a3adbd]">
-                                                {formatFileSize(file.size)}
-                                            </span>
-                                            <span className="flex-none inline-flex items-center gap-1 text-[11px] font-semibold text-[#1e8e3e]">
-                                                <CheckCircle2 size={12} className="flex-none"/>
-                                                {t("coordinationUi.revision.added")}
-                                            </span>
-                                            <button
-                                                type="button"
-                                                onClick={() => removeNewAttachment(index)}
-                                                className="cursor-pointer flex-none text-[#8b97ab] hover:text-[#c0392b]"
-                                            >
-                                                <Trash2 size={14}/>
-                                            </button>
-                                        </div>
-                                    ))}
-                                </div>
-                            )}
-
-                            {attachmentLimitReached ? (
-                                <Tooltip
-                                    content={t("coordinationUi.revision.attachmentsMaxTip", {max: VND_REDACTION_MAX_ATTACHMENTS})}
-                                    side="top"
-                                    className="mt-[6px] w-full"
-                                >
-                                    <span
-                                        className="flex h-[42px] w-full cursor-not-allowed items-center justify-center gap-1.5 rounded-[9px] border border-dashed border-[#e5e9f0] bg-[#f6f8fb] text-[11.5px] text-[#b7bfcc]"
-                                    >
-                                        <Paperclip size={14}/>
-                                        {t("coordinationUi.revision.addFiles")}
-                                    </span>
-                                </Tooltip>
-                            ) : (
-                                <label
-                                    className="mt-[6px] flex h-[42px] w-full cursor-pointer items-center justify-center gap-1.5 rounded-[9px] border border-dashed border-[#d5dae3] bg-[#fbfcfe] text-[11.5px] text-[#8b97ab] transition-colors hover:border-[#4e57d6]/50 hover:bg-[#f6f8fb]"
-                                >
-                                    <Paperclip size={14}/>
-                                    {t("coordinationUi.revision.addFiles")}
-                                    <input
-                                        type="file"
-                                        multiple
-                                        accept={DOC_ACCEPT}
-                                        className="hidden"
-                                        onChange={(e) => {
-                                            handleAddNewAttachments(e.target.files);
-                                            e.target.value = "";
-                                        }}
-                                    />
-                                </label>
-                            )}
-
-                            {attachmentCountLimitHit && (
-                                <div className="mt-2 flex items-start gap-1.5 text-[11.5px] text-[#d62815]">
-                                    <AlertCircle className="mt-[1px] h-3.5 w-3.5 shrink-0"/>
-                                    <span>
-                                        {t("coordinationUi.revision.attachmentsPartial", {max: VND_REDACTION_MAX_ATTACHMENTS})}
-                                    </span>
-                                </div>
-                            )}
-                        </div>
-
-                        <div className="mt-3 mb-[6px] flex items-center justify-between">
-                            <span className="text-[12.5px] font-semibold text-[#26324a]">
-                                {t("coordinationUi.revision.commentTitle")}
-                            </span>
-                            <CharCounter length={comment.length} max={MAX_RESOLUTION_COMMENT_LENGTH}/>
-                        </div>
-                        <textarea
-                            value={comment}
-                            onChange={(e) => setComment(e.target.value.slice(0, MAX_RESOLUTION_COMMENT_LENGTH))}
-                            maxLength={MAX_RESOLUTION_COMMENT_LENGTH}
-                            rows={3}
-                            className="w-full resize-none rounded-[10px] border border-[#e5e9f0] bg-[#f9fafc] p-3 text-[13px] font-normal text-[#26324a] outline-none focus:border-[#4e57d6] focus:bg-white"
+                        <RevisionRedactionAttachments
+                            redaction={redaction}
+                            totalAttachmentCount={totalAttachmentCount}
+                            removedAttachmentIds={removedAttachmentIds}
+                            newAttachments={newAttachments}
+                            attachmentLimitReached={attachmentLimitReached}
+                            attachmentCountLimitHit={attachmentCountLimitHit}
+                            onToggleRemoveExisting={toggleRemoveExistingAttachment}
+                            onRequestRemoval={setPendingRemoval}
+                            onAddFiles={handleAddNewAttachments}
+                            onRemoveNew={removeNewAttachment}
                         />
 
-                        <div className="mt-2 flex items-center justify-between gap-3">
-                            <span className="flex items-center gap-0.5 text-[11px] text-[#8b97ab]">
-                                {t("coordinationUi.revision.attachmentsCount", {count: commentAttachments.length, max: MAX_RESOLUTION_ATTACHMENTS})}
-                                <HelpTooltip
-                                    content={t("coordinationUi.revision.commentFilesTip", {max: MAX_RESOLUTION_ATTACHMENTS, size: formatFileSize(MAX_RESOLUTION_ATTACHMENT_SIZE_BYTES)})}
-                                    side="top"
-                                    className="h-5 w-5"
-                                />
-                            </span>
-
-                            {commentAttachmentLimitReached ? (
-                                <Tooltip
-                                    content={t("coordinationUi.revision.commentFilesMaxTip", {max: MAX_RESOLUTION_ATTACHMENTS})}
-                                    side="top"
-                                >
-                                    <span className="cursor-not-allowed inline-flex items-center gap-1.5 rounded-[8px] border border-[#e5e9f0] bg-[#f6f8fb] px-3 py-[6px] text-[11.5px] font-semibold text-[#b7bfcc]">
-                                        <Paperclip size={13}/>
-                                        {t("coordinationUi.revision.attachFile")}
-                                    </span>
-                                </Tooltip>
-                            ) : (
-                                <label className="cursor-pointer inline-flex items-center gap-1.5 rounded-[8px] border border-[#d7dee8] bg-white px-3 py-[6px] text-[11.5px] font-semibold text-[#4e57d6] hover:bg-[#ececfc]">
-                                    <input
-                                        type="file"
-                                        multiple
-                                        className="hidden"
-                                        onChange={(e) => {
-                                            handleAddCommentAttachments(e.target.files);
-                                            e.target.value = "";
-                                        }}
-                                    />
-                                    <Paperclip size={13}/>
-                                    {t("coordinationUi.revision.attachFile")}
-                                </label>
-                            )}
-                        </div>
-
-                        {commentAttachmentCountLimitHit && (
-                            <div className="mt-2 flex items-start gap-1.5 text-[11.5px] text-[#d62815]">
-                                <AlertCircle className="mt-[1px] h-3.5 w-3.5 shrink-0"/>
-                                <span>
-                                    {t("coordinationUi.revision.commentFilesPartial", {max: MAX_RESOLUTION_ATTACHMENTS})}
-                                </span>
-                            </div>
-                        )}
-
-                        {oversizedCommentFileNames.length > 0 && (
-                            <div className="mt-2 flex items-start gap-1.5 text-[11.5px] text-[#d62815]">
-                                <AlertCircle className="mt-[1px] h-3.5 w-3.5 shrink-0"/>
-                                <span>
-                                    {t("coordinationUi.revision.oversizedFiles", {
-                                        count: oversizedCommentFileNames.length,
-                                        names: oversizedCommentFileNames.join("», «"),
-                                        size: formatFileSize(MAX_RESOLUTION_ATTACHMENT_SIZE_BYTES),
-                                    })}
-                                </span>
-                            </div>
-                        )}
-
-                        {commentAttachments.length > 0 && (
-                            <div className="mt-2 flex flex-col gap-[6px]">
-                                {commentAttachments.map((file, index) => (
-                                    <div
-                                        key={`${file.name}-${index}`}
-                                        className="flex items-center gap-2 rounded-[9px] border border-[#e5e9f0] bg-[#fbfcfe] px-3 py-[7px] text-[12px] text-[#3a4560]"
-                                    >
-                                        <Paperclip size={13} className="flex-none text-[#8b97ab]"/>
-                                        <Tooltip content={file.name} side="top" className="min-w-0 flex-1">
-                                            <span className="block truncate">{file.name}</span>
-                                        </Tooltip>
-                                        <span className="flex-none text-[11px] text-[#a3adbd]">{formatFileSize(file.size)}</span>
-                                        <button
-                                            type="button"
-                                            onClick={() => removeCommentAttachment(index)}
-                                            className="cursor-pointer flex-none text-[#8b97ab] hover:text-[#c0392b]"
-                                        >
-                                            <Trash2 size={13}/>
-                                        </button>
-                                    </div>
-                                ))}
-                            </div>
-                        )}
+                        <RevisionComment
+                            comment={comment}
+                            onCommentChange={setComment}
+                            commentAttachments={commentAttachments}
+                            commentAttachmentLimitReached={commentAttachmentLimitReached}
+                            commentAttachmentCountLimitHit={commentAttachmentCountLimitHit}
+                            oversizedCommentFileNames={oversizedCommentFileNames}
+                            onAddFiles={handleAddCommentAttachments}
+                            onRemoveFile={removeCommentAttachment}
+                        />
                     </div>
                     </>
                 )}
@@ -1232,57 +473,12 @@ export function VndRevisionNeededPanel({
             </div>
 
             {requiresTid && (
-                <div className="overflow-hidden rounded-[14px] border border-[#e9edf3] bg-white">
-                    <div className="border-b border-[#eef2f7] px-5 py-[13px] text-[13.5px] font-bold text-[#1c2740]">
-                        {t("coordinationUi.revision.tidTitle")}
-                    </div>
-                    <div className="px-5 py-4">
-                        <p className="mb-3 text-[12.5px] leading-[1.5] text-[#8b97ab]">
-                            {t("coordinationUi.revision.tidNote")}
-                        </p>
-
-                        {!tid ? (
-                            <button
-                                type="button"
-                                onClick={() => setTidModalOpen(true)}
-                                className={`flex h-10 w-fit cursor-pointer items-center gap-2 rounded-[10px] border px-[15px] text-[13px] font-semibold transition-colors ${
-                                    tidMissing
-                                        ? "border-[#e8b4b4] bg-[#fdf1f1] text-[#c0392b] hover:bg-[#fbe4e4]"
-                                        : "border-[#e5e9f0] bg-white text-[#3a4560] hover:bg-[#f6f8fb]"
-                                }`}
-                            >
-                                <FileSpreadsheet size={14}/>
-                                {t("coordinationUi.revision.tidCreate")}
-                            </button>
-                        ) : (
-                            <div className="flex items-center gap-2 rounded-[9px] border border-[#e5e9f0] bg-[#fbfcfe] px-3 py-[8px]">
-                                <FileCheck2 size={14} className="flex-none text-[#2f9e5c]"/>
-                                <span className="flex-1 truncate text-[12.5px] text-[#26324a]">{tid.name}</span>
-                                <button
-                                    type="button"
-                                    onClick={() => setTidModalOpen(true)}
-                                    className="cursor-pointer flex-none text-[11.5px] font-semibold text-[#4e57d6] hover:underline"
-                                >
-                                    {t("coordinationUi.revision.tidChange")}
-                                </button>
-                                <button
-                                    type="button"
-                                    onClick={() => setTid(null)}
-                                    className="cursor-pointer flex-none text-[#8b97ab] hover:text-[#c0392b]"
-                                >
-                                    <Trash2 size={14}/>
-                                </button>
-                            </div>
-                        )}
-
-                        {tidMissing && (
-                            <div className="mt-2 flex items-start gap-1.5 text-[11.5px] text-[#d62815]">
-                                <AlertCircle className="mt-[1px] h-3.5 w-3.5 shrink-0"/>
-                                <span>{t("coordinationUi.revision.tidRequired")}</span>
-                            </div>
-                        )}
-                    </div>
-                </div>
+                <RevisionTidSection
+                    tid={tid}
+                    tidMissing={tidMissing}
+                    onTidChange={setTid}
+                    onOpenTidModal={setTidModalOpen}
+                />
             )}
 
             {error && (
@@ -1292,7 +488,6 @@ export function VndRevisionNeededPanel({
                 </div>
             )}
 
-            {/* Обернули кнопку и связанное с ней сообщение в flex flex-col items-center */}
             <div className="flex flex-col items-center gap-2">
                 <Tooltip
                     content={disabledReason ?? ""}
@@ -1336,11 +531,7 @@ export function VndRevisionNeededPanel({
                 confirmLabel={t("coordinationUi.revision.delete")}
             />
 
-            {/* Сформировать или загрузить ТИД - то же окно, что и при загрузке новой редакции на
-                вкладке "Редакции", с автосравнением с действующей редакцией. Исправленная сторона -
-                выбранный на замену RU-файл (если он уже выбран), иначе текущий RU-файл редакции.
-                Файл ТИД здесь на сервер не грузится - он уходит вместе с исправленной редакцией
-                при отправке (coordinationService.resubmit). */}
+            {/* Сформировать или загрузить ТИД */}
             {tidModalOpen && (
                 <VndUploadTidModal
                     vndId={vndId}
@@ -1374,3 +565,4 @@ export function VndRevisionNeededPanel({
         </div>
     );
 }
+

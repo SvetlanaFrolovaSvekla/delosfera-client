@@ -29,6 +29,9 @@ export const navGroups: NavGroup[] = [
             // записок лежали каждая в своём разделе, и человек, которому нужны обе,
             // ходил за ними в разные концы меню.
             { id: "analytics", icon: "rpt", labelKey: "sidebar.items.analytics", path: "/analytics", permission: PermissionCode.ViewFullStatistics },
+            // Лента событий по всем контурам с поиском и фильтрами (раньше открывалась только
+            // кнопкой "Смотреть всю активность" из виджета на рабочем столе)
+            { id: "activity", icon: "activity", labelKey: "sidebar.items.activity", path: "/activity" },
             // Раньше жила внутри "Нормотворчество" под именем "vnd-rubric" и открывала
             // только Рубрикатор ВНД. Теперь общая для всех контуров: сама модалка даёт
             // выбор "Рубрикатор ВНД" / "Рубрикатор СЗ" — см. Sidebar.tsx.
@@ -73,7 +76,7 @@ export const navGroups: NavGroup[] = [
             { id: "obligations", icon: "clock", labelKey: "sidebar.items.obligations", path: "/obligations" },
             // Доска обязательств по стадиям (ПР-1)
             { id: "obligations-board", icon: "clock", labelKey: "sidebar.items.obligationsBoard", path: "/obligations/board" },
-            // События операционного риска из workflow (RISK-1, 716-П / НБКР)
+            // События операционного риска из componentsWorkflow (RISK-1, 716-П / НБКР)
             { id: "risk-events", icon: "shield", labelKey: "События оп-риска", path: "/risk-events", permission: PermissionCode.ViewRiskEvents },
         ],
     },

@@ -16,6 +16,7 @@ import {auditLogService, type AuditFilter, type AuditPage} from "@/service/activ
 import {userService, type UserLookupItem} from "@/service/userService/userService.ts";
 import {formatDateTime} from "@/utils/dateUtils.ts";
 import {PageHeader} from "@/components/componentsGeneral/PageHeader.tsx";
+import {ActivityVsAuditNote} from "@/components/componentsGeneral/ActivityVsAuditNote.tsx";
 import {DatePickerInput} from "@/components/componentsGeneral/datePickers/DatePickerInput.tsx";
 import {SelectDropdown} from "@/components/componentsGeneral/selects/SingleSelects/SelectDropdown.tsx";
 import {UserPickerField} from "@/components/componentsGeneral/userPicker/UserPickerField.tsx";
@@ -162,6 +163,9 @@ export function AuditLogPage() {
                 title={t("auditLog.title") /* Журнал действий */}
                 description= {t("auditLog.description") /* Все действия в системе: кто, что и когда сделал. Записи не изменяются и не удаляются — журнал существует, чтобы на него можно было сослаться. */}
             />
+
+            {/* Чем отличается от "Активности на портале" - свёрнуто по умолчанию */}
+            <ActivityVsAuditNote current="audit" className="mb-4"/>
 
             {error && (
                 <div

@@ -1,11 +1,17 @@
+/* Таблица с данными об актуализации */
 import {useTranslation} from "react-i18next";
 import {Link} from "react-router-dom";
-import {useActualizationBucketMeta, useActualizationBucketThresholdText} from "@/hooks/actualizationHooks/useActualizationBucketMeta.ts";
-import {daysUntil} from "@/utils/dateUtils.ts";
 import type {VndResponse} from "@/service/vndService/vndServiceType.ts";
+import type {
+    ActualizationBucketSettings
+} from "@/service/actualizationBucketSettingsService/actualizationBucketSettingsService.ts";
 import type {ColDef} from "@/constants/columnsFilters/vndColumns.ts";
-import type {ActualizationBucketSettings} from "@/service/actualizationBucketSettingsService/actualizationBucketSettingsService.ts";
 import {STATUS_META} from "@/constants/vndStatus.ts";
+import {
+    useActualizationBucketMeta,
+    useActualizationBucketThresholdText
+} from "@/hooks/actualizationHooks/useActualizationBucketMeta.ts";
+import {daysUntil} from "@/utils/dateUtils.ts";
 import {EmptyState} from "@/components/componentsGeneral/EmptyState.tsx";
 import {Tooltip} from "@/components/componentsGeneral/Tooltip.tsx";
 
@@ -24,9 +30,16 @@ interface ActualizationTableProps {
 }
 
 export function ActualizationTable({
-                                       columns, rows, gridTemplate,
-                                       responsibleExecutorNames, keywordNames, secrecyLevelName, userGroupNames, rubricNames,
-                                       onResetFilters, bucketSettings,
+                                       columns,
+                                       rows,
+                                       gridTemplate,
+                                       responsibleExecutorNames,
+                                       keywordNames,
+                                       secrecyLevelName,
+                                       userGroupNames,
+                                       rubricNames,
+                                       onResetFilters,
+                                       bucketSettings,
                                    }: ActualizationTableProps) {
     const {t} = useTranslation();
     const bucketMetaMap = useActualizationBucketMeta();
@@ -109,14 +122,16 @@ export function ActualizationTable({
                                     case "code":
                                         return (
                                             <div key={c.key} className="min-w-0">
-                                                <span className="font-mono text-[12px] font-semibold text-[#4e57d6]">{r.code}</span>
+                                                <span
+                                                    className="font-mono text-[12px] font-semibold text-[#4e57d6]">{r.code}</span>
                                             </div>
                                         );
                                     case "name":
                                         return (
                                             <div key={c.key} className="min-w-0">
                                                 <Tooltip content={r.name} side="top" className="w-full">
-                                                    <span className="text-[13.5px] font-medium text-[#1c2740] whitespace-normal break-words line-clamp-[7] group-hover:underline decoration-1 underline-offset-1">
+                                                    <span
+                                                        className="text-[13.5px] font-medium text-[#1c2740] whitespace-normal break-words line-clamp-[7] group-hover:underline decoration-1 underline-offset-1">
                                                         {r.name}
                                                     </span>
                                                 </Tooltip>
@@ -125,79 +140,92 @@ export function ActualizationTable({
                                     case "type":
                                         return (
                                             <div key={c.key} className="min-w-0">
-                                                <span className="block text-[12.5px] text-[#55617a] whitespace-normal break-words line-clamp-5">{r.typeName || "—"}</span>
+                                                <span
+                                                    className="block text-[12.5px] text-[#55617a] whitespace-normal break-words line-clamp-5">{r.typeName || "—"}</span>
                                             </div>
                                         );
                                     case "developer":
                                         return (
                                             <div key={c.key} className="min-w-0">
-                                                <span className="block text-[12.5px] text-[#55617a] whitespace-normal break-words line-clamp-5">{r.developerName || "—"}</span>
+                                                <span
+                                                    className="block text-[12.5px] text-[#55617a] whitespace-normal break-words line-clamp-5">{r.developerName || "—"}</span>
                                             </div>
                                         );
                                     case "organ":
                                         return (
                                             <div key={c.key} className="min-w-0">
-                                                <span className="block text-[12.5px] text-[#55617a] whitespace-normal break-words line-clamp-5">{r.organName || "—"}</span>
+                                                <span
+                                                    className="block text-[12.5px] text-[#55617a] whitespace-normal break-words line-clamp-5">{r.organName || "—"}</span>
                                             </div>
                                         );
                                     case "rubric":
                                         return (
                                             <div key={c.key} className="min-w-0">
-                                                <span className="block text-[12.5px] text-[#55617a] whitespace-normal break-words line-clamp-5">{rubricNames(r.rubricIds)}</span>
+                                                <span
+                                                    className="block text-[12.5px] text-[#55617a] whitespace-normal break-words line-clamp-5">{rubricNames(r.rubricIds)}</span>
                                             </div>
                                         );
                                     case "responsibleExecutors":
                                         return (
                                             <div key={c.key} className="min-w-0">
-                                                <span className="block text-[12.5px] text-[#55617a] whitespace-normal break-words line-clamp-5">{responsibleExecutorNames(r.responsibleExecutorIds)}</span>
+                                                <span
+                                                    className="block text-[12.5px] text-[#55617a] whitespace-normal break-words line-clamp-5">{responsibleExecutorNames(r.responsibleExecutorIds)}</span>
                                             </div>
                                         );
                                     case "adoptionDate":
                                         return (
                                             <div key={c.key} className="min-w-0">
-                                                <span className="text-[12px] text-[#55617a]">{r.adoptionDate || "—"}</span>
+                                                <span
+                                                    className="text-[12px] text-[#55617a]">{r.adoptionDate || "—"}</span>
                                             </div>
                                         );
                                     case "adoptionCode":
                                         return (
                                             <div key={c.key} className="min-w-0">
-                                                <span className="text-[12px] text-[#55617a]">{r.adoptionCode || "—"}</span>
+                                                <span
+                                                    className="text-[12px] text-[#55617a]">{r.adoptionCode || "—"}</span>
                                             </div>
                                         );
                                     case "effectiveDate":
                                         return (
                                             <div key={c.key} className="min-w-0">
-                                                <span className="text-[12px] text-[#55617a]">{r.effectiveDate || "—"}</span>
+                                                <span
+                                                    className="text-[12px] text-[#55617a]">{r.effectiveDate || "—"}</span>
                                             </div>
                                         );
                                     case "requisitesChangedDate":
                                         return (
                                             <div key={c.key} className="min-w-0">
-                                                <span className="text-[12px] text-[#55617a]">{r.requisitesChangedDate || "—"}</span>
+                                                <span
+                                                    className="text-[12px] text-[#55617a]">{r.requisitesChangedDate || "—"}</span>
                                             </div>
                                         );
                                     case "revisionChangedDate":
                                         return (
                                             <div key={c.key} className="min-w-0">
-                                                <span className="text-[12px] text-[#55617a]">{r.revisionChangedDate || "—"}</span>
+                                                <span
+                                                    className="text-[12px] text-[#55617a]">{r.revisionChangedDate || "—"}</span>
                                             </div>
                                         );
                                     case "keywords":
                                         return (
                                             <div key={c.key} className="min-w-0">
-                                                <span className="block text-[12.5px] text-[#55617a] whitespace-normal break-words line-clamp-5">{keywordNames(r.keywordIds)}</span>
+                                                <span
+                                                    className="block text-[12.5px] text-[#55617a] whitespace-normal break-words line-clamp-5">{keywordNames(r.keywordIds)}</span>
                                             </div>
                                         );
                                     case "secrecyLevel":
                                         return (
                                             <div key={c.key} className="min-w-0">
-                                                <span className="text-[12px] text-[#55617a]">{secrecyLevelName(r.secrecyLevelId)}</span>
+                                                <span
+                                                    className="text-[12px] text-[#55617a]">{secrecyLevelName(r.secrecyLevelId)}</span>
                                             </div>
                                         );
                                     case "userGroups":
                                         return (
                                             <div key={c.key} className="min-w-0">
-                                                <span className="block text-[12.5px] text-[#55617a] whitespace-normal break-words line-clamp-5">{userGroupNames(r.userGroupIds)}</span>
+                                                <span
+                                                    className="block text-[12.5px] text-[#55617a] whitespace-normal break-words line-clamp-5">{userGroupNames(r.userGroupIds)}</span>
                                             </div>
                                         );
                                     case "dueActualizationDate":
@@ -210,7 +238,8 @@ export function ActualizationTable({
                                                                 className="w-[9px] h-[9px] flex-none rounded-full"
                                                                 style={{background: bucketMeta?.color ?? "#a3adbd"}}
                                                             />
-                                                            <span className="text-[12px] text-[#55617a] whitespace-nowrap">{r.dueActualizationDate}</span>
+                                                            <span
+                                                                className="text-[12px] text-[#55617a] whitespace-nowrap">{r.dueActualizationDate}</span>
                                                         </span>
                                                         {days !== null && (
                                                             <span
@@ -231,9 +260,11 @@ export function ActualizationTable({
                                     case "lastActualizationDate":
                                         return (
                                             <div key={c.key} className="min-w-0">
-                                                <span className="text-[12px] text-[#55617a]">{lastActDisplay || "—"}</span>
+                                                <span
+                                                    className="text-[12px] text-[#55617a]">{lastActDisplay || "—"}</span>
                                                 {!r.lastActualizationDate && lastActDisplay && (
-                                                    <span className="block text-[10.5px] text-[#a3adbd] mt-0.5">{t("vnd.createdDateHint")}</span>
+                                                    <span
+                                                        className="block text-[10.5px] text-[#a3adbd] mt-0.5">{t("vnd.createdDateHint")}</span>
                                                 )}
                                             </div>
                                         );

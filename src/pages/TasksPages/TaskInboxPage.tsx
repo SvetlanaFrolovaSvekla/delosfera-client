@@ -7,6 +7,8 @@
 import {useCallback, useEffect, useMemo, useState} from "react";
 import {Link} from "react-router-dom";
 import {useTranslation} from "react-i18next";
+import {useAuth} from "@/context/AuthContext.ts";
+import {notificationsRefreshBus} from "@/service/notificationsRefreshBus.ts";
 import {
     taskInboxService,
     taskKey,
@@ -20,19 +22,22 @@ import {
     INBOX_FILTER_DOCUMENT_TYPE,
     INBOX_FILTER_LABEL_KEYS,
     INBOX_STATS_LINK_ICON,
+    SZ_INBOX_SUB_TAB_IDS,
+    SZ_INBOX_SUB_TAB_LABEL_KEYS,
     type InboxFilterId,
+    type SzInboxSubTab,
 } from "@/constants/taskInboxConst.ts";
+import {PermissionCode} from "@/constants/permissions/permissions.ts";
 
 import {VndTasksPanel} from "@/components/componentsTasks/VndTasksPanel.tsx";
 import {VndTaskCard} from "@/components/componentsTasks/VndTaskCard.tsx";
 import {TaskInboxFilterTabs} from "@/components/componentsTasks/TaskInboxFilterTabs.tsx";
 import {InboxTaskRow} from "@/components/componentsTasks/InboxTaskRow.tsx";
-import {EmptyState} from "@/components/componentsGeneral/EmptyState.tsx";
-import {SearchBar} from "@/components/componentsGeneral/SearchBar.tsx";
 import {DelegateTaskModal} from "@/components/componentsTasks/DelegateTaskModal.tsx";
 import {RaiseRiskEventModal} from "@/components/componentsTasks/RaiseRiskEventModal.tsx";
-import {useAuth} from "@/context/AuthContext.ts";
-import {PermissionCode} from "@/constants/permissions/permissions.ts";
+import {Tabs} from "@/components/componentsGeneral/Tabs.tsx";
+import {EmptyState} from "@/components/componentsGeneral/EmptyState.tsx";
+import {SearchBar} from "@/components/componentsGeneral/SearchBar.tsx";
 
 // Получение текста, иконки при отсутствии задач на соответствующих табах
 function getInboxEmptyMeta(filter: InboxFilterId) {
@@ -47,6 +52,8 @@ export const TaskInboxPage = () => {
     const canRaiseRisk = hasPermission(PermissionCode.ManageRiskEvents);
 
     const [filter, setFilter] = useState<InboxFilterId>("all");
+    // Подвкладка раздела «Служебные записки» — этап записки (регистрация, согласование...).
+    const [szSubTab, setSzSubTab] = useState<SzInboxSubTab>("all");
     const [inbox, setInbox] = useState<TaskInbox | null>(null);
     const [loading, setLoading] = useState(true);
     // Поиск намеренно не сбрасывается при смене вкладки - так же, как на ВНД-вкладке:
@@ -58,13 +65,16 @@ export const TaskInboxPage = () => {
 
     const isVndTab = filter === "vnd";
     const isAllTab = filter === "all";
+    const isSzTab = filter === "sz";
 
     const load = useCallback(async () => {
         if (filter === "vnd") return;
 
         setLoading(true);
         try {
-            setInbox(await taskInboxService.get(INBOX_FILTER_DOCUMENT_TYPE[filter]));
+            // includeOwn — инициатор видит и свои записки, которые ждут других
+            // (регистрации, согласования, подписи...), а не только задачи на себе.
+            setInbox(await taskInboxService.get(INBOX_FILTER_DOCUMENT_TYPE[filter], {includeOwn: true}));
         } finally {
             setLoading(false);
         }
@@ -75,13 +85,37 @@ export const TaskInboxPage = () => {
         void load();
     }, [load]);
 
+    // Пришло уведомление (записку зарегистрировали, согласовали, вернули...) — обновляем
+    // список, как это делает виджет на главной (useTaskInbox): иначе страница показывала
+    // задачу, которой уже нет, до ручной перезагрузки.
+    useEffect(() => notificationsRefreshBus.subscribe(() => void load()), [load]);
+
     const {tasks: vndAllTasks, isLoading: vndAllLoading} = useVndTasks("all", isAllTab);
 
-    const filteredTasks = useMemo(() => {
+    // Задачи текущей подвкладки СЗ — до поиска: по ним же считаются счётчики вкладок.
+    const stageTasks = useMemo(() => {
         const tasks = inbox?.tasks ?? [];
-        if (!searchQuery.trim()) return tasks;
-        return tasks.filter((task) => matchesInboxTaskSearch(task, searchQuery));
-    }, [inbox, searchQuery]);
+        if (!isSzTab || szSubTab === "all") return tasks;
+        return tasks.filter((task) => task.stage === szSubTab);
+    }, [inbox, isSzTab, szSubTab]);
+
+    const filteredTasks = useMemo(() => {
+        if (!searchQuery.trim()) return stageTasks;
+        return stageTasks.filter((task) => matchesInboxTaskSearch(task, searchQuery));
+    }, [stageTasks, searchQuery]);
+
+    // Подвкладки СЗ со счётчиками. Пустые этапы скрываем, чтобы ряд не разрастался
+    // до восьми вкладок с нулями, — кроме «Все» и выбранной сейчас.
+    const szSubTabs = useMemo(() => {
+        const tasks = isSzTab ? inbox?.tasks ?? [] : [];
+        return SZ_INBOX_SUB_TAB_IDS
+            .map((id) => ({
+                id,
+                label: t(SZ_INBOX_SUB_TAB_LABEL_KEYS[id]),
+                n: id === "all" ? tasks.length : tasks.filter((task) => task.stage === id).length,
+            }))
+            .filter((tab) => tab.id === "all" || tab.id === szSubTab || tab.n > 0);
+    }, [inbox, isSzTab, szSubTab, t]);
 
     const filteredVndTasks = useMemo(() => {
         if (!isAllTab) return [];
@@ -89,7 +123,7 @@ export const TaskInboxPage = () => {
         return vndAllTasks.filter((task) => matchesTaskSearch(task, searchQuery));
     }, [isAllTab, vndAllTasks, searchQuery]);
 
-    const rawTotalCount = (inbox?.tasks.length ?? 0) + (isAllTab ? vndAllTasks.length : 0);
+    const rawTotalCount = stageTasks.length + (isAllTab ? vndAllTasks.length : 0);
     const isSearchEmpty = searchQuery.trim().length > 0 && rawTotalCount > 0
         && filteredTasks.length === 0 && filteredVndTasks.length === 0;
 
@@ -118,6 +152,8 @@ export const TaskInboxPage = () => {
                                 {/* Просрочено, по замещению */}
                                 {inbox.overdue > 0 && ` · ${t("tasks.inbox.overdueSuffix", {count: inbox.overdue})}`}
                                 {inbox.delegated > 0 && ` · ${t("tasks.inbox.delegatedSuffix", {count: inbox.delegated})}`}
+                                {/* Свои записки на отслеживании — в «Всего» не входят */}
+                                {inbox.own > 0 && ` · ${t("tasks.inbox.ownSuffix", {count: inbox.own})}`}
                             </>
                         ) : (
                             /* Согласования по всем контурам */
@@ -139,6 +175,16 @@ export const TaskInboxPage = () => {
             {/* Ряд вкладок-карточек над реестром задач: "Все контуры" + один пункт на контур. */}
             <TaskInboxFilterTabs value={filter} onChange={setFilter}/>
 
+            {/* Подвкладки «Служебных записок» по этапу: Все, Регистрация, Согласование... */}
+            {isSzTab && inbox && (
+                <Tabs<SzInboxSubTab>
+                    tabs={szSubTabs}
+                    value={szSubTab}
+                    onChange={setSzSubTab}
+                    className="mb-0 flex-wrap"
+                />
+            )}
+
             {/* Вкладки таба ВНД */}
             {isVndTab && <VndTasksPanel/>}
 
@@ -151,7 +197,7 @@ export const TaskInboxPage = () => {
                     />
 
                     {isAllTab && filteredVndTasks.length > 0 && (
-                        <section className="flex flex-col gap-2.5">
+                        <section className="grid grid-cols-1 gap-3">
                             {filteredVndTasks.map((task) => (
                                 <VndTaskCard
                                     key={`vnd-${task.vndId}-${task.scope}-${task.stageId ?? task.redactionId ?? "x"}`}
@@ -164,13 +210,20 @@ export const TaskInboxPage = () => {
 
 
                     {(filteredTasks.length > 0 || loading || !(isAllTab && filteredVndTasks.length > 0)) && (
-                        <section className="overflow-hidden rounded-[13px] border border-[#e5e9f0] bg-white">
+                        // Карточки — отдельными блоками с отступом (как у задач ВНД); рамка-контейнер
+                        // нужна только заглушке пустого списка.
+                        <section className={
+                            filteredTasks.length > 0
+                                ? "grid grid-cols-1 gap-3"
+                                : "overflow-hidden rounded-[13px] border border-[#e5e9f0] bg-white"
+                        }>
                             {filteredTasks.map((task: InboxTask) => (
                                 <InboxTaskRow
                                     key={taskKey(task)}
                                     task={task}
                                     onDelegate={setDelegateTask}
                                     onRaiseRisk={canRaiseRisk ? setRiskTask : undefined}
+                                    searchQuery={searchQuery}
                                 />
                             ))}
 

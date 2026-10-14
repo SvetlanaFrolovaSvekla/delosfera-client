@@ -1,4 +1,4 @@
-// Рабочее время для сроков согласования редакций ВНД — зеркало VndWorkingCalendar на бэкенде:
+// Рабочее время для сроков согласования редакций ВНД - зеркало VndWorkingCalendar на бэкенде:
 // пн–пт в рабочие часы банка (по умолчанию 09:00–18:00 по Бишкеку, UTC+6, без перехода на летнее
 // время) без праздников. И часы, и праздники задаёт справочник "Производственный календарь".
 //
@@ -108,11 +108,6 @@ export function getWorkDayMinutes(): number {
     return state.endMinutes - state.startMinutes;
 }
 
-/** Рабочие часы банка, минуты от полуночи по Бишкеку. */
-export function getWorkHours(): { start: number; end: number } {
-    return {start: state.startMinutes, end: state.endMinutes};
-}
-
 /** 540 → "09:00". */
 export function formatClock(minutes: number): string {
     const h = Math.floor(minutes / 60);
@@ -151,12 +146,6 @@ function windowOf(localDayStart: number): [number, number] | null {
     if (weekday === 0 || weekday === 6) return null;
     if (state.holidays.has(dayKey(localDayStart))) return null;
     return [localDayStart + state.startMinutes * MINUTE, localDayStart + state.endMinutes * MINUTE];
-}
-
-/** Нерабочий ли календарный день ("yyyy-MM-dd") — для раскраски календаря. */
-export function isDayOff(isoDate: string): boolean {
-    const [y, m, d] = isoDate.split("-").map(Number);
-    return windowOf(Date.UTC(y, m - 1, d)) === null;
 }
 
 /** Момент (UTC, мс) + рабочие минуты → момент (UTC, мс). */

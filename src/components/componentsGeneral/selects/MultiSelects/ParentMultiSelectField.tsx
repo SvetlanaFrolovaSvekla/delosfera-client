@@ -1,7 +1,7 @@
 // Триггер + чипы для выбора родительских узлов - использует ParentTreeMultiSelectModal (без каскада)
 import {useState} from "react";
 import {useTranslation} from "react-i18next";
-import {getAncestorPath} from "@/utils/treeSelectUtils.ts";
+import {getAncestorPath} from "@/utils/dictionaries/treeSelectUtils.ts";
 import {ParentTreeMultiSelectModal, type ParentTreeOption} from "./ParentTreeMultiSelectModal.tsx";
 import {ChevronDown, X} from "lucide-react";
 

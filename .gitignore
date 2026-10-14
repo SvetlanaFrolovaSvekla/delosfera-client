@@ -33,3 +33,9 @@ dist-ssr
 src.before-restore-180329/
 *.before-restore-*/
 *.before-tiptap
+
+# Тесты — только локально, на GitHub и на сервер не уходят
+src/__tests__/
+vitest.config.ts
+tsconfig.test.json
+coverage/

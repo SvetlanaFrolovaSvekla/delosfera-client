@@ -1,10 +1,11 @@
+// Отпечаток проверяемого файла: имя, размер и SHA-256 с кнопкой «Скопировать».
 import {useTranslation} from "react-i18next";
 import type {VndAuthenticityCheckResponse} from "@/service/vndService/vndAuthenticityService.ts";
+import {copyToClipboard, formatSize} from "@/utils/vndProcess/authenticityUtils.ts";
 import {Tooltip} from "@/components/componentsGeneral/Tooltip.tsx";
 import {HelpTooltip} from "@/components/componentsGeneral/knowledgeBaseComponents/HelpTooltip.tsx";
-import {copyToClipboard, formatSize} from "@/utils/vndProcess/authenticityUtils.ts";
-import {Copy, FileText} from "lucide-react";
 import {BTN_SECONDARY, CARD} from "./styles/authenticityStyles.ts";
+import {Copy, FileText} from "lucide-react";
 
 /** Имя, размер и SHA-256 проверяемого файла. */
 export function FileFingerprint({result}: { result: VndAuthenticityCheckResponse }) {

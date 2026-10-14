@@ -5,10 +5,10 @@
  */
 import type {ReactNode} from "react";
 import {useTranslation} from "react-i18next";
-import {CharCounter} from "@/components/componentsGeneral/CharCounter.tsx";
 import {
     ORGANIZATION_INN_MAX_LENGTH, PERSON_IDNP_LENGTH, type EcpIdentification,
 } from "@/hooks/useEcpIdentification.ts";
+import {CharCounter} from "@/components/componentsGeneral/CharCounter.tsx";
 import {ECP_PRIMARY_BTN, ECP_SECONDARY_BTN, ecpMethodLabel} from "@/components/signing/ecpUi.ts";
 
 const INPUT_CLS =

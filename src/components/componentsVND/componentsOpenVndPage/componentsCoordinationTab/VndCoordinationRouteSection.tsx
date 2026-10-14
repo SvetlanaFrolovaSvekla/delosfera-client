@@ -2,14 +2,14 @@
 // (см. getRouteHeaderConfig в ./coordinationRoleState.ts) + сама схема маршрута
 // (VndApprovalRouteView). Общий для видов согласующего и инициатора в VndCoordinationTab.
 import {useTranslation} from "react-i18next";
+import type {ApprovalProcessResponse} from "@/service/coordinationService/coordinationServiceTypes.ts";
+import type {RouteHeaderConfig} from "@/utils/vndProcess/coordination/coordinationRoleState.ts";
 import {
     VndApprovalRouteView
 } from "@/components/componentsCoordination/CoordinationRouteConstructor/viewComponents/VndApprovalRouteView.tsx";
 import type {
     FormattedCommentQuoteRef
 } from "@/components/componentsCoordination/CoordinationRouteConstructor/viewComponents/FormattedResolutionComment.tsx";
-import type {ApprovalProcessResponse} from "@/service/coordinationService/coordinationServiceTypes.ts";
-import type {RouteHeaderConfig} from "./coordinationRoleState.ts";
 
 interface VndCoordinationRouteSectionProps {
     process: ApprovalProcessResponse;

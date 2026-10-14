@@ -14,7 +14,7 @@ import {Sidebar} from "@/components/componentsSidebar/Sidebar.tsx";
 import {Header} from "@/components/componentsHeader/Header.tsx";
 import {RegulationConsentGate} from "@/components/signing/RegulationConsentGate.tsx";
 import {useUsageTracking} from "@/hooks/useUsageTracking.ts";
-import {FeedbackButton} from "@/components/feedback/FeedbackButton.tsx";
+import {FeedbackButton} from "@/components/componentsGeneral/FeedbackButton.tsx";
 
 // Страницы грузятся лениво — каждая попадает в отдельный чанк, а не в один общий бандл.
 // Named-экспорты оборачиваем в { default } для React.lazy.
@@ -245,6 +245,9 @@ function App() {
                                     <Route path="refs/work-calendar" element={<VndWorkCalendarPage/>}/>
                                     <Route path="mailing-settings" element={<NotificationMailingSettingsPage/>}/>
                                     <Route path="notification-settings" element={<NotificationSettingsPage/>}/>
+                                    {/* Та же лента, что /activity, но внутри "Наблюдения" - компактная и с
+                                        пояснением, чем отличается от "Журнала действий" */}
+                                    <Route path="activity" element={<ActivityFeedPage embedded/>}/>
 
 
                                     <Route element={<RequirePermission code={PermissionCode.ManageRoles}/>}>
@@ -286,7 +289,7 @@ function App() {
                                 <Route path="/obligations/board" element={<ObligationsBoardPage/>}/>
                                 <Route path="/obligations" element={<ObligationsPage/>}/>
 
-                                {/* События операционного риска из workflow (RISK-1, 716-П / НБКР) */}
+                                {/* События операционного риска из componentsWorkflow (RISK-1, 716-П / НБКР) */}
                                 <Route element={<RequirePermission code={PermissionCode.ViewRiskEvents}/>}>
                                     <Route path="/risk-events" element={<RiskEventsPage/>}/>
                                 </Route>

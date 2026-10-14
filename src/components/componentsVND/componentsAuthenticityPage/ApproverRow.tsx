@@ -1,6 +1,7 @@
+// Строка таблицы согласующих в ProcessBlock: ФИО и должность, решение, дата и статус подписи.
 import {useTranslation} from "react-i18next";
 import type {VndAuthenticityApprover} from "@/service/vndService/vndAuthenticityService.ts";
-import {formatDateTime} from "../../../utils/vndProcess/authenticityUtils.ts";
+import {formatDateTime} from "@/utils/vndProcess/authenticityUtils.ts";
 import {STATE_STYLE} from "./styles/authenticityStyles.ts";
 
 export function ApproverRow({approver, locale}: { approver: VndAuthenticityApprover; locale: string }) {

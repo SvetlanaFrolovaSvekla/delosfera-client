@@ -27,5 +27,7 @@
     "erasableSyntaxOnly": true,
     "noFallthroughCasesInSwitch": true
   },
-  "include": ["src"]
+  "include": ["src"],
+  /* Тесты живут только локально и проверяются своим tsconfig.test.json */
+  "exclude": ["src/__tests__"]
 }

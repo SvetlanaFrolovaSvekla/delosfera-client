@@ -3,13 +3,13 @@
 // запрос по текущим решениям (см. approvalSheetLive.ts), поэтому всегда актуален.
 import {useState} from "react";
 import {useTranslation} from "react-i18next";
-import {AlertTriangle, ClipboardCheck, Download, Loader2, ShieldCheck} from "lucide-react";
-import {useCanExportVnd, NO_EXPORT_VND_HINT} from "@/hooks/vndHooks/useCanExportVnd.ts";
-import {Tabs} from "@/components/componentsGeneral/Tabs.tsx";
-import {useDocxPreview} from "@/hooks/vndHooks/useDocxPreview.ts";
 import {
     approvalSheetEndpoint, approvalSheetPathSuffix, downloadApprovalSheet, type ApprovalSheetMode,
 } from "@/service/vndService/approvalSheetLive.ts";
+import {useCanExportVnd, NO_EXPORT_VND_HINT} from "@/hooks/vndHooks/useCanExportVnd.ts";
+import {useDocxPreview} from "@/hooks/vndHooks/useDocxPreview.ts";
+import {Tabs} from "@/components/componentsGeneral/Tabs.tsx";
+import {AlertTriangle, ClipboardCheck, Download, Loader2, ShieldCheck} from "lucide-react";
 
 interface ApprovalSheetLiveViewProps {
     vndId: number;

@@ -5,7 +5,7 @@ import {
     coordinationApproverService
 } from "@/service/dictionariesService/coordinationDefaultApproverService/coordinationDefaultApproverService.ts";
 import {useAuth} from "@/context/AuthContext.ts";
-import {CUSTOM_STAGE_LABEL_KEY} from "@/constants/coordinationParams.ts";
+import {CUSTOM_STAGE_LABEL_KEY} from "@/constants/validation/coordinationValidatuon.ts";
 
 // crypto.randomUUID() доступен только в secure context (https или localhost).
 // На http-проде (edo-test.keremetbank.kg) его нет — используем фолбэк.

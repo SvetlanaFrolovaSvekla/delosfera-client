@@ -10,7 +10,7 @@ import {
     type VndApprovalNormSettings,
 } from "@/service/vndApprovalNormSettingsService/vndApprovalNormSettingsService.ts";
 import {PermissionCode} from "@/constants/permissions/permissions.ts";
-import {getDefaultNormMinutes, getMaxDeadlineMinutes} from "@/constants/coordinationParams.ts";
+import {getDefaultNormMinutes, getMaxDeadlineMinutes} from "@/constants/validation/coordinationValidatuon.ts";
 import {useWorkCalendar} from "@/utils/workCalendar.ts";
 import {NormBlock} from "@/components/componentsCoordination/CoordinationRouteConstructor/functionalComponents/NormBlock.tsx";
 import {Loader} from "@/components/componentsGeneral/Loader.tsx";

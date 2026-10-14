@@ -54,6 +54,8 @@ interface ConfirmActionModalProps {
     icon?: LucideIcon;
     /** Шире обычного (760px) — для окон с подробным пояснением внутри. */
     wide?: boolean;
+    /** Кнопка подтверждения вдвое шире «Отмены» (по умолчанию — поровну): для длинных подписей. */
+    wideConfirm?: boolean;
     /** Произвольный доп. контент между текстом и блоком ошибки —
      * например, подсказка (Clue) о том, какие роли дают это право. */
     children?: ReactNode;
@@ -72,6 +74,7 @@ export function ConfirmActionModal({
                                        variant = "warning",
                                        icon,
                                        wide = false,
+                                       wideConfirm = false,
                                        children,
                                    }: ConfirmActionModalProps) {
     const {t} = useTranslation();
@@ -130,7 +133,7 @@ export function ConfirmActionModal({
                     <button
                         onClick={onConfirm}
                         disabled={loading}
-                        className={`h-9 flex-1 rounded-[9px] border-none ${style.confirmBg} text-white font-semibold text-[12.5px] cursor-pointer hover:brightness-[1.06] disabled:opacity-60 disabled:cursor-not-allowed transition-[filter]`}
+                        className={`h-9 ${wideConfirm ? "flex-[2] whitespace-nowrap" : "flex-1"} rounded-[9px] border-none ${style.confirmBg} text-white font-semibold text-[12.5px] cursor-pointer hover:brightness-[1.06] disabled:opacity-60 disabled:cursor-not-allowed transition-[filter]`}
                     >
                         {loading ? (loadingLabel ?? t("general.processing", "Обработка…")) : confirmLabel}
                     </button>

@@ -1,5 +1,5 @@
 // Карточка этапа при согласовании
-import {CUSTOM_STAGE_ICON, FIXED_STAGE_ICON} from "@/constants/coordinationParams.ts";
+import {CUSTOM_STAGE_ICON, FIXED_STAGE_ICON} from "@/constants/validation/coordinationValidatuon.ts";
 import {ChevronDown, X} from "lucide-react";
 import type {StageDraft} from "@/hooks/coordinationHooks/useStageDrafts.ts";
 

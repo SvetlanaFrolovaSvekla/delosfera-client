@@ -1,11 +1,15 @@
 // История актуализаций: кто когда брал, кто выдавал доступ
-
-import type { VndActualizationRecordResponse } from "@/service/vndService/vndServiceType";
+import {useMemo, useState} from "react";
 import {useTranslation} from "react-i18next";
+import type { VndActualizationRecordResponse } from "@/service/vndService/vndServiceType";
 import type {VndActualizationRequestResponse} from "@/service/actualizationService/actualizationServiceTypes.ts";
+import {formatDateTime, parseDDMMYYYY} from "@/utils/dateUtils.ts";
+import {HighlightSubstrings, splitSearchTerms} from "@/utils/highlightText.tsx";
 import {Loader} from "@/components/componentsGeneral/Loader.tsx";
-import {CheckCircle2, Send, Undo2, XCircle, History} from "lucide-react";
-import {formatDateTime} from "@/utils/dateUtils.ts";
+import {EmptyState} from "@/components/componentsGeneral/EmptyState.tsx";
+import {DatePickerInput} from "@/components/componentsGeneral/datePickers/DatePickerInput.tsx";
+import {Tooltip} from "@/components/componentsGeneral/Tooltip.tsx";
+import {CheckCircle2, Send, Undo2, XCircle, History, Search, X} from "lucide-react";
 
 export function ActualizationHistorySection({
                                          history, historyLoading, requests,
@@ -17,6 +21,48 @@ export function ActualizationHistorySection({
     const {t} = useTranslation();
     // Заявки, которые дошли до решения - интересны только они (Pending уже виден выше как плашка)
     const decidedRequests = requests.filter((r) => r.status !== "pending");
+
+    // Поиск и фильтр по периоду для «Истории актуализаций» (как в «Журнале аудита» на вкладке «История»)
+    const [query, setQuery] = useState("");
+    const [dateFrom, setDateFrom] = useState("");
+    const [dateTo, setDateTo] = useState("");
+
+    const terms = useMemo(() => splitSearchTerms(query), [query]);
+    const fromDate = useMemo(() => parseDDMMYYYY(dateFrom), [dateFrom]);
+    const toDate = useMemo(() => {
+        const d = parseDDMMYYYY(dateTo);
+        // "По" включительно: до конца выбранного дня
+        return d ? new Date(d.getFullYear(), d.getMonth(), d.getDate(), 23, 59, 59, 999) : null;
+    }, [dateTo]);
+
+    const filteredHistory = useMemo(() => history.filter((r) => {
+        // Период: цикл попадает, если в него входит хоть одна из его дат (взят / выполнен / опубликован)
+        if (fromDate || toDate) {
+            const dates = [r.startedAt, r.performedAt, r.publishedAt]
+                .filter((d): d is string => !!d)
+                .map((d) => new Date(d));
+            const inRange = dates.some((d) => (!fromDate || d >= fromDate) && (!toDate || d <= toDate));
+            if (!inRange) return false;
+        }
+        if (terms.length > 0) {
+            // Ищем по сотруднику и по датам в том виде, в каком они показаны ("06.10.2026, 10:39")
+            const haystack = [
+                r.responsibleUserName,
+                formatDateTime(r.startedAt),
+                r.performedAt ? formatDateTime(r.performedAt) : "",
+                r.publishedAt ? formatDateTime(r.publishedAt) : "",
+            ].join("\n").toLowerCase();
+            if (!terms.every((term) => haystack.includes(term))) return false;
+        }
+        return true;
+    }), [history, fromDate, toDate, terms]);
+
+    const hasFilters = query.trim() !== "" || dateFrom !== "" || dateTo !== "";
+    const resetFilters = () => {
+        setQuery("");
+        setDateFrom("");
+        setDateTo("");
+    };
 
     if (historyLoading) {
         return (
@@ -41,8 +87,65 @@ export function ActualizationHistorySection({
                         {t("openVndPage.actualizationTab.historyEmpty")}
                     </div>
                 ) : (
+                    <>
+                    {/* Поиск по сотруднику/дате и период */}
+                    <div className="flex flex-col gap-2.5 border-b border-[#eef2f7] bg-[#fbfcfe] px-5 py-3">
+                        <div className="relative">
+                            <Search size={14} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-[#a3adbd]"/>
+                            <input
+                                type="text"
+                                value={query}
+                                onChange={(e) => setQuery(e.target.value)}
+                                placeholder={t("openVndPage.actualizationTab.historySearchPlaceholder")}
+                                aria-label={t("openVndPage.actualizationTab.historySearchPlaceholder")}
+                                className="h-[36px] w-full box-border rounded-[8px] border border-[#e5e9f0] bg-white pl-8 pr-8 text-[12.5px] text-[#1c2740] outline-none focus:border-[#4e57d6]"
+                            />
+                            {query !== "" && (
+                                <span className="absolute right-2 top-1/2 -translate-y-1/2">
+                                    <Tooltip content={t("openVndPage.historyTab.auditSearchClear")} side="top">
+                                        <button type="button" onClick={() => setQuery("")}
+                                                aria-label={t("openVndPage.historyTab.auditSearchClear")}
+                                                className="cursor-pointer grid h-5 w-5 place-items-center rounded-full text-[#a3adbd] hover:bg-[#ececfc] hover:text-[#4e57d6]">
+                                            <X size={13}/>
+                                        </button>
+                                    </Tooltip>
+                                </span>
+                            )}
+                        </div>
+
+                        <div className="grid grid-cols-2 gap-2.5">
+                            <label className="flex min-w-0 flex-col gap-1">
+                                <span className="text-[10.5px] font-bold uppercase tracking-[.04em] text-[#a3adbd]">
+                                    {t("openVndPage.historyTab.auditDateFrom")}
+                                </span>
+                                <DatePickerInput value={dateFrom} onChange={setDateFrom} modal/>
+                            </label>
+                            <label className="flex min-w-0 flex-col gap-1">
+                                <span className="text-[10.5px] font-bold uppercase tracking-[.04em] text-[#a3adbd]">
+                                    {t("openVndPage.historyTab.auditDateTo")}
+                                </span>
+                                <DatePickerInput value={dateTo} onChange={setDateTo} modal/>
+                            </label>
+                        </div>
+
+                        <div className="flex items-center justify-between gap-3 text-[11.5px] text-[#8b97ab]">
+                            <span>{t("openVndPage.historyTab.auditShown", {shown: filteredHistory.length, total: history.length})}</span>
+                            {hasFilters && (
+                                <button type="button" onClick={resetFilters}
+                                        className="cursor-pointer font-semibold text-[#4e57d6] hover:underline">
+                                    {t("openVndPage.historyTab.auditReset")}
+                                </button>
+                            )}
+                        </div>
+                    </div>
+
+                    {filteredHistory.length === 0 ? (
+                        <div className="px-5 py-6 text-center text-[12.5px] text-[#a3adbd]">
+                            {t("openVndPage.historyTab.auditNoResults")}
+                        </div>
+                    ) : (
                     <div className="px-5 py-1.5">
-                        {history.map((r) => (
+                        {filteredHistory.map((r) => (
                             <div key={r.id} className="flex gap-[11px] py-3 border-t border-[#f3f6f9] first:border-t-0">
                                 <span
                                     className={`mt-1.5 h-[7px] w-[7px] flex-none rounded-full ${
@@ -51,7 +154,7 @@ export function ActualizationHistorySection({
                                 />
                                 <div className="min-w-0 text-[12.5px] leading-[1.5] text-[#26324a]">
                                     <div>
-                                        <span className="font-semibold">{r.responsibleUserName}</span> {t("openVndPage.actualizationTab.tookIntoActualizationLabel")} {formatDateTime(r.startedAt)}
+                                        <span className="font-semibold"><HighlightSubstrings text={r.responsibleUserName} terms={terms}/></span> {t("openVndPage.actualizationTab.tookIntoActualizationLabel")} <HighlightSubstrings text={formatDateTime(r.startedAt)} terms={terms}/>
                                         {" "}({r.requiresApproval
                                         ? t("openVndPage.actualizationTab.withApprovalTag")
                                         : t("openVndPage.actualizationTab.withoutApprovalTag")})
@@ -80,6 +183,8 @@ export function ActualizationHistorySection({
                             </div>
                         ))}
                     </div>
+                    )}
+                    </>
                 )}
             </div>
 
@@ -90,9 +195,12 @@ export function ActualizationHistorySection({
                     <span className="text-[13.5px] font-bold text-[#1c2740]">{t("openVndPage.actualizationTab.requestsTitle")}</span>
                 </div>
                 {decidedRequests.length === 0 ? (
-                    <div className="px-5 py-6 text-center text-[12.5px] text-[#a3adbd]">
-                        {t("openVndPage.actualizationTab.requestsEmpty")}
-                    </div>
+                    <EmptyState
+                        embedded
+                        icon={Send}
+                        title={t("openVndPage.actualizationTab.requestsEmpty")}
+                        description={t("openVndPage.actualizationTab.requestsEmptyDescription")}
+                    />
                 ) : (
                     <div className="px-5 py-1.5">
                         {decidedRequests.map((r) => (

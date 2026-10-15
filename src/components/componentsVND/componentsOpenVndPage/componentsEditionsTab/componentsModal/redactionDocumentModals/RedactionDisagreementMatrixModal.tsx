@@ -4,7 +4,7 @@ import {useTranslation} from "react-i18next";
 import type {VndRedactionResponse, VndResponse} from "@/service/vndService/vndServiceType.ts";
 import {useCanExportVnd, NO_EXPORT_VND_HINT} from "@/hooks/vndHooks/useCanExportVnd.ts";
 import {RedactionTextView} from "@/components/componentsVND/componentsOpenVndPage/componentsEditionsTab/RedactionTextView.tsx";
-import {Tooltip} from "@/components/componentsGeneral/Tooltip.tsx";
+import {Tooltip} from "@/components/componentsGeneral/tooltips/Tooltip.tsx";
 import {Download, Loader2, Scale, X} from "lucide-react";
 
 interface RedactionDisagreementMatrixModalProps {

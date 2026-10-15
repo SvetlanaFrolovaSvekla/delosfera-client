@@ -5,7 +5,7 @@ import {useNavigate} from "react-router-dom";
 import {useTranslation} from "react-i18next";
 import {useModalShake} from "@/hooks/useModalShake.ts";
 import {useCannotCreateVndMessage, useCanCreateVnd} from "@/hooks/vndHooks/useCanCreateVnd.ts";
-import {Tooltip} from "@/components/componentsGeneral/Tooltip.tsx";
+import {Tooltip} from "@/components/componentsGeneral/tooltips/Tooltip.tsx";
 import {FilePlus2, X} from "lucide-react";
 
 type DocumentType = "vnd" | "memo" | "procurement";

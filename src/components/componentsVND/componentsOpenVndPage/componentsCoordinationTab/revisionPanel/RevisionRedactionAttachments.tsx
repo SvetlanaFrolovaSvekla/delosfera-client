@@ -5,7 +5,7 @@ import type {VndRedactionResponse} from "@/service/vndService/vndServiceType.ts"
 import {formatFileSize} from "@/service/documentService/attachmentService.ts";
 import {VND_REDACTION_MAX_ATTACHMENTS} from "@/constants/validation/vndValidation.ts";
 import {downloadWithToast} from "@/utils/downloadFiles/downloadFile.ts";
-import {Tooltip} from "@/components/componentsGeneral/Tooltip.tsx";
+import {Tooltip} from "@/components/componentsGeneral/tooltips/Tooltip.tsx";
 import {HelpTooltip} from "@/components/componentsGeneral/knowledgeBaseComponents/HelpTooltip.tsx";
 import {AlertCircle, CheckCircle2, Paperclip, Trash2} from "lucide-react";
 import {DOC_ACCEPT} from "./revisionDocs.ts";

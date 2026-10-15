@@ -13,7 +13,7 @@ import {
     getAvailableLanguages, type RedactionLanguage, type RedactionViewTarget
 } from "@/utils/vndProcess/redactionLanguagePanelUtils.ts";
 import {buildRedactionFileName} from "@/utils/downloadFiles/fileNaming.ts";
-import {Tooltip} from "@/components/componentsGeneral/Tooltip.tsx";
+import {Tooltip} from "@/components/componentsGeneral/tooltips/Tooltip.tsx";
 import {SearchBar} from "@/components/componentsGeneral/SearchBar.tsx";
 import {
     AlertTriangle, Columns2, Download, Eye, EyeOff, FileText, Highlighter, ListTree, Loader2, MessageSquareText,

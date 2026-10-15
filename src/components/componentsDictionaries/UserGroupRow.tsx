@@ -2,7 +2,7 @@
 import {useTranslation} from "react-i18next";
 import type {UserGroupResponse} from "@/service/dictionariesService/userGroupService/userGroupServiceType.ts";
 import {HighlightText} from "@/utils/highlightText.tsx";
-import {Tooltip} from "@/components/componentsGeneral/Tooltip.tsx";
+import {Tooltip} from "@/components/componentsGeneral/tooltips/Tooltip.tsx";
 import {Pencil, Trash2, Users} from "lucide-react";
 
 interface UserGroupRowProps {

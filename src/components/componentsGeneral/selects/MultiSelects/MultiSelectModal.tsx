@@ -3,6 +3,7 @@ import {useTranslation} from "react-i18next";
 import {HighlightText} from "@/utils/highlightText.tsx";
 import {SearchBar} from "@/components/componentsGeneral/SearchBar.tsx";
 import {Check, X} from "lucide-react";
+import {ACCENT, type Accent} from "@/constants/accent.ts";
 
 export interface MultiSelectModalOption {
     key: string;
@@ -25,6 +26,8 @@ interface MultiSelectModalProps {
     hint?: ReactNode;
     /** Доп. действие справа в строке списка (например, кнопка "?"); клик по нему не меняет выбор */
     renderOptionAction?: (key: string) => ReactNode;
+    /** Акцентный цвет (по умолчанию фиолетовый). */
+    accent?: Accent;
 }
 
 export function MultiSelectModal({
@@ -38,8 +41,10 @@ export function MultiSelectModal({
                                      selectedCountLabel,
                                      hint,
                                      renderOptionAction,
+                                     accent = "violet",
                                  }: MultiSelectModalProps) {
     const {t} = useTranslation();
+    const a = ACCENT[accent];
     const [draft, setDraft] = useState<string[]>(selectedKeys);
     const [query, setQuery] = useState("");
     const [prevOpen, setPrevOpen] = useState(open);
@@ -122,6 +127,7 @@ export function MultiSelectModal({
                 {/* Фильтр — сверху, через SearchBar */}
                 <div className="px-5 pt-4 pb-2 flex-none">
                     <SearchBar
+                        accent={accent}
                         variant="gray"
                         value={query}
                         onChange={setQuery}
@@ -138,7 +144,7 @@ export function MultiSelectModal({
                         className={`text-[11px] font-semibold cursor-pointer ${
                             allSelected
                                 ? "text-[#c3ccd8] cursor-default"
-                                : "text-[#4e57d6] hover:underline"
+                                : `${a.text} hover:underline`
                         }`}
                     >
                         {t("general.selectAll")}
@@ -150,7 +156,7 @@ export function MultiSelectModal({
                         className={`text-[11px] font-semibold cursor-pointer ${
                             noneSelected
                                 ? "text-[#c3ccd8] cursor-default"
-                                : "text-[#4e57d6] hover:underline"
+                                : `${a.text} hover:underline`
                         }`}
                     >
                         {t("general.deselectAll")}
@@ -176,7 +182,7 @@ export function MultiSelectModal({
                                 <span
                                     className={`w-5 h-5 flex-none rounded-md grid place-items-center ${
                                         on
-                                            ? "border-[1.5px] border-[#4e57d6] bg-[#4e57d6]"
+                                            ? `border-[1.5px] ${a.border} ${a.bg}`
                                             : "border-[1.5px] border-[#cbd3df] bg-white"
                                     }`}
                                 >
@@ -211,7 +217,7 @@ export function MultiSelectModal({
                         </button>
                         <button
                             onClick={handleApply}
-                            className="h-9 px-5 rounded-[9px] border-none bg-[#4e57d6] text-white font-semibold text-[12.5px] cursor-pointer hover:brightness-[1.06]"
+                            className={`h-9 px-5 rounded-[9px] border-none ${a.bg} text-white font-semibold text-[12.5px] cursor-pointer hover:brightness-[1.06]`}
                         >
                             {t("general.save")}
                         </button>

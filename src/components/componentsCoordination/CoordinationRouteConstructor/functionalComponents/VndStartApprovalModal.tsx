@@ -18,7 +18,7 @@ import {
 import {
     RouteHintsPanel, type RouteHint
 } from "@/components/componentsCoordination/CoordinationRouteConstructor/functionalComponents/RouteHintsPanel.tsx";
-import {Tooltip} from "@/components/componentsGeneral/Tooltip.tsx";
+import {Tooltip} from "@/components/componentsGeneral/tooltips/Tooltip.tsx";
 import {Loader} from "@/components/componentsGeneral/Loader.tsx";
 
 import {ArrowDown, Clock, Loader2, Route, Lock, Plus, X, BadgeCheck} from "lucide-react";

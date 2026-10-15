@@ -6,7 +6,7 @@ import {
     FieldKind
 } from "@/service/documentTypeService/documentTypeService.ts";
 import {toast} from "@/service/toastService.ts";
-import {translit} from "@/utils/translit.ts";
+import {translit} from "@/utils/translations/translit.ts";
 import {Plus, Trash2} from "lucide-react";
 
 export function FieldsSection({type, onChanged}: {type: DocumentType; onChanged: () => Promise<void>}) {

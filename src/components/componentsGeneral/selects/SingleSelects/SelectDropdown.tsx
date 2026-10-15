@@ -4,6 +4,7 @@ import {useTranslation} from "react-i18next";
 import {Check, ChevronDown, Search, X} from "lucide-react";
 import {HighlightText} from "@/utils/highlightText.tsx";
 import {useClickOutside} from "@/hooks/useClickOutside.ts";
+import {ACCENT, type Accent} from "@/constants/accent.ts";
 
 export interface SelectOption {
     value: string;
@@ -33,6 +34,8 @@ interface SelectDropdownProps {
     active?: boolean;
     /* Жирность лейбла */
     labelClassName?: string;
+    /** Акцентный цвет открытого списка и выбранного пункта. По умолчанию фиолетовый. */
+    accent?: Accent;
 }
 
 export function SelectDropdown({
@@ -51,8 +54,10 @@ export function SelectDropdown({
                                    size = "md",
                                    active = false,
                                    labelClassName = "font-bold",
+                                   accent = "violet",
                                }: SelectDropdownProps) {
     const {t} = useTranslation();
+    const a = ACCENT[accent];
     const [open, setOpen] = useState(false);
     const [query, setQuery] = useState("");
     const rootRef = useRef<HTMLDivElement>(null);
@@ -99,7 +104,7 @@ export function SelectDropdown({
                             : "h-9 px-3 rounded-[9px] text-[12.5px]"
                     } ${active ? "text-[#2f68f5]" : "text-[#3a4560]"} ${
                         open
-                            ? "border-[#4e57d6] ring-[3px] ring-[#ececfc] bg-[#f6f8fb]"
+                            ? `${a.border} ring-[3px] ${a.ring} bg-[#f6f8fb]`
                             : invalid
                                 ? "border-[#e0b978] bg-white"
                                 : active
@@ -134,7 +139,7 @@ export function SelectDropdown({
                                         value={query}
                                         onChange={(e) => setQuery(e.target.value)}
                                         placeholder={searchPlaceholder ?? t("general.search")}
-                                        className="w-full h-8 pl-7 pr-7 rounded-[7px] border border-[#e5e9f0] bg-[#f6f8fb] text-[12.5px] text-[#1c2740] outline-none focus:border-[#4e57d6] focus:bg-white"
+                                        className={`w-full h-8 pl-7 pr-7 rounded-[7px] border border-[#e5e9f0] bg-[#f6f8fb] text-[12.5px] text-[#1c2740] outline-none ${a.focusBorder} focus:bg-white`}
                                     />
                                     {query && (
                                         <button
@@ -164,7 +169,7 @@ export function SelectDropdown({
                                         onClick={() => handleSelect(o.value)}
                                         className={`w-full flex items-center justify-between gap-2 px-3 py-[9px] rounded-lg text-left text-[12.5px] cursor-pointer ${
                                             isSelected
-                                                ? "bg-[#ececfc] text-[#4e57d6] font-semibold"
+                                                ? `${a.softBg} ${a.text} font-semibold`
                                                 : "text-[#26324a] hover:bg-[#f6f8fb]"
                                         }`}
                                     >

@@ -28,7 +28,7 @@ export const navGroups: NavGroup[] = [
             // Отчёты всех контуров в одном месте: раньше отчётность ВНД и аналитика
             // записок лежали каждая в своём разделе, и человек, которому нужны обе,
             // ходил за ними в разные концы меню.
-            { id: "analytics", icon: "rpt", labelKey: "sidebar.items.analytics", path: "/analytics", permission: PermissionCode.ViewFullStatistics },
+            { id: "analytics", icon: "chart", labelKey: "sidebar.items.analytics", path: "/analytics", permission: PermissionCode.ViewFullStatistics },
             // Лента событий по всем контурам с поиском и фильтрами (раньше открывалась только
             // кнопкой "Смотреть всю активность" из виджета на рабочем столе)
             { id: "activity", icon: "activity", labelKey: "sidebar.items.activity", path: "/activity" },
@@ -45,6 +45,8 @@ export const navGroups: NavGroup[] = [
         titleKey: "sidebar.groups.normotvorchestvo",
         items: [
             { id: "vnd", icon: "vnd", labelKey: "sidebar.items.vnd", path: "/base-vnd" },
+            // Доска ВНД: документы, связанные с СП пользователя (+ добавленные вручную), по статусам
+            { id: "vnd-board", icon: "board", labelKey: "sidebar.items.vndBoard", path: "/vnd-board", permission: PermissionCode.ViewVnd },
             { id: "pln", icon: "pln", labelKey: "sidebar.items.pln", badge: 3, path: "/actualization", permission: PermissionCode.ViewVndActualizationPage },
             // Предложения сотрудников по ВНД — получает главный редактор ВНД (бейдж — непрочитанные)
             { id: "vnd-proposals", icon: "idea", labelKey: "sidebar.items.vndProposals", path: "/vnd-proposals", permission: PermissionCode.ManageVndProposals },
@@ -62,7 +64,7 @@ export const navGroups: NavGroup[] = [
             // Заявки на замещение (КСЗ-В9)
             { id: "substitutions", icon: "user", labelKey: "sidebar.items.substitution", path: "/substitutions"},
             // Доска записок по стадиям
-            { id: "sz-tracker", icon: "sz", labelKey: "sidebar.items.szTracker", path: "/sz/tracker" },
+            { id: "sz-tracker", icon: "board", labelKey: "sidebar.items.szTracker", path: "/sz/tracker" },
         ],
     },
     {
@@ -75,7 +77,7 @@ export const navGroups: NavGroup[] = [
             // Периодичность, которой мыслит регулятор: «не реже раза в месяц»
             { id: "obligations", icon: "clock", labelKey: "sidebar.items.obligations", path: "/obligations" },
             // Доска обязательств по стадиям (ПР-1)
-            { id: "obligations-board", icon: "clock", labelKey: "sidebar.items.obligationsBoard", path: "/obligations/board" },
+            { id: "obligations-board", icon: "board", labelKey: "sidebar.items.obligationsBoard", path: "/obligations/board" },
             // События операционного риска из componentsWorkflow (RISK-1, 716-П / НБКР)
             { id: "risk-events", icon: "shield", labelKey: "События оп-риска", path: "/risk-events", permission: PermissionCode.ViewRiskEvents },
         ],
@@ -85,11 +87,11 @@ export const navGroups: NavGroup[] = [
         items: [
             { id: "prc", icon: "prc", labelKey: "sidebar.items.prc", path: "/prc" },
             // Доска закупок по стадиям (ЗК-11): где какая заявка и что зависло
-            { id: "prc-tracker", icon: "prc", labelKey: "sidebar.items.prcTracker", path: "/prc/tracker" },
+            { id: "prc-tracker", icon: "board", labelKey: "sidebar.items.prcTracker", path: "/prc/tracker" },
             // Годовой План закупок с отчётом об исполнении (PRC-22)
             { id: "prc-plan", icon: "pln", labelKey: "sidebar.items.prcAnnualPlan", path: "/prc/plan" },
             // Матрица определяет способ закупки, состав согласования и орган утверждения
-            { id: "matrix", icon: "matrix", labelKey: "sidebar.items.matrix", path: "/prc/matrix" },
+            { id: "matrix", icon: "authmatrix", labelKey: "sidebar.items.matrix", path: "/prc/matrix" },
             // Благонадёжность и чёрный список недобросовестных (PRC-07/17)
             { id: "prc-suppliers", icon: "flag", labelKey: "sidebar.items.prcSuppliers", path: "/prc/suppliers" },
         ],
@@ -117,7 +119,7 @@ export const navGroups: NavGroup[] = [
         titleKey: "sidebar.groups.management",
         items: [
             // Инструкции и рабочее место подписи нужны всем — остаются в общем меню
-            { id: "help", icon: "kb", labelKey: "sidebar.items.help", path: "/help" },
+            { id: "help", icon: "help", labelKey: "sidebar.items.help", path: "/help" },
             { id: "signing-workplace", icon: "check", labelKey: "sidebar.items.signingWorkplace", path: "/signing-workplace" },
             // Настройки, справочники, доступы и наблюдение — одним входом со своим
             // подменю: пунктов полтора десятка, в общем меню они вытесняли бы работу

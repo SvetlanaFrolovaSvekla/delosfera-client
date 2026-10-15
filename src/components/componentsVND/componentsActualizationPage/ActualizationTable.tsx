@@ -13,7 +13,7 @@ import {
 } from "@/hooks/actualizationHooks/useActualizationBucketMeta.ts";
 import {daysUntil} from "@/utils/dateUtils.ts";
 import {EmptyState} from "@/components/componentsGeneral/EmptyState.tsx";
-import {Tooltip} from "@/components/componentsGeneral/Tooltip.tsx";
+import {Tooltip} from "@/components/componentsGeneral/tooltips/Tooltip.tsx";
 
 interface ActualizationTableProps {
     columns: ColDef[];

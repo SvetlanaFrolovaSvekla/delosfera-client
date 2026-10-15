@@ -4,6 +4,7 @@ import {useTranslation} from "react-i18next";
 import {ChevronRight, X} from "lucide-react";
 import {HighlightText} from "@/utils/highlightText.tsx";
 import {SearchBar} from "@/components/componentsGeneral/SearchBar.tsx";
+import {ACCENT, type Accent} from "@/constants/accent.ts";
 
 export interface TreeSelectOption {
     key: string;
@@ -34,6 +35,8 @@ interface TreeSingleSelectModalProps {
     clearedLabel?: string;
     /** Пояснение в рамке под заголовком окна (над поиском) */
     hint?: ReactNode;
+    /** Акцентный цвет (по умолчанию фиолетовый). */
+    accent?: Accent;
 }
 
 function buildTree(options: TreeSelectOption[]): TreeNode[] {
@@ -109,8 +112,10 @@ export function TreeSingleSelectModal({
                                           clearLabel,
                                           clearedLabel,
                                           hint,
+                                          accent = "violet",
                                       }: TreeSingleSelectModalProps) {
     const {t} = useTranslation();
+    const a = ACCENT[accent];
     const [query, setQuery] = useState("");
     const [collapsed, setCollapsed] = useState<Set<string>>(new Set());
     const [prevOpen, setPrevOpen] = useState(open);
@@ -202,10 +207,10 @@ export function TreeSingleSelectModal({
                     >
                         <span
                             className={`w-5 h-5 flex-none rounded-full grid place-items-center border-[1.5px] ${
-                                on ? "border-[#4e57d6]" : "border-[#cbd3df]"
+                                on ? `${a.border}` : "border-[#cbd3df]"
                             } bg-white`}
                         >
-                            {on && <span className="w-[9px] h-[9px] rounded-full bg-[#4e57d6]"/>}
+                            {on && <span className={`w-[9px] h-[9px] rounded-full ${a.bg}`}/>}
                         </span>
                         <span className={`text-[13.5px] ${on ? "text-[#1c2740] font-semibold" : "text-[#26324a]"}`}>
                             <HighlightText text={node.label} query={query}/>
@@ -263,6 +268,7 @@ export function TreeSingleSelectModal({
                 {/* Поиск */}
                 <div className="px-5 pt-4 pb-2 flex-none">
                     <SearchBar
+                        accent={accent}
                         variant="gray"
                         value={query}
                         onChange={setQuery}
@@ -279,7 +285,7 @@ export function TreeSingleSelectModal({
                         className={`text-[13px] font-semibold cursor-pointer ${
                             selectedKey === null
                                 ? "text-[#c3ccd8] cursor-default"
-                                : "text-[#4e57d6] hover:underline"
+                                : `${a.text} hover:underline`
                         }`}
                     >
                         {selectedKey === null

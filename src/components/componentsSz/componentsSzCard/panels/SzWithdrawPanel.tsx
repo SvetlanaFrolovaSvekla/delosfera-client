@@ -3,7 +3,7 @@ import {useState} from "react";
 import {useTranslation} from "react-i18next";
 import {SzButton} from "@/components/componentsSz/componentsSzCard/controls/SzButton.tsx";
 import {inputClass} from "@/utils/szProcess/szCardUtils.ts";
-import {Tooltip} from "@/components/componentsGeneral/Tooltip.tsx";
+import {Tooltip} from "@/components/componentsGeneral/tooltips/Tooltip.tsx";
 import {ConfirmActionModal} from "@/components/componentsGeneral/modal/ConfirmActionModal.tsx";
 import {Undo2, X} from "lucide-react";
 

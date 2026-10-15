@@ -2,7 +2,7 @@
 import {useTranslation} from "react-i18next";
 import {useCannotCreateVndMessage} from "@/hooks/vndHooks/useCanCreateVnd.ts";
 import {PageHeader} from "@/components/componentsGeneral/PageHeader.tsx";
-import {Tooltip} from "@/components/componentsGeneral/Tooltip.tsx";
+import {Tooltip} from "@/components/componentsGeneral/tooltips/Tooltip.tsx";
 import {Plus} from "lucide-react";
 
 interface VndPageHeaderProps {

@@ -1,6 +1,6 @@
 // Верхняя часть рубрикатора
 import {HelpTooltip} from "@/components/componentsGeneral/knowledgeBaseComponents/HelpTooltip.tsx";
-import type {Side} from "@/components/componentsGeneral/Tooltip.tsx";
+import type {Side} from "@/components/componentsGeneral/tooltips/Tooltip.tsx";
 import {X} from "lucide-react";
 
 interface ModalHeaderProps {

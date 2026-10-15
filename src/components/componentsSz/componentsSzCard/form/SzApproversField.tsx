@@ -4,7 +4,7 @@ import {useTranslation} from "react-i18next";
 import {PlainCheckbox} from "@/components/componentsGeneral/componentsCheckBox/PlainCheckbox.tsx";
 import {ArrowDown, ArrowUp, ChevronRight, Users, X} from "lucide-react";
 import {SzUserMultiPickerModal} from "@/components/componentsSz/componentsSzCard/controls/SzUserMultiPickerModal.tsx";
-import {Tooltip} from "@/components/componentsGeneral/Tooltip.tsx";
+import {Tooltip} from "@/components/componentsGeneral/tooltips/Tooltip.tsx";
 import {Avatar} from "@/components/componentsGeneral/Avatar.tsx";
 
 export interface ApproverOption {
@@ -114,6 +114,7 @@ export function SzApproversField({
 
             {pickerOpen && (
                 <SzUserMultiPickerModal
+                    accent="blue"
                     people={users}
                     value={value}
                     onChange={onChange}

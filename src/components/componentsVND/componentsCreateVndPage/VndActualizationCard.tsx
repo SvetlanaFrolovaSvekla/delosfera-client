@@ -2,7 +2,7 @@
 import {useTranslation, Trans} from "react-i18next";
 import {ACTUALIZATION_MODE_OPTIONS, type ActualizationMode} from "@/utils/vndProcess/vndActualizationUtils.ts";
 import {DatePickerInput} from "@/components/componentsGeneral/datePickers/DatePickerInput.tsx";
-import {Tooltip} from "@/components/componentsGeneral/Tooltip.tsx";
+import {Tooltip} from "@/components/componentsGeneral/tooltips/Tooltip.tsx";
 
 interface VndActualizationCardProps {
     actualizationMode: ActualizationMode;

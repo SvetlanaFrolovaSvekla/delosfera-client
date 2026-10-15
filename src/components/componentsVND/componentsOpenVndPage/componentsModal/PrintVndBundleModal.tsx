@@ -16,7 +16,7 @@ import {
 import {useCanExportVnd} from "@/hooks/vndHooks/useCanExportVnd.ts";
 
 import {PlainCheckbox} from "@/components/componentsGeneral/componentsCheckBox/PlainCheckbox.tsx";
-import {Tooltip} from "@/components/componentsGeneral/Tooltip.tsx";
+import {Tooltip} from "@/components/componentsGeneral/tooltips/Tooltip.tsx";
 import {AttachmentDocxPreviewModal} from "@/components/componentsGeneral/modal/AttachmentDocxPreviewModal.tsx";
 import {
     ChevronDown, ChevronUp, Download, Eye, FileText, GripVertical, ListOrdered, Loader2, Printer, X,

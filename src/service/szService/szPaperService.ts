@@ -43,6 +43,21 @@ export interface SzPrintSignature {
     fingerprint: string | null;
     revoked: boolean;
     revokedReason: string | null;
+
+    /** Подпись ЭЦП ГП «Инфоком» (проверена у провайдера при сохранении резолюции). Поля ниже — только для неё. */
+    isEcp: boolean;
+    /** Тестовая имитация ЭЦП — не подпись. */
+    isTest: boolean;
+    organizationName: string | null;
+    /** Срок действия сертификата — как его вернул провайдер. */
+    certValidNotAfter: string | null;
+    issuerName: string | null;
+    /** Подписанный хэш резолюции (SHA-256, hex). */
+    documentHash: string | null;
+    /** SHA-256 самой подписи (hex). */
+    signatureSha256: string | null;
+    /** false — записку меняли после подписания; null — сверка неприменима. */
+    matchesCurrentContent: boolean | null;
 }
 
 export interface SzPrintApproval {
@@ -91,7 +106,15 @@ export interface SzPrintForm {
     addresseeName: string | null;
     addresseeDecision: string | null;
     addresseeDecisionAt: string | null;
+
+    /** Отпечаток текущего содержимого записки (SHA-256) — с ним сверяется каждая подпись ЭЦП. */
+    contentDigest: string | null;
 }
+
+/** Версия листа согласования: с подписями ЭЦП или для подписи от руки. */
+export type SzPrintMode = "signed" | "paper";
+
+export const szPrintUrl = (szId: number, mode: SzPrintMode) => `/sz/${szId}/print?mode=${mode}`;
 
 export const PRINT_RESOLUTION_LABEL: Record<string, string> = {
     Approved: "Согласовано",

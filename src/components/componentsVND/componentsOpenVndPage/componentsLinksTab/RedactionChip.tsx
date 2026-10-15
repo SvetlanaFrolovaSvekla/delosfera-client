@@ -2,7 +2,7 @@
 // «Все», «Общие» (ссылки без упоминания в тексте) и Р1, Р2, ... - какие ссылки упоминаются в
 // тексте какой редакции. Рядом с подписью - счётчик ссылок, зелёная точка - действующая
 // редакция. Необязательная подсказка (tooltip) показывается при наведении.
-import {Tooltip} from "@/components/componentsGeneral/Tooltip.tsx";
+import {Tooltip} from "@/components/componentsGeneral/tooltips/Tooltip.tsx";
 
 export function RedactionChip({active, onClick, label, count, current, tooltip}: {
     active: boolean;

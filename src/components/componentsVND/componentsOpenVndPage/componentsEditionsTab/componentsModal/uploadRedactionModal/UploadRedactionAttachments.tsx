@@ -8,7 +8,7 @@ import {downloadWithToast} from "@/utils/downloadFiles/downloadFile.ts";
 import {formatBytes, REDACTION_FILE_ACCEPT} from "@/utils/vndProcess/uploadRedactionFiles.ts";
 import {Clue} from "@/components/componentsGeneral/knowledgeBaseComponents/Clue.tsx";
 import {HelpTooltip} from "@/components/componentsGeneral/knowledgeBaseComponents/HelpTooltip.tsx";
-import {Tooltip} from "@/components/componentsGeneral/Tooltip.tsx";
+import {Tooltip} from "@/components/componentsGeneral/tooltips/Tooltip.tsx";
 
 interface UploadRedactionAttachmentsProps {
     previousAttachments?: VndRedactionAttachmentResponse[];

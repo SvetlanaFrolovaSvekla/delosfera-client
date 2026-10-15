@@ -7,7 +7,7 @@ import {useCanExportVnd, NO_EXPORT_VND_HINT} from "@/hooks/vndHooks/useCanExport
 import {formatDate} from "@/utils/dateUtils.ts";
 import {getRedactionDisplayStatus, REDACTION_STATUS_META} from "@/utils/vndProcess/redactionStatus.ts";
 import {HelpTooltip} from "@/components/componentsGeneral/knowledgeBaseComponents/HelpTooltip.tsx";
-import {Tooltip} from "@/components/componentsGeneral/Tooltip.tsx";
+import {Tooltip} from "@/components/componentsGeneral/tooltips/Tooltip.tsx";
 import {
     Calendar,
     CheckCircle2,

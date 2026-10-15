@@ -8,7 +8,7 @@ import {HighlightSubstrings, splitSearchTerms} from "@/utils/highlightText.tsx";
 import {Loader} from "@/components/componentsGeneral/Loader.tsx";
 import {EmptyState} from "@/components/componentsGeneral/EmptyState.tsx";
 import {DatePickerInput} from "@/components/componentsGeneral/datePickers/DatePickerInput.tsx";
-import {Tooltip} from "@/components/componentsGeneral/Tooltip.tsx";
+import {Tooltip} from "@/components/componentsGeneral/tooltips/Tooltip.tsx";
 import {CheckCircle2, Send, Undo2, XCircle, History, Search, X} from "lucide-react";
 
 export function ActualizationHistorySection({

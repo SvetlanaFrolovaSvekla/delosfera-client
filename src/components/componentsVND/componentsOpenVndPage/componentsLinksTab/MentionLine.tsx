@@ -7,7 +7,7 @@ import {languageShortLabel, shortFragment} from "@/components/componentsVND/comp
 import {
     isLegacyLink, type LinksSubTab
 } from "@/components/componentsVND/componentsOpenVndPage/componentsLinksTab/vndLinksTabUtils.ts";
-import {Tooltip} from "@/components/componentsGeneral/Tooltip.tsx";
+import {Tooltip} from "@/components/componentsGeneral/tooltips/Tooltip.tsx";
 import {ArrowUpRight, CornerDownRight, FileText, Search, Sparkles, TextSelect, X} from "lucide-react";
 
 export function MentionLine({link, perspective, canDelete, disabled, onDelete, onShowSource, onShowTarget}: {

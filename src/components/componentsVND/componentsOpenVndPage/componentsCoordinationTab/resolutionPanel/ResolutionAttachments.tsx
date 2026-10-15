@@ -3,7 +3,7 @@
 import {useTranslation} from "react-i18next";
 import {AlertCircle, Paperclip, X} from "lucide-react";
 import {formatFileSize} from "@/service/documentService/attachmentService.ts";
-import {Tooltip} from "@/components/componentsGeneral/Tooltip.tsx";
+import {Tooltip} from "@/components/componentsGeneral/tooltips/Tooltip.tsx";
 import {HelpTooltip} from "@/components/componentsGeneral/knowledgeBaseComponents/HelpTooltip.tsx";
 import {
     MAX_RESOLUTION_ATTACHMENTS,

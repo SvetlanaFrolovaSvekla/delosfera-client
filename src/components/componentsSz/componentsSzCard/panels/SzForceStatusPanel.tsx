@@ -5,7 +5,7 @@ import {SZ_STATUS_LABEL, type SzStatusCode} from "@/service/szService/szService.
 import {SzButton} from "@/components/componentsSz/componentsSzCard/controls/SzButton.tsx";
 import {inputClass} from "@/utils/szProcess/szCardUtils.ts";
 import {SelectDropdown} from "@/components/componentsGeneral/selects/SingleSelects/SelectDropdown.tsx";
-import {Tooltip} from "@/components/componentsGeneral/Tooltip.tsx";
+import {Tooltip} from "@/components/componentsGeneral/tooltips/Tooltip.tsx";
 import {ConfirmActionModal} from "@/components/componentsGeneral/modal/ConfirmActionModal.tsx";
 import {ArrowRightLeft, X} from "lucide-react";
 

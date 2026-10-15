@@ -10,7 +10,7 @@ import {NO_EXPORT_VND_HINT, useCanExportVnd} from "@/hooks/vndHooks/useCanExport
 import {isPreviewableFile} from "@/utils/downloadFiles/fileNaming.ts";
 import type {VndAttachmentLinkItem} from "@/service/vndService/vndServiceType.ts";
 import {RedactionPill} from "@/components/componentsVND/componentsOpenVndPage/componentsLinksTab/RedactionPill.tsx";
-import {Tooltip} from "@/components/componentsGeneral/Tooltip.tsx";
+import {Tooltip} from "@/components/componentsGeneral/tooltips/Tooltip.tsx";
 import {Download, Eye, FileText, FileX, Loader2, Search} from "lucide-react";
 
 export function AttachmentLinkRow({item, downloading, onPreview, onDownload, onShowInText}: {

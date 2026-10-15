@@ -19,7 +19,7 @@ import {EmptyState} from "@/components/componentsGeneral/EmptyState.tsx";
 import {Tabs} from "@/components/componentsGeneral/Tabs.tsx";
 import {SearchBar} from "@/components/componentsGeneral/SearchBar.tsx";
 import {SelectDropdown} from "@/components/componentsGeneral/selects/SingleSelects/SelectDropdown.tsx";
-import {Tooltip} from "@/components/componentsGeneral/Tooltip.tsx";
+import {Tooltip} from "@/components/componentsGeneral/tooltips/Tooltip.tsx";
 import {
     Badge, Cell, DataTable, Row,
     formatDate, type BadgeTone,

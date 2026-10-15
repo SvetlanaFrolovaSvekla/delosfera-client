@@ -15,7 +15,7 @@ import type {JournalView} from "@/service/journalViewService/journalViewService.
 import {useClickOutside} from "@/hooks/useClickOutside.ts";
 import {HelpTooltip} from "@/components/componentsGeneral/knowledgeBaseComponents/HelpTooltip.tsx";
 import {ConfirmActionModal} from "@/components/componentsGeneral/modal/ConfirmActionModal.tsx";
-import {Tooltip} from "@/components/componentsGeneral/Tooltip.tsx";
+import {Tooltip} from "@/components/componentsGeneral/tooltips/Tooltip.tsx";
 import {Check, ChevronDown, Save, Trash2, Users} from "lucide-react";
 
 interface Props {

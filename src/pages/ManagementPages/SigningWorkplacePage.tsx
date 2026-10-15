@@ -18,7 +18,7 @@ import {
 import {detectProvider, type ProviderInfo} from "@/service/signingService/cryptoProvider.ts";
 import {formatDate, formatDateTime} from "@/utils/dateUtils.ts";
 import {PageHeader} from "@/components/componentsGeneral/PageHeader.tsx";
-import {Tooltip} from "@/components/componentsGeneral/Tooltip.tsx";
+import {Tooltip} from "@/components/componentsGeneral/tooltips/Tooltip.tsx";
 import {HelpTooltip} from "@/components/componentsGeneral/knowledgeBaseComponents/HelpTooltip.tsx";
 import {Clue} from "@/components/componentsGeneral/knowledgeBaseComponents/Clue.tsx";
 import {

@@ -2,7 +2,7 @@
 import {useTranslation} from "react-i18next";
 import type {VndAuthenticityCheckResponse} from "@/service/vndService/vndAuthenticityService.ts";
 import {copyToClipboard, formatSize} from "@/utils/vndProcess/authenticityUtils.ts";
-import {Tooltip} from "@/components/componentsGeneral/Tooltip.tsx";
+import {Tooltip} from "@/components/componentsGeneral/tooltips/Tooltip.tsx";
 import {HelpTooltip} from "@/components/componentsGeneral/knowledgeBaseComponents/HelpTooltip.tsx";
 import {BTN_SECONDARY, CARD} from "./styles/authenticityStyles.ts";
 import {Copy, FileText} from "lucide-react";

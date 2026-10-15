@@ -76,3 +76,13 @@ export const SZ_INBOX_SUB_TAB_LABEL_KEYS: Record<SzInboxSubTab, string> = {
     Board: "tasks.inbox.szTabs.board",
     Execution: "tasks.inbox.szTabs.execution",
 };
+
+// Подвкладки «Согласования» в разделе СЗ: свои записки, которые сейчас согласуют другие,
+// и записки, где согласующий — сам пользователь.
+export type SzApprovalWho = "mine" | "approve";
+export const SZ_APPROVAL_WHO_IDS: SzApprovalWho[] = ["mine", "approve"];
+
+export const SZ_APPROVAL_WHO_LABEL_KEYS: Record<SzApprovalWho, string> = {
+    mine: "tasks.inbox.szApprovalTabs.mine",
+    approve: "tasks.inbox.szApprovalTabs.approve",
+};

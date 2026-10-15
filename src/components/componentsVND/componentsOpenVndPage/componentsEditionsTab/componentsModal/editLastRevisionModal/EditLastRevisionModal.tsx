@@ -27,7 +27,7 @@ import {
 } from "@/components/componentsGeneral/modal/AttachmentDocxPreviewModal.tsx";
 import {CharCounter} from "@/components/componentsGeneral/CharCounter.tsx";
 import {HelpTooltip} from "@/components/componentsGeneral/knowledgeBaseComponents/HelpTooltip.tsx";
-import { Tooltip } from "@/components/componentsGeneral/Tooltip.tsx";
+import { Tooltip } from "@/components/componentsGeneral/tooltips/Tooltip.tsx";
 import {TruncatedTooltip} from "@/components/componentsGeneral/TruncatedTooltip.tsx";
 import {Clue} from "@/components/componentsGeneral/knowledgeBaseComponents/Clue.tsx";
 import {

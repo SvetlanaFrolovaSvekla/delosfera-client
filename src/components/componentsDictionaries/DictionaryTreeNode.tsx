@@ -2,7 +2,7 @@
 import {useTranslation} from "react-i18next";
 import {HighlightText} from "@/utils/highlightText.tsx";
 import type {TreeDictItem, DictTreeNode} from "@/utils/dictionaries/hierarchicalDictTree.ts";
-import {Tooltip} from "@/components/componentsGeneral/Tooltip.tsx";
+import {Tooltip} from "@/components/componentsGeneral/tooltips/Tooltip.tsx";
 import {ChevronRight, Pencil, Plus, Trash2} from "lucide-react";
 
 interface DictionaryTreeNodeProps<T extends TreeDictItem> {

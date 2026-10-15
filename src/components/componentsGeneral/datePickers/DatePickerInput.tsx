@@ -4,6 +4,7 @@ import {useTranslation} from "react-i18next";
 import {createPortal} from "react-dom";
 import {Calendar, Check, ChevronLeft, ChevronRight} from "lucide-react";
 import {parseDDMMYYYY, formatDDMMYYYY, isSameDay} from "@/utils/dateUtils.ts";
+import {ACCENT, type Accent} from "@/constants/accent.ts";
 
 interface DatePickerInputProps {
     value: string;
@@ -17,6 +18,8 @@ interface DatePickerInputProps {
     withTime?: boolean;
     /** Время, подставляемое при выборе дня, пока оно не задано ("00:00" для начала периода, "23:59" для конца). */
     defaultTime?: string;
+    /** Акцентный цвет (фокус, выбранный день, кнопки). По умолчанию фиолетовый. */
+    accent?: Accent;
 }
 
 interface DayCell {
@@ -106,8 +109,10 @@ export function DatePickerInput({
                                     modalTitle: modalTitleProp,
                                     withTime = false,
                                     defaultTime = "00:00",
+                                    accent = "violet",
                                 }: DatePickerInputProps) {
     const {t} = useTranslation();
+    const a = ACCENT[accent];
 
     // В режиме со временем value = "дд.мм.гггг чч:мм": дату и время разбираем отдельно.
     const dateStr = withTime ? value.split(" ")[0] : value;
@@ -305,7 +310,7 @@ export function DatePickerInput({
                         type="button"
                         onClick={openCalendar}
                         disabled={disabled}
-                        className={`h-[36px] px-2.5 pr-7 rounded-[8px] border border-[#e5e9f0] bg-white text-[12.5px] text-left outline-none box-border focus:border-[#4e57d6] w-full cursor-pointer disabled:bg-[#f6f8fb] disabled:text-[#8b97ab] disabled:cursor-not-allowed ${
+                        className={`h-[36px] px-2.5 pr-7 rounded-[8px] border border-[#e5e9f0] bg-white text-[12.5px] text-left outline-none box-border ${a.focusBorder} w-full cursor-pointer disabled:bg-[#f6f8fb] disabled:text-[#8b97ab] disabled:cursor-not-allowed ${
                             value ? "text-[#1c2740]" : "text-[#a3adbd]"
                         } ${className}`}
                     >
@@ -321,7 +326,7 @@ export function DatePickerInput({
                         onFocus={() => {
                             if (!open) openCalendar();
                         }}
-                        className={`h-[36px] px-2.5 pr-7 rounded-[8px] border border-[#e5e9f0] bg-white text-[12.5px] text-[#1c2740] outline-none box-border focus:border-[#4e57d6] w-full disabled:bg-[#f6f8fb] disabled:text-[#8b97ab] disabled:cursor-not-allowed ${className}`}
+                        className={`h-[36px] px-2.5 pr-7 rounded-[8px] border border-[#e5e9f0] bg-white text-[12.5px] text-[#1c2740] outline-none box-border ${a.focusBorder} w-full disabled:bg-[#f6f8fb] disabled:text-[#8b97ab] disabled:cursor-not-allowed ${className}`}
                     />
                 )}
 
@@ -337,7 +342,7 @@ export function DatePickerInput({
                             type="button"
                             onClick={openCalendar}
                             disabled={disabled}
-                            className="text-[#a3adbd] hover:text-[#4e57d6] disabled:hover:text-[#a3adbd] disabled:cursor-not-allowed"
+                            className={`text-[#a3adbd] ${a.hoverText} disabled:hover:text-[#a3adbd] disabled:cursor-not-allowed`}
                         >
                             <Calendar className="w-[13px] h-[13px]"/>
                         </button>
@@ -354,7 +359,7 @@ export function DatePickerInput({
                                 <ChevronLeft className="w-4 h-4"/>
                             </button>
                             <button type="button" onClick={() => setView("years")}
-                                    className="cursor-pointer text-[12.5px] font-semibold text-[#1c2740] hover:text-[#4e57d6] px-1.5 py-0.5 rounded-md hover:bg-[#f6f8fb]">
+                                    className={`cursor-pointer text-[12.5px] font-semibold text-[#1c2740] ${a.hoverText} px-1.5 py-0.5 rounded-md hover:bg-[#f6f8fb]`}>
                                 {MONTHS[cursor.getMonth()]} {cursor.getFullYear()}
                             </button>
                             <button type="button" onClick={() => shiftMonth(1)}
@@ -384,9 +389,9 @@ export function DatePickerInput({
                                             !current ? "text-[#c7cedb]" : "text-[#3a4560]"
                                         } ${
                                             isSelected
-                                                ? "bg-[#4e57d6] text-white font-semibold"
+                                                ? `${a.bg} text-white font-semibold`
                                                 : isToday
-                                                    ? "border border-[#4e57d6] text-[#4e57d6] font-semibold"
+                                                    ? `border ${a.border} ${a.text} font-semibold`
                                                     : "hover:bg-[#f6f8fb]"
                                         }`}
                                     >
@@ -409,7 +414,7 @@ export function DatePickerInput({
                                         value={hh}
                                         onChange={(e) => handleHourChange(e.target.value)}
                                         onBlur={() => setHh((v) => v.padStart(2, "0"))}
-                                        className="h-9 w-[46px] rounded-[8px] border border-[#e5e9f0] text-center text-[12.5px] text-[#1c2740] outline-none box-border focus:border-[#4e57d6]"
+                                        className={`h-9 w-[46px] rounded-[8px] border border-[#e5e9f0] text-center text-[12.5px] text-[#1c2740] outline-none box-border ${a.focusBorder}`}
                                     />
                                     <span className="text-[#a3adbd]">:</span>
                                     <input
@@ -419,7 +424,7 @@ export function DatePickerInput({
                                         value={mm}
                                         onChange={(e) => handleMinuteChange(e.target.value)}
                                         onBlur={() => setMm((v) => v.padStart(2, "0"))}
-                                        className="h-9 w-[46px] rounded-[8px] border border-[#e5e9f0] text-center text-[12.5px] text-[#1c2740] outline-none box-border focus:border-[#4e57d6]"
+                                        className={`h-9 w-[46px] rounded-[8px] border border-[#e5e9f0] text-center text-[12.5px] text-[#1c2740] outline-none box-border ${a.focusBorder}`}
                                     />
                                 </div>
                             </div>
@@ -428,7 +433,7 @@ export function DatePickerInput({
                         <div className={`mt-2.5 pt-2.5 border-t border-[#eef2f7] flex items-center ${
                             withTime ? "justify-between" : "justify-center"}`}>
                             <button type="button" onClick={goToday}
-                                    className="cursor-pointer h-8 px-3 rounded-[8px] text-[12px] font-semibold text-[#4e57d6] hover:bg-[#f6f8fb]">
+                                    className={`cursor-pointer h-8 px-3 rounded-[8px] text-[12px] font-semibold ${a.text} hover:bg-[#f6f8fb]`}>
                                 {t("datePickerInput.today")} {/* Сегодня */}
                             </button>
                             {withTime && (
@@ -437,7 +442,7 @@ export function DatePickerInput({
                                             setOpen(false);
                                             setView("days");
                                         }}
-                                        className="cursor-pointer h-8 px-3.5 rounded-[8px] border-none bg-[#4e57d6] text-white text-[12px] font-semibold hover:brightness-[1.06]">
+                                        className={`cursor-pointer h-8 px-3.5 rounded-[8px] border-none ${a.bg} text-white text-[12px] font-semibold hover:brightness-[1.06]`}>
                                     {t("datePickerInput.done")} {/* Готово */}
                                 </button>
                             )}
@@ -458,7 +463,7 @@ export function DatePickerInput({
                                     onKeyDown={handleManualKeyDown}
                                     placeholder={dateFormatPlaceholder} // дд.мм.гггг
                                     maxLength={fullLength}
-                                    className={`h-9 px-2.5 rounded-[8px] border text-[12.5px] text-[#1c2740] outline-none flex-1 box-border focus:border-[#4e57d6] ${
+                                    className={`h-9 px-2.5 rounded-[8px] border text-[12.5px] text-[#1c2740] outline-none flex-1 box-border ${a.focusBorder} ${
                                         manualError ? "border-[#e0525f] focus:border-[#e0525f]" : "border-[#e5e9f0]"
                                     }`}
                                 />
@@ -469,7 +474,7 @@ export function DatePickerInput({
                                     aria-label={t("datePickerInput.confirmDateAria")} // Подтвердить дату
                                     className={`w-9 h-9 flex-none grid place-items-center rounded-[8px] border-none transition-colors ${
                                         manualIsValid
-                                            ? "bg-[#4e57d6] text-white cursor-pointer hover:brightness-105"
+                                            ? `${a.bg} text-white cursor-pointer hover:brightness-105`
                                             : "bg-[#f0f2f6] text-[#c7cedb] cursor-not-allowed"
                                     }`}
                                 >
@@ -505,7 +510,7 @@ export function DatePickerInput({
                                     onClick={() => pickYear(year)}
                                     className={`cursor-pointer h-8 rounded-[8px] text-[12.5px] ${
                                         year === cursor.getFullYear()
-                                            ? "bg-[#4e57d6] text-white font-semibold"
+                                            ? `${a.bg} text-white font-semibold`
                                             : "text-[#3a4560] hover:bg-[#f6f8fb]"
                                     }`}
                                 >

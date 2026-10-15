@@ -10,7 +10,7 @@ import {useTranslation} from "react-i18next";
 import {szApprovalService, type SzDetails} from "@/service/szService/szService.ts";
 import type {SzAssignmentDraft} from "@/service/szService/szExecutionService.ts";
 import {formatDateTime} from "@/utils/szProcess/szCardUtils.ts";
-import {Tooltip} from "@/components/componentsGeneral/Tooltip.tsx";
+import {Tooltip} from "@/components/componentsGeneral/tooltips/Tooltip.tsx";
 import {Plus, X} from "lucide-react";
 
 interface Props {

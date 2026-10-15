@@ -5,7 +5,7 @@ import {useTranslation} from "react-i18next";
 import {HighlightText} from "@/utils/highlightText.tsx";
 import {getRefSections} from "@/constants/getRefSections.ts";
 import {SearchBar} from "@/components/componentsGeneral/SearchBar.tsx";
-import {Tooltip} from "@/components/componentsGeneral/Tooltip.tsx";
+import {Tooltip} from "@/components/componentsGeneral/tooltips/Tooltip.tsx";
 
 export function DictionariesPages() {
     const {t} = useTranslation();

@@ -11,7 +11,7 @@ import {useSheetPreview} from "@/hooks/vndHooks/useSheetPreview.ts";
 import {usePptxPreview} from "@/hooks/vndHooks/usePptxPreview.ts";
 import {usePdfPreview} from "@/hooks/vndHooks/usePdfPreview.ts";
 import {getPreviewableFileKind} from "@/utils/downloadFiles/fileNaming.ts";
-import {Tooltip} from "@/components/componentsGeneral/Tooltip.tsx";
+import {Tooltip} from "@/components/componentsGeneral/tooltips/Tooltip.tsx";
 import {AlertTriangle, Download, FileSpreadsheet, FileText, Loader2, Presentation, X} from "lucide-react";
 
 interface AttachmentDocxPreviewModalProps {

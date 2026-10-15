@@ -3,6 +3,7 @@ import type {ReactNode} from "react";
 import {useTranslation} from "react-i18next";
 import {useModalShake} from "@/hooks/useModalShake.ts";
 import {AlertTriangle, Lock, Unlock, ShieldCheck, type LucideIcon} from "lucide-react";
+import type {Accent} from "@/constants/accent.ts";
 
 export type ConfirmActionVariant = "danger" | "warning" | "success" | "primary";
 
@@ -40,6 +41,14 @@ const VARIANT_STYLES: Record<ConfirmActionVariant, VariantStyle> = {
     },
 };
 
+/** Основная (primary) модалка в синем акценте реестра СЗ - вместо фиолетового по умолчанию. */
+const PRIMARY_BLUE: VariantStyle = {
+    haloBg: "bg-[#e9f0ff]",
+    circleBg: "bg-[#2f68f5]",
+    confirmBg: "bg-[#2f68f5]",
+    Icon: ShieldCheck,
+};
+
 interface ConfirmActionModalProps {
     open: boolean;
     onClose: () => void;
@@ -51,6 +60,11 @@ interface ConfirmActionModalProps {
     loading?: boolean;
     error?: string | null;
     variant?: ConfirmActionVariant;
+    /**
+     * Акцент основной модалки (variant="primary"): по умолчанию фиолетовый, "blue" - синий, как в СЗ.
+     * Красной, жёлтой и зелёной модалкам (danger / warning / success) цвет не меняет.
+     */
+    accent?: Accent;
     icon?: LucideIcon;
     /** Шире обычного (760px) — для окон с подробным пояснением внутри. */
     wide?: boolean;
@@ -72,6 +86,7 @@ export function ConfirmActionModal({
                                        loading = false,
                                        error = null,
                                        variant = "warning",
+                                       accent,
                                        icon,
                                        wide = false,
                                        wideConfirm = false,
@@ -82,7 +97,7 @@ export function ConfirmActionModal({
 
     if (!open) return null;
 
-    const style = VARIANT_STYLES[variant];
+    const style = variant === "primary" && accent === "blue" ? PRIMARY_BLUE : VARIANT_STYLES[variant];
     const Icon = icon ?? style.Icon;
 
     return (

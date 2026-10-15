@@ -10,7 +10,7 @@ import type {RedactionLanguage} from "@/utils/vndProcess/redactionLanguagePanelU
 import {
     DOC_ACCEPT
 } from "@/components/componentsVND/componentsOpenVndPage/componentsEditionsTab/componentsModal/editLastRevisionModal/EditLastRevisionModal.tsx";
-import {Tooltip} from "@/components/componentsGeneral/Tooltip.tsx";
+import {Tooltip} from "@/components/componentsGeneral/tooltips/Tooltip.tsx";
 import {CheckCircle2, Download, Eye, FileText, Paperclip, RefreshCcw, RotateCcw} from "lucide-react";
 
 export interface DocSlotDef {

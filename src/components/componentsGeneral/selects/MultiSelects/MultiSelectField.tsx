@@ -3,8 +3,9 @@ import {useLayoutEffect, useRef, useState, type ReactNode} from "react";
 import {useTranslation} from "react-i18next";
 import {MultiSelectModal} from "./MultiSelectModal.tsx";
 import {TreeMultiSelectModal, type TreeSelectOption} from "./TreeMultiSelectModal.tsx";
-import {Tooltip} from "../../Tooltip.tsx";
+import {Tooltip} from "../../tooltips/Tooltip.tsx";
 import {ChevronDown, X} from "lucide-react";
+import {ACCENT, type Accent} from "@/constants/accent.ts";
 
 interface SelectListFieldProps {
     label?: string;
@@ -22,6 +23,8 @@ interface SelectListFieldProps {
     modalHint?: ReactNode;
     /** Доп. действие справа в строке окна выбора (только для плоского списка) */
     renderOptionAction?: (key: string) => ReactNode;
+    /** Акцентный цвет чипсов «Все»/«+N» и модалки-дерева. По умолчанию фиолетовый. */
+    accent?: Accent;
 }
 
 const MAX_VISIBLE_CHIPS = 5;
@@ -72,8 +75,10 @@ export function MultiSelectField({
                                      showChevron = true,
                                      modalHint,
                                      renderOptionAction,
+                                     accent = "violet",
                                  }: SelectListFieldProps) {
     const {t} = useTranslation();
+    const a = ACCENT[accent];
     const [modalOpen, setModalOpen] = useState(false);
 
     const selectedOptions = options.filter((o) => selectedKeys.includes(o.key));
@@ -112,7 +117,7 @@ export function MultiSelectField({
                         )}
                         {allSelected ? (
                             <span
-                                className="inline-flex items-center pl-[9px] pr-[9px] py-[3px] rounded-full bg-[#ececfc] text-[12px] text-[#4e57d6] font-semibold">
+                                className={`inline-flex items-center pl-[9px] pr-[9px] py-[3px] rounded-full ${a.softBg} text-[12px] ${a.text} font-semibold`}>
                                 {t("general.selectAll")}
                             </span>
                         ) : (
@@ -141,7 +146,7 @@ export function MultiSelectField({
                                         side="top"
                                     >
                                         <span
-                                            className="inline-flex flex-none cursor-default items-center px-[9px] py-[3px] rounded-full bg-[#ececfc] text-[12px] font-semibold text-[#4e57d6]"
+                                            className={`inline-flex flex-none cursor-default items-center px-[9px] py-[3px] rounded-full ${a.softBg} text-[12px] font-semibold ${a.text}`}
                                         >
                                             +{hiddenOptions.length}
                                         </span>
@@ -166,6 +171,7 @@ export function MultiSelectField({
                     onApply={onChange}
                     searchPlaceholder={searchPlaceholder}
                     selectedCountLabel={selectedCountLabel}
+                    accent={accent}
                 />
             ) : (
                 <MultiSelectModal
@@ -179,6 +185,7 @@ export function MultiSelectField({
                     selectedCountLabel={selectedCountLabel}
                     hint={modalHint}
                     renderOptionAction={renderOptionAction}
+                    accent={accent}
                 />
             )}
         </>

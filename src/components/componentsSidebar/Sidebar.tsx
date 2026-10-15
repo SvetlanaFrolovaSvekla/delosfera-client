@@ -16,6 +16,7 @@ import {CountBadge} from "@/components/componentsSidebar/CountBadge.tsx";
 import {useFeedbackNewCount} from "@/hooks/feedbackHooks/useFeedbackNewCount.ts";
 import {RubricTreeModal} from "@/components/componentsGeneral/rubricator/RubricTreeModal.tsx";
 import {Icon} from "@/assets/icons/Icon";
+import {Tooltip} from "@/components/componentsGeneral/tooltips/Tooltip.tsx";
 import {ChevronRight, PanelLeftClose, PanelLeftOpen} from "lucide-react";
 
 const MODAL_ITEM_IDS = ["rubric"];
@@ -24,6 +25,9 @@ type RubricVariant = "vnd" | "sz";
 
 const COLLAPSED_KEY = "delosfera.sidebar.collapsed";
 const HIDDEN_KEY = "delosfera.sidebar.hidden";
+
+// Длительность выезда/сворачивания панели
+const SIDEBAR_ANIMATION_MS = 300;
 
 /** Пункты, у которых вместо цифры - просто красная точка ("есть новое"), а число - в подсказке */
 const DOT_BADGE_IDS = ["management"];
@@ -161,30 +165,55 @@ export function Sidebar() {
         }))
         .filter((grp) => grp.items.length > 0);
 
-    // Панель спрятана целиком — на её месте остаётся только стрелка возврата.
+    // Ширина раскрытой панели; у спрятанной - 0. Само содержимое всегда держит полную ширину,
+    // поэтому при скрытии оно не сплющивается, а просто уезжает за левый край.
+    const fullWidth = collapsed ? 72 : 248;
+    const slide = `${SIDEBAR_ANIMATION_MS}ms ease-out`;
+
+    // Когда панель спрятана, на её месте остаётся только стрелка возврата.
     // Кнопка держится у края экрана, а не в шапке: там её ищут глазами по тому
-    // же месту, где панель и была.
-    if (hidden) {
-        return (
-            <button
-                type="button"
-                onClick={() => setHiddenPersisted(false)}
-                title={t("sidebar.showMenu")}
-                aria-label={t("sidebar.showMenu")}
-                className="fixed left-0 top-[70px] z-30 grid h-9 w-7 place-items-center
-                           rounded-r-[9px] border border-l-0 border-[#e5e9f0] bg-white
-                           text-[#8b97ab] shadow-sm transition hover:text-[#2f68f5]"
-            >
-                <PanelLeftOpen size={17}/>
-            </button>
-        );
-    }
+    // же месту, где панель и была. Появляется после того, как панель уехала.
+    const showMenuButton = (
+        <div
+            className={`fixed left-0 top-[70px] z-30 ${hidden ? "" : "pointer-events-none"}`}
+            style={{
+                opacity: hidden ? 1 : 0,
+                transform: hidden ? "translateX(0)" : "translateX(-100%)",
+                transition: `opacity ${slide}, transform ${slide}`,
+                transitionDelay: hidden ? `${SIDEBAR_ANIMATION_MS * 0.6}ms` : "0ms",
+            }}
+        >
+            <Tooltip content={t("sidebar.showMenu")} side="right">
+                <button
+                    type="button"
+                    onClick={() => setHiddenPersisted(false)}
+                    aria-label={t("sidebar.showMenu")}
+                    tabIndex={hidden ? 0 : -1}
+                    className="grid h-9 w-7 cursor-pointer place-items-center
+                               rounded-r-[9px] border border-l-0 border-[#e5e9f0] bg-white
+                               text-[#8b97ab] shadow-sm transition hover:text-[#2f68f5]"
+                >
+                    <PanelLeftOpen size={17}/>
+                </button>
+            </Tooltip>
+        </div>
+    );
 
     return (
+        <>
+        {showMenuButton}
         <aside
-            className="flex flex-none flex-col overflow-hidden border-r border-[#e5e9f0] bg-white transition-[width] duration-400 ease-in-out"
-            style={{width: collapsed ? 72 : 248}}
+            className="flex flex-none overflow-hidden border-[#e5e9f0] bg-white"
+            aria-hidden={hidden}
+            style={{
+                width: hidden ? 0 : fullWidth,
+                borderRightWidth: hidden ? 0 : 1,
+                // visibility переключается после анимации: спрятанные пункты не ловят Tab
+                visibility: hidden ? "hidden" : "visible",
+                transition: `width ${slide}, border-right-width ${slide}, visibility 0s linear ${hidden ? SIDEBAR_ANIMATION_MS : 0}ms`,
+            }}
         >
+            <div className="flex flex-none flex-col" style={{width: fullWidth}}>
             {/* Логотип */}
             <Link
                 to="/"
@@ -230,7 +259,7 @@ export function Sidebar() {
                                             style={{background: "var(--app-accent, #4e57d6)"}}
                                         />
                                     )}
-                                    <span className="relative flex-none">
+                                    <span className="relative flex-none transition-transform duration-200 group-hover:scale-110">
                                         <Icon name={it.icon} width={19} height={19}/>
                                         {collapsed && !!it.badge && (
                                             <CountBadge count={it.badge} tooltip={dynamicBadgeTooltips[it.id]} tooltipSide="right"
@@ -257,12 +286,13 @@ export function Sidebar() {
                                 </>
                             );
 
-                            const sharedClassName = `cursor-pointer relative mb-0.5 flex w-full items-start overflow-hidden rounded-[9px] text-[13px] font-medium transition-all duration-200 ${
+                            const sharedClassName = `group cursor-pointer relative mb-0.5 flex w-full items-start overflow-hidden rounded-[9px] text-[13px] font-medium transition-all duration-200 ${
                                 collapsed ? "justify-center gap-0 px-0 py-[10px]" : "gap-[11px] px-[11px] py-[9px]"
                             }`;
+                            // Цвет текста - inline, иначе его перебивает глобальный стиль ссылок (a {color})
                             const sharedStyle = {
-                                background: isActive ? "var(--app-soft, #ececfc)" : "transparent",
                                 color: isActive ? "var(--app-accent, #4e57d6)" : "#4a566d",
+                                ...(isActive ? {background: "var(--app-soft, #ececfc)"} : {}),
                             };
 
                             if (it.path) {
@@ -316,15 +346,16 @@ export function Sidebar() {
                     {!collapsed && <span>{t("sidebar.collapse")}</span>}
                 </button>
 
-                <button
-                    onClick={() => setHiddenPersisted(true)}
-                    title={t("sidebar.hideMenu")}
-                    aria-label={t("sidebar.hideMenu")}
-                    className="flex-none cursor-pointer rounded-[9px] p-[9px] text-[#8b97ab]
-                               transition hover:bg-[#f2f5f9] hover:text-[#2f68f5]"
-                >
-                    <PanelLeftClose size={18}/>
-                </button>
+                <Tooltip content={t("sidebar.hideMenu")} side={collapsed ? "right" : "top"} className="flex-none">
+                    <button
+                        onClick={() => setHiddenPersisted(true)}
+                        aria-label={t("sidebar.hideMenu")}
+                        className="flex-none cursor-pointer rounded-[9px] p-[9px] text-[#8b97ab]
+                                   transition hover:bg-[#f2f5f9] hover:text-[#2f68f5]"
+                    >
+                        <PanelLeftClose size={18}/>
+                    </button>
+                </Tooltip>
             </div>
 
             {/* Модалка «Рубрикатор» — переключатель внутри модалки выбирает ВНД или СЗ */}
@@ -347,6 +378,8 @@ export function Sidebar() {
                 variantValue={rubricVariant}
                 onVariantChange={(v) => setRubricVariant(v as RubricVariant)}
             />
+            </div>
         </aside>
+        </>
     );
 }

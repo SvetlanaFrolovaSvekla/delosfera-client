@@ -1,6 +1,6 @@
 // Строка одного вложения резолюции
 import {useLayoutEffect, useRef, useState} from "react";
-import {Tooltip} from "@/components/componentsGeneral/Tooltip.tsx";
+import {Tooltip} from "@/components/componentsGeneral/tooltips/Tooltip.tsx";
 import {downloadWithToast} from "@/utils/downloadFiles/downloadFile.ts";
 import {isPreviewableFile} from "@/utils/downloadFiles/fileNaming.ts";
 import {Paperclip, Download, Eye} from "lucide-react";

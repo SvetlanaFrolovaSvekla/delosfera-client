@@ -19,7 +19,7 @@ import {SearchBar} from "@/components/componentsGeneral/SearchBar.tsx";
 import {SelectDropdown} from "@/components/componentsGeneral/selects/SingleSelects/SelectDropdown.tsx";
 import {PlainCheckbox} from "@/components/componentsGeneral/componentsCheckBox/PlainCheckbox.tsx";
 import {EmptyState} from "@/components/componentsGeneral/EmptyState.tsx";
-import {Tooltip} from "@/components/componentsGeneral/Tooltip.tsx";
+import {Tooltip} from "@/components/componentsGeneral/tooltips/Tooltip.tsx";
 import {ConfirmActionModal} from "@/components/componentsGeneral/modal/ConfirmActionModal.tsx";
 import {HighlightText} from "@/utils/highlightText.tsx";
 import {userService} from "@/service/userService/userService.ts";

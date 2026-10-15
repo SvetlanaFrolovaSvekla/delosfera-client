@@ -1,5 +1,5 @@
 /**
- * Массовая сдача записок в архив (СЗ-7): вся отобранная пачка подшивается в одно
+ * Массовая сдача записок в архив: вся отобранная пачка подшивается в одно
  * дело номенклатуры. Часть записок может не пройти проверку (не исполнена, оригинал
  * на руках) — итог показывает, сколько прошло и что не прошло, поимённо.
  *
@@ -131,6 +131,7 @@ export function SzBulkArchiveModal({ids, onClose, onDone}: Props) {
                             options={caseOptions}
                             selectedKey={caseId ? String(caseId) : null}
                             onChange={(key) => setCaseId(key ? Number(key) : 0)}
+                            accent="blue"
                         />
 
                         {/* Срок хранения — необязательно, по умолчанию из дела */}
@@ -145,6 +146,7 @@ export function SzBulkArchiveModal({ids, onClose, onDone}: Props) {
                                 onChange={setTermId}
                                 minWidth="100%"
                                 className="w-full"
+                                accent="blue"
                             />
                         </div>
 

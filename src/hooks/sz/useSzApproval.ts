@@ -5,9 +5,20 @@ import {useTranslation} from "react-i18next";
 import {useAuth} from "@/context/AuthContext.ts";
 import {oepSigningService} from "@/service/signingService/oepSigningService.ts";
 import {workflowService, type ResolutionType, type RouteInstance} from "@/service/workflowService/workflowService.ts";
+import {szEcpService, type SzSignableResolution} from "@/service/szService/szEcpService.ts";
+import {ecpCredentialService} from "@/service/ecpCredentialService.ts";
+import {useEcpHashSigning} from "@/hooks/useEcpHashSigning.ts";
+import type {ResolutionEcpSignature} from "@/hooks/useEcpApproval.ts";
 import {serverMessage} from "@/utils/szProcess/szCardUtils.ts";
 
+/** Код ошибки проверки подписи от backend (ResolutionSignatureErrorCodes). */
+function serverCode(e: unknown): string | undefined {
+    return (e as { response?: { data?: { code?: string } } }).response?.data?.code;
+}
+
 interface Params {
+    /** Записка — хэш резолюции для ЭЦП строит её backend. */
+    szId: number | undefined;
     route: RouteInstance | null;
     setSaving: (value: boolean) => void;
     setError: (message: string | null) => void;
@@ -15,10 +26,28 @@ interface Params {
     reload: () => Promise<void>;
 }
 
-export function useSzApproval({route, setSaving, setError, setNotice, reload}: Params) {
+export function useSzApproval({szId, route, setSaving, setError, setNotice, reload}: Params) {
     const {t} = useTranslation();
     const {user} = useAuth();
     const [comment, setComment] = useState("");
+
+    /** ЭЦП ГП «Инфоком» — как у ВНД: сохранённая идентификация → сессия → окно ПИН/кода. */
+    const ecp = useEcpHashSigning();
+
+    /** Тестовый режим сервера (EcpSigning:AllowWithoutEcp): решения без ЭЦП разрешены. */
+    const [allowWithoutEcp, setAllowWithoutEcp] = useState(false);
+    /** Тестовая имитация ЭЦП только для СЗ (EcpSigning:AllowSzTestEcp). */
+    const [allowSzTestEcp, setAllowSzTestEcp] = useState(false);
+    useEffect(() => {
+        szEcpService.testMode()
+            .then((r) => setAllowSzTestEcp(r.allowSzTestEcp))
+            .catch(() => setAllowSzTestEcp(false));
+    }, []);
+    useEffect(() => {
+        ecpCredentialService.testMode()
+            .then((r) => setAllowWithoutEcp(r.allowWithoutEcp))
+            .catch(() => setAllowWithoutEcp(false));
+    }, []);
 
     /** Открыто окно подписания: этап требует квалифицированной подписи. */
     const [qualifiedDialogOpen, setQualifiedDialogOpen] = useState(false);
@@ -101,6 +130,79 @@ export function useSzApproval({route, setSaving, setError, setNotice, reload}: P
         }
     };
 
+    /**
+     * Решение с подписью ЭЦП ГП «Инфоком». Хэш резолюции (решение + комментарий + содержимое
+     * записки) строит backend; тот же хэш он пересчитает при сохранении и сверит с подписанным —
+     * если записку или комментарий успели изменить, ответит "document_changed" и попросит подписать
+     * заново. Подписываются все решения: и "Согласовать", и замечания, и отклонение.
+     */
+    const signAndResolve = async (type: SzSignableResolution) => {
+        if (!myParticipant || szId === undefined) return;
+        const text = comment.trim();
+        if ((type === "ApprovedWithRemarks" || type === "Rejected") && !text) {
+            setError(t("szCard.approval.commentRequired"));
+            return;
+        }
+
+        setError(null);
+        setNotice(null);
+        const participantId = myParticipant.id;
+
+        let signature: ResolutionEcpSignature;
+        try {
+            signature = await ecp.requestSignature({
+                getHash: async () => (await szEcpService.getResolutionHash(szId, participantId, type, text)).hash,
+                signStored: () => szEcpService.signStored(szId, participantId, type, text),
+            });
+        } catch (e) {
+            // Окно подписи закрыли — это не ошибка, просто решение не отправлено.
+            if (e instanceof Error && e.message === "Подписание отменено") return;
+            setError(serverMessage(e) ?? t("szCard.approval.ecpSignFailed"));
+            return;
+        }
+
+        setSaving(true);
+        try {
+            await szEcpService.resolve(szId, participantId, type, text, signature);
+            setComment("");
+            setNotice(t("szCard.approval.decisionMadeEcp", {decision: t(`szCard.resolution.${type}`).toLowerCase()}));
+            await reload();
+        } catch (e) {
+            const code = serverCode(e);
+            // Подпись чужая / учётка привязана к другой ЭЦП — сбрасываем сессию, чтобы в следующий
+            // раз открылось окно с вводом ПИН, а не подписалось снова тем же токеном.
+            if (code === "identity_mismatch") ecp.resetSession();
+            setError(code === "document_changed"
+                ? t("szCard.approval.ecpDocumentChanged")
+                : serverMessage(e) ?? t("szCard.approval.decisionFailed"));
+        } finally {
+            setSaving(false);
+        }
+    };
+
+    /** ТЕСТ: решение с имитацией ЭЦП (сервер: EcpSigning:AllowSzTestEcp) — без окна ПИН/кода и без ГП. */
+    const testSignAndResolve = async (type: SzSignableResolution) => {
+        if (!myParticipant || szId === undefined) return;
+        const text = comment.trim();
+        if ((type === "ApprovedWithRemarks" || type === "Rejected") && !text) {
+            setError(t("szCard.approval.commentRequired"));
+            return;
+        }
+        setSaving(true);
+        setError(null);
+        setNotice(null);
+        try {
+            await szEcpService.resolveTest(szId, myParticipant.id, type, text);
+            setComment("");
+            setNotice(t("szCard.approval.decisionMadeTestEcp", {decision: t(`szCard.resolution.${type}`).toLowerCase()}));
+            await reload();
+        } catch (e) {
+            setError(serverMessage(e) ?? t("szCard.approval.decisionFailed"));
+        } finally {
+            setSaving(false);
+        }
+    };
+
     const confirmRemark = async (remarkId: number) => {
         setSaving(true);
         setError(null);
@@ -117,7 +219,7 @@ export function useSzApproval({route, setSaving, setError, setNotice, reload}: P
 
     return {
         comment, setComment, myParticipant, isSigningStep, needsQualified, openRemarks,
-        resolve, confirmRemark,
+        resolve, signAndResolve, testSignAndResolve, confirmRemark, ecp, allowWithoutEcp, allowSzTestEcp,
         qualifiedDialogOpen, setQualifiedDialogOpen, oepModalOpen, setOepModalOpen, oepAvailable,
     };
 }

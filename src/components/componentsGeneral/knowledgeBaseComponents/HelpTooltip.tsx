@@ -1,5 +1,5 @@
 // Значок вопросительного знака с тултипом (подсказка)
-import {type Side, Tooltip} from "@/components/componentsGeneral/Tooltip.tsx";
+import {type Side, Tooltip} from "@/components/componentsGeneral/tooltips/Tooltip.tsx";
 import {HelpCircle} from "lucide-react";
 
 interface HelpTooltipProps {

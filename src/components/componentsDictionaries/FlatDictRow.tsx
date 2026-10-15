@@ -2,7 +2,7 @@
 import {useTranslation} from "react-i18next";
 import type {FlatDictItem} from "@/hooks/dictionariesHooks/useFlatDictList.ts";
 import {HighlightText} from "@/utils/highlightText.tsx";
-import {Tooltip} from "@/components/componentsGeneral/Tooltip.tsx";
+import {Tooltip} from "@/components/componentsGeneral/tooltips/Tooltip.tsx";
 import {Pencil, Trash2} from "lucide-react";
 
 interface FlatDictRowProps<T extends FlatDictItem> {

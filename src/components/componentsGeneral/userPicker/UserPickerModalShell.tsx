@@ -3,6 +3,7 @@ import type {ReactNode} from "react";
 import {Loader2, Search, X} from "lucide-react";
 import {useTranslation} from "react-i18next";
 import {EmptyState} from "@/components/componentsGeneral/EmptyState.tsx";
+import {ACCENT, type Accent} from "@/constants/accent.ts";
 
 interface UserPickerModalShellProps {
     title: string;
@@ -35,9 +36,10 @@ export function UserPickerModalShell({title, onClose, filters, children}: UserPi
     );
 }
 
-export function UserPickerSearchInput({value, onChange, placeholder}: {
-    value: string; onChange: (v: string) => void; placeholder: string;
+export function UserPickerSearchInput({value, onChange, placeholder, accent = "violet"}: {
+    value: string; onChange: (v: string) => void; placeholder: string; accent?: Accent;
 }) {
+    const a = ACCENT[accent];
     return (
         <div className="relative">
             <Search size={15} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-[#8b97ab]"/>
@@ -46,7 +48,7 @@ export function UserPickerSearchInput({value, onChange, placeholder}: {
                 value={value}
                 onChange={(e) => onChange(e.target.value)}
                 placeholder={placeholder}
-                className="h-[38px] w-full rounded-[10px] border border-[#e5e9f0] bg-[#fbfcfe] pl-9 pr-3 text-[13px] text-[#26324a] outline-none focus:border-[#4e57d6]"
+                className={`h-[38px] w-full rounded-[10px] border border-[#e5e9f0] bg-[#fbfcfe] pl-9 pr-3 text-[13px] text-[#26324a] outline-none ${a.focusBorder}`}
             />
         </div>
     );

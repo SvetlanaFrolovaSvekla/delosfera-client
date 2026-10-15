@@ -30,7 +30,7 @@ import {
 import {
     AttachmentDocxPreviewModal
 } from "@/components/componentsGeneral/modal/AttachmentDocxPreviewModal.tsx";
-import {Tooltip} from "@/components/componentsGeneral/Tooltip.tsx";
+import {Tooltip} from "@/components/componentsGeneral/tooltips/Tooltip.tsx";
 
 import {RefreshCw, X} from "lucide-react";
 

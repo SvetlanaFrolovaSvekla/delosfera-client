@@ -1,5 +1,5 @@
 // Кнопка карточки служебной записки: один набор вариантов вместо длинных строк классов в разметке.
-import type {ButtonHTMLAttributes} from "react";
+import type {ButtonHTMLAttributes, ReactNode} from "react";
 
 export type SzButtonVariant =
     | "primary" | "success" | "outline" | "muted" | "danger"
@@ -34,8 +34,15 @@ export function szButtonClass(variant: SzButtonVariant, size: SzButtonSize = "md
 interface SzButtonProps extends Omit<ButtonHTMLAttributes<HTMLButtonElement>, "type"> {
     variant?: SzButtonVariant;
     size?: SzButtonSize;
+    /** Иконка слева от подписи */
+    icon?: ReactNode;
 }
 
-export function SzButton({variant = "muted", size = "md", className = "", ...rest}: SzButtonProps) {
-    return <button type="button" className={`${szButtonClass(variant, size)} ${className}`} {...rest}/>;
+export function SzButton({variant = "muted", size = "md", className = "", icon, children, ...rest}: SzButtonProps) {
+    return (
+        <button type="button" className={`${szButtonClass(variant, size)} ${icon ? "gap-1.5" : ""} ${className}`} {...rest}>
+            {icon}
+            {children}
+        </button>
+    );
 }

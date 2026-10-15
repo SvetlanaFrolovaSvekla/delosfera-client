@@ -3,7 +3,7 @@ import {useRef, useState} from "react";
 import {useTranslation} from "react-i18next";
 import {HighlightText} from "@/utils/highlightText.tsx";
 import {useClickOutside} from "@/hooks/useClickOutside.ts";
-import {Tooltip} from "@/components/componentsGeneral/Tooltip.tsx";
+import {Tooltip} from "@/components/componentsGeneral/tooltips/Tooltip.tsx";
 import {Check, ChevronDown, Search, X} from "lucide-react";
 
 export interface MultiSelectOption {

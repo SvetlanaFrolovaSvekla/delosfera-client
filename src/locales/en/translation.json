@@ -1,4 +1,128 @@
 {
+  "vndBoard": {
+    "title": "VND Board",
+    "description": "VNDs your unit is responsible for, plus documents you added yourself — by status of the latest edition",
+    "addButton": "Add VND",
+    "registryLink": "VND Registry",
+    "loading": "Building your board…",
+    "errorTitle": "Failed to load the board",
+    "retry": "Retry",
+    "searchPlaceholder": "Find on the board by code or title",
+    "panelCountFiltered": "{{shown}} of {{total}}",
+    "panelEmptyFiltered": "Nothing here matches the search and filter",
+    "showMore": "Show {{count}} more",
+    "collapse": "Collapse",
+    "intro": {
+      "eyebrow": "Area of responsibility",
+      "subtree": "+ nested units: {{count}}",
+      "subtreeTooltip": "Documents of nested departments and sectors are included too",
+      "ownUnit": "You are in {{name}}",
+      "text": "VNDs where this unit is the developer or a responsible executor appear on the board automatically. Add any other document manually and remove what you don't need — documents of your unit can be brought back later.",
+      "noUnit": "No unit is set in your profile, so your unit's documents can't be picked up — the board only shows what you add yourself. Ask an administrator to set your unit.",
+      "legendTitle": "Why a document is on the board"
+    },
+    "reasons": {
+      "developer": {
+        "label": "Developer",
+        "tooltip": "Your unit is the document's developer"
+      },
+      "executor": {
+        "label": "Executor",
+        "tooltip": "Your unit is among the responsible executors"
+      },
+      "pinned": {
+        "label": "Added by you",
+        "tooltip": "You added the document to the board manually"
+      }
+    },
+    "overview": {
+      "title": "Documents on the board: {{count}}",
+      "split": "from your unit — {{unit}} · added manually — {{pinned}}"
+    },
+    "source": {
+      "label": "Document source",
+      "all": "All",
+      "unit": "My unit",
+      "pinned": "Added"
+    },
+    "panels": {
+      "active": {
+        "title": "Current",
+        "hint": "Editions in force · nearest actualization first",
+        "empty": "No documents in force yet"
+      },
+      "activeSimple": {
+        "title": "In force",
+        "hint": "Documents that apply now"
+      },
+      "onact": {
+        "title": "Under actualization",
+        "hint": "Scheduled review is in progress",
+        "empty": "Nothing is being actualized"
+      },
+      "review": {
+        "title": "Under approval",
+        "hint": "A new edition is being approved",
+        "empty": "Nothing is under approval"
+      },
+      "consol": {
+        "title": "Consolidation",
+        "hint": "Comments are being merged into the final edition",
+        "empty": "No consolidation right now"
+      },
+      "arch": {
+        "title": "Archived",
+        "hint": "Cancelled and no longer in force",
+        "empty": "The archive is empty"
+      },
+      "draft": {
+        "title": "Drafts",
+        "hint": "Documents that haven't gone beyond a draft yet",
+        "empty": "No drafts"
+      },
+      "favorites": {
+        "title": "Favorites",
+        "hint": "Your stars — from the registry and document pages",
+        "empty": "Star a document and it will show up here"
+      }
+    },
+    "meta": {
+      "actualizationIn": "Actualization in {{count}} d",
+      "actualizationOverdue": "Actualization overdue by {{count}} d",
+      "effectiveFrom": "Enters into force {{date}}",
+      "responsible": "Resp.: {{name}}",
+      "revisionFrom": "Edition of {{date}}",
+      "archivedAt": "Archived since {{date}}",
+      "createdBy": "Author: {{name}}"
+    },
+    "actions": {
+      "hide": "Remove from board (can be restored)",
+      "unpin": "Remove from board",
+      "unfavorite": "Remove from favorites",
+      "restore": "Restore"
+    },
+    "hidden": {
+      "title": "Removed from the board: {{count}}",
+      "description": "Your unit's documents that you hid. You can bring them back at any time."
+    },
+    "addModal": {
+      "title": "Add a VND to the board",
+      "description": "Your unit's documents are already here. Add any others you work with.",
+      "placeholder": "Document code or title",
+      "hint": "Type at least 2 characters",
+      "nothing": "Nothing found",
+      "add": "Add",
+      "onBoard": "On the board"
+    },
+    "toasts": {
+      "added": "Document added to the board",
+      "hidden": "{{code}} removed from the board",
+      "unpinned": "{{code}} removed from the board",
+      "undoHint": "Click to undo",
+      "restored": "{{code}} is back on the board",
+      "actionError": "Failed to update the board"
+    }
+  },
   "general": {
     "search": "Search...",
     "notFound": "Nothing found!",
@@ -1465,11 +1589,11 @@
     "next": "Next"
   },
   "dateFilterGroup": {
-    "exactLabel": "точная",
-    "rangeLabel": "диапазон",
-    "or": "или",
+    "exactLabel": "Exact",
+    "rangeLabel": "Range",
+    "or": "or",
     "numberColumn": "№",
-    "numberPlaceholder": "номер"
+    "numberPlaceholder": "number"
   },
   "datePickerInput": {
     "dateFormatPlaceholder": "DD.MM.YYYY",
@@ -1590,6 +1714,7 @@
       "home": "Dashboard",
       "rubric": "Rubricator",
       "vnd": "VND Registry",
+      "vndBoard": "VND Board",
       "notif": "Notifications",
       "pln": "Actualization Planning",
       "tid": "Approval",
@@ -1858,6 +1983,15 @@
       "success": "Success",
       "warning": "Warning",
       "urgent": "Urgent"
+    },
+    "legend": {
+      "title": "What the dots mean",
+      "subtitle": "Dot colour shows the notification importance",
+      "info": "For your information",
+      "success": "Action completed",
+      "warning": "Needs attention",
+      "urgent": "Needs action right away",
+      "unread": "Unread notification"
     },
     "severityFilter": {
       "label": "Notification type",
@@ -3088,6 +3222,9 @@
       "amountPlaceholder": "0",
       "unit": "Unit",
       "unitPlaceholder": "Select a unit",
+      "selectEmployeeTitle": "Select employee",
+      "selectUnitTitle": "Select unit",
+      "searchUnit": "Search units",
       "unitModalTitle": "Select unit",
       "unitSearch": "Search unit…",
       "quarter": "Quarter",
@@ -4016,7 +4153,8 @@
       "noRegNumber": "no number",
       "searchEmptyTitle": "Nothing found",
       "searchEmptyDescription": "Try changing your search query.",
-      "statsTitle": "My tasks statistics"
+      "statsTitle": "My tasks statistics",
+      "digestTitle": "Digest"
     },
     "inbox": {
       "title": "My tasks",
@@ -4056,6 +4194,10 @@
         "decision": "Addressee decision",
         "board": "Collegial body",
         "execution": "Execution"
+      },
+      "szApprovalTabs": {
+        "mine": "My memos under approval",
+        "approve": "Memos I approve"
       },
       "empty": {
         "all": {
@@ -5230,6 +5372,12 @@
     }
   },
   "savedFilters": {
+      "reset": "Clear filters",
+      "savedToast": "Filter “{{name}}” saved",
+      "deletedToast": "Filter “{{name}}” deleted",
+      "deleteConfirmTitle": "Delete filter?",
+      "deleteConfirmMessage": "The saved filter “{{name}}” will be deleted. This can't be undone.",
+      "deleteFailed": "Couldn't delete the filter",
     "title": "Saved filters",
     "applyHint": "Apply a filter",
     "empty": "No saved filters",
@@ -5239,7 +5387,33 @@
     "saveFailed": "Couldn't save the filter",
     "delete": "Delete filter"
   },
+  "pager": {
+    "shown": "Showing {{from}}–{{to}} of {{total}}",
+    "pageSize": "Per page",
+    "prev": "Previous",
+    "next": "Next"
+  },
   "szRegistry": {
+    "activeFilters": {
+      "label": "Active filters",
+      "query": "Search",
+      "kind": "Type",
+      "remove": "Remove filter"
+    },
+      "exportDone": "Registry exported to Excel",
+      "exportSelectedDone": "Exported to Excel: {{count}}",
+      "exportDoneHint": "The file is in your downloads folder",
+    "advanced": {
+      "paperCarrier": "Paper carrier",
+      "code": "Code",
+      "codePlaceholder": "Search by registration number…",
+      "title": "Subject",
+      "titlePlaceholder": "Search by subject…",
+      "author": "Author",
+      "datesSection": "Dates",
+      "registeredDate": "Registration date",
+      "dueDate": "Due date"
+    },
     "analyticsButton": "Memo analytics",
     "title": "Service memo registry",
     "subtitle": "Central registry of service memos · registration, due dates and approval statuses",
@@ -5252,12 +5426,17 @@
       "originals": "Originals in hand",
       "mine": "Memos I initiated",
       "drafts": "Drafts",
-      "approval": "Under approval",
+      "approval": "Memos I approve",
       "pending": "Awaiting registration",
       "signing": "Awaiting signature",
-      "archive": "Archive"
+      "archive": "Archive",
+      "favorites": "Favorites"
     },
-    "searchPlaceholder": "Search by number, subject and text…",
+    "approvalTabs": {
+      "mine": "My memos under approval",
+      "inbox": "Memos I approve"
+    },
+    "searchPlaceholder": "Search by subject, number, author and text…",
     "allKinds": "All types",
     "allStatuses": "All statuses",
     "kindSearchPlaceholder": "Search type…",
@@ -5270,6 +5449,7 @@
     "exportErrorHint": "Please try again later",
     "exportSelectedError": "Couldn't export the selected memos",
     "cols": {
+      "favorite": "Favorite",
       "memo": "Memo",
       "subject": "Subject",
       "holder": "Held by",
@@ -5288,6 +5468,7 @@
     "originalsEmpty": "All originals are filed",
     "assignmentsEmpty": "No assignments",
     "memosEmpty": "No memos",
+    "favoriteAddTooltip": "Add the memo to favorites — it will appear on the “Favorites” tab of the memo registry",
     "selectAll": "Select all",
     "selectRow": "Select {{name}}",
     "noNumber": "— no number",
@@ -5305,6 +5486,11 @@
     "selected": "Selected: {{count}}",
     "exportSelected": "Export selected",
     "sendToArchive": "Send to archive",
+    "addToFavorites": "Add to favorites",
+    "removeFromFavorites": "Remove from favorites",
+    "favoritesAddedToast": "Added to favorites: {{count}}",
+    "favoritesRemovedToast": "Removed from favorites: {{count}}",
+    "favoritesSkipped": "Skipped (no access): {{count}}",
     "clearSelection": "Clear selection",
     "paper": "paper",
     "archivedToast": "Filed: {{count}}",
@@ -5393,7 +5579,14 @@
       "period": "Substitution period",
       "commission": "Handover commission",
       "other": "Other",
-      "route": "Approval route"
+      "route": "Approval route",
+      "generalHint": "Subject and reason for substitution",
+      "absentHint": "Who is being substituted",
+      "substituteHint": "Who substitutes and their passport details",
+      "periodHint": "Start and end dates",
+      "commissionHint": "Chair, members and handover moment",
+      "otherHint": "Additional description",
+      "routeHint": "Who approves the request"
     },
     "fields": {
       "subject": "Subject",
@@ -5404,6 +5597,10 @@
       "position": "Position",
       "unit": "Unit",
       "unitPlaceholder": "— select a unit —",
+      "selectUnitTitle": "Select a unit",
+      "searchUnit": "Find a unit",
+      "selectEmployeeTitle": "Select an employee",
+      "unitAutoHint": "Filled in automatically from the selected employee. You can change it if needed.",
       "passportSeriesNumber": "Passport series and number",
       "passportIssuedBy": "Issued by",
       "inn": "Tax ID (14 digits)",
@@ -5763,6 +5960,17 @@
     "empty": "No suppliers — add one manually above, or they will appear when commercial offers are registered"
   },
   "szCard": {
+    "sections": {
+      "main": "Main details",
+      "mainHint": "Subject, type and addressee of the memo",
+      "body": "Memo text",
+      "kindFields": "Type-specific details",
+      "kindFieldsHint": "Fields depend on the selected type",
+      "approval": "Approval and signing",
+      "approvalHint": "Who approves the memo and who signs it",
+      "extra": "Additional",
+      "extraHint": "Attachments and rubrics"
+    },
     "back": "Service memos",
     "noNumber": "no number",
     "newTitle": "New service memo",
@@ -5782,7 +5990,27 @@
       "forceStatus": "Change status",
       "delete": "Delete",
       "submitFailed": "Failed to submit: check the text and the addressee",
-      "registerFailed": "Failed to register the memo"
+      "registerFailed": "Failed to register the memo",
+      "printSigned": "Sheet with EDS",
+      "printPaper": "Sheet for signing",
+      "printSignedHint": "Print form with the approval sheet: EDS stamps in the “Signature” column",
+      "printPaperHint": "Print form with an empty “Signature” column — print and sign by hand"
+    },
+    "document": {
+      "menu": "Download / print",
+      "menuHint": "Download the memo with its approval sheet as PDF or Word, or print it right away",
+      "version": "Approval sheet version",
+      "signed": "With e-signatures",
+      "paper": "For signing",
+      "pdf": "Download PDF",
+      "docx": "Download DOCX (Word)",
+      "print": "Print",
+      "pdfHint": "Memo with approval sheet as PDF — same as the print form",
+      "docxHint": "Memo with approval sheet as an editable Word (DOCX) file",
+      "printHint": "Open the print dialog right away without leaving the page",
+      "preparing": "Preparing…",
+      "downloadError": "Could not generate the memo file",
+      "printError": "Could not prepare the memo for printing"
     },
     "notices": {
       "saved": "Saved",
@@ -6035,6 +6263,9 @@
       "hint": "If this is a different memo, just continue — the warning blocks nothing."
     },
     "templates": {
+      "removeConfirmTitle": "Delete template?",
+      "removeConfirmMessage": "Template “{{name}}” will be permanently deleted. Existing memos are not affected.",
+      "removeConfirm": "Delete",
       "title": "Memo templates",
       "applyPlaceholder": "Apply a template…",
       "empty": "No saved templates",
@@ -6179,6 +6410,17 @@
         "Cancelled": "Withdrawn"
       }
     },
+    "signature": {
+      "ecp": "EDS",
+      "ecpTest": "EDS · test",
+      "otherVersion": "on a previous text version",
+      "otherVersionLong": "Signed on a previous version of the memo text",
+      "revoked": "revoked",
+      "testBadge": "test",
+      "testNotVerified": "Test simulation — not checked by the provider",
+      "journalEmpty": "No EDS signatures on this memo yet.",
+      "previousRounds": "Previous approval rounds"
+    },
     "approval": {
       "title": "Approval",
       "round": "round {{n}}",
@@ -6200,7 +6442,19 @@
       "returnForRevision": "Return for revision",
       "commentRequired": "A comment is required for remarks and rejection",
       "decisionMade": "Decision recorded: {{decision}}",
-      "decisionFailed": "Failed to submit the decision"
+      "decisionFailed": "Failed to submit the decision",
+      "ecpNotice": "The decision is signed with the Infocom digital signature (EDS): it covers your decision, comment and the current memo text. With an active EDS session or a saved identification in your profile, no PIN entry is needed.",
+      "ecpSignFailed": "Failed to sign the decision with EDS",
+      "decisionMadeEcp": "Decision made and signed with EDS: {{decision}}",
+      "ecpDocumentChanged": "The memo or comment changed after signing — please sign the decision again",
+      "otherSignMethods": "Other signing methods:",
+      "cryptoProviderSign": "Crypto provider (TUMAR)",
+      "withoutEcpTest": "no EDS, test",
+      "testEcpTitle": "TEST: simulated EDS (PIN, code and signing are skipped)",
+      "testEcp": "test EDS",
+      "decisionMadeTestEcp": "Decision made (simulated EDS): {{decision}}",
+      "routeLoadFailed": "Failed to load the approval route: {{error}}",
+      "retry": "Retry"
     },
     "remarks": {
       "title": "Remarks to resolve",

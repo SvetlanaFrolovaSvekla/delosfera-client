@@ -1,7 +1,7 @@
 // Маленькая кнопка в шапке открытого ВНД (глазик просмотра, звёздочка избранного,
 // "+ Предложения по ВНД") - одна высота, скругление и рамка, отличаются только цветом.
 import type {ReactNode} from "react";
-import {Tooltip} from "@/components/componentsGeneral/Tooltip.tsx";
+import {Tooltip} from "@/components/componentsGeneral/tooltips/Tooltip.tsx";
 
 export type VndHeaderButtonVariant = "accent" | "favorite" | "favoriteActive" | "proposal";
 

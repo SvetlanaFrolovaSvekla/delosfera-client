@@ -17,7 +17,7 @@ import {SelectDropdown} from "@/components/componentsGeneral/selects/SingleSelec
 import {SingleSelectListField} from "@/components/componentsGeneral/selects/SingleSelects/SingleSelectListField.tsx";
 import {CheckBoxOne} from "@/components/componentsGeneral/componentsCheckBox/CheckBoxOne.tsx";
 import {SearchBar} from "@/components/componentsGeneral/SearchBar.tsx";
-import {Tooltip} from "@/components/componentsGeneral/Tooltip.tsx";
+import {Tooltip} from "@/components/componentsGeneral/tooltips/Tooltip.tsx";
 import {HighlightText} from "@/utils/highlightText.tsx";
 import {RolePermissionsModal} from "@/components/componentsUsers/RolePermissionsModal.tsx";
 

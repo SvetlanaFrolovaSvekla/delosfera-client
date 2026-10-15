@@ -7,7 +7,7 @@ import {vndTitle} from "@/utils/vndProcess/authenticityUtils.ts";
 
 import {Pill} from "./Pill.tsx";
 import {ProcessBlock} from "./ProcessBlock.tsx";
-import {Tooltip} from "@/components/componentsGeneral/Tooltip.tsx";
+import {Tooltip} from "@/components/componentsGeneral/tooltips/Tooltip.tsx";
 import {Clue} from "@/components/componentsGeneral/knowledgeBaseComponents/Clue.tsx";
 import {CARD} from "./styles/authenticityStyles.ts";
 import {ArrowRight} from "lucide-react";

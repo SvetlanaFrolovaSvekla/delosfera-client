@@ -13,13 +13,13 @@ import {
 import {toast} from "@/service/toastService.ts";
 import {formatDateTime} from "@/utils/dateUtils.ts";
 import {HighlightText} from "@/utils/highlightText.tsx";
-import {HelpArticleView} from "@/components/help/HelpArticleView.tsx";
-import {HelpArticleEditor} from "@/components/help/HelpArticleEditor.tsx";
+import {HelpArticleView} from "@/components/componentsHelp/HelpArticleView.tsx";
+import {HelpArticleEditor} from "@/components/componentsHelp/HelpArticleEditor.tsx";
 import {PageHeader} from "@/components/componentsGeneral/PageHeader.tsx";
 import {SearchBar} from "@/components/componentsGeneral/SearchBar.tsx";
 import {Loader} from "@/components/componentsGeneral/Loader.tsx";
 import {EmptyState} from "@/components/componentsGeneral/EmptyState.tsx";
-import {Tooltip} from "@/components/componentsGeneral/Tooltip.tsx";
+import {Tooltip} from "@/components/componentsGeneral/tooltips/Tooltip.tsx";
 import {HelpTooltip} from "@/components/componentsGeneral/knowledgeBaseComponents/HelpTooltip.tsx";
 import {Clue} from "@/components/componentsGeneral/knowledgeBaseComponents/Clue.tsx";
 import {ConfirmDeleteModal} from "@/components/componentsGeneral/modal/ConfirmDeleteModal.tsx";

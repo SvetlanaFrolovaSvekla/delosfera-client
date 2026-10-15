@@ -3,7 +3,7 @@ import React, {useState} from "react";
 import {
     DOC_ACCEPT
 } from "@/components/componentsVND/componentsOpenVndPage/componentsEditionsTab/componentsModal/editLastRevisionModal/EditLastRevisionModal.tsx";
-import {Tooltip} from "@/components/componentsGeneral/Tooltip.tsx";
+import {Tooltip} from "@/components/componentsGeneral/tooltips/Tooltip.tsx";
 import {CheckCircle2, Download, Eye, FileText, Paperclip, RefreshCcw, RotateCcw} from "lucide-react";
 
 /** Строка одного специального вложения - тот же визуальный паттерн, что и DocReplaceSlot, но

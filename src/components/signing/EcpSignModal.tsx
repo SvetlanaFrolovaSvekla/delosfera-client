@@ -28,18 +28,22 @@ import {PlainCheckbox} from "@/components/componentsGeneral/componentsCheckBox/P
 import {EcpIdentityForm} from "@/components/signing/EcpIdentityForm.tsx";
 
 interface Props {
-    vndId: number;
-    stageId: number;
+    /** Резолюция ВНД: хэш запрашивается у coordinationService по vndId/stageId. */
+    vndId?: number;
+    stageId?: number;
     /** То, что подписывается — например, итоговый текст резолюции. Хэш считает backend. */
-    payloadText: string;
+    payloadText?: string;
     /** Решение, под которым ставится подпись (входит в хэш). */
     decision?: ApprovalDecisionType;
+    /** Другой контур (например, служебная записка): хэш строит его backend — модалка только
+     * подписывает то, что вернёт эта функция. Если задана, vndId/stageId не нужны. */
+    getHash?: () => Promise<string>;
     onSigned: (result: ResolutionEcpSignature) => void;
     onClose: () => void;
 }
 
 export const EcpSignModal = ({
-    vndId, stageId, payloadText, decision = ApprovalDecisionType.Approve, onSigned, onClose,
+    vndId, stageId, payloadText = "", decision = ApprovalDecisionType.Approve, getHash, onSigned, onClose,
 }: Props) => {
     const {t} = useTranslation();
     const {setSession} = useEcpSession();
@@ -94,7 +98,13 @@ export const EcpSignModal = ({
             }
 
             // Хэш — от backend (текст резолюции + содержимое редакции + код ВНД), не считаем сами.
-            const {hash} = await coordinationService.getResolutionHash(vndId, stageId, payloadText, decision);
+            let hash: string;
+            if (getHash) {
+                hash = await getHash();
+            } else {
+                if (vndId === undefined || stageId === undefined) throw new Error(t("ecp.modal.signMissing"));
+                hash = (await coordinationService.getResolutionHash(vndId, stageId, payloadText, decision)).hash;
+            }
             const signed = await infocomEcpService.signHash(hash, auth.token);
             if (!signed.isSuccesfull || !signed.sign) throw new Error(t("ecp.modal.signMissing"));
 

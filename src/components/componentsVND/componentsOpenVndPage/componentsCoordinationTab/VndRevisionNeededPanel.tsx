@@ -26,7 +26,7 @@ import {RevisionRedactionAttachments} from "./revisionPanel/RevisionRedactionAtt
 import {RevisionComment} from "./revisionPanel/RevisionComment.tsx";
 import {RevisionTidSection} from "./revisionPanel/RevisionTidSection.tsx";
 import {AttachmentDocxPreviewModal} from "@/components/componentsGeneral/modal/AttachmentDocxPreviewModal.tsx";
-import {Tooltip} from "@/components/componentsGeneral/Tooltip.tsx";
+import {Tooltip} from "@/components/componentsGeneral/tooltips/Tooltip.tsx";
 import {ConfirmActionModal} from "@/components/componentsGeneral/modal/ConfirmActionModal.tsx";
 import {AlertCircle, Trash2} from "lucide-react";
 

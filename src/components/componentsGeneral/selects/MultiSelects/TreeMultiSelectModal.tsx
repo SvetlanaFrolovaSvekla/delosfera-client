@@ -6,6 +6,7 @@ import type {BaseTreeOption, TreeNodeOf} from "@/utils/dictionaries/treeSelectUt
 import {HighlightText} from "@/utils/highlightText.tsx";
 import {SearchBar} from "@/components/componentsGeneral/SearchBar.tsx";
 import {Check, ChevronRight, Minus, X} from "lucide-react";
+import {ACCENT, type Accent} from "@/constants/accent.ts";
 export type TreeSelectOption = BaseTreeOption;
 
 interface TreeMultiSelectModalProps {
@@ -19,6 +20,8 @@ interface TreeMultiSelectModalProps {
 
     searchPlaceholder?: string;
     selectedCountLabel?: string;
+    /** Акцентный цвет (галочки, ссылки «Все»/«Снять все», кнопка «Сохранить»). */
+    accent?: Accent;
 }
 
 export function TreeMultiSelectModal({
@@ -30,8 +33,10 @@ export function TreeMultiSelectModal({
                                          onApply,
                                          searchPlaceholder,
                                          selectedCountLabel,
+                                         accent = "violet",
                                      }: TreeMultiSelectModalProps) {
     const {t} = useTranslation();
+    const a = ACCENT[accent];
     const {panelRef, handleBackdropClick} = useModalShake();
     const {
         draft, query, setQuery, collapsed, toggleCollapse,
@@ -81,14 +86,14 @@ export function TreeMultiSelectModal({
                         <span
                             className={`w-5 h-5 flex-none rounded-md grid place-items-center ${
                                 on
-                                    ? "border-[1.5px] border-[#4e57d6] bg-[#4e57d6]"
+                                    ? `border-[1.5px] ${a.border} ${a.bg}`
                                     : partial
-                                        ? "border-[1.5px] border-[#4e57d6] bg-white"
+                                        ? `border-[1.5px] ${a.border} bg-white`
                                         : "border-[1.5px] border-[#cbd3df] bg-white"
                             }`}
                         >
                             {on && <Check className="w-[13px] h-[13px] text-white" strokeWidth={3}/>}
-                            {!on && partial && <Minus className="w-[13px] h-[13px] text-[#4e57d6]" strokeWidth={3}/>}
+                            {!on && partial && <Minus className={`w-[13px] h-[13px] ${a.text}`} strokeWidth={3}/>}
                         </span>
                         <span className="text-[13.5px] text-[#26324a]">
                             <HighlightText text={node.label} query={query}/>
@@ -131,6 +136,7 @@ export function TreeMultiSelectModal({
                         value={query}
                         onChange={setQuery}
                         placeholder={searchPlaceholder ?? t("general.search")}
+                        accent={accent}
                     />
                 </div>
 
@@ -140,7 +146,7 @@ export function TreeMultiSelectModal({
                         onClick={selectAll}
                         disabled={allSelected}
                         className={`text-[11px] font-semibold cursor-pointer ${
-                            allSelected ? "text-[#c3ccd8] cursor-default" : "text-[#4e57d6] hover:underline"
+                            allSelected ? "text-[#c3ccd8] cursor-default" : `${a.text} hover:underline`
                         }`}
                     >
                         {t("general.selectAll")}
@@ -150,7 +156,7 @@ export function TreeMultiSelectModal({
                         onClick={deselectAll}
                         disabled={noneSelected}
                         className={`text-[11px] font-semibold cursor-pointer ${
-                            noneSelected ? "text-[#c3ccd8] cursor-default" : "text-[#4e57d6] hover:underline"
+                            noneSelected ? "text-[#c3ccd8] cursor-default" : `${a.text} hover:underline`
                         }`}
                     >
                         {t("general.deselectAll")}
@@ -180,7 +186,7 @@ export function TreeMultiSelectModal({
                         </button>
                         <button
                             onClick={handleApply}
-                            className="h-9 px-5 rounded-[9px] border-none bg-[#4e57d6] text-white font-semibold text-[12.5px] cursor-pointer hover:brightness-[1.06]"
+                            className={`h-9 px-5 rounded-[9px] border-none ${a.bg} text-white font-semibold text-[12.5px] cursor-pointer hover:brightness-[1.06]`}
                         >
                             {t("general.save")}
                         </button>

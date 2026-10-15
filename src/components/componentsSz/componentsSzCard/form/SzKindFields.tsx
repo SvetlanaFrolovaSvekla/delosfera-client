@@ -71,6 +71,7 @@ export function SzKindFields({card, userList}: SzKindFieldsProps) {
                             {t("szCard.fields.hrKind")}<span className="text-[#c0392b]"> *</span>
                         </span>
                         <SelectDropdown
+                            accent="blue"
                             value={form.hrKindId != null ? String(form.hrKindId) : ""}
                             onChange={(v) => changeHrKind(v ? Number(v) : null)}
                             options={[
@@ -155,6 +156,7 @@ export function SzKindFields({card, userList}: SzKindFieldsProps) {
                 {/* Филиал/СП сотрудника */}
                 {editable ? (
                     <SingleSelectListField
+                        accent="blue"
                         label={t("szCard.fields.employeeUnit")}
                         required
                         modalTitle={t("szCard.fields.employeeUnit")}

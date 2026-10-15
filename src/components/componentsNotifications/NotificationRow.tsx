@@ -7,7 +7,7 @@ import type { Notification } from "@/service/notificationsService/notificationsS
 import { toast } from "@/service/toastService.ts";
 import { HighlightText } from "@/utils/highlightText.tsx";
 import { SeverityDot } from "../componentsGeneral/dots/SeverityDot.tsx";
-import { Tooltip } from "../componentsGeneral/Tooltip.tsx";
+import { Tooltip } from "../componentsGeneral/tooltips/Tooltip.tsx";
 import { PlainCheckbox } from "@/components/componentsGeneral/componentsCheckBox/PlainCheckbox.tsx";
 import { ConfirmDeleteModal } from "@/components/componentsGeneral/modal/ConfirmDeleteModal.tsx";
 import { Bell, Check, ChevronRight, Paperclip, Star, Trash2 } from "lucide-react";

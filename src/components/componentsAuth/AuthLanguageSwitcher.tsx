@@ -1,6 +1,6 @@
 import {useTranslation} from "react-i18next";
 import {type Lang, LANGS} from "@/constants/langs.ts";
-import {Tooltip} from "@/components/componentsGeneral/Tooltip.tsx";
+import {Tooltip} from "@/components/componentsGeneral/tooltips/Tooltip.tsx";
 
 export function AuthLanguageSwitcher() {
     const {t, i18n} = useTranslation();

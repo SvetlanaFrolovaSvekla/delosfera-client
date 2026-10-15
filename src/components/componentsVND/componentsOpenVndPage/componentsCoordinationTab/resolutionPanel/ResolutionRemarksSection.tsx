@@ -3,7 +3,7 @@
 import type {RefObject} from "react";
 import {useTranslation} from "react-i18next";
 import {Quote, Search, Trash2, TextQuote} from "lucide-react";
-import {Tooltip} from "@/components/componentsGeneral/Tooltip.tsx";
+import {Tooltip} from "@/components/componentsGeneral/tooltips/Tooltip.tsx";
 import {HelpTooltip} from "@/components/componentsGeneral/knowledgeBaseComponents/HelpTooltip.tsx";
 import type {DraftTextRemark} from "./resolutionPanelTypes.ts";
 

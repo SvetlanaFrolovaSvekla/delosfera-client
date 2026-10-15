@@ -8,7 +8,7 @@ import {
 import {hrForms, type HrFormSchema} from "@/service/szService/szService.ts";
 import {SzHrForm} from "@/components/componentsSz/componentsSzCard/form/SzHrForm.tsx";
 import {SearchSelect} from "@/components/componentsGeneral/selects/SearchSelect.tsx";
-import {RichTextEditor} from "@/components/editor/RichTextEditor.tsx";
+import {RichTextEditor} from "@/components/componentsEditor/RichTextEditor.tsx";
 import {Loader} from "@/components/componentsGeneral/Loader.tsx";
 import {useUserLookup} from "@/hooks/useUserLookup.ts";
 import {useDictionaries} from "@/context/DictionariesContext.tsx";

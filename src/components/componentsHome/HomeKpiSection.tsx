@@ -12,7 +12,7 @@ import {useEffect, useState} from "react";
 import {useNavigate} from "react-router-dom";
 import {useTranslation} from "react-i18next";
 import {Icon} from "@/assets/icons/Icon";
-import {Tooltip} from "@/components/componentsGeneral/Tooltip.tsx";
+import {Tooltip} from "@/components/componentsGeneral/tooltips/Tooltip.tsx";
 import {useAnyModalOpen} from "@/hooks/generalHooks/useAnyModalOpen.ts";
 import type {VndHomeSummary} from "@/hooks/analyticsHooks/useVndHomeSummary.ts";
 import {dashboardService, type DashboardKpi, type DashboardSummary} from "@/service/dashboardService/dashboardService.ts";

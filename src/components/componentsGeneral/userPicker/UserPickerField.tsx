@@ -11,6 +11,7 @@ import {
     type OrgUnitPickerPerson,
 } from "@/components/componentsGeneral/userPicker/UserOrgUnitPickerModal.tsx";
 import {ChevronDown, User as UserIcon, X} from "lucide-react";
+import type {Accent} from "@/constants/accent.ts";
 
 interface UserPickerFieldProps {
     people: OrgUnitPickerPerson[];
@@ -25,6 +26,8 @@ interface UserPickerFieldProps {
     onClear?: () => void;
     /** Высота 36px — вровень с DatePickerInput и SelectDropdown в строке фильтров. */
     compact?: boolean;
+    /** Акцентный цвет модалки выбора. По умолчанию фиолетовый. */
+    accent?: Accent;
 }
 
 export function UserPickerField({
@@ -38,6 +41,7 @@ export function UserPickerField({
                                     clearable,
                                     onClear,
                                     compact,
+                                    accent,
                                 }: UserPickerFieldProps) {
     const [open, setOpen] = useState(false);
 
@@ -88,6 +92,7 @@ export function UserPickerField({
                     searchPlaceholder={searchPlaceholder}
                     onSelect={(person) => onChange(person.id)}
                     onClose={() => setOpen(false)}
+                    accent={accent}
                 />
             )}
         </>

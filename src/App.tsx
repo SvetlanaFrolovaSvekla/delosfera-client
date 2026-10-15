@@ -49,18 +49,18 @@ const AnalyticsPage = lazy(() => import("@/pages/AnalyticsPage.tsx").then(m => (
 const UsersPage = lazy(() => import("@/pages/ManagementPages/SettingsPages/PeopleAndAccessSettings/UsersPage.tsx").then(m => ({default: m.UsersPage})));
 
 // Контур служебных записок (контур 4 ТЗ)
-const SzRegistryPage = lazy(() => import("@/pages/SZPages/SzRegistryPage.tsx").then(m => ({default: m.SzRegistryPage})));
-const SzTrackerPage = lazy(() => import("@/pages/SZPages/SzTrackerPage.tsx").then(m => ({default: m.SzTrackerPage})));
-const SzCardPage = lazy(() => import("@/pages/SZPages/SzCardPage.tsx").then(m => ({default: m.SzCardPage})));
-const SzPrintPage = lazy(() => import("@/pages/SZPages/SzPrintPage.tsx").then(m => ({default: m.SzPrintPage})));
+const SzRegistryPage = lazy(() => import("@/pages/SzPagesSection/SzPages/SzRegistryPage.tsx").then(m => ({default: m.SzRegistryPage})));
+const SzTrackerPage = lazy(() => import("@/pages/SzPagesSection/SzTrackerPage.tsx").then(m => ({default: m.SzTrackerPage})));
+const SzCardPage = lazy(() => import("@/pages/SzPagesSection/SzPages/SzCardPage.tsx").then(m => ({default: m.SzCardPage})));
+const SzPrintPage = lazy(() => import("@/pages/SzPagesSection/SzPages/SzPrintPage.tsx").then(m => ({default: m.SzPrintPage})));
 
 // Контур закупок (контур 6 ТЗ)
-const AuthorityMatrixPage = lazy(() => import("@/pages/ProcurementPages/AuthorityMatrixPage.tsx").then(m => ({default: m.AuthorityMatrixPage})));
-const ProcurementRegistryPage = lazy(() => import("@/pages/ProcurementPages/ProcurementRegistryPage.tsx").then(m => ({default: m.ProcurementRegistryPage})));
-const ProcurementTrackerPage = lazy(() => import("@/pages/ProcurementPages/ProcurementTrackerPage.tsx").then(m => ({default: m.ProcurementTrackerPage})));
-const ProcurementNewPage = lazy(() => import("@/pages/ProcurementPages/ProcurementNewPage.tsx").then(m => ({default: m.ProcurementNewPage})));
-const ProcurementCardPage = lazy(() => import("@/pages/ProcurementPages/ProcurementCardPage.tsx").then(m => ({default: m.ProcurementCardPage})));
-const ProcurementProtocolPage = lazy(() => import("@/pages/ProcurementPages/ProcurementProtocolPage.tsx").then(m => ({default: m.ProcurementProtocolPage})));
+const AuthorityMatrixPage = lazy(() => import("@/pages/ProcurementPagesSection/AuthorityMatrixPage.tsx").then(m => ({default: m.AuthorityMatrixPage})));
+const ProcurementRegistryPage = lazy(() => import("@/pages/ProcurementPagesSection/ProcurementRegistryPage.tsx").then(m => ({default: m.ProcurementRegistryPage})));
+const ProcurementTrackerPage = lazy(() => import("@/pages/ProcurementPagesSection/ProcurementTrackerPage.tsx").then(m => ({default: m.ProcurementTrackerPage})));
+const ProcurementNewPage = lazy(() => import("@/pages/ProcurementPagesSection/ProcurementNewPage.tsx").then(m => ({default: m.ProcurementNewPage})));
+const ProcurementCardPage = lazy(() => import("@/pages/ProcurementPagesSection/ProcurementCardPage.tsx").then(m => ({default: m.ProcurementCardPage})));
+const ProcurementProtocolPage = lazy(() => import("@/pages/ProcurementPagesSection/ProcurementProtocolPage.tsx").then(m => ({default: m.ProcurementProtocolPage})));
 
 // Сводный реестр задач по всем контурам (GEN-11)
 const TaskInboxPage = lazy(() => import("@/pages/TasksPages/TaskInboxPage.tsx").then(m => ({default: m.TaskInboxPage})));
@@ -70,8 +70,8 @@ const NotificationSettingsPage = lazy(() => import("@/pages/ManagementPages/Sett
 const TaskStatsPage = lazy(() => import("@/pages/TasksPages/TaskStatsPage.tsx").then(m => ({default: m.TaskStatsPage})));
 const ObligationsBoardPage = lazy(() => import("@/pages/MeetingsPages/ObligationsBoardPage.tsx").then(m => ({default: m.ObligationsBoardPage})));
 const HrRoutingSettingsPage = lazy(() => import("@/pages/ManagementPages/SettingsPages/PeopleAndAccessSettings/HrRoutingSettingsPage.tsx").then(m => ({default: m.HrRoutingSettingsPage})));
-const SubstitutionRequestsPage = lazy(() => import("@/pages/SubstitutionsPages/SubstitutionsPage.tsx").then(m => ({default: m.SubstitutionRequestsPage})));
-const SubstitutionCardPage = lazy(() => import("@/pages/SubstitutionsPages/SubstitutionCardPage.tsx").then(m => ({default: m.SubstitutionCardPage})));
+const SubstitutionRequestsPage = lazy(() => import("@/pages/SzPagesSection/SubstitutionsPages/SubstitutionsPage.tsx").then(m => ({default: m.SubstitutionRequestsPage})));
+const SubstitutionCardPage = lazy(() => import("@/pages/SzPagesSection/SubstitutionsPages/SubstitutionCardPage.tsx").then(m => ({default: m.SubstitutionCardPage})));
 const RiskEventsPage = lazy(() => import("@/pages/RiskEventsPages/RiskEventsPage.tsx").then(m => ({default: m.RiskEventsPage})));
 
 // Полная лента событий по всем контурам — развёрнутая версия виджета
@@ -91,6 +91,7 @@ const SigningWorkplacePage = lazy(() => import("@/pages/ManagementPages/SigningW
 const AcknowledgementPage = lazy(() => import("@/pages/PersonDocManagementPages/AcknowledgementPage.tsx").then(m => ({default: m.AcknowledgementPage})));
 const HelpPage = lazy(() => import("@/pages/ManagementPages/HelpPage.tsx").then(m => ({default: m.HelpPage})));
 const VndProposalsPage = lazy(() => import("@/pages/VndPages/VndProposalsPage.tsx").then(m => ({default: m.VndProposalsPage})));
+const VndBoardPage = lazy(() => import("@/pages/VndPages/VndBoardPage.tsx").then(m => ({default: m.VndBoardPage})));
 const VndAuthenticityPage = lazy(() => import("@/pages/VndPages/VndAuthenticityPage.tsx").then(m => ({default: m.VndAuthenticityPage})));
 const FeedbackInboxPage = lazy(() => import("@/pages/ManagementPages/SettingsPages/Observation/FeedbackInboxPage.tsx").then(m => ({default: m.FeedbackInboxPage})));
 const UsageAnalyticsPage = lazy(() => import("@/pages/ManagementPages/SettingsPages/Observation/UsageAnalyticsPage.tsx").then(m => ({default: m.UsageAnalyticsPage})));
@@ -106,10 +107,10 @@ const NotificationMailingSettingsPage = lazy(() => import("@/pages/ManagementPag
 const DocumentTypesPage = lazy(() => import("@/pages/ManagementPages/SettingsPages/Dictionaries/DocumentTypesPage.tsx").then(m => ({default: m.DocumentTypesPage})));
 const SettingsChangesPage = lazy(() => import("@/pages/ManagementPages/SettingsPages/Observation/SettingsChangesPage.tsx").then(m => ({default: m.SettingsChangesPage})));
 const HrOrdersPage = lazy(() => import("@/pages/PersonDocManagementPages/HrOrdersPage.tsx").then(m => ({default: m.HrOrdersPage})));
-const SzStatisticsPage = lazy(() => import("@/pages/SZPages/SzStatisticsPage.tsx").then(m => ({default: m.SzStatisticsPage})));
+const SzStatisticsPage = lazy(() => import("@/pages/SzPagesSection/SzPages/SzStatisticsPage.tsx").then(m => ({default: m.SzStatisticsPage})));
 const SubstitutionsPage = lazy(() => import("@/pages/ManagementPages/SettingsPages/PeopleAndAccessSettings/SubstitutionsPage.tsx").then(m => ({default: m.SubstitutionsPage})));
-const SupplierRegistryPage = lazy(() => import("@/pages/ProcurementPages/SupplierRegistryPage.tsx").then(m => ({default: m.SupplierRegistryPage})));
-const ProcurementPlanPage = lazy(() => import("@/pages/ProcurementPages/ProcurementPlanPage.tsx").then(m => ({default: m.ProcurementPlanPage})));
+const SupplierRegistryPage = lazy(() => import("@/pages/ProcurementPagesSection/SupplierRegistryPage.tsx").then(m => ({default: m.SupplierRegistryPage})));
+const ProcurementPlanPage = lazy(() => import("@/pages/ProcurementPagesSection/ProcurementPlanPage.tsx").then(m => ({default: m.ProcurementPlanPage})));
 
 const MainLayout = () => {
     // Учёт посещаемости включаем здесь, а не в App: сюда попадают только
@@ -165,6 +166,11 @@ function App() {
                                 <Route path="/base-vnd" element={<BaseVndPage/>}/>
                                 <Route path="/base-vnd/new" element={<CreateVndPage/>}/>
                                 <Route path="/base-vnd/:id" element={<OpenVndPage/>}/>
+
+                                {/* Доска ВНД: документы, связанные с СП пользователя, + добавленные вручную */}
+                                <Route element={<RequirePermission code={PermissionCode.ViewVnd}/>}>
+                                    <Route path="/vnd-board" element={<VndBoardPage/>}/>
+                                </Route>
 
                                 <Route path="/tasks" element={<TaskInboxPage/>}/>
 

@@ -22,7 +22,7 @@ import {ResolutionAttachments} from "./resolutionPanel/ResolutionAttachments.tsx
 import {ResolutionDecisionButtons} from "./resolutionPanel/ResolutionDecisionButtons.tsx";
 import {CharCounter} from "@/components/componentsGeneral/CharCounter.tsx";
 import {ConfirmActionModal} from "@/components/componentsGeneral/modal/ConfirmActionModal.tsx";
-import {Tooltip} from "@/components/componentsGeneral/Tooltip.tsx";
+import {Tooltip} from "@/components/componentsGeneral/tooltips/Tooltip.tsx";
 import {X, AlertCircle} from "lucide-react";
 
 /** Типы панели - реэкспорт, чтобы импорты в других файлах не менялись. */

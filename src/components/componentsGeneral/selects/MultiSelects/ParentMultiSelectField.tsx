@@ -4,6 +4,7 @@ import {useTranslation} from "react-i18next";
 import {getAncestorPath} from "@/utils/dictionaries/treeSelectUtils.ts";
 import {ParentTreeMultiSelectModal, type ParentTreeOption} from "./ParentTreeMultiSelectModal.tsx";
 import {ChevronDown, X} from "lucide-react";
+import type {Accent} from "@/constants/accent.ts";
 
 interface ParentMultiSelectFieldProps {
     label?: string;
@@ -14,6 +15,8 @@ interface ParentMultiSelectFieldProps {
     searchPlaceholder?: string;
     selectedCountLabel?: string;
     boldLabel?: boolean;
+    /** Акцентный цвет модалки выбора (по умолчанию фиолетовый). */
+    accent?: Accent;
 }
 
 export function ParentMultiSelectField({
@@ -25,6 +28,7 @@ export function ParentMultiSelectField({
                                            searchPlaceholder,
                                            selectedCountLabel,
                                            boldLabel = true,
+                                           accent,
                                        }: ParentMultiSelectFieldProps) {
     const {t} = useTranslation();
     const [modalOpen, setModalOpen] = useState(false);
@@ -103,6 +107,7 @@ export function ParentMultiSelectField({
                 onApply={onChange}
                 searchPlaceholder={searchPlaceholder}
                 selectedCountLabel={selectedCountLabel}
+                accent={accent}
             />
         </div>
     );

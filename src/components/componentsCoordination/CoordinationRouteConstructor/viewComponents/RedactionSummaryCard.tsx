@@ -8,7 +8,7 @@ import {
 import {useState} from "react";
 import {FileText, Calendar, Printer} from "lucide-react";
 import {useTranslation} from "react-i18next";
-import {Tooltip} from "@/components/componentsGeneral/Tooltip.tsx";
+import {Tooltip} from "@/components/componentsGeneral/tooltips/Tooltip.tsx";
 import {countPrintBundleFiles} from "@/utils/vndProcess/printBundleItems.ts";
 import {VndHeaderButton} from "@/components/componentsVND/componentsOpenVndPage/VndHeaderButton.tsx";
 import {

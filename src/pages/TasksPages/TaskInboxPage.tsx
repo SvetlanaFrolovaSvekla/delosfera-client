@@ -24,7 +24,10 @@ import {
     INBOX_STATS_LINK_ICON,
     SZ_INBOX_SUB_TAB_IDS,
     SZ_INBOX_SUB_TAB_LABEL_KEYS,
+    SZ_APPROVAL_WHO_IDS,
+    SZ_APPROVAL_WHO_LABEL_KEYS,
     type InboxFilterId,
+    type SzApprovalWho,
     type SzInboxSubTab,
 } from "@/constants/taskInboxConst.ts";
 import {PermissionCode} from "@/constants/permissions/permissions.ts";
@@ -38,6 +41,7 @@ import {RaiseRiskEventModal} from "@/components/componentsTasks/RaiseRiskEventMo
 import {Tabs} from "@/components/componentsGeneral/Tabs.tsx";
 import {EmptyState} from "@/components/componentsGeneral/EmptyState.tsx";
 import {SearchBar} from "@/components/componentsGeneral/SearchBar.tsx";
+import {ArrowRight} from "lucide-react";
 
 // Получение текста, иконки при отсутствии задач на соответствующих табах
 function getInboxEmptyMeta(filter: InboxFilterId) {
@@ -54,6 +58,8 @@ export const TaskInboxPage = () => {
     const [filter, setFilter] = useState<InboxFilterId>("all");
     // Подвкладка раздела «Служебные записки» — этап записки (регистрация, согласование...).
     const [szSubTab, setSzSubTab] = useState<SzInboxSubTab>("all");
+    // Внутри «Согласования»: свои записки на согласовании / записки, которые согласую я.
+    const [approvalWho, setApprovalWho] = useState<SzApprovalWho>("mine");
     const [inbox, setInbox] = useState<TaskInbox | null>(null);
     const [loading, setLoading] = useState(true);
     // Поиск намеренно не сбрасывается при смене вкладки - так же, как на ВНД-вкладке:
@@ -96,8 +102,21 @@ export const TaskInboxPage = () => {
     const stageTasks = useMemo(() => {
         const tasks = inbox?.tasks ?? [];
         if (!isSzTab || szSubTab === "all") return tasks;
-        return tasks.filter((task) => task.stage === szSubTab);
-    }, [inbox, isSzTab, szSubTab]);
+        const byStage = tasks.filter((task) => task.stage === szSubTab);
+        if (szSubTab !== "Approval") return byStage;
+        // Свои записки (isOwn) — «Мои СЗ на согласовании», остальное — задачи согласующего.
+        return byStage.filter((task) => (approvalWho === "mine") === task.isOwn);
+    }, [inbox, isSzTab, szSubTab, approvalWho]);
+
+    // Подвкладки «Согласования» со счётчиками.
+    const approvalWhoTabs = useMemo(() => {
+        const approvalTasks = (inbox?.tasks ?? []).filter((task) => task.stage === "Approval");
+        return SZ_APPROVAL_WHO_IDS.map((id) => ({
+            id,
+            label: t(SZ_APPROVAL_WHO_LABEL_KEYS[id]),
+            n: approvalTasks.filter((task) => (id === "mine") === task.isOwn).length,
+        }));
+    }, [inbox, t]);
 
     const filteredTasks = useMemo(() => {
         if (!searchQuery.trim()) return stageTasks;
@@ -162,14 +181,24 @@ export const TaskInboxPage = () => {
                     </div>
                 </div>
 
-                <Link
-                    to="/tasks/stats"
-                    className="inline-flex h-10 cursor-pointer items-center gap-2 rounded-[10px] border-none bg-[#4e57d6] px-[15px] text-[13px] font-semibold !text-white shadow-[0_6px_16px_-6px_#4e57d6] hover:brightness-[1.06]"
-                >
-                    <StatsLinkIcon className="h-[18px] w-[18px]" strokeWidth={2}/>
-                    {/* Статистика по моим задачам */}
-                    {t("tasks.common.statsTitle")}
-                </Link>
+                <div className="flex gap-4">
+                    <Link
+                        to="/tasks/stats"
+                        className="inline-flex h-10 cursor-pointer items-center gap-2 rounded-[10px] border-none bg-[#4e57d6] px-[15px] text-[13px] font-semibold !text-white shadow-[0_6px_16px_-6px_#4e57d6] hover:brightness-[1.06]"
+                    >
+                        <StatsLinkIcon className="h-[18px] w-[18px]" strokeWidth={2}/>
+                        {/* Статистика по моим задачам */}
+                        {t("tasks.common.statsTitle")}
+                    </Link>
+                    <Link
+                        to="/digest"
+                        className="inline-flex h-10 cursor-pointer items-center gap-2 rounded-[10px] border-none bg-[#4e57d6] px-[15px] text-[13px] font-semibold !text-white shadow-[0_6px_16px_-6px_#4e57d6] hover:brightness-[1.06]"
+                    >
+                        {/* Дайджест */}
+                        {t("tasks.common.digestTitle")}
+                        <ArrowRight className="h-[18px] w-[18px]" strokeWidth={2}/>
+                    </Link>
+                </div>
             </div>
 
             {/* Ряд вкладок-карточек над реестром задач: "Все контуры" + один пункт на контур. */}
@@ -181,6 +210,16 @@ export const TaskInboxPage = () => {
                     tabs={szSubTabs}
                     value={szSubTab}
                     onChange={setSzSubTab}
+                    className="mb-0 flex-wrap"
+                />
+            )}
+
+            {/* «Согласование»: «Мои СЗ на согласовании» и «СЗ, согласую я». */}
+            {isSzTab && inbox && szSubTab === "Approval" && (
+                <Tabs<SzApprovalWho>
+                    tabs={approvalWhoTabs}
+                    value={approvalWho}
+                    onChange={setApprovalWho}
                     className="mb-0 flex-wrap"
                 />
             )}

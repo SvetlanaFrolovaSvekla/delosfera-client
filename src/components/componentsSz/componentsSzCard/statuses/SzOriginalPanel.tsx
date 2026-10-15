@@ -9,7 +9,7 @@ import {szPaperService, type SzOriginal} from "@/service/szService/szPaperServic
 import {toast} from "@/service/toastService.ts";
 import {formatDate, formatDateTime, ruToIso} from "@/utils/szProcess/szCardUtils.ts";
 import {SzButton} from "@/components/componentsSz/componentsSzCard/controls/SzButton.tsx";
-import {Tooltip} from "@/components/componentsGeneral/Tooltip.tsx";
+import {Tooltip} from "@/components/componentsGeneral/tooltips/Tooltip.tsx";
 import {UserPickerField} from "@/components/componentsGeneral/userPicker/UserPickerField.tsx";
 import {DatePickerInput} from "@/components/componentsGeneral/datePickers/DatePickerInput.tsx";
 import {colors} from "@/design/tokens.ts";

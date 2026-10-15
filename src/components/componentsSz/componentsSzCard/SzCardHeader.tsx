@@ -2,7 +2,7 @@
 import {useState} from "react";
 import {useNavigate} from "react-router-dom";
 import {useTranslation} from "react-i18next";
-
+import {szPrintUrl} from "@/service/szService/szPaperService.ts";
 import type {SzCardState} from "@/hooks/sz/useSzCard.ts";
 import {
     EDITABLE_STATUSES,
@@ -11,11 +11,15 @@ import {
 } from "@/utils/szProcess/szCardUtils.ts";
 
 import {SzButton, szButtonClass} from "@/components/componentsSz/componentsSzCard/controls/SzButton.tsx";
+import {SzDocumentMenu} from "@/components/componentsSz/componentsSzCard/controls/SzDocumentMenu.tsx";
+import {SzFavoriteButton} from "@/components/componentsSz/componentsSzRegistry/SzFavoriteButton.tsx";
+
+import {Tooltip} from "@/components/componentsGeneral/tooltips/Tooltip.tsx";
 import {ConfirmDeleteModal} from "@/components/componentsGeneral/modal/ConfirmDeleteModal.tsx";
 import {ConfirmActionModal} from "@/components/componentsGeneral/modal/ConfirmActionModal.tsx";
 
 import {colors} from "@/design/tokens.ts";
-import {ArrowLeft, Check, Send} from "lucide-react";
+import {ArrowLeft, ArrowRightLeft, BadgeCheck, FilePlus, Printer, Save, Send, ShieldCheck, Trash2, Undo2, X} from "lucide-react";
 
 interface SzCardHeaderProps {
     card: SzCardState;
@@ -64,15 +68,16 @@ export function SzCardHeader({card, onToggleWithdraw, onToggleForce}: SzCardHead
                 </div>
 
                 {/* Кнопки */}
-                <div className="flex items-center gap-2">
+                <div className="flex flex-wrap items-center justify-end gap-2">
                     {/* Новая записка: «Отмена» возвращает в реестр, «Создать черновик-записку» сохраняет.
                         Вид кнопок — как на создании ВНД (CreateVndPage), только синяя. */}
                     {isNew && (
                         <button
                             onClick={() => navigate("/sz")}
                             disabled={saving}
-                            className="h-11 px-[18px] rounded-[11px] border border-[#e5e9f0] bg-white text-[#3a4560] font-semibold text-[13.5px] cursor-pointer hover:bg-[#f6f8fb] disabled:opacity-60 disabled:cursor-not-allowed"
+                            className="inline-flex items-center gap-2 h-11 px-[18px] rounded-[11px] border border-[#e5e9f0] bg-white text-[#3a4560] font-semibold text-[13.5px] cursor-pointer hover:bg-[#f6f8fb] disabled:opacity-60 disabled:cursor-not-allowed"
                         >
+                            <X className="w-[18px] h-[18px]" strokeWidth={2}/>
                             {t("szCard.actions.cancelCreate")}
                         </button>
                     )}
@@ -87,17 +92,17 @@ export function SzCardHeader({card, onToggleWithdraw, onToggleForce}: SzCardHead
                                     : "bg-[#2f68f5] text-white cursor-pointer hover:brightness-[1.06] shadow-[0_8px_20px_-8px_#2f68f5]"
                             }`}
                         >
-                            <Check className="w-[18px] h-[18px]" strokeWidth={2}/>
+                            <FilePlus className="w-[18px] h-[18px]" strokeWidth={2}/>
                             {saving ? t("szCard.actions.creatingDraft") : t("szCard.actions.createDraft")}
                         </button>
                     ) : (
-                        <SzButton variant="primary" onClick={save} disabled={saving}>
+                        <SzButton variant="primary" icon={<Save size={16}/>} onClick={save} disabled={saving}>
                             {saving ? t("szCard.actions.saving") : t("szCard.actions.save")}
                         </SzButton>
                     ))}
                     {/* Отправить на регистрацию/Согласование */}
                     {sz && canSubmit && (
-                        <SzButton variant="outline" onClick={() => setConfirmSubmit(true)} disabled={saving}>
+                        <SzButton variant="outline" icon={<Send size={16}/>} onClick={() => setConfirmSubmit(true)} disabled={saving}>
                             {sz.regNumber
                                 ? t("szCard.actions.submitForApproval")
                                 : t("szCard.actions.submitForRegistration")}
@@ -105,38 +110,73 @@ export function SzCardHeader({card, onToggleWithdraw, onToggleForce}: SzCardHead
                     )}
                     {/* Зарегистрировать — только Сектор делопроизводства (право RegisterSz) */}
                     {sz?.statusCode === "PendingRegistration" && canRegister && (
-                        <SzButton variant="success" onClick={() => runAction("register")} disabled={saving}>
+                        <SzButton variant="success" icon={<BadgeCheck size={16}/>} onClick={() => runAction("register")} disabled={saving}>
                             {t("szCard.actions.register")}
                         </SzButton>
                     )}
-                    {/* Печатная форма нужна и электронной записке - например, для подшивки в дело. */}
+                    {/* Печатная форма нужна и электронной записке - например, для подшивки в дело.
+                        Две версии листа согласования, как у ВНД: с подписями ЭЦП и для подписи от руки.
+                        Рядом — «Скачать / печать»: PDF, DOCX или сразу на принтер. */}
                     {sz && sz.statusCode !== "Draft" && (
-                        <a
-                            href={`/sz/${sz.id}/print`}
-                            target="_blank"
-                            rel="noreferrer"
-                            className={`${szButtonClass("muted")} no-underline`}
-                        >
-                            {t("szCard.actions.print")}
-                        </a>
+                        <>
+                            <Tooltip content={t("szCard.actions.printSignedHint")} side="bottom">
+                                <a
+                                    href={szPrintUrl(sz.id, "signed")}
+                                    target="_blank"
+                                    rel="noreferrer"
+                                    className={`${szButtonClass("muted")} no-underline gap-1.5`}
+                                >
+                                    <ShieldCheck size={15}/>
+                                    {t("szCard.actions.printSigned")}
+                                </a>
+                            </Tooltip>
+                            <Tooltip content={t("szCard.actions.printPaperHint")} side="bottom">
+                                <a
+                                    href={szPrintUrl(sz.id, "paper")}
+                                    target="_blank"
+                                    rel="noreferrer"
+                                    className={`${szButtonClass("muted")} no-underline gap-1.5`}
+                                >
+                                    <Printer size={15}/>
+                                    {t("szCard.actions.printPaper")}
+                                </a>
+                            </Tooltip>
+                            <SzDocumentMenu szId={sz.id}/>
+                        </>
                     )}
                     {/* Отозвать */}
                     {canWithdraw && (
-                        <SzButton onClick={onToggleWithdraw} disabled={saving}>
+                        <SzButton icon={<Undo2 size={16}/>} onClick={onToggleWithdraw} disabled={saving}>
                             {t("szCard.actions.withdraw")}
                         </SzButton>
                     )}
                     {/* Перевести статус */}
                     {sz && canForceStatus && (
-                        <SzButton onClick={onToggleForce} disabled={saving}>
+                        <SzButton icon={<ArrowRightLeft size={16}/>} onClick={onToggleForce} disabled={saving}>
                             {t("szCard.actions.forceStatus")}
                         </SzButton>
                     )}
-                    {/* Удалить */}
-                    {sz?.statusCode === "Draft" && isAuthor && (
-                        <SzButton variant="danger" onClick={() => setConfirmDelete(true)} disabled={saving}>
-                            {t("szCard.actions.delete")}
-                        </SzButton>
+
+                    {/* Избранное и удаление черновика */}
+                    {sz && !isNew && (
+                        <>
+                            {/* Избранное - личная отметка, как у ВНД; появится на вкладке «Избранное» в реестре */}
+                            <SzFavoriteButton variant="button" szId={sz.id} isFavorite={!!sz.isFavorite}/>
+                            {/* Удалить - только корзинка */}
+                            {sz.statusCode === "Draft" && isAuthor && (
+                                <Tooltip content={t("szCard.actions.delete")} side="bottom">
+                                    <button
+                                        type="button"
+                                        onClick={() => setConfirmDelete(true)}
+                                        disabled={saving}
+                                        aria-label={t("szCard.actions.delete")}
+                                        className="inline-flex h-8 w-8 shrink-0 cursor-pointer items-center justify-center rounded-[10px] border border-[#f1c9c2] bg-white text-[#c0392b] transition-colors hover:bg-[#fbeae7] disabled:opacity-50"
+                                    >
+                                        <Trash2 size={15}/>
+                                    </button>
+                                </Tooltip>
+                            )}
+                        </>
                     )}
                 </div>
             </div>
@@ -155,8 +195,10 @@ export function SzCardHeader({card, onToggleWithdraw, onToggleForce}: SzCardHead
                 loadingLabel={t("szCard.submitConfirm.processing")}
                 loading={saving}
                 variant="primary"
+                accent="blue"
                 icon={Send}
                 wideConfirm
+
             />
 
             <ConfirmDeleteModal

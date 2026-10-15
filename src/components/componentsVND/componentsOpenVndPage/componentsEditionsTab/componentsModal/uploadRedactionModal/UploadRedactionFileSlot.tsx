@@ -1,6 +1,6 @@
 // Поле выбора одного файла редакции (русский/кыргызский/английский текст)
 import {useTranslation} from "react-i18next";
-import {Tooltip} from "@/components/componentsGeneral/Tooltip.tsx";
+import {Tooltip} from "@/components/componentsGeneral/tooltips/Tooltip.tsx";
 import {
     fileTooLargeMessage,
     REDACTION_FILE_ACCEPT,

@@ -6,11 +6,12 @@ import {useDictionaries} from "@/context/DictionariesContext.tsx";
 import type {SzCardState} from "@/hooks/sz/useSzCard.ts";
 
 import {Field} from "@/components/componentsDocumentsTypes/Field.tsx";
-import {RichTextEditor} from "@/components/editor/RichTextEditor.tsx";
+import {RichTextEditor} from "@/components/componentsEditor/RichTextEditor.tsx";
 import {SzApproversField} from "@/components/componentsSz/componentsSzCard/form/SzApproversField.tsx";
 import {SzKindFields} from "@/components/componentsSz/componentsSzCard/form/SzKindFields.tsx";
 import {SzRubricsField} from "@/components/componentsSz/componentsSzCard/controls/SzRubricsField.tsx";
 import {inputClass, localizedTitle} from "@/utils/szProcess/szCardUtils.ts";
+import {SzFormSection} from "@/components/componentsSz/componentsSzCard/form/SzFormSection.tsx";
 
 import type {PickableUser} from "@/components/componentsGeneral/userPicker/UserPicker.tsx";
 import {UserPickerField} from "@/components/componentsGeneral/userPicker/UserPickerField.tsx";
@@ -42,8 +43,14 @@ export function SzMainForm({card, userList}: SzMainFormProps) {
         [orgUnits]
     );
 
+    // Секция «Параметры вида» нужна только видам со своими полями (кадровая, закупка, обучение);
+    // у обычной записки SzKindFields ничего не рисует - пустую секцию с заголовком не показываем.
+    const hasKindFields = card.formKey === "Hr" || card.formKey === "Procurement" || card.formKey === "Training";
+
     return (
-        <div className="mt-5 rounded-[12px] border border-[#e5e9f0] bg-white p-5">
+        <div className="mt-5 flex flex-col gap-4">
+            {/* ----------- Основные сведения ----------- */}
+            <SzFormSection title={t("szCard.sections.main")} hint={t("szCard.sections.mainHint")}>
             <div className="grid grid-cols-2 gap-4">
                 {/* ----------- Поля всегда (по умолчанию, вне зависимости от вида записки) -----------*/}
                 {/* Тема */}
@@ -58,6 +65,7 @@ export function SzMainForm({card, userList}: SzMainFormProps) {
                             {t("szCard.fields.kind")} <span className="text-[#c0392b]">*</span>
                         </label>
                         <SelectDropdown
+                            accent="blue"
                             value={String(form.kindId)}
                             onChange={(v) => void applyKind(Number(v))}
                             options={kinds.map((k) => ({value: String(k.id), label: localizedTitle(k, i18n.language)}))}
@@ -76,6 +84,7 @@ export function SzMainForm({card, userList}: SzMainFormProps) {
                     /* Кому */
                     <Field label={t("szCard.fields.addressee")} required>
                         <UserPickerField
+                            accent="blue"
                             people={userList}
                             value={form.addresseeUserId ?? null}
                             placeholder={t("szCard.fields.addresseePick")}
@@ -120,6 +129,7 @@ export function SzMainForm({card, userList}: SzMainFormProps) {
                     {editable ? (
                         <>
                             <SingleSelectListField
+                                accent="blue"
                                 label={t("szCard.fields.addresseeUnit")}
                                 required
                                 modalTitle={t("szCard.fields.addresseeUnit")}
@@ -152,25 +162,35 @@ export function SzMainForm({card, userList}: SzMainFormProps) {
                     {t("szCard.fields.paperCarrier")}
                 </PlainCheckbox>
             </div>
+            </SzFormSection>
 
-            {/* Текст записки */}
-            <div className="mt-4">
+            {/* ----------- Текст записки ----------- */}
+            <SzFormSection title={t("szCard.sections.body")}>
                 <span className="mb-[5px] block text-[11.5px] text-[#8b97ab]">
                     {t("szCard.fields.body")} <span className="text-[#c0392b]">*</span>
                 </span>
                 <RichTextEditor
+                    accent="blue"
                     value={form.body ?? ""}
                     disabled={!editable}
                     onChange={(html) => set("body", html)}
                 />
-            </div>
+            </SzFormSection>
 
             {/* ----------- Поля, зависящие от вида записки -----------*/}
-            <SzKindFields card={card} userList={userList}/>
+            {hasKindFields && (
+                <SzFormSection title={t("szCard.sections.kindFields")} hint={t("szCard.sections.kindFieldsHint")}>
+                    <div className="[&>div:first-child]:mt-0">
+                        <SzKindFields card={card} userList={userList}/>
+                    </div>
+                </SzFormSection>
+            )}
 
 
 
-            {/* ----------- Согласующие -----------*/}
+            {/* ----------- Согласующие и подписант -----------*/}
+            <SzFormSection title={t("szCard.sections.approval")} hint={t("szCard.sections.approvalHint")}>
+            <div className="[&>div:first-child]:mt-0">
             {/* Сообщение "Согласующие подставлены из шаблона вида — можно изменить" */}
             {approversFromTemplate && (
                 <div className="mb-1.5 text-[11.5px] text-[#1c7a4d]">
@@ -197,6 +217,7 @@ export function SzMainForm({card, userList}: SzMainFormProps) {
                 {editable ? (
                     <Field label={t("szCard.fields.signer")}>
                         <UserPickerField
+                            accent="blue"
                             people={userList}
                             value={form.signerUserId ?? null}
                             placeholder={t("szCard.fields.signerPlaceholder")}
@@ -216,7 +237,12 @@ export function SzMainForm({card, userList}: SzMainFormProps) {
                 )}
                 <div className="mt-1 text-[11.5px] text-[#8b97ab]">{t("szCard.fields.signerHint")}</div>
             </div>
+            </div>
+            </SzFormSection>
 
+            {/* ----------- Дополнительно: вложения и рубрики ----------- */}
+            <SzFormSection title={t("szCard.sections.extra")} hint={t("szCard.sections.extraHint")}>
+            <div className="[&>div:first-child]:mt-0">
             {/* Вложения */}
             <AttachmentsPanel
                 documentId={sz?.documentId ?? null}
@@ -232,6 +258,8 @@ export function SzMainForm({card, userList}: SzMainFormProps) {
                 onChange={(ids) => set("rubricIds", ids)}
                 editable={editable}
             />
+            </div>
+            </SzFormSection>
         </div>
     );
 }

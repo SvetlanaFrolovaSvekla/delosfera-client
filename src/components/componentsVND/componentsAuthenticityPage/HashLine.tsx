@@ -1,7 +1,7 @@
 // Строка с хэшем (подпись: значение) и кнопкой "Скопировать" - используется в SignatureCard
 import {useTranslation} from "react-i18next";
 import {copyToClipboard} from "@/utils/vndProcess/authenticityUtils.ts";
-import {Tooltip} from "@/components/componentsGeneral/Tooltip.tsx";
+import {Tooltip} from "@/components/componentsGeneral/tooltips/Tooltip.tsx";
 import {Copy} from "lucide-react";
 
 export function HashLine({label, value}: { label: string; value: string }) {

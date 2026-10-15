@@ -2,7 +2,7 @@
 import {Fragment} from "react";
 import {useTranslation} from "react-i18next";
 import {Search} from "lucide-react";
-import {Tooltip} from "@/components/componentsGeneral/Tooltip.tsx";
+import {Tooltip} from "@/components/componentsGeneral/tooltips/Tooltip.tsx";
 import {escapeRegExp} from "@/utils/highlightText.tsx";
 
 const QUOTE_LINE_RE = /^Цитата: «/;

@@ -19,7 +19,7 @@ import {
 import {
     AttachmentDocxPreviewModal
 } from "@/components/componentsGeneral/modal/AttachmentDocxPreviewModal.tsx";
-import {Tooltip} from "@/components/componentsGeneral/Tooltip.tsx";
+import {Tooltip} from "@/components/componentsGeneral/tooltips/Tooltip.tsx";
 import {SearchBar} from "@/components/componentsGeneral/SearchBar.tsx";
 import {ChevronDown, ChevronUp, Download, Loader2, MessageSquareText, X} from "lucide-react";
 import {useTranslation} from "react-i18next";

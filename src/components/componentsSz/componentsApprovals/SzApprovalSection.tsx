@@ -1,12 +1,16 @@
 // Блок "Согласование": цепочка этапов, подробный список с резолюциями, решение
 // текущего пользователя, окна подписания и замечания к устранению.
+import {useEffect, useMemo, useState} from "react";
 import {useTranslation} from "react-i18next";
+import {szEcpService, type SzResolutionSignature} from "@/service/szService/szEcpService.ts";
+import {SzSignatureJournal} from "@/components/componentsSz/componentsApprovals/SzSignatureJournal.tsx";
 import type {SzDetails} from "@/service/szService/szService.ts";
 import type {RouteInstance} from "@/service/workflowService/workflowService.ts";
 import type {SzApprovalState} from "@/hooks/sz/useSzApproval.ts";
 import {RouteFlowView} from "@/components/componentsWorkflow/RouteFlowView.tsx";
 import {QualifiedSignDialog} from "@/components/signing/QualifiedSignDialog.tsx";
 import {OepSignModal} from "@/components/signing/OepSignModal.tsx";
+import {EcpSignModal} from "@/components/signing/EcpSignModal.tsx";
 import {SzPanel} from "@/components/componentsSz/SzPanel.tsx";
 import {SzRouteSteps} from "@/components/componentsSz/componentsApprovals/SzRouteSteps.tsx";
 import {SzDecisionPanel} from "@/components/componentsSz/componentsApprovals/SzDecisionPanel.tsx";
@@ -25,8 +29,23 @@ export function SzApprovalSection({sz, route, users, approval, currentUserId, sa
     const {t} = useTranslation();
     const {
         myParticipant, openRemarks, resolve, confirmRemark,
-        qualifiedDialogOpen, setQualifiedDialogOpen, oepModalOpen, setOepModalOpen,
+        qualifiedDialogOpen, setQualifiedDialogOpen, oepModalOpen, setOepModalOpen, ecp,
     } = approval;
+
+    // Журнал подписей ЭЦП — перечитываем при каждом обновлении маршрута (новое решение → новая подпись).
+    const [signatures, setSignatures] = useState<SzResolutionSignature[]>([]);
+    const [journalError, setJournalError] = useState(false);
+    useEffect(() => {
+        let cancelled = false;
+        szEcpService.signatures(sz.id)
+            .then((data) => { if (!cancelled) { setSignatures(data); setJournalError(false); } })
+            .catch(() => { if (!cancelled) { setSignatures([]); setJournalError(true); } });
+        return () => { cancelled = true; };
+    }, [sz.id, route]);
+    const ecpByParticipant = useMemo(
+        () => new Map(signatures.map((s) => [s.routeParticipantId, s] as const)),
+        [signatures],
+    );
 
     return (
         <SzPanel>
@@ -43,9 +62,23 @@ export function SzApprovalSection({sz, route, users, approval, currentUserId, sa
                 <RouteFlowView route={route}/>
             </div>
 
-            <SzRouteSteps route={route} users={users}/>
+            <SzRouteSteps route={route} users={users} ecpByParticipant={ecpByParticipant}/>
 
             {myParticipant && <SzDecisionPanel approval={approval} saving={saving}/>}
+
+            {(signatures.length > 0 || journalError) && (
+                <SzSignatureJournal szId={sz.id} items={signatures} loadError={journalError}/>
+            )}
+
+            {/* ЭЦП ГП «Инфоком»: окно ПИН/кода открывается, только если нет ни сохранённой
+                идентификации, ни действующей сессии (см. useEcpHashSigning). */}
+            {ecp.modalOpen && ecp.modalGetHash && (
+                <EcpSignModal
+                    getHash={ecp.modalGetHash}
+                    onSigned={ecp.handleModalSigned}
+                    onClose={ecp.handleModalClose}
+                />
+            )}
 
             {qualifiedDialogOpen && (
                 <QualifiedSignDialog

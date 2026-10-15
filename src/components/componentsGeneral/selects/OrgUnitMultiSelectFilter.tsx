@@ -2,14 +2,16 @@
 import {useTranslation} from "react-i18next";
 import {MultiSelectField} from "@/components/componentsGeneral/selects/MultiSelects/MultiSelectField.tsx";
 import type {TreeSelectOption} from "@/components/componentsGeneral/selects/MultiSelects/TreeMultiSelectModal.tsx";
+import type {Accent} from "@/constants/accent.ts";
 
 interface OrgUnitMultiSelectFilterProps {
     options: TreeSelectOption[];
     selectedKeys: string[];
     onChange: (keys: string[]) => void;
+    accent?: Accent;
 }
 
-export function OrgUnitMultiSelectFilter({options, selectedKeys, onChange}: OrgUnitMultiSelectFilterProps) {
+export function OrgUnitMultiSelectFilter({options, selectedKeys, onChange, accent}: OrgUnitMultiSelectFilterProps) {
     const {t} = useTranslation();
     return (
         <MultiSelectField
@@ -23,6 +25,7 @@ export function OrgUnitMultiSelectFilter({options, selectedKeys, onChange}: OrgU
             searchPlaceholder={t("selectApproverModal.orgUnitSearchPlaceholder")}
             selectedCountLabel={t("selectApproverModal.orgUnitSelectedCountLabel")}
             boldLabel={false}
+            accent={accent}
         />
     );
 }

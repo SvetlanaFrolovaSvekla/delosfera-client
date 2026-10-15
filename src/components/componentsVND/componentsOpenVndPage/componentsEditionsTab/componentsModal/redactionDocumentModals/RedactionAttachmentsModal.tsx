@@ -4,7 +4,7 @@ import {createPortal} from "react-dom";
 import {useTranslation} from "react-i18next";
 import type {VndRedactionResponse} from "@/service/vndService/vndServiceType.ts";
 import {isPreviewableFile} from "@/utils/downloadFiles/fileNaming.ts";
-import {Tooltip} from "@/components/componentsGeneral/Tooltip.tsx";
+import {Tooltip} from "@/components/componentsGeneral/tooltips/Tooltip.tsx";
 import {TruncatedTooltip} from "@/components/componentsGeneral/TruncatedTooltip.tsx";
 import {
     AttachmentDocxPreviewModal

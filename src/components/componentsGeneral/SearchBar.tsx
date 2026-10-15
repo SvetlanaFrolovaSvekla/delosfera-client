@@ -2,6 +2,14 @@
 import {useTranslation} from "react-i18next";
 import {Icon} from "@/assets/icons/Icon";
 import {X} from "lucide-react";
+import type {CSSProperties} from "react";
+import type {Accent} from "@/constants/accent.ts";
+
+/** Явный акцент перекрывает CSS-переменные раздела (--app-accent / --app-soft). */
+const ACCENT_VARS: Record<Accent, Record<string, string>> = {
+    violet: {"--app-accent": "#4e57d6", "--app-soft": "#ececfc"},
+    blue: {"--app-accent": "#2f68f5", "--app-soft": "#e9f0ff"},
+};
 
 interface SearchBarProps {
     placeholder?: string;
@@ -12,6 +20,8 @@ interface SearchBarProps {
     variant?: "gray" | "white"; // фон поля, серый по умолчанию
     onSubmit?: (value: string) => void; // Enter в поле: там, где строка ведёт к выдаче
     autoFocus?: boolean; // Фокус сразу при монтировании - напр. Поиск в только что открытой модалке
+    /** Акцент рамки фокуса. Не задан — берётся из CSS-переменных раздела (по умолчанию фиолетовый). */
+    accent?: Accent;
 }
 
 export function SearchBar({
@@ -23,13 +33,14 @@ export function SearchBar({
                               variant = "gray",
                               onSubmit,
                               autoFocus = false,
+                              accent,
                           }: SearchBarProps) {
     const {t} = useTranslation();
 
     return (
         <div
             className={`relative flex-1 ${className}`}
-            style={maxWidth ? {maxWidth} : undefined}
+            style={maxWidth || accent ? {...(maxWidth ? {maxWidth} : {}), ...(accent ? ACCENT_VARS[accent] : {})} as CSSProperties : undefined}
         >
             <Icon
                 name="search"

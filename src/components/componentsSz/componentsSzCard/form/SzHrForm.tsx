@@ -22,7 +22,7 @@ import {SelectDropdown} from "@/components/componentsGeneral/selects/SingleSelec
 import {SingleSelectListField} from "@/components/componentsGeneral/selects/SingleSelects/SingleSelectListField.tsx";
 import {DatePickerInput} from "@/components/componentsGeneral/datePickers/DatePickerInput.tsx";
 import {PlainCheckbox} from "@/components/componentsGeneral/componentsCheckBox/PlainCheckbox.tsx";
-import {Tooltip} from "@/components/componentsGeneral/Tooltip.tsx";
+import {Tooltip} from "@/components/componentsGeneral/tooltips/Tooltip.tsx";
 import {Plus, X} from "lucide-react";
 
 interface Props {
@@ -77,6 +77,7 @@ function HrDateField({value, onChange, disabled}: {
 
     return (
         <DatePickerInput
+            accent="blue"
             value={raw}
             disabled={disabled}
             className="!h-10 !rounded-[9px] !text-[13px]"
@@ -198,6 +199,7 @@ export function SzHrForm({
     const renderOrgUnitSelect = (label: string, id: number | null | undefined, onPick: (id: number | null) => void, required?: boolean) =>
         editable ? (
             <SingleSelectListField
+                accent="blue"
                 label={label}
                 required={required}
                 modalTitle={label}
@@ -238,6 +240,7 @@ export function SzHrForm({
                 // Общий SelectDropdown вместо нативного <select>, как у поля «Вид записки».
                 return editable ? (
                     <SelectDropdown
+                        accent="blue"
                         value={(v as string) ?? ""}
                         onChange={(val) => apply(val || null)}
                         options={[
@@ -339,6 +342,7 @@ export function SzHrForm({
                                                 <span className="text-[11px] text-[#8b97ab]">{t("szCard.fields.hrEmployeeLabel")}</span>
                                                 {editable ? (
                                                     <UserPickerField
+                                                        accent="blue"
                                                         people={users}
                                                         value={e.userId ?? null}
                                                         placeholder={t("szCard.fields.hrEmployeePick")}

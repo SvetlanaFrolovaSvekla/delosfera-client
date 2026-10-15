@@ -7,7 +7,7 @@ import {LINK_STATUS_STYLES} from "@/components/componentsVND/componentsOpenVndPa
 import {
     isLegacyLink, type DocGroup, type LinksSubTab
 } from "@/components/componentsVND/componentsOpenVndPage/componentsLinksTab/vndLinksTabUtils.ts";
-import {Tooltip} from "@/components/componentsGeneral/Tooltip.tsx";
+import {Tooltip} from "@/components/componentsGeneral/tooltips/Tooltip.tsx";
 import {ChevronRight} from "lucide-react";
 
 export function DocumentGroup({group, perspective, canDelete, disabled, onDelete, onShowSource, onShowTarget}: {

@@ -41,6 +41,8 @@ export function useSzCard(id: string | undefined) {
     const [hrValues, setHrValues] = useState<Record<string, unknown>>({});
     const [sz, setSz] = useState<SzDetails | null>(null);
     const [route, setRoute] = useState<RouteInstance | null>(null);
+    /** Маршрут есть, но загрузить его не удалось — блок согласования показывает причину, а не исчезает. */
+    const [routeError, setRouteError] = useState<string | null>(null);
     const [form, setForm] = useState<SzSaveRequest>(EMPTY_FORM);
 
     /**
@@ -91,9 +93,20 @@ export function useSzCard(id: string | undefined) {
 
         // Маршрут нужен и после завершения: карточка показывает, кто и как решил.
         if (d.currentRouteInstanceId) {
-            workflowService.instance(d.currentRouteInstanceId).then(setRoute).catch(() => setRoute(null));
+            setRouteError(null);
+            workflowService.instance(d.currentRouteInstanceId)
+                .then(setRoute)
+                .catch((e: unknown) => {
+                    // Раньше ошибка глоталась молча, и блок "Согласование" просто пропадал —
+                    // согласующий не видел ни решения, ни причины.
+                    console.error("[sz] не удалось загрузить маршрут согласования", e);
+                    const r = (e as { response?: { status?: number; data?: { message?: string } } }).response;
+                    setRouteError(r?.data?.message ?? (r?.status ? `HTTP ${r.status}` : String(e)));
+                    setRoute(null);
+                });
         } else {
             setRoute(null);
+            setRouteError(null);
         }
     }, []);
 
@@ -289,7 +302,7 @@ export function useSzCard(id: string | undefined) {
     return {
         isNew, sz, form, setForm, set, kind, formKey, kinds, hrKinds, hrForms, hrValues, setHrValues,
         pendingFiles, setPendingFiles, loading, saving, setSaving, error, setError, notice, setNotice,
-        route, isAuthor, editable, canForceStatus, canRegister, approversFromTemplate,
+        route, routeError, isAuthor, editable, canForceStatus, canRegister, approversFromTemplate,
         applyKind, applyDetails, reload, save, runAction, withdraw, forceStatus,
     };
 }

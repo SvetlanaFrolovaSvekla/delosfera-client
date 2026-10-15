@@ -11,7 +11,7 @@
 // в каждой ячейке, как при формировании ТИД-а (см. требование "должно быть в каждой строке ещё
 // «выделить красным», «выделить зеленым» «выделить черным»").
 import {useEffect, useRef} from "react";
-import {Tooltip} from "@/components/componentsGeneral/Tooltip.tsx";
+import {Tooltip} from "@/components/componentsGeneral/tooltips/Tooltip.tsx";
 
 // Обычный текстовый цвет приложения ("чёрный" в терминах кнопок покраски) - на случай, если
 // нужно вернуть кусок ранее покрашенного текста обратно к обычному цвету. Кнопка "Выделить

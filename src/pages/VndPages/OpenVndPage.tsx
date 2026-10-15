@@ -52,7 +52,7 @@ import {DeleteVndModal} from "@/components/componentsVND/componentsOpenVndPage/c
 import {Loader} from "@/components/componentsGeneral/Loader.tsx";
 import {EmptyState} from "@/components/componentsGeneral/EmptyState.tsx";
 import {VndStatusBanner} from "@/components/componentsGeneral/knowledgeBaseComponents/VndStatusBanner.tsx";
-import {Tooltip} from "@/components/componentsGeneral/Tooltip.tsx";
+import {Tooltip} from "@/components/componentsGeneral/tooltips/Tooltip.tsx";
 
 import {Archive, Eye, Lightbulb, Lock, Printer, Trash2} from "lucide-react";
 

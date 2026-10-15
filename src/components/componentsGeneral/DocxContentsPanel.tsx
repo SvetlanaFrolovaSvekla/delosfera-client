@@ -8,7 +8,7 @@ import {useTranslation} from "react-i18next";
 import {useDocxHeadings} from "@/hooks/vndHooks/useDocxHeadings.ts";
 import type {DocxHeadingItem} from "@/utils/docxWork/docxHeadings.ts";
 import {textMatchKey} from "@/utils/docxWork/docxOoxml.ts";
-import {Tooltip} from "@/components/componentsGeneral/Tooltip.tsx";
+import {Tooltip} from "@/components/componentsGeneral/tooltips/Tooltip.tsx";
 import {ListTree, Loader2, X} from "lucide-react";
 
 /** Абзац тела документа: docx-preview рисует колонтитулы (<header>/<footer>) на КАЖДЫЙ раздел и

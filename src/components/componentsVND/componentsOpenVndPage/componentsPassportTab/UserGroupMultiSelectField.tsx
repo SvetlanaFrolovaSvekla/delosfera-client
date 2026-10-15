@@ -4,8 +4,9 @@ import {useState} from "react";
 import {useTranslation} from "react-i18next";
 import {CircleHelp, Info} from "lucide-react";
 import {MultiSelectField} from "@/components/componentsGeneral/selects/MultiSelects/MultiSelectField.tsx";
-import {Tooltip} from "@/components/componentsGeneral/Tooltip.tsx";
+import {Tooltip} from "@/components/componentsGeneral/tooltips/Tooltip.tsx";
 import {UserGroupMembersModal} from "@/components/componentsVND/componentsOpenVndPage/componentsPassportTab/UserGroupMembersModal.tsx";
+import {ACCENT, type Accent} from "@/constants/accent.ts";
 
 interface UserGroupMultiSelectFieldProps {
     label?: string;
@@ -15,10 +16,13 @@ interface UserGroupMultiSelectFieldProps {
     onChange: (keys: string[]) => void;
     searchPlaceholder?: string;
     boldLabel?: boolean;
+    /** Акцентный цвет (по умолчанию фиолетовый). */
+    accent?: Accent;
 }
 
 export function UserGroupMultiSelectField(props: UserGroupMultiSelectFieldProps) {
     const {t} = useTranslation();
+    const a = ACCENT[props.accent ?? "violet"];
     const [membersOf, setMembersOf] = useState<{ id: number; name: string } | null>(null);
 
     return (
@@ -27,7 +31,7 @@ export function UserGroupMultiSelectField(props: UserGroupMultiSelectFieldProps)
                 {...props}
                 modalHint={
                     <span className="flex items-start gap-2">
-                        <Info size={14} className="mt-[2px] flex-none text-[#4e57d6]" strokeWidth={2}/>
+                        <Info size={14} className={`mt-[2px] flex-none ${a.text}`} strokeWidth={2}/>
                         <span>{t("userGroupAccess.hint")}</span>
                     </span>
                 }
@@ -39,7 +43,7 @@ export function UserGroupMultiSelectField(props: UserGroupMultiSelectFieldProps)
                                 id: Number(key),
                                 name: props.options.find((o) => o.key === key)?.label ?? "",
                             })}
-                            className="grid h-7 w-7 cursor-pointer place-items-center rounded-full text-[#a3adbd] hover:bg-[#ececfc] hover:text-[#4e57d6]"
+                            className={`grid h-7 w-7 cursor-pointer place-items-center rounded-full text-[#a3adbd] ${a.hoverSoftBg} ${a.hoverText}`}
                         >
                             <CircleHelp size={16} strokeWidth={1.9}/>
                         </button>

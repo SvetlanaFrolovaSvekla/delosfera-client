@@ -3,7 +3,7 @@ import {useTranslation} from "react-i18next";
 import {parseDDMMYYYY} from "@/utils/dateUtils.ts";
 import {UserPickerField} from "@/components/componentsGeneral/userPicker/UserPickerField.tsx";
 import type {OrgUnitPickerPerson} from "@/components/componentsGeneral/userPicker/UserOrgUnitPickerModal.tsx";
-import {Tooltip} from "@/components/componentsGeneral/Tooltip.tsx";
+import {Tooltip} from "@/components/componentsGeneral/tooltips/Tooltip.tsx";
 import {DatePickerInput} from "@/components/componentsGeneral/datePickers/DatePickerInput.tsx";
 
 type PersonOption = OrgUnitPickerPerson;

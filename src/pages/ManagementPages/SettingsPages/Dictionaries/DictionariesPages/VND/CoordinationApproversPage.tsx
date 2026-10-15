@@ -9,7 +9,7 @@ import {PermissionCode} from "@/constants/permissions/permissions.ts";
 
 import {Loader} from "@/components/componentsGeneral/Loader.tsx";
 import {EmptyState} from "@/components/componentsGeneral/EmptyState.tsx";
-import {Tooltip} from "@/components/componentsGeneral/Tooltip.tsx";
+import {Tooltip} from "@/components/componentsGeneral/tooltips/Tooltip.tsx";
 import {ConfirmDeleteModal} from "@/components/componentsGeneral/modal/ConfirmDeleteModal.tsx";
 import {useCoordinationApprovers} from "@/hooks/dictionariesHooks/useCoordinationApprovers.ts";
 import {CoordinationStageFormModal} from "@/components/componentsDictionaries/CoordinationStageFormModal.tsx";

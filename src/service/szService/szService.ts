@@ -1,6 +1,7 @@
 import type {BoardReview} from "@/components/componentsGeneral/BoardReviewCard.tsx";
 import type {MeetingBody} from "@/service/meetingsService/meetingsService.ts";
 import {apiClient} from "@/service/apiClient.ts";
+import type {SzBulkResult} from "@/service/szService/szArchiveService.ts";
 import type {SzAssignmentDraft} from "@/service/szService/szExecutionService.ts";
 
 export type SzStatusCode =
@@ -59,6 +60,8 @@ export interface SzListItem {
     daysLeft: number | null;
     isOverdue: boolean;
     isPaperCarrier: boolean;
+    /** В «Избранном» текущего пользователя. Необязательное — старый сервер его не отдаёт. */
+    isFavorite?: boolean;
 }
 
 export interface SzDetails extends SzListItem {
@@ -174,12 +177,25 @@ export interface SzSearchRequest {
     ids?: number[];
     kindIds?: number[];
     authorId?: number;
+    /** Расширенный поиск: авторы записки (любой из списка). */
+    authorIds?: number[];
+    /** Расширенный поиск: подстрока регистрационного номера (кода). */
+    regNumber?: string;
+    /** Расширенный поиск: подстрока темы. */
+    title?: string;
     correspondentUnitId?: number;
     rubricId?: number;
     mineOnly?: boolean;
+    /** Только записки из «Избранного» текущего пользователя (в любом статусе, включая архив). */
+    favoritesOnly?: boolean;
     registeredFrom?: string;
     registeredTo?: string;
+    /** Срок исполнения — с / по (YYYY-MM-DD, включительно). */
+    dueFrom?: string;
+    dueTo?: string;
     overdueOnly?: boolean;
+    /** Расширенный поиск: только записки на бумажном носителе. */
+    paperCarrierOnly?: boolean;
     page?: number;
     pageSize?: number;
 }
@@ -197,6 +213,16 @@ export interface SzCounters {
     pendingRegistration: number;
     archived: number;
     byStatus: Record<string, number>;
+    /** «СЗ, инициирую я». Необязательные — старый сервер их не отдаёт. */
+    mine?: number;
+    /** «СЗ, согласую я»: активные задачи согласования текущего пользователя. */
+    inbox?: number;
+    /** «Мои поручения»: незакрытые поручения. */
+    assignments?: number;
+    /** «Оригиналы на руках»; null — реестр оригиналов пользователю недоступен. */
+    originals?: number | null;
+    /** «Избранное» текущего пользователя. */
+    favorites?: number;
 }
 
 export interface SzHistoryEntry {
@@ -266,6 +292,28 @@ export const szService = {
         link.click();
         link.remove();
         URL.revokeObjectURL(url);
+    },
+
+    /** Добавить записку в «Избранное» текущего пользователя (идемпотентно). */
+    async addToFavorites(id: number): Promise<void> {
+        await apiClient.put(`${BASE}/${id}/favorite`);
+    },
+
+    /** Убрать записку из «Избранного» текущего пользователя (идемпотентно). */
+    async removeFromFavorites(id: number): Promise<void> {
+        await apiClient.delete(`${BASE}/${id}/favorite`);
+    },
+
+    /** Добавить отмеченные записки в «Избранное». Недоступные пропускаются и приходят в failed. */
+    async addManyToFavorites(ids: number[]): Promise<SzBulkResult> {
+        const {data} = await apiClient.post<SzBulkResult>(`${BASE}/favorites/bulk-add`, {ids});
+        return data;
+    },
+
+    /** Убрать отмеченные записки из «Избранного». */
+    async removeManyFromFavorites(ids: number[]): Promise<SzBulkResult> {
+        const {data} = await apiClient.post<SzBulkResult>(`${BASE}/favorites/bulk-remove`, {ids});
+        return data;
     },
 
     async counters(): Promise<SzCounters> {

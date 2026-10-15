@@ -1,5 +1,5 @@
 import {useTranslation} from "react-i18next";
-import {Tooltip} from "@/components/componentsGeneral/Tooltip.tsx";
+import {Tooltip} from "@/components/componentsGeneral/tooltips/Tooltip.tsx";
 
 /**
  * Сотрудников в день. Столбики, а не линия: дни дискретны, а линия между ними

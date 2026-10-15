@@ -4,6 +4,7 @@ import {useTranslation} from "react-i18next";
 import {ChevronDown} from "lucide-react";
 import {TreeSingleSelectModal, type TreeSelectOption} from "./TreeSingleSelectModal.tsx";
 import {getAncestorPath} from "@/utils/dictionaries/treeSelectUtils.ts";
+import type {Accent} from "@/constants/accent.ts";
 
 interface SingleSelectListFieldProps {
     label: string;
@@ -19,6 +20,8 @@ interface SingleSelectListFieldProps {
     required?: boolean;
     showChevron?: boolean; // показывать ли стрелочку-шеврон справа в поле
     modalHint?: ReactNode; // пояснение сверху в окне выбора
+    /** Акцентный цвет модалки выбора (по умолчанию фиолетовый). */
+    accent?: Accent;
 }
 
 export function SingleSelectListField({
@@ -35,6 +38,7 @@ export function SingleSelectListField({
                                           required = false,
                                           showChevron = true,
                                           modalHint,
+                                          accent,
                                       }: SingleSelectListFieldProps) {
     const {t} = useTranslation();
     const [modalOpen, setModalOpen] = useState(false);
@@ -96,6 +100,7 @@ export function SingleSelectListField({
                 clearLabel={clearLabel}
                 clearedLabel={clearedLabel}
                 hint={modalHint}
+                accent={accent}
             />
         </>
     );

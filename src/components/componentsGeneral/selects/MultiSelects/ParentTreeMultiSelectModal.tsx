@@ -5,6 +5,7 @@ import {useModalShake} from "@/hooks//useModalShake.ts";
 import {HighlightText} from "@/utils/highlightText.tsx";
 import {SearchBar} from "@/components/componentsGeneral/SearchBar.tsx";
 import {Check, ChevronRight, X} from "lucide-react";
+import {ACCENT, type Accent} from "@/constants/accent.ts";
 
 export interface ParentTreeOption {
     key: string;
@@ -27,6 +28,8 @@ interface ParentTreeMultiSelectModalProps {
     onApply: (keys: string[]) => void;
     searchPlaceholder?: string;
     selectedCountLabel?: string;
+    /** Акцентный цвет (по умолчанию фиолетовый). */
+    accent?: Accent;
 }
 
 function buildTree(options: ParentTreeOption[]): ParentTreeNode[] {
@@ -103,8 +106,10 @@ export function ParentTreeMultiSelectModal({
                                                onApply,
                                                searchPlaceholder,
                                                selectedCountLabel,
+                                               accent = "violet",
                                            }: ParentTreeMultiSelectModalProps) {
     const {t} = useTranslation();
+    const a = ACCENT[accent];
     const {panelRef, handleBackdropClick} = useModalShake();
 
     const [draft, setDraft] = useState<string[]>(selectedKeys);
@@ -194,7 +199,7 @@ export function ParentTreeMultiSelectModal({
                                 node.disabled
                                     ? "border-[1.5px] border-[#e5e9f0] bg-[#f2f5f9]"
                                     : on
-                                        ? "border-[1.5px] border-[#4e57d6] bg-[#4e57d6]"
+                                        ? `border-[1.5px] ${a.border} ${a.bg}`
                                         : "border-[1.5px] border-[#cbd3df] bg-white"
                             }`}
                         >
@@ -243,6 +248,7 @@ export function ParentTreeMultiSelectModal({
 
                 <div className="px-5 pt-4 pb-2 flex-none">
                     <SearchBar
+                        accent={accent}
                         variant="gray"
                         value={query}
                         onChange={setQuery}
@@ -256,7 +262,7 @@ export function ParentTreeMultiSelectModal({
                         onClick={selectAll}
                         disabled={allSelected}
                         className={`text-[11px] font-semibold cursor-pointer ${
-                            allSelected ? "text-[#c3ccd8] cursor-default" : "text-[#4e57d6] hover:underline"
+                            allSelected ? "text-[#c3ccd8] cursor-default" : `${a.text} hover:underline`
                         }`}
                     >
                         {t("general.selectAll")}
@@ -266,7 +272,7 @@ export function ParentTreeMultiSelectModal({
                         onClick={deselectAll}
                         disabled={noneSelected}
                         className={`text-[11px] font-semibold cursor-pointer ${
-                            noneSelected ? "text-[#c3ccd8] cursor-default" : "text-[#4e57d6] hover:underline"
+                            noneSelected ? "text-[#c3ccd8] cursor-default" : `${a.text} hover:underline`
                         }`}
                     >
                         {t("general.deselectAll")}
@@ -296,7 +302,7 @@ export function ParentTreeMultiSelectModal({
                         </button>
                         <button
                             onClick={handleApply}
-                            className="h-9 px-5 rounded-[9px] border-none bg-[#4e57d6] text-white font-semibold text-[12.5px] cursor-pointer hover:brightness-[1.06]"
+                            className={`h-9 px-5 rounded-[9px] border-none ${a.bg} text-white font-semibold text-[12.5px] cursor-pointer hover:brightness-[1.06]`}
                         >
                             {t("general.save")}
                         </button>

@@ -3,7 +3,7 @@
 import {useTranslation} from "react-i18next";
 import {formatFileSize} from "@/service/documentService/attachmentService.ts";
 import {MAX_RESOLUTION_ATTACHMENTS, MAX_RESOLUTION_ATTACHMENT_SIZE_BYTES, MAX_RESOLUTION_COMMENT_LENGTH} from "@/constants/validation/coordinationValidatuon.ts";
-import {Tooltip} from "@/components/componentsGeneral/Tooltip.tsx";
+import {Tooltip} from "@/components/componentsGeneral/tooltips/Tooltip.tsx";
 import {HelpTooltip} from "@/components/componentsGeneral/knowledgeBaseComponents/HelpTooltip.tsx";
 import {CharCounter} from "@/components/componentsGeneral/CharCounter.tsx";
 import {AlertCircle, Paperclip, Trash2} from "lucide-react";

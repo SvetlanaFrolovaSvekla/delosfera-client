@@ -13,6 +13,7 @@ import {
 } from "@/components/componentsGeneral/userPicker/UserPickerModalShell.tsx";
 import {HighlightText} from "@/utils/highlightText.tsx";
 import {User as UserIcon} from "lucide-react";
+import {ACCENT, type Accent} from "@/constants/accent.ts";
 
 export interface OrgUnitPickerPerson {
     id: number;
@@ -32,6 +33,8 @@ interface UserOrgUnitPickerModalProps {
     searchPlaceholder: string;
     onSelect: (person: OrgUnitPickerPerson) => void;
     onClose: () => void;
+    /** Акцентный цвет (подсветка выбранного, поиск, фильтр СП). По умолчанию фиолетовый. */
+    accent?: Accent;
 }
 
 export function UserOrgUnitPickerModal({
@@ -42,8 +45,10 @@ export function UserOrgUnitPickerModal({
                                             searchPlaceholder,
                                             onSelect,
                                             onClose,
+                                            accent = "violet",
                                         }: UserOrgUnitPickerModalProps) {
     const {t} = useTranslation();
+    const a = ACCENT[accent];
     const [search, setSearch] = useState("");
 
     const {treeOptions, selectedKeys, setSelectedKeys, selectedIds, loading, error} = useOrgUnitFilter();
@@ -73,8 +78,8 @@ export function UserOrgUnitPickerModal({
             onClose={onClose}
             filters={
                 <>
-                    <UserPickerSearchInput value={search} onChange={setSearch} placeholder={searchPlaceholder}/>
-                    <OrgUnitMultiSelectFilter options={treeOptions} selectedKeys={selectedKeys} onChange={setSelectedKeys}/>
+                    <UserPickerSearchInput value={search} onChange={setSearch} placeholder={searchPlaceholder} accent={accent}/>
+                    <OrgUnitMultiSelectFilter options={treeOptions} selectedKeys={selectedKeys} onChange={setSelectedKeys} accent={accent}/>
                 </>
             }
         >
@@ -95,14 +100,14 @@ export function UserOrgUnitPickerModal({
                                 type="button"
                                 onClick={() => handlePick(p)}
                                 className={`flex items-center gap-3 rounded-[10px] px-3 py-[10px] text-left transition-colors cursor-pointer ${
-                                    isSelected ? "bg-[#ececfc]" : "hover:bg-[#f6f8fb]"
+                                    isSelected ? `${a.softBg}` : "hover:bg-[#f6f8fb]"
                                 }`}
                             >
-                                <div className="flex h-9 w-9 flex-none items-center justify-center rounded-full bg-[#f0f1fb] text-[#4e57d6]">
+                                <div className={`flex h-9 w-9 flex-none items-center justify-center rounded-full ${a.tintBg} ${a.text}`}>
                                     <UserIcon size={16}/>
                                 </div>
                                 <div className="min-w-0 flex-1">
-                                    <span className={`block truncate text-[13px] font-semibold ${isSelected ? "text-[#4e57d6]" : "text-[#26324a]"}`}>
+                                    <span className={`block truncate text-[13px] font-semibold ${isSelected ? `${a.text}` : "text-[#26324a]"}`}>
                                         <HighlightText text={p.fullName} query={search}/>
                                     </span>
                                     {(p.position || p.orgUnit) && (

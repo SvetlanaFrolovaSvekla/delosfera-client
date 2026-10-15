@@ -2,7 +2,7 @@
 import { useTranslation } from "react-i18next";
 import { NOTIFICATION_SEVERITY_META } from "@/constants/notificationSeverity.ts";
 import type { NotificationSeverity } from "@/service/notificationsService/notificationsServiceType.ts";
-import { Tooltip } from "@/components/componentsGeneral/Tooltip.tsx";
+import { Tooltip } from "@/components/componentsGeneral/tooltips/Tooltip.tsx";
 
 interface SeverityDotProps {
     severity: NotificationSeverity;

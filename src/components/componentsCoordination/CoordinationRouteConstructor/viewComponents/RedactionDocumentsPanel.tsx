@@ -9,7 +9,7 @@ import {Download, Eye, FileText, Loader2} from "lucide-react";
 import {
     AttachmentDocxPreviewModal
 } from "@/components/componentsGeneral/modal/AttachmentDocxPreviewModal.tsx";
-import {Tooltip} from "@/components/componentsGeneral/Tooltip.tsx";
+import {Tooltip} from "@/components/componentsGeneral/tooltips/Tooltip.tsx";
 import {useCanExportVnd} from "@/hooks/vndHooks/useCanExportVnd.ts";
 import {approvalSheetCaption, getRedactionApprovalSheets} from "@/utils/vndProcess/approvalSheets.ts";
 

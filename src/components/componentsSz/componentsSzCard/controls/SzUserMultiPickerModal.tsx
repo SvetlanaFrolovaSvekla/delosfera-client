@@ -14,6 +14,7 @@ import {
 import {seniority, type PickableUser} from "@/components/componentsGeneral/userPicker/UserPicker.tsx";
 import {OrgUnitMultiSelectFilter} from "@/components/componentsGeneral/selects/OrgUnitMultiSelectFilter.tsx";
 import {Check, User as UserIcon} from "lucide-react";
+import {ACCENT, type Accent} from "@/constants/accent.ts";
 
 interface Props {
     people: PickableUser[];
@@ -22,10 +23,13 @@ interface Props {
     onChange: (ids: number[]) => void;
     title: string;
     onClose: () => void;
+    /** Акцентный цвет (галочки, подсветка выбранных, кнопка «Готово»). По умолчанию фиолетовый. */
+    accent?: Accent;
 }
 
-export function SzUserMultiPickerModal({people, value, onChange, title, onClose}: Props) {
+export function SzUserMultiPickerModal({people, value, onChange, title, onClose, accent = "violet"}: Props) {
     const {t} = useTranslation();
+    const a = ACCENT[accent];
     const [search, setSearch] = useState("");
     const {treeOptions, selectedKeys, setSelectedKeys, selectedIds, loading, error} = useOrgUnitFilter();
 
@@ -57,8 +61,14 @@ export function SzUserMultiPickerModal({people, value, onChange, title, onClose}
                         value={search}
                         onChange={setSearch}
                         placeholder={t("szCard.fields.userSearch")}
+                        accent={accent}
                     />
-                    <OrgUnitMultiSelectFilter options={treeOptions} selectedKeys={selectedKeys} onChange={setSelectedKeys}/>
+                    <OrgUnitMultiSelectFilter
+                        options={treeOptions}
+                        selectedKeys={selectedKeys}
+                        onChange={setSelectedKeys}
+                        accent={accent}
+                    />
                 </>
             }
         >
@@ -81,18 +91,18 @@ export function SzUserMultiPickerModal({people, value, onChange, title, onClose}
                                         type="button"
                                         onClick={() => toggle(p.id)}
                                         className={`flex items-center gap-3 rounded-[10px] px-3 py-[10px] text-left transition-colors cursor-pointer ${
-                                            checked ? "bg-[#ececfc]" : "hover:bg-[#f6f8fb]"
+                                            checked ? `${a.softBg}` : "hover:bg-[#f6f8fb]"
                                         }`}
                                     >
                                         <span className={`flex h-4 w-4 flex-none items-center justify-center rounded-[4px] border ${
-                                            checked ? "border-[#4e57d6] bg-[#4e57d6]" : "border-[#c8d2e0] bg-white"}`}>
+                                            checked ? `${a.border} ${a.bg}` : "border-[#c8d2e0] bg-white"}`}>
                                             {checked && <Check size={11} className="text-white" strokeWidth={3}/>}
                                         </span>
-                                        <div className="flex h-9 w-9 flex-none items-center justify-center rounded-full bg-[#f0f1fb] text-[#4e57d6]">
+                                        <div className={`flex h-9 w-9 flex-none items-center justify-center rounded-full ${a.tintBg} ${a.text}`}>
                                             <UserIcon size={16}/>
                                         </div>
                                         <div className="min-w-0 flex-1">
-                                            <span className={`block truncate text-[13px] font-semibold ${checked ? "text-[#4e57d6]" : "text-[#26324a]"}`}>
+                                            <span className={`block truncate text-[13px] font-semibold ${checked ? `${a.text}` : "text-[#26324a]"}`}>
                                                 <HighlightText text={p.fullName} query={search}/>
                                             </span>
                                             {(p.position || p.orgUnit) && (
@@ -118,7 +128,7 @@ export function SzUserMultiPickerModal({people, value, onChange, title, onClose}
                     <button
                         type="button"
                         onClick={onClose}
-                        className="h-9 cursor-pointer rounded-[9px] border-none bg-[#4e57d6] px-4 text-[13px] font-semibold text-white hover:bg-[#434bc4]"
+                        className={`h-9 cursor-pointer rounded-[9px] border-none ${a.bg} px-4 text-[13px] font-semibold text-white ${a.hoverBg}`}
                     >
                         {t("szCard.fields.done")}
                     </button>

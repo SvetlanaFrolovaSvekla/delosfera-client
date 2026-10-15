@@ -11,8 +11,8 @@ import {ReportVndPage} from "@/pages/ReportPages/ReportVndPages/ReportVndPage.ts
 import {ReportVndActualizationPage} from "@/pages/ReportPages/ReportVndPages/ReportVndActualizationPage.tsx";
 import {ReportVndApprovalsPage} from "@/pages/ReportPages/ReportVndPages/ReportVndApprovalsPage.tsx";
 import {ReportProcessMiningPage} from "@/pages/ReportPages/ReportProcessMiningPage.tsx";
-import {SzStatisticsPage} from "@/pages/SZPages/SzStatisticsPage.tsx";
-import {ProcurementStatisticsPage} from "@/pages/ProcurementPages/ProcurementStatisticsPage.tsx";
+import {SzStatisticsPage} from "@/pages/SzPagesSection/SzPages/SzStatisticsPage.tsx";
+import {ProcurementStatisticsPage} from "@/pages/ProcurementPagesSection/ProcurementStatisticsPage.tsx";
 import {SlaDashboardPage} from "@/pages/MeetingsPages/SlaDashboardPage.tsx";
 
 import {ContourReportView} from "@/components/componentsReport/ContourReportView.tsx";

@@ -2,7 +2,7 @@
 import {useTranslation} from "react-i18next";
 import type {RedactionDisplayStatus} from "@/utils/vndProcess/redactionStatus.ts";
 import {formatDate} from "@/utils/dateUtils.ts";
-import {Tooltip} from "@/components/componentsGeneral/Tooltip.tsx";
+import {Tooltip} from "@/components/componentsGeneral/tooltips/Tooltip.tsx";
 import {Loader2} from "lucide-react";
 
 interface BannerConfig {

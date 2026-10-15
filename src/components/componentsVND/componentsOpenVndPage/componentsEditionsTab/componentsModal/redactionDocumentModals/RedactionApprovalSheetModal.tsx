@@ -7,7 +7,7 @@ import {useCanExportVnd, NO_EXPORT_VND_HINT} from "@/hooks/vndHooks/useCanExport
 import {approvalSheetCaption, getRedactionApprovalSheets} from "@/utils/vndProcess/approvalSheets.ts";
 import {RedactionTextView} from "@/components/componentsVND/componentsOpenVndPage/componentsEditionsTab/RedactionTextView.tsx";
 import {ApprovalSheetLiveView} from "@/components/componentsVND/approvalSheet/ApprovalSheetLiveView.tsx";
-import {Tooltip} from "@/components/componentsGeneral/Tooltip.tsx";
+import {Tooltip} from "@/components/componentsGeneral/tooltips/Tooltip.tsx";
 import {ClipboardCheck, Download, Loader2, X} from "lucide-react";
 
 interface RedactionApprovalSheetModalProps {

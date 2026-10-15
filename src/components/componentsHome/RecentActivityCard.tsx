@@ -9,7 +9,7 @@ import {timeAgo} from "@/utils/dateUtils.ts";
 import {Loader} from "@/components/componentsGeneral/Loader.tsx";
 import {EmptyState} from "@/components/componentsGeneral/EmptyState.tsx";
 import {EmptyPanelPattern} from "@/components/componentsGeneral/EmptyPanelPattern.tsx";
-import {Tooltip} from "@/components/componentsGeneral/Tooltip.tsx";
+import {Tooltip} from "@/components/componentsGeneral/tooltips/Tooltip.tsx";
 import {Icon} from "@/assets/icons/Icon";
 import {History, Lock} from "lucide-react";
 

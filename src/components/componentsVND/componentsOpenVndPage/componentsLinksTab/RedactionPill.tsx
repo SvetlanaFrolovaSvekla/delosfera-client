@@ -4,7 +4,7 @@
 // Используется в MentionLine и AttachmentLinkRow.
 import {useTranslation} from "react-i18next";
 import {languageShortLabel} from "@/components/componentsVND/componentsOpenVndPage/componentsLinksTab/vndLinkUi.ts";
-import {Tooltip} from "@/components/componentsGeneral/Tooltip.tsx";
+import {Tooltip} from "@/components/componentsGeneral/tooltips/Tooltip.tsx";
 
 export function RedactionPill({number, lang, current, code}: {
     number: number;

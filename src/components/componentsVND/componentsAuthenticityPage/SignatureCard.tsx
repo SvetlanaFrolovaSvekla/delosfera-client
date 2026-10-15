@@ -9,7 +9,7 @@ import {toast} from "@/service/toastService.ts";
 import {formatDateTime} from "@/utils/vndProcess/authenticityUtils.ts";
 import {Field} from "./Field.tsx";
 import {HashLine} from "./HashLine.tsx";
-import {Tooltip} from "@/components/componentsGeneral/Tooltip.tsx";
+import {Tooltip} from "@/components/componentsGeneral/tooltips/Tooltip.tsx";
 import {BTN_SECONDARY, STATE_STYLE, VERIFY_STYLE} from "./styles/authenticityStyles.ts";
 import {CheckCircle2, ShieldCheck, XCircle} from "lucide-react";
 

@@ -4,7 +4,7 @@ import type {CalendarEvent} from "@/service/analyticsService/calendarService.ts"
 import {MAX_VISIBLE} from "@/constants/calendarPageConst.ts";
 import {eventKey} from "@/utils/calendar/calendarUtils.ts";
 import {EventChip} from "@/components/componentsCalendar/EventChip.tsx";
-import {Tooltip} from "@/components/componentsGeneral/Tooltip.tsx";
+import {Tooltip} from "@/components/componentsGeneral/tooltips/Tooltip.tsx";
 
 interface Props {
     date: Date;

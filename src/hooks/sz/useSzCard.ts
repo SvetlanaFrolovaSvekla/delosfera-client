@@ -1,6 +1,6 @@
 // Состояние и действия карточки служебной записки: загрузка, форма, сохранение,
 // отправка, регистрация, отзыв и ручной перевод статуса. Согласование — в useSzApproval.
-import {useCallback, useEffect, useMemo, useState} from "react";
+import {useCallback, useEffect, useMemo, useRef, useState} from "react";
 import {useNavigate} from "react-router-dom";
 import {useTranslation} from "react-i18next";
 import {useAuth} from "@/context/AuthContext.ts";
@@ -62,6 +62,13 @@ export function useSzCard(id: string | undefined) {
     const [notice, setNotice] = useState<string | null>(null);
     const [approversFromTemplate, setApproversFromTemplate] = useState(false);
 
+    /**
+     * Форма в том виде, в каком она лежит на сервере. По ней «Отправить» понимает,
+     * есть ли несохранённые правки: отправка берёт записку с сервера, и правки,
+     * не сохранённые перед ней, раньше молча терялись.
+     */
+    const savedSnapshot = useRef<string | null>(null);
+
     // i18n.t, а не t: он не меняется при смене языка, и справочники не перезагружаются.
     useEffect(() => {
         void szHrForms().then(setHrForms).catch(() => undefined);
@@ -77,7 +84,7 @@ export function useSzCard(id: string | undefined) {
 
     const applyDetails = useCallback((d: SzDetails) => {
         setSz(d);
-        setForm({
+        const loaded: SzSaveRequest = {
             title: d.title, kindId: d.kindId, body: d.body,
             correspondentUnitId: d.correspondentUnitId, isPaperCarrier: d.isPaperCarrier,
             rubricIds: d.rubricIds,
@@ -90,7 +97,9 @@ export function useSzCard(id: string | undefined) {
             hasBudget: d.hasBudget, amount: d.amount, travelExpenses: d.travelExpenses,
             planItemId: d.planItemId,
             employees: d.employees ?? [],
-        });
+        };
+        setForm(loaded);
+        savedSnapshot.current = snapshotOf(loaded, d.extraFields ?? {});
 
         // Общие поля кадровой записки лежат в extraFields. Раньше их не читали обратно,
         // и в форме после открытия карточки они были пустыми.
@@ -171,10 +180,14 @@ export function useSzCard(id: string | undefined) {
         }
     };
 
-    const save = async () => {
+    /**
+     * Сохранить форму. quiet — без тоста об успехе: так сохраняют перед отправкой,
+     * и об итоге сообщает уже сама отправка. Возвращает записку или null при сбое.
+     */
+    const save = async ({quiet = false}: { quiet?: boolean } = {}): Promise<SzDetails | null> => {
         if (!form.title.trim() || !form.kindId) {
             setError(t("szCard.errors.titleRequired"));
-            return;
+            return null;
         }
         setSaving(true);
         setError(null);
@@ -210,12 +223,15 @@ export function useSzCard(id: string | undefined) {
             setNotice(null);
             if (failed.length) {
                 toast.warning(t("szCard.notices.saved"), t("szCard.notices.filesFailed", {files: failed.join(", ")}));
-            } else {
+            } else if (!quiet) {
                 toast.success(t("szCard.notices.saved"));
             }
             if (isNew) navigate(`/sz/${saved.id}`, {replace: true});
-        } catch {
-            setError(t("szCard.errors.saveFailed"));
+            return saved;
+        } catch (e) {
+            // Причину отказа называет сервер («Сумма не может быть отрицательной» и т.п.).
+            setError(serverMessage(e) ?? t("szCard.errors.saveFailed"));
+            return null;
         } finally {
             setSaving(false);
         }
@@ -223,6 +239,16 @@ export function useSzCard(id: string | undefined) {
 
     const runAction = async (action: "submit" | "register" | "delete") => {
         if (!sz) return;
+
+        // Отправка уносит записку в том виде, в каком она на сервере. Несохранённые
+        // правки сначала сохраняем, а если сохранить не вышло — не отправляем вовсе:
+        // уйти должно то, что автор видит на экране.
+        if (action === "submit" && editable
+            && savedSnapshot.current !== snapshotOf(form, hrValues)) {
+            const saved = await save({quiet: true});
+            if (!saved) return;
+        }
+
         setSaving(true);
         setError(null);
         setNotice(null);
@@ -314,3 +340,8 @@ export function useSzCard(id: string | undefined) {
 }
 
 export type SzCardState = ReturnType<typeof useSzCard>;
+
+/** Слепок формы для сравнения «есть ли несохранённые правки». */
+function snapshotOf(form: SzSaveRequest, hrValues: Record<string, unknown>): string {
+    return JSON.stringify({form, hrValues});
+}

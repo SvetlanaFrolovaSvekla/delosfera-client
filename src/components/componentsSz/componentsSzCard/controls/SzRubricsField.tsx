@@ -19,9 +19,11 @@ interface SzRubricsFieldProps {
 
 export function SzRubricsField({value, onChange, editable}: SzRubricsFieldProps) {
     const {t} = useTranslation();
-    const {rubrics, rubricOptions} = useDictionaries();
+    // Рубрикатор СЗ — свой справочник («Справочники → Рубрики СЗ»), не рубрикатор ВНД:
+    // раньше поле брало рубрики ВНД, и правки справочника СЗ в карточку не попадали.
+    const {szRubrics, szRubricOptions} = useDictionaries();
 
-    const selected = rubrics.filter((r) => value.includes(Number(r.id)));
+    const selected = szRubrics.filter((r) => value.includes(Number(r.id)));
     const visible = selected.slice(0, MAX_VISIBLE_RUBRICS);
     const hidden = selected.slice(MAX_VISIBLE_RUBRICS);
 
@@ -32,7 +34,7 @@ export function SzRubricsField({value, onChange, editable}: SzRubricsFieldProps)
                     accent="blue"
                     label={t("szCard.fields.rubrics")}
                     modalTitle={t("szCard.fields.rubrics")}
-                    options={rubricOptions}
+                    options={szRubricOptions}
                     selectedKeys={value.map(String)}
                     onChange={(keys) => onChange(keys.map(Number))}
                     searchPlaceholder={t("szCard.fields.rubricsSearch")}

@@ -14,14 +14,17 @@ interface Props {
 export function DueCell({dueDate, isOverdue, daysLeft, fallback = "—"}: Props) {
     const {t} = useTranslation();
     if (!dueDate) return <>{fallback}</>;
+    // Записка закрыта (исполнена, забракована, отозвана, в архиве) — сервер не присылает
+    // остаток дней: срок ей уже не грозит, показываем только дату.
+    if (daysLeft == null) return <>{formatDate(dueDate)}</>;
     return (
         <span className="inline-flex items-center gap-2">
             <span>{formatDate(dueDate)}</span>
             <span className="text-[11.5px] font-semibold"
                   style={{color: isOverdue ? colors.ryg.red.fg : colors.inkSubtle}}>
                 {isOverdue
-                    ? t("szRegistry.daysOverdue", {n: Math.abs(daysLeft ?? 0)})
-                    : t("szRegistry.daysLeft", {n: daysLeft ?? 0})}
+                    ? t("szRegistry.daysOverdue", {n: Math.abs(daysLeft)})
+                    : t("szRegistry.daysLeft", {n: daysLeft})}
             </span>
         </span>
     );

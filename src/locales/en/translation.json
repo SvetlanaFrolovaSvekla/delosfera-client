@@ -6139,6 +6139,7 @@
       "assignmentIncomplete": "Each assignment needs both an assignee and a task — or remove the incomplete row",
       "primaryRequired": "Mark the responsible assignee among the filled-in assignments",
       "invalidDueDate": "An assignment deadline is incomplete or invalid: dd.mm.yyyy",
+      "pastDueDate": "An assignment deadline cannot be in the past",
       "resolveFailed": "Failed to issue the resolution",
       "resolvedToast": "Resolution issued, assignments sent",
       "primaryBadge": "lead",

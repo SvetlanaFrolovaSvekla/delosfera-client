@@ -6,6 +6,8 @@ interface Props {
     exporting: boolean;
     onExport: () => void;
     onArchive: () => void;
+    /** Сдать пачку в дело может делопроизводство; остальным кнопка не нужна. */
+    canArchive?: boolean;
     onClear: () => void;
     /** Среди отмеченных есть записки не из «Избранного» — показываем «В избранное». */
     canAddFavorites?: boolean;
@@ -21,7 +23,7 @@ const BUTTON = "inline-flex items-center gap-1.5 h-8 px-3 rounded-[8px] border b
 
 /** Панель массовых операций над отмеченными строками (СЗ-7). */
 export function BulkActionsBar({
-                                   count, exporting, onExport, onArchive, onClear,
+                                   count, exporting, onExport, onArchive, onClear, canArchive = false,
                                    canAddFavorites, canRemoveFavorites, favoriteBusy, onAddFavorites, onRemoveFavorites,
                                }: Props) {
     const {t} = useTranslation();
@@ -33,9 +35,11 @@ export function BulkActionsBar({
             <button type="button" onClick={onExport} disabled={exporting} className={BUTTON}>
                 <Download className="w-3.5 h-3.5"/> {t("szRegistry.exportSelected")}
             </button>
-            <button type="button" onClick={onArchive} className={BUTTON}>
-                <Archive className="w-3.5 h-3.5"/> {t("szRegistry.sendToArchive")}
-            </button>
+            {canArchive && (
+                <button type="button" onClick={onArchive} className={BUTTON}>
+                    <Archive className="w-3.5 h-3.5"/> {t("szRegistry.sendToArchive")}
+                </button>
+            )}
             {/* Избранное: кнопка видна, только если ей есть что сделать с отмеченными строками */}
             {canAddFavorites && onAddFavorites && (
                 <button type="button" onClick={onAddFavorites} disabled={favoriteBusy} className={BUTTON}>

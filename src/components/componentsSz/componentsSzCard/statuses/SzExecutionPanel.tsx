@@ -14,7 +14,7 @@ import {
     type SzAssignmentState,
 } from "@/service/szService/szExecutionService.ts";
 import {toast} from "@/service/toastService.ts";
-import {formatDate, inputClass, ruToIso, serverMessage} from "@/utils/szProcess/szCardUtils.ts";
+import {formatDate, inputClass, isPastIso, ruToIso, serverMessage} from "@/utils/szProcess/szCardUtils.ts";
 
 import {SzButton} from "@/components/componentsSz/componentsSzCard/controls/SzButton.tsx";
 import {Field} from "@/components/componentsDocumentsTypes/Field.tsx";
@@ -107,6 +107,13 @@ export function SzExecutionPanel({sz, onChanged}: Props) {
     const onExecution = sz.statusCode === "OnExecution";
 
     /**
+     * Адресат, ещё не вынесший решения, выносит его в блоке «Решение адресата» выше —
+     * там же и поручения. Вторая форма резолюции здесь дублировала бы ту же работу.
+     * После решения без поручений эта форма появляется: поручения можно выдать отдельно.
+     */
+    const addresseeDecidesAbove = isAddressee && !sz.addresseeDecision;
+
+    /**
      * Закрывать записку руками нужно только тогда, когда сама она не закроется.
      *
      * Записка становится исполненной сама, как только принято последнее
@@ -165,6 +172,11 @@ export function SzExecutionPanel({sz, onChanged}: Props) {
         // Недонабранный срок («12.0») не должен молча превращаться в «срок записки».
         if (ready.some((d) => d.dueDate.trim() && !ruToIso(d.dueDate.trim()))) {
             setError(t("szCard.execution.invalidDueDate"));
+            return;
+        }
+        // Срок в прошлом исполнитель выполнить не может: поручение сразу было бы просрочено.
+        if (ready.some((d) => isPastIso(ruToIso(d.dueDate.trim())))) {
+            setError(t("szCard.execution.pastDueDate"));
             return;
         }
         if (!ready.length) {
@@ -258,7 +270,7 @@ export function SzExecutionPanel({sz, onChanged}: Props) {
             )}
 
             {/* Форма резолюции. Выносится один раз: дальше работа идёт по поручениям. */}
-            {onExecution && !hasResolution && canControl && (
+            {onExecution && !hasResolution && canControl && !addresseeDecidesAbove && (
                 <div className="rounded-[12px] border border-[#cbddff] bg-[#f5f8ff] p-4">
                     <div className="text-[13.5px] font-semibold text-[#0f1b2d]">
                         {t("szCard.execution.form.title")}

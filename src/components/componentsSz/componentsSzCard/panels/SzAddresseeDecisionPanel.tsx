@@ -9,15 +9,18 @@ import {useState} from "react";
 import {useTranslation} from "react-i18next";
 import {szApprovalService, type SzDetails} from "@/service/szService/szService.ts";
 import type {SzAssignmentDraft} from "@/service/szService/szExecutionService.ts";
-import {formatDateTime} from "@/utils/szProcess/szCardUtils.ts";
+import {formatDateTime, isPastIso, ruToIso} from "@/utils/szProcess/szCardUtils.ts";
 import {Tooltip} from "@/components/componentsGeneral/tooltips/Tooltip.tsx";
+import {UserPickerField} from "@/components/componentsGeneral/userPicker/UserPickerField.tsx";
+import type {OrgUnitPickerPerson} from "@/components/componentsGeneral/userPicker/UserOrgUnitPickerModal.tsx";
+import {DatePickerInput} from "@/components/componentsGeneral/datePickers/DatePickerInput.tsx";
 import {Plus, X} from "lucide-react";
 
 interface Props {
     sz: SzDetails;
     currentUserId: number | undefined;
     /** Пользователи системы — из них назначаются исполнители поручений. */
-    users: { id: number; fullName: string }[];
+    users: OrgUnitPickerPerson[];
     onDecided: (updated: SzDetails) => void;
 }
 
@@ -27,9 +30,12 @@ const inputClass =
 /**
  * Строка поручения в форме. rowKey — постоянный ключ строки для React: с key={index}
  * при удалении строки из середины состояние полей переезжало к соседней строке.
- * На сервер не уходит.
+ * Срок — как его набирает человек (дд.мм.гггг, как в блоке «Исполнение»); в гггг-мм-дд
+ * переводится при отправке. На сервер rowKey не уходит.
  */
-type AssignmentRow = SzAssignmentDraft & { rowKey: number };
+type AssignmentRow = Omit<SzAssignmentDraft, "dueDate"> & { rowKey: number; dueDate: string };
+
+const datePickerClass = "!h-10 !rounded-[9px] !text-[13px]";
 let assignmentRowSeq = 0;
 
 export function SzAddresseeDecisionPanel({sz, currentUserId, users, onDecided}: Props) {
@@ -42,12 +48,19 @@ export function SzAddresseeDecisionPanel({sz, currentUserId, users, onDecided}: 
     if (!sz.addresseeUserId) return null;
 
     const isAddressee = currentUserId === sz.addresseeUserId;
-    const awaiting = sz.statusCode === "OnAddresseeDecision";
+
+    // Решение ждут в двух случаях. Подписант назван отдельно — после подписи записка
+    // «на решении адресата». Подписал сам адресат — она сразу «на исполнении», и решение
+    // с поручениями — его следующее действие (сервер принимает его и там). Раньше форма
+    // открывалась только в первом случае, и адресат, подписавший записку, её не видел.
+    // Если резолюцию по записке уже вынесли через исполнение — решения не ждём.
+    const awaiting = sz.statusCode === "OnAddresseeDecision"
+        || (sz.statusCode === "OnExecution" && !sz.executionResolution);
 
     // Ни решения, ни ожидания — блок скрыт: до конца согласования показывать нечего.
     if (!awaiting && !sz.addresseeDecision) return null;
 
-    const patch = (index: number, changes: Partial<SzAssignmentDraft>) =>
+    const patch = (index: number, changes: Partial<AssignmentRow>) =>
         setAssignments((list) => list.map((a, i) => (i === index ? {...a, ...changes} : a)));
 
     const submit = async () => {
@@ -65,6 +78,15 @@ export function SzAddresseeDecisionPanel({sz, currentUserId, users, onDecided}: 
             setError(t("szCard.addresseeDecision.errOnePrimary")); // Ответственный исполнитель может быть только один
             return;
         }
+        // Недонабранный срок не должен молча превратиться в «срок записки».
+        if (filled.some((a) => a.dueDate.trim() && !ruToIso(a.dueDate.trim()))) {
+            setError(t("szCard.execution.invalidDueDate"));
+            return;
+        }
+        if (filled.some((a) => isPastIso(ruToIso(a.dueDate.trim())))) {
+            setError(t("szCard.execution.pastDueDate")); // Срок поручения не может быть в прошлом
+            return;
+        }
 
         setSaving(true);
         setError(null);
@@ -73,7 +95,7 @@ export function SzAddresseeDecisionPanel({sz, currentUserId, users, onDecided}: 
                 assigneeUserId: a.assigneeUserId,
                 text: a.text,
                 isPrimary: a.isPrimary,
-                dueDate: a.dueDate,
+                dueDate: ruToIso(a.dueDate.trim()),
             }))));
             setText("");
             setAssignments([]);
@@ -123,27 +145,30 @@ export function SzAddresseeDecisionPanel({sz, currentUserId, users, onDecided}: 
 
                         {assignments.map((a, i) => (
                             <div key={a.rowKey} className="mb-2 rounded-[9px] border border-[#e5e9f0] bg-[#fafbfd] p-3">
-                                <div className="flex gap-2">
-                                    <select
-                                        className={inputClass}
-                                        value={a.assigneeUserId || ""}
-                                        onChange={(e) => patch(i, {assigneeUserId: Number(e.target.value)})}
-                                    >
-                                        {/* Исполнитель… */}
-                                        <option value="">{t("szCard.addresseeDecision.assignee")}</option>
-                                        {users.map((u) => (
-                                            <option key={u.id} value={u.id}>{u.fullName}</option>
-                                        ))}
-                                    </select>
+                                <div className="flex items-center gap-2">
+                                    {/* Исполнитель — тот же выбор с поиском и деревом СП, что и в «Исполнении» */}
+                                    <div className="min-w-0 flex-1">
+                                        <UserPickerField
+                                            people={users}
+                                            value={a.assigneeUserId || null}
+                                            onChange={(id) => patch(i, {assigneeUserId: id})}
+                                            placeholder={t("szCard.addresseeDecision.assignee")}
+                                            modalTitle={t("szCard.execution.form.assigneeModalTitle")}
+                                            searchPlaceholder={t("szCard.fields.userSearch")}
+                                            clearable
+                                            onClear={() => patch(i, {assigneeUserId: 0})}
+                                            accent="blue"
+                                        />
+                                    </div>
                                     {/* Срок поручения; пусто — срок записки */}
                                     <Tooltip content={t("szCard.addresseeDecision.dueTooltip")} side="top">
-                                        <input
-                                            type="date"
-                                            className={`${inputClass} w-[170px]`}
-                                            value={a.dueDate ?? ""}
-                                            onChange={(e) => patch(i, {dueDate: e.target.value || null})}
-                                            aria-label={t("szCard.addresseeDecision.due")} // Срок поручения
-                                        />
+                                        <div className="w-[170px] shrink-0" aria-label={t("szCard.addresseeDecision.due")}>
+                                            <DatePickerInput
+                                                value={a.dueDate}
+                                                onChange={(v) => patch(i, {dueDate: v})}
+                                                className={datePickerClass}
+                                            />
+                                        </div>
                                     </Tooltip>
                                     {/* Убрать поручение */}
                                     <Tooltip content={t("szCard.addresseeDecision.removeAssignment")} side="top">
@@ -182,7 +207,7 @@ export function SzAddresseeDecisionPanel({sz, currentUserId, users, onDecided}: 
                             type="button"
                             onClick={() => setAssignments((list) => [
                                 ...list,
-                                {rowKey: ++assignmentRowSeq, assigneeUserId: 0, text: "", isPrimary: list.length === 0, dueDate: null},
+                                {rowKey: ++assignmentRowSeq, assigneeUserId: 0, text: "", isPrimary: list.length === 0, dueDate: ""},
                             ])}
                             className="inline-flex items-center gap-1.5 h-8 px-3 rounded-[9px] border border-[#e5e9f0] bg-white text-[12.5px] font-semibold text-[#2f68f5] cursor-pointer hover:bg-[#f6f8fb]"
                         >

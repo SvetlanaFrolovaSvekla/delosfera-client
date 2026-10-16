@@ -1,21 +1,11 @@
 // Общие константы и функции карточки служебной записки.
 import type {HrFormSchema, SzStatusCode} from "@/service/szService/szService.ts";
-import {colors} from "@/design/tokens.ts";
 
-export const STATUS_TONE: Partial<Record<SzStatusCode, { fg: string; bg: string }>> = {
-    Draft: colors.status.draft,
-    OnApproval: colors.status.review,
-    PendingRegistration: colors.status.onact,
-    OnSigning: colors.status.review,
-    Registered: colors.status.review,
-    OnRevision: colors.status.onact,
-    OnAddresseeDecision: colors.status.review,
-    OnExecution: colors.status.consol,
-    Executed: colors.status.active,
-    Rejected: colors.status.arch,
-    Withdrawn: colors.status.draft,
-    Archived: colors.status.arch,
-};
+/**
+ * Цвета статусов — один источник для реестра, доски и карточки. Раньше у карточки
+ * был свой список, и «Вынесена на орган» в ней была серой, как черновик.
+ */
+export {STATUS_TONE} from "@/constants/szConstatns/szStatusTone.ts";
 
 /** Статусы, в которых автор ещё может править и отправлять записку. */
 export const EDITABLE_STATUSES: readonly SzStatusCode[] = ["Draft", "OnRevision", "Withdrawn"];
@@ -118,4 +108,15 @@ export function formatDateTime(
 export function formatMoney(value: number | null | undefined, language: string | undefined): string {
     if (value == null) return "—";
     return value.toLocaleString(intlLocale(language), {minimumFractionDigits: 2, maximumFractionDigits: 2});
+}
+
+/** Сегодняшняя дата в формате гггг-мм-дд — по часам браузера, без сдвига в UTC. */
+export function todayIso(): string {
+    const d = new Date();
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+}
+
+/** Дата гггг-мм-дд раньше сегодняшней: срок поручения в прошлом ставить нельзя. */
+export function isPastIso(iso: string | null | undefined): boolean {
+    return !!iso && iso < todayIso();
 }

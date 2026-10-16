@@ -95,7 +95,7 @@ export function SzCardHeader({card, onToggleWithdraw, onToggleForce}: SzCardHead
                     {/* Создать черновик-записку (новая) / Сохранить (правка) */}
                     {editable && (isNew ? (
                         <button
-                            onClick={save}
+                            onClick={() => void save()}
                             disabled={saving}
                             className={`inline-flex items-center gap-2 h-11 px-[22px] rounded-[11px] border-none font-semibold text-[14px] ${
                                 saving
@@ -107,7 +107,7 @@ export function SzCardHeader({card, onToggleWithdraw, onToggleForce}: SzCardHead
                             {saving ? t("szCard.actions.creatingDraft") : t("szCard.actions.createDraft")}
                         </button>
                     ) : (
-                        <SzButton variant="primary" icon={<Save size={16}/>} onClick={save} disabled={saving}>
+                        <SzButton variant="primary" icon={<Save size={16}/>} onClick={() => void save()} disabled={saving}>
                             {saving ? t("szCard.actions.saving") : t("szCard.actions.save")}
                         </SzButton>
                     ))}

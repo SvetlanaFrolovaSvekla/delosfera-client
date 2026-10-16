@@ -8,6 +8,8 @@ interface Props {
     scope: ScopeId;
     counters: SzCounters | null;
     onSelect: (id: ScopeId) => void;
+    /** Вкладки, которых у пользователя нет (реестр оригиналов — только делопроизводству). */
+    hidden?: readonly ScopeId[];
 }
 
 function scopeCount(counters: SzCounters | null, id: ScopeId): number | undefined {
@@ -25,7 +27,7 @@ function scopeCount(counters: SzCounters | null, id: ScopeId): number | undefine
     return undefined;
 }
 
-export function RegistryTabs({scope, counters, onSelect}: Props) {
+export function RegistryTabs({scope, counters, onSelect, hidden = []}: Props) {
     const {t} = useTranslation();
     return (
         <Tabs
@@ -33,7 +35,7 @@ export function RegistryTabs({scope, counters, onSelect}: Props) {
             className="mt-5"
             value={scope}
             onChange={onSelect}
-            tabs={SCOPES.map((s) => ({
+            tabs={SCOPES.filter((s) => !hidden.includes(s.id)).map((s) => ({
                 id: s.id,
                 label: t(`szRegistry.scopes.${s.id}`),
                 n: scopeCount(counters, s.id),

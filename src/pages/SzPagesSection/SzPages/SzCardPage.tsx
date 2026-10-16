@@ -85,8 +85,10 @@ export function SzCardPage() {
                 />
             )}
 
-            {/* Сообщение об отзыве */}
-            {sz?.withdrawReason && sz.statusCode === "Draft" && (
+            {/* Сообщение об отзыве. Отзыв ставит статус «Отозвана»; «Черновик» — записки,
+                отозванные до того, как этот статус появился. Раньше проверялся только
+                черновик, и плашка с причиной отзыва не показывалась никогда. */}
+            {sz?.withdrawReason && (sz.statusCode === "Withdrawn" || sz.statusCode === "Draft") && (
                 <SzWithdrawnBanner text={t("szCard.withdraw.banner", {reason: sz.withdrawReason})}/>
             )}
 

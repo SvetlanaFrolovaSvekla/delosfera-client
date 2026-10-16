@@ -11,6 +11,8 @@ import {
 import {szExecutionService, type SzAssignment} from "@/service/szService/szExecutionService.ts";
 import {szPaperService, type SzOriginal} from "@/service/szService/szPaperService.ts";
 import {toast} from "@/service/toastService.ts";
+import {useAuth} from "@/context/AuthContext.ts";
+import {PermissionCode} from "@/constants/permissions/permissions.ts";
 import {useRowSelection} from "@/hooks/useRowSelection.ts";
 import {EMPTY_DATE_FILTER} from "@/constants/emptyDateFilter.ts";
 import type {DateFilterValue} from "@/components/componentsGeneral/datePickers/DateFilterGroup.tsx";
@@ -64,6 +66,15 @@ function readPageSize(): number {
 export function SzRegistryPage() {
     const {t, i18n} = useTranslation();
     const navigate = useNavigate();
+    const {hasPermission} = useAuth();
+    /**
+     * Делопроизводство — те же права, что проверяет сервер (реестр оригиналов, подшивка
+     * в дело). Остальным вкладка «Оригиналы на руках» отвечала ошибкой загрузки, а
+     * «Сдать в архив» — отказом по каждой строке.
+     */
+    const isClerk = hasPermission(PermissionCode.RegisterSz) || hasPermission(PermissionCode.ViewAllSz);
+    const hiddenScopes: ScopeId[] = isClerk ? [] : ["originals"];
+
     const [scope, setScopeState] = useState<ScopeId>("all");
     /**
      * Вкладка, по которой реально грузятся строки: «СЗ, согласую я» — подвкладка
@@ -76,8 +87,13 @@ export function SzRegistryPage() {
             setScopeState("approval");
             return;
         }
+        // Сохранённый фильтр мог указывать на вкладку, которой у пользователя нет.
+        if (next === "originals" && !isClerk) {
+            setScopeState("all");
+            return;
+        }
         setScopeState(next);
-    }, []);
+    }, [isClerk]);
     const [query, setQuery] = useState("");
     /** Строка поиска, по которой реально идёт запрос: печатаем - запрос уходит после паузы, а не на каждую букву. */
     const [searchQuery, setSearchQuery] = useState("");
@@ -404,7 +420,7 @@ export function SzRegistryPage() {
                 </div>
             </div>
 
-            <RegistryTabs scope={scope} counters={counters} onSelect={setScope}/>
+            <RegistryTabs scope={scope} counters={counters} onSelect={setScope} hidden={hiddenScopes}/>
 
             {/* В "Согласую я" фильтры не применяются - список формирует сам движок согласования. */}
             <RegistryFilterBar
@@ -503,6 +519,7 @@ export function SzRegistryPage() {
                             exporting={exporting}
                             onExport={() => void runExport([...selected])}
                             onArchive={() => setBulkArchiveOpen(true)}
+                            canArchive={isClerk}
                             onClear={clear}
                             canAddFavorites={canAddFavorites}
                             canRemoveFavorites={canRemoveFavorites}

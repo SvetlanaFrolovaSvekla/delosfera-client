@@ -20,10 +20,16 @@ const DATE_LOCALE_BY_LANG: Record<string, string> = {
     ky: "ky-KG",
 };
 
-function formatDue(iso: string | null, lang: string): string {
+function formatDue(iso: string | null, lang: string, withYear = false): string {
     if (!iso) return "";
     const locale = DATE_LOCALE_BY_LANG[lang] ?? "ru-RU";
-    return new Date(iso).toLocaleString(locale, {day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit"});
+    return new Date(iso).toLocaleString(locale, {
+        day: "2-digit",
+        month: "2-digit",
+        ...(withYear ? {year: "numeric" as const} : {}),
+        hour: "2-digit",
+        minute: "2-digit",
+    });
 }
 
 // Контур документа → вид значка/бейджа (цвета те же, что у вкладок-карточек над реестром).
@@ -137,7 +143,13 @@ export function InboxTaskCard({task, searchQuery = "", square = false, noTopBord
                 )}
             </span>
 
-            {task.isOwn ? (
+            {task.completedAt ? (
+                // Выполненная задача: показываем, когда она была закрыта (дата и время).
+                <span className="flex flex-none items-center gap-1.5 text-[11.5px] font-semibold text-[#55617a]">
+                    <Icon name="clock" width={14} height={14}/>
+                    {t("tasks.inbox.completedPrefix")}{formatDue(task.completedAt, i18n.language, true)}
+                </span>
+            ) : task.isOwn ? (
                 // У своей записки срока для автора нет — показываем, с какого момента она на этапе.
                 <span className="flex flex-none items-center gap-1.5 text-[11.5px] font-semibold text-[#8b97ab]">
                     <Icon name="clock" width={14} height={14}/>

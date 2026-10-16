@@ -11,6 +11,7 @@ import {SzApproversField} from "@/components/componentsSz/componentsSzCard/form/
 import {SzKindFields} from "@/components/componentsSz/componentsSzCard/form/SzKindFields.tsx";
 import {SzRubricsField} from "@/components/componentsSz/componentsSzCard/controls/SzRubricsField.tsx";
 import {inputClass, localizedTitle} from "@/utils/szProcess/szCardUtils.ts";
+import {SzRegistrationPanel} from "@/components/componentsSz/componentsSzCard/panels/SzRegistrationPanel.tsx";
 import {SzFormSection} from "@/components/componentsSz/componentsSzCard/form/SzFormSection.tsx";
 
 import type {PickableUser} from "@/components/componentsGeneral/userPicker/UserPicker.tsx";
@@ -20,6 +21,9 @@ import {SingleSelectListField} from "@/components/componentsGeneral/selects/Sing
 import {PlainCheckbox} from "@/components/componentsGeneral/componentsCheckBox/PlainCheckbox.tsx";
 import {ReadOnlyField} from "@/components/componentsGeneral/readOnlySelects/ReadOnlyField.tsx";
 import {AttachmentsPanel} from "@/components/componentsGeneral/attachments/AttachmentsPanel.tsx";
+
+/** Сколько файлов можно приложить к одной записке (сервер проверяет тот же предел). */
+const MAX_ATTACHMENTS = 10;
 
 interface SzMainFormProps {
     card: SzCardState;
@@ -177,6 +181,9 @@ export function SzMainForm({card, userList}: SzMainFormProps) {
                 />
             </SzFormSection>
 
+            {/* Регистрация и сроки: автор, подразделение, дата регистрации, срок исполнения */}
+            {sz && <SzRegistrationPanel sz={sz} className="!mt-0"/>}
+
             {/* ----------- Поля, зависящие от вида записки -----------*/}
             {hasKindFields && (
                 <SzFormSection title={t("szCard.sections.kindFields")} hint={t("szCard.sections.kindFieldsHint")}>
@@ -247,6 +254,7 @@ export function SzMainForm({card, userList}: SzMainFormProps) {
             <AttachmentsPanel
                 documentId={sz?.documentId ?? null}
                 editable={editable}
+                maxFiles={MAX_ATTACHMENTS}
                 hint={t("szCard.fields.attachmentsHint")}
                 pending={isNew ? pendingFiles : undefined}
                 onPendingChange={isNew ? setPendingFiles : undefined}

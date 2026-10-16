@@ -12,9 +12,11 @@ interface InboxTaskRowProps {
     onRaiseRisk?: (task: InboxTask) => void;
     /** Запрос поиска — подсвечивает совпадения, как на карточках ВНД. */
     searchQuery?: string;
+    /** Выполненная задача: только просмотр, без делегирования и оп-риска. */
+    readOnly?: boolean;
 }
 
-export function InboxTaskRow({task, onDelegate, onRaiseRisk, searchQuery = ""}: InboxTaskRowProps) {
+export function InboxTaskRow({task, onDelegate, onRaiseRisk, searchQuery = "", readOnly = false}: InboxTaskRowProps) {
     const {t} = useTranslation();
 
     return (
@@ -23,7 +25,7 @@ export function InboxTaskRow({task, onDelegate, onRaiseRisk, searchQuery = ""}: 
 
             {/* Делегировать можно только задачу согласования: у неё есть
                 участник маршрута, которого движок и проверяет. */}
-            {task.participantId !== null && (
+            {!readOnly && task.participantId !== null && (
                 <button
                     type="button"
                     title={t("tasks.inbox.delegateAction")}
@@ -37,7 +39,7 @@ export function InboxTaskRow({task, onDelegate, onRaiseRisk, searchQuery = ""}: 
             {/* Поднять оп-риск с любого шага/документа (RISK-1) — кнопка есть только
                 у сотрудников с правом ManageRiskEvents (см. TaskInboxPage). Со своей записки
                 на отслеживании оп-риск не поднимают — это не шаг, а наблюдение. */}
-            {onRaiseRisk && !task.isOwn && (
+            {!readOnly && onRaiseRisk && !task.isOwn && (
                 <button
                     type="button"
                     title={t("tasks.inbox.raiseRiskAction")}

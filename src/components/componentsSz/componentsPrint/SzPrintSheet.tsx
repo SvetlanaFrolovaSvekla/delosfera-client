@@ -26,6 +26,23 @@ export const SZ_PRINT_LOGO_URL = keremetLogo;
 
 const STAMP_COLOR = "#1F3A93";
 
+/** Согласующие, поставившие ЭЦП на «Согласовано с замечаниями»: подпись стоит на версии до правок. */
+function isRemarksOnEarlierVersion(a: SzPrintApproval): boolean {
+    return a.resolution === "ApprovedWithRemarks"
+        && !!a.signature?.isEcp && !a.signature.revoked
+        && a.signature.matchesCurrentContent === false;
+}
+
+/** Пояснение под листом: подпись на прежней версии текста — это нормально, замечания учтены. */
+// eslint-disable-next-line react-refresh/only-export-components
+export function remarksSignatureNote(approvals: SzPrintApproval[]): string | null {
+    const n = approvals.filter(isRemarksOnEarlierVersion).length;
+    if (n === 0) return null;
+    return n === 1
+        ? "Один согласующий поставил резолюцию «Согласовано с замечаниями»: подпись стоит на прежней версии текста, впоследствии замечания были устранены."
+        : `Согласующих, поставивших резолюцию «Согласовано с замечаниями», — ${n}: их подписи стоят на прежней версии текста, впоследствии замечания были устранены.`;
+}
+
 /** Штамп ЭЦП ГП «Инфоком» — "оттиск печати" в колонке "Подпись". */
 function EcpStamp({s}: { s: SzPrintSignature }) {
     return (
@@ -58,11 +75,6 @@ function EcpStamp({s}: { s: SzPrintSignature }) {
                     <div className="font-mono text-[7.5px] text-[#7A869A]">Отпечаток подписи: {shorten(s.signatureSha256)}</div>
                 )}
             </div>
-            {s.matchesCurrentContent === false && (
-                <div className="mt-[3px] border-t border-[#d9a441] pt-[2px] text-[8px] font-semibold text-[#8a5a00]">
-                    Подписано под предыдущей версией текста записки
-                </div>
-            )}
         </div>
     );
 }
@@ -152,9 +164,7 @@ interface SzPrintSheetProps {
 
 export function SzPrintSheet({form, mode, variant = "screen"}: SzPrintSheetProps) {
     const signed = mode === "signed";
-    const ecpCount = form.approvals.filter((a) => a.signature?.isEcp && !a.signature.revoked).length;
-    const otherVersionCount = form.approvals
-        .filter((a) => a.signature?.isEcp && a.signature.matchesCurrentContent === false).length;
+    const remarksNote = remarksSignatureNote(form.approvals);
 
     const sheetClass = variant === "capture"
         ? "sz-print-sheet sz-print-capture w-[178mm] bg-white text-[#0f1b2d]"
@@ -260,8 +270,8 @@ export function SzPrintSheet({form, mode, variant = "screen"}: SzPrintSheetProps
                     Лист согласования
                 </div>
                 <div className="mb-2 text-center text-[11px] italic text-[#55617a]">
-                    {signed ? "с подписями ЭЦП" : "для подписи согласующими"}
-                    {form.regNumber && ` · к служебной записке № ${form.regNumber}`}
+                    {signed && "с подписями ЭЦП"}
+                    {form.regNumber && `${signed ? " · " : ""}к служебной записке № ${form.regNumber}`}
                 </div>
                 <table className="sz-approval-sheet text-[11px]">
                     <colgroup>
@@ -309,7 +319,6 @@ export function SzPrintSheet({form, mode, variant = "screen"}: SzPrintSheetProps
                                 {a.resolution
                                     ? <b>{PRINT_RESOLUTION_LABEL[a.resolution] ?? a.resolution}</b>
                                     : <span className="text-[#7A869A]">Ожидает решения</span>}
-                                {a.comment && <div className="mt-0.5 text-[10px] text-[#55617a]">{a.comment}</div>}
                             </td>
                             <td>
                                 {a.resolvedAt ? (
@@ -330,11 +339,6 @@ export function SzPrintSheet({form, mode, variant = "screen"}: SzPrintSheetProps
 
                 {signed ? (
                     <div className="mt-3 text-[9.5px] italic leading-[1.5] text-[#7A869A]">
-                        {otherVersionCount > 0
-                            ? <div className="font-semibold not-italic text-[#8a5a00]">
-                                Внимание: подписей ЭЦП под предыдущей версией текста записки — {otherVersionCount}.
-                            </div>
-                            : ecpCount > 0 && <div>Подписей ЭЦП в листе: {ecpCount}, все — под текущей версией текста записки.</div>}
                         <div>
                             Подписи ЭЦП поставлены согласующими через облачную ЭЦП ГП «Инфоком» и проверены системой
                             «Делосфера» у провайдера при сохранении резолюций. Хэш документа — SHA-256 подписанного
@@ -345,13 +349,9 @@ export function SzPrintSheet({form, mode, variant = "screen"}: SzPrintSheetProps
                                 Отпечаток текущего текста записки (SHA-256): {form.contentDigest}
                             </div>
                         )}
+                        {remarksNote && <div className="mt-1">{remarksNote}</div>}
                     </div>
-                ) : (
-                    <div className="mt-3 text-[9.5px] italic text-[#7A869A]">
-                        Состояние на {formatDateTime(new Date().toISOString())}. Решения и даты — из системы
-                        «Делосфера»; подписи согласующие ставят на бумаге.
-                    </div>
-                )}
+                ) : null}
             </div>
 
             {form.isPaperCarrier && (

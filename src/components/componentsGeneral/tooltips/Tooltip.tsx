@@ -11,8 +11,11 @@ interface TooltipProps {
     delay?: number;
     disabled?: boolean;
     className?: string;
+    /** Максимальная ширина подсказки, px (по умолчанию 420). */
+    maxWidth?: number;
 }
 
+const VIEWPORT_PAD = 8; // минимальный отступ подсказки от края окна
 const GAP = 8; // расстояние от триггера до тултипа (включая стрелку)
 const DEFAULT_Z_INDEX = 9999;
 
@@ -58,7 +61,7 @@ const arrowClasses: Record<Side, string> = {
     right: "right-full top-1/2 -translate-y-1/2 border-r-[#0f1b2d] border-y-transparent border-l-transparent",
 };
 
-export function Tooltip({content, children, side = "bottom", delay = 300, disabled = false, className = ""}: TooltipProps) {
+export function Tooltip({content, children, side = "bottom", delay = 300, disabled = false, className = "", maxWidth = 420}: TooltipProps) {
     const [visible, setVisible] = useState(false);
     const [mounted, setMounted] = useState(false);
     const [coords, setCoords] = useState<{top: number; left: number} | null>(null);
@@ -67,6 +70,9 @@ export function Tooltip({content, children, side = "bottom", delay = 300, disabl
     const [zIndexOverride, setZIndexOverride] = useState<number | null>(null);
     const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
     const triggerRef = useRef<HTMLDivElement>(null);
+    const tipRef = useRef<HTMLDivElement>(null);
+    // Сдвиг, возвращающий подсказку в пределы окна (длинный текст у края экрана).
+    const [shift, setShift] = useState({dx: 0, dy: 0});
 
     const recomputeBlocking = () => {
         const trigger = triggerRef.current;
@@ -116,6 +122,29 @@ export function Tooltip({content, children, side = "bottom", delay = 300, disabl
         if (mounted) computePosition();
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [mounted, side]);
+
+    // Подсказка с длинным текстом (например, десятки рубрик) у края окна не должна
+    // выходить за него: после отрисовки меряем её размер и сдвигаем внутрь окна.
+    useLayoutEffect(() => {
+        const tip = tipRef.current;
+        if (!mounted || !coords || !tip) return;
+        const w = tip.offsetWidth;
+        const h = tip.offsetHeight;
+        const vw = window.innerWidth;
+        const vh = window.innerHeight;
+
+        const box = {
+            left: side === "left" ? coords.left - w : side === "right" ? coords.left : coords.left - w / 2,
+            top: side === "top" ? coords.top - h : side === "bottom" ? coords.top : coords.top - h / 2,
+        };
+        const clamp = (start: number, size: number, limit: number) => {
+            if (start < VIEWPORT_PAD) return VIEWPORT_PAD - start;
+            if (start + size > limit - VIEWPORT_PAD) return limit - VIEWPORT_PAD - (start + size);
+            return 0;
+        };
+        const next = {dx: clamp(box.left, w, vw), dy: clamp(box.top, h, vh)};
+        setShift((prev) => (prev.dx === next.dx && prev.dy === next.dy ? prev : next));
+    }, [mounted, coords, side, content, maxWidth]);
 
     useEffect(() => {
         if (!mounted) return;
@@ -180,20 +209,29 @@ export function Tooltip({content, children, side = "bottom", delay = 300, disabl
             {mounted && !disabled && coords &&
                 createPortal(
                     <div
+                        ref={tipRef}
                         role="tooltip"
                         data-tooltip-portal="true"
-                        className={`pointer-events-none fixed max-w-[420px] whitespace-normal break-words rounded-[7px] bg-[#0f1b2d] px-2.5 py-1.5 text-[11.5px] font-medium text-white shadow-[0_8px_20px_-6px_rgba(15,27,45,.35)] transition-all duration-150 ease-out ${
+                        className={`pointer-events-none fixed max-h-[calc(100vh-16px)] overflow-hidden whitespace-normal break-words rounded-[7px] bg-[#0f1b2d] px-2.5 py-1.5 text-[11.5px] font-medium text-white shadow-[0_8px_20px_-6px_rgba(15,27,45,.35)] transition-all duration-150 ease-out ${
                             visible ? "opacity-100 scale-100" : "opacity-0 scale-95"
                         }`}
                         style={{
-                            top: coords.top,
-                            left: coords.left,
+                            top: coords.top + shift.dy,
+                            left: coords.left + shift.dx,
+                            width: "max-content",
+                            maxWidth: `min(${maxWidth}px, calc(100vw - ${VIEWPORT_PAD * 2}px))`,
                             transform: translate,
                             zIndex: zIndexOverride ?? DEFAULT_Z_INDEX,
                         }}
                     >
                         {content}
-                        <span className={`absolute h-0 w-0 border-[5px] ${arrowClasses[side]}`}/>
+                        {/* Стрелка остаётся у триггера, даже если подсказку сдвинули. */}
+                        <span
+                            className={`absolute h-0 w-0 border-[5px] ${arrowClasses[side]}`}
+                            style={side === "top" || side === "bottom"
+                                ? {left: `calc(50% - ${shift.dx}px)`}
+                                : {top: `calc(50% - ${shift.dy}px)`}}
+                        />
                     </div>,
                     document.body
                 )}

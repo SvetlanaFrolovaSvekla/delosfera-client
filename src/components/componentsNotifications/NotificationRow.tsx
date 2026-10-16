@@ -56,7 +56,7 @@ export function NotificationRow({
         const isToday = date.toDateString() === now.toDateString();
         return isToday
             ? date.toLocaleTimeString(locale, { hour: "2-digit", minute: "2-digit" })
-            : date.toLocaleDateString(locale, { day: "2-digit", month: "2-digit", year: "2-digit" });
+            : date.toLocaleString(locale, { day: "2-digit", month: "2-digit", year: "2-digit", hour: "2-digit", minute: "2-digit" });
     }
 
     const handleClick = () => {

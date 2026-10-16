@@ -3,12 +3,13 @@ import { useTranslation } from "react-i18next";
 import { notificationsService } from "@/service/notificationsService/notificationsService.ts";
 import type {
     NotificationCategoryOption,
+    NotificationSelectionItem,
     NotificationSeverity,
 } from "@/service/notificationsService/notificationsServiceType.ts";
 
 import { useNotificationTabs } from "@/hooks/notificationsHooks/useNotificationTabs.ts";
 import { useNotificationScopeCounts } from "@/hooks/notificationsHooks/useNotificationScopeCounts.ts";
-import { useNotificationRows } from "@/hooks/notificationsHooks/useNotificationRows.ts";
+import { useNotificationRows, buildFilter } from "@/hooks/notificationsHooks/useNotificationRows.ts";
 import { useNotificationActions } from "@/hooks/notificationsHooks/useNotificationActions.ts";
 
 import { NotificationCategoryPanel } from "@/components/componentsNotifications/NotificationCategoryPanel.tsx";
@@ -37,6 +38,10 @@ export function NotificationsPage() {
     // Выбор строк для массовых действий (чекбоксы) и подтверждение массового удаления.
     const [selected, setSelected] = useState<Set<number>>(new Set());
     const [bulkDeleteOpen, setBulkDeleteOpen] = useState(false);
+    // Режим "выбраны все по фильтру": тут лежат id и флаги ВСЕХ подходящих уведомлений (а не только
+    // текущей страницы), выбор сохраняется при листании страниц. null - обычный постраничный выбор.
+    const [allItems, setAllItems] = useState<NotificationSelectionItem[] | null>(null);
+    const [selectingAll, setSelectingAll] = useState(false);
 
     const { mainTab, setMainTab, categoryTab, setCategoryTab, resetTabs } = useNotificationTabs();
 
@@ -81,21 +86,66 @@ export function NotificationsPage() {
         onMutated: bumpReload,
     });
 
-    // Смена вкладки, фильтра, поиска или страницы меняет набор строк - прежний выбор к ним не относится.
+    // Смена вкладки, фильтра или поиска меняет набор уведомлений - прежний выбор к ним не относится.
     useEffect(() => {
         // eslint-disable-next-line react-hooks/set-state-in-effect
         setSelected(new Set());
-    }, [mainTab, categoryTab, severities, debouncedSearch, page]);
+        setAllItems(null);
+    }, [mainTab, categoryTab, severities, debouncedSearch]);
 
-    // После обновления списка (удалили, перечитали) выкидываем из выбора то, чего на странице уже нет.
+    // Смена страницы сбрасывает выбор, кроме режима "выбраны все по фильтру".
     useEffect(() => {
+        if (allItems) return;
+        // eslint-disable-next-line react-hooks/set-state-in-effect
+        setSelected(new Set());
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [page]);
+
+    // После обновления списка (удалили, перечитали) выкидываем из выбора то, чего на странице уже нет
+    // (в режиме "все по фильтру" выбор шире страницы, там не трогаем).
+    useEffect(() => {
+        if (allItems) return;
         // eslint-disable-next-line react-hooks/set-state-in-effect
         setSelected((prev) => {
             const ids = new Set(rows.map((n) => n.id));
             const next = new Set([...prev].filter((id) => ids.has(id)));
             return next.size === prev.size ? prev : next;
         });
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [rows]);
+
+    const clearSelection = () => {
+        setSelected(new Set());
+        setAllItems(null);
+    };
+
+    // Подгружаем id всех уведомлений по текущему фильтру (до 5000) и выбираем их все.
+    const selectAllMatching = async () => {
+        setSelectingAll(true);
+        try {
+            const items = await notificationsService.searchSelection(
+                buildFilter(mainTab, categoryTab, severities, debouncedSearch, 1)
+            );
+            setAllItems(items);
+            setSelected(new Set(items.map((i) => i.id)));
+        } catch {
+            // не вышло - остаётся выбор страницы
+        } finally {
+            setSelectingAll(false);
+        }
+    };
+
+    const runBulkRead = async (ids: number[]) => {
+        const set = new Set(ids);
+        setAllItems((prev) => prev && prev.map((i) => (set.has(i.id) ? { ...i, isRead: true } : i)));
+        await bulkMarkAsRead(ids);
+    };
+
+    const runBulkFavorite = async (ids: number[], favorite: boolean) => {
+        const set = new Set(ids);
+        setAllItems((prev) => prev && prev.map((i) => (set.has(i.id) ? { ...i, isFavorite: favorite } : i)));
+        await bulkSetFavorite(ids, favorite);
+    };
 
     const toggleRow = (id: number) =>
         setSelected((prev) => {
@@ -113,7 +163,11 @@ export function NotificationsPage() {
             return next;
         });
 
-    const selectedRows = rows.filter((n) => selected.has(n.id));
+    const selectedRows: { isRead: boolean; isFavorite: boolean }[] = allItems
+        ? allItems.filter((i) => selected.has(i.id))
+        : rows.filter((n) => selected.has(n.id));
+    const pageFullySelected = rows.length > 0 && rows.every((n) => selected.has(n.id));
+    const canSelectAllMatching = !allItems && pageFullySelected && totalCount > rows.length;
     const hasUnreadSelected = selectedRows.some((n) => !n.isRead);
     // Если все отмеченные уже в избранном, кнопка превращается в "Убрать из избранного".
     const allSelectedFavorite = selectedRows.length > 0 && selectedRows.every((n) => n.isFavorite);
@@ -184,7 +238,7 @@ export function NotificationsPage() {
                 onConfirm={() => {
                     setBulkDeleteOpen(false);
                     void bulkDelete([...selected]);
-                    setSelected(new Set());
+                    clearSelection();
                 }}
                 variant="danger"
                 icon={Trash2}
@@ -222,11 +276,25 @@ export function NotificationsPage() {
                     {selected.size > 0 && (
                         <div className="mb-5 flex flex-wrap items-center gap-2.5 rounded-2xl border border-slate-200 bg-white/40 px-3.5 py-3">
                             <span className="text-[12.5px] font-semibold text-slate-400">
-                                {t("notifications.bulk.selected", { n: selected.size, defaultValue: "Выбрано: {{n}}" })}
+                                {allItems && selected.size === allItems.length
+                                    ? t("notifications.bulk.allMatchingSelected", { n: selected.size })
+                                    : t("notifications.bulk.selected", { n: selected.size, defaultValue: "Выбрано: {{n}}" })}
                             </span>
+                            {canSelectAllMatching && (
+                                <button
+                                    type="button"
+                                    onClick={() => void selectAllMatching()}
+                                    disabled={selectingAll}
+                                    className="cursor-pointer border-none bg-transparent text-[12.5px] font-semibold text-[#4e57d6] disabled:opacity-50"
+                                >
+                                    {selectingAll
+                                        ? t("notifications.bulk.selectingAll")
+                                        : t("notifications.bulk.selectAllMatching", { n: totalCount })}
+                                </button>
+                            )}
                             <button
                                 type="button"
-                                onClick={() => void bulkMarkAsRead([...selected])}
+                                onClick={() => void runBulkRead([...selected])}
                                 disabled={!hasUnreadSelected}
                                 className="inline-flex h-8 cursor-pointer items-center gap-1.5 rounded-[8px] border border-[#c9ccf0] bg-white px-3 text-[12.5px] font-semibold text-slate-400 disabled:cursor-not-allowed disabled:opacity-50"
                             >
@@ -235,7 +303,7 @@ export function NotificationsPage() {
                             </button>
                             <button
                                 type="button"
-                                onClick={() => void bulkSetFavorite([...selected], !allSelectedFavorite)}
+                                onClick={() => void runBulkFavorite([...selected], !allSelectedFavorite)}
                                 className="inline-flex h-8 cursor-pointer items-center gap-1.5 rounded-[8px] border border-[#ecd9a6] bg-white px-3 text-[12.5px] font-semibold text-[#a16207] transition-colors"
                             >
                                 <Star className="h-3.5 w-3.5 text-[#ca8a04]" />
@@ -253,7 +321,7 @@ export function NotificationsPage() {
                             </button>
                             <button
                                 type="button"
-                                onClick={() => setSelected(new Set())}
+                                onClick={clearSelection}
                                 className="cursor-pointer border-none bg-transparent text-[12px] text-[#8b97ab]"
                             >
                                 {t("notifications.bulk.clear", { defaultValue: "Снять выделение" })}

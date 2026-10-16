@@ -1945,6 +1945,9 @@
     "markAsRead": "Mark as read",
     "bulk": {
       "selected": "Selected: {{n}}",
+      "selectAllMatching": "Select all ({{n}})",
+      "allMatchingSelected": "All notifications selected: {{n}}",
+      "selectingAll": "Selecting…",
       "markRead": "Mark as read",
       "addFavorite": "Add to favorites",
       "removeFavorite": "Remove from favorites",
@@ -1953,7 +1956,12 @@
       "selectAll": "Select all on this page",
       "selectRow": "Select notification",
       "deleteConfirmTitle": "Delete the selected notifications?",
-      "deleteConfirmMessage": "{{n}} notification(s) will be deleted. This cannot be undone."
+      "deleteConfirmMessage": "{{n}} notification(s) will be deleted. This cannot be undone.",
+      "readDone": "Marked as read: {{n}}",
+      "favoriteAdded": "Added to favorites: {{n}}",
+      "favoriteRemoved": "Removed from favorites: {{n}}",
+      "deleted": "Notifications deleted: {{n}}",
+      "failed": "Could not complete the action on the notifications"
     },
     "markAllConfirm": {
       "title": "Mark all notifications as read?",
@@ -4182,6 +4190,7 @@
       "ownSuffix": "my memos in progress {{count}}",
       "ownBadge": "My memo",
       "ownHint": "Your memo is waiting for other participants — no action needed from you",
+      "completedPrefix": "Completed: ",
       "ownSincePrefix": "since ",
       "overdueBadge": "overdue",
       "raiseRiskAction": "Raise operational risk",
@@ -4404,6 +4413,8 @@
   },
   "attachments": {
     "title": "Attachments",
+    "errorLimit": "No more than {{max}} files can be attached",
+    "limitReached": "Limit reached: no more than {{max}} files",
     "saveHint": "Save draft to attach files",
     "dropPrefix": "Drag and drop files, paste screenshots or",
     "browseLink": "browse",
@@ -6093,7 +6104,10 @@
       "registrationMessage": "The memo will be sent to the Records Management Office for registration. After registration it will go to approval.",
       "approvalTitle": "Send for approval?",
       "approvalMessage": "The memo will be sent along the approval route.",
-      "processing": "Sending…"
+      "processing": "Sending…",
+      "registerTitle": "Register the memo?",
+      "registerMessage": "The memo will be assigned a registration number and immediately sent for approval. Registration cannot be undone.",
+      "registerProcessing": "Registering…"
     },
     "execution": {
       "title": "Execution",
@@ -6415,6 +6429,8 @@
       "ecpTest": "EDS · test",
       "otherVersion": "on a previous text version",
       "otherVersionLong": "Signed on a previous version of the memo text",
+      "otherVersionRemarks": "Approved with remarks: the signature is on the earlier text version; the remarks were resolved afterwards",
+      "otherVersionRemarksShort": "signed before the edits",
       "revoked": "revoked",
       "testBadge": "test",
       "testNotVerified": "Test simulation — not checked by the provider",
@@ -6433,7 +6449,7 @@
       "decisionTitleSigning": "Signing the memo",
       "qualifiedNotice": "This stage is closed with a <b>qualified signature</b>. The “{{action}}” button opens the workplace: the signature is made by the crypto provider on your computer, and the key is never sent to the server.",
       "commentPlaceholder": "Comment (required for remarks and rejection)",
-      "commentPlaceholderSigning": "Comment (required when returning for revision)",
+      "commentPlaceholderSigning": "Comment (required when rejecting)",
       "approve": "Approve",
       "sign": "Sign",
       "cloudSign": "Cloud e-signature (CES)",
@@ -6460,7 +6476,14 @@
       "title": "Remarks to resolve",
       "resolved": "Remark resolved",
       "confirmed": "The remark is marked as resolved — approval will continue",
-      "confirmFailed": "Failed to confirm that the remark was resolved"
+      "confirmFailed": "Failed to confirm that the remark was resolved",
+      "confirmTitle": "Confirm that the remark is resolved",
+      "confirmMessage": "Do you confirm that the remark has been resolved? Once all remarks are resolved, the memo will continue along the approval route.",
+      "confirmButton": "Yes, resolved",
+      "movedOnTitle": "The memo has moved on along the route",
+      "movedOnText": "All remarks are resolved — approval continues from the same stage",
+      "stillOpenTitle": "Remark resolved",
+      "stillOpenText": "Unresolved remarks left: {{count}}"
     },
     "resolution": {
       "Approved": "Approved",

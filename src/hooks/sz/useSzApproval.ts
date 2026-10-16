@@ -1,6 +1,6 @@
 // Согласование записки глазами текущего пользователя: его активная задача, решение,
 // подпись (квалифицированная и облачная) и устранение замечаний.
-import {useEffect, useMemo, useState} from "react";
+import {useEffect, useMemo, useRef, useState} from "react";
 import {useTranslation} from "react-i18next";
 import {useAuth} from "@/context/AuthContext.ts";
 import {oepSigningService} from "@/service/signingService/oepSigningService.ts";
@@ -9,6 +9,7 @@ import {szEcpService, type SzSignableResolution} from "@/service/szService/szEcp
 import {ecpCredentialService} from "@/service/ecpCredentialService.ts";
 import {useEcpHashSigning} from "@/hooks/useEcpHashSigning.ts";
 import type {ResolutionEcpSignature} from "@/hooks/useEcpApproval.ts";
+import {toast} from "@/service/toastService.ts";
 import {serverMessage} from "@/utils/szProcess/szCardUtils.ts";
 
 /** Код ошибки проверки подписи от backend (ResolutionSignatureErrorCodes). */
@@ -29,7 +30,26 @@ interface Params {
 export function useSzApproval({szId, route, setSaving, setError, setNotice, reload}: Params) {
     const {t} = useTranslation();
     const {user} = useAuth();
-    const [comment, setComment] = useState("");
+    const [comment, setCommentValue] = useState("");
+    /** Не заполнен обязательный комментарий (замечания / отклонение) — поле подсвечивается красным. */
+    const [commentError, setCommentError] = useState<string | null>(null);
+    const commentRef = useRef<HTMLTextAreaElement>(null);
+
+    const setComment = (value: string) => {
+        setCommentValue(value);
+        if (commentError && value.trim()) setCommentError(null);
+    };
+
+    /** Для замечаний и отклонения комментарий обязателен: показываем ошибку у поля, тост и ставим в него фокус. */
+    const requireComment = (type: ResolutionType, text: string): boolean => {
+        if ((type !== "ApprovedWithRemarks" && type !== "Rejected") || text) return true;
+        const message = t("szCard.approval.commentRequired");
+        setCommentError(message);
+        setError(message);
+        commentRef.current?.scrollIntoView({behavior: "smooth", block: "center"});
+        commentRef.current?.focus({preventScroll: true});
+        return false;
+    };
 
     /** ЭЦП ГП «Инфоком» — как у ВНД: сохранённая идентификация → сессия → окно ПИН/кода. */
     const ecp = useEcpHashSigning();
@@ -100,10 +120,7 @@ export function useSzApproval({szId, route, setSaving, setError, setNotice, relo
 
     const resolve = async (type: ResolutionType, signatureId?: number) => {
         if (!myParticipant) return;
-        if ((type === "ApprovedWithRemarks" || type === "Rejected") && !comment.trim()) {
-            setError(t("szCard.approval.commentRequired"));
-            return;
-        }
+        if (!requireComment(type, comment.trim())) return;
 
         // Отклонение и возврат на доработку ничего не удостоверяют — под ними подпись
         // не нужна, и требовать её значило бы мешать остановить процесс.
@@ -115,6 +132,7 @@ export function useSzApproval({szId, route, setSaving, setError, setNotice, relo
         setSaving(true);
         setError(null);
         setNotice(null);
+        setCommentError(null);
         try {
             await workflowService.resolve(myParticipant.id, type, comment.trim() || undefined, signatureId);
             setComment("");
@@ -139,13 +157,11 @@ export function useSzApproval({szId, route, setSaving, setError, setNotice, relo
     const signAndResolve = async (type: SzSignableResolution) => {
         if (!myParticipant || szId === undefined) return;
         const text = comment.trim();
-        if ((type === "ApprovedWithRemarks" || type === "Rejected") && !text) {
-            setError(t("szCard.approval.commentRequired"));
-            return;
-        }
+        if (!requireComment(type, text)) return;
 
         setError(null);
         setNotice(null);
+        setCommentError(null);
         const participantId = myParticipant.id;
 
         let signature: ResolutionEcpSignature;
@@ -184,13 +200,11 @@ export function useSzApproval({szId, route, setSaving, setError, setNotice, relo
     const testSignAndResolve = async (type: SzSignableResolution) => {
         if (!myParticipant || szId === undefined) return;
         const text = comment.trim();
-        if ((type === "ApprovedWithRemarks" || type === "Rejected") && !text) {
-            setError(t("szCard.approval.commentRequired"));
-            return;
-        }
+        if (!requireComment(type, text)) return;
         setSaving(true);
         setError(null);
         setNotice(null);
+        setCommentError(null);
         try {
             await szEcpService.resolveTest(szId, myParticipant.id, type, text);
             setComment("");
@@ -203,22 +217,30 @@ export function useSzApproval({szId, route, setSaving, setError, setNotice, relo
         }
     };
 
-    const confirmRemark = async (remarkId: number) => {
+    const confirmRemark = async (remarkId: number): Promise<boolean> => {
         setSaving(true);
         setError(null);
         try {
             await workflowService.confirmRemark(remarkId);
-            setNotice(t("szCard.remarks.confirmed"));
             await reload();
+            // Маршрут идёт дальше, когда устранены все замечания; пока есть открытые — говорим, сколько осталось.
+            const left = openRemarks.filter((r) => r.id !== remarkId).length;
+            if (left === 0) {
+                toast.success(t("szCard.remarks.movedOnTitle"), t("szCard.remarks.movedOnText"));
+            } else {
+                toast.info(t("szCard.remarks.stillOpenTitle"), t("szCard.remarks.stillOpenText", {count: left}));
+            }
+            return true;
         } catch {
             setError(t("szCard.remarks.confirmFailed"));
+            return false;
         } finally {
             setSaving(false);
         }
     };
 
     return {
-        comment, setComment, myParticipant, isSigningStep, needsQualified, openRemarks,
+        comment, setComment, commentError, commentRef, myParticipant, isSigningStep, needsQualified, openRemarks,
         resolve, signAndResolve, testSignAndResolve, confirmRemark, ecp, allowWithoutEcp, allowSzTestEcp,
         qualifiedDialogOpen, setQualifiedDialogOpen, oepModalOpen, setOepModalOpen, oepAvailable,
     };

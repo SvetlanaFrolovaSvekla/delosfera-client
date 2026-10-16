@@ -23,8 +23,8 @@ import {
 import {SzForceStatusPanel} from "@/components/componentsSz/componentsSzCard/panels/SzForceStatusPanel.tsx";
 import {SzWithdrawPanel} from "@/components/componentsSz/componentsSzCard/panels/SzWithdrawPanel.tsx";
 import {SzMainForm} from "@/components/componentsSz/componentsSzCard/form/SzMainForm.tsx";
-import {SzRegistrationPanel} from "@/components/componentsSz/componentsSzCard/panels/SzRegistrationPanel.tsx";
 import {SzStatusPanels} from "@/components/componentsSz/componentsSzCard/panels/SzStatusPanels.tsx";
+import {SzExecutionPanel} from "@/components/componentsSz/componentsSzCard/statuses/SzExecutionPanel.tsx";
 import {SzApprovalSection} from "@/components/componentsSz/componentsApprovals/SzApprovalSection.tsx";
 import {SzAddresseeDecisionPanel} from "@/components/componentsSz/componentsSzCard/panels/SzAddresseeDecisionPanel.tsx";
 import {Loader} from "@/components/componentsGeneral/Loader.tsx";
@@ -115,9 +115,6 @@ export function SzCardPage() {
                 />
             )}
 
-            {/* Регистрация и сроки: автор, подразделение, дата регистрации, срок исполнения */}
-            {sz && <SzRegistrationPanel sz={sz}/>}
-
             {/* Статус: Бумажный оригинал */}
             {sz && <SzStatusPanels sz={sz} formKey={formKey} onChanged={card.reload}/>}
 
@@ -145,6 +142,11 @@ export function SzCardPage() {
                     currentUserId={user?.id}
                     saving={saving}
                 />
+            )}
+
+            {/* Исполнение начинается после согласования — панель ведёт поручения и сроки. */}
+            {sz && (sz.statusCode === "OnExecution" || sz.statusCode === "Executed") && (
+                <SzExecutionPanel sz={sz} onChanged={card.reload}/>
             )}
         </div>
     );

@@ -105,3 +105,10 @@ export interface CreateNotificationRequest {
     userIds?: number[];
     toAllUsers?: boolean;
 }
+
+// --- Лёгкий элемент для "выбрать все по фильтру" (id + флаги для кнопок массовых действий)
+export interface NotificationSelectionItem {
+    id: number;
+    isRead: boolean;
+    isFavorite: boolean;
+}

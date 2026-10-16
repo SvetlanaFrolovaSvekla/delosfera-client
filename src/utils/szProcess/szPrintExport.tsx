@@ -22,6 +22,7 @@ import {
 } from "@/service/szService/szPaperService.ts";
 import {
     SZ_PRINT_LOGO_URL,
+    remarksSignatureNote,
     SZ_PRINT_STYLES,
     SzPrintSheet,
 } from "@/components/componentsSz/componentsPrint/SzPrintSheet.tsx";
@@ -611,9 +612,6 @@ function signatureBlocks(a: SzPrintApproval, mode: SzPrintMode, width: number): 
         chunkHex(s.documentHash, 32).forEach((part) => blocks.push(para(run(part, mono))));
     }
     if (s.signatureSha256) blocks.push(para(run(`Отпечаток подписи: ${shortenHex(s.signatureSha256)}`, {...mono, color: LIGHT_GREY})));
-    if (s.matchesCurrentContent === false) {
-        blocks.push(para(run("Подписано под предыдущей версией текста записки", {size: 7, b: true, color: "8A5A00"}), {before: 40, borderTopColor: "D9A441"}));
-    }
     return stampFrame(blocks, width);
 }
 
@@ -692,7 +690,7 @@ function buildDocumentXml(form: SzPrintForm, mode: SzPrintMode, logo: LogoImage 
 
     // Лист согласования.
     body.push(para(run("ЛИСТ СОГЛАСОВАНИЯ", {size: 12, b: true}), {align: "center", before: 480, keepNext: true}));
-    body.push(para(run(`${signed ? "с подписями ЭЦП" : "для подписи согласующими"}${form.regNumber ? ` · к служебной записке № ${form.regNumber}` : ""}`,
+    body.push(para(run(`${signed ? "с подписями ЭЦП" : ""}${form.regNumber ? `${signed ? " · " : ""}к служебной записке № ${form.regNumber}` : ""}`,
         {size: 9, i: true, color: GREY}), {align: "center", after: 120, keepNext: true}));
 
     const mm = (v: number) => Math.round(v * TW_PER_MM);
@@ -724,7 +722,6 @@ function buildDocumentXml(form: SzPrintForm, mode: SzPrintMode, logo: LogoImage 
                     para(a.resolution
                         ? run(PRINT_RESOLUTION_LABEL[a.resolution] ?? a.resolution, {size: 9, b: true})
                         : run("Ожидает решения", {size: 9, color: LIGHT_GREY})),
-                    ...(a.comment ? [para(run(a.comment, {size: 8, color: GREY}), {before: 20})] : []),
                 ], 3),
                 cell(a.resolvedAt
                     ? [para(run(formatPrintDate(a.resolvedAt), small)), para(run(formatPrintTime(a.resolvedAt), {size: 8, color: LIGHT_GREY}))]
@@ -739,19 +736,12 @@ function buildDocumentXml(form: SzPrintForm, mode: SzPrintMode, logo: LogoImage 
     // Пояснения под листом.
     const note: RunStyle = {size: 8, i: true, color: LIGHT_GREY};
     if (signed) {
-        const ecpCount = form.approvals.filter((a) => a.signature?.isEcp && !a.signature.revoked).length;
-        const otherVersion = form.approvals.filter((a) => a.signature?.isEcp && a.signature.matchesCurrentContent === false).length;
-        if (otherVersion > 0) {
-            body.push(para(run(`Внимание: подписей ЭЦП под предыдущей версией текста записки — ${otherVersion}.`, {size: 8, b: true, color: "8A5A00"}), {before: 120}));
-        } else if (ecpCount > 0) {
-            body.push(para(run(`Подписей ЭЦП в листе: ${ecpCount}, все — под текущей версией текста записки.`, note), {before: 120}));
-        }
-        body.push(para(run("Подписи ЭЦП поставлены согласующими через облачную ЭЦП ГП «Инфоком» и проверены системой «Делосфера» у провайдера при сохранении резолюций. Хэш документа — SHA-256 подписанного содержимого: решения, текста резолюции и отпечатка записки (текст, реквизиты, вложения).", note), {before: 60}));
+        body.push(para(run("Подписи ЭЦП поставлены согласующими через облачную ЭЦП ГП «Инфоком» и проверены системой «Делосфера» у провайдера при сохранении резолюций. Хэш документа — SHA-256 подписанного содержимого: решения, текста резолюции и отпечатка записки (текст, реквизиты, вложения).", note), {before: 120}));
         if (form.contentDigest) {
             body.push(para(run(`Отпечаток текущего текста записки (SHA-256): ${form.contentDigest}`, {size: 7, color: LIGHT_GREY, font: "Consolas"}), {before: 40}));
         }
-    } else {
-        body.push(para(run(`Состояние на ${formatDateTime(new Date().toISOString())}. Решения и даты — из системы «Делосфера»; подписи согласующие ставят на бумаге.`, note), {before: 120}));
+        const remarksNote = remarksSignatureNote(form.approvals);
+        if (remarksNote) body.push(para(run(remarksNote, note), {before: 60}));
     }
 
     if (form.isPaperCarrier) {

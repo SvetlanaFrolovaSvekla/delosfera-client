@@ -54,7 +54,7 @@ export function SzRubricsField({value, onChange, editable}: SzRubricsFieldProps)
                                     </span>
                                 ))}
                                 {hidden.length > 0 && (
-                                    <Tooltip content={hidden.map((r) => r.name).join(", ")} side="top">
+                                    <Tooltip content={hidden.map((r) => r.name).join(", ")} side="top" maxWidth={900}>
                                         <span
                                             className="h-8 min-w-8 inline-flex items-center justify-center px-2 rounded-full border border-[#2f68f5] bg-[#2f68f5] text-[12px] font-bold text-white cursor-default">
                                             +{hidden.length}

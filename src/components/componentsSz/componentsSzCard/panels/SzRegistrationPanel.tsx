@@ -6,11 +6,11 @@ import {formatDate} from "@/utils/szProcess/szCardUtils.ts";
 import {ReadOnlyField} from "@/components/componentsGeneral/readOnlySelects/ReadOnlyField.tsx";
 import {colors} from "@/design/tokens.ts";
 
-export function SzRegistrationPanel({sz}: { sz: SzDetails }) {
+export function SzRegistrationPanel({sz, className}: { sz: SzDetails; className?: string }) {
     const {t} = useTranslation();
 
     return (
-        <SzPanel>
+        <SzPanel className={className}>
             <div className="text-[13px] font-bold uppercase tracking-[.04em] text-[#a3adbd] mb-4">
                 {t("szCard.registration.title")}
             </div>

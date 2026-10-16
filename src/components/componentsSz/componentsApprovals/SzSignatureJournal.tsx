@@ -97,7 +97,11 @@ export function SzSignatureJournal({szId, items, loadError}: SzSignatureJournalP
                             {item.certIssuerCommonName && ` · ${t("ecp.journal.issuer", {name: item.certIssuerCommonName})}`}
                         </div>
                         {!item.matchesCurrentContent && (
-                            <div className="text-[11.5px] font-medium text-[#8a5a00]">{t("szCard.signature.otherVersionLong")}</div>
+                            <div className="text-[11.5px] font-medium text-[#8a5a00]">
+                                {item.decision === "ApprovedWithRemarks"
+                                    ? t("szCard.signature.otherVersionRemarks")
+                                    : t("szCard.signature.otherVersionLong")}
+                            </div>
                         )}
                         <div className="truncate font-mono text-[10.5px] text-[#aab3c2]" title={item.hash}>
                             SHA-256 ({item.hashSchemaVersion}): {item.hash}
@@ -122,7 +126,7 @@ export function SzSignatureJournal({szId, items, loadError}: SzSignatureJournalP
     };
 
     return (
-        <div className="mt-4 rounded-[12px] border border-[#e9edf3] bg-white p-4">
+        <div className="mt-4 rounded-[12px] border border-[#e9edf3] bg-[#fbfcff] p-4">
             <div className="flex items-center gap-2 text-[13.5px] font-semibold text-[#1c2740]">
                 <ShieldCheck size={16} className="text-[#4e57d6]"/>
                 {t("ecp.journal.title")}

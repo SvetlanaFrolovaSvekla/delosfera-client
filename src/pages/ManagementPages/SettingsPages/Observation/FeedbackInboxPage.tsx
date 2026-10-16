@@ -248,7 +248,7 @@ export function FeedbackInboxPage() {
                             <div className="flex flex-wrap items-center gap-2 border-t border-[#eef2f7] pt-3 text-[12.5px] text-[#8593a8]">
                                 {routePath && (
                                     <span className="inline-flex items-center gap-1.5 rounded-full bg-[#eaf0ff] py-1 pl-3 pr-1.5 text-[#2f68f5]">
-                                        {t("feedbackInbox.screenFilter", {name: selectedPage?.pageTitle || routePath})}
+                                        {t("feedbackInbox.screenFilter", {name: selectedPage?.screenTitle || routePath})}
                                         <button type="button" onClick={() => setRoutePath("")} aria-label={t("feedbackInbox.showAllPages")}
                                                 className="grid h-5 w-5 cursor-pointer place-items-center rounded-full hover:bg-white">
                                             <X size={12}/>
@@ -308,8 +308,13 @@ export function FeedbackInboxPage() {
                                         }`}
                                     >
                                         <span className="flex items-center gap-2">
-                                            <span className="min-w-0 flex-1 truncate text-[13px] font-medium text-[#101a2c]">
-                                                {page.pageTitle || page.routePath}
+                                            <span className="min-w-0 flex-1">
+                                                <span className="block truncate text-[13px] font-medium text-[#101a2c]">
+                                                    {page.screenTitle || page.routePath}
+                                                </span>
+                                                <span className="block truncate font-mono text-[11px] text-[#8593a8]">
+                                                    {page.routePath}
+                                                </span>
                                             </span>
                                             {page.problems > 0 && (
                                                 <span className="flex-none rounded-full bg-[#fbe9e7] px-1.5 py-[1px] text-[11px] font-semibold text-[#c0392b]">
@@ -446,7 +451,7 @@ function FeedbackCard({row, saving, onChange, onPageClick}: {
                             title={t("feedbackInbox.filterByThisPage")}
                             className="inline-flex max-w-full cursor-pointer items-center gap-1 truncate rounded-full border border-[#e5e9f0] px-2.5 py-0.5 text-[11.5px] text-[#4d5a72] hover:border-[#2f68f5] hover:text-[#2f68f5]">
                         <Monitor size={12}/>
-                        {row.pageTitle || row.routePath}
+                        {row.screenTitle || row.routePath}
                     </button>
                     <span className="ml-auto font-mono text-[11.5px] text-[#8593a8]">
                         {formatDate(row.createdAt)}

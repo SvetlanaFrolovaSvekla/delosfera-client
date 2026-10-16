@@ -41,6 +41,7 @@ import {RaiseRiskEventModal} from "@/components/componentsTasks/RaiseRiskEventMo
 import {Tabs} from "@/components/componentsGeneral/Tabs.tsx";
 import {EmptyState} from "@/components/componentsGeneral/EmptyState.tsx";
 import {SearchBar} from "@/components/componentsGeneral/SearchBar.tsx";
+import {SelectDropdown} from "@/components/componentsGeneral/selects/SingleSelects/SelectDropdown.tsx";
 import {ArrowRight} from "lucide-react";
 
 // Получение текста, иконки при отсутствии задач на соответствующих табах
@@ -49,6 +50,9 @@ function getInboxEmptyMeta(filter: InboxFilterId) {
 }
 
 const StatsLinkIcon = INBOX_STATS_LINK_ICON; // Иконка при сообщении при пустом списке
+
+type DoneToggle = "active" | "done";
+const DONE_TOGGLE_IDS: DoneToggle[] = ["active", "done"];
 
 export const TaskInboxPage = () => {
     const {t} = useTranslation();
@@ -60,6 +64,8 @@ export const TaskInboxPage = () => {
     const [szSubTab, setSzSubTab] = useState<SzInboxSubTab>("all");
     // Внутри «Согласования»: свои записки на согласовании / записки, которые согласую я.
     const [approvalWho, setApprovalWho] = useState<SzApprovalWho>("mine");
+    // Фильтр по выполненности (как в ВНД): активные задачи или история выполненных. Только в разделе СЗ.
+    const [doneToggle, setDoneToggle] = useState<DoneToggle>("active");
     const [inbox, setInbox] = useState<TaskInbox | null>(null);
     const [loading, setLoading] = useState(true);
     // Поиск намеренно не сбрасывается при смене вкладки - так же, как на ВНД-вкладке:
@@ -72,19 +78,24 @@ export const TaskInboxPage = () => {
     const isVndTab = filter === "vnd";
     const isAllTab = filter === "all";
     const isSzTab = filter === "sz";
+    const isDoneView = isSzTab && doneToggle === "done";
 
     const load = useCallback(async () => {
         if (filter === "vnd") return;
 
         setLoading(true);
         try {
+            if (isDoneView) {
+                setInbox(await taskInboxService.getDone());
+                return;
+            }
             // includeOwn — инициатор видит и свои записки, которые ждут других
             // (регистрации, согласования, подписи...), а не только задачи на себе.
             setInbox(await taskInboxService.get(INBOX_FILTER_DOCUMENT_TYPE[filter], {includeOwn: true}));
         } finally {
             setLoading(false);
         }
-    }, [filter]);
+    }, [filter, isDoneView]);
 
     useEffect(() => {
         // eslint-disable-next-line react-hooks/set-state-in-effect
@@ -103,10 +114,10 @@ export const TaskInboxPage = () => {
         const tasks = inbox?.tasks ?? [];
         if (!isSzTab || szSubTab === "all") return tasks;
         const byStage = tasks.filter((task) => task.stage === szSubTab);
-        if (szSubTab !== "Approval") return byStage;
+        if (szSubTab !== "Approval" || isDoneView) return byStage;
         // Свои записки (isOwn) — «Мои СЗ на согласовании», остальное — задачи согласующего.
         return byStage.filter((task) => (approvalWho === "mine") === task.isOwn);
-    }, [inbox, isSzTab, szSubTab, approvalWho]);
+    }, [inbox, isSzTab, szSubTab, approvalWho, isDoneView]);
 
     // Подвкладки «Согласования» со счётчиками.
     const approvalWhoTabs = useMemo(() => {
@@ -202,7 +213,13 @@ export const TaskInboxPage = () => {
             </div>
 
             {/* Ряд вкладок-карточек над реестром задач: "Все контуры" + один пункт на контур. */}
-            <TaskInboxFilterTabs value={filter} onChange={setFilter}/>
+            <TaskInboxFilterTabs
+                value={filter}
+                onChange={(next) => {
+                    setFilter(next);
+                    setDoneToggle("active");
+                }}
+            />
 
             {/* Подвкладки «Служебных записок» по этапу: Все, Регистрация, Согласование... */}
             {isSzTab && inbox && (
@@ -215,7 +232,7 @@ export const TaskInboxPage = () => {
             )}
 
             {/* «Согласование»: «Мои СЗ на согласовании» и «СЗ, согласую я». */}
-            {isSzTab && inbox && szSubTab === "Approval" && (
+            {isSzTab && inbox && szSubTab === "Approval" && !isDoneView && (
                 <Tabs<SzApprovalWho>
                     tabs={approvalWhoTabs}
                     value={approvalWho}
@@ -234,6 +251,23 @@ export const TaskInboxPage = () => {
                         value={searchQuery}
                         onChange={setSearchQuery}
                     />
+
+                    {isSzTab && (
+                        <div className="flex flex-wrap items-start gap-4">
+                            <SelectDropdown
+                                options={DONE_TOGGLE_IDS.map((value) => ({
+                                    value,
+                                    label: t(`tasks.vnd.doneFilter.${value}`),
+                                }))}
+                                value={doneToggle}
+                                onChange={(value) => setDoneToggle(value as DoneToggle)}
+                                label={t("tasks.vnd.doneFilterLabel")}
+                                labelPosition="inline"
+                                placeholder={t("tasks.vnd.doneFilter.active")}
+                                minWidth="200px"
+                            />
+                        </div>
+                    )}
 
                     {isAllTab && filteredVndTasks.length > 0 && (
                         <section className="grid grid-cols-1 gap-3">
@@ -263,6 +297,7 @@ export const TaskInboxPage = () => {
                                     onDelegate={setDelegateTask}
                                     onRaiseRisk={canRaiseRisk ? setRiskTask : undefined}
                                     searchQuery={searchQuery}
+                                    readOnly={isDoneView}
                                 />
                             ))}
 
@@ -273,6 +308,13 @@ export const TaskInboxPage = () => {
                                             embedded
                                             title={t("tasks.common.searchEmptyTitle")}
                                             description={t("tasks.common.searchEmptyDescription")}
+                                        />
+                                    ) : isDoneView ? (
+                                        <EmptyState
+                                            embedded
+                                            icon={getInboxEmptyMeta(filter).icon}
+                                            title={t("tasks.vnd.doneEmptyTitle")}
+                                            description={t("tasks.vnd.doneEmptyDescription")}
                                         />
                                     ) : (
                                         <EmptyState

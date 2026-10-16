@@ -53,7 +53,12 @@ export function useSzCard(id: string | undefined) {
     const [pendingFiles, setPendingFiles] = useState<File[]>([]);
     const [loading, setLoading] = useState(!isNew);
     const [saving, setSaving] = useState(false);
-    const [error, setError] = useState<string | null>(null);
+    const [error, setErrorState] = useState<string | null>(null);
+    /** Любая ошибка страницы показывается и плашкой над формой, и всплывающим тостом. */
+    const setError = useCallback((message: string | null) => {
+        setErrorState(message);
+        if (message) toast.error(message);
+    }, []);
     const [notice, setNotice] = useState<string | null>(null);
     const [approversFromTemplate, setApproversFromTemplate] = useState(false);
 
@@ -242,7 +247,8 @@ export function useSzCard(id: string | undefined) {
                     ? "szCard.notices.sentToRegistration"
                     : "szCard.notices.sentToApproval"));
             } else {
-                setNotice(t("szCard.notices.registered", {
+                // Регистрация — тоже всплывающим уведомлением, как и отправка.
+                toast.success(t("szCard.notices.registered", {
                     regNumber: updated.regNumber,
                     dueDate: formatDate(updated.dueDate),
                 }));

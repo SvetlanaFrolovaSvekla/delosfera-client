@@ -63,6 +63,8 @@ export interface FeedbackRow {
     routePath: string;
     entityId: number | null;
     pageTitle: string | null;
+    /** Название экрана, собранное сервером по маршруту (заголовок вкладки у всех экранов одинаковый). */
+    screenTitle: string;
     createdAt: string;
     status: FeedbackStatus;
     handlerComment: string | null;
@@ -80,6 +82,7 @@ export interface MyFeedbackRow {
     text: string;
     routePath: string;
     pageTitle: string | null;
+    screenTitle: string;
     createdAt: string;
     status: FeedbackStatus;
     handlerComment: string | null;
@@ -88,7 +91,7 @@ export interface MyFeedbackRow {
 export interface FeedbackSummary {
     byStatus: { status: FeedbackStatus; count: number }[];
     byKind: { kind: FeedbackKind; count: number }[];
-    byPage: { routePath: string; pageTitle: string | null; count: number; problems: number }[];
+    byPage: { routePath: string; screenTitle: string; count: number; problems: number }[];
 }
 
 const BASE = "/feedback";

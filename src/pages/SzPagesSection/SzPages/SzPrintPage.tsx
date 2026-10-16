@@ -79,7 +79,8 @@ export function SzPrintPage() {
             <style>{SZ_PRINT_STYLES}</style>
 
             <div className="sz-print-hide mx-auto mb-4 flex max-w-[210mm] flex-wrap items-center justify-between gap-3 px-4">
-                <div className="flex items-center gap-1 rounded-[11px] border border-[#d7dee8] bg-white p-1">
+                <div className="flex flex-col gap-1.5">
+                <div className="flex items-center gap-1 rounded-[11px] border border-[#d7dee8] bg-white p-1 self-start">
                     <button
                         type="button"
                         onClick={() => switchMode("signed")}
@@ -96,6 +97,13 @@ export function SzPrintPage() {
                     >
                         <ClipboardCheck size={15}/> Для подписи от руки
                     </button>
+                </div>
+                {/* Что перед глазами: лист всегда отражает состояние записки на сейчас. */}
+                <div className="max-w-[420px] text-[11.5px] leading-[1.45] text-[#8b97ab]">
+                    {signed
+                        ? "Лист на текущее состояние служебной записки: решения согласующих и их подписи ЭЦП."
+                        : "Лист на текущее состояние служебной записки. Нужен, если подписи согласующих требуется собрать на бумаге."}
+                </div>
                 </div>
                 <div className="flex items-center gap-2">
                     <Tooltip content={t("szCard.document.pdfHint")} side="bottom">

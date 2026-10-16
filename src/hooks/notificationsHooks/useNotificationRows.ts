@@ -4,9 +4,9 @@ import {notificationsService} from "@/service/notificationsService/notifications
 import type {Notification, NotificationFilter, NotificationSeverity} from "@/service/notificationsService/notificationsServiceType.ts";
 import type {NotificationMainTab, NotificationCategoryTab} from "./useNotificationTabs.ts";
 
-const PAGE_SIZE = 20;
+export const PAGE_SIZE = 20;
 
-function buildFilter(
+export function buildFilter(
     mainTab: NotificationMainTab,
     categoryTab: NotificationCategoryTab,
     severity: NotificationSeverity[],

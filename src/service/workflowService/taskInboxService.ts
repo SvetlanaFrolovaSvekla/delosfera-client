@@ -44,6 +44,9 @@ export interface InboxTask {
     delegatedBy: string | null;
 
     createdAt: string;
+
+    /** Когда задача закрыта (только в списке «Выполненные»; у старых закрытых задач — дата создания). */
+    completedAt?: string | null;
 }
 
 /** Этапы служебной записки (см. SzStage на сервере). */
@@ -90,6 +93,12 @@ export const taskInboxService = {
         const {data} = await apiClient.get<TaskInbox>("/workflow/inbox", {
             params: Object.keys(params).length ? params : undefined,
         });
+        return data;
+    },
+
+    /** Выполненные мной задачи по служебным запискам (вкладка «Выполненные»). */
+    async getDone(limit = 200): Promise<TaskInbox> {
+        const {data} = await apiClient.get<TaskInbox>("/workflow/inbox/done", {params: {limit}});
         return data;
     },
 

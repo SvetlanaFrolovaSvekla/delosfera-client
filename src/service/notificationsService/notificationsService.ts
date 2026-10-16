@@ -7,6 +7,7 @@ import type {
     NotificationCategoryOption,
     NotificationCategory,
     CreateNotificationRequest,
+    NotificationSelectionItem,
 } from "./notificationsServiceType.ts";
 
 class NotificationsService {
@@ -82,6 +83,32 @@ class NotificationsService {
             `${this.basePath}/${id}/favorite`
         );
         return response.data;
+    }
+
+    /** Все id (и флаги) уведомлений по фильтру — для «выбрать всё», а не только страницу (до 5000). */
+    async searchSelection(filter: NotificationFilter): Promise<NotificationSelectionItem[]> {
+        const response = await axiosInstance.post<NotificationSelectionItem[]>(
+            `${this.basePath}/search-selection`,
+            filter
+        );
+        return response.data;
+    }
+
+    /** Массовые действия одним запросом (сервер сам пропускает уже прочитанные/чужие/удалённые). */
+    /** Возвращают, сколько записей сервер реально изменил (affected). */
+    async bulkMarkAsRead(ids: number[]): Promise<number> {
+        const response = await axiosInstance.post<{ affected: number }>(`${this.basePath}/bulk/read`, {ids});
+        return response.data.affected;
+    }
+
+    async bulkSetFavorite(ids: number[], favorite: boolean): Promise<number> {
+        const response = await axiosInstance.post<{ affected: number }>(`${this.basePath}/bulk/favorite`, {ids, favorite});
+        return response.data.affected;
+    }
+
+    async bulkDelete(ids: number[]): Promise<number> {
+        const response = await axiosInstance.post<{ affected: number }>(`${this.basePath}/bulk/delete`, {ids});
+        return response.data.affected;
     }
 
     /** Удалить уведомление из своего списка (мягкое удаление) */

@@ -1,4 +1,6 @@
 import type { Dispatch, SetStateAction } from "react";
+import { useTranslation } from "react-i18next";
+import { toast } from "@/service/toastService.ts";
 import { notificationsService } from "@/service/notificationsService/notificationsService.ts";
 import type { useNotificationRows } from "@/hooks/notificationsHooks/useNotificationRows.ts";
 import type { useNotificationTabs } from "@/hooks/notificationsHooks/useNotificationTabs.ts";
@@ -14,6 +16,8 @@ interface UseNotificationActionsParams {
 }
 
 export function useNotificationActions({ rows, setRows, categoryTab, onMutated }: UseNotificationActionsParams) {
+    const { t } = useTranslation();
+
     const markAsRead = async (id: number) => {
         const target = rows.find((n) => n.id === id);
         if (!target || target.isRead) return;
@@ -65,34 +69,44 @@ export function useNotificationActions({ rows, setRows, categoryTab, onMutated }
         }
     };
 
-    // Массовые действия над отмеченными строками. Оптимистично правим список, шлём запросы по
-    // одному (пакетных методов на бэке нет) и обновляем страницу один раз в конце - если часть
-    // запросов упала, тихая перезагрузка вернёт реальное состояние.
-    const bulkMarkAsRead = async (ids: number[]) => {
-        const targets = rows.filter((n) => ids.includes(n.id) && !n.isRead).map((n) => n.id);
-        if (targets.length === 0) return;
-        const set = new Set(targets);
-        setRows((prev) => prev.map((n) => (set.has(n.id) ? { ...n, isRead: true } : n)));
-        await Promise.allSettled(targets.map((id) => notificationsService.markAsRead(id)));
-        onMutated();
+    // Массовые действия над отмеченными id - одним запросом на действие. Id могут быть не только
+    // с текущей страницы (режим "выбрать все по фильтру"), поэтому список правим по id, а не по rows.
+    // Массовое действие: итог сообщаем тостом (сколько записей сервер реально затронул),
+    // а сбой не глотаем - иначе оптимистичное обновление списка молча откатывается перезагрузкой.
+    const runBulk = async (action: () => Promise<number>, doneKey: string) => {
+        try {
+            const affected = await action();
+            toast.success(t(doneKey, { n: affected }));
+        } catch {
+            toast.error(t("notifications.bulk.failed"));
+        } finally {
+            onMutated();
+        }
     };
 
-    // favorite=true - добавить в избранное тех, кто там ещё не лежит; false - убрать из избранного.
+    const bulkMarkAsRead = async (ids: number[]) => {
+        if (ids.length === 0) return;
+        const set = new Set(ids);
+        setRows((prev) => prev.map((n) => (set.has(n.id) ? { ...n, isRead: true } : n)));
+        await runBulk(() => notificationsService.bulkMarkAsRead(ids), "notifications.bulk.readDone");
+    };
+
+    // favorite=true - добавить в избранное; false - убрать из избранного.
     const bulkSetFavorite = async (ids: number[], favorite: boolean) => {
-        const targets = rows.filter((n) => ids.includes(n.id) && n.isFavorite !== favorite).map((n) => n.id);
-        if (targets.length === 0) return;
-        const set = new Set(targets);
+        if (ids.length === 0) return;
+        const set = new Set(ids);
         setRows((prev) => prev.map((n) => (set.has(n.id) ? { ...n, isFavorite: favorite } : n)));
-        await Promise.allSettled(targets.map((id) => notificationsService.toggleFavorite(id)));
-        onMutated();
+        await runBulk(
+            () => notificationsService.bulkSetFavorite(ids, favorite),
+            favorite ? "notifications.bulk.favoriteAdded" : "notifications.bulk.favoriteRemoved",
+        );
     };
 
     const bulkDelete = async (ids: number[]) => {
         if (ids.length === 0) return;
         const set = new Set(ids);
         setRows((prev) => prev.filter((n) => !set.has(n.id)));
-        await Promise.allSettled(ids.map((id) => notificationsService.delete(id)));
-        onMutated();
+        await runBulk(() => notificationsService.bulkDelete(ids), "notifications.bulk.deleted");
     };
 
     return {

@@ -2,16 +2,16 @@
 import {type ReactNode} from "react";
 
 interface TabItem<T extends string> {
-    id: T;
+    id: T; // T - идентификатор вкладки
     label: string;
     /** Счётчик рядом с названием. Не задан — не рисуется: на вкладках, где
-     *  считать нечего, ноль в кружке читается как «пусто», а не «без счёта». */
+     *  считать нечего, ноль в кружке читается как "пусто". */
     n?: number;
     alignRight?: boolean;
     icon?: ReactNode;
 }
 
-/** Акцентный цвет активной вкладки. По умолчанию индиго; «blue» — синий реестра СЗ. */
+/** Акцентный цвет активной вкладки. По умолчанию фиолетовый; */
 type TabsAccent = "indigo" | "blue";
 
 const ACCENTS: Record<TabsAccent, { text: string; line: string; chip: string }> = {
@@ -30,40 +30,43 @@ interface TabsProps<T extends string> {
 export function Tabs<T extends string>({tabs, value, onChange, className = "mb-4", accent = "indigo"}: TabsProps<T>) {
     const c = ACCENTS[accent];
     return (
-        <div className={`flex items-center gap-[22px] border-b border-[#e9edf3] ${className}`}>
-            {tabs.map((tab) => {
-                const active = tab.id === value;
-                return (
-                    <button
-                        key={tab.id}
-                        onClick={() => onChange(tab.id)}
-                        className={`relative inline-flex items-center gap-2 py-[9px] px-1 border-none bg-transparent text-[14px] cursor-pointer whitespace-nowrap ${
-                            tab.alignRight ? "ml-auto" : ""
-                        }`}
-                    >
-                        {tab.icon && (
-                            <span className={`inline-flex items-center ${active ? c.text : "text-[#8b97ab]"}`}>
+        // Панель прокручивается по горизонтали, если табы не влазят
+        <div className={`overflow-x-auto overflow-y-hidden pb-1 ${className}`}>
+            <div className="flex items-center gap-[22px] w-max min-w-full border-b border-[#e9edf3]">
+                {tabs.map((tab) => {
+                    const active = tab.id === value;
+                    return (
+                        <button
+                            key={tab.id}
+                            onClick={() => onChange(tab.id)}
+                            className={`relative inline-flex items-center gap-2 py-[9px] px-1 border-none bg-transparent text-[14px] cursor-pointer whitespace-nowrap shrink-0 ${
+                                tab.alignRight ? "ml-auto" : ""
+                            }`}
+                        >
+                            {tab.icon && (
+                                <span className={`inline-flex items-center ${active ? c.text : "text-[#8b97ab]"}`}>
                                 {tab.icon}
                             </span>
-                        )}
-                        <span className={active ? `${c.text} font-bold` : "text-[#8b97ab] font-medium"}>
+                            )}
+                            <span className={active ? `${c.text} font-bold` : "text-[#8b97ab] font-medium"}>
                             {tab.label}
                         </span>
-                        {tab.n !== undefined && (
-                            <span
-                                className={`font-mono text-[11px] font-bold py-[1px] px-[7px] rounded-full ${
-                                    active ? c.chip : "bg-[#f2f5f9] text-[#a3adbd]"
-                                }`}
-                            >
+                            {tab.n !== undefined && (
+                                <span
+                                    className={`font-mono text-[11px] font-bold py-[1px] px-[7px] rounded-full ${
+                                        active ? c.chip : "bg-[#f2f5f9] text-[#a3adbd]"
+                                    }`}
+                                >
                                 {tab.n}
                             </span>
-                        )}
-                        {active && (
-                            <span className={`absolute left-0 right-0 -bottom-px h-[1px] rounded-full ${c.line}`}/>
-                        )}
-                    </button>
-                );
-            })}
+                            )}
+                            {active && (
+                                <span className={`absolute left-0 right-0 bottom-0 h-[2px] rounded-full ${c.line}`}/>
+                            )}
+                        </button>
+                    );
+                })}
+            </div>
         </div>
     );
 }

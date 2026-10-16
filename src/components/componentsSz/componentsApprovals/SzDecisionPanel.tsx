@@ -16,11 +16,11 @@ export function SzDecisionPanel({approval, saving}: SzDecisionPanelProps) {
     const {t} = useTranslation();
     const {session, isValid} = useEcpSession();
     const {
-        comment, setComment, isSigningStep, needsQualified, oepAvailable, allowWithoutEcp, ecp,
+        comment, setComment, commentError, commentRef, isSigningStep, needsQualified, oepAvailable, allowWithoutEcp, ecp,
         resolve, signAndResolve, testSignAndResolve, allowSzTestEcp, setOepModalOpen,
     } = approval;
     const approveLabel = t(isSigningStep ? "szCard.approval.sign" : "szCard.approval.approve");
-    const rejectLabel = t(isSigningStep ? "szCard.approval.returnForRevision" : "szCard.approval.reject");
+    const rejectLabel = t("szCard.approval.reject");
     const busy = saving || ecp.quietSigning || ecp.modalOpen;
 
     return (
@@ -38,14 +38,23 @@ export function SzDecisionPanel({approval, saving}: SzDecisionPanelProps) {
             </div>*/}
 
             <textarea
+                ref={commentRef}
                 value={comment}
+                aria-invalid={!!commentError}
                 onChange={(e) => setComment(e.target.value)}
                 rows={3}
                 placeholder={t(isSigningStep
                     ? "szCard.approval.commentPlaceholderSigning"
                     : "szCard.approval.commentPlaceholder")}
-                className="mt-2 w-full px-3 py-2.5 rounded-[9px] border border-[#e5e9f0] bg-white text-[13px] outline-none resize-y focus:border-[#2f68f5]"
+                className={`mt-2 w-full px-3 py-2.5 rounded-[9px] border bg-white text-[13px] outline-none resize-y ${
+                    commentError
+                        ? "border-[#e0483a] bg-[#fff8f7] shadow-[0_0_0_3px_rgba(224,72,58,0.12)] focus:border-[#e0483a]"
+                        : "border-[#e5e9f0] focus:border-[#2f68f5]"
+                }`}
             />
+            {commentError && (
+                <div role="alert" className="mt-1 text-[12px] font-medium text-[#c0392b]">{commentError}</div>
+            )}
 
             {/* Основной путь — решение с подписью ЭЦП. */}
             <div className="mt-2.5 flex flex-wrap gap-2">

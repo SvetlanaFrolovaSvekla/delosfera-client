@@ -39,7 +39,7 @@ export function SzRouteSteps({route, users, ecpByParticipant}: SzRouteStepsProps
     return (
         <div className="flex flex-col gap-2.5">
             {route.steps.map((step) => (
-                <div key={step.id} className="rounded-[12px] border border-[#eef2f7] bg-white">
+                <div key={step.id} className="rounded-[12px] border border-[#eef2f7] bg-[#fbfcff]">
                     <div className="flex items-center gap-2 border-b border-[#f1f4f8] px-4 py-2 text-[11px] font-semibold uppercase tracking-[.05em] text-[#a3adbd]">
                         {t("szCard.approval.stage", {order: step.order})}
                         {step.kind === "Signing" && <span>· {t("szCard.approval.stageSigning")}</span>}
@@ -91,10 +91,17 @@ export function SzRouteSteps({route, users, ecpByParticipant}: SzRouteStepsProps
                                                     <span className="text-[#8b97ab]">· {formatDateTime(ecp.signedAt)}</span>
                                                 </span>
                                                 {!ecp.matchesCurrentContent && (
-                                                    <span className="inline-flex items-center gap-1 rounded-[7px] bg-[#fdf3e0] px-2 py-[3px] text-[11px] text-[#8a5a00]">
-                                                        <AlertTriangle size={12}/>
-                                                        {t("szCard.signature.otherVersion")}
-                                                    </span>
+                                                    ecp.decision === "ApprovedWithRemarks" ? (
+                                                        // Согласовано с замечаниями: подпись на версии до правок — штатно, без тревоги.
+                                                        <span className="inline-flex items-center gap-1 rounded-[7px] bg-[#f3f5f9] px-2 py-[3px] text-[11px] text-[#6b7791]">
+                                                            {t("szCard.signature.otherVersionRemarksShort")}
+                                                        </span>
+                                                    ) : (
+                                                        <span className="inline-flex items-center gap-1 rounded-[7px] bg-[#fdf3e0] px-2 py-[3px] text-[11px] text-[#8a5a00]">
+                                                            <AlertTriangle size={12}/>
+                                                            {t("szCard.signature.otherVersion")}
+                                                        </span>
+                                                    )
                                                 )}
                                             </div>
                                         ) : stamp && (

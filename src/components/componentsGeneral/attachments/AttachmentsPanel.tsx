@@ -47,6 +47,9 @@ interface Props {
      */
     pending?: File[];
     onPendingChange?: (files: File[]) => void;
+
+    /** Предел числа вложений в карточке. Не задан — без ограничения. Сервер проверяет его ещё раз. */
+    maxFiles?: number;
 }
 
 function extensionOf(name: string): string {
@@ -59,7 +62,7 @@ function allowedFile(file: File): boolean {
 }
 
 export function AttachmentsPanel({
-                                     documentId, editable, title, hint, pending, onPendingChange,
+                                     documentId, editable, title, hint, pending, onPendingChange, maxFiles,
                                  }: Props) {
     const {t} = useTranslation();
     const panelTitle = title ?? t("attachments.title");
@@ -79,6 +82,10 @@ export function AttachmentsPanel({
     const [coEdit, setCoEdit] = useState<Attachment | null>(null);
     const fileInput = useRef<HTMLInputElement>(null);
     const zone = useRef<HTMLDivElement>(null);
+
+    // Сколько файлов уже приложено: у созданной карточки - с сервера, у новой - в очереди на загрузку.
+    const attachedCount = documentId ? items.length : (pending?.length ?? 0);
+    const limitReached = maxFiles !== undefined && attachedCount >= maxFiles;
 
     const fileProblem = useCallback((file: File): string => {
         const ext = extensionOf(file.name);
@@ -115,6 +122,16 @@ export function AttachmentsPanel({
             setError(null);
         }
 
+        // Предел числа вложений: берём столько, сколько ещё помещается, об остальных говорим.
+        if (maxFiles !== undefined) {
+            const room = Math.max(0, maxFiles - attachedCount);
+            if (files.length > room) {
+                setError(t("attachments.errorLimit", {max: maxFiles}));
+                files = files.slice(0, room);
+                if (files.length === 0) return;
+            }
+        }
+
         if (!documentId) {
             // Карточки ещё нет — файлы ждут её создания в состоянии формы.
             if (onPendingChange) onPendingChange([...(pending ?? []), ...files]);
@@ -138,7 +155,7 @@ export function AttachmentsPanel({
         } finally {
             setBusy(false);
         }
-    }, [documentId, reload, onPendingChange, pending, fileProblem, t]);
+    }, [documentId, reload, onPendingChange, pending, fileProblem, maxFiles, attachedCount, t]);
 
     // Вставка из буфера ловится, пока курсор в пределах блока вложений: иначе Ctrl+V
     // в тексте записки цеплял бы скриншот вместо вставки текста.
@@ -205,7 +222,10 @@ export function AttachmentsPanel({
     return (
         <div className="mt-4">
             <div className="flex items-baseline justify-between mb-[5px]">
-                <span className="block text-[11.5px] text-[#8b97ab]">{panelTitle}</span>
+                <span className="block text-[11.5px] text-[#8b97ab]">
+                    {panelTitle}
+                    {maxFiles !== undefined && ` · ${attachedCount} / ${maxFiles}`}
+                </span>
                 {hint && <span className="text-[11.5px] text-[#a6b0c2]">{hint}</span>}
             </div>
 
@@ -217,9 +237,9 @@ export function AttachmentsPanel({
                     // Клик по всей рамке, а не только по слову «обзор»: рамка занимает
                     // почти шестьсот пикселей и выглядит кнопкой, поэтому жмут именно
                     // по ней — и раньше ничего не происходило.
-                    onClick={() => { if (canAttach && !busy) fileInput.current?.click(); }}
+                    onClick={() => { if (canAttach && !busy && !limitReached) fileInput.current?.click(); }}
                     onKeyDown={(e) => {
-                        if (!canAttach || busy) return;
+                        if (!canAttach || busy || limitReached) return;
                         if (e.key === "Enter" || e.key === " ") {
                             e.preventDefault();
                             fileInput.current?.click();
@@ -238,7 +258,10 @@ export function AttachmentsPanel({
                             ? "border-[#2f68f5] bg-[#f2f6ff] text-[#2f68f5]"
                             : "border-[#d6dded] bg-[#fafbfd] text-[#8b97ab] hover:border-[#b9c8e8] focus:border-[#2f68f5]"}`}
                 >
-                    {canAttach ? (
+                    {canAttach && limitReached ? (
+                        // Достигнут предел вложений
+                        t("attachments.limitReached", {max: maxFiles})
+                    ) : canAttach ? (
                         <>
                             {t("attachments.dropPrefix")}{" "}
                             <span className="font-semibold text-[#2f68f5] underline">

@@ -6,7 +6,6 @@ import {PermissionCode} from "@/constants/permissions/permissions.ts";
 import {SzProcurementLink} from "@/components/componentsSz/componentsSzCard/statuses/SzProcurementLink.tsx";
 import {BODY_SUBMISSION_STATUSES} from "@/utils/szProcess/szCardUtils.ts";
 import {SzTrainingBudgetPanel} from "@/components/componentsSz/componentsSzCard/statuses/SzTrainingBudgetPanel.tsx";
-import {SzExecutionPanel} from "@/components/componentsSz/componentsSzCard/statuses/SzExecutionPanel.tsx";
 import {SzSubmitToBodyPanel} from "@/components/componentsSz/componentsSzCard/statuses/SzSubmitToBodyPanel.tsx";
 import {SzOriginalPanel} from "@/components/componentsSz/componentsSzCard/statuses/SzOriginalPanel.tsx";
 import {SzProcurementPanel} from "@/components/componentsSz/componentsSzCard/statuses/SzProcurementPanel.tsx";
@@ -27,11 +26,6 @@ export function SzStatusPanels({sz, formKey, onChanged}: SzStatusPanelsProps) {
             {/* Бюджет и позиция плана по СЗ на обучение (КСЗ-08): проставляет УЧР. */}
             {formKey === "Training" && (
                 <SzTrainingBudgetPanel sz={sz} canEdit={hasPermission(PermissionCode.ViewAllSz)} onChanged={onChanged}/>
-            )}
-
-            {/* Исполнение начинается после согласования — панель ведёт поручения и сроки. */}
-            {(sz.statusCode === "OnExecution" || sz.statusCode === "Executed") && (
-                <SzExecutionPanel sz={sz} onChanged={onChanged}/>
             )}
 
             {/* Вынесение на коллегиальный орган. Вопрос выносит адресат по записке,

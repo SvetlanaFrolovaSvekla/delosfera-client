@@ -11,7 +11,6 @@ import {
 } from "@/utils/szProcess/szCardUtils.ts";
 
 import {SzButton, szButtonClass} from "@/components/componentsSz/componentsSzCard/controls/SzButton.tsx";
-import {SzDocumentMenu} from "@/components/componentsSz/componentsSzCard/controls/SzDocumentMenu.tsx";
 import {SzFavoriteButton} from "@/components/componentsSz/componentsSzRegistry/SzFavoriteButton.tsx";
 
 import {Tooltip} from "@/components/componentsGeneral/tooltips/Tooltip.tsx";
@@ -19,7 +18,18 @@ import {ConfirmDeleteModal} from "@/components/componentsGeneral/modal/ConfirmDe
 import {ConfirmActionModal} from "@/components/componentsGeneral/modal/ConfirmActionModal.tsx";
 
 import {colors} from "@/design/tokens.ts";
-import {ArrowLeft, ArrowRightLeft, BadgeCheck, FilePlus, Printer, Save, Send, ShieldCheck, Trash2, Undo2, X} from "lucide-react";
+import {
+    ArrowLeft,
+    ArrowRightLeft,
+    BadgeCheck,
+    Download,
+    FilePlus,
+    Save,
+    Send,
+    Trash2,
+    Undo2,
+    X
+} from "lucide-react";
 
 interface SzCardHeaderProps {
     card: SzCardState;
@@ -32,6 +42,7 @@ export function SzCardHeader({card, onToggleWithdraw, onToggleForce}: SzCardHead
     const navigate = useNavigate();
     const [confirmDelete, setConfirmDelete] = useState(false);
     const [confirmSubmit, setConfirmSubmit] = useState(false);
+    const [confirmRegister, setConfirmRegister] = useState(false);
     const {sz, isNew, isAuthor, editable, saving, canForceStatus, canRegister, save, runAction} = card;
 
     const tone = sz ? STATUS_TONE[sz.statusCode] ?? colors.status.draft : colors.status.draft;
@@ -110,7 +121,7 @@ export function SzCardHeader({card, onToggleWithdraw, onToggleForce}: SzCardHead
                     )}
                     {/* Зарегистрировать — только Сектор делопроизводства (право RegisterSz) */}
                     {sz?.statusCode === "PendingRegistration" && canRegister && (
-                        <SzButton variant="success" icon={<BadgeCheck size={16}/>} onClick={() => runAction("register")} disabled={saving}>
+                        <SzButton variant="success" icon={<BadgeCheck size={16}/>} onClick={() => setConfirmRegister(true)} disabled={saving}>
                             {t("szCard.actions.register")}
                         </SzButton>
                     )}
@@ -119,29 +130,17 @@ export function SzCardHeader({card, onToggleWithdraw, onToggleForce}: SzCardHead
                         Рядом — «Скачать / печать»: PDF, DOCX или сразу на принтер. */}
                     {sz && sz.statusCode !== "Draft" && (
                         <>
-                            <Tooltip content={t("szCard.actions.printSignedHint")} side="bottom">
+                            <Tooltip content={t("szCard.document.menuHint")} side="bottom">
                                 <a
                                     href={szPrintUrl(sz.id, "signed")}
                                     target="_blank"
                                     rel="noreferrer"
                                     className={`${szButtonClass("muted")} no-underline gap-1.5`}
                                 >
-                                    <ShieldCheck size={15}/>
-                                    {t("szCard.actions.printSigned")}
+                                    <Download size={15}/>
+                                    {t("szCard.document.menu")}
                                 </a>
                             </Tooltip>
-                            <Tooltip content={t("szCard.actions.printPaperHint")} side="bottom">
-                                <a
-                                    href={szPrintUrl(sz.id, "paper")}
-                                    target="_blank"
-                                    rel="noreferrer"
-                                    className={`${szButtonClass("muted")} no-underline gap-1.5`}
-                                >
-                                    <Printer size={15}/>
-                                    {t("szCard.actions.printPaper")}
-                                </a>
-                            </Tooltip>
-                            <SzDocumentMenu szId={sz.id}/>
                         </>
                     )}
                     {/* Отозвать */}
@@ -199,6 +198,24 @@ export function SzCardHeader({card, onToggleWithdraw, onToggleForce}: SzCardHead
                 icon={Send}
                 wideConfirm
 
+            />
+
+            {/* Подтверждение регистрации: присваивает номер и запускает согласование - необратимо */}
+            <ConfirmActionModal
+                open={confirmRegister}
+                onClose={() => setConfirmRegister(false)}
+                onConfirm={async () => {
+                    await runAction("register");
+                    setConfirmRegister(false);
+                }}
+                title={t("szCard.submitConfirm.registerTitle")}
+                message={t("szCard.submitConfirm.registerMessage")}
+                confirmLabel={t("szCard.actions.register")}
+                loadingLabel={t("szCard.submitConfirm.registerProcessing")}
+                loading={saving}
+                variant="primary"
+                accent="blue"
+                icon={BadgeCheck}
             />
 
             <ConfirmDeleteModal

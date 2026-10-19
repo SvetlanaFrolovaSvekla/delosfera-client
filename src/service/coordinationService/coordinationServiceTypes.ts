@@ -89,6 +89,9 @@ export interface ApprovalDecisionRequest {
     ecpTimestamp?: number;
     /** ТЕСТ: "Согласовать" без ЭЦП — backend разрешает только локальным учётным записям. */
     withoutEcp?: boolean;
+    /** ТЕСТ: имитация ЭЦП (EcpSigning:AllowVndTestEcp) - подпись у ГП «Инфоком» не ставится,
+     * в журнале запись помечается «ТЕСТ». */
+    testEcp?: boolean;
 }
 
 /** Хэш резолюции для подписи (POST .../decision/resolution-hash). */
@@ -132,6 +135,8 @@ export interface VndResolutionSignatureResponse {
     signedAt: string;
     verifiedAt: string;
     verified: boolean;
+    /** Имитация ЭЦП тестового режима (EcpSigning:AllowVndTestEcp), а не настоящая подпись. */
+    isTest?: boolean;
 }
 
 /** Результат повторной проверки подписи (POST /vnd/{vndId}/signatures/{id}/verify). */

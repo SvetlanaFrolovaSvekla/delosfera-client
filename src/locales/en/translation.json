@@ -733,6 +733,19 @@
     "viewDocument": "View document",
     "noExportHint": "You have no permission to download internal documents (the “Export internal documents” permission)"
   },
+  "titlePage": {
+    "label": "Title page",
+    "notCreated": "Not created",
+    "generate": "Generate from requisites",
+    "regenerate": "Regenerate from requisites",
+    "upload": "Upload your own file",
+    "remove": "Remove title page",
+    "manualBadge": "uploaded manually",
+    "generated": "Title page generated",
+    "uploaded": "Title page uploaded",
+    "removed": "Title page removed",
+    "error": "Could not update the title page"
+  },
   "redactionStatusLabel": {
     "current": "current",
     "pendingEffective": "awaiting entry into force",
@@ -995,6 +1008,12 @@
       "approve": "Approve (no e-signature, test)",
       "approveWithComment": "With remarks (no e-signature, test)",
       "reject": "Reject (no e-signature, test)"
+    },
+    "testEcpTitle": "TEST: e-signature imitation (PIN, code and signature are skipped)",
+    "testEcpLabel": {
+      "approve": "Approve · test e-sign",
+      "approveWithComment": "With comments · test e-sign",
+      "reject": "Reject · test e-sign"
     },
     "hints": {
       "primary": {
@@ -4723,6 +4742,8 @@
       "account": "account: {{name}}",
       "verified": "Signature verified when saved",
       "notVerified": "Signature not confirmed",
+      "test": "TEST · e-signature imitation",
+      "testHint": "Test imitation: the signature was neither applied nor verified by Infocom",
       "issuer": "Issuer: {{name}}",
       "certUntil": "Certificate until {{date}}",
       "verify": "Verify",

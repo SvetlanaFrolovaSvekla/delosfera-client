@@ -310,6 +310,14 @@ export interface VndRedactionResponse {
      * или полным) по замечаниям. Показывается в "Специальные вложения" (см. RedactionDocumentsPanel). */
     disagreementMatrixFileId: number | null;
 
+    /** Титульный лист редакции (шапка с реквизитами этой и предыдущей редакции) — специальное
+     * вложение, хранится отдельно от текста редакции. Null — не сформирован и не загружен. */
+    titlePageFileId?: number | null;
+    titlePageFileName?: string | null;
+    /** Загружен пользователем вручную — система сама его не пересобирает. */
+    titlePageIsManual?: boolean;
+    titlePageUpdatedAt?: string | null;
+
     requiresApproval: boolean;
     approvalStatus: RedactionApprovalStatus;
 

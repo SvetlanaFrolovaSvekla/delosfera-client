@@ -15,7 +15,7 @@ import type {QuoteAnchorContext} from "@/utils/docxWork/quoteAnchor.ts";
 import {quoteDisplayText, quoteMatchText} from "@/utils/vndProcess/quoteText.ts";
 import {composeResolutionComment, loadDraft, nextDraftId, saveDraft} from "@/utils/vndProcess/coordination/resolutionDraft.ts";
 import {EcpSignModal} from "@/components/signing/EcpSignModal.tsx";
-import type {DraftTextRemark, ResolutionChoice, ResolutionPhase} from "./resolutionPanel/resolutionPanelTypes.ts";
+import type {DraftTextRemark, DecisionMode, ResolutionChoice, ResolutionPhase} from "./resolutionPanel/resolutionPanelTypes.ts";
 import {EcpSessionCountdown} from "./resolutionPanel/EcpSessionCountdown.tsx";
 import {ResolutionRemarksSection} from "./resolutionPanel/ResolutionRemarksSection.tsx";
 import {ResolutionAttachments} from "./resolutionPanel/ResolutionAttachments.tsx";
@@ -47,6 +47,8 @@ interface VndApproverResolutionPanelProps {
         ecpSignature?: ResolutionEcpSignature,
         /** ТЕСТ: "Согласовать" без ЭЦП (только локальные учётные записи, backend перепроверяет). */
         withoutEcp?: boolean,
+        /** ТЕСТ: имитация ЭЦП (EcpSigning:AllowVndTestEcp, backend перепроверяет настройку). */
+        testEcp?: boolean,
     ) => Promise<boolean | "resign" | "reauth" | void> | boolean | void;
     submitting?: boolean;
     error?: string | null;
@@ -105,10 +107,10 @@ export const VndApproverResolutionPanel = forwardRef<
     const [files, setFiles] = useState<File[]>([]);
     const [attachmentCountLimitHit, setAttachmentCountLimitHit] = useState(false);
     const [oversizedFileNames, setOversizedFileNames] = useState<string[]>([]);
-    // "Отклонить" ждёт подтверждения; withEcp - какой кнопкой (с ЭЦП или тестовой) нажато.
-    const [pendingReject, setPendingReject] = useState<{withEcp: boolean} | null>(null);
+    // "Отклонить" ждёт подтверждения; mode - какой кнопкой (с ЭЦП или тестовой) нажато.
+    const [pendingReject, setPendingReject] = useState<{mode: DecisionMode} | null>(null);
     // Последняя нажатая кнопка решения - на ней показываем "Отправка…".
-    const [lastAction, setLastAction] = useState<{choice: ResolutionChoice; withEcp: boolean} | null>(null);
+    const [lastAction, setLastAction] = useState<{choice: ResolutionChoice; mode: DecisionMode} | null>(null);
     // Пересоздаём сам <input type="file"> после каждого выбора (через key), а не просто
     // чистим его .value — второй способ на части машин (Windows, некоторые сборки Chrome/Edge)
     // не всегда даёт браузеру повторно открыть диалог или корректно прочитать новый выбор
@@ -246,15 +248,21 @@ export const VndApproverResolutionPanel = forwardRef<
     const [resignNeeded, setResignNeeded] = useState<"resign" | "reauth" | null>(null);
 
     const [testMode, setTestMode] = useState(false);
+    const [testEcpMode, setTestEcpMode] = useState(false);
     useEffect(() => {
         let cancelled = false;
         ecpCredentialService.testMode()
-            .then((r) => { if (!cancelled) setTestMode(r.allowWithoutEcp); })
+            .then((r) => {
+                if (cancelled) return;
+                setTestMode(r.allowWithoutEcp);
+                setTestEcpMode(r.allowVndTestEcp === true);
+            })
             .catch(() => { /* нет ответа - тестовых кнопок просто не будет */ });
         return () => { cancelled = true; };
     }, []);
 
-    const doSubmit = async (decisionChoice: ResolutionChoice, ecpSignature?: ResolutionEcpSignature, withoutEcp?: boolean) => {
+    const doSubmit = async (decisionChoice: ResolutionChoice, ecpSignature?: ResolutionEcpSignature,
+                            mode: DecisionMode = "ecp") => {
         if (submitLockRef.current) return;
         submitLockRef.current = true;
         try {
@@ -266,7 +274,8 @@ export const VndApproverResolutionPanel = forwardRef<
                 occurrence: r.occurrence,
                 note: r.note.trim() || null,
             }));
-            const ok = await onSubmit(decisionChoice, composedComment, files, quotesToSend, ecpSignature, withoutEcp);
+            const ok = await onSubmit(decisionChoice, composedComment, files, quotesToSend, ecpSignature,
+                mode === "withoutEcp" || undefined, mode === "testEcp" || undefined);
             // Черновик стираем только после успешной отправки - при ошибке он нужен, чтобы
             // пользователь ничего не потерял.
             if (ok === true) saveDraft(draftStorageKey, null);
@@ -277,16 +286,18 @@ export const VndApproverResolutionPanel = forwardRef<
         }
     };
 
-    // Кнопка решения: c - решение, withEcp - с подписью (левая колонка) или тестовое без ЭЦП (правая).
+    // Кнопка решения: c - решение, mode - с подписью ЭЦП, тестовое без ЭЦП или тестовая имитация ЭЦП.
     // Для "с замечаниями"/"отклонить" нужен текст - без него показываем подсказку (commentMissing по
     // выбранному решению), запрос не отправляем. "Отклонить" - через подтверждение.
     const busy = submitting || ecp.quietSigning || ecp.modalOpen;
     const missingFor = (c: ResolutionChoice) => c !== "approve" && comment.trim().length === 0 && !hasRemarkNotes;
 
-    const runDecision = (c: ResolutionChoice, withEcp: boolean) => {
-        setLastAction({choice: c, withEcp});
-        if (!withEcp) {
-            void doSubmit(c, undefined, true);
+    const runDecision = (c: ResolutionChoice, mode: DecisionMode) => {
+        setLastAction({choice: c, mode});
+        if (mode !== "ecp") {
+            // Без ЭЦП / имитация ЭЦП: ПИН, код и подпись пропускаются, "подпись"-имитацию (с настоящим
+            // хэшем резолюции) строит backend, если включён EcpSigning:AllowVndTestEcp.
+            void doSubmit(c, undefined, mode);
             return;
         }
         // requestSignature сама решает: подписать сохранённой идентификацией / действующей сессией
@@ -297,22 +308,22 @@ export const VndApproverResolutionPanel = forwardRef<
             .catch(() => {});
     };
 
-    const handleAction = (c: ResolutionChoice, withEcp: boolean) => {
+    const handleAction = (c: ResolutionChoice, mode: DecisionMode) => {
         if (busy || submitLockRef.current) return;
         setChoice(c);
         setResignNeeded(null);
         if (missingFor(c) || composedTooLong) return;
         if (c === "reject") {
-            setPendingReject({withEcp});
+            setPendingReject({mode});
             return;
         }
-        runDecision(c, withEcp);
+        runDecision(c, mode);
     };
 
     const handleConfirmReject = () => {
         const pending = pendingReject;
         setPendingReject(null);
-        if (pending) runDecision("reject", pending.withEcp);
+        if (pending) runDecision("reject", pending.mode);
     };
 
     const handleDiscardDraft = () => {
@@ -413,7 +424,7 @@ export const VndApproverResolutionPanel = forwardRef<
                             ? t("resolutionPanel.resignStale")
                             : t("resolutionPanel.resignOtherPerson")}
                     </span>
-                    <button type="button" onClick={() => handleAction(choice, true)}
+                    <button type="button" onClick={() => handleAction(choice, "ecp")}
                             disabled={busy}
                             className="cursor-pointer shrink-0 rounded-[8px] border border-[#e0c47a] bg-white px-3 py-1 text-[12px] font-semibold text-[#8a6100] disabled:opacity-50">
                         {t("resolutionPanel.resignAgain")}
@@ -427,6 +438,7 @@ export const VndApproverResolutionPanel = forwardRef<
             <ResolutionDecisionButtons
                 phase={phase}
                 testMode={testMode}
+                testEcpMode={testEcpMode}
                 busy={busy}
                 composedTooLong={composedTooLong}
                 submitting={submitting}

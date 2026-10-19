@@ -51,6 +51,7 @@ export function useResolutionDecision(vndId: number, reload: () => Promise<void>
         quotes: ApprovalQuoteItem[],
         ecpSignature?: ResolutionEcpSignature,
         withoutEcp?: boolean,
+        testEcp?: boolean,
     ): Promise<ResolutionSubmitResult> => {
         // true - резолюция сохранена (панель резолюции по нему стирает свой черновик в браузере).
         if (!myStage || decisionInFlightRef.current) return false;
@@ -71,6 +72,8 @@ export function useResolutionDecision(vndId: number, reload: () => Promise<void>
                 ecpTimestamp: ecpSignature?.timestamp,
                 // ТЕСТ: согласование без ЭЦП для локальных учёток (backend перепроверяет Source).
                 withoutEcp: withoutEcp || undefined,
+                // ТЕСТ: имитация ЭЦП (EcpSigning:AllowVndTestEcp).
+                testEcp: testEcp || undefined,
             });
             await reload();
             toast.success(t("openVndPage.coordinationTab.decisionSubmittedToastTitle"), t("openVndPage.coordinationTab.decisionSubmittedToastDescription"));

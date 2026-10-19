@@ -1,17 +1,22 @@
 // Компонента с карточкой панели для скачивания ВНД (Документы редакции) в RedactionColumn, RedactionSummaryCard
-import React, {useState} from "react";
+import React, {useEffect, useRef, useState} from "react";
 import {useTranslation} from "react-i18next";
 import type {VndRedactionResponse, VndResponse} from "@/service/vndService/vndServiceType.ts";
 import {buildRedactionFileName, isPreviewableFile, resolveVndDocTitle} from "@/utils/downloadFiles/fileNaming.ts";
 import type {RedactionLanguage, RedactionViewTarget} from "@/utils/vndProcess/redactionLanguagePanelUtils.ts";
 import {formatDate} from "@/utils/dateUtils.ts";
-import {Download, Eye, FileText, Loader2} from "lucide-react";
+import {Download, Eye, FilePlus2, FileText, Loader2, RefreshCw, Trash2, Upload} from "lucide-react";
 import {
     AttachmentDocxPreviewModal
 } from "@/components/componentsGeneral/modal/AttachmentDocxPreviewModal.tsx";
 import {Tooltip} from "@/components/componentsGeneral/tooltips/Tooltip.tsx";
 import {useCanExportVnd} from "@/hooks/vndHooks/useCanExportVnd.ts";
 import {approvalSheetCaption, getRedactionApprovalSheets} from "@/utils/vndProcess/approvalSheets.ts";
+import {vndService} from "@/service/vndService/vndService.ts";
+import {toast} from "@/service/toastService.ts";
+import {useAuth} from "@/context/AuthContext.ts";
+import {PermissionCode} from "@/constants/permissions/permissions.ts";
+import {useEditionsPermissions} from "@/hooks/vndHooks/useEditionsPermissions.ts";
 
 interface RedactionDocumentsPanelProps {
     vnd: VndResponse;
@@ -142,10 +147,18 @@ export function RedactionDocumentsPanel({
                 </>
             )}
 
-            {(approvalSheets.length > 0 || selected.disagreementMatrixFileId !== null) && (
-                <>
+            {/* Специальные вложения показываются всегда: в них всегда есть строка "Титульный лист"
+                (даже если он ещё не сформирован - тогда с кнопками "Сформировать"/"Загрузить"). */}
+            <>
                     <SectionLabel className="mt-5">{t("redactionDocumentsPanel.special")}</SectionLabel>
                     <div className="flex flex-col gap-2">
+                        <TitlePageRow
+                            vndId={vnd.id}
+                            redaction={selected}
+                            downloadingId={downloadingId}
+                            onDownload={onDownload}
+                            onPreview={(fileId, fileName) => setPreviewAttachment({fileId, fileName})}
+                        />
                         {approvalSheets.map((sheet) => {
                             const isLatest = sheet.fileId === selected.approvalSheetFileId;
                             return (
@@ -193,8 +206,7 @@ export function RedactionDocumentsPanel({
                             </DownloadRow>
                         )}
                     </div>
-                </>
-            )}
+            </>
 
             {selected.attachments.length > 0 && (
                 <>
@@ -233,6 +245,188 @@ export function RedactionDocumentsPanel({
             />
         )}
         </>
+    );
+}
+
+/** Строка "Титульный лист" в специальных вложениях: шапка с реквизитами этой и предыдущей редакции
+ * (см. VndTitlePageService на бэке). Формируется сама при консолидации новой редакции; у старых ВНД
+ * её можно сформировать кнопкой или загрузить свой файл. Загруженный вручную лист система больше
+ * сама не пересобирает (только по кнопке "Сформировать заново"). */
+export function TitlePageRow({
+                          vndId,
+                          redaction,
+                          downloadingId,
+                          onDownload,
+                          onPreview,
+                          onChanged,
+                      }: {
+    vndId: number;
+    redaction: VndRedactionResponse;
+    downloadingId: number | null;
+    onDownload: (fileId: number, name: string) => void;
+    onPreview: (fileId: number, fileName: string) => void;
+    /** Титульный лист сформирован/загружен/убран - например, перечитать список редакций. */
+    onChanged?: (updated: VndRedactionResponse) => void;
+}) {
+    const {t} = useTranslation();
+    const {hasPermission} = useAuth();
+    const {isChiefEditor, canEditLastRevision} = useEditionsPermissions();
+    // Тот же набор прав, что проверяет сервер (VndTitlePageService.LoadForEditAsync).
+    const canManage = isChiefEditor || canEditLastRevision || hasPermission(PermissionCode.EditVndRequisites);
+
+    const [state, setState] = useState(() => titlePageState(redaction));
+    const [busy, setBusy] = useState<"generate" | "upload" | "remove" | null>(null);
+    const fileInputRef = useRef<HTMLInputElement>(null);
+
+    // Другая редакция или обновлённые с сервера данные - берём их.
+    useEffect(() => {
+        // eslint-disable-next-line react-hooks/set-state-in-effect
+        setState(titlePageState(redaction));
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [redaction.id, redaction.titlePageFileId, redaction.titlePageIsManual]);
+
+    const run = async (kind: "generate" | "upload" | "remove", action: () => Promise<VndRedactionResponse>,
+                       successKey: string) => {
+        setBusy(kind);
+        try {
+            const updated = await action();
+            setState(titlePageState(updated));
+            onChanged?.(updated);
+            toast.success(t(successKey));
+        } catch (e) {
+            toast.error(t("titlePage.error"), e instanceof Error ? e.message : undefined);
+        } finally {
+            setBusy(null);
+        }
+    };
+
+    const generate = () => run("generate", () => vndService.generateTitlePage(vndId, redaction.id), "titlePage.generated");
+    const remove = () => run("remove", () => vndService.removeTitlePage(vndId, redaction.id), "titlePage.removed");
+    const upload = (file: File) => run("upload", () => vndService.uploadTitlePage(vndId, redaction.id, file), "titlePage.uploaded");
+
+    const actions = canManage && (
+        <div className="flex flex-none items-center gap-1">
+            <IconAction
+                tooltip={state.fileId === null ? t("titlePage.generate") : t("titlePage.regenerate")}
+                busy={busy === "generate"}
+                disabled={busy !== null}
+                onClick={generate}
+            >
+                {state.fileId === null ? <FilePlus2 size={14}/> : <RefreshCw size={14}/>}
+            </IconAction>
+            <IconAction
+                tooltip={t("titlePage.upload")}
+                busy={busy === "upload"}
+                disabled={busy !== null}
+                onClick={() => fileInputRef.current?.click()}
+            >
+                <Upload size={14}/>
+            </IconAction>
+            {state.fileId !== null && (
+                <IconAction
+                    tooltip={t("titlePage.remove")}
+                    busy={busy === "remove"}
+                    disabled={busy !== null}
+                    onClick={remove}
+                    danger
+                >
+                    <Trash2 size={14}/>
+                </IconAction>
+            )}
+            <input
+                ref={fileInputRef}
+                type="file"
+                accept=".docx,.doc,.pdf"
+                className="hidden"
+                onChange={(e) => {
+                    const file = e.target.files?.[0];
+                    e.target.value = "";
+                    if (file) void upload(file);
+                }}
+            />
+        </div>
+    );
+
+    if (state.fileId === null) {
+        return (
+            <div className="flex items-center gap-2 rounded-[9px] border border-dashed border-[#d7dee8] px-3 py-[10px]">
+                <FileText size={16} className="flex-none text-[#a3adbd]"/>
+                <span className="flex min-w-0 flex-1 flex-col">
+                    <span className="text-[9.5px] font-bold uppercase tracking-[0.04em] text-[#a3adbd]">
+                        {t("titlePage.label")}
+                    </span>
+                    <span className="truncate text-[13px] text-[#8b97ab]">{t("titlePage.notCreated")}</span>
+                </span>
+                {actions}
+            </div>
+        );
+    }
+
+    const fileId = state.fileId;
+    return (
+        <div className="flex items-center gap-2">
+            <div className="min-w-0 flex-1">
+                <DownloadRow
+                    icon={<FileText size={16} className="flex-none text-[#4e57d6]"/>}
+                    isDownloading={downloadingId === fileId}
+                    onClick={() => onDownload(fileId, state.fileName)}
+                    onView={isPreviewableFile(state.fileName) ? () => onPreview(fileId, state.fileName) : undefined}
+                >
+                    <span className="flex min-w-0 flex-1 flex-col">
+                        <span className="text-[9.5px] font-bold uppercase tracking-[0.04em] text-[#a3adbd]">
+                            {t("titlePage.label")}
+                        </span>
+                        <span className="truncate text-[13px] text-[#26324a]">{state.fileName}</span>
+                    </span>
+                    {state.isManual && (
+                        <span className="flex-none rounded-full bg-[#fff4e0] px-2 py-[3px] text-[10.5px] font-semibold text-[#a86b00]">
+                            {t("titlePage.manualBadge")}
+                        </span>
+                    )}
+                </DownloadRow>
+            </div>
+            {actions}
+        </div>
+    );
+}
+
+function titlePageState(r: VndRedactionResponse) {
+    return {
+        fileId: r.titlePageFileId ?? null,
+        fileName: r.titlePageFileName ?? `${r.code}_Титульный_лист.docx`,
+        isManual: r.titlePageIsManual ?? false,
+    };
+}
+
+function IconAction({
+                        children,
+                        tooltip,
+                        busy,
+                        disabled,
+                        danger = false,
+                        onClick,
+                    }: {
+    children: React.ReactNode;
+    tooltip: string;
+    busy: boolean;
+    disabled: boolean;
+    danger?: boolean;
+    onClick: () => void;
+}) {
+    return (
+        <Tooltip content={tooltip} side="top">
+            <button
+                type="button"
+                disabled={disabled}
+                onClick={onClick}
+                aria-label={tooltip}
+                className={`cursor-pointer flex-none rounded-[7px] border border-[#d7dee8] bg-white p-[6px] disabled:cursor-not-allowed disabled:opacity-60 ${
+                    danger ? "text-[#c2410c] hover:bg-[#fdecec]" : "text-[#4e57d6] hover:bg-[#ececfc]"
+                }`}
+            >
+                {busy ? <Loader2 size={14} className="animate-spin"/> : children}
+            </button>
+        </Tooltip>
     );
 }
 

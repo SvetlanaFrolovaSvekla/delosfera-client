@@ -310,11 +310,13 @@ function RedactionListItem({
     // Кнопка-скрепка открывает "Вложения редакции"
     const specialAttachmentsCount =
         (redaction.tidFileId !== null ? 1 : 0)
+        + (redaction.titlePageFileId ? 1 : 0)
         // Листов согласования может быть несколько (актуализация без изменений) - считаем все.
         + Math.max(redaction.approvalSheets?.length ?? 0, redaction.approvalSheetFileId !== null ? 1 : 0)
         + (redaction.disagreementMatrixFileId !== null ? 1 : 0);
     const totalAttachmentsCount = redaction.attachments.length + specialAttachmentsCount;
-    const hasAttachments = totalAttachmentsCount > 0;
+    // Окно вложений открывается всегда: в нём строка "Титульный лист" с кнопками
+    // "Сформировать"/"Загрузить", даже если вложений ещё нет.
     const hasTid = redaction.tidFileId !== null;
 
     return (
@@ -355,24 +357,19 @@ function RedactionListItem({
                             <Calendar size={12} className="flex-none"/>
                             {formatDate(redaction.createdAt)}
                         </span>
-                        {hasAttachments ? (
-                            <button
-                                type="button"
-                                onClick={(event) => {
-                                    event.stopPropagation();
-                                    onOpenAttachments();
-                                }}
-                                className="cursor-pointer flex items-center gap-[4px] text-[#3c424a] hover:text-[#4e57d6]"
-                            >
-                                <Paperclip size={12} className="flex-none"/>
-                                {totalAttachmentsCount}
-                            </button>
-                        ) : (
-                            <span className="flex items-center gap-[4px] text-[#c3ccd8]">
-                                <Paperclip size={12} className="flex-none"/>
-                                0
-                            </span>
-                        )}
+                        <button
+                            type="button"
+                            onClick={(event) => {
+                                event.stopPropagation();
+                                onOpenAttachments();
+                            }}
+                            className={`cursor-pointer flex items-center gap-[4px] hover:text-[#4e57d6] ${
+                                totalAttachmentsCount > 0 ? "text-[#3c424a]" : "text-[#c3ccd8]"
+                            }`}
+                        >
+                            <Paperclip size={12} className="flex-none"/>
+                            {totalAttachmentsCount}
+                        </button>
                     </span>
 
                     {/* Дата принятия/№ принятия ИМЕННО этой редакции (см. миграцию "реквизиты по

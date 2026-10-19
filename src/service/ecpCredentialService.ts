@@ -69,8 +69,10 @@ export const ecpCredentialService = {
     },
 
     /** Тестовый режим сервера: разрешены ли решения без ЭЦП (EcpSigning:AllowWithoutEcp). */
-    async testMode(): Promise<{allowWithoutEcp: boolean}> {
-        const {data} = await apiClient.get<{allowWithoutEcp: boolean}>("/signing/ecp-credential/test-mode");
+    /** Тестовые режимы сервера: allowWithoutEcp - решения ВНД без ЭЦП (EcpSigning:AllowWithoutEcp),
+     * allowVndTestEcp - имитация ЭЦП при согласовании ВНД (EcpSigning:AllowVndTestEcp). */
+    async testMode(): Promise<{allowWithoutEcp: boolean; allowVndTestEcp?: boolean}> {
+        const {data} = await apiClient.get<{allowWithoutEcp: boolean; allowVndTestEcp?: boolean}>("/signing/ecp-credential/test-mode");
         return data;
     },
 };

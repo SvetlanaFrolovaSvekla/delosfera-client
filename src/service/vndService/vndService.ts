@@ -344,6 +344,36 @@ export const vndService = {
         return handleResponse<VndRedactionResponse>(response);
     },
 
+    /** Титульный лист редакции: сформировать (заново) по реквизитам. */
+    async generateTitlePage(vndId: number, redactionId: number): Promise<VndRedactionResponse> {
+        const response = await fetch(`${API_BASE}/vnd/${vndId}/redactions/${redactionId}/title-page/generate`, {
+            method: "POST",
+            headers: authHeaders(),
+        });
+        return handleResponse<VndRedactionResponse>(response);
+    },
+
+    /** Титульный лист редакции: загрузить свой файл вместо сформированного системой. */
+    async uploadTitlePage(vndId: number, redactionId: number, file: File): Promise<VndRedactionResponse> {
+        const formData = new FormData();
+        formData.append("file", file);
+        const response = await fetch(`${API_BASE}/vnd/${vndId}/redactions/${redactionId}/title-page`, {
+            method: "POST",
+            headers: authHeaders(),
+            body: formData,
+        });
+        return handleResponse<VndRedactionResponse>(response);
+    },
+
+    /** Титульный лист редакции: убрать. */
+    async removeTitlePage(vndId: number, redactionId: number): Promise<VndRedactionResponse> {
+        const response = await fetch(`${API_BASE}/vnd/${vndId}/redactions/${redactionId}/title-page`, {
+            method: "DELETE",
+            headers: authHeaders(),
+        });
+        return handleResponse<VndRedactionResponse>(response);
+    },
+
     async quickSearch(query: string, limit = 8, signal?: AbortSignal): Promise<VndQuickSearchResult[]> {
         const params = new URLSearchParams({q: query, limit: String(limit)});
         const response = await fetch(`${API_BASE}/vnd/quick-search?${params}`, {

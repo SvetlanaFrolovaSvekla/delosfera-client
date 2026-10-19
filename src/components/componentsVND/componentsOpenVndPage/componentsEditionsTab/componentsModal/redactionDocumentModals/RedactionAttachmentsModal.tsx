@@ -12,6 +12,9 @@ import {
 import {Download, Eye, FileText, Loader2, Paperclip, X} from "lucide-react";
 import {useCanExportVnd, NO_EXPORT_VND_HINT} from "@/hooks/vndHooks/useCanExportVnd.ts";
 import {approvalSheetCaption, getRedactionApprovalSheets} from "@/utils/vndProcess/approvalSheets.ts";
+import {
+    TitlePageRow
+} from "@/components/componentsCoordination/CoordinationRouteConstructor/viewComponents/RedactionDocumentsPanel.tsx";
 
 /** Специальные вложения открываются просмотрщиком (RedactionTidModal/RedactionApprovalSheetModal
  * из VndEditionsTab), а не просто скачиваются. Обычные вложения произвольного формата
@@ -20,12 +23,15 @@ import {approvalSheetCaption, getRedactionApprovalSheets} from "@/utils/vndProce
 export type SpecialAttachmentTarget = "tid" | "approvalSheet" | "disagreementMatrix";
 
 interface RedactionAttachmentsModalProps {
+    vndId: number;
     redaction: VndRedactionResponse;
     downloadingId: number | null;
     onDownload: (fileId: number, name: string) => void;
     /** Открыть просмотр указанного специального вложения (ТИД/Лист согласования). */
     onView?: (target: SpecialAttachmentTarget) => void;
     onClose: () => void;
+    /** Титульный лист сформирован/загружен/убран - перечитать редакции. */
+    onTitlePageChanged?: (updated: VndRedactionResponse) => void;
 }
 
 interface SpecialAttachment {
@@ -41,11 +47,13 @@ interface SpecialAttachment {
 }
 
 export function RedactionAttachmentsModal({
+                                              vndId,
                                               redaction,
                                               downloadingId,
                                               onDownload,
                                               onView,
                                               onClose,
+                                              onTitlePageChanged,
                                           }: RedactionAttachmentsModalProps) {
     const {t} = useTranslation();
     const canExportVnd = useCanExportVnd();
@@ -90,8 +98,6 @@ export function RedactionAttachmentsModal({
             : []),
     ];
 
-    const hasAnyAttachments = specialAttachments.length > 0 || redaction.attachments.length > 0;
-
     if (previewAttachment) {
         return (
             <AttachmentDocxPreviewModal
@@ -129,13 +135,22 @@ export function RedactionAttachmentsModal({
 
                 <div className="flex-1 overflow-y-auto px-6 pb-2">
 
-                    {specialAttachments.length > 0 && (
-                        <div className="mb-4">
+                    {/* Специальные вложения показываются всегда: в них всегда есть строка "Титульный
+                        лист" (даже несформированный - с кнопками "Сформировать"/"Загрузить"). */}
+                    <div className="mb-4">
                             <div className="mb-2 text-[11px] font-bold uppercase tracking-[0.04em] text-[#a3adbd]">
                                 {/* Специальные вложения */}
                                 {t("redactionAttachmentsModal.specialAttachments")}
                             </div>
                             <div className="flex flex-col gap-2">
+                                <TitlePageRow
+                                    vndId={vndId}
+                                    redaction={redaction}
+                                    downloadingId={downloadingId}
+                                    onDownload={onDownload}
+                                    onPreview={(fileId, fileName) => setPreviewAttachment({fileId, fileName})}
+                                    onChanged={onTitlePageChanged}
+                                />
                                 {specialAttachments.map((item) => (
                                     <div
                                         key={item.key}
@@ -174,17 +189,14 @@ export function RedactionAttachmentsModal({
                                     </div>
                                 ))}
                             </div>
-                        </div>
-                    )}
+                    </div>
 
                     {redaction.attachments.length > 0 && (
                         <div>
-                            {specialAttachments.length > 0 && (
-                                <div className="mb-2 text-[11px] font-bold uppercase tracking-[0.04em] text-[#a3adbd]">
-                                    {/* Вложения */}
-                                    {t("redactionAttachmentsModal.attachmentsCount", {count: redaction.attachments.length})}
-                                </div>
-                            )}
+                            <div className="mb-2 text-[11px] font-bold uppercase tracking-[0.04em] text-[#a3adbd]">
+                                {/* Вложения */}
+                                {t("redactionAttachmentsModal.attachmentsCount", {count: redaction.attachments.length})}
+                            </div>
                             <div className="flex flex-col gap-2">
                                 {redaction.attachments.map((attachment) => (
                                     <div
@@ -222,13 +234,6 @@ export function RedactionAttachmentsModal({
                                     </div>
                                 ))}
                             </div>
-                        </div>
-                    )}
-
-                    {!hasAnyAttachments && (
-                        <div className="rounded-[10px] border border-dashed border-[#e5e9f0] px-3 py-[18px] text-center text-[12.5px] text-[#a3adbd]">
-                            {/* У этой редакции пока нет вложений */}
-                            {t("redactionAttachmentsModal.noAttachments")}
                         </div>
                     )}
 

@@ -74,6 +74,7 @@ class CoordinationService {
         if (request.ecpPersonIdnp) formData.append("EcpPersonIdnp", request.ecpPersonIdnp);
         if (request.ecpTimestamp) formData.append("EcpTimestamp", String(request.ecpTimestamp));
         if (request.withoutEcp) formData.append("WithoutEcp", "true");
+        if (request.testEcp) formData.append("TestEcp", "true");
 
         // Content-Type НЕ задаём вручную: axios/браузер сам подставит
         // "multipart/form-data; boundary=...". Если прописать заголовок явно без

@@ -1,9 +1,12 @@
 // Кнопки решений панели резолюции: слева кнопки с подписью ЭЦП (обязательна для любого решения;
 // в тестовом режиме рядом - кнопки без ЭЦП, только пока на сервере включён EcpSigning:AllowWithoutEcp),
-// справа - пояснение, к чему приведёт именно это решение на текущей фазе.
+// справа - пояснение, к чему приведёт именно это решение на текущей фазе. Ниже, если на сервере включён
+// EcpSigning:AllowVndTestEcp, - блок "ТЕСТ: имитация ЭЦП" (как в согласовании СЗ): решение проходит без
+// ПИН/кода/подписи ГП «Инфоком», в журнале и листе согласования помечается как тестовая имитация.
 // Логика нажатия (проверки, подтверждение "Отклонить", подпись) - в VndApproverResolutionPanel.
 import {useTranslation} from "react-i18next";
-import type {ResolutionChoice, ResolutionPhase} from "./resolutionPanelTypes.ts";
+import {ShieldCheck} from "lucide-react";
+import type {DecisionMode, ResolutionChoice, ResolutionPhase} from "./resolutionPanelTypes.ts";
 import {
     ACTIONS, CHOICE_THEME, DECISION_BUTTON_SHADOW, HINT_ACCENT, TEST_ACTION_STYLE,
 } from "../../../../../constants/vndConstants/resolutionDecisionTheme.ts";
@@ -11,16 +14,18 @@ import {
 interface ResolutionDecisionButtonsProps {
     phase: ResolutionPhase;
     testMode: boolean;
+    /** Тестовая имитация ЭЦП (EcpSigning:AllowVndTestEcp). */
+    testEcpMode: boolean;
     busy: boolean | undefined;
     composedTooLong: boolean;
     submitting: boolean | undefined;
     /** Последняя нажатая кнопка решения - на ней показываем "Отправка…". */
-    lastAction: {choice: ResolutionChoice; withEcp: boolean} | null;
-    onAction: (c: ResolutionChoice, withEcp: boolean) => void;
+    lastAction: {choice: ResolutionChoice; mode: DecisionMode} | null;
+    onAction: (c: ResolutionChoice, mode: DecisionMode) => void;
 }
 
 export function ResolutionDecisionButtons({
-    phase, testMode, busy, composedTooLong, submitting, lastAction, onAction,
+    phase, testMode, testEcpMode, busy, composedTooLong, submitting, lastAction, onAction,
 }: ResolutionDecisionButtonsProps) {
     const {t} = useTranslation();
     return (
@@ -35,24 +40,24 @@ export function ResolutionDecisionButtons({
                         <div className="flex flex-none flex-wrap items-center gap-2.5">
                             <button
                                 type="button"
-                                onClick={() => onAction(c, true)}
+                                onClick={() => onAction(c, "ecp")}
                                 disabled={busy || composedTooLong}
                                 className={`group cursor-pointer flex w-[380px] max-w-full items-center justify-center gap-2.5 rounded-[12px] px-5 py-[11px] text-[13.5px] font-semibold text-white transition-all duration-150 hover:-translate-y-px active:translate-y-0 disabled:translate-y-0 disabled:cursor-not-allowed disabled:opacity-50 disabled:shadow-none ${DECISION_BUTTON_SHADOW[c]} ${actionTheme.buttonBg} ${actionTheme.buttonHover}`}
                             >
                                 <span className="grid h-6 w-6 flex-none place-items-center rounded-full bg-white/20 transition-colors group-hover:bg-white/30">
                                     <Icon className="h-[14px] w-[14px]" strokeWidth={2.6}/>
                                 </span>
-                                {isRunning && lastAction?.withEcp ? t("resolutionPanel.sending") : t(`resolutionPanel.ecpLabel.${c}`)}
+                                {isRunning && lastAction?.mode === "ecp" ? t("resolutionPanel.sending") : t(`resolutionPanel.ecpLabel.${c}`)}
                             </button>
                             {testMode && (
                                 <button
                                     type="button"
-                                    onClick={() => onAction(c, false)}
+                                    onClick={() => onAction(c, "withoutEcp")}
                                     disabled={busy || composedTooLong}
                                     className={`cursor-pointer flex w-[300px] max-w-full items-center justify-center gap-2 rounded-[12px] border border-dashed bg-white px-4 py-[11px] text-[13px] font-semibold transition-colors disabled:cursor-not-allowed disabled:opacity-50 ${TEST_ACTION_STYLE[c]}`}
                                 >
                                     <Icon className="h-4 w-4" strokeWidth={2.5}/>
-                                    {isRunning && !lastAction?.withEcp ? t("resolutionPanel.sending") : t(`resolutionPanel.testLabel.${c}`)}
+                                    {isRunning && lastAction?.mode === "withoutEcp" ? t("resolutionPanel.sending") : t(`resolutionPanel.testLabel.${c}`)}
                                 </button>
                             )}
                         </div>
@@ -64,6 +69,30 @@ export function ResolutionDecisionButtons({
                     </div>
                 );
             })}
+            {testEcpMode && (
+                <div className="rounded-[12px] border border-dashed border-[#f0dcae] bg-[#fffaf0] px-3.5 py-3">
+                    <div className="mb-2 text-[12px] font-semibold text-[#8a5a00]">
+                        {t("resolutionPanel.testEcpTitle")}
+                    </div>
+                    <div className="flex flex-wrap items-center gap-2">
+                        {ACTIONS.map((c) => {
+                            const isRunning = submitting && lastAction?.choice === c && lastAction.mode === "testEcp";
+                            return (
+                                <button
+                                    key={c}
+                                    type="button"
+                                    onClick={() => onAction(c, "testEcp")}
+                                    disabled={busy || composedTooLong}
+                                    className={`cursor-pointer flex items-center gap-1.5 rounded-[10px] border border-dashed bg-white px-3 py-[7px] text-[12.5px] font-semibold transition-colors disabled:cursor-not-allowed disabled:opacity-50 ${TEST_ACTION_STYLE[c]}`}
+                                >
+                                    <ShieldCheck className="h-[14px] w-[14px]" strokeWidth={2.4}/>
+                                    {isRunning ? t("resolutionPanel.sending") : t(`resolutionPanel.testEcpLabel.${c}`)}
+                                </button>
+                            );
+                        })}
+                    </div>
+                </div>
+            )}
         </div>
     );
 }

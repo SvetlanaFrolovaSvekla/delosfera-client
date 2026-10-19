@@ -512,6 +512,7 @@ export function VndEditionsTab({vnd, onVndChanged, onGoToApproval, linkFocus}: V
                 docs={docs}
                 downloadingId={download.activeId}
                 onDownload={handleDownload}
+                onTitlePageChanged={() => refetch()}
             />
 
             {/* Просмотр и сравнение редакций - слева выбранная сейчас редакция, справа

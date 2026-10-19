@@ -1,5 +1,5 @@
 // Окна просмотра документов редакции: вложения, ТИД, лист согласования, матрица разногласий
-import type {VndResponse} from "@/service/vndService/vndServiceType.ts";
+import type {VndRedactionResponse, VndResponse} from "@/service/vndService/vndServiceType.ts";
 import type {RedactionDocumentModalsState} from "@/hooks/vndHooks/useRedactionDocumentModals.ts";
 import {
     RedactionAttachmentsModal
@@ -19,16 +19,20 @@ interface RedactionDocumentModalsProps {
     docs: RedactionDocumentModalsState;
     downloadingId: number | null;
     onDownload: (fileId: number, name: string) => void;
+    /** Титульный лист редакции сформирован/загружен/убран (из окна "Вложения редакции"). */
+    onTitlePageChanged?: (updated: VndRedactionResponse) => void;
 }
 
-export function RedactionDocumentModals({vnd, docs, downloadingId, onDownload}: RedactionDocumentModalsProps) {
+export function RedactionDocumentModals({vnd, docs, downloadingId, onDownload, onTitlePageChanged}: RedactionDocumentModalsProps) {
     const {attachments, tid, approvalSheet, disagreementMatrix} = docs;
 
     return (
         <>
             {attachments && (
                 <RedactionAttachmentsModal
+                    vndId={vnd.id}
                     redaction={attachments}
+                    onTitlePageChanged={onTitlePageChanged}
                     downloadingId={downloadingId}
                     onDownload={onDownload}
                     onView={(target) => {

@@ -132,6 +132,12 @@ export function VndSignatureJournal({vndId, refreshKey, currentProcessId, curren
                                 {t(`ecp.journal.staleReason.${stale}`)}
                             </span>
                         )}
+                        {item.isTest && (
+                            <span className="mb-1 ml-1 inline-flex items-center gap-1 rounded-full border border-dashed border-[#f0dcae] bg-[#fffaf0] px-2 py-[1px] text-[10.5px] font-semibold text-[#8a5a00]"
+                                  title={t("ecp.journal.testHint")}>
+                                {t("ecp.journal.test")}
+                            </span>
+                        )}
                         <div className="font-semibold">
                             {item.personFio ?? item.certCommonName ?? item.userFullName ?? "—"}
                             {item.userFullName && item.personFio && item.userFullName !== item.personFio && (

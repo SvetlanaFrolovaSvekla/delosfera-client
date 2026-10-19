@@ -315,7 +315,8 @@ export function VndCoordinationTab({vnd, onVndChanged}: VndCoordinationTabProps)
         choice: ResolutionChoice, comment: string, files: File[], quotes: ApprovalQuoteItem[],
         ecpSignature?: ResolutionEcpSignature,
         withoutEcp?: boolean,
-    ) => resolutionDecision.submit(myStage, choice, comment, files, quotes, ecpSignature, withoutEcp);
+        testEcp?: boolean,
+    ) => resolutionDecision.submit(myStage, choice, comment, files, quotes, ecpSignature, withoutEcp, testEcp);
 
     // Конфиг шапки над установленным маршрутом
     const routeHeaderConfig = getRouteHeaderConfig(process.status, isInitiator, t);

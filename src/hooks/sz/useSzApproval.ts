@@ -21,13 +21,15 @@ interface Params {
     /** Записка — хэш резолюции для ЭЦП строит её backend. */
     szId: number | undefined;
     route: RouteInstance | null;
+    /** За кого пользователь действует по замещению (GEN-14) — их этапы тоже его. */
+    actingForUserIds?: number[];
     setSaving: (value: boolean) => void;
     setError: (message: string | null) => void;
     setNotice: (message: string | null) => void;
     reload: () => Promise<void>;
 }
 
-export function useSzApproval({szId, route, setSaving, setError, setNotice, reload}: Params) {
+export function useSzApproval({szId, route, actingForUserIds, setSaving, setError, setNotice, reload}: Params) {
     const {t} = useTranslation();
     const {user} = useAuth();
     const [comment, setCommentValue] = useState("");
@@ -79,15 +81,22 @@ export function useSzApproval({szId, route, setSaving, setError, setNotice, relo
         oepSigningService.status().then(setOepAvailable).catch(() => setOepAvailable(false));
     }, []);
 
-    /** Активная задача согласования текущего пользователя по этой записке. */
+    /**
+     * Активная задача согласования текущего пользователя по этой записке — своя или
+     * того, кого он замещает (GEN-14): визу замещающего сервер принимает, и без этого
+     * он видел задачу в реестре, а в карточке не находил кнопок. Своя — в приоритете.
+     */
     const myParticipant = useMemo(() => {
         if (!route || !user) return null;
-        for (const step of route.steps) {
-            const p = step.participants.find((x) => x.userId === user.id && x.state === "Active");
-            if (p) return p;
+        const actors = [user.id, ...(actingForUserIds ?? [])];
+        for (const actor of actors) {
+            for (const step of route.steps) {
+                const p = step.participants.find((x) => x.userId === actor && x.state === "Active");
+                if (p) return p;
+            }
         }
         return null;
-    }, [route, user]);
+    }, [route, user, actingForUserIds]);
 
     const myStep = useMemo(() => {
         if (!route || !myParticipant) return null;

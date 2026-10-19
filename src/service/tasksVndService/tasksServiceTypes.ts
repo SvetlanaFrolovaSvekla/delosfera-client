@@ -50,6 +50,8 @@ export interface VndTaskResponse {
     deadlineAt: string | null;
 
     initiatorName: string | null;
+    /** Этап пришёл по замещению (GEN-14): за кого пользователь выносит решение. */
+    onBehalfOf?: string | null;
     deadlineMinutes: number | null;
     /// deadlineMinutes в рабочих минутах (1 д. = 9 ч), "осталось" считается в рабочем времени
     usesWorkingTime?: boolean;

@@ -158,7 +158,11 @@ export function VndTaskCard({task, searchQuery = "", square = false, noTopBorder
                 {/* Здесь же встречается редакция/инициатор/отклонивший — тоже участвуют
                     в поиске (см. matchesTaskSearch), поэтому подсвечиваем строку целиком. */}
                 <span className="mt-0.5 block truncate text-[11.5px] text-[#8b97ab]">
-                    <HighlightText text={getMetaText(task, t)} query={searchQuery}/>
+                    <HighlightText
+                        text={task.onBehalfOf
+                            ? `${getMetaText(task, t)} · ${t("tasks.inbox.onBehalfOfSuffix", {name: task.onBehalfOf})}`
+                            : getMetaText(task, t)}
+                        query={searchQuery}/>
                 </span>
 
                 {/* Комментарий инициатора по предыдущему кругу — контекст, зачем документ снова здесь.

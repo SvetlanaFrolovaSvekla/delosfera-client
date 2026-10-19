@@ -5658,7 +5658,8 @@
       "Pending": "Pending",
       "Active": "Under approval",
       "Approved": "Approved",
-      "Rejected": "Rejected"
+      "Rejected": "Rejected",
+      "Skipped": "Not reached"
     },
     "roles": {
       "ops": "Operations Department",
@@ -5679,7 +5680,27 @@
       "addMember": "Add a commission member",
       "removeMember": "Remove from the commission"
     },
-    "rejectPrompt": "Reason for rejection (optional):",
+    "rejectPrompt": "Reason for rejection (required):",
+    "rejectForm": {
+      "title": "Reject the request",
+      "placeholder": "Why the request is rejected — the initiator will see it",
+      "confirm": "Reject",
+      "cancel": "Cancel",
+      "required": "Specify the reason for rejection"
+    },
+    "round": "Round {{n}}",
+    "decidedOnBehalf": "decision: {{name}} (as substitute)",
+    "actingFor": "You are approving this stage on behalf of {{name}} as their substitute",
+    "reassign": {
+      "button": "Reassign",
+      "title": "Reassign the “{{role}}” stage",
+      "user": "New approver",
+      "placeholder": "Reason for reassignment (goes to the log)",
+      "confirm": "Reassign",
+      "cancel": "Cancel",
+      "userRequired": "Select an employee",
+      "reasonRequired": "Specify the reason for reassignment"
+    },
     "files": {
       "order": "Order {{name}}.docx",
       "liability": "Liability agreement {{name}}.docx",

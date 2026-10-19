@@ -70,6 +70,16 @@ export function SubstitutionCardPage() {
     const [busy, setBusy] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const [loading, setLoading] = useState(!isNew);
+    // Отклонение — своей формой с обязательной причиной. Раньше был window.prompt, и
+    // «Отмена» в нём всё равно отклоняла заявку, причём без причины.
+    const [rejectOpen, setRejectOpen] = useState(false);
+    const [rejectReason, setRejectReason] = useState("");
+    const [rejectError, setRejectError] = useState<string | null>(null);
+    // Переназначение непройденного этапа (УЧР, администратор): id этапа, кому, почему.
+    const [reassignFor, setReassignFor] = useState<number | null>(null);
+    const [reassignUserId, setReassignUserId] = useState<number | null>(null);
+    const [reassignReason, setReassignReason] = useState("");
+    const [reassignError, setReassignError] = useState<string | null>(null);
 
     useEffect(() => {
         userService.lookup().then((list) => setUsers(list.map((u) => ({
@@ -122,9 +132,20 @@ export function SubstitutionCardPage() {
             .finally(() => setLoading(false));
     }, [id, isNew, t]);
 
-    // УЧР (ViewAllSz) правит заявку после согласования Операционным управлением.
-    const opsApproved = details?.approvals?.some(
-        (a) => a.roleLabel === "Операционное управление" && a.state === "Approved") ?? false;
+    // Действующий маршрут — последний круг согласования; прошлые круги только история.
+    const currentRound = Math.max(1, ...(details?.approvals ?? []).map((a) => a.round ?? 1));
+    const currentSteps = (details?.approvals ?? []).filter((a) => (a.round ?? 1) === currentRound);
+    const activeStep = currentSteps.find((a) => a.state === "Active");
+    // Решает назначенный на этап или тот, кто его сейчас замещает (GEN-14).
+    const canDecide = details?.status === "OnApproval" && !!activeStep && !!user
+        && (activeStep.userId === user.id || (details?.actingForUserIds ?? []).includes(activeStep.userId));
+    const decidesOnBehalfOf = canDecide && activeStep && activeStep.userId !== user?.id ? activeStep.userName : null;
+    // Переназначать этапы могут УЧР (ViewAllSz) и администратор — как проверяет сервер.
+    const canManageRoute = hasPermission(PermissionCode.ViewAllSz) || hasPermission(PermissionCode.ManageSystemSettings);
+
+    // УЧР (ViewAllSz) правит заявку после согласования Операционным управлением — в действующем круге.
+    const opsApproved = currentSteps.some(
+        (a) => a.roleLabel === "Операционное управление" && a.state === "Approved");
     const hrCanEdit = hasPermission(PermissionCode.ViewAllSz) && opsApproved
         && (details?.status === "OnApproval" || details?.status === "OnExecution");
     const editable = isNew || details?.status === "Draft" || details?.status === "Rejected" || hrCanEdit;
@@ -179,18 +200,52 @@ export function SubstitutionCardPage() {
         }
     }
 
-    async function act(fn: () => Promise<SubstitutionDetails>) {
+    /** Выполнить действие над заявкой; true — успешно (формы отклонения/переназначения закрываются только тогда). */
+    async function act(fn: () => Promise<SubstitutionDetails>): Promise<boolean> {
         setBusy(true);
         setError(null);
         try {
             const d = await fn();
             setDetails(d);
             setForm(toForm(d));
+            return true;
         } catch (e) {
             setError(msgOf(e, t));
+            return false;
         } finally {
             setBusy(false);
         }
+    }
+
+    async function confirmReject() {
+        if (details == null) return;
+        const reason = rejectReason.trim();
+        if (!reason) {
+            setRejectError(t("substitutionCard.rejectForm.required"));
+            return;
+        }
+        if (!await act(() => substitutionService.reject(details.id, reason))) return;
+        setRejectOpen(false);
+        setRejectReason("");
+        setRejectError(null);
+    }
+
+    async function confirmReassign() {
+        if (details == null || reassignFor == null) return;
+        if (reassignUserId == null) {
+            setReassignError(t("substitutionCard.reassign.userRequired"));
+            return;
+        }
+        const reason = reassignReason.trim();
+        if (!reason) {
+            setReassignError(t("substitutionCard.reassign.reasonRequired"));
+            return;
+        }
+        if (!await act(() => substitutionService.reassign(details.id, reassignFor, reassignUserId, reason))) return;
+        setReassignFor(null);
+        setReassignUserId(null);
+        setReassignReason("");
+        setReassignError(null);
     }
 
     async function remove() {
@@ -478,27 +533,132 @@ export function SubstitutionCardPage() {
                 {details && details.approvals.length > 0 && (
                     <SzFormSection title={t("substitutionCard.sections.route")} hint={t("substitutionCard.sections.routeHint")}>
                         <div className="flex flex-col gap-2.5">
-                            {details.approvals.map((a) => {
+                            {details.approvals.map((a, i) => {
+                                const round = a.round ?? 1;
+                                const isHistory = round !== currentRound;
                                 const color = a.state === "Approved" ? "#1c7a4d"
                                     : a.state === "Rejected" ? "#c0392b"
                                         : a.state === "Active" ? "#2f68f5" : "#8b97ab";
                                 const roleKey = ROLE_KEY[a.roleLabel];
+                                const roleTitle = roleKey ? t(`substitutionCard.roles.${roleKey}`) : a.roleLabel;
+                                // Заголовок круга — только когда кругов несколько (была повторная отправка).
+                                const showRoundHeader = currentRound > 1
+                                    && (i === 0 || (details.approvals[i - 1].round ?? 1) !== round);
+                                const decidedBy = a.decidedByUserId != null && a.decidedByUserId !== a.userId
+                                    ? details.deciderNames?.[a.decidedByUserId] ?? null
+                                    : null;
+                                const canReassign = canManageRoute && !isHistory && details.status === "OnApproval"
+                                    && (a.state === "Active" || a.state === "Pending");
                                 return (
-                                    <div key={a.order} className="flex items-center gap-3 text-[13px]">
-                                        <span
-                                            className="inline-flex h-6 w-6 flex-none items-center justify-center rounded-full text-white text-[12px] font-semibold"
-                                            style={{background: color}}>{a.order}</span>
-                                        <span className="min-w-[170px] font-semibold text-[#1c2740]">
-                                            {roleKey ? t(`substitutionCard.roles.${roleKey}`) : a.roleLabel}
-                                        </span>
-                                        <span className="flex-1 text-[#55617a]">{a.userName ?? "—"}</span>
-                                        <span className="font-semibold"
-                                              style={{color}}>{t(`substitutionCard.approvalState.${a.state}`)}</span>
-                                    </div>
+                                    <React.Fragment key={a.id ?? `${round}-${a.order}`}>
+                                        {showRoundHeader && (
+                                            <div className="mt-1 text-[11.5px] font-semibold uppercase tracking-wide text-[#8b97ab]">
+                                                {t("substitutionCard.round", {n: round})}
+                                            </div>
+                                        )}
+                                        <div className={`flex flex-col gap-1 text-[13px] ${isHistory ? "opacity-70" : ""}`}>
+                                            <div className="flex items-center gap-3">
+                                                <span
+                                                    className="inline-flex h-6 w-6 flex-none items-center justify-center rounded-full text-white text-[12px] font-semibold"
+                                                    style={{background: color}}>{a.order}</span>
+                                                <span className="min-w-[170px] font-semibold text-[#1c2740]">{roleTitle}</span>
+                                                <span className="flex-1 text-[#55617a]">
+                                                    {a.userName ?? "—"}
+                                                    {decidedBy && (
+                                                        <span className="ml-1.5 text-[12px] text-[#8b97ab]">
+                                                            · {t("substitutionCard.decidedOnBehalf", {name: decidedBy})}
+                                                        </span>
+                                                    )}
+                                                </span>
+                                                {canReassign && reassignFor !== a.id && (
+                                                    <button type="button" className={BTN_SECONDARY} disabled={busy}
+                                                            onClick={() => {
+                                                                setReassignFor(a.id);
+                                                                setReassignUserId(null);
+                                                                setReassignReason("");
+                                                                setReassignError(null);
+                                                            }}>
+                                                        {t("substitutionCard.reassign.button")}
+                                                    </button>
+                                                )}
+                                                <span className="font-semibold"
+                                                      style={{color}}>{t(`substitutionCard.approvalState.${a.state}`)}</span>
+                                            </div>
+                                            {a.comment && (
+                                                <div className="ml-9 whitespace-pre-wrap text-[12.5px] text-[#55617a]">«{a.comment}»</div>
+                                            )}
+                                            {reassignFor === a.id && (
+                                                <div className="ml-9 mt-1 flex flex-col gap-2 rounded-[10px] border border-[#e5e9f0] bg-[#f9fafc] p-3">
+                                                    <div className="text-[12.5px] font-semibold text-[#1c2740]">
+                                                        {t("substitutionCard.reassign.title", {role: roleTitle})}
+                                                    </div>
+                                                    <Field label={t("substitutionCard.reassign.user")}>
+                                                        <UserField users={users} value={reassignUserId}
+                                                                   onChange={(u) => setReassignUserId(u?.id ?? null)}/>
+                                                    </Field>
+                                                    <textarea
+                                                        className={`w-full min-h-[64px] rounded-[9px] border border-[#e5e9f0] bg-white px-3 py-2 text-[13px] text-[#0f1b2d] ${FOCUS}`}
+                                                        placeholder={t("substitutionCard.reassign.placeholder")}
+                                                        value={reassignReason}
+                                                        onChange={(e) => setReassignReason(e.target.value)}/>
+                                                    {reassignError && (
+                                                        <div className="text-[12.5px] text-[#c0392b]">{reassignError}</div>
+                                                    )}
+                                                    <div className="flex gap-2">
+                                                        <button type="button" className={BTN_PRIMARY} disabled={busy}
+                                                                onClick={() => void confirmReassign()}>
+                                                            {t("substitutionCard.reassign.confirm")}
+                                                        </button>
+                                                        <button type="button" className={BTN_SECONDARY} disabled={busy}
+                                                                onClick={() => setReassignFor(null)}>
+                                                            {t("substitutionCard.reassign.cancel")}
+                                                        </button>
+                                                    </div>
+                                                </div>
+                                            )}
+                                        </div>
+                                    </React.Fragment>
                                 );
                             })}
                         </div>
                     </SzFormSection>
+                )}
+
+                {/* Решение за отсутствующего: видно, что этап согласуется по замещению (GEN-14). */}
+                {decidesOnBehalfOf && (
+                    <div className="rounded-[10px] border border-[#cbddff] bg-[#f6f9ff] px-4 py-2.5 text-[13px] text-[#2f68f5]">
+                        {t("substitutionCard.actingFor", {name: decidesOnBehalfOf})}
+                    </div>
+                )}
+
+                {/* Отклонение: причина обязательна, «Отмена» просто закрывает форму. */}
+                {details && canDecide && rejectOpen && (
+                    <div className="flex flex-col gap-2 rounded-[12px] border border-[#f1c9c2] bg-[#fdf6f5] p-4">
+                        <div className="text-[13.5px] font-semibold text-[#1c2740]">{t("substitutionCard.rejectForm.title")}</div>
+                        <textarea
+                            autoFocus
+                            className={`w-full min-h-[88px] rounded-[9px] border border-[#e5e9f0] bg-white px-3 py-2 text-[13px] text-[#0f1b2d] ${FOCUS}`}
+                            placeholder={t("substitutionCard.rejectForm.placeholder")}
+                            value={rejectReason}
+                            onChange={(e) => {
+                                setRejectReason(e.target.value);
+                                if (rejectError && e.target.value.trim()) setRejectError(null);
+                            }}/>
+                        {rejectError && <div className="text-[12.5px] text-[#c0392b]">{rejectError}</div>}
+                        <div className="flex gap-2">
+                            <button type="button" className={BTN_DANGER} disabled={busy}
+                                    onClick={() => void confirmReject()}>
+                                {t("substitutionCard.rejectForm.confirm")}
+                            </button>
+                            <button type="button" className={BTN_SECONDARY} disabled={busy}
+                                    onClick={() => {
+                                        setRejectOpen(false);
+                                        setRejectError(null);
+                                    }}>
+                                {t("substitutionCard.rejectForm.cancel")}
+                            </button>
+                        </div>
+                    </div>
                 )}
 
                 {/* Действия */}
@@ -553,19 +713,18 @@ export function SubstitutionCardPage() {
                             <Trash2 size={16}/> {t("substitutionCard.buttons.delete")}
                         </button>
                     )}
-                    {details?.status === "OnApproval"
-                        && details.approvals.find((a) => a.state === "Active")?.userId === user?.id && (
+                    {details && canDecide && (
                             <>
                                 <button type="button"
                                         onClick={() => void act(() => substitutionService.approve(details.id))}
-                                        disabled={busy}
+                                        disabled={busy || rejectOpen}
                                         className={BTN_SUCCESS}>
                                     {t("substitutionCard.buttons.approve")}
                                 </button>
                                 <button type="button" onClick={() => {
-                                    const c = window.prompt(t("substitutionCard.rejectPrompt")) ?? undefined;
-                                    void act(() => substitutionService.reject(details.id, c));
-                                }} disabled={busy} className={BTN_DANGER}>
+                                    setRejectOpen(true);
+                                    setRejectError(null);
+                                }} disabled={busy || rejectOpen} className={BTN_DANGER}>
                                     {t("substitutionCard.buttons.reject")}
                                 </button>
                             </>

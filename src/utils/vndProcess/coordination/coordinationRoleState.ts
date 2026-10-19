@@ -44,22 +44,33 @@ export function getCoordinationRoleState(
     // обязательном этапе), и новый действующий (его же вернули доп. этапом). Старый стоит в
     // списке раньше - без этой проверки находился именно он, и у согласующего пропадала
     // панель резолюции по его действующему этапу.
-    const myStage = process.stages.find((s) => {
-        if (s.isRemovedByEditor) return false;
-        if (isPrimaryPhase) return s.approverUserId === currentUserId;
-        if (isRepeatedPhase) return s.approverUserId === currentUserId && s.participatesInRepeat;
-        if (isFinalHoldPhase) return s.approverUserId === currentUserId;
+    const stageOf = (userId: number | undefined) => process.stages.find((s) => {
+        if (s.isRemovedByEditor || userId === undefined) return false;
+        if (isPrimaryPhase) return s.approverUserId === userId;
+        if (isRepeatedPhase) return s.approverUserId === userId && s.participatesInRepeat;
+        if (isFinalHoldPhase) return s.approverUserId === userId;
         return false;
     });
+
+    const isPending = (stage: ApprovalStageResponse | undefined) =>
+        !!stage &&
+        ((isPrimaryPhase && stage.primaryDecision === "pending") ||
+            (isRepeatedPhase && (stage.repeatDecision === null || stage.repeatDecision === "pending")) ||
+            (isFinalHoldPhase && (stage.finalHoldDecision === null || stage.finalHoldDecision === "pending")));
+
+    // Свой этап — в приоритете. Если своего этапа, ждущего решения, нет, берём ждущий этап
+    // того, кого пользователь сейчас замещает (GEN-14): решение за отсутствующего сервер
+    // принимает, а задача на него уже стоит в реестре замещающего.
+    const ownStage = stageOf(currentUserId);
+    const actingForStage = isPending(ownStage)
+        ? undefined
+        : (process.actingForUserIds ?? []).map(stageOf).find(isPending);
+    const myStage = actingForStage ?? ownStage;
 
     const isInitiator = process.initiatorUserId === currentUserId;
     const isApprover = !isInitiator && !!myStage;
 
-    const isPendingForMe =
-        !!myStage &&
-        ((isPrimaryPhase && myStage.primaryDecision === "pending") ||
-            (isRepeatedPhase && (myStage.repeatDecision === null || myStage.repeatDecision === "pending")) ||
-            (isFinalHoldPhase && (myStage.finalHoldDecision === null || myStage.finalHoldDecision === "pending")));
+    const isPendingForMe = isPending(myStage);
 
     return {
         isPrimaryPhase,

@@ -92,7 +92,12 @@ export function SzExecutionPanel({sz, onChanged}: Props) {
     }, [load]);
 
     const isAuthor = !!user && sz.authorId === user.id;
-    const isAddressee = !!user && sz.addresseeUserId === user.id;
+    /** Сам пользователь и те, кого он сейчас замещает (GEN-14). */
+    const actors = useMemo(
+        () => (user ? [user.id, ...(sz.actingForUserIds ?? [])] : []),
+        [user, sz.actingForUserIds],
+    );
+    const isAddressee = sz.addresseeUserId !== null && actors.includes(sz.addresseeUserId);
 
     /**
      * Кто распоряжается исполнением — так же, как проверяет сервер (EnsureCanControl):
@@ -125,8 +130,8 @@ export function SzExecutionPanel({sz, onChanged}: Props) {
 
     /** Мои поручения по этой записке — по ним видна форма отчёта. */
     const mine = useMemo(
-        () => assignments.filter((a) => a.assigneeUserId === user?.id && (a.state === "Open" || a.state === "Reported")),
-        [assignments, user],
+        () => assignments.filter((a) => actors.includes(a.assigneeUserId) && (a.state === "Open" || a.state === "Reported")),
+        [assignments, actors],
     );
 
     const run = async (action: () => Promise<unknown>, fallback: string, successMessage?: string) => {
@@ -375,7 +380,7 @@ export function SzExecutionPanel({sz, onChanged}: Props) {
             {assignments.length > 0 && (
                 <div className="flex flex-col gap-2.5">
                     {assignments.map((a) => {
-                        const isMine = a.assigneeUserId === user?.id;
+                        const isMine = actors.includes(a.assigneeUserId);
                         const tone = a.isOverdue ? STATE_TONE.Overdue : STATE_TONE[a.state];
                         return (
                             <div key={a.id} className="rounded-[10px] border border-[#eef2f7] bg-white px-4 py-3">

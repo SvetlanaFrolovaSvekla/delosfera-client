@@ -47,7 +47,10 @@ export function SzAddresseeDecisionPanel({sz, currentUserId, users, onDecided}: 
 
     if (!sz.addresseeUserId) return null;
 
-    const isAddressee = currentUserId === sz.addresseeUserId;
+    // Адресат или тот, кто его сейчас замещает (GEN-14): решение за отсутствующего
+    // сервер принимает, а задача на него уже стоит в реестре замещающего.
+    const isAddressee = currentUserId === sz.addresseeUserId
+        || (sz.actingForUserIds ?? []).includes(sz.addresseeUserId);
 
     // Решение ждут в двух случаях. Подписант назван отдельно — после подписи записка
     // «на решении адресата». Подписал сам адресат — она сразу «на исполнении», и решение

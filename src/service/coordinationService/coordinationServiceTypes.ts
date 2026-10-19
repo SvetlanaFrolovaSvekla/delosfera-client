@@ -417,6 +417,9 @@ export interface ApprovalProcessResponse {
     completedAt: string | null;
     disagreementMatrixRows: DisagreementMatrixRowResponse[];
     stages: ApprovalStageResponse[];
+    /** За кого текущий пользователь действует по замещению (GEN-14) — их этапы он тоже
+     * решает. Приходит только в ответе на текущий процесс; старый сервер поле не присылает. */
+    actingForUserIds?: number[];
     phaseRounds: ApprovalPhaseRoundResponse[];
     /** Снимки файлов редакции по кругам согласования — см. VndRedactionRevisionSnapshotResponse.
      * Нужно для кнопок "Скачать версию" в "Истории маршрута согласования" (см.

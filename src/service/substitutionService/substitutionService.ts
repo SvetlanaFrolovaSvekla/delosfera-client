@@ -25,12 +25,16 @@ export interface CommissionMember {
     position?: string | null;
 }
 
-export type ApprovalState = "Pending" | "Active" | "Approved" | "Rejected";
+/** Skipped — очередь до этапа не дошла: круг закончился отклонением или повторной отправкой. */
+export type ApprovalState = "Pending" | "Active" | "Approved" | "Rejected" | "Skipped";
 export const APPROVAL_STATE_LABEL: Record<ApprovalState, string> = {
     Pending: "Ожидает", Active: "На согласовании", Approved: "Согласовано", Rejected: "Отклонено",
 };
 
 export interface ApprovalStep {
+    id: number;
+    /** Круг согласования: 1 — первая отправка, 2 — после отклонения… Действующий — последний. */
+    round: number;
     order: number;
     roleLabel: string;
     userId: number;
@@ -38,6 +42,8 @@ export interface ApprovalStep {
     state: ApprovalState;
     comment: string | null;
     decidedAt: string | null;
+    /** Кто фактически решил — отличается от userId, если решал замещающий (GEN-14). */
+    decidedByUserId: number | null;
 }
 
 export interface SubstitutionListItem {
@@ -85,6 +91,10 @@ export interface SubstitutionDetails extends SubstitutionListItem {
     description: string | null;
     passportExpiresBeforeEnd: boolean;
     approvals: ApprovalStep[];
+    /** За кого текущий пользователь действует по замещению (GEN-14). */
+    actingForUserIds?: number[];
+    /** id → ФИО тех, кто решал за назначенного на этап (по замещению). */
+    deciderNames?: Record<number, string>;
 }
 
 export interface SubstitutionSaveRequest {
@@ -154,7 +164,14 @@ export const substitutionService = {
         const {data} = await apiClient.post<SubstitutionDetails>(`${BASE}/${id}/approve`, {comment});
         return data;
     },
-    async reject(id: number, comment?: string) {
+    /** Переназначить непройденный этап действующего маршрута (УЧР, администратор). */
+    async reassign(id: number, approvalId: number, userId: number, reason: string) {
+        const {data} = await apiClient.post<SubstitutionDetails>(`${BASE}/${id}/approvals/${approvalId}/reassign`, {userId, reason});
+        return data;
+    },
+
+    /** Причина обязательна — без неё сервер отклонение не примет. */
+    async reject(id: number, comment: string) {
         const {data} = await apiClient.post<SubstitutionDetails>(`${BASE}/${id}/reject`, {comment});
         return data;
     },

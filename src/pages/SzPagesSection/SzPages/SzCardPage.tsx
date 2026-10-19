@@ -40,6 +40,7 @@ export function SzCardPage() {
     const approval = useSzApproval({
         szId: sz?.id,
         route,
+        actingForUserIds: sz?.actingForUserIds,
         setSaving: card.setSaving,
         setError: card.setError,
         setNotice: card.setNotice,

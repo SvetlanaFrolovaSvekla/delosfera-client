@@ -135,6 +135,9 @@ export function taskLink(task: InboxTask): string {
             return `/prc/${task.entityId}`;
         case "Vnd":
             return `/base-vnd/${task.entityId}`;
+        // Согласование заявки на замещение (КСЗ-В9): карточка по id заявки.
+        case "Substitution":
+            return `/substitutions/${task.entityId}`;
         // Письмо и обязательство (КЛ-1) открываются на своих реестрах: карточки-роута нет.
         case "Letter":
             return "/correspondence";

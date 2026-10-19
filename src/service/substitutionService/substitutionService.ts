@@ -29,6 +29,7 @@ export interface CommissionMember {
 export type ApprovalState = "Pending" | "Active" | "Approved" | "Rejected" | "Skipped";
 export const APPROVAL_STATE_LABEL: Record<ApprovalState, string> = {
     Pending: "Ожидает", Active: "На согласовании", Approved: "Согласовано", Rejected: "Отклонено",
+    Skipped: "Не дошла очередь",
 };
 
 export interface ApprovalStep {

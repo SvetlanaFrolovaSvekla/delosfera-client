@@ -7,7 +7,7 @@ import type {
 } from "@/service/notificationsService/notificationsServiceType.ts";
 import { NotificationRow } from "./NotificationRow.tsx";
 import { PlainCheckbox } from "@/components/componentsGeneral/componentsCheckBox/PlainCheckbox.tsx";
-import { EmptyState } from "@/components/componentsGeneral/EmptyState.tsx";
+import { EmptyState } from "@/components/componentsGeneral/emptyPanel/EmptyState.tsx";
 import { Bell } from "lucide-react";
 
 interface NotificationListProps {

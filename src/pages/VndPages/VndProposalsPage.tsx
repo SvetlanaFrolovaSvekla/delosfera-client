@@ -23,7 +23,7 @@ import {formatDateTime, formatRelativeTime} from "@/utils/dateUtils.ts";
 import {PageHeader} from "@/components/componentsGeneral/PageHeader.tsx";
 import {SearchBar} from "@/components/componentsGeneral/SearchBar.tsx";
 import {Loader} from "@/components/componentsGeneral/Loader.tsx";
-import {EmptyState} from "@/components/componentsGeneral/EmptyState.tsx";
+import {EmptyState} from "@/components/componentsGeneral/emptyPanel/EmptyState.tsx";
 import {Tabs} from "@/components/componentsGeneral/Tabs.tsx";
 
 import {

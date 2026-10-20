@@ -12,7 +12,8 @@ import {
 } from "@/service/obligationsService/obligationsService.ts";
 import {PageHeader} from "@/components/componentsGeneral/PageHeader.tsx";
 import {Loader} from "@/components/componentsGeneral/Loader.tsx";
-import {EmptyState} from "@/components/componentsGeneral/EmptyState.tsx";
+import {DoubleScroll} from "@/components/componentsGeneral/DoubleScroll.tsx";
+import {EmptyState} from "@/components/componentsGeneral/emptyPanel/EmptyState.tsx";
 import {Badge} from "@/components/componentsGeneral/DataTable.tsx";
 
 
@@ -73,7 +74,7 @@ export function ObligationsBoardPage() {
             {!columns && !error && <Loader label={t("obligations.board.loading")}/>}
 
             {columns && (
-                <div className="flex gap-3 overflow-x-auto pb-3" style={{scrollbarWidth: "thin"}}>
+                <DoubleScroll className="flex gap-3 overflow-x-auto pb-3 [scrollbar-width:thin]">
                     {columns.map(col => (
                         <div key={col.code}
                              className="flex w-[290px] shrink-0 flex-col rounded-2xl border border-[#e9edf3] bg-[#f6f8fb]">
@@ -122,7 +123,7 @@ export function ObligationsBoardPage() {
                             </div>
                         </div>
                     ))}
-                </div>
+                </DoubleScroll>
             )}
         </div>
     );

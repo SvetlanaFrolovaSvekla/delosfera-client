@@ -8,11 +8,11 @@ import {Field} from "@/components/componentsDocumentsTypes/Field.tsx";
 import {SzHrForm} from "@/components/componentsSz/componentsSzCard/form/SzHrForm.tsx";
 import {findHrFormSchema, inputClass, localizedTitle} from "@/utils/szProcess/szCardUtils.ts";
 
-import type {PickableUser} from "@/components/componentsGeneral/userPicker/UserPicker.tsx";
 import {SelectDropdown} from "@/components/componentsGeneral/selects/SingleSelects/SelectDropdown.tsx";
 import {SingleSelectListField} from "@/components/componentsGeneral/selects/SingleSelects/SingleSelectListField.tsx";
 import {PlainCheckbox} from "@/components/componentsGeneral/componentsCheckBox/PlainCheckbox.tsx";
 import {ReadOnlyField} from "@/components/componentsGeneral/readOnlySelects/ReadOnlyField.tsx";
+import type {PickableUser} from "@/constants/pickableUser.ts";
 
 interface SzKindFieldsProps {
     card: SzCardState;

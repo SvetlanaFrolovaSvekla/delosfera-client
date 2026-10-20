@@ -58,6 +58,14 @@ export function HomePage() {
     const szInbox = useTaskInbox("Sz");
     const prcInbox = useTaskInbox("Procurement");
     const ackInbox = useTaskInbox("Acknowledgement");
+    // Заявки на замещение (согласование этапа и исполнение в УЧР) — свой контур в сводном
+    // реестре. Раньше на главную не загружались вовсе: согласующий узнавал о заявке только
+    // из уведомления. Ведутся в разделе СЗ — и в виджете идут под вкладкой «СЗ».
+    const subInbox = useTaskInbox("Substitution");
+    const szAndSubTasks = useMemo(
+        () => [...szInbox.tasks, ...subInbox.tasks],
+        [szInbox.tasks, subInbox.tasks],
+    );
 
     // "Последние задачи"
     const homeTasks = useMemo(() => {
@@ -82,11 +90,11 @@ export function HomePage() {
     const vndTasksCount = coordination.tasks.length + myVndApproval.tasks.length
         + actualization.tasks.length + consolidation.tasks.length + rejected.tasks.length
         + actualizationRequest.tasks.length + actualizationApproved.tasks.length;
-    const tasksTotalCount = vndTasksCount + szInbox.tasks.length + prcInbox.tasks.length + ackInbox.tasks.length;
+    const tasksTotalCount = vndTasksCount + szAndSubTasks.length + prcInbox.tasks.length + ackInbox.tasks.length;
     const tasksLoading = coordination.isLoading || myVndApproval.isLoading
         || actualization.isLoading || consolidation.isLoading || rejected.isLoading
         || actualizationRequest.isLoading || actualizationApproved.isLoading
-        || szInbox.isLoading || prcInbox.isLoading || ackInbox.isLoading;
+        || szInbox.isLoading || subInbox.isLoading || prcInbox.isLoading || ackInbox.isLoading;
 
     // Текущая дата - локализуется под текущий язык
     const formattedDate = useFormattedDate();
@@ -121,13 +129,13 @@ export function HomePage() {
             <div className="grid grid-cols-1 items-start gap-[18px] xl:grid-cols-[1.65fr_1fr]">
                 <MyTasksCard
                     tasks={homeTasks}
-                    szTasks={szInbox.tasks}
+                    szTasks={szAndSubTasks}
                     prcTasks={prcInbox.tasks}
                     ackTasks={ackInbox.tasks}
                     isLoading={tasksLoading}
                     counts={{
                         vnd: vndTasksCount,
-                        sz: szInbox.tasks.length,
+                        sz: szAndSubTasks.length,
                         prc: prcInbox.tasks.length,
                         ack: ackInbox.tasks.length,
                     }}

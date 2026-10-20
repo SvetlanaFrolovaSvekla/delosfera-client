@@ -23,7 +23,7 @@ import {
 import {
     AuditLogPanel
 } from "@/components/componentsVND/componentsOpenVndPage/componentsHistoryTab/AuditLogPanel.tsx";
-import {EmptyState} from "@/components/componentsGeneral/EmptyState.tsx";
+import {EmptyState} from "@/components/componentsGeneral/emptyPanel/EmptyState.tsx";
 import {Eye, FileStack, Loader2} from "lucide-react";
 
 interface VndHistoryTabProps {

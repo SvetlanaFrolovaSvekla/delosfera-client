@@ -12,7 +12,7 @@ import {
     ParentMultiSelectField
 } from "@/components/componentsGeneral/selects/MultiSelects/ParentMultiSelectField.tsx";
 import {Loader} from "@/components/componentsGeneral/Loader.tsx";
-import {EmptyState} from "@/components/componentsGeneral/EmptyState.tsx";
+import {EmptyState} from "@/components/componentsGeneral/emptyPanel/EmptyState.tsx";
 import {Tooltip} from "@/components/componentsGeneral/tooltips/Tooltip.tsx";
 import {SelectDropdown} from "@/components/componentsGeneral/selects/SingleSelects/SelectDropdown.tsx";
 import {SingleSelectListField} from "@/components/componentsGeneral/selects/SingleSelects/SingleSelectListField.tsx";

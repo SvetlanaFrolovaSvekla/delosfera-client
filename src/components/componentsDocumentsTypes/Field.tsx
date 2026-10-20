@@ -2,7 +2,7 @@ import React from "react";
 
 export function Field({label, hint, required, children}: {
     label: string; hint?: string;
-    /** Красная звёздочка у подписи — поле обязательное. */
+    /** Красная звёздочка у подписи - поле обязательное. */
     required?: boolean;
     children: React.ReactNode;
 }) {

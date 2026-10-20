@@ -11,7 +11,7 @@ import {formatDate, formatDateTime} from "@/utils/dateUtils.ts";
 import {PageHeader} from "@/components/componentsGeneral/PageHeader.tsx";
 import {Loader} from "@/components/componentsGeneral/Loader.tsx";
 import {CheckBoxOne} from "@/components/componentsGeneral/componentsCheckBox/CheckBoxOne.tsx";
-import {EmptyState} from "@/components/componentsGeneral/EmptyState.tsx";
+import {EmptyState} from "@/components/componentsGeneral/emptyPanel/EmptyState.tsx";
 import {CheckCircle2, History} from "lucide-react";
 
 /**

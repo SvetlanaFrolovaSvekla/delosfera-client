@@ -28,7 +28,7 @@ import {
     FormattedResolutionComment
 } from "@/components/componentsCoordination/CoordinationRouteConstructor/viewComponents/FormattedResolutionComment.tsx";
 import {ApprovalRouteHistoryCarousel} from "./ApprovalRouteHistoryCarousel.tsx";
-import {EmptyState} from "@/components/componentsGeneral/EmptyState.tsx";
+import {EmptyState} from "@/components/componentsGeneral/emptyPanel/EmptyState.tsx";
 
 import {ArrowLeft, Download, Route as RouteIcon} from "lucide-react";
 

@@ -11,7 +11,7 @@ import {UserGroupRow} from "@/components/componentsDictionaries/UserGroupRow.tsx
 import {ConfirmDeleteModal} from "@/components/componentsGeneral/modal/ConfirmDeleteModal.tsx";
 import {SearchBar} from "@/components/componentsGeneral/SearchBar.tsx";
 import {Loader} from "@/components/componentsGeneral/Loader.tsx";
-import {EmptyState} from "@/components/componentsGeneral/EmptyState.tsx";
+import {EmptyState} from "@/components/componentsGeneral/emptyPanel/EmptyState.tsx";
 
 export function UserGroupPage() {
     const {t} = useTranslation();

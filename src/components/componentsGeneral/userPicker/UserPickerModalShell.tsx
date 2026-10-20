@@ -1,9 +1,9 @@
 import {createPortal} from "react-dom";
 import type {ReactNode} from "react";
-import {Loader2, Search, X} from "lucide-react";
 import {useTranslation} from "react-i18next";
-import {EmptyState} from "@/components/componentsGeneral/EmptyState.tsx";
+import {EmptyState} from "@/components/componentsGeneral/emptyPanel/EmptyState.tsx";
 import {ACCENT, type Accent} from "@/constants/accent.ts";
+import {Loader2, Search, X} from "lucide-react";
 
 interface UserPickerModalShellProps {
     title: string;

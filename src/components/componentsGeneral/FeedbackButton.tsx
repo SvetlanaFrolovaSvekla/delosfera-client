@@ -1,11 +1,11 @@
 /**
- * Кнопка «Сообщить» на каждом экране системы.
+ * Кнопка "Сообщить" на каждом экране системы.
  *
  * Стоит именно на экране, а не в отдельном разделе: сотруднику, который наткнулся
- * на неудобство посреди работы, некогда искать, куда об этом писать. Кнопка рядом —
+ * на неудобство посреди работы, некогда искать, куда об этом писать. Кнопка рядом -
  * порог в одно нажатие, и тогда замечание вообще случается.
  *
- * Где человек находился, что за экран, какой браузер и какого размера окно —
+ * Где человек находился, что за экран, какой браузер и какого размера окно -
  * система записывает сама. Половина сообщений вида «кнопка не помещается»,
  * объясняется размером окна, и спрашивать об этом потом значит потерять день.
  */
@@ -176,7 +176,7 @@ export function FeedbackButton() {
                                                 key={value}
                                                 type="button"
                                                 onClick={() => setKind(value)}
-                                                className={`flex items-start gap-3 rounded-[12px] border px-3 py-2.5 text-left transition
+                                                className={`cursor-pointer flex items-start gap-3 rounded-[12px] border px-3 py-2.5 text-left transition
                                                     ${active
                                                     ? "border-[#2f68f5] bg-[#eaf0ff]"
                                                     : "border-[#e1e7ef] bg-white hover:border-[#c3cede]"}`}
@@ -204,7 +204,7 @@ export function FeedbackButton() {
                                     onChange={(event) => setText(event.target.value)}
                                     rows={5}
                                     maxLength={4000}
-                                    // placeholder="Что произошло или чего не хватает. Чем конкретнее, тем быстрее поправим."
+                                    // "Что произошло или чего не хватает. Чем конкретнее, тем быстрее поправим."
                                     placeholder={t("feedbackButton.textPlaceholder")}
                                     className="w-full resize-y rounded-[12px] border border-[#e1e7ef] px-3 py-2.5
                                                text-[14px] text-[#101a2c] outline-none transition
@@ -224,7 +224,7 @@ export function FeedbackButton() {
                                         <button
                                             type="button"
                                             onClick={close}
-                                            className="rounded-[10px] px-4 py-2 text-[14px] text-[#4d5a72]
+                                            className="cursor-pointer rounded-[10px] px-4 py-2 text-[14px] text-[#4d5a72]
                                                        transition hover:bg-[#eef2f7]"
                                         >
                                             {/* Отмена */}
@@ -234,7 +234,7 @@ export function FeedbackButton() {
                                             type="button"
                                             onClick={submit}
                                             disabled={sending}
-                                            className="rounded-[10px] bg-[#2f68f5] px-4 py-2 text-[14px] font-medium
+                                            className="cursor-pointer rounded-[10px] bg-[#2f68f5] px-4 py-2 text-[14px] font-medium
                                                        text-white transition hover:bg-[#2554cc] disabled:opacity-60"
                                         >
                                             {/* {sending ? "Отправляем…" : "Отправить"} */}

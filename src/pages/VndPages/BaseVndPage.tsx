@@ -29,7 +29,7 @@ import {VndSortDropdown} from "@/components/componentsVND/componentsBaseVndPage/
 
 import {Tabs} from "@/components/componentsGeneral/Tabs.tsx";
 import {Loader} from "@/components/componentsGeneral/Loader";
-import {EmptyState} from "@/components/componentsGeneral/EmptyState.tsx";
+import {EmptyState} from "@/components/componentsGeneral/emptyPanel/EmptyState.tsx";
 import {JournalViewPicker} from "@/components/componentsGeneral/JournalViewPicker.tsx";
 
 import {FileEdit, Star} from "lucide-react";

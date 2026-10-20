@@ -1,4 +1,4 @@
-// Общая панель "Содержание" docx-документа — строится из настоящих заголовков (стили Word
+// Общая панель "Содержание" docx-документа - строится из настоящих заголовков (стили Word
 // "Заголовок 1/2/3...", см. utils/docxWork/docxHeadings.ts), клик скроллит к заголовку в уже
 // отрендеренном docx-preview. Используется через тонкие обёртки RedactionContentsPanel (ВНД) и
 // HelpAttachmentContentsPanel (вложения статей инструкции) - они различаются только источником
@@ -12,15 +12,13 @@ import {Tooltip} from "@/components/componentsGeneral/tooltips/Tooltip.tsx";
 import {ListTree, Loader2, X} from "lucide-react";
 
 /** Абзац тела документа: docx-preview рисует колонтитулы (<header>/<footer>) на КАЖДЫЙ раздел и
- * сноски (<ol>) — их абзацы с тем же стилем раньше сдвигали порядковый номер (⚠ 06.10.2026:
- * "Заголовок 1" в шапке-таблице колонтитула → клик по "1. ..." вёл на "2. ...", а в документах с
- * несколькими разделами, например альбомной таблицей, — ещё дальше). */
+ * сноски (<ol>) - их абзацы с тем же стилем раньше сдвигали порядковый номер */
 function isBodyParagraph(el: Element): boolean {
     return el.tagName === "P" && !el.closest("header, footer, ol");
 }
 
 /** Находит DOM-узел заголовка: сперва по классу стиля + порядковому номеру среди абзацев тела
- * (с проверкой текста), иначе — по тексту абзаца. */
+ * (с проверкой текста), иначе - по тексту абзаца. */
 function findHeadingElement(container: HTMLElement, heading: DocxHeadingItem): HTMLElement | null {
     const matchesText = (el: Element) => {
         if (!heading.textKey) return true;
@@ -59,7 +57,7 @@ interface ContentsItemTitleProps {
     className: string;
 }
 
-/** Заголовок пункта содержания с line-clamp — при реальном обрезании текста (а не всегда,
+/** Заголовок пункта содержания с line-clamp - при реальном обрезании текста (а не всегда,
  * чтобы не мельтешить тултипом на коротких заголовках) оборачивается в Tooltip с полным
  * названием. Обрезание определяется сравнением scrollHeight/clientHeight после рендера. */
 function ContentsItemTitle({title, className}: ContentsItemTitleProps) {

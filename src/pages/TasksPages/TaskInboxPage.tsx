@@ -39,7 +39,7 @@ import {InboxTaskRow} from "@/components/componentsTasks/InboxTaskRow.tsx";
 import {DelegateTaskModal} from "@/components/componentsTasks/DelegateTaskModal.tsx";
 import {RaiseRiskEventModal} from "@/components/componentsTasks/RaiseRiskEventModal.tsx";
 import {Tabs} from "@/components/componentsGeneral/Tabs.tsx";
-import {EmptyState} from "@/components/componentsGeneral/EmptyState.tsx";
+import {EmptyState} from "@/components/componentsGeneral/emptyPanel/EmptyState.tsx";
 import {SearchBar} from "@/components/componentsGeneral/SearchBar.tsx";
 import {SelectDropdown} from "@/components/componentsGeneral/selects/SingleSelects/SelectDropdown.tsx";
 import {ArrowRight} from "lucide-react";

@@ -10,7 +10,7 @@ import {notificationsRefreshBus} from "@/service/notificationsRefreshBus.ts";
 import {PREVIEW_COUNT, SEVERITY_DOT, SEVERITY_TOAST_VARIANT} from "@/constants/notificationConst.ts";
 import {formatRelativeTime} from "@/utils/dateUtils.ts";
 import {Loader} from "@/components/componentsGeneral/Loader.tsx";
-import {EmptyState} from "@/components/componentsGeneral/EmptyState.tsx";
+import {EmptyState} from "@/components/componentsGeneral/emptyPanel/EmptyState.tsx";
 import {Icon} from "@/assets/icons/Icon";
 import {NotificationsLegendHint} from "@/components/componentsHeader/NotificationsLegendHint.tsx";
 

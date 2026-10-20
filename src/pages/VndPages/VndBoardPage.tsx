@@ -1,16 +1,13 @@
 /**
- * "Доска ВНД" — личная витрина нормативных документов пользователя.
- *
- * Реестр отвечает на вопрос «какие ВНД вообще есть», доска — «что из этого касается меня и где
- * оно сейчас»: документы, у которых СП пользователя — разработчик или ответственный исполнитель
+ * "Доска ВНД" - личная доска ВНД пользователя.
+ * Реестр отвечает на вопрос "какие ВНД вообще есть", доска — "что из этого касается меня и где
+ * оно сейчас": документы, у которых СП пользователя - разработчик или ответственный исполнитель
  * (подбираются сервером автоматически), плюс добавленные вручную, разложенные по статусу
- * последней редакции. Отдельная панель — личное "Избранное".
+ * последней редакции. Отдельная панель - личное "Избранное".
  */
 import {useCallback, useMemo, useState} from "react";
 import {useTranslation} from "react-i18next";
 import {Link} from "react-router-dom";
-import {AlertTriangle, Building2, Info, List, Network, Pin, Plus, RefreshCw, Search, X} from "lucide-react";
-
 import {useAuth} from "@/context/AuthContext.ts";
 import {PermissionCode} from "@/constants/permissions/permissions.ts";
 import {
@@ -22,14 +19,19 @@ import {vndService} from "@/service/vndService/vndService.ts";
 import {vndBoardService, type VndBoardReason} from "@/service/vndService/vndBoardService.ts";
 import {toast} from "@/service/toastService.ts";
 import {useVndBoard} from "@/hooks/vndHooks/useVndBoard.ts";
-import {PageHeader} from "@/components/componentsGeneral/PageHeader.tsx";
-import {Loader} from "@/components/componentsGeneral/Loader.tsx";
-import {EmptyState} from "@/components/componentsGeneral/EmptyState.tsx";
-import {Tooltip} from "@/components/componentsGeneral/tooltips/Tooltip.tsx";
+
 import {VndBoardPanel, type VndBoardPanelRow} from "@/components/componentsVND/componentsVndBoard/VndBoardPanel.tsx";
 import type {VndBoardRemoveKind} from "@/components/componentsVND/componentsVndBoard/VndBoardCard.tsx";
 import {VndBoardAddModal} from "@/components/componentsVND/componentsVndBoard/VndBoardAddModal.tsx";
 import {VndBoardHiddenSection} from "@/components/componentsVND/componentsVndBoard/VndBoardHiddenSection.tsx";
+
+import {PageHeader} from "@/components/componentsGeneral/PageHeader.tsx";
+import {Loader} from "@/components/componentsGeneral/Loader.tsx";
+import {EmptyState} from "@/components/componentsGeneral/emptyPanel/EmptyState.tsx";
+import {Tooltip} from "@/components/componentsGeneral/tooltips/Tooltip.tsx";
+import {AlertTriangle, Building2, Info, List, Network, Pin, Plus, RefreshCw, Search, X} from "lucide-react";
+import {DoubleScroll} from "@/components/componentsGeneral/DoubleScroll.tsx";
+
 
 const SOURCE_STORAGE_KEY = "vndBoard.sourceFilter";
 const SOURCE_FILTERS: VndBoardSourceFilter[] = ["all", "unit", "pinned"];
@@ -81,7 +83,7 @@ export function VndBoardPage() {
         try {
             localStorage.setItem(SOURCE_STORAGE_KEY, value);
         } catch {
-            // приватный режим / запрет хранилища — фильтр просто не запомнится
+            // приватный режим / запрет хранилища - фильтр просто не запомнится
         }
     };
 
@@ -327,7 +329,7 @@ export function VndBoardPage() {
 
                     {/* --- Поиск по доске и фильтр "откуда документ" --- */}
                     <div className="mb-4 flex flex-wrap items-center gap-3">
-                        <label className="flex h-10 min-w-[240px] flex-1 items-center gap-2 rounded-[10px] border border-[#e5e9f0] bg-white px-3 focus-within:border-[#4e57d6] focus-within:shadow-[0_0_0_3px_#ececfc] sm:max-w-[420px]">
+                        <label className="flex h-10 min-w-[240px] flex-1 items-center gap-2 rounded-[10px] border border-[#e5e9f0] bg-white px-3 focus-within:border-[#4e57d6] focus-within:shadow-[0_0_0_3px_#ececfc]">
                             <Search className="h-4 w-4 flex-none text-[#8b97ab]" strokeWidth={2}/>
                             <input
                                 value={search}
@@ -371,7 +373,7 @@ export function VndBoardPage() {
 
                     {/* --- Панели: на широком экране все в один ряд (канбан), при нехватке места — горизонтальная
                         прокрутка; на узком — друг под другом --- */}
-                    <div className="grid items-start gap-3 max-lg:grid-cols-1 lg:auto-cols-[minmax(200px,1fr)] lg:grid-flow-col lg:overflow-x-auto lg:pb-2 [scrollbar-width:thin]">
+                        <DoubleScroll className="grid items-start gap-3 max-lg:grid-cols-1 lg:auto-cols-[minmax(200px,1fr)] lg:grid-flow-col lg:overflow-x-auto lg:pb-4">
                         {panels.map((p) => (
                             <VndBoardPanel
                                 key={p.key}
@@ -385,7 +387,7 @@ export function VndBoardPage() {
                                 onRemove={(vnd, kind) => void removeFromBoard(vnd, kind)}
                             />
                         ))}
-                    </div>
+                    </DoubleScroll>
 
                     <VndBoardHiddenSection items={data.hidden} busyIds={busyIds} onRestore={(vnd) => void restore(vnd)}/>
                 </>

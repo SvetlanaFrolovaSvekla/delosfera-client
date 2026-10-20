@@ -23,7 +23,7 @@ import {EmployeeRow} from "@/components/componentsUsageAnalytics/EmployeeRow.tsx
 
 import {PageHeader} from "@/components/componentsGeneral/PageHeader.tsx";
 import {Loader} from "@/components/componentsGeneral/Loader.tsx";
-import {EmptyState} from "@/components/componentsGeneral/EmptyState.tsx";
+import {EmptyState} from "@/components/componentsGeneral/emptyPanel/EmptyState.tsx";
 import {DataTable, FilterChip} from "@/components/componentsGeneral/DataTable.tsx";
 import {Download} from "lucide-react";
 import {SearchBar} from "@/components/componentsGeneral/SearchBar.tsx";

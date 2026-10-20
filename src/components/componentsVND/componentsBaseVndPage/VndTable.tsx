@@ -7,7 +7,7 @@ import {LINKED_TO_ME_RELATION_META, type LinkedToMeRelationKey} from "@/constant
 import {type ColDef} from "@/constants/columnsFilters/vndColumns.ts";
 import {HighlightText} from "@/utils/highlightText.tsx";
 import {useActualizationBucketMeta} from "@/hooks/actualizationHooks/useActualizationBucketMeta.ts";
-import {EmptyState} from "@/components/componentsGeneral/EmptyState.tsx";
+import {EmptyState} from "@/components/componentsGeneral/emptyPanel/EmptyState.tsx";
 import {Tooltip} from "@/components/componentsGeneral/tooltips/Tooltip.tsx";
 import {Clock, Lock, Star} from "lucide-react";
 

@@ -61,10 +61,10 @@ export const navGroups: NavGroup[] = [
         items: [
             // Реестр служебных записок: карточка, согласование, исполнение, архив, закупка
             { id: "sz", icon: "sz", labelKey: "sidebar.items.sz", path: "/sz" },
-            // Заявки на замещение (КСЗ-В9)
-            { id: "substitutions", icon: "user", labelKey: "sidebar.items.substitution", path: "/substitutions"},
             // Доска записок по стадиям
             { id: "sz-tracker", icon: "board", labelKey: "sidebar.items.szTracker", path: "/sz/tracker" },
+            // Заявки на замещение (КСЗ-В9)
+            { id: "substitutions", icon: "user", labelKey: "sidebar.items.substitution", path: "/substitutions"},
         ],
     },
     {

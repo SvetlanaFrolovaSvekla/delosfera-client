@@ -138,10 +138,25 @@ export interface SubstitutionPage {
     pageSize: number;
 }
 
+export interface SubstitutionSearchParams {
+    query?: string;
+    status?: string;
+    mineOnly?: boolean;
+    /** Отсутствующий (id пользователя). */
+    absentUserId?: number;
+    /** Замещающий (id пользователя). */
+    substituteUserId?: number;
+    /** Период "yyyy-MM-dd": заявки, чей период замещения пересекается с заданным (границы включительно). */
+    periodFrom?: string;
+    periodTo?: string;
+    page?: number;
+    pageSize?: number;
+}
+
 const BASE = "/substitution-requests";
 
 export const substitutionService = {
-    async search(params: {query?: string; status?: string; mineOnly?: boolean; page?: number; pageSize?: number} = {}) {
+    async search(params: SubstitutionSearchParams = {}) {
         const {data} = await apiClient.get<SubstitutionPage>(BASE, {params});
         return data;
     },

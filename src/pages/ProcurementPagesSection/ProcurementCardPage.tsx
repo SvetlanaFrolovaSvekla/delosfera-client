@@ -24,7 +24,7 @@ import {AttachmentsPanel} from "@/components/componentsGeneral/attachments/Attac
 import {PageHeader} from "@/components/componentsGeneral/PageHeader.tsx";
 import {Section} from "@/components/componentsGeneral/Section.tsx";
 import {Loader} from "@/components/componentsGeneral/Loader.tsx";
-import {EmptyState} from "@/components/componentsGeneral/EmptyState.tsx";
+import {EmptyState} from "@/components/componentsGeneral/emptyPanel/EmptyState.tsx";
 import {Avatar} from "@/components/componentsGeneral/Avatar.tsx";
 import {Tooltip} from "@/components/componentsGeneral/tooltips/Tooltip.tsx";
 import {ReadOnlyField} from "@/components/componentsGeneral/readOnlySelects/ReadOnlyField.tsx";

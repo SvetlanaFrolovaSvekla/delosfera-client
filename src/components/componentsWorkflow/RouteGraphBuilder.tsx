@@ -19,12 +19,13 @@ import {
     STEP_KIND_TITLE, SIGNATURE_LEVEL_TITLE,
     type RouteRoleOption, type RouteConditionOption, type TemplateStep, type TemplateParticipant,
 } from "@/service/workflowService/workflowService.ts";
-import {UserPicker, type PickableUser} from "@/components/componentsGeneral/userPicker/UserPicker.tsx";
+import {UserPickerField} from "@/components/componentsGeneral/userPicker/UserPickerField.tsx";
 import {
     Plus, Trash2, GripVertical, Users, User as UserIcon, Building2,
     GitBranch, ArrowDown, FileText, CheckCircle2, Split, Clock, PenLine, ShieldCheck,
     Copy, ChevronDown, ChevronRight, AlertTriangle,
 } from "lucide-react";
+import type {PickableUser} from "@/constants/pickableUser.ts";
 
 const KINDS: TemplateStep["kind"][] = ["Approval", "FinalControl", "Signing", "Board"];
 
@@ -686,9 +687,13 @@ function ParticipantRow({
                 )}
 
                 {mode === "user" && (
-                    <UserPicker
-                        users={users} value={participant.userId} disabled={!canEdit} bySeniority
-                        onChange={(u) => onChange({userId: u?.id ?? null})}
+                    <UserPickerField
+                        compact bySeniority
+                        people={users} value={participant.userId} disabled={!canEdit}
+                        onChange={(id) => onChange({userId: id})}
+                        placeholder="— не выбрано —"
+                        modalTitle="Выбор согласующего"
+                        searchPlaceholder="Фамилия, должность или подразделение…"
                     />
                 )}
 

@@ -1,14 +1,13 @@
-import type {ReactNode} from "react";
-import type {TFunction} from "i18next";
-
 /**
  * Таблица реестра.
  *
  * Вынесена отдельно, потому что реестров в системе много и все они выглядят
  * одинаково: шапка, строки, горизонтальная прокрутка внутри своей рамки.
- * Прокрутка именно внутри — иначе широкая таблица уводит вбок всю страницу
+ * Прокрутка именно внутри - иначе широкая таблица уводит вбок всю страницу
  * вместе с меню.
  */
+import type {ReactNode} from "react";
+import type {TFunction} from "i18next";
 
 interface DataTableProps {
     headers: (string | {title: string; align?: "left" | "right"})[];
@@ -138,6 +137,7 @@ export function FilterChip({
 }
 
 /** Дата в привычном виде. Пусто — прочерк, а не пустое место: так видно, что поля нет. */
+// eslint-disable-next-line react-refresh/only-export-components
 export function formatDate(value: string | null | undefined): string {
     if (!value) return "—";
     const date = new Date(value);
@@ -145,6 +145,7 @@ export function formatDate(value: string | null | undefined): string {
     return date.toLocaleDateString("ru-RU", {day: "2-digit", month: "2-digit", year: "numeric"});
 }
 
+// eslint-disable-next-line react-refresh/only-export-components
 export function formatDateTime(value: string | null | undefined): string {
     if (!value) return "—";
     const date = new Date(value);
@@ -160,6 +161,7 @@ export function formatDateTime(value: string | null | undefined): string {
  * Число дней само по себе требует счёта в уме, а срок смотрят бегло.
  * Склонения («1 день / 2 дня / 5 дней») берутся из переводов time.days.
  */
+// eslint-disable-next-line react-refresh/only-export-components
 export function formatDaysLeft(days: number | null | undefined, t: TFunction): string {
     if (days === null || days === undefined) return "—";
     if (days === 0) return t("dataTable.today");

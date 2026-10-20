@@ -4,7 +4,7 @@ import {GitBranch, RotateCcw, Timer, Users as UsersIcon} from "lucide-react";
 import {useAuth} from "@/context/AuthContext.ts";
 import {PermissionCode} from "@/constants/permissions/permissions.ts";
 import {Loader} from "@/components/componentsGeneral/Loader.tsx";
-import {EmptyState} from "@/components/componentsGeneral/EmptyState.tsx";
+import {EmptyState} from "@/components/componentsGeneral/emptyPanel/EmptyState.tsx";
 import {SearchBar} from "@/components/componentsGeneral/SearchBar.tsx";
 import {SelectDropdown} from "@/components/componentsGeneral/selects/SingleSelects/SelectDropdown.tsx";
 import {HighlightText} from "@/utils/highlightText.tsx";

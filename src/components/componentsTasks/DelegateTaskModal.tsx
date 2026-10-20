@@ -5,8 +5,9 @@
 import {useEffect, useState} from "react";
 import {useTranslation} from "react-i18next";
 import {axiosInstance} from "@/service/axiosInstance.ts";
-import {UserPicker, type PickableUser} from "@/components/componentsGeneral/userPicker/UserPicker.tsx";
+import {UserPickerField} from "@/components/componentsGeneral/userPicker/UserPickerField.tsx";
 import {taskInboxService, type InboxTask} from "@/service/workflowService/taskInboxService.ts";
+import type {PickableUser} from "@/constants/pickableUser.ts";
 
 interface Props {
     task: InboxTask;
@@ -70,12 +71,15 @@ export function DelegateTaskModal({task, onClose, onDone}: Props) {
                     <label className="mb-1.5 block text-[12.5px] font-semibold text-[#55617a]">
                         {t("tasks.delegate.toLabel")}
                     </label>
-                    <UserPicker
-                        users={users}
+                    <UserPickerField
+                        people={users}
                         value={toUserId}
-                        onChange={(u) => setToUserId(u?.id ?? null)}
+                        onChange={setToUserId}
+                        clearable
+                        onClear={() => setToUserId(null)}
                         placeholder={t("tasks.delegate.toPlaceholder")}
-                    />
+                        modalTitle={t("tasks.delegate.toLabel")}
+                        searchPlaceholder={t("tasks.delegate.searchPlaceholder")}                    />
                 </div>
 
                 <div>

@@ -9,7 +9,8 @@ import {useTranslation} from "react-i18next";
 import {procurementService, type TrackerColumn} from "@/service/procurementService/procurementService.ts";
 import {organizationUnitService} from "@/service/dictionariesService/organizationUnitService/organizationUnitService.ts";
 import type {OrganizationUnitResponse} from "@/service/dictionariesService/organizationUnitService/organizationUnitServiceType.ts";
-import {EmptyState} from "@/components/componentsGeneral/EmptyState.tsx";
+import {DoubleScroll} from "@/components/componentsGeneral/DoubleScroll.tsx";
+import {EmptyState} from "@/components/componentsGeneral/emptyPanel/EmptyState.tsx";
 
 const NUMBER_LOCALE: Record<string, string> = {ru: "ru-RU", en: "en-US", ky: "ky-KG"};
 
@@ -82,7 +83,7 @@ export function ProcurementTrackerPage() {
             {!columns && !error && <div className="text-[13px] text-[#8b97ab]">{t("general.loading")}</div>}
 
             {columns && (
-                <div className="flex gap-3 overflow-x-auto pb-3" style={{scrollbarWidth: "thin"}}>
+                <DoubleScroll className="flex gap-3 overflow-x-auto pb-3 [scrollbar-width:thin]">
                     {columns.map(col => (
                         <div key={col.code} className="shrink-0 w-[280px] rounded-[13px] bg-[#f6f8fb] border border-[#e5e9f0] flex flex-col">
                             <div className="px-3.5 py-3 border-b border-[#e5e9f0]">
@@ -133,7 +134,7 @@ export function ProcurementTrackerPage() {
                             </div>
                         </div>
                     ))}
-                </div>
+                </DoubleScroll>
             )}
         </div>
     );

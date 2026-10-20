@@ -1,18 +1,17 @@
-import {useEffect, useState} from "react";
-import {ImageOff} from "lucide-react";
-import {useTranslation} from "react-i18next";
-import {helpService} from "@/service/helpService/helpService.ts";
-
 /**
  * Снимок экрана с нумерованными выносками.
  *
- * Выноски — номера на кружках, а не нарисованные стрелки: стрелку пришлось бы
+ * Выноски - номера на кружках, а не нарисованные стрелки: стрелку пришлось бы
  * рисовать в графическом редакторе и перерисовывать при каждой правке
  * интерфейса. Номер ставится мышью прямо в системе и живёт вместе со статьёй.
  *
  * Положение метки хранится в процентах от размера снимка — картинка
  * показывается в разной ширине, и метка в пикселях уехала бы с нужной кнопки.
  */
+import React, {useEffect, useState} from "react";
+import {useTranslation} from "react-i18next";
+import {helpService} from "@/service/helpService/helpService.ts";
+import {ImageOff} from "lucide-react";
 
 export interface Marker {
     x: number;
@@ -24,9 +23,9 @@ interface Props {
     fileId: number;
     caption?: string;
     markers?: Marker[];
-    /** Обработчик клика по снимку — только в редакторе, для постановки меток. */
+    /** Обработчик клика по снимку - только в редакторе, для постановки меток. */
     onPick?: (x: number, y: number) => void;
-    /** Убрать метку по номеру — только в редакторе. */
+    /** Убрать метку по номеру - только в редакторе. */
     onRemoveMarker?: (index: number) => void;
 }
 
@@ -42,7 +41,7 @@ export function HelpScreenshot({fileId, caption, markers = [], onPick, onRemoveM
         helpService.fetchImage(fileId)
             .then((next) => {
                 if (cancelled) {
-                    // Пришло после ухода со страницы — освобождаем сразу, иначе
+                    // Пришло после ухода со страницы - освобождаем сразу, иначе
                     // ссылка на данные останется висеть до перезагрузки вкладки.
                     URL.revokeObjectURL(next);
                     return;

@@ -14,7 +14,7 @@ import {PermissionCode} from "@/constants/permissions/permissions.ts";
 import {UserPickerField} from "@/components/componentsGeneral/userPicker/UserPickerField.tsx";
 import {SelectDropdown} from "@/components/componentsGeneral/selects/SingleSelects/SelectDropdown.tsx";
 import {Tabs} from "@/components/componentsGeneral/Tabs.tsx";
-import {EmptyState} from "@/components/componentsGeneral/EmptyState.tsx";
+import {EmptyState} from "@/components/componentsGeneral/emptyPanel/EmptyState.tsx";
 import {Tooltip} from "@/components/componentsGeneral/tooltips/Tooltip.tsx";
 import {userService, type UserLookupItem} from "@/service/userService/userService.ts";
 import {

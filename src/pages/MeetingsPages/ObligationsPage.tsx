@@ -20,7 +20,7 @@ import {
 } from "@/service/obligationsService/obligationsService.ts";
 import {PageHeader} from "@/components/componentsGeneral/PageHeader.tsx";
 import {Loader} from "@/components/componentsGeneral/Loader.tsx";
-import {EmptyState} from "@/components/componentsGeneral/EmptyState.tsx";
+import {EmptyState} from "@/components/componentsGeneral/emptyPanel/EmptyState.tsx";
 import {
     Badge, Cell, DataTable, Row,
     formatDate, formatDaysLeft, type BadgeTone,

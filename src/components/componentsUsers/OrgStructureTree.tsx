@@ -13,7 +13,7 @@ import {
     type OrgTree, type OrgTreeNode,
 } from "@/service/orgStructureService/orgTreeService.ts";
 import {Loader} from "@/components/componentsGeneral/Loader";
-import {EmptyState} from "@/components/componentsGeneral/EmptyState.tsx";
+import {EmptyState} from "@/components/componentsGeneral/emptyPanel/EmptyState.tsx";
 import {Building2, ChevronRight, Users2} from "lucide-react";
 import {HighlightText} from "@/utils/highlightText.tsx";
 

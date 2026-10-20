@@ -22,7 +22,7 @@ import {MeetingAttendancePanel} from "@/components/meetings/MeetingAttendancePan
 import {PageHeader} from "@/components/componentsGeneral/PageHeader.tsx";
 import {Section} from "@/components/componentsGeneral/Section.tsx";
 import {Loader} from "@/components/componentsGeneral/Loader.tsx";
-import {EmptyState} from "@/components/componentsGeneral/EmptyState.tsx";
+import {EmptyState} from "@/components/componentsGeneral/emptyPanel/EmptyState.tsx";
 import {KpiCard} from "@/components/componentsReport/KpiCard.tsx";
 
 const TEXT_INPUT =

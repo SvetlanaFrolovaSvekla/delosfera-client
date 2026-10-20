@@ -25,7 +25,7 @@ import type {
 
 import {AttachmentDocxPreviewModal} from "@/components/componentsGeneral/modal/AttachmentDocxPreviewModal.tsx";
 import {Link2, Loader2, Paperclip, Plus} from "lucide-react";
-import {EmptyState} from "@/components/componentsGeneral/EmptyState.tsx";
+import {EmptyState} from "@/components/componentsGeneral/emptyPanel/EmptyState.tsx";
 
 interface VndLinksTabProps {
     vnd: VndResponse;

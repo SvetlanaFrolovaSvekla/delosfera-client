@@ -24,7 +24,7 @@ import {PageHeader} from "@/components/componentsGeneral/PageHeader.tsx";
 import {Section} from "@/components/componentsGeneral/Section.tsx";
 import {SearchBar} from "@/components/componentsGeneral/SearchBar.tsx";
 import {Loader} from "@/components/componentsGeneral/Loader.tsx";
-import {EmptyState} from "@/components/componentsGeneral/EmptyState.tsx";
+import {EmptyState} from "@/components/componentsGeneral/emptyPanel/EmptyState.tsx";
 import {Badge, Cell, DataTable, Row} from "@/components/componentsGeneral/DataTable.tsx";
 import {CheckBoxOne} from "@/components/componentsGeneral/componentsCheckBox/CheckBoxOne.tsx";
 import {DatePickerInput} from "@/components/componentsGeneral/datePickers/DatePickerInput.tsx";

@@ -11,7 +11,7 @@ import {HighlightSubstrings, splitSearchTerms} from "@/utils/highlightText.tsx";
 import {DatePickerInput} from "@/components/componentsGeneral/datePickers/DatePickerInput.tsx";
 import {Tooltip} from "@/components/componentsGeneral/tooltips/Tooltip.tsx";
 import {LightTooltip} from "@/components/componentsGeneral/tooltips/LightTooltip.tsx";
-import {EmptyState} from "@/components/componentsGeneral/EmptyState.tsx";
+import {EmptyState} from "@/components/componentsGeneral/emptyPanel/EmptyState.tsx";
 import {
     AUDIT_KINDS, getAuditKind, type AuditKindKey, type AuditKindMeta,
 } from "@/components/componentsVND/componentsOpenVndPage/componentsHistoryTab/auditEventKinds.ts";

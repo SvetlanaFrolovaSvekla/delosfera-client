@@ -20,16 +20,16 @@ import {
 import {ALLOWED_EXTENSIONS} from "@/constants/validation/attachmentsValidation.ts";
 import {MAX_FILE_SIZE} from "@/constants/validation/totalValidatuon.ts";
 import {isPreviewableFile} from "@/utils/downloadFiles/fileNaming.ts";
-import {Tooltip} from "@/components/componentsGeneral/tooltips/Tooltip.tsx";
-import {
-    AttachmentDocxPreviewModal
-} from "@/components/componentsGeneral/modal/AttachmentDocxPreviewModal.tsx";
-import {Paperclip, Trash2, Download, Eye, Loader2, Users} from "lucide-react";
 import {isCoauthorable} from "@/service/coauthoringService/coauthoringService.ts";
 
 /** Кнопка «Открыть для совместного редактирования» временно скрыта; вернуть — поставить true. */
 const COEDIT_ENABLED = false;
+import {
+    AttachmentDocxPreviewModal
+} from "@/components/componentsGeneral/modal/AttachmentDocxPreviewModal.tsx";
+import {Tooltip} from "@/components/componentsGeneral/tooltips/Tooltip.tsx";
 import {OnlyOfficeEditor} from "@/components/componentsEditor/OnlyOfficeEditor.tsx";
+import {Paperclip, Trash2, Download, Eye, Loader2, Users} from "lucide-react";
 
 
 interface Props {

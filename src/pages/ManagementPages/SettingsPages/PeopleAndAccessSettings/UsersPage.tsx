@@ -21,7 +21,7 @@ import {ConfirmActionModal} from "@/components/componentsGeneral/modal/ConfirmAc
 import {JournalViewPicker} from "@/components/componentsGeneral/JournalViewPicker.tsx";
 import {Tabs} from "@/components/componentsGeneral/Tabs.tsx";
 import {Loader} from "@/components/componentsGeneral/Loader.tsx";
-import {EmptyState} from "@/components/componentsGeneral/EmptyState.tsx";
+import {EmptyState} from "@/components/componentsGeneral/emptyPanel/EmptyState.tsx";
 import {ChevronLeft, ChevronRight} from "lucide-react";
 
 // Состояние ожидающего подтверждения действия блокировки/разблокировки

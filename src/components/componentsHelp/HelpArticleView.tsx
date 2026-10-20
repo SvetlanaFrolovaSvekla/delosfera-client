@@ -1,13 +1,3 @@
-import {useState} from "react";
-import {useNavigate} from "react-router-dom";
-import {useTranslation} from "react-i18next";
-import {ArrowRight, BookOpen, Download, Eye, FileText, Info, Loader2, TriangleAlert} from "lucide-react";
-import {helpService, type HelpBlock} from "@/service/helpService/helpService.ts";
-import {formatFileSize} from "@/service/documentService/attachmentService.ts";
-import {HelpScreenshot} from "@/components/componentsHelp/HelpScreenshot.tsx";
-import {HelpAttachmentPreviewModal} from "@/components/componentsHelp/HelpAttachmentPreviewModal.tsx";
-import {HighlightText} from "@/utils/highlightText.tsx";
-
 /**
  * Отрисовка тела статьи.
  *
@@ -18,10 +8,18 @@ import {HighlightText} from "@/utils/highlightText.tsx";
  * Ссылка на раздел — не украшение: она отвечает на вопрос «где это в системе», не
  * заставляя читателя искать пункт меню по описанию.
  */
+import {useState} from "react";
+import {useNavigate} from "react-router-dom";
+import {useTranslation} from "react-i18next";
+import {helpService, type HelpBlock} from "@/service/helpService/helpService.ts";
+import {formatFileSize} from "@/service/documentService/attachmentService.ts";
+import {HighlightText} from "@/utils/highlightText.tsx";
+import {HelpScreenshot} from "@/components/componentsHelp/HelpScreenshot.tsx";
+import {HelpAttachmentPreviewModal} from "@/components/componentsHelp/HelpAttachmentPreviewModal.tsx";
+import {ArrowRight, BookOpen, Download, Eye, FileText, Info, Loader2, TriangleAlert} from "lucide-react";
 
 interface Props {
     body: HelpBlock[];
-
     /** Строка поиска по инструкциям: её совпадения подсвечиваются в тексте статьи. */
     highlight?: string;
 }
@@ -127,7 +125,7 @@ export const HelpArticleView = ({body, highlight = ""}: Props) => {
                         );
 
                     default:
-                        // Блок неизвестного вида мог прийти из более новой версии:
+                        // Блок неизвестного вида
                         // молча пропускаем, чтобы не рушить всю статью.
                         return null;
                 }
@@ -144,19 +142,19 @@ export const HelpArticleView = ({body, highlight = ""}: Props) => {
  */
 function HelpFileAttachment({fileId, fileName, size}: {fileId: number; fileName: string; size: number}) {
     const {t} = useTranslation();
-    const [просмотр, setПросмотр] = useState(false);
-    const [скачивается, setСкачивается] = useState(false);
-    const [ошибка, setОшибка] = useState<string | null>(null);
+    const [previewOpen, setPreviewOpen] = useState(false);
+    const [downloading, setDownloading] = useState(false);
+    const [error, setError] = useState<string | null>(null);
 
-    const скачать = async () => {
-        setСкачивается(true);
-        setОшибка(null);
+    const download = async () => {
+        setDownloading(true);
+        setError(null);
         try {
             await helpService.downloadFile(fileId, fileName);
         } catch {
-            setОшибка(t("help.view.downloadFailed"));
+            setError(t("help.view.downloadFailed"));
         } finally {
-            setСкачивается(false);
+            setDownloading(false);
         }
     };
 
@@ -169,19 +167,19 @@ function HelpFileAttachment({fileId, fileName, size}: {fileId: number; fileName:
             <div className="min-w-0 flex-1">
                 <div className="truncate text-[13.5px] font-semibold text-[#1c2740]">{fileName}</div>
                 <div className="mt-0.5 text-[11.5px] text-[#8b97ab]">
-                    {formatFileSize(size)}{ошибка && <span className="ml-2 text-[#c0392b]">{ошибка}</span>}
+                    {formatFileSize(size)}{error && <span className="ml-2 text-[#c0392b]">{error}</span>}
                 </div>
             </div>
 
             <div className="flex flex-none items-center gap-2">
-                <button onClick={() => setПросмотр(true)}
+                <button onClick={() => setPreviewOpen(true)}
                         className="flex items-center gap-1.5 rounded-[9px] border border-[#e5e9f0] bg-white px-3 py-2 text-[12.5px] font-semibold text-[#55617a] hover:border-[#d9dcf7]">
                     <Eye className="h-4 w-4" strokeWidth={2}/>
                     {t("help.view.preview")}
                 </button>
-                <button onClick={() => void скачать()} disabled={скачивается}
+                <button onClick={() => void download()} disabled={downloading}
                         className="flex items-center gap-1.5 rounded-[9px] border border-[#d9dcf7] bg-white px-3 py-2 text-[12.5px] font-semibold text-[#4e57d6] hover:bg-[#f4f5ff] disabled:opacity-50">
-                    {скачивается ? (
+                    {downloading ? (
                         <Loader2 className="h-4 w-4 animate-spin"/>
                     ) : (
                         <Download className="h-4 w-4" strokeWidth={2}/>
@@ -190,11 +188,11 @@ function HelpFileAttachment({fileId, fileName, size}: {fileId: number; fileName:
                 </button>
             </div>
 
-            {просмотр && (
+            {previewOpen && (
                 <HelpAttachmentPreviewModal
                     fileId={fileId}
                     fileName={fileName}
-                    onClose={() => setПросмотр(false)}
+                    onClose={() => setPreviewOpen(false)}
                 />
             )}
         </div>

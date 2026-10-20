@@ -8,8 +8,8 @@ import {HOME_TOP_ROW_HEIGHT} from "@/constants/homeConst.ts";
 import {VndTaskCard} from "@/components/componentsTasks/VndTaskCard.tsx";
 import {SzTaskCard} from "@/components/componentsTasks/SzTaskCard.tsx";
 import {Loader} from "@/components/componentsGeneral/Loader.tsx";
-import {EmptyState} from "@/components/componentsGeneral/EmptyState.tsx";
-import {EmptyPanelPattern} from "@/components/componentsGeneral/EmptyPanelPattern.tsx";
+import {EmptyState} from "@/components/componentsGeneral/emptyPanel/EmptyState.tsx";
+import {EmptyPanelPattern} from "@/components/componentsGeneral/emptyPanel/EmptyPanelPattern.tsx";
 import {ListChecks} from "lucide-react";
 
 interface MyTasksCardProps {

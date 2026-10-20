@@ -1,4 +1,5 @@
-// Включённые условия фильтра в виде «чипсов»: видно, что именно отфильтровано, и каждое можно снять
+// Включённые условия фильтра в виде "чипсов": видно, что именно отфильтровано,
+// и каждое можно снять
 import {X} from "lucide-react";
 
 export interface ActiveFilterChip {
@@ -9,7 +10,7 @@ export interface ActiveFilterChip {
 
 interface Props {
     chips: ActiveFilterChip[];
-    /** Подпись слева: «Активные фильтры» */
+    /** Подпись слева: "Активные фильтры" */
     label: string;
     /** Подсказка и aria-label крестика на чипсе */
     removeLabel: string;

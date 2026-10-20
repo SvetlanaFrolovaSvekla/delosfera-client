@@ -47,7 +47,7 @@ import {VndCoordinationSharedModals} from "../componentsCoordinationTab/componen
 import {getCoordinationRoleState, getRouteHeaderConfig} from "../../../../utils/vndProcess/coordination/coordinationRoleState.ts";
 import type {CoordinationModal} from "../../../../utils/vndProcess/coordination/coordinationModalTypes.ts";
 import {Loader} from "@/components/componentsGeneral/Loader.tsx";
-import {EmptyState} from "@/components/componentsGeneral/EmptyState.tsx";
+import {EmptyState} from "@/components/componentsGeneral/emptyPanel/EmptyState.tsx";
 import {AlertTriangle, Clock3, Info} from "lucide-react";
 ///
 

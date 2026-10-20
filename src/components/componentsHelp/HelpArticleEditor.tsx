@@ -1,15 +1,8 @@
+/**
+ * Редактор статьи инструкции.
+ */
 import {useState} from "react";
 import {useTranslation} from "react-i18next";
-import {
-    ArrowDown, ArrowRight, ArrowUp, BookOpen, Image as ImageIcon, Info, ListOrdered, Paperclip, Plus,
-    TextAlignStart, Trash2, X, type LucideIcon,
-} from "lucide-react";
-import {HelpScreenshot} from "@/components/componentsHelp/HelpScreenshot.tsx";
-import {SelectDropdown} from "@/components/componentsGeneral/selects/SingleSelects/SelectDropdown.tsx";
-import {PlainCheckbox} from "@/components/componentsGeneral/componentsCheckBox/PlainCheckbox.tsx";
-import {Tooltip} from "@/components/componentsGeneral/tooltips/Tooltip.tsx";
-import {HelpTooltip} from "@/components/componentsGeneral/knowledgeBaseComponents/HelpTooltip.tsx";
-import {Clue} from "@/components/componentsGeneral/knowledgeBaseComponents/Clue.tsx";
 import {toast} from "@/service/toastService.ts";
 import {
     helpService,
@@ -18,15 +11,16 @@ import {
     type HelpBlock,
     type HelpSection,
 } from "@/service/helpService/helpService.ts";
-
-/**
- * Редактор статьи инструкции.
- *
- * Блоки добавляются кнопками, а не размечаются в тексте: разметку пришлось бы
- * объяснять тому, кто пишет инструкцию, — а он как раз тот человек, которому
- * объяснять не должны. Порядок меняется стрелками, потому что перетаскивание в
- * длинном списке промахивается чаще, чем попадает.
- */
+import {HelpScreenshot} from "@/components/componentsHelp/HelpScreenshot.tsx";
+import {SelectDropdown} from "@/components/componentsGeneral/selects/SingleSelects/SelectDropdown.tsx";
+import {PlainCheckbox} from "@/components/componentsGeneral/componentsCheckBox/PlainCheckbox.tsx";
+import {Tooltip} from "@/components/componentsGeneral/tooltips/Tooltip.tsx";
+import {HelpTooltip} from "@/components/componentsGeneral/knowledgeBaseComponents/HelpTooltip.tsx";
+import {Clue} from "@/components/componentsGeneral/knowledgeBaseComponents/Clue.tsx";
+import {
+    ArrowDown, ArrowRight, ArrowUp, BookOpen, Image as ImageIcon, Info, ListOrdered, Paperclip, Plus,
+    TextAlignStart, Trash2, X, type LucideIcon,
+} from "lucide-react";
 
 interface Props {
     /** Пусто — создаётся новая статья. */
@@ -37,7 +31,7 @@ interface Props {
 }
 
 /** Виды блоков. Подписи — в переводах: help.blocks.<kind>.label / .hint. */
-const ВИДЫ: {kind: HelpBlock["kind"]; icon: LucideIcon}[] = [
+const BLOCK_KINDS: {kind: HelpBlock["kind"]; icon: LucideIcon}[] = [
     {kind: "text", icon: TextAlignStart},
     {kind: "steps", icon: ListOrdered},
     {kind: "note", icon: Info},
@@ -48,16 +42,16 @@ const ВИДЫ: {kind: HelpBlock["kind"]; icon: LucideIcon}[] = [
 ];
 
 /** Общий вид поля ввода — используется и в статье, и в редакторе снимка (как поля форм ВНД). */
-const поле =
+const FIELD_CLASS =
     "w-full rounded-[9px] border border-[#e5e9f0] bg-white px-3 py-2 text-[13px] text-[#1c2740] outline-none " +
     "placeholder:text-[#a3adbd] hover:bg-[#f6f8fb] focus:border-[#4e57d6] focus:bg-white focus:ring-[3px] focus:ring-[#ececfc]";
 
 /** Подпись поля и пояснение под ним. */
-const подпись = "text-[11.5px] font-semibold text-[#55617a]";
-const пояснение = "text-[11px] leading-[1.45] text-[#a3adbd]";
+const LABEL_CLASS = "text-[11.5px] font-semibold text-[#55617a]";
+const HINT_CLASS = "text-[11px] leading-[1.45] text-[#a3adbd]";
 
 /** Маленькая кнопка действия над блоком (вверх/вниз/удалить). */
-const кнопкаБлока =
+const BLOCK_BUTTON_CLASS =
     "flex h-7 w-7 cursor-pointer items-center justify-center rounded-[7px] border border-[#e5e9f0] bg-white " +
     "text-[#8b97ab] hover:bg-[#f6f8fb] disabled:cursor-not-allowed disabled:opacity-40";
 
@@ -71,11 +65,11 @@ export const HelpArticleEditor = ({article, onClose, onSaved}: Props) => {
     const [isPublished, setIsPublished] = useState(article?.isPublished ?? false);
     const [body, setBody] = useState<HelpBlock[]>(article?.body ?? []);
 
-    const [занято, setЗанято] = useState(false);
-    const [ошибка, setОшибка] = useState<string | null>(null);
+    const [busy, setBusy] = useState(false);
+    const [error, setError] = useState<string | null>(null);
 
-    const добавить = (kind: HelpBlock["kind"]) => {
-        const пустой: Record<HelpBlock["kind"], HelpBlock> = {
+    const addBlock = (kind: HelpBlock["kind"]) => {
+        const emptyBlocks: Record<HelpBlock["kind"], HelpBlock> = {
             text: {kind: "text", text: ""},
             steps: {kind: "steps", items: [""]},
             note: {kind: "note", tone: "info", text: ""},
@@ -84,32 +78,32 @@ export const HelpArticleEditor = ({article, onClose, onSaved}: Props) => {
             image: {kind: "image", fileId: 0, caption: "", markers: []},
             file: {kind: "file", fileId: 0, fileName: "", size: 0},
         };
-        setBody([...body, пустой[kind]]);
+        setBody([...body, emptyBlocks[kind]]);
     };
 
-    const заменить = (i: number, block: HelpBlock) =>
+    const replaceBlock = (i: number, block: HelpBlock) =>
         setBody(body.map((b, j) => (j === i ? block : b)));
 
-    const убрать = (i: number) => setBody(body.filter((_, j) => j !== i));
+    const removeBlock = (i: number) => setBody(body.filter((_, j) => j !== i));
 
-    const сдвинуть = (i: number, шаг: -1 | 1) => {
-        const j = i + шаг;
+    const moveBlock = (i: number, delta: -1 | 1) => {
+        const j = i + delta;
         if (j < 0 || j >= body.length) return;
-        const копия = [...body];
-        [копия[i], копия[j]] = [копия[j], копия[i]];
-        setBody(копия);
+        const copy = [...body];
+        [copy[i], copy[j]] = [copy[j], copy[i]];
+        setBody(copy);
     };
 
-    const сохранить = async () => {
+    const save = async () => {
         if (!titleRu.trim()) {
-            setОшибка(t("help.componentsEditor.titleRequired"));
+            setError(t("help.componentsEditor.titleRequired"));
             toast.warning(t("help.componentsEditor.titleRequired"));
             return;
         }
 
         try {
-            setЗанято(true);
-            setОшибка(null);
+            setBusy(true);
+            setError(null);
 
             const input = {
                 section,
@@ -121,28 +115,32 @@ export const HelpArticleEditor = ({article, onClose, onSaved}: Props) => {
                 body,
             };
 
-            const id = article
-                ? (await helpService.update(article.id, input), article.id)
-                : await helpService.create(input);
+            let id: number;
+            if (article) {
+                await helpService.update(article.id, input);
+                id = article.id;
+            } else {
+                id = await helpService.create(input);
+            }
 
             onSaved(id);
         } catch (e) {
             const message = (e as {response?: {data?: {message?: string}}}).response?.data?.message;
-            setОшибка(message ?? t("help.componentsEditor.saveFailed"));
+            setError(message ?? t("help.componentsEditor.saveFailed"));
             toast.error(t("help.componentsEditor.saveFailed"), message);
-            setЗанято(false);
+            setBusy(false);
         }
     };
 
 
 
-    const текущийВид = (kind: HelpBlock["kind"]) => ВИДЫ.find((v) => v.kind === kind);
+    const findKind = (kind: HelpBlock["kind"]) => BLOCK_KINDS.find((v) => v.kind === kind);
 
     return (
         <div className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-[#0f1b2d]/40 p-4 backdrop-blur-[2px]"
              role="dialog" aria-modal="true" aria-label={t("help.componentsEditor.ariaLabel")}>
             <div className="my-6 flex w-full max-w-[860px] flex-col overflow-hidden rounded-2xl bg-white shadow-[0_24px_60px_-20px_rgba(15,27,45,0.35)]">
-                {/* ── шапка ─────────────────────────────────── */}
+                {/* Шапка */}
                 <div className="relative flex items-center justify-center border-b border-[#eef2f7] px-5 py-4">
                     <div className="absolute left-4 top-1/2 -translate-y-1/2">
                         <HelpTooltip
@@ -160,25 +158,25 @@ export const HelpArticleEditor = ({article, onClose, onSaved}: Props) => {
                 </div>
 
                 <div className="flex flex-col gap-5 px-6 py-5">
-                    {ошибка && (
+                    {error && (
                         <div className="rounded-[10px] border border-[#f1c9c2] bg-[#fbeae7] px-3.5 py-2.5 text-[12.5px] text-[#c0392b]">
-                            {ошибка}
+                            {error}
                         </div>
                     )}
 
-                    {/* ── реквизиты ─────────────────────────── */}
+                    {/* Реквизиты */}
                     <div className="rounded-2xl border border-[#eef2f7] p-4">
                         <div className="mb-3.5 text-[12px] font-bold uppercase tracking-[.04em] text-[#2d354a]">{t("help.componentsEditor.aboutTitle")}</div>
 
                         <div className="grid gap-3 sm:grid-cols-[1fr_230px]">
                             <label className="flex flex-col gap-1.5">
-                                <span className={подпись}>{t("help.componentsEditor.title")} <span className="text-[#c0392b]">*</span></span>
-                                <input className={поле} value={titleRu} onChange={(e) => setTitleRu(e.target.value)}
+                                <span className={LABEL_CLASS}>{t("help.componentsEditor.title")} <span className="text-[#c0392b]">*</span></span>
+                                <input className={FIELD_CLASS} value={titleRu} onChange={(e) => setTitleRu(e.target.value)}
                                        placeholder={t("help.componentsEditor.titlePlaceholder")}/>
                             </label>
 
                             <div className="flex flex-col gap-1.5">
-                                <span className={подпись}>{t("help.componentsEditor.section")}</span>
+                                <span className={LABEL_CLASS}>{t("help.componentsEditor.section")}</span>
                                 <SelectDropdown
                                     options={SECTION_ORDER.map((s) => ({value: s, label: t(`help.sections.${s}`)}))}
                                     value={section}
@@ -189,32 +187,32 @@ export const HelpArticleEditor = ({article, onClose, onSaved}: Props) => {
                         </div>
 
                         <label className="mt-3 flex flex-col gap-1.5">
-                            <span className={подпись}>{t("help.componentsEditor.summary")}</span>
-                            <input className={поле} value={summaryRu} onChange={(e) => setSummaryRu(e.target.value)}
+                            <span className={LABEL_CLASS}>{t("help.componentsEditor.summary")}</span>
+                            <input className={FIELD_CLASS} value={summaryRu} onChange={(e) => setSummaryRu(e.target.value)}
                                    placeholder={t("help.componentsEditor.summaryPlaceholder")}/>
-                            <span className={пояснение}>{t("help.componentsEditor.summaryHint")}</span>
+                            <span className={HINT_CLASS}>{t("help.componentsEditor.summaryHint")}</span>
                         </label>
 
                         <div className="mt-3 grid gap-3 sm:grid-cols-[1fr_140px]">
                             <label className="flex flex-col gap-1.5">
-                                <span className={подпись}>{t("help.componentsEditor.route")}</span>
-                                <input className={поле} value={routePath} onChange={(e) => setRoutePath(e.target.value)}
+                                <span className={LABEL_CLASS}>{t("help.componentsEditor.route")}</span>
+                                <input className={FIELD_CLASS} value={routePath} onChange={(e) => setRoutePath(e.target.value)}
                                        placeholder="/sz"/>
-                                <span className={пояснение}>
+                                <span className={HINT_CLASS}>
                                     {t("help.componentsEditor.routeHint")}
                                 </span>
                             </label>
 
                             <label className="flex flex-col gap-1.5">
-                                <span className={подпись}>{t("help.componentsEditor.order")}</span>
-                                <input type="number" className={поле} value={sortOrder}
+                                <span className={LABEL_CLASS}>{t("help.componentsEditor.order")}</span>
+                                <input type="number" className={FIELD_CLASS} value={sortOrder}
                                        onChange={(e) => setSortOrder(Number(e.target.value))}/>
-                                <span className={пояснение}>{t("help.componentsEditor.orderHint")}</span>
+                                <span className={HINT_CLASS}>{t("help.componentsEditor.orderHint")}</span>
                             </label>
                         </div>
                     </div>
 
-                    {/* ── блоки ─────────────────────────────── */}
+                    {/* Блоки */}
                     <div className="rounded-2xl border border-[#eef2f7] p-4">
                         <div className="mb-3 flex items-center justify-between gap-2">
                             <span className="text-[12px] font-bold uppercase tracking-[.04em] text-[#2d354a]">{t("help.componentsEditor.contentTitle")}</span>
@@ -224,8 +222,8 @@ export const HelpArticleEditor = ({article, onClose, onSaved}: Props) => {
                         </div>
 
                         <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-4">
-                            {ВИДЫ.map((v) => (
-                                <button key={v.kind} type="button" onClick={() => добавить(v.kind)}
+                            {BLOCK_KINDS.map((v) => (
+                                <button key={v.kind} type="button" onClick={() => addBlock(v.kind)}
                                         className="group flex cursor-pointer items-start gap-2.5 rounded-[11px] border border-[#e5e9f0] bg-white p-2.5 text-left hover:border-[#c9cdf5] hover:bg-[#f8f8ff]">
                                     <span className="grid h-8 w-8 flex-none place-items-center rounded-[9px] bg-[#f2f5f9] text-[#8b97ab] group-hover:bg-[#ececfc] group-hover:text-[#4e57d6]">
                                         <v.icon className="h-4 w-4" strokeWidth={2}/>
@@ -245,8 +243,8 @@ export const HelpArticleEditor = ({article, onClose, onSaved}: Props) => {
                         ) : (
                             <div className="mt-3 flex flex-col gap-2.5">
                                 {body.map((block, i) => {
-                                    const вид = текущийВид(block.kind);
-                                    const Icon = вид?.icon;
+                                    const kindDef = findKind(block.kind);
+                                    const Icon = kindDef?.icon;
                                     return (
                                         <div key={i} className="rounded-[12px] border border-[#eef2f7] bg-[#fafbfd] p-3">
                                             <div className="mb-2.5 flex items-center justify-between gap-2">
@@ -256,25 +254,25 @@ export const HelpArticleEditor = ({article, onClose, onSaved}: Props) => {
                                                     </span>
                                                     {Icon && <Icon className="h-3.5 w-3.5 text-[#4e57d6]" strokeWidth={2}/>}
                                                     <span className="text-[11.5px] font-bold uppercase tracking-[0.06em] text-[#55617a]">
-                                                        {вид ? t(`help.blocks.${вид.kind}.label`) : block.kind}
+                                                        {kindDef ? t(`help.blocks.${kindDef.kind}.label`) : block.kind}
                                                     </span>
                                                 </span>
                                                 <div className="flex gap-1">
                                                     <Tooltip content={t("help.componentsEditor.moveUp")}>
-                                                        <button type="button" onClick={() => сдвинуть(i, -1)} disabled={i === 0}
-                                                                className={кнопкаБлока}>
+                                                        <button type="button" onClick={() => moveBlock(i, -1)} disabled={i === 0}
+                                                                className={BLOCK_BUTTON_CLASS}>
                                                             <ArrowUp className="h-3.5 w-3.5" strokeWidth={2}/>
                                                         </button>
                                                     </Tooltip>
                                                     <Tooltip content={t("help.componentsEditor.moveDown")}>
-                                                        <button type="button" onClick={() => сдвинуть(i, 1)} disabled={i === body.length - 1}
-                                                                className={кнопкаБлока}>
+                                                        <button type="button" onClick={() => moveBlock(i, 1)} disabled={i === body.length - 1}
+                                                                className={BLOCK_BUTTON_CLASS}>
                                                             <ArrowDown className="h-3.5 w-3.5" strokeWidth={2}/>
                                                         </button>
                                                     </Tooltip>
                                                     <Tooltip content={t("help.componentsEditor.removeBlock")}>
-                                                        <button type="button" onClick={() => убрать(i)}
-                                                                className={`${кнопкаБлока} !text-[#c0392b] hover:!bg-[#fdf1f1]`}>
+                                                        <button type="button" onClick={() => removeBlock(i)}
+                                                                className={`${BLOCK_BUTTON_CLASS} !text-[#c0392b] hover:!bg-[#fdf1f1]`}>
                                                             <Trash2 className="h-3.5 w-3.5" strokeWidth={2}/>
                                                         </button>
                                                     </Tooltip>
@@ -282,9 +280,9 @@ export const HelpArticleEditor = ({article, onClose, onSaved}: Props) => {
                                             </div>
 
                                             {block.kind === "text" && (
-                                                <textarea rows={3} className={поле} value={block.text}
+                                                <textarea rows={3} className={FIELD_CLASS} value={block.text}
                                                           placeholder={t("help.componentsEditor.paragraphPlaceholder")}
-                                                          onChange={(e) => заменить(i, {...block, text: e.target.value})}/>
+                                                          onChange={(e) => replaceBlock(i, {...block, text: e.target.value})}/>
                                             )}
 
                                             {block.kind === "steps" && (
@@ -294,21 +292,21 @@ export const HelpArticleEditor = ({article, onClose, onSaved}: Props) => {
                                                             <span className="grid h-6 w-6 flex-none place-items-center rounded-full bg-[#ececfc] text-[11.5px] font-bold text-[#4e57d6]">
                                                                 {j + 1}
                                                             </span>
-                                                            <input className={поле} value={item} placeholder={t("help.componentsEditor.stepPlaceholder")}
-                                                                   onChange={(e) => заменить(i, {
+                                                            <input className={FIELD_CLASS} value={item} placeholder={t("help.componentsEditor.stepPlaceholder")}
+                                                                   onChange={(e) => replaceBlock(i, {
                                                                        ...block,
                                                                        items: block.items.map((x, k) => (k === j ? e.target.value : x)),
                                                                    })}/>
                                                             <Tooltip content={t("help.componentsEditor.removeStep")}>
-                                                                <button type="button" onClick={() => заменить(i, {
+                                                                <button type="button" onClick={() => replaceBlock(i, {
                                                                     ...block, items: block.items.filter((_, k) => k !== j),
-                                                                })} className={`${кнопкаБлока} !text-[#c0392b]`}>
+                                                                })} className={`${BLOCK_BUTTON_CLASS} !text-[#c0392b]`}>
                                                                     <Trash2 className="h-3 w-3" strokeWidth={2}/>
                                                                 </button>
                                                             </Tooltip>
                                                         </div>
                                                     ))}
-                                                    <button type="button" onClick={() => заменить(i, {...block, items: [...block.items, ""]})}
+                                                    <button type="button" onClick={() => replaceBlock(i, {...block, items: [...block.items, ""]})}
                                                             className="mt-0.5 inline-flex w-fit cursor-pointer items-center gap-1 border-none bg-transparent p-0 text-[12px] font-semibold text-[#4e57d6]">
                                                         <Plus className="h-3.5 w-3.5" strokeWidth={2.2}/>
                                                         {t("help.componentsEditor.addStep")}
@@ -321,7 +319,7 @@ export const HelpArticleEditor = ({article, onClose, onSaved}: Props) => {
                                                     <div className="flex gap-2">
                                                         {(["info", "warning"] as const).map((tone) => (
                                                             <button key={tone} type="button"
-                                                                    onClick={() => заменить(i, {...block, tone})}
+                                                                    onClick={() => replaceBlock(i, {...block, tone})}
                                                                     className={`h-8 cursor-pointer rounded-[8px] border px-3 text-[12px] font-semibold ${
                                                                         (block.tone ?? "info") === tone
                                                                             ? tone === "info"
@@ -332,42 +330,42 @@ export const HelpArticleEditor = ({article, onClose, onSaved}: Props) => {
                                                             </button>
                                                         ))}
                                                     </div>
-                                                    <textarea rows={2} className={поле} value={block.text}
+                                                    <textarea rows={2} className={FIELD_CLASS} value={block.text}
                                                               placeholder={t("help.componentsEditor.notePlaceholder")}
-                                                              onChange={(e) => заменить(i, {...block, text: e.target.value})}/>
+                                                              onChange={(e) => replaceBlock(i, {...block, text: e.target.value})}/>
                                                 </div>
                                             )}
 
                                             {block.kind === "link" && (
                                                 <div className="grid gap-2 sm:grid-cols-[1fr_180px]">
-                                                    <input className={поле} value={block.label} placeholder={t("help.componentsEditor.linkLabelPlaceholder")}
-                                                           onChange={(e) => заменить(i, {...block, label: e.target.value})}/>
-                                                    <input className={поле} value={block.path} placeholder="/sz"
-                                                           onChange={(e) => заменить(i, {...block, path: e.target.value})}/>
+                                                    <input className={FIELD_CLASS} value={block.label} placeholder={t("help.componentsEditor.linkLabelPlaceholder")}
+                                                           onChange={(e) => replaceBlock(i, {...block, label: e.target.value})}/>
+                                                    <input className={FIELD_CLASS} value={block.path} placeholder="/sz"
+                                                           onChange={(e) => replaceBlock(i, {...block, path: e.target.value})}/>
                                                 </div>
                                             )}
 
                                             {block.kind === "image" && (
                                                 <HelpImageBlockEditor
                                                     block={block}
-                                                    onChange={(next) => заменить(i, next)}
+                                                    onChange={(next) => replaceBlock(i, next)}
                                                 />
                                             )}
 
                                             {block.kind === "file" && (
                                                 <HelpFileBlockEditor
                                                     block={block}
-                                                    onChange={(next) => заменить(i, next)}
+                                                    onChange={(next) => replaceBlock(i, next)}
                                                 />
                                             )}
 
                                             {block.kind === "vnd" && (
                                                 <div className="grid gap-2 sm:grid-cols-[1fr_140px]">
-                                                    <input className={поле} value={block.label} placeholder={t("help.componentsEditor.vndLabelPlaceholder")}
-                                                           onChange={(e) => заменить(i, {...block, label: e.target.value})}/>
-                                                    <input type="number" className={поле} value={block.documentId}
+                                                    <input className={FIELD_CLASS} value={block.label} placeholder={t("help.componentsEditor.vndLabelPlaceholder")}
+                                                           onChange={(e) => replaceBlock(i, {...block, label: e.target.value})}/>
+                                                    <input type="number" className={FIELD_CLASS} value={block.documentId}
                                                            placeholder={t("help.componentsEditor.vndIdPlaceholder")}
-                                                           onChange={(e) => заменить(i, {...block, documentId: Number(e.target.value)})}/>
+                                                           onChange={(e) => replaceBlock(i, {...block, documentId: Number(e.target.value)})}/>
                                                 </div>
                                             )}
                                         </div>
@@ -378,25 +376,25 @@ export const HelpArticleEditor = ({article, onClose, onSaved}: Props) => {
                     </div>
                 </div>
 
-                {/* ── подвал ────────────────────────────────── */}
+                {/* Подвал */}
                 <div className="flex flex-wrap items-center justify-between gap-3 border-t border-[#eef2f7] bg-[#fafbfd] px-6 py-4">
                     <div className="flex flex-col gap-0.5">
                         <PlainCheckbox checked={isPublished} onChange={setIsPublished}>
                             {t("help.componentsEditor.publish")}
                         </PlainCheckbox>
-                        <span className={`pl-7 ${пояснение}`}>
+                        <span className={`pl-7 ${HINT_CLASS}`}>
                             {isPublished ? t("help.componentsEditor.publishedHint") : t("help.componentsEditor.draftHint")}
                         </span>
                     </div>
 
                     <div className="flex gap-2.5">
-                        <button type="button" onClick={onClose} disabled={занято}
+                        <button type="button" onClick={onClose} disabled={busy}
                                 className="h-10 cursor-pointer rounded-[10px] border border-[#e5e9f0] bg-white px-4 text-[13px] font-semibold text-[#55617a] hover:bg-[#f6f8fb]">
                             {t("help.componentsEditor.cancel")}
                         </button>
-                        <button type="button" onClick={() => void сохранить()} disabled={занято}
+                        <button type="button" onClick={() => void save()} disabled={busy}
                                 className="h-10 cursor-pointer rounded-[10px] border-none bg-[#4e57d6] px-5 text-[13px] font-semibold text-white shadow-[0_6px_16px_-6px_#4e57d6] hover:brightness-[1.06] disabled:cursor-not-allowed disabled:opacity-50">
-                            {занято ? t("help.componentsEditor.saving") : article ? t("help.componentsEditor.save") : t("help.componentsEditor.create")}
+                            {busy ? t("help.componentsEditor.saving") : article ? t("help.componentsEditor.save") : t("help.componentsEditor.create")}
                         </button>
                     </div>
                 </div>
@@ -417,23 +415,23 @@ function HelpImageBlockEditor({block, onChange}: {
     onChange: (block: HelpBlock) => void;
 }) {
     const {t} = useTranslation();
-    const [загрузка, setЗагрузка] = useState(false);
-    const [ошибка, setОшибка] = useState<string | null>(null);
+    const [uploading, setUploading] = useState(false);
+    const [error, setError] = useState<string | null>(null);
 
     const markers = block.markers ?? [];
 
-    const загрузить = async (file: File) => {
-        setЗагрузка(true);
-        setОшибка(null);
+    const upload = async (file: File) => {
+        setUploading(true);
+        setError(null);
         try {
             const {fileId} = await helpService.uploadImage(file);
             // Новый снимок — старые выноски к нему не относятся.
             onChange({...block, fileId, markers: []});
         } catch (e) {
-            const текст = (e as {response?: {data?: {message?: string}}})?.response?.data?.message;
-            setОшибка(текст ?? t("help.componentsEditor.imageUploadFailed"));
+            const message = (e as {response?: {data?: {message?: string}}})?.response?.data?.message;
+            setError(message ?? t("help.componentsEditor.imageUploadFailed"));
         } finally {
-            setЗагрузка(false);
+            setUploading(false);
         }
     };
 
@@ -449,13 +447,13 @@ function HelpImageBlockEditor({block, onChange}: {
                         className="hidden"
                         onChange={(e) => {
                             const file = e.target.files?.[0];
-                            if (file) void загрузить(file);
+                            if (file) void upload(file);
                             e.target.value = "";
                         }}
                     />
                 </label>
 
-                {загрузка && <span className="text-[12.5px] text-[#8b97ab]">{t("help.componentsEditor.uploading")}</span>}
+                {uploading && <span className="text-[12.5px] text-[#8b97ab]">{t("help.componentsEditor.uploading")}</span>}
 
                 {block.fileId > 0 && (
                     <span className="text-[12.5px] text-[#8b97ab]">
@@ -464,7 +462,7 @@ function HelpImageBlockEditor({block, onChange}: {
                 )}
             </div>
 
-            {ошибка && <p className="m-0 text-[13px] text-[#c0392b]">{ошибка}</p>}
+            {error && <p className="m-0 text-[13px] text-[#c0392b]">{error}</p>}
 
             {block.fileId > 0 && (
                 <>
@@ -483,7 +481,7 @@ function HelpImageBlockEditor({block, onChange}: {
                                 {index + 1}
                             </span>
                             <input
-                                className={поле}
+                                className={FIELD_CLASS}
                                 value={marker.text ?? ""}
                                 placeholder={t("help.componentsEditor.markerPlaceholder")}
                                 onChange={(e) => onChange({
@@ -496,7 +494,7 @@ function HelpImageBlockEditor({block, onChange}: {
                     ))}
 
                     <input
-                        className={поле}
+                        className={FIELD_CLASS}
                         value={block.caption ?? ""}
                         placeholder={t("help.componentsEditor.captionPlaceholder")}
                         onChange={(e) => onChange({...block, caption: e.target.value})}
@@ -517,20 +515,20 @@ function HelpFileBlockEditor({block, onChange}: {
     onChange: (block: HelpBlock) => void;
 }) {
     const {t} = useTranslation();
-    const [загрузка, setЗагрузка] = useState(false);
-    const [ошибка, setОшибка] = useState<string | null>(null);
+    const [uploading, setUploading] = useState(false);
+    const [error, setError] = useState<string | null>(null);
 
-    const загрузить = async (file: File) => {
-        setЗагрузка(true);
-        setОшибка(null);
+    const upload = async (file: File) => {
+        setUploading(true);
+        setError(null);
         try {
             const {fileId, fileName, size} = await helpService.uploadFile(file);
             onChange({...block, fileId, fileName, size});
         } catch (e) {
-            const текст = (e as {response?: {data?: {message?: string}}})?.response?.data?.message;
-            setОшибка(текст ?? t("help.componentsEditor.fileUploadFailed"));
+            const message = (e as {response?: {data?: {message?: string}}})?.response?.data?.message;
+            setError(message ?? t("help.componentsEditor.fileUploadFailed"));
         } finally {
-            setЗагрузка(false);
+            setUploading(false);
         }
     };
 
@@ -546,20 +544,20 @@ function HelpFileBlockEditor({block, onChange}: {
                         className="hidden"
                         onChange={(e) => {
                             const file = e.target.files?.[0];
-                            if (file) void загрузить(file);
+                            if (file) void upload(file);
                             e.target.value = "";
                         }}
                     />
                 </label>
 
-                {загрузка && <span className="text-[12.5px] text-[#8b97ab]">{t("help.componentsEditor.uploading")}</span>}
+                {uploading && <span className="text-[12.5px] text-[#8b97ab]">{t("help.componentsEditor.uploading")}</span>}
 
-                {block.fileId > 0 && !загрузка && (
+                {block.fileId > 0 && !uploading && (
                     <span className="text-[12.5px] text-[#8b97ab]">{block.fileName}</span>
                 )}
             </div>
 
-            {ошибка && <p className="m-0 text-[13px] text-[#c0392b]">{ошибка}</p>}
+            {error && <p className="m-0 text-[13px] text-[#c0392b]">{error}</p>}
         </div>
     );
 }

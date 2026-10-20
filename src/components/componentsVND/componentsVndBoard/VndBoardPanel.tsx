@@ -1,13 +1,12 @@
-// Панель "Доски ВНД" — одна стадия жизненного цикла (или "Избранное"): шапка с цветом статуса и
+// Панель "Доски ВНД" - одна стадия жизненного цикла (или "Избранное"): шапка с цветом статуса и
 // счётчиком, карточки документов, "Показать ещё" для длинных списков.
 import {useState} from "react";
 import {useTranslation} from "react-i18next";
-import {ChevronDown, ChevronUp} from "lucide-react";
-
+import type {VndBoardPanelMeta} from "@/constants/vndBoard.ts";
 import type {VndResponse} from "@/service/vndService/vndServiceType.ts";
 import type {VndBoardReason} from "@/service/vndService/vndBoardService.ts";
-import type {VndBoardPanelMeta} from "@/constants/vndBoard.ts";
 import {VndBoardCard, type VndBoardRemoveKind} from "./VndBoardCard.tsx";
+import {ChevronDown, ChevronUp} from "lucide-react";
 
 export interface VndBoardPanelRow {
     vnd: VndResponse;
@@ -27,7 +26,7 @@ interface VndBoardPanelProps {
     onRemove: (vnd: VndResponse, kind: VndBoardRemoveKind) => void;
 }
 
-const COLLAPSED_LIMIT = 6;
+const COLLAPSED_LIMIT = 4;
 
 export function VndBoardPanel({
                                   meta, rows, totalCount, searchQuery, canViewExtended, busyIds,

@@ -20,7 +20,7 @@ import {
 } from "@/service/procurementService/authorityMatrixService.ts";
 import {CheckBoxOne} from "@/components/componentsGeneral/componentsCheckBox/CheckBoxOne.tsx";
 import {Loader} from "@/components/componentsGeneral/Loader.tsx";
-import {EmptyState} from "@/components/componentsGeneral/EmptyState.tsx";
+import {EmptyState} from "@/components/componentsGeneral/emptyPanel/EmptyState.tsx";
 
 
 const LABEL = "text-[11px] font-bold tracking-[.04em] uppercase text-[#a3adbd]";

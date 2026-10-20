@@ -6,9 +6,9 @@
 import {useState} from "react";
 import {createPortal} from "react-dom";
 import {useTranslation} from "react-i18next";
-import {Download, FileText, Loader2, X} from "lucide-react";
-import {useDocxPreview} from "@/hooks/vndHooks/useDocxPreview.ts";
 import {helpService} from "@/service/helpService/helpService.ts";
+import {useDocxPreview} from "@/hooks/vndHooks/useDocxPreview.ts";
+import {Download, FileText, Loader2, X} from "lucide-react";
 
 interface Props {
     fileId: number;
@@ -19,18 +19,18 @@ interface Props {
 export function HelpAttachmentPreviewModal({fileId, fileName, onClose}: Props) {
     const {t} = useTranslation();
     const {containerRef, loading, error} = useDocxPreview(fileId, {endpoint: "help/files"});
-    const [скачивается, setСкачивается] = useState(false);
-    const [ошибкаСкачивания, setОшибкаСкачивания] = useState<string | null>(null);
+    const [downloading, setDownloading] = useState(false);
+    const [downloadError, setDownloadError] = useState<string | null>(null);
 
-    const скачать = async () => {
-        setСкачивается(true);
-        setОшибкаСкачивания(null);
+    const download = async () => {
+        setDownloading(true);
+        setDownloadError(null);
         try {
             await helpService.downloadFile(fileId, fileName);
         } catch {
-            setОшибкаСкачивания(t("help.view.downloadFailed"));
+            setDownloadError(t("help.view.downloadFailed"));
         } finally {
-            setСкачивается(false);
+            setDownloading(false);
         }
     };
 
@@ -53,17 +53,17 @@ export function HelpAttachmentPreviewModal({fileId, fileName, onClose}: Props) {
                     </div>
 
                     <div className="flex items-center gap-3">
-                        {ошибкаСкачивания && (
-                            <span className="text-[12px] text-[#c0392b]">{ошибкаСкачивания}</span>
+                        {downloadError && (
+                            <span className="text-[12px] text-[#c0392b]">{downloadError}</span>
                         )}
                         <button
                             type="button"
                             title={t("help.view.downloadFile")}
-                            disabled={скачивается}
-                            onClick={() => void скачать()}
+                            disabled={downloading}
+                            onClick={() => void download()}
                             className="cursor-pointer flex-none grid h-9 w-9 place-items-center rounded-[9px] border border-[#d7dee8] bg-white text-[#4e57d6] hover:bg-[#ececfc] disabled:cursor-not-allowed disabled:opacity-50"
                         >
-                            {скачивается ? (
+                            {downloading ? (
                                 <Loader2 size={16} className="animate-spin"/>
                             ) : (
                                 <Download size={16}/>

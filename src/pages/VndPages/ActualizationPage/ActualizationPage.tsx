@@ -18,7 +18,7 @@ import {useVndActualizationColumnVisibility} from "@/hooks/vndHooks/useVndActual
 import {useActualizationBucketSettings} from "@/hooks/actualizationHooks/useActualizationBucketSettings.ts";
 
 import {Loader} from "@/components/componentsGeneral/Loader.tsx";
-import {EmptyState} from "@/components/componentsGeneral/EmptyState.tsx";
+import {EmptyState} from "@/components/componentsGeneral/emptyPanel/EmptyState.tsx";
 import {type DateFilterValue} from "@/components/componentsGeneral/datePickers/DateFilterGroup.tsx";
 import {
     ActualizationPageHeader

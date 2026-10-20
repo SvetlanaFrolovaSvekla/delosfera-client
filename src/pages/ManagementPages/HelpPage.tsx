@@ -18,7 +18,7 @@ import {HelpArticleEditor} from "@/components/componentsHelp/HelpArticleEditor.t
 import {PageHeader} from "@/components/componentsGeneral/PageHeader.tsx";
 import {SearchBar} from "@/components/componentsGeneral/SearchBar.tsx";
 import {Loader} from "@/components/componentsGeneral/Loader.tsx";
-import {EmptyState} from "@/components/componentsGeneral/EmptyState.tsx";
+import {EmptyState} from "@/components/componentsGeneral/emptyPanel/EmptyState.tsx";
 import {Tooltip} from "@/components/componentsGeneral/tooltips/Tooltip.tsx";
 import {HelpTooltip} from "@/components/componentsGeneral/knowledgeBaseComponents/HelpTooltip.tsx";
 import {Clue} from "@/components/componentsGeneral/knowledgeBaseComponents/Clue.tsx";
@@ -330,6 +330,8 @@ export function HelpPage() {
                         </div>
                     )}
 
+                    <Clue>{t("help.page.clue")}</Clue>
+
                     <nav className="rounded-2xl border border-[#eef2f7] bg-white p-2 shadow-[0_1px_2px_rgba(16,24,40,0.03)]">
                         {loading && toc.length === 0 ? (
                             <Loader size="sm" fullHeight={false}/>
@@ -392,8 +394,6 @@ export function HelpPage() {
                             );
                         })}
                     </nav>
-
-                    <Clue>{t("help.page.clue")}</Clue>
                 </aside>
 
                 {/* Статья */}

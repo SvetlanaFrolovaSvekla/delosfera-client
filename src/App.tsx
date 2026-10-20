@@ -88,7 +88,7 @@ const MeetingRegistryPage = lazy(() => import("@/pages/MeetingsPages/MeetingRegi
 const MeetingCardPage = lazy(() => import("@/pages/MeetingsPages/MeetingCardPage.tsx").then(m => ({default: m.MeetingCardPage})));
 const AuditLogPage = lazy(() => import("@/pages/ManagementPages/SettingsPages/Observation/AuditLogPage.tsx").then(m => ({default: m.AuditLogPage})));
 const SigningWorkplacePage = lazy(() => import("@/pages/ManagementPages/SigningWorkplacePage.tsx").then(m => ({default: m.SigningWorkplacePage})));
-const AcknowledgementPage = lazy(() => import("@/pages/PersonDocManagementPages/AcknowledgementPage.tsx").then(m => ({default: m.AcknowledgementPage})));
+const AcknowledgementPage = lazy(() => import("@/pages/PersonDocManagementSection/AcknowledgementPage.tsx").then(m => ({default: m.AcknowledgementPage})));
 const HelpPage = lazy(() => import("@/pages/ManagementPages/HelpPage.tsx").then(m => ({default: m.HelpPage})));
 const VndProposalsPage = lazy(() => import("@/pages/VndPages/VndProposalsPage.tsx").then(m => ({default: m.VndProposalsPage})));
 const VndBoardPage = lazy(() => import("@/pages/VndPages/VndBoardPage.tsx").then(m => ({default: m.VndBoardPage})));
@@ -106,7 +106,7 @@ const ManagementPage = lazy(() => import("@/pages/ManagementPages/SettingsPages/
 const NotificationMailingSettingsPage = lazy(() => import("@/pages/ManagementPages/SettingsPages/NotificationsSettings/NotificationMailingSettingsPage.tsx").then(m => ({default: m.NotificationMailingSettingsPage})));
 const DocumentTypesPage = lazy(() => import("@/pages/ManagementPages/SettingsPages/Dictionaries/DocumentTypesPage.tsx").then(m => ({default: m.DocumentTypesPage})));
 const SettingsChangesPage = lazy(() => import("@/pages/ManagementPages/SettingsPages/Observation/SettingsChangesPage.tsx").then(m => ({default: m.SettingsChangesPage})));
-const HrOrdersPage = lazy(() => import("@/pages/PersonDocManagementPages/HrOrdersPage.tsx").then(m => ({default: m.HrOrdersPage})));
+const HrOrdersPage = lazy(() => import("@/pages/PersonDocManagementSection/HrOrdersPage.tsx").then(m => ({default: m.HrOrdersPage})));
 const SzStatisticsPage = lazy(() => import("@/pages/SzPagesSection/SzPages/SzStatisticsPage.tsx").then(m => ({default: m.SzStatisticsPage})));
 const SubstitutionsPage = lazy(() => import("@/pages/ManagementPages/SettingsPages/PeopleAndAccessSettings/SubstitutionsPage.tsx").then(m => ({default: m.SubstitutionsPage})));
 const SupplierRegistryPage = lazy(() => import("@/pages/ProcurementPagesSection/SupplierRegistryPage.tsx").then(m => ({default: m.SupplierRegistryPage})));

@@ -69,14 +69,13 @@ export function SavedFiltersBar({scope, api, current, onApply, onReset}: Props) 
 
     async function reload() {
         try {
-            setFilters(await (apiRef.current?.list() ?? savedFilterService.list(scope)));
+            setFilters(await (apiRef.current?.list() ?? await savedFilterService.list(scope)));
         } catch {
             /* список фильтров не критичен для работы реестра */
         }
     }
 
     useEffect(() => {
-        // eslint-disable-next-line react-hooks/set-state-in-effect
         void reload();
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [scope]);
@@ -125,7 +124,7 @@ export function SavedFiltersBar({scope, api, current, onApply, onReset}: Props) 
         setBusy(true);
         setError(null);
         try {
-            await (apiRef.current?.create(trimmed, current) ?? savedFilterService.create(scope, trimmed, current));
+            await (apiRef.current?.create(trimmed, current) ?? await savedFilterService.create(scope, trimmed, current));
             setName("");
             setNaming(false);
             toast.success(t("savedFilters.savedToast", {name: trimmed}));
@@ -158,7 +157,7 @@ export function SavedFiltersBar({scope, api, current, onApply, onReset}: Props) 
         setDeleting(true);
         setDeleteError(null);
         try {
-            await (apiRef.current?.remove(id) ?? savedFilterService.remove(id));
+            await (apiRef.current?.remove(id) ?? await savedFilterService.remove(id));
             setPendingDelete(null);
             if (applied?.id === id) setApplied(null);
             toast.success(t("savedFilters.deletedToast", {name: pendingDelete.name}));

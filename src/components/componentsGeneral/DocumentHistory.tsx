@@ -1,26 +1,25 @@
-import {useEffect, useState} from "react";
-import {Check, X, FileText, Pencil, Clock, Info} from "lucide-react";
-import {activityLogService, type DocumentHistoryEntry}
-    from "@/service/activityLogService/activityLogService.ts";
-
 /**
- * История действий по документу — общая для всех контуров.
+ * История действий по документу - общая для всех контуров.
  *
  * Строится из технического аудита, который пишут все контуры; отдельного журнала
- * ни у кого, кроме ВНД, не было. Один компонент кладётся на любую карточку —
+ * ни у кого, кроме ВНД, не было. Один компонент кладётся на любую карточку -
  * записку, закупку, договор, письмо.
  */
+import {useEffect, useState} from "react";
+import {activityLogService, type DocumentHistoryEntry}
+    from "@/service/activityLogService/activityLogService.ts";
+import {Check, X, FileText, Pencil, Clock, Info} from "lucide-react";
 
 const ICONS: Record<string, typeof Info> = {
     check: Check, x: X, doc: FileText, edit: Pencil, clock: Clock, info: Info,
 };
 
-const ЦВЕТ: Record<string, string> = {
+const COLORS: Record<string, string> = {
     check: "#1c7a4d", x: "#b5352f", clock: "#8a6d1f",
     doc: "#2f68f5", edit: "#55617a", info: "#8b97ab",
 };
 
-const когда = (iso: string) => {
+const formatDateTime = (iso: string) => {
     const d = new Date(iso);
     return d.toLocaleString("ru-RU", {
         day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit",
@@ -36,11 +35,11 @@ export function DocumentHistory({entityType, entityId, assignmentIds}: {
     const [rows, setRows] = useState<DocumentHistoryEntry[] | null>(null);
 
     useEffect(() => {
-        let живо = true;
+        let alive = true;
         activityLogService.history(entityType, entityId, assignmentIds)
-            .then((r) => { if (живо) setRows(r); })
-            .catch(() => { if (живо) setRows([]); });
-        return () => { живо = false; };
+            .then((r) => { if (alive) setRows(r); })
+            .catch(() => { if (alive) setRows([]); });
+        return () => { alive = false; };
     }, [entityType, entityId, assignmentIds]);
 
     if (rows === null) return null;
@@ -56,13 +55,13 @@ export function DocumentHistory({entityType, entityId, assignmentIds}: {
             <div className="flex flex-col">
                 {rows.map((r, i) => {
                     const Icon = ICONS[r.icon] ?? Info;
-                    const цвет = ЦВЕТ[r.icon] ?? "#8b97ab";
+                    const color = COLORS[r.icon] ?? "#8b97ab";
                     return (
                         <div key={r.id} className="flex gap-3">
                             {/* Вертикаль ленты: точка события и линия к следующему. */}
                             <div className="flex flex-col items-center flex-none">
                                 <span className="grid h-7 w-7 place-items-center rounded-full"
-                                      style={{background: `${цвет}14`, color: цвет}}>
+                                      style={{background: `${color}14`, color}}>
                                     <Icon size={14}/>
                                 </span>
                                 {i < rows.length - 1 && <span className="w-px flex-1 bg-[#eef2f7]"/>}
@@ -70,7 +69,7 @@ export function DocumentHistory({entityType, entityId, assignmentIds}: {
 
                             <div className="pb-4 min-w-0">
                                 <div className="text-[13.5px] text-[#1c2740]">{r.text}</div>
-                                <div className="text-[11.5px] text-[#a3adbd] mt-0.5">{когда(r.at)}</div>
+                                <div className="text-[11.5px] text-[#a3adbd] mt-0.5">{formatDateTime(r.at)}</div>
                             </div>
                         </div>
                     );

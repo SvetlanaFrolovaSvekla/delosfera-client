@@ -16,7 +16,7 @@ import {workflowService} from "@/service/workflowService/workflowService.ts";
 import {toast} from "@/service/toastService.ts";
 import {PageHeader} from "@/components/componentsGeneral/PageHeader.tsx";
 import {Loader} from "@/components/componentsGeneral/Loader.tsx";
-import {EmptyState} from "@/components/componentsGeneral/EmptyState.tsx";
+import {EmptyState} from "@/components/componentsGeneral/emptyPanel/EmptyState.tsx";
 import {AlertTriangle, Plus} from "lucide-react";
 import {translit} from "@/utils/translations/translit.ts";
 import {TypeCard} from "@/components/componentsDocumentsTypes/TypeCard.tsx";

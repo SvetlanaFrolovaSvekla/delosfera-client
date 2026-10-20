@@ -5,7 +5,6 @@ import {
     FileText,
     ShieldCheck,
     ListChecks,
-    MoreHorizontal,
     FileSignature,
     ShoppingCart,
     BookOpenCheck,
@@ -28,7 +27,8 @@ export const NOTIFICATION_CATEGORY_META: Record<NotificationCategory, Notificati
     // Other - легаси-"Разное", своей вкладки больше нет (см. notificationsServiceType.ts):
     // то, что было в ней про ознакомление, теперь отдельная категория выше, а обязательства/
     // встречи/переписка остаются с этой категорией, просто без вкладки-фильтра.
-    Other: { icon: MoreHorizontal, color: "#6b7686", bg: "#eceff3", ring: "#d7dde6" },
+    // Значок — колокольчик, а не «три точки»: «…» читался как меню действий, а не как тип.
+    Other: { icon: Bell, color: "#6b7686", bg: "#eceff3", ring: "#d7dde6" },
     // Approval/Task - легаси, своей вкладки больше нет (см. notificationsServiceType.ts),
     // но карточки старых уведомлений с такой категорией должны на что-то отрисоваться.
     Approval: { icon: ShieldCheck, color: "#7a5ce0", bg: "#efeafe", ring: "#ddd0fa" },

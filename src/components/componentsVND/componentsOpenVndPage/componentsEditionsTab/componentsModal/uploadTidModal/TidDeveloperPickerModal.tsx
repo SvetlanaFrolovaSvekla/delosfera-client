@@ -7,7 +7,7 @@ import {useTranslation} from "react-i18next";
 import type {UserResponse} from "@/service/userService/userServiceType.ts";
 import {useUsersList} from "@/hooks/userHooks/useUsersList.ts";
 import {HighlightText} from "@/utils/highlightText.tsx";
-import {EmptyState} from "@/components/componentsGeneral/EmptyState.tsx";
+import {EmptyState} from "@/components/componentsGeneral/emptyPanel/EmptyState.tsx";
 import {UserListFilters} from "@/components/componentsGeneral/userPicker/UserListFilters.tsx";
 import {Loader2, User as UserIcon, X} from "lucide-react";
 

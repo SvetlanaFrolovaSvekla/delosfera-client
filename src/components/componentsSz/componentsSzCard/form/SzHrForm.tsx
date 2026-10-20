@@ -23,6 +23,7 @@ import {SingleSelectListField} from "@/components/componentsGeneral/selects/Sing
 import {DatePickerInput} from "@/components/componentsGeneral/datePickers/DatePickerInput.tsx";
 import {PlainCheckbox} from "@/components/componentsGeneral/componentsCheckBox/PlainCheckbox.tsx";
 import {Tooltip} from "@/components/componentsGeneral/tooltips/Tooltip.tsx";
+import {ACCENT, type Accent} from "@/constants/accent.ts";
 import {Plus, X} from "lucide-react";
 
 interface Props {
@@ -37,9 +38,18 @@ interface Props {
     users: PickableUser[];
     orgUnits: {id: number; name: string; parentId?: number | null}[];
     editable: boolean;
+    /** Акцент полей и панели «добавить сотрудника». По умолчанию синий, как в записках; приказы — фиолетовый. */
+    accent?: Accent;
 }
 
-const fieldClass = "w-full h-10 px-3 rounded-[9px] border border-[#e5e9f0] bg-white text-[13px] outline-none focus:border-[#2f68f5] disabled:bg-[#f8fafc]";
+const fieldClassFor = (accent: Accent) =>
+    `w-full h-10 px-3 rounded-[9px] border border-[#e5e9f0] bg-white text-[13px] outline-none ${ACCENT[accent].focusBorder} disabled:bg-[#f8fafc]`;
+
+/** Рамка панели «добавить сотрудника» при наведении — светлый тон акцента. */
+const ADD_HOVER_BORDER: Record<Accent, string> = {
+    blue: "hover:border-[#b9c8e8]",
+    violet: "hover:border-[#c5c8f2]",
+};
 
 /** В значениях записки дата лежит как гггг-мм-дд, а DatePickerInput работает с дд.мм.гггг. */
 const isoToRu = (v: unknown): string => {
@@ -60,10 +70,11 @@ const ruToIso = (s: string): string | null => {
  * сырую строку держим у себя и пишем в записку только полную корректную дату (или null, если
  * поле очистили) — иначе при вводе значение отскакивало бы назад.
  */
-function HrDateField({value, onChange, disabled}: {
+function HrDateField({value, onChange, disabled, accent}: {
     value: unknown;
     onChange: (iso: string | null) => void;
     disabled: boolean;
+    accent: Accent;
 }) {
     const [raw, setRaw] = useState(isoToRu(value));
 
@@ -77,7 +88,7 @@ function HrDateField({value, onChange, disabled}: {
 
     return (
         <DatePickerInput
-            accent="blue"
+            accent={accent}
             value={raw}
             disabled={disabled}
             className="!h-10 !rounded-[9px] !text-[13px]"
@@ -128,9 +139,11 @@ function useRowKeys(length: number) {
 }
 
 export function SzHrForm({
-    schema, employees, onEmployeesChange, values, onValuesChange, users, orgUnits, editable,
+    schema, employees, onEmployeesChange, values, onValuesChange, users, orgUnits, editable, accent = "blue",
 }: Props) {
     const {t} = useTranslation();
+    const a = ACCENT[accent];
+    const fieldClass = fieldClassFor(accent);
 
     // Дерево СП для модалки выбора — как у поля «Адресат — структурное подразделение».
     const unitOptions = useMemo(
@@ -199,7 +212,7 @@ export function SzHrForm({
     const renderOrgUnitSelect = (label: string, id: number | null | undefined, onPick: (id: number | null) => void, required?: boolean) =>
         editable ? (
             <SingleSelectListField
-                accent="blue"
+                accent={accent}
                 label={label}
                 required={required}
                 modalTitle={label}
@@ -240,7 +253,7 @@ export function SzHrForm({
                 // Общий SelectDropdown вместо нативного <select>, как у поля «Вид записки».
                 return editable ? (
                     <SelectDropdown
-                        accent="blue"
+                        accent={accent}
                         value={(v as string) ?? ""}
                         onChange={(val) => apply(val || null)}
                         options={[
@@ -256,7 +269,7 @@ export function SzHrForm({
                 return renderOrgUnitSelect(f.label, v as number | null, apply, f.required);
 
             case "date":
-                return <HrDateField value={v} disabled={!editable} onChange={apply}/>;
+                return <HrDateField value={v} disabled={!editable} onChange={apply} accent={accent}/>;
 
             case "money":
             case "number":
@@ -299,7 +312,7 @@ export function SzHrForm({
                             }
                         }}
                         className={`${employees.length > 0 ? "mb-2 " : ""}rounded-[9px] border border-dashed border-[#d6dded] bg-[#fafbfd] px-4 py-5 text-center text-[13px] text-[#8b97ab] outline-none transition-colors ${
-                            canAdd ? "cursor-pointer hover:border-[#b9c8e8] focus:border-[#2f68f5]" : ""}`}
+                            canAdd ? `cursor-pointer ${ADD_HOVER_BORDER[accent]} ${a.focusBorder}` : ""}`}
                     >
                         {employees.length === 0 && (
                             <>
@@ -312,7 +325,7 @@ export function SzHrForm({
                             </>
                         )}
                         {canAdd && (
-                            <div className={`${employees.length === 0 ? "mt-2 " : ""}flex items-center justify-center gap-1 text-[12.5px] text-[#2f68f5]`}>
+                            <div className={`${employees.length === 0 ? "mt-2 " : ""}flex items-center justify-center gap-1 text-[12.5px] ${a.text}`}>
                                 <Plus size={13} strokeWidth={2.5}/>
                                 {/* добавить / Добавить ещё сотрудников */}
                                 {employees.length === 0 ? t("szCard.fields.hrAdd") : t("szCard.fields.hrAddMore")}
@@ -342,7 +355,7 @@ export function SzHrForm({
                                                 <span className="text-[11px] text-[#8b97ab]">{t("szCard.fields.hrEmployeeLabel")}</span>
                                                 {editable ? (
                                                     <UserPickerField
-                                                        accent="blue"
+                                                        accent={accent}
                                                         people={users}
                                                         value={e.userId ?? null}
                                                         placeholder={t("szCard.fields.hrEmployeePick")}

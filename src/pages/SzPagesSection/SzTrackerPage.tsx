@@ -7,7 +7,8 @@ import {Link} from "react-router-dom";
 import {useTranslation} from "react-i18next";
 import {szService, type SzKind, type SzStatusCode, type SzTrackerColumn} from "@/service/szService/szService.ts";
 import {STATUS_TONE} from "@/constants/szConstatns/szStatusTone.ts";
-import {EmptyState} from "@/components/componentsGeneral/EmptyState.tsx";
+import {DoubleScroll} from "@/components/componentsGeneral/DoubleScroll.tsx";
+import {EmptyState} from "@/components/componentsGeneral/emptyPanel/EmptyState.tsx";
 import {colors} from "@/design/tokens.ts";
 
 export function SzTrackerPage() {
@@ -74,7 +75,7 @@ export function SzTrackerPage() {
             {!columns && !error && <div className="text-[13px] text-[#8b97ab]">{t("general.loading")}</div>}
 
             {columns && (
-                <div className="flex gap-3 overflow-x-auto pb-3" style={{scrollbarWidth: "thin"}}>
+                <DoubleScroll className="flex gap-3 overflow-x-auto pb-3 [scrollbar-width:thin]">
                     {columns.map(col => (
                         <div key={col.code} className="shrink-0 w-[270px] min-h-[calc(100vh-240px)] rounded-[13px] bg-[#f6f8fb] border border-[#e5e9f0] flex flex-col">
                             <div className="px-3.5 py-3 border-b border-[#e5e9f0] flex items-center justify-between">
@@ -118,7 +119,7 @@ export function SzTrackerPage() {
                             </div>
                         </div>
                     ))}
-                </div>
+                </DoubleScroll>
             )}
         </div>
     );

@@ -13,7 +13,7 @@ import {useAuth} from "@/context/AuthContext.ts";
 import {PermissionCode} from "@/constants/permissions/permissions.ts";
 import {colorAt} from "@/constants/reportPalette.ts";
 import {Loader} from "@/components/componentsGeneral/Loader.tsx";
-import {EmptyState} from "@/components/componentsGeneral/EmptyState.tsx";
+import {EmptyState} from "@/components/componentsGeneral/emptyPanel/EmptyState.tsx";
 import {ChartCard} from "@/components/componentsReport/ChartCard.tsx";
 import {KpiCard} from "@/components/componentsReport/KpiCard.tsx";
 import {DonutChart} from "@/components/componentsReport/DonutChart.tsx";

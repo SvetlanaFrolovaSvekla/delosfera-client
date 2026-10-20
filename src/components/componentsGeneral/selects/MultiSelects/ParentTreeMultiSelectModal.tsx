@@ -1,11 +1,11 @@
 // Модалка множественного выбора узлов дерева БЕЗ каскада + поддержка disabled-опций (например, превышена макс. глубина)
 import {useEffect, useMemo, useState} from "react";
 import {useTranslation} from "react-i18next";
+import {ACCENT, type Accent} from "@/constants/accent.ts";
 import {useModalShake} from "@/hooks//useModalShake.ts";
 import {HighlightText} from "@/utils/highlightText.tsx";
 import {SearchBar} from "@/components/componentsGeneral/SearchBar.tsx";
 import {Check, ChevronRight, X} from "lucide-react";
-import {ACCENT, type Accent} from "@/constants/accent.ts";
 
 export interface ParentTreeOption {
     key: string;

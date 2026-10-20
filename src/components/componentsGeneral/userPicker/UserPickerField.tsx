@@ -28,6 +28,9 @@ interface UserPickerFieldProps {
     compact?: boolean;
     /** Акцентный цвет модалки выбора. По умолчанию фиолетовый. */
     accent?: Accent;
+    disabled?: boolean;
+    /** Список по старшинству (Правление → руководители → остальные) — для согласующих и подписанта. */
+    bySeniority?: boolean;
 }
 
 export function UserPickerField({
@@ -42,6 +45,8 @@ export function UserPickerField({
                                     onClear,
                                     compact,
                                     accent,
+                                    disabled,
+                                    bySeniority,
                                 }: UserPickerFieldProps) {
     const [open, setOpen] = useState(false);
 
@@ -51,8 +56,9 @@ export function UserPickerField({
         <>
             <button
                 type="button"
+                disabled={disabled}
                 onClick={() => setOpen(true)}
-                className={`flex ${compact ? "h-9" : "h-10"} w-full items-center justify-between gap-2 rounded-[9px] border border-[#e5e9f0] bg-white px-3 text-[13px] outline-none cursor-pointer hover:bg-[#f6f8fb] focus:border-[#2f68f5]`}
+                className={`flex ${compact ? "h-9" : "h-10"} w-full items-center justify-between gap-2 rounded-[9px] border border-[#e5e9f0] bg-white px-3 text-[13px] outline-none cursor-pointer hover:bg-[#f6f8fb] focus:border-[#2f68f5] disabled:cursor-not-allowed disabled:bg-[#f6f8fb] disabled:hover:bg-[#f6f8fb]`}
             >
                 <span className="flex min-w-0 items-center gap-2">
                     <UserIcon size={14} className="flex-none text-[#a3adbd]"/>
@@ -60,7 +66,7 @@ export function UserPickerField({
                         {selected?.fullName ?? placeholder}
                     </span>
                 </span>
-                {clearable && selected ? (
+                {clearable && selected && !disabled ? (
                     <span
                         role="button"
                         tabIndex={0}
@@ -93,6 +99,7 @@ export function UserPickerField({
                     onSelect={(person) => onChange(person.id)}
                     onClose={() => setOpen(false)}
                     accent={accent}
+                    bySeniority={bySeniority}
                 />
             )}
         </>

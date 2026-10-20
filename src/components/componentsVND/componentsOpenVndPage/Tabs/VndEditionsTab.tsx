@@ -74,7 +74,7 @@ import {
     VndStartApprovalModal
 } from "@/components/componentsCoordination/CoordinationRouteConstructor/functionalComponents/VndStartApprovalModal.tsx";
 
-import {EmptyState} from "@/components/componentsGeneral/EmptyState.tsx";
+import {EmptyState} from "@/components/componentsGeneral/emptyPanel/EmptyState.tsx";
 import {Loader} from "@/components/componentsGeneral/Loader.tsx";
 import {SearchBar} from "@/components/componentsGeneral/SearchBar.tsx";
 import {Upload} from "lucide-react";

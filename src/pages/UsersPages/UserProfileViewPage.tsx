@@ -14,7 +14,7 @@ import {useAuth} from "@/context/AuthContext";
 import {userService} from "@/service/userService/userService.ts";
 import type {UserResponse} from "@/service/userService/userServiceType.ts";
 import {UserProfileView} from "@/components/componentsUsers/UserProfileView.tsx";
-import {EmptyState} from "@/components/componentsGeneral/EmptyState.tsx";
+import {EmptyState} from "@/components/componentsGeneral/emptyPanel/EmptyState.tsx";
 import {Loader} from "@/components/componentsGeneral/Loader.tsx";
 
 import {ArrowLeft} from "lucide-react";

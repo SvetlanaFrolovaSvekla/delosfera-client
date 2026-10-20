@@ -28,7 +28,7 @@ import {
 import {CharCounter} from "@/components/componentsGeneral/CharCounter.tsx";
 import {HelpTooltip} from "@/components/componentsGeneral/knowledgeBaseComponents/HelpTooltip.tsx";
 import { Tooltip } from "@/components/componentsGeneral/tooltips/Tooltip.tsx";
-import {TruncatedTooltip} from "@/components/componentsGeneral/TruncatedTooltip.tsx";
+import {TruncatedTooltip} from "@/components/componentsGeneral/tooltips/TruncatedTooltip.tsx";
 import {Clue} from "@/components/componentsGeneral/knowledgeBaseComponents/Clue.tsx";
 import {
     CheckCircle2, Download, Eye, Loader2, Paperclip, Trash2, X,

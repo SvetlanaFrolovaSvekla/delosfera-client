@@ -19,7 +19,7 @@ import {
 } from "@/service/feedbackService/feedbackService.ts";
 import {PageHeader} from "@/components/componentsGeneral/PageHeader.tsx";
 import {Loader} from "@/components/componentsGeneral/Loader.tsx";
-import {EmptyState} from "@/components/componentsGeneral/EmptyState.tsx";
+import {EmptyState} from "@/components/componentsGeneral/emptyPanel/EmptyState.tsx";
 import {
     AlertTriangle, CircleHelp, Inbox, Lightbulb, Loader2, MessageSquareReply, Monitor, MonitorSmartphone, Timer, X,
 } from "lucide-react";

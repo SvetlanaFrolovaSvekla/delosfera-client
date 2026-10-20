@@ -2,7 +2,7 @@
 // обрезан многоточием (scrollWidth > clientWidth у span'а), а не всегда при наведении - иначе
 // подсказка дублировала бы уже полностью видимое название.
 import {useLayoutEffect, useRef, useState} from "react";
-import {Tooltip, type Side} from "./tooltips/Tooltip.tsx";
+import {Tooltip, type Side} from "./Tooltip.tsx";
 
 interface TruncatedTooltipProps {
     /** Полный текст - показывается и в самой строке (обрезается CSS truncate), и в подсказке. */

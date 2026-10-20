@@ -1,5 +1,5 @@
 // Страница "Заявки на замещение"
-import {useEffect, useState} from "react";
+import {useEffect, useMemo, useState} from "react";
 import {useTranslation} from "react-i18next";
 import {Link, useNavigate} from "react-router-dom";
 import {
@@ -15,7 +15,16 @@ import {SearchBar} from "@/components/componentsGeneral/SearchBar.tsx";
 import {SelectDropdown} from "@/components/componentsGeneral/selects/SingleSelects/SelectDropdown.tsx";
 import {CheckBoxOne} from "@/components/componentsGeneral/componentsCheckBox/CheckBoxOne.tsx";
 import {SavedFiltersBar} from "@/components/componentsGeneral/SavedFiltersBar.tsx";
+import {UserPickerField} from "@/components/componentsGeneral/userPicker/UserPickerField.tsx";
+import {
+    type PickableUser,
+} from "@/constants/pickableUser.ts";
+import {DateFilterGroup, type DateFilterValue} from "@/components/componentsGeneral/datePickers/DateFilterGroup.tsx";
+import {EMPTY_DATE_FILTER} from "@/constants/emptyDateFilter.ts";
+import {toDateRangeFilter} from "@/utils/dateUtils.ts";
+import {userService} from "@/service/userService/userService.ts";
 import {Icon} from "@/assets/icons/Icon.tsx";
+import {ChevronDown, ChevronUp, SlidersHorizontal} from "lucide-react";
 import {colors} from "@/design/tokens.ts";
 
 const STATUSES = Object.keys(STATUS_LABEL) as SubstitutionStatus[];
@@ -34,6 +43,25 @@ const REASON_CODE_BY_TITLE = Object.fromEntries(
     (Object.entries(REASON_LABEL) as [SubstitutionReason, string][]).map(([code, title]) => [title, code]),
 ) as Record<string, SubstitutionReason>;
 
+/** Период из DateFilterGroup → границы для сервера: точная дата — заявки, действующие в этот день. */
+function periodBounds(v: DateFilterValue): { periodFrom?: string; periodTo?: string } {
+    const r = toDateRangeFilter(v);
+    if (!r) return {};
+    if (r.exact) return {periodFrom: r.exact, periodTo: r.exact};
+    return {periodFrom: r.from ?? undefined, periodTo: r.to ?? undefined};
+}
+
+const FILTER_LABEL_CLASS = "block text-[11.5px] text-[#8b97ab] mb-[5px]";
+
+/** Условия расширенного поиска: черновик в панели и применённые к реестру. */
+interface AdvancedFilters {
+    absentUserId: number | null;
+    substituteUserId: number | null;
+    period: DateFilterValue;
+}
+
+const EMPTY_ADVANCED: AdvancedFilters = {absentUserId: null, substituteUserId: null, period: EMPTY_DATE_FILTER};
+
 function formatDate(iso: string | null): string {
     if (!iso) return "…";
     const [y, m, d] = iso.slice(0, 10).split("-");
@@ -50,8 +78,47 @@ export function SubstitutionRequestsPage() {
     const [appliedQuery, setAppliedQuery] = useState("");
     const [status, setStatus] = useState<SubstitutionStatus | "">("");
     const [mineOnly, setMineOnly] = useState(false);
+    /** Применённые условия расширенного поиска (по ним строится реестр). */
+    const [advanced, setAdvanced] = useState<AdvancedFilters>(EMPTY_ADVANCED);
+    /** То, что набрано в открытой панели, — применяется кнопкой "Найти". */
+    const [draft, setDraft] = useState<AdvancedFilters>(EMPTY_ADVANCED);
+    const [advOpen, setAdvOpen] = useState(false);
+    const {absentUserId, substituteUserId, period} = advanced;
+    const [users, setUsers] = useState<PickableUser[]>([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
+
+    // Справочник сотрудников для фильтров "Отсутствующий" / "Замещающий".
+    useEffect(() => {
+        userService.lookup().then((list) => setUsers(list.map((u) => ({
+            id: u.id, fullName: u.fullName, position: u.position ?? null,
+            orgUnit: u.orgUnit ?? null, orgUnitId: u.orgUnitId ?? null,
+            isBoardMember: u.isBoardMember ?? false, isUnitHead: u.isUnitHead ?? false,
+        })))).catch(() => {
+        });
+    }, []);
+
+    // Границы периода как строки — чтобы эффект ниже не перезапускался от нового объекта с теми же датами.
+    const {periodFrom, periodTo} = useMemo(() => periodBounds(period), [period]);
+
+    const hasAdvancedActive = absentUserId != null || substituteUserId != null || !!periodFrom || !!periodTo;
+
+    const updateDraft = <K extends keyof AdvancedFilters>(key: K, value: AdvancedFilters[K]) =>
+        setDraft((d) => ({...d, [key]: value}));
+
+    /** Открываем панель с уже применёнными условиями, а не с тем, что было набрано и не применено. */
+    const toggleAdv = () => {
+        if (!advOpen) setDraft(advanced);
+        setAdvOpen((v) => !v);
+    };
+    const applyAdvanced = () => {
+        setAdvanced(draft);
+        setAdvOpen(false);
+    };
+    const resetAdvanced = () => {
+        setDraft(EMPTY_ADVANCED);
+        setAdvanced(EMPTY_ADVANCED);
+    };
 
     useEffect(() => {
         let cancelled = false;
@@ -61,7 +128,16 @@ export function SubstitutionRequestsPage() {
             setLoading(true);
             setError(null);
             substitutionService
-                .search({query: q || undefined, status: status || undefined, mineOnly: mineOnly || undefined, pageSize: 200})
+                .search({
+                    query: q || undefined,
+                    status: status || undefined,
+                    mineOnly: mineOnly || undefined,
+                    absentUserId: absentUserId ?? undefined,
+                    substituteUserId: substituteUserId ?? undefined,
+                    periodFrom,
+                    periodTo,
+                    pageSize: 200,
+                })
                 .then((p) => {
                     if (cancelled) return;
                     setRows(p.items);
@@ -79,7 +155,7 @@ export function SubstitutionRequestsPage() {
             cancelled = true;
             clearTimeout(timer);
         };
-    }, [query, status, mineOnly, t]);
+    }, [query, status, mineOnly, absentUserId, substituteUserId, periodFrom, periodTo, t]);
 
     const reasonText = (title: string): string => {
         const code = REASON_CODE_BY_TITLE[title];
@@ -117,6 +193,8 @@ export function SubstitutionRequestsPage() {
                     ]}
                     value={status}
                     onChange={(v) => setStatus(v as SubstitutionStatus | "")}
+                    searchable
+                    searchPlaceholder={t("substitutionRequests.statusSearchPlaceholder")}
                     minWidth="170px"
                     accent="blue"
                 />
@@ -129,22 +207,151 @@ export function SubstitutionRequestsPage() {
                 </div>
             </div>
 
-            {/* Сохраненные фильтры */}
-            <div className="mt-2.5">
+            {/* Сохраненные фильтры + кнопка расширенного поиска справа от них */}
+            <div className="mt-2.5 flex flex-wrap items-center gap-2">
                 <SavedFiltersBar
                     scope="substitution"
-                    current={{query, status: status || null, mineOnly}}
+                    current={{query, status: status || null, mineOnly, absentUserId, substituteUserId, period}}
                     onApply={(p) => {
-                        const f = p as { query?: string; status?: SubstitutionStatus | null; mineOnly?: boolean };
+                        const f = p as {
+                            query?: string;
+                            status?: SubstitutionStatus | null;
+                            mineOnly?: boolean;
+                            absentUserId?: number | null;
+                            substituteUserId?: number | null;
+                            period?: DateFilterValue | null;
+                        };
                         setQuery(f.query ?? "");
                         setStatus(f.status ?? "");
                         setMineOnly(!!f.mineOnly);
+                        const next: AdvancedFilters = {
+                            absentUserId: f.absentUserId ?? null,
+                            substituteUserId: f.substituteUserId ?? null,
+                            period: f.period ?? EMPTY_DATE_FILTER,
+                        };
+                        setAdvanced(next);
+                        setDraft(next);
+                    }}
+                    onReset={() => {
+                        setQuery("");
+                        setStatus("");
+                        setMineOnly(false);
+                        resetAdvanced();
                     }}
                 />
+                {/* Расширенный поиск */}
+                <button
+                    type="button"
+                    onClick={toggleAdv}
+                    className={`relative inline-flex h-9 cursor-pointer items-center gap-2 rounded-[9px] border px-3 text-[12.5px] font-semibold text-[#3a4560] hover:bg-[#f6f8fb] ${
+                        advOpen
+                            ? "border-[#2f68f5] bg-[#f6f8fb] ring-[3px] ring-[#e9f0ff]"
+                            : "border-[#e5e9f0] bg-white"
+                    }`}
+                >
+                    <SlidersHorizontal className="h-[15px] w-[15px]" strokeWidth={1.8}/>
+                    {t("registry.filters.advancedSearch")}
+                    <ChevronDown
+                        className={`h-[15px] w-[15px] flex-none text-[#a3adbd] transition-transform ${advOpen ? "rotate-180" : ""}`}
+                        strokeWidth={2}
+                    />
+                    {/* Зелёная точка — расширенный поиск применён */}
+                    {hasAdvancedActive && (
+                        <span
+                            className="absolute -right-1 -top-1 h-2.5 w-2.5 rounded-full bg-[#3fb36c] ring-2 ring-white"/>
+                    )}
+                </button>
+            </div>
+
+            {/* Панель расширенного поиска: отсутствующий, замещающий, период */}
+            <div
+                className={`grid overflow-hidden transition-[grid-template-rows,opacity,margin-top] duration-300 ease-in-out ${
+                    advOpen ? "mt-3 grid-rows-[1fr] opacity-100" : "mt-0 grid-rows-[0fr] opacity-0"
+                }`}
+            >
+                <div className="overflow-hidden">
+                    <div className="rounded-2xl border border-[#e9edf3] bg-white px-[22px] py-5">
+                        <div
+                            className="mb-[18px] grid gap-x-[18px] gap-y-3.5 [grid-template-columns:repeat(auto-fit,minmax(260px,1fr))]">
+                            <div>
+                                <span className={FILTER_LABEL_CLASS}>{t("substitutionRequests.filters.absent")}</span>
+                                <UserPickerField
+                                    people={users}
+                                    value={draft.absentUserId}
+                                    onChange={(id) => updateDraft("absentUserId", id)}
+                                    clearable
+                                    onClear={() => updateDraft("absentUserId", null)}
+                                    excludeId={draft.substituteUserId ?? undefined}
+                                    accent="blue"
+                                    placeholder={t("substitutionRequests.filters.anyEmployee")}
+                                    modalTitle={t("substitutionRequests.filters.absentModalTitle")}
+                                    searchPlaceholder={t("substitutionRequests.filters.employeeSearchPlaceholder")}
+                                />
+                            </div>
+                            <div>
+                                <span
+                                    className={FILTER_LABEL_CLASS}>{t("substitutionRequests.filters.substitute")}</span>
+                                <UserPickerField
+                                    people={users}
+                                    value={draft.substituteUserId}
+                                    onChange={(id) => updateDraft("substituteUserId", id)}
+                                    clearable
+                                    onClear={() => updateDraft("substituteUserId", null)}
+                                    excludeId={draft.absentUserId ?? undefined}
+                                    accent="blue"
+                                    placeholder={t("substitutionRequests.filters.anyEmployee")}
+                                    modalTitle={t("substitutionRequests.filters.substituteModalTitle")}
+                                    searchPlaceholder={t("substitutionRequests.filters.employeeSearchPlaceholder")}
+                                />
+                            </div>
+                        </div>
+
+                        <div className="mb-[18px] rounded-xl border border-[#eef2f7] p-3.5">
+                            <div className="mb-2.5 text-[11px] font-bold uppercase tracking-[.04em] text-[#a3adbd]">
+                                {t("substitutionRequests.filters.period")}
+                            </div>
+                            <DateFilterGroup
+                                accent="blue"
+                                rows={[{
+                                    key: "period",
+                                    label: t("substitutionRequests.filters.periodRow"),
+                                    value: draft.period,
+                                    onChange: (v) => updateDraft("period", v),
+                                }]}
+                            />
+                        </div>
+
+                        <div className="flex justify-end gap-2.5">
+                            <button
+                                type="button"
+                                onClick={() => setAdvOpen(false)}
+                                className="inline-flex h-10 cursor-pointer items-center gap-1.5 rounded-[10px] border border-[#e5e9f0] bg-white px-4 text-[12.5px] font-semibold text-[#55617a] hover:bg-[#f6f8fb]"
+                            >
+                                <ChevronUp className="h-[15px] w-[15px]" strokeWidth={2}/>
+                                {t("registry.filters.advanced.collapse")}
+                            </button>
+                            <button
+                                type="button"
+                                onClick={resetAdvanced}
+                                className="h-10 cursor-pointer rounded-[10px] border border-[#e5e9f0] bg-white px-4 text-[12.5px] font-semibold text-[#55617a] hover:bg-[#f6f8fb]"
+                            >
+                                {t("registry.filters.advanced.reset")}
+                            </button>
+                            <button
+                                type="button"
+                                onClick={applyAdvanced}
+                                className="h-10 cursor-pointer rounded-[10px] border-none bg-[#2f68f5] px-5 text-[12.5px] font-semibold text-white hover:brightness-[1.06]"
+                            >
+                                {t("registry.filters.advanced.apply")}
+                            </button>
+                        </div>
+                    </div>
+                </div>
             </div>
 
             {error && (
-                <div className="mt-4 rounded-[10px] border border-[#f1c9c2] bg-[#fbeae7] px-4 py-2.5 text-[13px] text-[#c0392b]">
+                <div
+                    className="mt-4 rounded-[10px] border border-[#f1c9c2] bg-[#fbeae7] px-4 py-2.5 text-[13px] text-[#c0392b]">
                     {error}
                 </div>
             )}
@@ -163,9 +370,15 @@ export function SubstitutionRequestsPage() {
                     </thead>
                     <tbody>
                     {loading ? (
-                        <tr><td colSpan={6} className="px-4 py-10 text-center text-[13px] text-[#8b97ab]">{t("general.loading")}</td></tr>
+                        <tr>
+                            <td colSpan={6}
+                                className="px-4 py-10 text-center text-[13px] text-[#8b97ab]">{t("general.loading")}</td>
+                        </tr>
                     ) : rows.length === 0 ? (
-                        <tr><td colSpan={6} className="px-4 py-10 text-center text-[13px] text-[#8b97ab]">{t("substitutionRequests.empty")}</td></tr>
+                        <tr>
+                            <td colSpan={6}
+                                className="px-4 py-10 text-center text-[13px] text-[#8b97ab]">{t("substitutionRequests.empty")}</td>
+                        </tr>
                     ) : rows.map((r) => {
                         const tone = STATUS_TONE[r.status] ?? colors.status.draft;
                         return (
@@ -179,7 +392,8 @@ export function SubstitutionRequestsPage() {
                                     </Link>
                                 </td>
                                 <td className="px-4 py-2.5">
-                                    <Link to={`/substitutions/${r.id}`} className="text-[#1c2740] no-underline hover:underline">
+                                    <Link to={`/substitutions/${r.id}`}
+                                          className="text-[#1c2740] no-underline hover:underline">
                                         {r.subject
                                             ? <HighlightText text={r.subject} query={appliedQuery}/>
                                             : "—"}
@@ -190,7 +404,8 @@ export function SubstitutionRequestsPage() {
                                     {r.absentName ? <HighlightText text={r.absentName} query={appliedQuery}/> : "—"}
                                 </td>
                                 <td className="px-4 py-2.5 text-[#55617a]">
-                                    {r.substituteName ? <HighlightText text={r.substituteName} query={appliedQuery}/> : "—"}
+                                    {r.substituteName ?
+                                        <HighlightText text={r.substituteName} query={appliedQuery}/> : "—"}
                                 </td>
                                 <td className="px-4 py-2.5 whitespace-nowrap text-[#55617a]">
                                     {!r.startsOn && !r.endsOn ? "—" : `${formatDate(r.startsOn)} — ${formatDate(r.endsOn)}`}

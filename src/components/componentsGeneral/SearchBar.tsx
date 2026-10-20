@@ -1,9 +1,9 @@
 // Строка поиска
 import {useTranslation} from "react-i18next";
 import {Icon} from "@/assets/icons/Icon";
-import {X} from "lucide-react";
 import type {CSSProperties} from "react";
 import type {Accent} from "@/constants/accent.ts";
+import {X} from "lucide-react";
 
 /** Явный акцент перекрывает CSS-переменные раздела (--app-accent / --app-soft). */
 const ACCENT_VARS: Record<Accent, Record<string, string>> = {

@@ -1,4 +1,4 @@
-import {ChartColumn, FileText, Layers, ShoppingCart, StickyNote, type LucideIcon} from "lucide-react";
+import {ChartColumn, FileText, Layers, ShoppingCart, StickyNote, UserCog, type LucideIcon} from "lucide-react";
 import type {SzTaskStage} from "@/service/workflowService/taskInboxService.ts";
 
 // Вкладки сводного реестра задач
@@ -29,6 +29,12 @@ export const INBOX_CONTOUR_META: Record<Exclude<InboxFilterId, "all">, { icon: L
     sz: {icon: StickyNote, color: "#d1a154", bg: "#fdf3e2", ring: "#f6e2bb"},
     prc: {icon: ShoppingCart, color: "#7a5ce0", bg: "#efeafe", ring: "#ddd0fa"},
     ack: {icon: FileText, color: "#499c72", bg: "#e5f7ee", ring: "#c8ecd9"},
+};
+
+// Заявка на замещение (КСЗ-В9): своей вкладки в реестре нет (живёт в разделе СЗ), но значок
+// свой — чтобы в списке её не путали со служебной запиской.
+export const SUBSTITUTION_CONTOUR_META: { icon: LucideIcon; color: string; bg: string; ring: string } = {
+    icon: UserCog, color: "#d1a154", bg: "#fdf3e2", ring: "#f6e2bb",
 };
 
 export const INBOX_ALL_TAB_ICON: LucideIcon = Layers;

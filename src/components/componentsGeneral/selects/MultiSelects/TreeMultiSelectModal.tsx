@@ -4,9 +4,9 @@ import {useTreeMultiSelect} from "@/hooks//useTreeMultiSelect.ts";
 import {useModalShake} from "@/hooks//useModalShake.ts";
 import type {BaseTreeOption, TreeNodeOf} from "@/utils/dictionaries/treeSelectUtils.ts";
 import {HighlightText} from "@/utils/highlightText.tsx";
+import {ACCENT, type Accent} from "@/constants/accent.ts";
 import {SearchBar} from "@/components/componentsGeneral/SearchBar.tsx";
 import {Check, ChevronRight, Minus, X} from "lucide-react";
-import {ACCENT, type Accent} from "@/constants/accent.ts";
 export type TreeSelectOption = BaseTreeOption;
 
 interface TreeMultiSelectModalProps {

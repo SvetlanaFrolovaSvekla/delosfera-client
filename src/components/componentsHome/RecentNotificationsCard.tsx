@@ -11,8 +11,8 @@ import {NOTIFICATION_CATEGORY_META, DEFAULT_CATEGORY_META} from "@/constants/not
 import {timeAgo} from "@/utils/dateUtils.ts";
 
 import {Loader} from "@/components/componentsGeneral/Loader.tsx";
-import {EmptyState} from "@/components/componentsGeneral/EmptyState.tsx";
-import {EmptyPanelPattern} from "@/components/componentsGeneral/EmptyPanelPattern.tsx";
+import {EmptyState} from "@/components/componentsGeneral/emptyPanel/EmptyState.tsx";
+import {EmptyPanelPattern} from "@/components/componentsGeneral/emptyPanel/EmptyPanelPattern.tsx";
 
 import {Bell, BellOff, ChevronRight} from "lucide-react"
 

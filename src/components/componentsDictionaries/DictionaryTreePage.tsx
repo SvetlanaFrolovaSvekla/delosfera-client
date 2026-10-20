@@ -10,7 +10,7 @@ import {DictionaryTreeNode} from "@/components/componentsDictionaries/Dictionary
 
 import {SearchBar} from "@/components/componentsGeneral/SearchBar.tsx";
 import {Loader} from "@/components/componentsGeneral/Loader.tsx";
-import {EmptyState} from "@/components/componentsGeneral/EmptyState.tsx";
+import {EmptyState} from "@/components/componentsGeneral/emptyPanel/EmptyState.tsx";
 import {ConfirmActionModal} from "@/components/componentsGeneral/modal/ConfirmActionModal.tsx";
 
 import {AlertTriangle, ArrowLeft, Plus} from "lucide-react";

@@ -14,7 +14,7 @@ import {getDefaultNormMinutes, getMaxDeadlineMinutes} from "@/constants/validati
 import {useWorkCalendar} from "@/utils/workCalendar.ts";
 import {NormBlock} from "@/components/componentsCoordination/CoordinationRouteConstructor/functionalComponents/NormBlock.tsx";
 import {Loader} from "@/components/componentsGeneral/Loader.tsx";
-import {EmptyState} from "@/components/componentsGeneral/EmptyState.tsx";
+import {EmptyState} from "@/components/componentsGeneral/emptyPanel/EmptyState.tsx";
 import {WorkingTimeNote} from "@/components/componentsCoordination/CoordinationRouteConstructor/viewComponents/WorkingTimeNote.tsx";
 import {ArrowDown, ArrowLeft, Timer} from "lucide-react";
 

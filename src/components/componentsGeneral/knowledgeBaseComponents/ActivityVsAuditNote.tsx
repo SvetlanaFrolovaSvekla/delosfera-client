@@ -1,12 +1,12 @@
-// "Чем отличается «Активность на портале» от «Технического журнала действий»" - сворачиваемая
-// подсказка над обеими страницами (Управление → Наблюдение). По умолчанию свёрнута: тем, кто уже
+// Чем отличается "Активность на портале" от "Технического журнала действий" - сворачиваемая
+// подсказка над обеими страницами (Управление -> Наблюдение). По умолчанию свёрнута: тем, кто уже
 // знает разницу, не мешает, а кто не знает - раскроет одним кликом.
 import {useId, useState, type ReactNode} from "react";
 import {useTranslation} from "react-i18next";
 import {Link} from "react-router-dom";
-import {Activity, ArrowUpRight, ChevronDown, FileText, Lightbulb, ScrollText, Target, Users} from "lucide-react";
 import {useAuth} from "@/context/AuthContext.ts";
 import {PermissionCode} from "@/constants/permissions/permissions.ts";
+import {Activity, ArrowUpRight, ChevronDown, FileText, Lightbulb, ScrollText, Target, Users} from "lucide-react";
 
 type Side = "activity" | "audit";
 

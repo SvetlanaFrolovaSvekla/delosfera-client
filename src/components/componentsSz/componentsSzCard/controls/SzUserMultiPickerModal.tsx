@@ -11,10 +11,10 @@ import {
     UserPickerSearchInput,
     UserPickerListStatus,
 } from "@/components/componentsGeneral/userPicker/UserPickerModalShell.tsx";
-import {seniority, type PickableUser} from "@/components/componentsGeneral/userPicker/UserPicker.tsx";
 import {OrgUnitMultiSelectFilter} from "@/components/componentsGeneral/selects/OrgUnitMultiSelectFilter.tsx";
 import {Check, User as UserIcon} from "lucide-react";
 import {ACCENT, type Accent} from "@/constants/accent.ts";
+import {type PickableUser, seniority} from "@/constants/pickableUser.ts";
 
 interface Props {
     people: PickableUser[];

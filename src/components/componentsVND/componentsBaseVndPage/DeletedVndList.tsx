@@ -10,7 +10,7 @@ import {toast} from "@/service/toastService.ts";
 import {STATUS_META} from "@/constants/vndStatus.ts";
 import type {VndStatusKey} from "@/constants/vndTabs.ts";
 import {Loader} from "@/components/componentsGeneral/Loader";
-import {EmptyState} from "@/components/componentsGeneral/EmptyState.tsx";
+import {EmptyState} from "@/components/componentsGeneral/emptyPanel/EmptyState.tsx";
 import {Info, RotateCcw} from "lucide-react";
 
 export function DeletedVndList() {

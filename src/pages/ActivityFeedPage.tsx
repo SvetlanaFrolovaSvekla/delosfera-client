@@ -11,7 +11,7 @@ import {useActivityFeed} from "@/hooks/activityLogHooks/useActivityFeed.ts";
 import {formatDateTime, parseDDMMYYYY, timeAgo} from "@/utils/dateUtils.ts";
 import {HighlightSubstrings, splitSearchTerms} from "@/utils/highlightText.tsx";
 import {LightTooltip} from "@/components/componentsGeneral/tooltips/LightTooltip.tsx";
-import {ActivityVsAuditNote} from "@/components/componentsGeneral/ActivityVsAuditNote.tsx";
+import {ActivityVsAuditNote} from "@/components/componentsGeneral/knowledgeBaseComponents/ActivityVsAuditNote.tsx";
 import {Loader} from "@/components/componentsGeneral/Loader.tsx";
 import {DatePickerInput} from "@/components/componentsGeneral/datePickers/DatePickerInput.tsx";
 import {Tooltip} from "@/components/componentsGeneral/tooltips/Tooltip.tsx";

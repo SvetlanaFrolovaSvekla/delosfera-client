@@ -10,7 +10,7 @@ import type {
 } from "@/service/vndNewRedactionMailingService/vndNewRedactionMailingService.ts";
 import {useUsersList} from "@/hooks/userHooks/useUsersList.ts";
 import {HighlightText} from "@/utils/highlightText.tsx";
-import {EmptyState} from "@/components/componentsGeneral/EmptyState.tsx";
+import {EmptyState} from "@/components/componentsGeneral/emptyPanel/EmptyState.tsx";
 import {UserListFilters} from "@/components/componentsGeneral/userPicker/UserListFilters.tsx";
 import {Check, ChevronLeft, ChevronRight, Loader2, X} from "lucide-react";
 

@@ -8,6 +8,10 @@ import {apiClient} from "@/service/apiClient.ts";
 export interface HrRoutingSettings {
     headOfficeHrUserId: number | null;
     branchHrUserId: number | null;
+    /** Согласующий от Операционного управления в маршруте заявок на замещение (ЗМ-Настр). */
+    operationsApproverUserId: number | null;
+    /** Замена согласующего Операционного управления, если основной заблокирован/отключён. */
+    operationsFallbackUserId: number | null;
 }
 
 const BASE = "/sz/hr-routing";

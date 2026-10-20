@@ -12,7 +12,7 @@ import {
     type ActualizationBucketSettings,
 } from "@/service/actualizationBucketSettingsService/actualizationBucketSettingsService.ts";
 import {Loader} from "@/components/componentsGeneral/Loader.tsx";
-import {EmptyState} from "@/components/componentsGeneral/EmptyState.tsx";
+import {EmptyState} from "@/components/componentsGeneral/emptyPanel/EmptyState.tsx";
 
 const MAX_DAYS = 3650; // 10 лет — разумный потолок, чтобы не завести опечатку в поле
 

@@ -2,20 +2,24 @@
  * Книга приказов по личному составу.
  *
  * Отдельная от приказов по основной деятельности: срок хранения у неё особый,
- * и нумерация своя — «12-лс». Смешивать их нельзя.
+ * и нумерация своя - «12-лс». Смешивать их нельзя.
  */
-
 import {useEffect, useState} from "react";
 import {useTranslation} from "react-i18next";
-import {Download, Plus, ScrollText} from "lucide-react";
+
 import {
     hrOrderService,
     ORDER_STATUS_ORDER,
     type HrOrderKind, type HrOrderKindInfo, type HrOrderListItem, type HrOrderStatus,
 } from "@/service/hrOrderService/hrOrderService.ts";
+import {useAuth} from "@/context/AuthContext.ts";
+import {PermissionCode} from "@/constants/permissions/permissions.ts";
+import {HighlightText} from "@/utils/highlightText.tsx";
+import {HrOrderEditModal} from "@/components/componentsHrOrder/HrOrderEditModal.tsx";
+import {HrOrderCardModal} from "@/components/componentsHrOrder/HrOrderCardModal.tsx";
 import {PageHeader} from "@/components/componentsGeneral/PageHeader.tsx";
 import {Loader} from "@/components/componentsGeneral/Loader.tsx";
-import {EmptyState} from "@/components/componentsGeneral/EmptyState.tsx";
+import {EmptyState} from "@/components/componentsGeneral/emptyPanel/EmptyState.tsx";
 import {Tabs} from "@/components/componentsGeneral/Tabs.tsx";
 import {SearchBar} from "@/components/componentsGeneral/SearchBar.tsx";
 import {SelectDropdown} from "@/components/componentsGeneral/selects/SingleSelects/SelectDropdown.tsx";
@@ -24,11 +28,8 @@ import {
     Badge, Cell, DataTable, Row,
     formatDate, type BadgeTone,
 } from "@/components/componentsGeneral/DataTable.tsx";
-import {HighlightText} from "@/utils/highlightText.tsx";
-import {HrOrderEditModal} from "@/components/hr/HrOrderEditModal.tsx";
-import {HrOrderCardModal} from "@/components/hr/HrOrderCardModal.tsx";
-import {useAuth} from "@/context/AuthContext.ts";
-import {PermissionCode} from "@/constants/permissions/permissions.ts";
+import {toast} from "@/service/toastService.ts";
+import {Download, Plus, ScrollText} from "lucide-react";
 
 const STATUS_TONE: Record<HrOrderStatus, BadgeTone> = {
     Signed: "good",
@@ -47,7 +48,7 @@ export function HrOrdersPage() {
     const [status, setStatus] = useState<HrOrderStatus | "">("");
     const [kind, setKind] = useState<HrOrderKind | "">("");
     const [text, setText] = useState("");
-    /** Текст, по которому список реально отобран — его и подсвечиваем в строках. */
+    /** Текст, по которому список реально отобран - его подсвечиваем в строках. */
     const [appliedText, setAppliedText] = useState("");
     const [loading, setLoading] = useState(true);
     const [exporting, setExporting] = useState(false);
@@ -59,28 +60,34 @@ export function HrOrdersPage() {
         hrOrderService.kinds().then(setKinds).catch(() => {});
     }, []);
 
-    const load = async () => {
+    const loadWith = async (searchText: string) => {
         setLoading(true);
         try {
             const result = await hrOrderService.list({
                 status: status || undefined,
                 kind: kind || undefined,
-                text: text.trim() || undefined,
+                text: searchText.trim() || undefined,
                 pageSize: 200,
             });
             setRows(result.items);
-            setAppliedText(text.trim());
+            setAppliedText(searchText.trim());
+        } catch {
+            // "Не удалось загрузить приказы"
+            toast.error(t("hrOrdersPage.loadFailed", "Не удалось загрузить приказы"));
         } finally {
             setLoading(false);
         }
     };
 
+    const load = () => loadWith(text);
+
     useEffect(() => {
+        // eslint-disable-next-line react-hooks/set-state-in-effect
         void load();
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [status, kind]);
 
-    /** Название вида приказа — из перевода; если такого вида в локалях нет, берём то, что прислал сервер. */
+    /** Название вида приказа - из перевода; если такого вида в локалях нет, берём то, что прислал сервер. */
     const kindTitle = (value: HrOrderKind) =>
         t(`hrOrdersPage.kinds.${value}`, {defaultValue: kinds.find((k) => k.kind === value)?.title ?? value});
 
@@ -163,6 +170,8 @@ export function HrOrdersPage() {
                     value={kind}
                     onChange={(value) => setKind(value as HrOrderKind | "")}
                     minWidth="200px"
+                    searchable
+                    searchPlaceholder={t("hrOrdersPage.kindSearch", "Найти вид приказа")}
                 />
             </div>
 
@@ -252,9 +261,27 @@ export function HrOrdersPage() {
                     orderId={editing === "new" ? null : editing}
                     kinds={kinds}
                     onClose={() => setEditing(null)}
-                    onSaved={() => {
+                    onSaved={(isNew) => {
                         setEditing(null);
-                        void load();
+                        toast.success(isNew
+                            ? t("hrOrdersPage.created", "Приказ сохранён как проект")
+                            : t("hrOrdersPage.updated", "Изменения сохранены"));
+
+                        // Новый приказ — проект. Если стоит фильтр, под который он не попадает
+                        // (вкладка «Подписан», другой вид, поиск), сбрасываем его — иначе
+                        // кажется, что приказ не создался. Смена фильтра сама перезагрузит список.
+                        if (isNew && (status !== "" || kind !== "" || text.trim() !== "")) {
+                            setText("");
+                            if (status === "" && kind === "") {
+                                // Был только текст поиска - эффект по фильтрам не сработает.
+                                void loadWith("");
+                            } else {
+                                setStatus("");
+                                setKind("");
+                            }
+                        } else {
+                            void load();
+                        }
                     }}
                 />
             )}

@@ -8,7 +8,7 @@ import type {MouseEvent} from "react";
 import {Link} from "react-router-dom";
 import {useTranslation} from "react-i18next";
 import {taskLink, type InboxTask} from "@/service/workflowService/taskInboxService.ts";
-import {INBOX_CONTOUR_META} from "@/constants/taskInboxConst.ts";
+import {INBOX_CONTOUR_META, SUBSTITUTION_CONTOUR_META} from "@/constants/taskInboxConst.ts";
 import {HighlightText} from "@/utils/highlightText.tsx";
 import {Icon} from "@/assets/icons/Icon.tsx";
 
@@ -42,6 +42,8 @@ export function inboxContourMeta(documentType: string) {
             return INBOX_CONTOUR_META.ack;
         case "Vnd":
             return INBOX_CONTOUR_META.vnd;
+        case "Substitution":
+            return SUBSTITUTION_CONTOUR_META;
         default:
             return INBOX_CONTOUR_META.sz;
     }

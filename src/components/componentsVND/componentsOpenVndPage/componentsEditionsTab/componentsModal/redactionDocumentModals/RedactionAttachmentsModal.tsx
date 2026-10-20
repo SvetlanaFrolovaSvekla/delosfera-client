@@ -5,7 +5,7 @@ import {useTranslation} from "react-i18next";
 import type {VndRedactionResponse} from "@/service/vndService/vndServiceType.ts";
 import {isPreviewableFile} from "@/utils/downloadFiles/fileNaming.ts";
 import {Tooltip} from "@/components/componentsGeneral/tooltips/Tooltip.tsx";
-import {TruncatedTooltip} from "@/components/componentsGeneral/TruncatedTooltip.tsx";
+import {TruncatedTooltip} from "@/components/componentsGeneral/tooltips/TruncatedTooltip.tsx";
 import {
     AttachmentDocxPreviewModal
 } from "@/components/componentsGeneral/modal/AttachmentDocxPreviewModal.tsx";

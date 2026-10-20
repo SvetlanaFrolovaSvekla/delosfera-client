@@ -16,6 +16,10 @@ export function HrRoutingSettingsPage() {
     const [users, setUsers] = useState<UserLookupItem[]>([]);
     const [headOffice, setHeadOffice] = useState<number | null>(null);
     const [branch, setBranch] = useState<number | null>(null);
+    // Операционное управление в маршруте заявок на замещение. Поля были только на сервере:
+    // экрана не было, а каждое сохранение этой страницы отправляло их пустыми и затирало.
+    const [operations, setOperations] = useState<number | null>(null);
+    const [operationsFallback, setOperationsFallback] = useState<number | null>(null);
 
     const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState(false);
@@ -28,6 +32,8 @@ export function HrRoutingSettingsPage() {
                 setUsers(list);
                 setHeadOffice(s.headOfficeHrUserId);
                 setBranch(s.branchHrUserId);
+                setOperations(s.operationsApproverUserId ?? null);
+                setOperationsFallback(s.operationsFallbackUserId ?? null);
             })
             .catch(() => setError(t("hrRoutingSettings.errorLoad") /* Не удалось загрузить настройки */))
             .finally(() => setLoading(false));
@@ -38,7 +44,12 @@ export function HrRoutingSettingsPage() {
         setSaved(false);
         setError(null);
         try {
-            await hrRoutingService.set({headOfficeHrUserId: headOffice, branchHrUserId: branch});
+            await hrRoutingService.set({
+                headOfficeHrUserId: headOffice,
+                branchHrUserId: branch,
+                operationsApproverUserId: operations,
+                operationsFallbackUserId: operationsFallback,
+            });
             setSaved(true);
         } catch {
             setError(t("hrRoutingSettings.errorSave") /* Не удалось сохранить */);
@@ -93,6 +104,36 @@ export function HrRoutingSettingsPage() {
                             searchPlaceholder={t("selectApproverModal.searchPlaceholder")}
                             onChange={(id) => { setBranch(id); setSaved(false); }}
                             onClear={() => { setBranch(null); setSaved(false); }}
+                        />
+                    </Field>
+
+                    <Field
+                        label={t("hrRoutingSettings.operationsLabel") /* Согласующий от Операционного управления */}
+                        hint={t("hrRoutingSettings.operationsHint")}>
+                        <UserPickerField
+                            people={users}
+                            value={operations}
+                            clearable
+                            placeholder={t("hrRoutingSettings.pickerPlaceholder")}
+                            modalTitle={t("hrRoutingSettings.operationsLabel")}
+                            searchPlaceholder={t("selectApproverModal.searchPlaceholder")}
+                            onChange={(id) => { setOperations(id); setSaved(false); }}
+                            onClear={() => { setOperations(null); setSaved(false); }}
+                        />
+                    </Field>
+
+                    <Field
+                        label={t("hrRoutingSettings.operationsFallbackLabel") /* Замена согласующего Операционного управления */}
+                        hint={t("hrRoutingSettings.operationsFallbackHint")}>
+                        <UserPickerField
+                            people={users}
+                            value={operationsFallback}
+                            clearable
+                            placeholder={t("hrRoutingSettings.pickerPlaceholder")}
+                            modalTitle={t("hrRoutingSettings.operationsFallbackLabel")}
+                            searchPlaceholder={t("selectApproverModal.searchPlaceholder")}
+                            onChange={(id) => { setOperationsFallback(id); setSaved(false); }}
+                            onClear={() => { setOperationsFallback(null); setSaved(false); }}
                         />
                     </Field>
 

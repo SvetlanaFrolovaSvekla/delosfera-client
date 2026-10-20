@@ -13,7 +13,7 @@ import {
 } from "@/service/substitutionService/substitutionService.ts";
 import {useAuth} from "@/context/AuthContext.ts";
 import {PermissionCode} from "@/constants/permissions/permissions.ts";
-import type {PickableUser} from "@/components/componentsGeneral/userPicker/UserPicker.tsx";
+
 import {UserPickerField} from "@/components/componentsGeneral/userPicker/UserPickerField.tsx";
 import {SelectDropdown} from "@/components/componentsGeneral/selects/SingleSelects/SelectDropdown.tsx";
 import {
@@ -24,6 +24,7 @@ import {formatDDMMYYYY, parseDDMMYYYYToISO, parseDate} from "@/utils/dateUtils.t
 import {colors} from "@/design/tokens.ts";
 import {SzFormSection} from "@/components/componentsSz/componentsSzCard/form/SzFormSection.tsx";
 import {ArrowLeft, ChevronDown, Building2, Plus, Printer, Trash2, X} from "lucide-react";
+import type {PickableUser} from "@/constants/pickableUser.ts";
 
 const empty: SubstitutionSaveRequest = {
     subject: "", reason: "Other", absentName: "", substituteName: "",
@@ -406,7 +407,7 @@ export function SubstitutionCardPage() {
                                    onChange={(v) => set("passportIssuedBy", v)}/>
                         </Field>
                         <Field label={t("substitutionCard.fields.inn")}>
-                            <Input value={form.inn ?? ""} disabled={!editable} onChange={(v) => set("inn", v)}/>
+                            <InnInput value={form.inn ?? ""} disabled={!editable} onChange={(v) => set("inn", v)}/>
                         </Field>
                         <Field label={t("substitutionCard.fields.passportIssuedOn")}>
                             <DateInput value={form.passportIssuedOn} disabled={!editable}
@@ -819,6 +820,27 @@ function Field({label, hint, required, children}: {
 
 function Input({value, onChange, disabled}: { value: string; onChange: (v: string) => void; disabled?: boolean }) {
     return <input className={FIELD} value={value} disabled={disabled} onChange={(e) => onChange(e.target.value)}/>;
+}
+
+/** Длина ИНН — 14 цифр (КСЗ-ЗМ-15), та же проверка, что и на сервере (SubstitutionService.Validate). */
+const INN_LENGTH = 14;
+
+/** ИНН: только цифры, не длиннее 14, со счётчиком «n/14» справа в поле — видно, сколько ещё ввести. */
+function InnInput({value, onChange, disabled}: { value: string; onChange: (v: string) => void; disabled?: boolean }) {
+    const len = value.length;
+    // Неполный ИНН подсвечиваем: сервер его всё равно не примет при сохранении.
+    const tone = len === 0 ? "text-[#a3adbd]" : len === INN_LENGTH ? "text-[#1c7a4d]" : "text-[#c27c0e]";
+    return (
+        <div className="relative">
+            <input className={`${FIELD} pr-14`} value={value} disabled={disabled}
+                   inputMode="numeric" maxLength={INN_LENGTH} autoComplete="off"
+                   onChange={(e) => onChange(e.target.value.replace(/\D/g, "").slice(0, INN_LENGTH))}/>
+            <span
+                className={`pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-[11.5px] font-semibold tabular-nums ${tone}`}>
+                {len}/{INN_LENGTH}
+            </span>
+        </div>
+    );
 }
 
 /** Дата — через календарь-модалку проекта. В форме хранится ISO (гггг-мм-дд), в календаре — дд.мм.гггг. */

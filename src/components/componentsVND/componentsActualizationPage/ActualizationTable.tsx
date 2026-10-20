@@ -12,7 +12,7 @@ import {
     useActualizationBucketThresholdText
 } from "@/hooks/actualizationHooks/useActualizationBucketMeta.ts";
 import {daysUntil} from "@/utils/dateUtils.ts";
-import {EmptyState} from "@/components/componentsGeneral/EmptyState.tsx";
+import {EmptyState} from "@/components/componentsGeneral/emptyPanel/EmptyState.tsx";
 import {Tooltip} from "@/components/componentsGeneral/tooltips/Tooltip.tsx";
 
 interface ActualizationTableProps {

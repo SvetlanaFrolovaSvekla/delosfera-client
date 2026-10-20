@@ -1,7 +1,7 @@
 // Справочник пользователей для карточки СЗ: словарь id -> ФИО и список для выбора человека.
 import {useEffect, useState} from "react";
 import {userService} from "@/service/userService/userService.ts";
-import type {PickableUser} from "@/components/componentsGeneral/userPicker/UserPicker.tsx";
+import type {PickableUser} from "@/constants/pickableUser.ts";
 
 export function useSzUsers() {
     const [users, setUsers] = useState<Record<number, string>>({});

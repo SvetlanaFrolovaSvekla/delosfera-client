@@ -15,6 +15,8 @@ import {UserGroupMultiSelectField} from "@/components/componentsVND/componentsOp
 
 import {Section} from "@/components/componentsGeneral/Section.tsx";
 import {ReadOnlyField} from "@/components/componentsGeneral/readOnlySelects/ReadOnlyField.tsx";
+import {PersonRow, personMeta} from "@/components/componentsSubstitutions/SubstitutionPersonField.tsx";
+import {userService, type UserLookupItem} from "@/service/userService/userService.ts";
 import {ReadOnlyChipsField} from "@/components/componentsGeneral/readOnlySelects/ReadOnlyChipsField.tsx";
 import {SingleSelectListField} from "@/components/componentsGeneral/selects/SingleSelects/SingleSelectListField.tsx";
 import {MultiSelectField} from "@/components/componentsGeneral/selects/MultiSelects/MultiSelectField.tsx";
@@ -84,6 +86,22 @@ export function VndPassportTab({
         secrecyLevelName,
         userGroupNames,
     } = useVndDictionaryResolvers();
+
+    // Справочник сотрудников — только чтобы показать должность и подразделение под ФИО
+    // инициатора и ответственного (как «Автор заявки» в замещениях). Запрос кешируется.
+    const [lookupUsers, setLookupUsers] = useState<UserLookupItem[]>([]);
+    useEffect(() => {
+        let cancelled = false;
+        userService.lookup().then((list) => {
+            if (!cancelled) setLookupUsers(list);
+        }).catch(() => {
+        });
+        return () => {
+            cancelled = true;
+        };
+    }, []);
+    const initiatorPerson = lookupUsers.find((u) => u.id === vnd.createdByUserId);
+    const responsiblePerson = lookupUsers.find((u) => u.id === vnd.actualizationResponsibleUserId);
 
     const [redactions, setRedactions] = useState<VndRedactionResponse[]>([]);
     const [selectedRedactionId, setSelectedRedactionId] = useState<number | null>(null);
@@ -262,16 +280,20 @@ export function VndPassportTab({
                 <Section icon={<FileText className="w-[15px] h-[15px]" strokeWidth={1.9}/>} title={t("openVndPage.passportTab.sections.mainInfo")}>
                     {/* Инициатор и ответственный за актуализацию - всегда read-only */}
                     <div className={`grid grid-cols-1 gap-4 mb-4 ${isDraft ? "" : "sm:grid-cols-2"}`}>
-                        <ReadOnlyField
+                        <PersonReadOnlyField
                             label={t("openVndPage.passportTab.initiatorLabel")}
-                            value={vnd.createdByUserName ? `${vnd.createdByUserName}${isInitiatorMe ? t("openVndPage.passportTab.meSuffix") : ""}` : "—"}
-                            linkTo={vnd.createdByUserId ? (isInitiatorMe ? "/profile" : `/users/${vnd.createdByUserId}`) : undefined}
+                            name={vnd.createdByUserName ? `${vnd.createdByUserName}${isInitiatorMe ? t("openVndPage.passportTab.meSuffix") : ""}` : null}
+                            meta={personMeta(initiatorPerson)}
+                            muted={!initiatorPerson}
+                            href={vnd.createdByUserId ? (isInitiatorMe ? "/profile" : `/users/${vnd.createdByUserId}`) : undefined}
                         />
                         {!isDraft && (
-                            <ReadOnlyField
+                            <PersonReadOnlyField
                                 label={t("openVndPage.passportTab.actualizationResponsibleLabel")}
-                                value={vnd.actualizationResponsibleUserName || "—"}
-                                linkTo={vnd.actualizationResponsibleUserId ? `/users/${vnd.actualizationResponsibleUserId}` : undefined}
+                                name={vnd.actualizationResponsibleUserName || null}
+                                meta={personMeta(responsiblePerson)}
+                                muted={!responsiblePerson}
+                                href={vnd.actualizationResponsibleUserId ? `/users/${vnd.actualizationResponsibleUserId}` : undefined}
                             />
                         )}
                     </div>
@@ -624,5 +646,27 @@ export function VndPassportTab({
                 </Section>
             </div>
         </>
+    );
+}
+
+/** Нередактируемое поле с сотрудником: аватар, ФИО-ссылка на профиль, должность · подразделение. */
+function PersonReadOnlyField({label, name, meta, muted, href}: {
+    label: string;
+    name: string | null;
+    meta?: string | null;
+    muted?: boolean;
+    href?: string;
+}) {
+    return (
+        <div className="flex flex-col h-full min-w-0">
+            <label className="block text-[12px] font-semibold text-[#3a4560] mb-1.5">{label}</label>
+            <div className="mt-auto">
+                {name ? (
+                    <PersonRow name={name} meta={meta} muted={muted} nameHref={href}/>
+                ) : (
+                    <div className="flex min-h-10 items-center rounded-[9px] border border-[#e5e9f0] bg-[#f9fafc] px-3 text-[13px] text-[#a3adbd]">—</div>
+                )}
+            </div>
+        </div>
     );
 }

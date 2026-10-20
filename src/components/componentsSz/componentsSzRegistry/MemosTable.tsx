@@ -9,6 +9,7 @@ import {DueCell} from "./DueCell.tsx";
 import {formatDate} from "./registryModel.ts";
 import {RegistryStateRow, RegistryTable, type RegistryColumn} from "./RegistryTable.tsx";
 import {SzFavoriteButton} from "@/components/componentsSz/componentsSzRegistry/SzFavoriteButton.tsx";
+import {Avatar} from "@/components/componentsGeneral/Avatar.tsx";
 
 interface Props {
     items: SzListItem[];
@@ -93,8 +94,16 @@ export function MemosTable({
                             )}
                         </td>
                         <td className="px-4 py-2.5 text-[#55617a]">{kindName(i.kindId, i.kind)}</td>
-                        <td className="px-4 py-2.5 text-[#55617a]">
-                            {i.author ? <HighlightSubstrings text={i.author} terms={terms}/> : "—"}
+                        {/* Автор — с аватаркой-инициалами, как в реестре заявок на замещение */}
+                        <td className="px-4 py-2.5">
+                            {i.author ? (
+                                <span className="flex min-w-0 items-center gap-2">
+                                    <Avatar name={i.author} size={24}/>
+                                    <span className="truncate text-[#55617a]">
+                                        <HighlightSubstrings text={i.author} terms={terms}/>
+                                    </span>
+                                </span>
+                            ) : <span className="text-[#a3adbd]">—</span>}
                         </td>
                         <td className="px-4 py-2.5">
                             <DueCell dueDate={i.dueDate} isOverdue={i.isOverdue} daysLeft={i.daysLeft}/>

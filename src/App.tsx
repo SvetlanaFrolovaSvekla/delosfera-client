@@ -53,6 +53,7 @@ const SzRegistryPage = lazy(() => import("@/pages/SzPagesSection/SzPages/SzRegis
 const SzTrackerPage = lazy(() => import("@/pages/SzPagesSection/SzTrackerPage.tsx").then(m => ({default: m.SzTrackerPage})));
 const SzCardPage = lazy(() => import("@/pages/SzPagesSection/SzPages/SzCardPage.tsx").then(m => ({default: m.SzCardPage})));
 const SzPrintPage = lazy(() => import("@/pages/SzPagesSection/SzPages/SzPrintPage.tsx").then(m => ({default: m.SzPrintPage})));
+const SubstitutionPrintPage = lazy(() => import("@/pages/SzPagesSection/SubstitutionsPages/SubstitutionPrintPage.tsx").then(m => ({default: m.SubstitutionPrintPage})));
 
 // Контур закупок (контур 6 ТЗ)
 const AuthorityMatrixPage = lazy(() => import("@/pages/ProcurementPagesSection/AuthorityMatrixPage.tsx").then(m => ({default: m.AuthorityMatrixPage})));
@@ -154,6 +155,8 @@ function App() {
                         <Route element={<ProtectedRoute/>}>
                             {/* Печатная форма идёт без бокового меню и шапки — лист уходит на A4 как есть. */}
                             <Route path="/sz/:id/print" element={<SzPrintPage/>}/>
+                            {/* «Скачать / печать» приказа и договора МО заявки на замещение — так же без меню. */}
+                            <Route path="/substitutions/:id/print/:form" element={<SubstitutionPrintPage/>}/>
 
                             <Route element={<MainLayout/>}>
                                 <Route path="/" element={<HomePage/>}/>

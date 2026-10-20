@@ -16,7 +16,7 @@ import type {
     HrFormSchema,
     SzEmployee,
 } from "@/service/szService/szService.ts";
-import type {PickableUser} from "@/components/componentsGeneral/userPicker/UserPicker.tsx";
+import type {PickableUser} from "@/constants/pickableUser.ts";
 import {UserPickerField} from "@/components/componentsGeneral/userPicker/UserPickerField.tsx";
 import {SelectDropdown} from "@/components/componentsGeneral/selects/SingleSelects/SelectDropdown.tsx";
 import {SingleSelectListField} from "@/components/componentsGeneral/selects/SingleSelects/SingleSelectListField.tsx";

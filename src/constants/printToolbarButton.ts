@@ -1,0 +1,1 @@
+export const toolbarButton = "inline-flex h-10 cursor-pointer items-center gap-1.5 rounded-[10px] border border-[#d7dee8] bg-white px-3 text-[13px] font-semibold text-[#3a4560] hover:bg-[#f6f8fb] disabled:cursor-wait disabled:opacity-60";

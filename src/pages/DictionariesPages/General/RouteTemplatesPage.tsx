@@ -14,7 +14,7 @@ import {useTranslation} from "react-i18next";
 import {Plus, Users, CheckCircle2, AlertTriangle, GitBranch, ArrowLeft} from "lucide-react";
 import {useAuth} from "@/context/AuthContext.ts";
 import {PermissionCode} from "@/constants/permissions/permissions.ts";
-import {type PickableUser} from "@/components/componentsGeneral/userPicker/UserPicker.tsx";
+import {type PickableUser} from "@/constants/pickableUser.ts";
 import {SearchBar} from "@/components/componentsGeneral/SearchBar.tsx";
 import {SelectDropdown} from "@/components/componentsGeneral/selects/SingleSelects/SelectDropdown.tsx";
 import {PlainCheckbox} from "@/components/componentsGeneral/componentsCheckBox/PlainCheckbox.tsx";

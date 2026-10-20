@@ -287,6 +287,8 @@
     "cancel": "cancel"
   },
   "hrRoutingSettings": {
+    "headOfficeSignerLabel": "Signatory of substitution orders for Head Office",
+    "headOfficeSignerHint": "Signs the order and the liability agreement on behalf of the Bank for substitution requests of Head Office employees. For branches the branch director signs.",
     "pageTitle": "HR memo routing",
     "pageDescription": "Who acts as the HR coordinator on the HR memo route, by the author's area. An author from a branch is routed to the branch HR coordinator, otherwise to the Head Office HR coordinator.",
     "errorLoad": "Failed to load settings",
@@ -5642,7 +5644,9 @@
       "anyEmployee": "Any employee",
       "absentModalTitle": "Select absent employee",
       "substituteModalTitle": "Select substitute",
-      "employeeSearchPlaceholder": "Find an employee…"
+      "employeeSearchPlaceholder": "Find an employee…",
+      "author": "Request author",
+      "authorModalTitle": "Select request author"
     },
     "cols": {
       "number": "Number",
@@ -5650,12 +5654,13 @@
       "absent": "Absent employee",
       "substitute": "Substitute",
       "period": "Period",
-      "status": "Status"
+      "status": "Status",
+      "author": "Author"
     },
     "status": {
       "Draft": "Draft",
       "OnApproval": "Under approval",
-      "OnExecution": "In execution",
+      "OnExecution": "On signing",
       "Executed": "Executed",
       "Rejected": "Rejected",
       "Withdrawn": "Withdrawn"
@@ -5667,7 +5672,117 @@
       "Other": "Other"
     }
   },
+  "substitutionSigning": {
+    "title": "Document signing",
+    "hint": "The order and the liability agreement are frozen when the request is submitted. The branch director (and the Operations and HR approvers, if they are also the absent or substitute employee) can e-sign them right at their approval step; the others sign after approval. If the request is changed, the documents are frozen again: earlier signatures become outdated and a new signature is required; until it is given, the e-signature sheet shows auto-approval.",
+    "waiting": "Awaiting signatures",
+    "allSigned": "All signatures collected",
+    "allSignedText": "HR can mark the request as executed.",
+    "closed": "Signing closed",
+    "version": "Version {{n}} of {{date}}",
+    "downloadPlain": "Without signatures",
+    "downloadSigned": "With e-signatures",
+    "noSigner": "Not determined",
+    "sign": "Sign with e-signature",
+    "signing": "Signing…",
+    "signTest": "Test",
+    "signed": "Document signed",
+    "signedTest": "Test signature added",
+    "signFailed": "Could not sign",
+    "documentChanged": "The document changed after you started signing. Data refreshed — please sign the new version.",
+    "downloadFailed": "Could not download the document",
+    "slotSigned": "Signed",
+    "slotSignedTest": "Test signature",
+    "signedBy": "signed by: {{name}}",
+    "notSigned": "Not signed",
+    "showOld": "Previous versions ({{n}})",
+    "hideOld": "Hide previous versions",
+    "signaturesCount": "{{n}} of {{total}} signatures",
+    "approvalStage": "Approval in progress — route participants can already sign at their step",
+    "afterApproval": "Signature — after approval",
+    "staleSignature": "Signature on version {{v}} of {{date}}",
+    "outdated": "outdated",
+    "autoApproved": "The document changed after signing. Until a new signature is given, the e-signature sheet shows auto-approval.",
+    "signAgain": "Sign again",
+    "outdatedVersion": "outdated version",
+    "openPrint": "Download / print",
+    "notFrozen": "Documents are frozen when the request is submitted — for now you can preview the form with the current data",
+    "viewDocuments": "View documents",
+    "view": "View",
+    "placement": {
+      "title": "Signature placement",
+      "hint": "Move the cursor over the document — your signature block snaps between paragraphs; the places of the next signers are shown in grey. Click to fix the place.",
+      "hintChosen": "Place selected. Click elsewhere in the document to move it, or sign.",
+      "confirm": "Sign with e-signature here",
+      "confirmTest": "Test signature here",
+      "cancel": "Cancel",
+      "loadError": "Failed to load the document to choose the signature place"
+    }
+  },
   "substitutionCard": {
+    "routeNoteTitle": "The request was sent with an incomplete route",
+    "printFrozenHint": "Documents open in the version frozen for signing: “With e-signatures” or “For handwritten signature”.",
+    "printPage": {
+      "toast": {
+        "docxDownloaded": "Document downloaded",
+        "pdfPreparing": "Preparing PDF…",
+        "pdfDownloaded": "PDF downloaded",
+        "printOpening": "Opening print dialog",
+        "printNewTab": "Opening print in a new tab",
+        "preparing": "Preparing the document…"
+      },
+      "pageTitle": "Order / liability agreement print forms",
+      "modalTitle": "Document preview",
+      "modalSubtitle": "Order and liability agreement — with e-signatures or for handwritten signature",
+      "close": "Close",
+      "loading": "Preparing the document…",
+      "loadError": "Could not generate the document",
+      "signed": "With e-signatures",
+      "paper": "For handwritten signature",
+      "signedHint": "The current version of the document: e-signature stamps are placed where the signers chose, unsigned places are shown in grey. At the end is the e-signature sheet: who signed, when and with which certificate. Signatures on an earlier version are shown as auto-approval.",
+      "paperHint": "The same document without the e-signature sheet — print it and sign by hand.",
+      "notFrozenHint": "The documents are not frozen for signing yet (the request has not been submitted) — the form reflects the current request data, there are no e-signatures.",
+      "print": "Print",
+      "pdfHint": "Download as PDF",
+      "docxHint": "Download Word document (DOCX)",
+      "preparing": "Preparing…",
+      "order": "Order on temporary assignment of duties",
+      "liability": "Full liability agreement",
+      "version": "version {{n}}",
+      "downloadFailed": "Could not download the document"
+    },
+    "toast": {
+      "draftCreated": "Draft request created",
+      "saved": "Changes saved",
+      "saveFailed": "Could not save the request",
+      "submitted": "Request sent for approval",
+      "submittedToSigning": "Request passed to document signing",
+      "submitFailed": "Could not submit the request",
+      "approved": "Request approved",
+      "rejected": "Request rejected",
+      "reassigned": "Step reassigned",
+      "executed": "Request marked as executed",
+      "withdrawn": "Request withdrawn and returned to draft",
+      "deleted": "Draft deleted",
+      "actionFailed": "Action failed",
+      "printFailed": "Could not generate the document"
+    },
+    "confirm": {
+      "processing": "Processing…",
+      "approveTitle": "Approve the request?",
+      "approveMessage": "Your step will be marked as approved and the request will move to the next approver. The decision cannot be changed afterwards.",
+      "rejectTitle": "Reject the request?",
+      "rejectMessage": "Approval will stop and the request will return to the initiator. Specify the reason — the initiator will see it.",
+      "submitTitle": "Send the request for approval?",
+      "submitMessage": "The request will follow the route: branch director → Operations Department → HR. If an approver is not configured, that step is skipped and a notification is sent. After submission only HR can edit the request.",
+      "executeTitle": "Mark the request as executed?",
+      "executeMessageSigned": "All signatures on the order and agreement are collected. The request will become “Executed” and signing will be closed.",
+      "executeMessageUnsigned": "Not all e-signatures on the order and agreement are collected. If the documents were signed on paper, you can still mark the request executed — signing will be closed and missing signatures can no longer be added in the system.",
+      "withdrawTitle": "Withdraw the request?",
+      "withdrawMessage": "Approval and signing will stop and the request will return to draft — you can edit it and submit it for approval again. The current approver will be notified.",
+      "deleteTitle": "Delete the draft?",
+      "deleteMessage": "The draft substitution request will be deleted permanently."
+    },
     "loadError": "Couldn't load the request",
     "saveFailed": "Couldn't save",
     "newTitle": "New substitution request",
@@ -5718,11 +5833,35 @@
       "handoverMoment": "Handover moment",
       "handoverOn": "Handover date",
       "members": "Commission members",
-      "description": "Description"
+      "description": "Description",
+      "author": "Request author",
+      "authorHint": "Who created the request. Filled in automatically and cannot be changed.",
+      "createdAt": "Created",
+      "createdAtNew": "Set when the request is created",
+      "clearEmployee": "Remove employee"
     },
     "handover": {
       "EndOfDay": "At the end of the working day",
       "StartOfDay": "At the start of the working day"
+    },
+    "routeActions": {
+      "decide": "Your decision:",
+      "decideFor": "Decision on behalf of {{name}}:",
+      "sign": "Sign the documents with e-signature:",
+      "signOrder": "Sign the order",
+      "signLiability": "Sign the liability agreement"
+    },
+    "routeColumns": {
+      "approval": "Approval",
+      "signature": "E-signature"
+    },
+    "signState": {
+      "signed": "Signed",
+      "partial": "Signed {{done}} of {{total}}",
+      "waiting": "Awaiting signature",
+      "autoApproved": "Auto-approved",
+      "notRequired": "Not required",
+      "notFrozen": "Documents not fixed yet"
     },
     "approvalState": {
       "Pending": "Pending",
@@ -5736,12 +5875,21 @@
       "hr": "HR Department"
     },
     "buttons": {
+      "save": "Save",
+      "cancelCreate": "Cancel",
+      "createDraft": "Create draft",
+      "creatingDraft": "Creating draft…",
+      "print": "Print forms",
       "saveDraft": "Save draft",
       "submit": "Submit for approval",
       "saveHr": "Save changes (HR)",
       "order": "Order",
       "liability": "Liability agreement",
       "exportAll": "Export (all fields)",
+      "printOrder": "Download / print order",
+      "printLiability": "Download / print liability agreement",
+      "printForms": "Order / liability agreement print forms",
+      "printHint": "Opens a page with the order and the liability agreement: “With e-signatures” or “For handwritten signature” — PDF, DOCX or straight to the printer.",
       "execute": "Executed (order issued)",
       "delete": "Delete",
       "approve": "Approve",

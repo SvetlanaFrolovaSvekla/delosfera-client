@@ -14,7 +14,7 @@ import {inputClass, localizedTitle} from "@/utils/szProcess/szCardUtils.ts";
 import {SzRegistrationPanel} from "@/components/componentsSz/componentsSzCard/panels/SzRegistrationPanel.tsx";
 import {SzFormSection} from "@/components/componentsSz/componentsSzCard/form/SzFormSection.tsx";
 
-import type {PickableUser} from "@/components/componentsGeneral/userPicker/UserPicker.tsx";
+import type {PickableUser} from "@/constants/pickableUser.ts";
 import {UserPickerField} from "@/components/componentsGeneral/userPicker/UserPickerField.tsx";
 import {SelectDropdown} from "@/components/componentsGeneral/selects/SingleSelects/SelectDropdown.tsx";
 import {SingleSelectListField} from "@/components/componentsGeneral/selects/SingleSelects/SingleSelectListField.tsx";

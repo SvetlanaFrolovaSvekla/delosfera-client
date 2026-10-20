@@ -9,12 +9,21 @@ import {
 import {
     substitutionService, REASON_LABEL, HANDOVER_LABEL,
     type SubstitutionSaveRequest, type SubstitutionReason, type HandoverMoment,
-    type CommissionMember, type SubstitutionDetails, type SubstitutionStatus,
+    type CommissionMember, type SubstitutionDetails, type ApprovalStep, type ApprovalState, type SubstitutionStatus, type SubstitutionSigningState,
+    substitutionPrintUrl,
 } from "@/service/substitutionService/substitutionService.ts";
 import {useAuth} from "@/context/AuthContext.ts";
-import {PermissionCode} from "@/constants/permissions/permissions.ts";
+import {toast} from "@/service/toastService.ts";
+import {SzButton, szButtonClass} from "@/components/componentsSz/componentsSzCard/controls/SzButton.tsx";
+import {ConfirmActionModal} from "@/components/componentsGeneral/modal/ConfirmActionModal.tsx";
+import {ConfirmDeleteModal} from "@/components/componentsGeneral/modal/ConfirmDeleteModal.tsx";
+import {Tooltip} from "@/components/componentsGeneral/tooltips/Tooltip.tsx";
+import {SubstitutionSigningSection} from "@/components/componentsSubstitutions/SubstitutionSigningSection.tsx";
+import {useSubstitutionSigning} from "@/components/componentsSubstitutions/useSubstitutionSigning.tsx";
 
-import {UserPickerField} from "@/components/componentsGeneral/userPicker/UserPickerField.tsx";
+import {
+    PersonRow, SubstitutionPersonField, personMeta,
+} from "@/components/componentsSubstitutions/SubstitutionPersonField.tsx";
 import {SelectDropdown} from "@/components/componentsGeneral/selects/SingleSelects/SelectDropdown.tsx";
 import {
     TreeSingleSelectModal
@@ -23,7 +32,10 @@ import {DatePickerInput} from "@/components/componentsGeneral/datePickers/DatePi
 import {formatDDMMYYYY, parseDDMMYYYYToISO, parseDate} from "@/utils/dateUtils.ts";
 import {colors} from "@/design/tokens.ts";
 import {SzFormSection} from "@/components/componentsSz/componentsSzCard/form/SzFormSection.tsx";
-import {ArrowLeft, ChevronDown, Building2, Plus, Printer, Trash2, X} from "lucide-react";
+import {
+    AlertTriangle, ArrowLeft, BadgeCheck, Building2, Check, ChevronDown, Download, FilePlus, Plus, Save, Send,
+    FileSignature, FlaskConical, Trash2, Undo2, X,
+} from "lucide-react";
 import type {PickableUser} from "@/constants/pickableUser.ts";
 
 const empty: SubstitutionSaveRequest = {
@@ -51,16 +63,36 @@ const FOCUS = "outline-none focus:border-[#2f68f5] focus:ring-[3px] focus:ring-[
 const FIELD = `w-full h-10 px-3 rounded-[9px] border border-[#e5e9f0] bg-white text-[13px] text-[#0f1b2d] placeholder:text-[#a3adbd] ${FOCUS} disabled:bg-[#f6f8fb] disabled:text-[#8b97ab]`;
 const BTN = "inline-flex items-center gap-2 cursor-pointer disabled:cursor-not-allowed disabled:opacity-50";
 const BTN_PRIMARY = `${BTN} h-[42px] rounded-[11px] border-none bg-[#2f68f5] px-[18px] text-[13.5px] font-semibold text-white shadow-[0_6px_16px_-6px_#2f68f5] hover:brightness-[1.06]`;
-const BTN_SUCCESS = `${BTN} h-[42px] rounded-[11px] border-none bg-[#1c7a4d] px-[18px] text-[13.5px] font-semibold text-white hover:brightness-95`;
 const BTN_SECONDARY = `${BTN} h-10 rounded-[10px] border border-[#e5e9f0] bg-white px-3.5 text-[12.5px] font-semibold text-[#3a4560] hover:bg-[#f6f8fb]`;
-const BTN_DANGER = `${BTN} h-10 rounded-[10px] border border-[#f1c9c2] bg-white px-3.5 text-[12.5px] font-semibold text-[#c0392b] hover:bg-[#fbeae7]`;
+
+type StatusTone = "success" | "danger" | "active" | "warning" | "muted";
+const TONE_CLASS: Record<StatusTone, string> = {
+    success: "bg-[#e9f6ee] text-[#1c7a4d]",
+    danger: "bg-[#fdeceb] text-[#c0392b]",
+    active: "bg-[#e9f0ff] text-[#2f68f5]",
+    warning: "bg-[#fdf3e0] text-[#b3730a]",
+    muted: "bg-[#f1f3f7] text-[#8b97ab]",
+};
+const APPROVAL_TONE: Record<ApprovalState, StatusTone> = {
+    Approved: "success", Rejected: "danger", Active: "active", Pending: "muted", Skipped: "muted",
+};
+/** Колонка статуса в маршруте: «Согласование» / «Подпись». */
+const STATUS_COL = "w-[150px] flex-none";
+
+function StatusPill({tone, children}: {tone: StatusTone; children: React.ReactNode}) {
+    return (
+        <span className={`inline-flex max-w-full items-center rounded-full px-2.5 py-1 text-[12px] font-semibold leading-none ${TONE_CLASS[tone]}`}>
+            {children}
+        </span>
+    );
+}
 
 export function SubstitutionCardPage() {
     const {t, i18n} = useTranslation();
     const {id} = useParams<{ id: string }>();
     const isNew = !id || id === "new";
     const navigate = useNavigate();
-    const {hasPermission, user} = useAuth();
+    const {user} = useAuth();
 
     const [users, setUsers] = useState<PickableUser[]>([]);
     const [filials, setFilials] = useState<{ id: number; titleRu: string; label: string }[]>([]);
@@ -71,9 +103,7 @@ export function SubstitutionCardPage() {
     const [busy, setBusy] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const [loading, setLoading] = useState(!isNew);
-    // Отклонение — своей формой с обязательной причиной. Раньше был window.prompt, и
-    // «Отмена» в нём всё равно отклоняла заявку, причём без причины.
-    const [rejectOpen, setRejectOpen] = useState(false);
+    // Отклонение — модалкой с обязательной причиной; «Отмена» просто закрывает её.
     const [rejectReason, setRejectReason] = useState("");
     const [rejectError, setRejectError] = useState<string | null>(null);
     // Переназначение непройденного этапа (УЧР, администратор): id этапа, кому, почему.
@@ -81,6 +111,14 @@ export function SubstitutionCardPage() {
     const [reassignUserId, setReassignUserId] = useState<number | null>(null);
     const [reassignReason, setReassignReason] = useState("");
     const [reassignError, setReassignError] = useState<string | null>(null);
+    // Подтверждения действий из шапки — как в карточке СЗ.
+    const [confirm, setConfirm] = useState<null | "submit" | "execute" | "withdraw" | "delete" | "approve" | "reject">(null);
+    // Зафиксированные документы и подписи ЭЦП — с отправки заявки (на согласовании подписывает
+    // директор филиала и др. на своём этапе) и на этапе «На подписании».
+    const [signing, setSigning] = useState<SubstitutionSigningState | null>(null);
+    // Счётчик перезагрузки подписания: правка УЧР или решение по этапу могут завести новую версию
+    // документов, а статус заявки при этом не меняется.
+    const [signingReload, setSigningReload] = useState(0);
 
     useEffect(() => {
         userService.lookup().then((list) => setUsers(list.map((u) => ({
@@ -123,7 +161,14 @@ export function SubstitutionCardPage() {
     };
 
     useEffect(() => {
-        if (isNew) return;
+        if (isNew) {
+            // eslint-disable-next-line react-hooks/set-state-in-effect
+            setDetails(null);
+            setForm(empty);
+            setLoading(false);
+            return;
+        }
+        setLoading(true);
         substitutionService.get(Number(id))
             .then((d) => {
                 setDetails(d);
@@ -133,6 +178,17 @@ export function SubstitutionCardPage() {
             .finally(() => setLoading(false));
     }, [id, isNew, t]);
 
+    // Документы фиксируются при отправке — грузим их для всех, кроме черновиков.
+    const status = details?.status;
+    useEffect(() => {
+        if (!details || status === "Draft") {
+            // eslint-disable-next-line react-hooks/set-state-in-effect
+            setSigning(null);
+            return;
+        }
+        substitutionService.signingState(details.id).then(setSigning).catch(() => setSigning(null));
+    }, [details?.id, status, signingReload]); // eslint-disable-line react-hooks/exhaustive-deps
+
     // Действующий маршрут — последний круг согласования; прошлые круги только история.
     const currentRound = Math.max(1, ...(details?.approvals ?? []).map((a) => a.round ?? 1));
     const currentSteps = (details?.approvals ?? []).filter((a) => (a.round ?? 1) === currentRound);
@@ -140,16 +196,37 @@ export function SubstitutionCardPage() {
     // Решает назначенный на этап или тот, кто его сейчас замещает (GEN-14).
     const canDecide = details?.status === "OnApproval" && !!activeStep && !!user
         && (activeStep.userId === user.id || (details?.actingForUserIds ?? []).includes(activeStep.userId));
+    // Подпись ЭЦП прямо из маршрута: после согласования у этапа появляются кнопки «Подписать …».
+    const routeSigning = useSubstitutionSigning(details?.id ?? 0, setSigning);
+    /** Места подписей этапа, которые текущий пользователь может поставить сейчас. */
+    const signableFor = (a: ApprovalStep) => (signing?.documents ?? [])
+        .filter((d) => d.isCurrent)
+        .flatMap((doc) => doc.slots
+            .filter((sl) => sl.canSign && !sl.signature && sl.userId != null
+                && (sl.userId === a.userId || sl.userId === a.decidedByUserId))
+            .map((slot) => ({doc, slot})));
     const decidesOnBehalfOf = canDecide && activeStep && activeStep.userId !== user?.id ? activeStep.userName : null;
-    // Переназначать этапы могут УЧР (ViewAllSz) и администратор — как проверяет сервер.
-    const canManageRoute = hasPermission(PermissionCode.ViewAllSz) || hasPermission(PermissionCode.ManageSystemSettings);
+    // Что можно — считает сервер (details.access): УЧР из настроек маршрута и администратор ведут
+    // все заявки; инициатор — только свою (отправить, отозвать, удалить черновик).
+    const access = details?.access;
+    const canManage = !!access?.canManage;
+    const isInitiator = isNew || !!access?.isInitiator;
+    // Переназначать этапы могут УЧР и администратор — как проверяет сервер.
+    const canManageRoute = canManage;
 
-    // УЧР (ViewAllSz) правит заявку после согласования Операционным управлением — в действующем круге.
+    // УЧР правит заявку после согласования Операционным управлением — в действующем круге.
+    // Нет этапа «Операционное управление» (пропущен — не настроен) — правит сразу.
     const opsApproved = currentSteps.some(
-        (a) => a.roleLabel === "Операционное управление" && a.state === "Approved");
-    const hrCanEdit = hasPermission(PermissionCode.ViewAllSz) && opsApproved
+        (a) => a.roleLabel === "Операционное управление" && a.state === "Approved")
+        || (currentSteps.length > 0 && !currentSteps.some((a) => a.roleLabel === "Операционное управление"));
+    const hrCanEdit = canManage && opsApproved
         && (details?.status === "OnApproval" || details?.status === "OnExecution");
-    const editable = isNew || details?.status === "Draft" || details?.status === "Rejected" || hrCanEdit;
+    // Withdrawn — заявки, отозванные до того, как отзыв стал возвращать в черновик: их тоже можно
+    // поправить и отправить заново.
+    const ownDraft = isInitiator
+        && (details?.status === "Draft" || details?.status === "Rejected" || details?.status === "Withdrawn");
+    const editable = isNew || ownDraft || hrCanEdit;
+    const canSubmit = !!details && ownDraft;
     const set = <K extends keyof SubstitutionSaveRequest>(k: K, v: SubstitutionSaveRequest[K]) =>
         setForm((f) => ({...f, [k]: v}));
 
@@ -164,6 +241,8 @@ export function SubstitutionCardPage() {
         () => filials.map((f) => ({key: String(f.id), label: f.label})),
         [filials]);
 
+    /** Новая заявка — «Создать черновик» (как в СЗ): заявка появляется в статусе «Черновик»,
+     *  на согласование уходит только по кнопке «Отправить на согласование». */
     async function saveDraft(): Promise<number | null> {
         setBusy(true);
         setError(null);
@@ -171,47 +250,55 @@ export function SubstitutionCardPage() {
             const d = isNew ? await substitutionService.create(form)
                 : await substitutionService.update(Number(id), form);
             if (isNew) {
+                toast.success(t("substitutionCard.toast.draftCreated"), d.subject || undefined);
                 navigate(`/substitutions/${d.id}`, {replace: true});
             } else {
                 setDetails(d);
                 setForm(toForm(d));
+                setSigningReload((n) => n + 1);
+                toast.success(t("substitutionCard.toast.saved"));
             }
             return d.id;
         } catch (e) {
-            setError(msgOf(e, t));
+            toast.error(t("substitutionCard.toast.saveFailed"), msgOf(e, t));
             return null;
         } finally {
             setBusy(false);
         }
     }
 
+    /** Отправка: сначала сохраняем правки черновика, затем отправляем на согласование. */
     async function submit() {
-        const sid = await saveDraft();
-        if (sid == null) return;
+        if (details == null) return;
         setBusy(true);
-        setError(null);
         try {
-            const d = await substitutionService.submit(sid);
+            await substitutionService.update(details.id, form);
+            const d = await substitutionService.submit(details.id);
             setDetails(d);
             setForm(toForm(d));
+            toast.success(
+                d.status === "OnExecution" ? t("substitutionCard.toast.submittedToSigning") : t("substitutionCard.toast.submitted"),
+                d.routeNote ?? undefined);
         } catch (e) {
-            setError(msgOf(e, t));
+            toast.error(t("substitutionCard.toast.submitFailed"), msgOf(e, t));
         } finally {
             setBusy(false);
         }
     }
 
     /** Выполнить действие над заявкой; true — успешно (формы отклонения/переназначения закрываются только тогда). */
-    async function act(fn: () => Promise<SubstitutionDetails>): Promise<boolean> {
+    async function act(fn: () => Promise<SubstitutionDetails>, okTitle: string): Promise<boolean> {
         setBusy(true);
         setError(null);
         try {
             const d = await fn();
             setDetails(d);
             setForm(toForm(d));
+            setSigningReload((n) => n + 1);
+            toast.success(okTitle);
             return true;
         } catch (e) {
-            setError(msgOf(e, t));
+            toast.error(t("substitutionCard.toast.actionFailed"), msgOf(e, t));
             return false;
         } finally {
             setBusy(false);
@@ -225,8 +312,8 @@ export function SubstitutionCardPage() {
             setRejectError(t("substitutionCard.rejectForm.required"));
             return;
         }
-        if (!await act(() => substitutionService.reject(details.id, reason))) return;
-        setRejectOpen(false);
+        if (!await act(() => substitutionService.reject(details.id, reason), t("substitutionCard.toast.rejected"))) return;
+        setConfirm(null);
         setRejectReason("");
         setRejectError(null);
     }
@@ -242,7 +329,8 @@ export function SubstitutionCardPage() {
             setReassignError(t("substitutionCard.reassign.reasonRequired"));
             return;
         }
-        if (!await act(() => substitutionService.reassign(details.id, reassignFor, reassignUserId, reason))) return;
+        if (!await act(() => substitutionService.reassign(details.id, reassignFor, reassignUserId, reason),
+            t("substitutionCard.toast.reassigned"))) return;
         setReassignFor(null);
         setReassignUserId(null);
         setReassignReason("");
@@ -255,17 +343,43 @@ export function SubstitutionCardPage() {
         setError(null);
         try {
             await substitutionService.remove(details.id);
+            toast.success(t("substitutionCard.toast.deleted"));
             navigate("/substitutions");
         } catch (e) {
-            setError(msgOf(e, t));
+            toast.error(t("substitutionCard.toast.actionFailed"), msgOf(e, t));
             setBusy(false);
         }
     }
 
     if (loading) return <div className="p-6 text-[13px] text-[#8b97ab]">{t("general.loading")}</div>;
 
-    const docNumber = details?.regNumber ?? details?.id;
     const statusTone = details ? (STATUS_TONE[details.status] ?? colors.status.draft) : null;
+
+    const signedAll = !!signing?.allSigned;
+
+    /**
+     * Статус подписи участника маршрута: его места на листах подписей действующих документов
+     * (приказ, договор МО). Если мест нет — подпись от этапа не требуется.
+     */
+    const signStateOf = (a: ApprovalStep): {label: string; tone: StatusTone} => {
+        const docs = (signing?.documents ?? []).filter((d) => d.isCurrent);
+        if (docs.length === 0) return {label: t("substitutionCard.signState.notFrozen"), tone: "muted"};
+        const slots = docs.flatMap((d) => d.slots)
+            .filter((sl) => sl.userId != null && (sl.userId === a.userId || sl.userId === a.decidedByUserId));
+        if (slots.length === 0) return {label: t("substitutionCard.signState.notRequired"), tone: "muted"};
+        const done = slots.filter((sl) => sl.signature).length;
+        if (done === slots.length) return {label: t("substitutionCard.signState.signed"), tone: "success"};
+        if (done > 0) return {label: t("substitutionCard.signState.partial", {done, total: slots.length}), tone: "warning"};
+        if (slots.every((sl) => sl.autoApproved)) return {label: t("substitutionCard.signState.autoApproved"), tone: "muted"};
+        return {label: t("substitutionCard.signState.waiting"), tone: "warning"};
+    };
+
+    // Автор заявки — кто её завёл; неизменяемое поле. У новой заявки им станет текущий пользователь.
+    const authorId = isNew ? (user?.id ?? null) : (details?.authorUserId ?? null);
+    const authorPerson = authorId != null ? users.find((u) => u.id === authorId) : undefined;
+    const authorName = authorPerson?.fullName
+        ?? (isNew ? user?.fullName : details?.authorName)
+        ?? null;
 
     return (
         <div className="px-7 py-6 max-w-[1700px]">
@@ -274,24 +388,98 @@ export function SubstitutionCardPage() {
             >
                 <ArrowLeft className="w-4 h-4"/> {t("substitutionRequests.title")}
             </button>
-            {/* Номер, статус, заголовок — как в шапке карточки СЗ */}
-            <div>
-                {details && (
-                    <div className="flex items-center gap-2.5">
-                        <span className="font-mono text-[13px] text-[#55617a]">{docNumber}</span>
-                        {statusTone && (
-                            <span className="inline-flex rounded-full px-[9px] py-0.5 text-[11px] font-semibold"
-                                  style={{color: statusTone.fg, background: statusTone.bg}}>
-                                {t(`substitutionRequests.status.${details.status}`)}
-                            </span>
-                        )}
-                    </div>
-                )}
-                <h1 className="mt-1.5 mb-0 text-[21px] font-bold tracking-[-0.02em] text-[#0f1b2d]">
-                    {isNew ? t("substitutionCard.newTitle") : (details?.subject || t("substitutionCard.defaultTitle"))}
-                </h1>
+            {/* Шапка как у карточки СЗ: номер, статус, заголовок — слева, действия — справа */}
+            <div className="flex items-start justify-between gap-4">
+                <div className="min-w-0">
+                    {details && (
+                        <div className="flex items-center gap-2.5">
+                            <span className="font-mono text-[13px] text-[#55617a]">{details.regNumber ?? t("substitutionRequests.draftNumber")}</span>
+                            {statusTone && (
+                                <span className="inline-flex rounded-full px-[9px] py-0.5 text-[11px] font-semibold"
+                                      style={{color: statusTone.fg, background: statusTone.bg}}>
+                                    {t(`substitutionRequests.status.${details.status}`)}
+                                </span>
+                            )}
+                        </div>
+                    )}
+                    <h1 className="mt-1.5 mb-0 text-[21px] font-bold tracking-[-0.02em] text-[#0f1b2d]">
+                        {isNew ? t("substitutionCard.newTitle") : (details?.subject || t("substitutionCard.defaultTitle"))}
+                    </h1>
+                </div>
+
+                <div className="flex flex-wrap items-center justify-end gap-2">
+                    {/* Новая заявка: «Отмена» и «Создать черновик» — как на создании СЗ */}
+                    {isNew && (
+                        <>
+                            <button type="button" onClick={() => navigate("/substitutions")} disabled={busy}
+                                    className="inline-flex items-center gap-2 h-11 px-[18px] rounded-[11px] border border-[#e5e9f0] bg-white text-[#3a4560] font-semibold text-[13.5px] cursor-pointer hover:bg-[#f6f8fb] disabled:opacity-60 disabled:cursor-not-allowed">
+                                <X className="w-[18px] h-[18px]" strokeWidth={2}/>
+                                {t("substitutionCard.buttons.cancelCreate")}
+                            </button>
+                            <button type="button" onClick={() => void saveDraft()} disabled={busy}
+                                    className={`inline-flex items-center gap-2 h-11 px-[22px] rounded-[11px] border-none font-semibold text-[14px] ${
+                                        busy ? "bg-[#e5e9f0] text-[#a3adbd] cursor-not-allowed"
+                                            : "bg-[#2f68f5] text-white cursor-pointer hover:brightness-[1.06] shadow-[0_8px_20px_-8px_#2f68f5]"}`}>
+                                <FilePlus className="w-[18px] h-[18px]" strokeWidth={2}/>
+                                {busy ? t("substitutionCard.buttons.creatingDraft") : t("substitutionCard.buttons.createDraft")}
+                            </button>
+                        </>
+                    )}
+                    {/* Сохранить: черновик/отклонённая — инициатор, после Операционного управления — УЧР */}
+                    {!isNew && editable && (
+                        <SzButton variant="primary" icon={<Save size={16}/>} onClick={() => void saveDraft()} disabled={busy}>
+                            {hrCanEdit && !ownDraft ? t("substitutionCard.buttons.saveHr") : t("substitutionCard.buttons.save")}
+                        </SzButton>
+                    )}
+                    {canSubmit && (
+                        <SzButton variant="outline" icon={<Send size={16}/>} onClick={() => setConfirm("submit")} disabled={busy}>
+                            {t("substitutionCard.buttons.submit")}
+                        </SzButton>
+                    )}
+                    {/* «Исполнено» — УЧР вручную, в том числе с неподписанными документами */}
+                    {details && access?.canExecute && (
+                        <SzButton variant="success" icon={<BadgeCheck size={16}/>} onClick={() => setConfirm("execute")} disabled={busy}>
+                            {t("substitutionCard.buttons.execute")}
+                        </SzButton>
+                    )}
+                    {/* «Печатные формы приказа/договора МО» — как «Скачать / печать» у СЗ: страница в новой
+                        вкладке, сверху табы документов (приказ, договор МО), ниже — «С подписями ЭЦП» /
+                        «Для подписи от руки», PDF, DOCX и печать. */}
+                    {details && (
+                        <Tooltip content={t("substitutionCard.buttons.printHint")} side="bottom">
+                            <a href={substitutionPrintUrl(details.id, "order")} target="_blank" rel="noreferrer"
+                               className={`${szButtonClass("muted")} no-underline gap-1.5`}>
+                                <Download size={15}/>
+                                {t("substitutionCard.buttons.printForms")}
+                            </a>
+                        </Tooltip>
+                    )}
+                    {access?.canWithdraw && (
+                        <SzButton icon={<Undo2 size={16}/>} onClick={() => setConfirm("withdraw")} disabled={busy}>
+                            {t("substitutionCard.buttons.withdraw")}
+                        </SzButton>
+                    )}
+                    {access?.canDelete && (
+                        <Tooltip content={t("substitutionCard.buttons.delete")} side="bottom">
+                            <button type="button" onClick={() => setConfirm("delete")} disabled={busy}
+                                    aria-label={t("substitutionCard.buttons.delete")}
+                                    className="inline-flex h-10 w-10 shrink-0 cursor-pointer items-center justify-center rounded-[10px] border border-[#f1c9c2] bg-white text-[#c0392b] transition-colors hover:bg-[#fbeae7] disabled:opacity-50">
+                                <Trash2 size={16}/>
+                            </button>
+                        </Tooltip>
+                    )}
+                </div>
             </div>
 
+            {details?.routeNote && (
+                <div className="mt-3 flex items-start gap-2 rounded-[10px] border border-[#f0dcae] bg-[#fdf6e7] px-4 py-2.5 text-[13px] text-[#8a5a00]">
+                    <AlertTriangle size={16} className="mt-[1px] flex-none"/>
+                    <div>
+                        <div className="font-semibold">{t("substitutionCard.routeNoteTitle")}</div>
+                        <div className="whitespace-pre-wrap">{details.routeNote}</div>
+                    </div>
+                </div>
+            )}
             {details?.passportExpiresBeforeEnd && (
                 <div
                     className="mt-3 rounded-[10px] border border-[#f1c9c2] bg-[#fbeae7] px-4 py-2.5 text-[13px] text-[#c0392b]">
@@ -309,6 +497,19 @@ export function SubstitutionCardPage() {
                 {/* Блок 1 */}
                 <SzFormSection title={t("substitutionCard.sections.general")} hint={t("substitutionCard.sections.generalHint")}>
                     <Grid>
+                        <Field label={t("substitutionCard.fields.author")}
+                               hint={t("substitutionCard.fields.authorHint")}>
+                            {authorName ? (
+                                <PersonRow name={authorName} meta={personMeta(authorPerson)} muted={!authorPerson}/>
+                            ) : (
+                                <div className="flex h-10 items-center rounded-[9px] border border-[#e5e9f0] bg-[#f9fafc] px-3 text-[13px] text-[#a3adbd]">—</div>
+                            )}
+                        </Field>
+                        <Field label={t("substitutionCard.fields.createdAt")}>
+                            <div className="flex h-10 items-center rounded-[9px] border border-[#e5e9f0] bg-[#f9fafc] px-3 font-mono text-[13px] text-[#55617a]">
+                                {details?.createdAt ? formatDateTime(details.createdAt) : t("substitutionCard.fields.createdAtNew")}
+                            </div>
+                        </Field>
                         <Field label={t("substitutionCard.fields.subject")} required>
                             <Input value={form.subject} disabled={!editable} onChange={(v) => set("subject", v)}/>
                         </Field>
@@ -327,6 +528,8 @@ export function SubstitutionCardPage() {
                     <Grid>
                         <Field label={t("substitutionCard.fields.employee")}>
                             <UserField users={users} value={form.absentUserId ?? null} disabled={!editable}
+                                       fallbackName={form.absentName} fallbackPosition={form.absentPosition}
+                                       excludeId={form.substituteUserId ?? undefined}
                                        onChange={(u) => {
                                            // Подразделение подставляем из сотрудника; не нашли — оставляем выбранное вручную.
                                            const unit = filialOf(u?.orgUnitId);
@@ -364,6 +567,8 @@ export function SubstitutionCardPage() {
                     <Grid>
                         <Field label={t("substitutionCard.fields.employee")}>
                             <UserField users={users} value={form.substituteUserId ?? null} disabled={!editable}
+                                       fallbackName={form.substituteName} fallbackPosition={form.substitutePosition}
+                                       excludeId={form.absentUserId ?? undefined}
                                        onChange={(u) => {
                                            const unit = filialOf(u?.orgUnitId);
                                            setForm((f) => ({
@@ -449,6 +654,7 @@ export function SubstitutionCardPage() {
                     <Grid>
                         <Field label={t("substitutionCard.fields.chair")}>
                             <UserField users={users} value={form.commissionChairUserId ?? null} disabled={!editable}
+                                       fallbackName={form.commissionChairName} fallbackPosition={form.commissionChairPosition}
                                        onChange={(u) => setForm((f) => ({
                                            ...f,
                                            commissionChairUserId: u?.id ?? null,
@@ -489,8 +695,10 @@ export function SubstitutionCardPage() {
                         <div className="flex flex-col gap-2">
                             {form.commissionMembers.map((m, i) => (
                                 <div key={i} className="flex items-center gap-2">
-                                    <div className="flex-1"><UserField users={users} value={m.userId ?? null}
+                                    <div className="min-w-0 flex-1"><UserField users={users} value={m.userId ?? null}
                                                                     disabled={!editable}
+                                                                    fallbackName={m.fullName}
+                                                                    fallbackPosition={m.position}
                                                                     onChange={(u) => updateMember(setForm, i, {
                                                                         userId: u?.id ?? null,
                                                                         fullName: u?.fullName ?? m.fullName,
@@ -501,12 +709,13 @@ export function SubstitutionCardPage() {
                                            value={m.position ?? ""}
                                            onChange={(e) => updateMember(setForm, i, {position: e.target.value})}/>
                                     {editable && (
-                                        <button type="button" onClick={() => removeMember(setForm, i)}
-                                                aria-label={t("substitutionCard.buttons.removeMember")}
-                                                title={t("substitutionCard.buttons.removeMember")}
-                                                className="grid h-10 w-10 flex-none cursor-pointer place-items-center rounded-[9px] border-none bg-transparent text-[#a3adbd] hover:bg-[#fbeae7] hover:text-[#c0392b]">
-                                            <Trash2 size={16}/>
-                                        </button>
+                                        <Tooltip content={t("substitutionCard.buttons.removeMember")} side="top">
+                                            <button type="button" onClick={() => removeMember(setForm, i)}
+                                                    aria-label={t("substitutionCard.buttons.removeMember")}
+                                                    className="grid h-10 w-10 flex-none cursor-pointer place-items-center rounded-[9px] border-none bg-transparent text-[#a3adbd] hover:bg-[#fbeae7] hover:text-[#c0392b]">
+                                                <Trash2 size={16}/>
+                                            </button>
+                                        </Tooltip>
                                     )}
                                 </div>
                             ))}
@@ -534,6 +743,12 @@ export function SubstitutionCardPage() {
                 {details && details.approvals.length > 0 && (
                     <SzFormSection title={t("substitutionCard.sections.route")} hint={t("substitutionCard.sections.routeHint")}>
                         <div className="flex flex-col gap-2.5">
+                            {/* Шапка колонок: статус согласования и статус подписи ЭЦП */}
+                            <div className="flex items-center gap-3 border-b border-[#eef1f5] pb-2 text-[11.5px] font-semibold uppercase tracking-wide text-[#8b97ab]">
+                                <span className="flex-1"/>
+                                <span className={STATUS_COL}>{t("substitutionCard.routeColumns.approval")}</span>
+                                <span className={STATUS_COL}>{t("substitutionCard.routeColumns.signature")}</span>
+                            </div>
                             {details.approvals.map((a, i) => {
                                 const round = a.round ?? 1;
                                 const isHistory = round !== currentRound;
@@ -582,12 +797,79 @@ export function SubstitutionCardPage() {
                                                         {t("substitutionCard.reassign.button")}
                                                     </button>
                                                 )}
-                                                <span className="font-semibold"
-                                                      style={{color}}>{t(`substitutionCard.approvalState.${a.state}`)}</span>
+                                                <span className={STATUS_COL}>
+                                                    <StatusPill tone={APPROVAL_TONE[a.state]}>
+                                                        {t(`substitutionCard.approvalState.${a.state}`)}
+                                                    </StatusPill>
+                                                </span>
+                                                <span className={STATUS_COL}>
+                                                    {isHistory ? (
+                                                        <span className="text-[12px] text-[#a3adbd]">—</span>
+                                                    ) : (() => {
+                                                        const sign = signStateOf(a);
+                                                        return <StatusPill tone={sign.tone}>{sign.label}</StatusPill>;
+                                                    })()}
+                                                </span>
                                             </div>
                                             {a.comment && (
                                                 <div className="ml-9 whitespace-pre-wrap text-[12.5px] text-[#55617a]">«{a.comment}»</div>
                                             )}
+                                            {/* Решение по своему этапу — прямо в строке маршрута */}
+                                            {!isHistory && canDecide && activeStep?.id === a.id && (
+                                                <div className="ml-9 mt-1 flex flex-wrap items-center gap-2 rounded-[10px] border border-[#cbddff] bg-[#f6f9ff] px-3 py-2.5">
+                                                    <span className="mr-1 text-[12.5px] font-semibold text-[#2f68f5]">
+                                                        {decidesOnBehalfOf
+                                                            ? t("substitutionCard.routeActions.decideFor", {name: decidesOnBehalfOf})
+                                                            : t("substitutionCard.routeActions.decide")}
+                                                    </span>
+                                                    <SzButton size="xs" variant="success" icon={<Check size={14}/>} disabled={busy}
+                                                              onClick={() => setConfirm("approve")}>
+                                                        {t("substitutionCard.buttons.approve")}
+                                                    </SzButton>
+                                                    <SzButton size="xs" variant="danger" icon={<X size={14}/>} disabled={busy}
+                                                              onClick={() => {
+                                                                  setRejectError(null);
+                                                                  setConfirm("reject");
+                                                              }}>
+                                                        {t("substitutionCard.buttons.reject")}
+                                                    </SzButton>
+                                                </div>
+                                            )}
+                                            {/* После согласования — подпись ЭЦП документов этого участника */}
+                                            {!isHistory && a.state === "Approved" && (() => {
+                                                const items = signableFor(a);
+                                                if (items.length === 0) return null;
+                                                return (
+                                                    <div className="ml-9 mt-1 flex flex-wrap items-center gap-2 rounded-[10px] border border-[#cbddff] bg-[#f6f9ff] px-3 py-2.5">
+                                                        <span className="mr-1 text-[12.5px] font-semibold text-[#2f68f5]">
+                                                            {t("substitutionCard.routeActions.sign")}
+                                                        </span>
+                                                        {items.map(({doc, slot}) => {
+                                                            const key = `${doc.id}-${slot.role}`;
+                                                            return (
+                                                                <React.Fragment key={key}>
+                                                                    <SzButton size="xs" variant="primary" icon={<FileSignature size={14}/>}
+                                                                              disabled={routeSigning.busyKey !== null || routeSigning.quietSigning}
+                                                                              onClick={() => void routeSigning.sign(doc, slot.role)}>
+                                                                        {routeSigning.busyKey === key
+                                                                            ? t("substitutionSigning.signing")
+                                                                            : t(doc.kind === "Order"
+                                                                                ? "substitutionCard.routeActions.signOrder"
+                                                                                : "substitutionCard.routeActions.signLiability")}
+                                                                    </SzButton>
+                                                                    {signing?.allowTestEcp && (
+                                                                        <SzButton size="xs" variant="warning" icon={<FlaskConical size={14}/>}
+                                                                                  disabled={routeSigning.busyKey !== null}
+                                                                                  onClick={() => void routeSigning.signTest(doc, slot.role)}>
+                                                                            {t("substitutionSigning.signTest")}
+                                                                        </SzButton>
+                                                                    )}
+                                                                </React.Fragment>
+                                                            );
+                                                        })}
+                                                    </div>
+                                                );
+                                            })()}
                                             {reassignFor === a.id && (
                                                 <div className="ml-9 mt-1 flex flex-col gap-2 rounded-[10px] border border-[#e5e9f0] bg-[#f9fafc] p-3">
                                                     <div className="text-[12.5px] font-semibold text-[#1c2740]">
@@ -625,120 +907,120 @@ export function SubstitutionCardPage() {
                     </SzFormSection>
                 )}
 
-                {/* Решение за отсутствующего: видно, что этап согласуется по замещению (GEN-14). */}
-                {decidesOnBehalfOf && (
-                    <div className="rounded-[10px] border border-[#cbddff] bg-[#f6f9ff] px-4 py-2.5 text-[13px] text-[#2f68f5]">
-                        {t("substitutionCard.actingFor", {name: decidesOnBehalfOf})}
-                    </div>
+                {/* Подписание документов: приказ и договор, подписи ЭЦП участников, просмотр (глазик).
+                    Показывается всегда, у черновика — с пояснением, что документы зафиксируются при отправке. */}
+                {details && (
+                    <SubstitutionSigningSection requestId={details.id} regNumber={details.regNumber}
+                                                state={signing} onChange={setSigning}/>
                 )}
 
-                {/* Отклонение: причина обязательна, «Отмена» просто закрывает форму. */}
-                {details && canDecide && rejectOpen && (
-                    <div className="flex flex-col gap-2 rounded-[12px] border border-[#f1c9c2] bg-[#fdf6f5] p-4">
-                        <div className="text-[13.5px] font-semibold text-[#1c2740]">{t("substitutionCard.rejectForm.title")}</div>
-                        <textarea
-                            autoFocus
-                            className={`w-full min-h-[88px] rounded-[9px] border border-[#e5e9f0] bg-white px-3 py-2 text-[13px] text-[#0f1b2d] ${FOCUS}`}
-                            placeholder={t("substitutionCard.rejectForm.placeholder")}
-                            value={rejectReason}
-                            onChange={(e) => {
-                                setRejectReason(e.target.value);
-                                if (rejectError && e.target.value.trim()) setRejectError(null);
-                            }}/>
-                        {rejectError && <div className="text-[12.5px] text-[#c0392b]">{rejectError}</div>}
-                        <div className="flex gap-2">
-                            <button type="button" className={BTN_DANGER} disabled={busy}
-                                    onClick={() => void confirmReject()}>
-                                {t("substitutionCard.rejectForm.confirm")}
-                            </button>
-                            <button type="button" className={BTN_SECONDARY} disabled={busy}
-                                    onClick={() => {
-                                        setRejectOpen(false);
-                                        setRejectError(null);
-                                    }}>
-                                {t("substitutionCard.rejectForm.cancel")}
-                            </button>
-                        </div>
-                    </div>
-                )}
 
-                {/* Действия */}
-                <div className="flex items-center gap-2.5 flex-wrap">
-                    {(isNew || details?.status === "Draft" || details?.status === "Rejected") && (
-                        <>
-                            <button type="button" onClick={() => void submit()} disabled={busy} className={BTN_PRIMARY}>
-                                {t("substitutionCard.buttons.submit")}
-                            </button>
-                            <button type="button" onClick={() => void saveDraft()} disabled={busy}
-                                    className={BTN_SECONDARY}>
-                                {t("substitutionCard.buttons.saveDraft")}
-                            </button>
-                        </>
-                    )}
-                    {hrCanEdit && (
-                        <button type="button" onClick={() => void saveDraft()} disabled={busy} className={BTN_PRIMARY}>
-                            {t("substitutionCard.buttons.saveHr")}
-                        </button>
-                    )}
-                    {details && (
-                        <>
-                            <button type="button"
-                                    onClick={() => void substitutionService.print(details.id, "order", t("substitutionCard.files.order", {name: docNumber}))}
-                                    className={BTN_SECONDARY}>
-                                <Printer size={16}/> {t("substitutionCard.buttons.order")}
-                            </button>
-                            <button type="button"
-                                    onClick={() => void substitutionService.print(details.id, "liability", t("substitutionCard.files.liability", {name: docNumber}))}
-                                    className={BTN_SECONDARY}>
-                                <Printer size={16}/> {t("substitutionCard.buttons.liability")}
-                            </button>
-                            <button type="button"
-                                    onClick={() => void substitutionService.print(details.id, "card", t("substitutionCard.files.card", {name: docNumber}))}
-                                    className={BTN_SECONDARY}>
-                                <Printer size={16}/> {t("substitutionCard.buttons.exportAll")}
-                            </button>
-                        </>
-                    )}
-                    {details?.status === "OnExecution"
-                        && (hasPermission(PermissionCode.ViewAllSz)
-                            || details.approvals?.some((a) => a.roleLabel === "УЧР" && a.userId === user?.id)) && (
-                            <button type="button"
-                                    onClick={() => void act(() => substitutionService.execute(details.id))}
-                                    disabled={busy}
-                                    className={BTN_SUCCESS}>
-                                {t("substitutionCard.buttons.execute")}
-                            </button>
-                        )}
-                    {details?.status === "Draft" && (
-                        <button type="button" onClick={() => void remove()} disabled={busy} className={BTN_DANGER}>
-                            <Trash2 size={16}/> {t("substitutionCard.buttons.delete")}
-                        </button>
-                    )}
-                    {details && canDecide && (
-                            <>
-                                <button type="button"
-                                        onClick={() => void act(() => substitutionService.approve(details.id))}
-                                        disabled={busy || rejectOpen}
-                                        className={BTN_SUCCESS}>
-                                    {t("substitutionCard.buttons.approve")}
-                                </button>
-                                <button type="button" onClick={() => {
-                                    setRejectOpen(true);
-                                    setRejectError(null);
-                                }} disabled={busy || rejectOpen} className={BTN_DANGER}>
-                                    {t("substitutionCard.buttons.reject")}
-                                </button>
-                            </>
-                        )}
-                    {(details?.status === "OnApproval" || details?.status === "OnExecution") && (
-                        <button type="button" onClick={() => void act(() => substitutionService.withdraw(details.id))}
-                                disabled={busy}
-                                className={BTN_DANGER}>
-                            {t("substitutionCard.buttons.withdraw")}
-                        </button>
-                    )}
-                </div>
             </div>
+
+            {routeSigning.modal}
+
+            {/* Подтверждения действий из шапки */}
+            <ConfirmActionModal
+                open={confirm === "approve"}
+                onClose={() => setConfirm(null)}
+                onConfirm={async () => {
+                    if (details && await act(() => substitutionService.approve(details.id), t("substitutionCard.toast.approved"))) {
+                        setConfirm(null);
+                    }
+                }}
+                title={t("substitutionCard.confirm.approveTitle")}
+                message={t("substitutionCard.confirm.approveMessage")}
+                confirmLabel={t("substitutionCard.buttons.approve")}
+                loadingLabel={t("substitutionCard.confirm.processing")}
+                loading={busy}
+                variant="success"
+                icon={Check}
+            />
+            <ConfirmActionModal
+                open={confirm === "reject"}
+                onClose={() => {
+                    setConfirm(null);
+                    setRejectError(null);
+                }}
+                onConfirm={() => void confirmReject()}
+                title={t("substitutionCard.confirm.rejectTitle")}
+                message={t("substitutionCard.confirm.rejectMessage")}
+                confirmLabel={t("substitutionCard.rejectForm.confirm")}
+                loadingLabel={t("substitutionCard.confirm.processing")}
+                loading={busy}
+                error={rejectError}
+                variant="danger"
+                icon={X}
+            >
+                <textarea
+                    autoFocus
+                    className={`w-full min-h-[96px] rounded-[9px] border border-[#e5e9f0] bg-white px-3 py-2 text-[13px] text-[#0f1b2d] ${FOCUS}`}
+                    placeholder={t("substitutionCard.rejectForm.placeholder")}
+                    value={rejectReason}
+                    onChange={(e) => {
+                        setRejectReason(e.target.value);
+                        if (rejectError && e.target.value.trim()) setRejectError(null);
+                    }}/>
+            </ConfirmActionModal>
+            <ConfirmActionModal
+                open={confirm === "submit"}
+                onClose={() => setConfirm(null)}
+                onConfirm={async () => {
+                    await submit();
+                    setConfirm(null);
+                }}
+                title={t("substitutionCard.confirm.submitTitle")}
+                message={t("substitutionCard.confirm.submitMessage")}
+                confirmLabel={t("substitutionCard.buttons.submit")}
+                loadingLabel={t("substitutionCard.confirm.processing")}
+                loading={busy}
+                variant="primary"
+                accent="blue"
+                icon={Send}
+                wideConfirm
+            />
+            <ConfirmActionModal
+                open={confirm === "execute"}
+                onClose={() => setConfirm(null)}
+                onConfirm={async () => {
+                    if (details) await act(() => substitutionService.execute(details.id), t("substitutionCard.toast.executed"));
+                    setConfirm(null);
+                }}
+                title={t("substitutionCard.confirm.executeTitle")}
+                message={signedAll ? t("substitutionCard.confirm.executeMessageSigned") : t("substitutionCard.confirm.executeMessageUnsigned")}
+                confirmLabel={t("substitutionCard.buttons.execute")}
+                loadingLabel={t("substitutionCard.confirm.processing")}
+                loading={busy}
+                variant={signedAll ? "success" : "warning"}
+                icon={BadgeCheck}
+                wideConfirm
+            />
+            <ConfirmActionModal
+                open={confirm === "withdraw"}
+                onClose={() => setConfirm(null)}
+                onConfirm={async () => {
+                    if (details) await act(() => substitutionService.withdraw(details.id), t("substitutionCard.toast.withdrawn"));
+                    setConfirm(null);
+                }}
+                title={t("substitutionCard.confirm.withdrawTitle")}
+                message={t("substitutionCard.confirm.withdrawMessage")}
+                confirmLabel={t("substitutionCard.buttons.withdraw")}
+                loadingLabel={t("substitutionCard.confirm.processing")}
+                loading={busy}
+                variant="warning"
+                icon={Undo2}
+            />
+            <ConfirmDeleteModal
+                open={confirm === "delete"}
+                onClose={() => setConfirm(null)}
+                onConfirm={async () => {
+                    await remove();
+                    setConfirm(null);
+                }}
+                title={t("substitutionCard.confirm.deleteTitle")}
+                message={t("substitutionCard.confirm.deleteMessage")}
+                loading={busy}
+            />
         </div>
     );
 }
@@ -857,24 +1139,34 @@ function DateInput({value, onChange, disabled}: {
     );
 }
 
-/** Выбор сотрудника в модалке (поиск + фильтр по подразделениям). */
-function UserField({users, value, onChange, disabled}: {
+/** Выбор сотрудника: пока не выбран — кнопка поиска, выбран — строка с аватаркой (как у согласующих СЗ). */
+function UserField({users, value, onChange, disabled, fallbackName, fallbackPosition, excludeId}: {
     users: PickableUser[];
     value: number | null;
     onChange: (u: PickableUser | null) => void;
     disabled?: boolean;
+    fallbackName?: string | null;
+    fallbackPosition?: string | null;
+    excludeId?: number;
 }) {
     const {t} = useTranslation();
     return (
-        <div className={disabled ? "pointer-events-none opacity-60" : ""}>
-            <UserPickerField people={users} value={value} accent="blue" clearable
-                             placeholder={t("substitutionCard.fields.findEmployee")}
-                             modalTitle={t("substitutionCard.fields.selectEmployeeTitle")}
-                             searchPlaceholder={t("substitutionCard.fields.findEmployee")}
-                             onChange={(id) => onChange(users.find((u) => u.id === id) ?? null)}
-                             onClear={() => onChange(null)}/>
-        </div>
+        <SubstitutionPersonField users={users} value={value} onChange={onChange} disabled={disabled}
+                                 fallbackName={fallbackName} fallbackPosition={fallbackPosition}
+                                 excludeId={excludeId}
+                                 placeholder={t("substitutionCard.fields.findEmployee")}
+                                 modalTitle={t("substitutionCard.fields.selectEmployeeTitle")}
+                                 searchPlaceholder={t("substitutionCard.fields.findEmployee")}
+                                 clearLabel={t("substitutionCard.fields.clearEmployee")}/>
     );
+}
+
+/** Дата и время создания: дд.мм.гггг чч:мм по местному времени. */
+function formatDateTime(iso: string): string {
+    const d = new Date(iso);
+    if (Number.isNaN(d.getTime())) return "—";
+    const p = (n: number) => String(n).padStart(2, "0");
+    return `${p(d.getDate())}.${p(d.getMonth() + 1)}.${d.getFullYear()} ${p(d.getHours())}:${p(d.getMinutes())}`;
 }
 
 /** Выбор подразделения в модалке со списком и поиском. */

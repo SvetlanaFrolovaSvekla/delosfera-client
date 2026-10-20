@@ -20,6 +20,9 @@ export function HrRoutingSettingsPage() {
     // экрана не было, а каждое сохранение этой страницы отправляло их пустыми и затирало.
     const [operations, setOperations] = useState<number | null>(null);
     const [operationsFallback, setOperationsFallback] = useState<number | null>(null);
+    // Подписант от Банка приказа и договора заявок на замещение отсутствующих из Головного офиса
+    // (у филиала подписывает директор филиала, у ГО директора филиала нет).
+    const [headOfficeSigner, setHeadOfficeSigner] = useState<number | null>(null);
 
     const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState(false);
@@ -34,6 +37,7 @@ export function HrRoutingSettingsPage() {
                 setBranch(s.branchHrUserId);
                 setOperations(s.operationsApproverUserId ?? null);
                 setOperationsFallback(s.operationsFallbackUserId ?? null);
+                setHeadOfficeSigner(s.headOfficeSignerUserId ?? null);
             })
             .catch(() => setError(t("hrRoutingSettings.errorLoad") /* Не удалось загрузить настройки */))
             .finally(() => setLoading(false));
@@ -49,6 +53,7 @@ export function HrRoutingSettingsPage() {
                 branchHrUserId: branch,
                 operationsApproverUserId: operations,
                 operationsFallbackUserId: operationsFallback,
+                headOfficeSignerUserId: headOfficeSigner,
             });
             setSaved(true);
         } catch {
@@ -134,6 +139,21 @@ export function HrRoutingSettingsPage() {
                             searchPlaceholder={t("selectApproverModal.searchPlaceholder")}
                             onChange={(id) => { setOperationsFallback(id); setSaved(false); }}
                             onClear={() => { setOperationsFallback(null); setSaved(false); }}
+                        />
+                    </Field>
+
+                    <Field
+                        label={t("hrRoutingSettings.headOfficeSignerLabel") /* Подписант приказов о замещении по Головному офису */}
+                        hint={t("hrRoutingSettings.headOfficeSignerHint")}>
+                        <UserPickerField
+                            people={users}
+                            value={headOfficeSigner}
+                            clearable
+                            placeholder={t("hrRoutingSettings.pickerPlaceholder")}
+                            modalTitle={t("hrRoutingSettings.headOfficeSignerLabel")}
+                            searchPlaceholder={t("selectApproverModal.searchPlaceholder")}
+                            onChange={(id) => { setHeadOfficeSigner(id); setSaved(false); }}
+                            onClear={() => { setHeadOfficeSigner(null); setSaved(false); }}
                         />
                     </Field>
 

@@ -2,6 +2,7 @@ import {Link} from "react-router-dom";
 import {useTranslation} from "react-i18next";
 import type {SzOriginal} from "@/service/szService/szPaperService.ts";
 import {DueCell} from "./DueCell.tsx";
+import {Avatar} from "@/components/componentsGeneral/Avatar.tsx";
 import {RegistryStateRow, RegistryTable, type RegistryColumn} from "./RegistryTable.tsx";
 
 interface Props {
@@ -39,7 +40,14 @@ export function OriginalsTable({originals, loading}: Props) {
                             {o.title ?? "—"}
                         </Link>
                     </td>
-                    <td className="px-4 py-2.5 text-[#55617a]">{o.holderName ?? "—"}</td>
+                    <td className="px-4 py-2.5">
+                        {o.holderName ? (
+                            <span className="flex min-w-0 items-center gap-2">
+                                <Avatar name={o.holderName} size={24}/>
+                                <span className="truncate text-[#55617a]">{o.holderName}</span>
+                            </span>
+                        ) : <span className="text-[#a3adbd]">—</span>}
+                    </td>
                     <td className="px-4 py-2.5 text-[#55617a]">{o.location ?? "—"}</td>
                     <td className="px-4 py-2.5">
                         <DueCell dueDate={o.dueBackOn} isOverdue={o.isOverdue} daysLeft={o.daysLeft}

@@ -12,6 +12,9 @@ export interface HrRoutingSettings {
     operationsApproverUserId: number | null;
     /** Замена согласующего Операционного управления, если основной заблокирован/отключён. */
     operationsFallbackUserId: number | null;
+    /** Подписант от Банка приказа и договора по заявкам на замещение сотрудников Головного офиса
+     * (у филиала подписывает директор филиала). Пусто — место подписи директора остаётся незаполненным. */
+    headOfficeSignerUserId?: number | null;
 }
 
 const BASE = "/sz/hr-routing";

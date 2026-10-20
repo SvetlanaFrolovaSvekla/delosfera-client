@@ -22,6 +22,7 @@ import {SZ_PRINT_STYLES, SzPrintSheet} from "@/components/componentsSz/component
 import {downloadSzDocx, downloadSzPdf, waitForSheetAssets} from "@/utils/szProcess/szPrintExport.tsx";
 import {Tooltip} from "@/components/componentsGeneral/tooltips/Tooltip.tsx";
 import {toast} from "@/service/toastService.ts";
+import {toolbarButton} from "@/constants/printToolbarButton.ts";
 
 export function SzPrintPage() {
     const {t} = useTranslation();
@@ -71,8 +72,6 @@ export function SzPrintPage() {
             setBusy(null);
         }
     };
-
-    const toolbarButton = "inline-flex h-10 cursor-pointer items-center gap-1.5 rounded-[10px] border border-[#d7dee8] bg-white px-3 text-[13px] font-semibold text-[#3a4560] hover:bg-[#f6f8fb] disabled:cursor-wait disabled:opacity-60";
 
     return (
         <div className="bg-[#edecf5] min-h-screen py-6 print:bg-white print:py-0">
@@ -124,7 +123,9 @@ export function SzPrintPage() {
                         <button
                             type="button"
                             onClick={() => window.print()}
-                            className="inline-flex h-10 items-center gap-1.5 px-4 rounded-[10px] border-none bg-[#2f68f5] text-white font-semibold text-[13px] cursor-pointer hover:brightness-[1.06]"
+                            className="inline-flex h-10 items-center gap-1.5 px-4
+                            rounded-[10px] border-none bg-[#2f68f5] text-white font-semibold
+                            text-[13px] cursor-pointer hover:brightness-[1.06]"
                         >
                             <Printer size={15}/> Печать
                         </button>

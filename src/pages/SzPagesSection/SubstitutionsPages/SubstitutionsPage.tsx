@@ -26,6 +26,7 @@ import {userService} from "@/service/userService/userService.ts";
 import {Icon} from "@/assets/icons/Icon.tsx";
 import {ChevronDown, ChevronUp, SlidersHorizontal} from "lucide-react";
 import {colors} from "@/design/tokens.ts";
+import {Avatar} from "@/components/componentsGeneral/Avatar.tsx";
 
 const STATUSES = Object.keys(STATUS_LABEL) as SubstitutionStatus[];
 
@@ -57,10 +58,13 @@ const FILTER_LABEL_CLASS = "block text-[11.5px] text-[#8b97ab] mb-[5px]";
 interface AdvancedFilters {
     absentUserId: number | null;
     substituteUserId: number | null;
+    authorUserId: number | null;
     period: DateFilterValue;
 }
 
-const EMPTY_ADVANCED: AdvancedFilters = {absentUserId: null, substituteUserId: null, period: EMPTY_DATE_FILTER};
+const EMPTY_ADVANCED: AdvancedFilters = {
+    absentUserId: null, substituteUserId: null, authorUserId: null, period: EMPTY_DATE_FILTER,
+};
 
 function formatDate(iso: string | null): string {
     if (!iso) return "…";
@@ -83,7 +87,7 @@ export function SubstitutionRequestsPage() {
     /** То, что набрано в открытой панели, — применяется кнопкой "Найти". */
     const [draft, setDraft] = useState<AdvancedFilters>(EMPTY_ADVANCED);
     const [advOpen, setAdvOpen] = useState(false);
-    const {absentUserId, substituteUserId, period} = advanced;
+    const {absentUserId, substituteUserId, authorUserId, period} = advanced;
     const [users, setUsers] = useState<PickableUser[]>([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
@@ -101,7 +105,8 @@ export function SubstitutionRequestsPage() {
     // Границы периода как строки — чтобы эффект ниже не перезапускался от нового объекта с теми же датами.
     const {periodFrom, periodTo} = useMemo(() => periodBounds(period), [period]);
 
-    const hasAdvancedActive = absentUserId != null || substituteUserId != null || !!periodFrom || !!periodTo;
+    const hasAdvancedActive = absentUserId != null || substituteUserId != null || authorUserId != null
+        || !!periodFrom || !!periodTo;
 
     const updateDraft = <K extends keyof AdvancedFilters>(key: K, value: AdvancedFilters[K]) =>
         setDraft((d) => ({...d, [key]: value}));
@@ -134,6 +139,7 @@ export function SubstitutionRequestsPage() {
                     mineOnly: mineOnly || undefined,
                     absentUserId: absentUserId ?? undefined,
                     substituteUserId: substituteUserId ?? undefined,
+                    authorUserId: authorUserId ?? undefined,
                     periodFrom,
                     periodTo,
                     pageSize: 200,
@@ -155,7 +161,7 @@ export function SubstitutionRequestsPage() {
             cancelled = true;
             clearTimeout(timer);
         };
-    }, [query, status, mineOnly, absentUserId, substituteUserId, periodFrom, periodTo, t]);
+    }, [query, status, mineOnly, absentUserId, substituteUserId, authorUserId, periodFrom, periodTo, t]);
 
     const reasonText = (title: string): string => {
         const code = REASON_CODE_BY_TITLE[title];
@@ -211,7 +217,7 @@ export function SubstitutionRequestsPage() {
             <div className="mt-2.5 flex flex-wrap items-center gap-2">
                 <SavedFiltersBar
                     scope="substitution"
-                    current={{query, status: status || null, mineOnly, absentUserId, substituteUserId, period}}
+                    current={{query, status: status || null, mineOnly, absentUserId, substituteUserId, authorUserId, period}}
                     onApply={(p) => {
                         const f = p as {
                             query?: string;
@@ -219,6 +225,7 @@ export function SubstitutionRequestsPage() {
                             mineOnly?: boolean;
                             absentUserId?: number | null;
                             substituteUserId?: number | null;
+                            authorUserId?: number | null;
                             period?: DateFilterValue | null;
                         };
                         setQuery(f.query ?? "");
@@ -227,6 +234,7 @@ export function SubstitutionRequestsPage() {
                         const next: AdvancedFilters = {
                             absentUserId: f.absentUserId ?? null,
                             substituteUserId: f.substituteUserId ?? null,
+                            authorUserId: f.authorUserId ?? null,
                             period: f.period ?? EMPTY_DATE_FILTER,
                         };
                         setAdvanced(next);
@@ -304,6 +312,20 @@ export function SubstitutionRequestsPage() {
                                     searchPlaceholder={t("substitutionRequests.filters.employeeSearchPlaceholder")}
                                 />
                             </div>
+                            <div>
+                                <span className={FILTER_LABEL_CLASS}>{t("substitutionRequests.filters.author")}</span>
+                                <UserPickerField
+                                    people={users}
+                                    value={draft.authorUserId}
+                                    onChange={(id) => updateDraft("authorUserId", id)}
+                                    clearable
+                                    onClear={() => updateDraft("authorUserId", null)}
+                                    accent="blue"
+                                    placeholder={t("substitutionRequests.filters.anyEmployee")}
+                                    modalTitle={t("substitutionRequests.filters.authorModalTitle")}
+                                    searchPlaceholder={t("substitutionRequests.filters.employeeSearchPlaceholder")}
+                                />
+                            </div>
                         </div>
 
                         <div className="mb-[18px] rounded-xl border border-[#eef2f7] p-3.5">
@@ -365,18 +387,19 @@ export function SubstitutionRequestsPage() {
                         <th className="px-4 py-2.5 text-left w-[190px]">{t("substitutionRequests.cols.absent")}</th>
                         <th className="px-4 py-2.5 text-left w-[190px]">{t("substitutionRequests.cols.substitute")}</th>
                         <th className="px-4 py-2.5 text-left w-[190px]">{t("substitutionRequests.cols.period")}</th>
+                        <th className="px-4 py-2.5 text-left w-[200px]">{t("substitutionRequests.cols.author")}</th>
                         <th className="px-4 py-2.5 text-left w-[170px]">{t("substitutionRequests.cols.status")}</th>
                     </tr>
                     </thead>
                     <tbody>
                     {loading ? (
                         <tr>
-                            <td colSpan={6}
+                            <td colSpan={7}
                                 className="px-4 py-10 text-center text-[13px] text-[#8b97ab]">{t("general.loading")}</td>
                         </tr>
                     ) : rows.length === 0 ? (
                         <tr>
-                            <td colSpan={6}
+                            <td colSpan={7}
                                 className="px-4 py-10 text-center text-[13px] text-[#8b97ab]">{t("substitutionRequests.empty")}</td>
                         </tr>
                     ) : rows.map((r) => {
@@ -409,6 +432,14 @@ export function SubstitutionRequestsPage() {
                                 </td>
                                 <td className="px-4 py-2.5 whitespace-nowrap text-[#55617a]">
                                     {!r.startsOn && !r.endsOn ? "—" : `${formatDate(r.startsOn)} — ${formatDate(r.endsOn)}`}
+                                </td>
+                                <td className="px-4 py-2.5">
+                                    {r.authorName ? (
+                                        <span className="flex min-w-0 items-center gap-2">
+                                            <Avatar name={r.authorName} size={24}/>
+                                            <span className="truncate text-[#55617a]">{r.authorName}</span>
+                                        </span>
+                                    ) : <span className="text-[#a3adbd]">—</span>}
                                 </td>
                                 <td className="px-4 py-2.5">
                                     <span className="inline-flex rounded-full px-[9px] py-0.5 text-[11px] font-semibold"

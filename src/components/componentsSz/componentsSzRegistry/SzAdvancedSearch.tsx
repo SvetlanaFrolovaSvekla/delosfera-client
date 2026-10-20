@@ -6,7 +6,7 @@ import {useTranslation} from "react-i18next";
 import {ChevronDown, ChevronUp, SlidersHorizontal, X} from "lucide-react";
 import {SearchBar} from "@/components/componentsGeneral/SearchBar.tsx";
 import {SzUserMultiPickerModal} from "@/components/componentsSz/componentsSzCard/controls/SzUserMultiPickerModal.tsx";
-import type {PickableUser} from "@/components/componentsGeneral/userPicker/UserPicker.tsx";
+import type {PickableUser} from "@/constants/pickableUser.ts";
 import {DateFilterGroup} from "@/components/componentsGeneral/datePickers/DateFilterGroup.tsx";
 import {CheckBoxOne} from "@/components/componentsGeneral/componentsCheckBox/CheckBoxOne.tsx";
 import {useSzUsers} from "@/hooks/sz/useSzUsers.ts";

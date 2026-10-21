@@ -12,7 +12,7 @@ import {
 } from "@/service/substitutionService/substitutionService.ts";
 import type {ResolutionEcpSignature} from "@/hooks/useEcpApproval.ts";
 import {useEcpHashSigning} from "@/hooks/useEcpHashSigning.ts";
-import {EcpSignModal} from "@/components/signing/EcpSignModal.tsx";
+import {EcpSignModal} from "@/components/componentsSigning/EcpSignModal.tsx";
 import {toast} from "@/service/toastService.ts";
 import {SubstitutionSignPlacementModal} from "./SubstitutionSignPlacementModal.tsx";
 

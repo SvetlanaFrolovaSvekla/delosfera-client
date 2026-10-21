@@ -86,6 +86,12 @@ function toRange(v: DateFilterValue): { from?: string; to?: string } {
     return {from: r.from ?? undefined, to: r.to ?? undefined};
 }
 
+/**
+ * Чьи черновики показывать на вкладке «Черновики». «Черновики других пользователей» —
+ * только администратору системы (сервер остальным вернёт пусто).
+ */
+export type DraftOwner = "mine" | "others";
+
 export interface RegistryFilters {
     query: string;
     kindId: number | "";
@@ -93,6 +99,8 @@ export interface RegistryFilters {
     statusFilter: SzStatusCode | "";
     /** Расширенный поиск; не задан — не применяется. */
     advanced?: SzAdvancedFilters;
+    /** Вкладка «Черновики»: свои или чужие. По умолчанию — свои. */
+    draftOwner?: DraftOwner;
 }
 
 /**
@@ -104,10 +112,12 @@ export function buildSearchParams(scope: ScopeId, f: RegistryFilters) {
     const a = f.advanced ?? EMPTY_SZ_ADVANCED;
     const registered = toRange(a.registeredDate);
     const due = toRange(a.dueDate);
+    const othersDrafts = scope === "drafts" && f.draftOwner === "others";
     return {
         query: f.query.trim() || undefined,
         statuses: s.statuses ?? (f.statusFilter ? [f.statusFilter] : undefined),
-        mineOnly: s.mineOnly,
+        mineOnly: othersDrafts ? undefined : s.mineOnly,
+        othersOnly: othersDrafts || undefined,
         favoritesOnly: s.favoritesOnly,
         kindIds: f.kindId ? [Number(f.kindId)] : undefined,
         overdueOnly: f.overdueOnly || undefined,

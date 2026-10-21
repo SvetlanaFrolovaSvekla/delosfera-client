@@ -2,7 +2,8 @@ import {useState, useEffect} from "react";
 import {useAuth} from "@/context/AuthContext.ts";
 import {useTranslation} from "react-i18next";
 import {Link, useLocation, useNavigate} from "react-router-dom";
-import {notificationsService} from "@/service/notificationsService/notificationsService.ts";
+import {NOTIFICATIONS_CHANGED_EVENT, notificationsService} from "@/service/notificationsService/notificationsService.ts";
+import {notificationsRefreshBus} from "@/service/notificationsRefreshBus.ts";
 import {
     VND_PROPOSALS_CHANGED_EVENT,
     vndProposalService,
@@ -75,13 +76,37 @@ export function Sidebar() {
     const tasksBadge = taskCounts.coordination + taskCounts.actualization + taskCounts.consolidation;
     const [unreadCount, setUnreadCount] = useState(0);
 
+    // Перечитываем: после прочтения/удаления (событие от notificationsService), при новом
+    // уведомлении (шина из колокольчика), при возврате на вкладку и раз в минуту.
     useEffect(() => {
-        notificationsService
-            .getCounts()
-            .then((c) => setUnreadCount(c.totalUnread))
-            .catch(() => {
-                // счётчик не критичен — просто не показываем бейдж
-            });
+        let cancelled = false;
+        const refresh = () => {
+            notificationsService
+                .getCounts()
+                .then((c) => {
+                    if (!cancelled) setUnreadCount(c.totalUnread);
+                })
+                .catch(() => {
+                    // счётчик не критичен — просто не показываем бейдж
+                });
+        };
+        const handleVisibility = () => {
+            if (!document.hidden) refresh();
+        };
+        refresh();
+        const timer = setInterval(() => {
+            if (!document.hidden) refresh();
+        }, 60_000);
+        window.addEventListener(NOTIFICATIONS_CHANGED_EVENT, refresh);
+        document.addEventListener("visibilitychange", handleVisibility);
+        const unsubscribe = notificationsRefreshBus.subscribe(refresh);
+        return () => {
+            cancelled = true;
+            clearInterval(timer);
+            window.removeEventListener(NOTIFICATIONS_CHANGED_EVENT, refresh);
+            document.removeEventListener("visibilitychange", handleVisibility);
+            unsubscribe();
+        };
     }, []);
 
     // Предложения по ВНД: непрочитанные - только у получателей (право ManageVndProposals).

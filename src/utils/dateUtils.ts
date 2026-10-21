@@ -5,6 +5,22 @@ import type {DeadlineUrgencyKey} from "@/constants/vndStatus.ts";
 import {getWorkDayMinutes, workingMinutesBetween} from "@/utils/workCalendar.ts";
 import type {DateFilterValue} from "@/components/componentsGeneral/datePickers/DateFilterGroup.tsx";
 
+
+/** Если даты в форме хранятся как "дд.мм.гггг" - в этом формате работает DatePickerInput; на сервер уходит ISO. */
+export const isoToDisplay = (iso?: string | null): string => {
+    if (!iso) return "";
+    const [year, month, day] = iso.slice(0, 10).split("-");
+    return year && month && day ? `${day}.${month}.${year}` : "";
+};
+
+/** "дд.мм.гггг" -> "гггг-мм-дд"; пустая строка, если дата не распознана. */
+export const displayToIso = (display: string): string => {
+    const date = parseDDMMYYYY(display);
+    if (!date) return "";
+    return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
+};
+
+
 export function formatDateTime(iso: string): string {
     return new Date(iso).toLocaleString("ru-RU", {
         day: "2-digit",

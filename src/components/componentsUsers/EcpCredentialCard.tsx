@@ -10,8 +10,8 @@ import {useTranslation} from "react-i18next";
 import {infocomErrorText} from "@/service/infocomEcpService.ts";
 import {ecpCredentialService, type EcpCredentialStatus} from "@/service/ecpCredentialService.ts";
 import {useEcpIdentification} from "@/hooks/useEcpIdentification.ts";
-import {EcpIdentityForm} from "@/components/signing/EcpIdentityForm.tsx";
-import {ECP_PRIMARY_BTN, ECP_SECONDARY_BTN} from "@/components/signing/ecpUi.ts";
+import {EcpIdentityForm} from "@/components/componentsSigning/EcpIdentityForm.tsx";
+import {ECP_PRIMARY_BTN, ECP_SECONDARY_BTN} from "@/components/componentsSigning/ecpUi.ts";
 import {toast} from "@/service/toastService.ts";
 
 

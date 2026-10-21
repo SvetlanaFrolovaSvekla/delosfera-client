@@ -83,7 +83,7 @@ export function ProcurementTrackerPage() {
             {!columns && !error && <div className="text-[13px] text-[#8b97ab]">{t("general.loading")}</div>}
 
             {columns && (
-                <DoubleScroll className="flex gap-3 overflow-x-auto pb-3 [scrollbar-width:thin]">
+                <DoubleScroll className="flex gap-3 overflow-x-auto pb-3">
                     {columns.map(col => (
                         <div key={col.code} className="shrink-0 w-[280px] rounded-[13px] bg-[#f6f8fb] border border-[#e5e9f0] flex flex-col">
                             <div className="px-3.5 py-3 border-b border-[#e5e9f0]">

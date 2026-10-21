@@ -24,11 +24,13 @@ import {organizationUnitService} from "@/service/dictionariesService/organizatio
 import {attachmentService} from "@/service/documentService/attachmentService.ts";
 import type {OrganizationUnitResponse} from "@/service/dictionariesService/organizationUnitService/organizationUnitServiceType.ts";
 import {formatDate} from "@/utils/dateUtils.ts";
-import {MatrixNotesList} from "@/components/procurement/MatrixNotesList.tsx";
-import {OrgUnitPicker} from "@/components/procurement/OrgUnitPicker.tsx";
-import {PlanItemPicker} from "@/components/procurement/PlanItemPicker.tsx";
+import {MatrixNotesList} from "@/components/componentsProcurement/MatrixNotesList.tsx";
+import {OrgUnitPicker} from "@/components/componentsProcurement/OrgUnitPicker.tsx";
+import {PlanItemPicker} from "@/components/componentsProcurement/PlanItemPicker.tsx";
 import type {PlanItemLookup} from "@/service/procurementService/planItemLookupService.ts";
 import {AttachmentsPanel} from "@/components/componentsGeneral/attachments/AttachmentsPanel.tsx";
+import {ArrowLeft, List, Plus} from "lucide-react";
+import {PageHeader} from "@/components/componentsGeneral/PageHeader.tsx";
 
 // Шаги мастера: подписи берутся из переводов по ключам
 const STEPS = ["subject", "justification", "route"] as const;
@@ -248,16 +250,23 @@ export const ProcurementNewPage = () => {
         step === 2;
 
     return (
-        <div style={{padding: "22px 26px", display: "flex", flexDirection: "column", gap: 18, maxWidth: 1080}}>
-            <div>
-                <div style={{fontSize: 12.5, color: "#8b97ab"}}>{t("procurementNew.breadcrumb")}</div>
-                <h1 style={{margin: "3px 0 0", fontSize: 19, fontWeight: 700, color: "#0f1b2d"}}>
-                    {isEdit ? t("procurementNew.titleEdit") : t("procurementNew.title")}
-                </h1>
-            </div>
+        <div className="w-full max-w-[1700px] mx-auto px-4 sm:px-6 lg:px-8 xl:px-10 pt-5 sm:pt-[26px] pb-10 sm:pb-[60px]">
+
+            <PageHeader
+                title={isEdit ? t("procurementNew.titleEdit") : t("procurementNew.title")}
+                actions={
+                    <Link
+                        to="/prc"
+                        className="inline-flex items-center gap-[7px] text-[#8b97ab] text-[13px] font-medium cursor-pointer p-0 mb-1 hover:text-[#4e57d6]"
+                    >
+                        <ArrowLeft className="w-4 h-4" strokeWidth={2} />
+                        {t("procurementTracker.back")}
+                    </Link>
+                }
+            />
 
             {/* шаги */}
-            <div style={{display: "flex", gap: 8}}>
+            <div className="flex gap-[26px] mb-[15px]">
                 {STEPS.map((s, i) => (
                     <div
                         key={s}

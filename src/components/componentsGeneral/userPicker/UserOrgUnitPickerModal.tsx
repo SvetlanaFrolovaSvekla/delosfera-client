@@ -19,6 +19,7 @@ import {
     type PickableUser,
 } from "@/constants/pickableUser.ts";
 import {User as UserIcon} from "lucide-react";
+import {Avatar} from "@/components/componentsGeneral/Avatar.tsx";
 
 
 export type OrgUnitPickerPerson = PickableUser;
@@ -40,6 +41,8 @@ interface UserOrgUnitPickerModalProps {
      * для подбора согласующих и подписанта. По умолчанию — по алфавиту.
      */
     bySeniority?: boolean;
+    /** Кружки с инициалами (как в реестре СЗ) вместо безликой иконки. По умолчанию — иконка. */
+    avatars?: boolean;
 }
 
 export function UserOrgUnitPickerModal({
@@ -52,6 +55,7 @@ export function UserOrgUnitPickerModal({
                                             onClose,
                                             accent = "violet",
                                             bySeniority,
+                                            avatars,
                                         }: UserOrgUnitPickerModalProps) {
     const {t} = useTranslation();
     const a = ACCENT[accent];
@@ -120,9 +124,13 @@ export function UserOrgUnitPickerModal({
                                         isSelected ? `${a.softBg}` : "hover:bg-[#f6f8fb]"
                                     }`}
                                 >
-                                    <div className={`flex h-9 w-9 flex-none items-center justify-center rounded-full ${a.tintBg} ${a.text}`}>
-                                        <UserIcon size={16}/>
-                                    </div>
+                                    {avatars ? (
+                                        <Avatar name={p.fullName} size={36}/>
+                                    ) : (
+                                        <div className={`flex h-9 w-9 flex-none items-center justify-center rounded-full ${a.tintBg} ${a.text}`}>
+                                            <UserIcon size={16}/>
+                                        </div>
+                                    )}
                                     <div className="min-w-0 flex-1">
                                         <span className={`block truncate text-[13px] font-semibold ${isSelected ? `${a.text}` : "text-[#26324a]"}`}>
                                             <HighlightText text={p.fullName} query={search}/>

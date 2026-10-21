@@ -58,6 +58,7 @@ export interface Poa {
     signedAt: string | null;
     revokedOn: string | null;
     revokeReason: string | null;
+    revokedByUserId: number | null;
     revokedBy: string | null;
 
     originalLocation: string | null;
@@ -92,6 +93,25 @@ export interface PoaFilter {
     holderUserId?: number;
     grantorUserId?: number;
     unitId?: number;
+    /** Доверители (любой из) — расширенный поиск. */
+    grantorUserIds?: number[];
+    /** Представители-сотрудники (любой из). */
+    holderUserIds?: number[];
+    /** Часть ФИО представителя, как в доверенности, - так находят и сторонних лиц. */
+    holderName?: string;
+    holderKind?: PoaHolderKind;
+    /** Часть регистрационного номера. */
+    regNumber?: string;
+    /** Фраза из текста полномочий. */
+    powers?: string;
+    /** Только с правом передоверия. */
+    allowsDelegation?: boolean;
+    /** Дата выдачи: с — по, ISO. */
+    issuedFrom?: string;
+    issuedTo?: string;
+    /** Дата окончания срока: с — по, ISO. */
+    validToFrom?: string;
+    validToTo?: string;
     /** Действующие на указанный день — «кто был вправе подписать тогда». */
     validOn?: string;
     text?: string;
@@ -112,6 +132,19 @@ export const poaService = {
     async get(id: number) {
         const {data} = await apiClient.get<Poa>(`${BASE}/${id}`);
         return data;
+    },
+
+    /** Тот же реестр целиком (с теми же фильтрами) - книгой Excel. */
+    async exportRegistry(filter: PoaFilter = {}) {
+        const response = await apiClient.post(`${BASE}/export`, filter, {responseType: "blob"});
+        const url = URL.createObjectURL(response.data as Blob);
+        const link = document.createElement("a");
+        link.href = url;
+        link.download = `Доверенности ${new Date().toLocaleDateString("ru-RU")}.xlsx`;
+        document.body.appendChild(link);
+        link.click();
+        link.remove();
+        URL.revokeObjectURL(url);
     },
 
     /** Чем человек вправе распоряжаться на указанный день. */

@@ -14,7 +14,7 @@ import type {RedactionViewTarget} from "@/utils/vndProcess/redactionLanguagePane
 import type {QuoteAnchorContext} from "@/utils/docxWork/quoteAnchor.ts";
 import {quoteDisplayText, quoteMatchText} from "@/utils/vndProcess/quoteText.ts";
 import {composeResolutionComment, loadDraft, nextDraftId, saveDraft} from "@/utils/vndProcess/coordination/resolutionDraft.ts";
-import {EcpSignModal} from "@/components/signing/EcpSignModal.tsx";
+import {EcpSignModal} from "@/components/componentsSigning/EcpSignModal.tsx";
 import type {DraftTextRemark, DecisionMode, ResolutionChoice, ResolutionPhase} from "./resolutionPanel/resolutionPanelTypes.ts";
 import {EcpSessionCountdown} from "./resolutionPanel/EcpSessionCountdown.tsx";
 import {ResolutionRemarksSection} from "./resolutionPanel/ResolutionRemarksSection.tsx";

@@ -193,6 +193,8 @@ export interface SzSearchRequest {
     correspondentUnitId?: number;
     rubricId?: number;
     mineOnly?: boolean;
+    /** Только записки других авторов — «Черновики других пользователей» (администратор системы). */
+    othersOnly?: boolean;
     /** Только записки из «Избранного» текущего пользователя (в любом статусе, включая архив). */
     favoritesOnly?: boolean;
     registeredFrom?: string;
@@ -230,6 +232,8 @@ export interface SzCounters {
     originals?: number | null;
     /** «Избранное» текущего пользователя. */
     favorites?: number;
+    /** «Черновики других пользователей»; null — подвкладка пользователю недоступна. */
+    othersDrafts?: number | null;
 }
 
 export interface SzHistoryEntry {
@@ -245,11 +249,28 @@ export interface SzTrackerItem {
     id: number;
     regNumber: string | null;
     title: string;
+    /** Вид записки: id — для названия на языке интерфейса, kind — русское название (запасное). */
+    kindId: number;
     kind: string;
     authorName: string | null;
     addresseeName: string | null;
+    /** Сколько дней записка живёт (от создания). */
     ageDays: number;
+    /** С какого момента записка на текущей стадии (ISO). */
+    stageSince: string;
+    /** Сколько календарных дней записка на текущей стадии. */
+    stageDays: number;
+    /** Стоит на стадии дольше порога (см. SzTrackerBoard.staleAfterDays). */
     isStale: boolean;
+    /** Срок исполнения (YYYY-MM-DD), если задан. */
+    dueDate: string | null;
+    /** Дней до срока; отрицательное — просрочена на столько. */
+    daysLeft: number | null;
+    isOverdue: boolean;
+    /** Автор — текущий пользователь. */
+    isMine: boolean;
+    /** Записка подразделения пользователя. */
+    isMyUnit: boolean;
 }
 
 export interface SzTrackerColumn {
@@ -257,6 +278,17 @@ export interface SzTrackerColumn {
     title: string;
     count: number;
     items: SzTrackerItem[];
+}
+
+/** Доска записок: колонки и пороги, по которым сервер считал «зависла». */
+export interface SzTrackerBoard {
+    columns: SzTrackerColumn[];
+    staleAfterDays: number;
+    staleExecutionAfterDays: number;
+    /** Есть ли у пользователя подразделение (иначе фильтр «Моё подразделение» не нужен). */
+    hasUnit: boolean;
+    /** Видит ли пользователь чужие черновики в реестре (администратор системы). */
+    canSeeOthersDrafts: boolean;
 }
 
 /** Возможный дубликат записки (СК-5). */
@@ -351,8 +383,8 @@ export const szService = {
     },
 
     /** Доска записок по стадиям (РС-4). */
-    async tracker(): Promise<SzTrackerColumn[]> {
-        const {data} = await apiClient.get<SzTrackerColumn[]>(`${BASE}/tracker`);
+    async tracker(): Promise<SzTrackerBoard> {
+        const {data} = await apiClient.get<SzTrackerBoard>(`${BASE}/tracker`);
         return data;
     },
 

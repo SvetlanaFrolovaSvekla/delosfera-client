@@ -6,7 +6,7 @@ import {
     isReadyToUse
 } from "@/service/documentTypeService/documentTypeService.ts";
 import {toast} from "@/service/toastService.ts";
-import type {RouteTemplate} from "@/pages/ManagementPages/SettingsPages/Dictionaries/DocumentTypesPage.tsx";
+import type {RouteTemplate} from "@/pages/ManagementPagesSection/SettingsPages/Dictionaries/DocumentTypesPage.tsx";
 import {Field} from "@/components/componentsDocumentsTypes/Field.tsx";
 import {FieldsSection} from "@/components/componentsDocumentsTypes/FieldsSection.tsx";
 import {PlainCheckbox} from "@/components/componentsGeneral/componentsCheckBox/PlainCheckbox.tsx";

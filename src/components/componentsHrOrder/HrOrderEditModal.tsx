@@ -15,11 +15,11 @@ import {
 import {hrForms, type HrFormSchema, type SzEmployee} from "@/service/szService/szService.ts";
 import {useDictionaries} from "@/context/DictionariesContext.tsx";
 import {useUserLookup} from "@/hooks/useUserLookup.ts";
+import {displayToIso, isoToDisplay} from "@/utils/dateUtils.ts";
 import {SzHrForm} from "@/components/componentsSz/componentsSzCard/form/SzHrForm.tsx";
 import {SelectDropdown} from "@/components/componentsGeneral/selects/SingleSelects/SelectDropdown.tsx";
 import {DatePickerInput} from "@/components/componentsGeneral/datePickers/DatePickerInput.tsx";
 import {UserPickerField} from "@/components/componentsGeneral/userPicker/UserPickerField.tsx";
-import {parseDDMMYYYY} from "@/utils/dateUtils.ts";
 import {RichTextEditor} from "@/components/componentsEditor/RichTextEditor.tsx";
 import {Loader} from "@/components/componentsGeneral/Loader.tsx";
 import {ModalHeader} from "@/components/componentsGeneral/rubricator/ModalHeader.tsx";
@@ -33,20 +33,6 @@ interface Props {
     /** isNew — приказ только что создан (а не изменён). */
     onSaved: (isNew: boolean) => void;
 }
-
-/** Даты в форме хранятся как "дд.мм.гггг" - в этом формате работает DatePickerInput; на сервер уходит ISO. */
-const isoToDisplay = (iso?: string | null): string => {
-    if (!iso) return "";
-    const [year, month, day] = iso.slice(0, 10).split("-");
-    return year && month && day ? `${day}.${month}.${year}` : "";
-};
-
-/** "дд.мм.гггг" -> "гггг-мм-дд"; пустая строка, если дата не распознана. */
-const displayToIso = (display: string): string => {
-    const date = parseDDMMYYYY(display);
-    if (!date) return "";
-    return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
-};
 
 /** Вид без своей формы («Иной»): только сотрудники, без реквизитов. */
 const PLAIN_SCHEMA: HrFormSchema = {allowMultipleEmployees: true, employeeMayBeExternal: false, fields: []};

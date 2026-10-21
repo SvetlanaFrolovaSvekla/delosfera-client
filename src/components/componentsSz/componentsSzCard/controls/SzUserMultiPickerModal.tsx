@@ -13,6 +13,7 @@ import {
 } from "@/components/componentsGeneral/userPicker/UserPickerModalShell.tsx";
 import {OrgUnitMultiSelectFilter} from "@/components/componentsGeneral/selects/OrgUnitMultiSelectFilter.tsx";
 import {Check, User as UserIcon} from "lucide-react";
+import {Avatar} from "@/components/componentsGeneral/Avatar.tsx";
 import {ACCENT, type Accent} from "@/constants/accent.ts";
 import {type PickableUser, seniority} from "@/constants/pickableUser.ts";
 
@@ -25,9 +26,11 @@ interface Props {
     onClose: () => void;
     /** Акцентный цвет (галочки, подсветка выбранных, кнопка «Готово»). По умолчанию фиолетовый. */
     accent?: Accent;
+    /** Кружки с инициалами (как в реестре СЗ) вместо безликой иконки. По умолчанию — иконка. */
+    avatars?: boolean;
 }
 
-export function SzUserMultiPickerModal({people, value, onChange, title, onClose, accent = "violet"}: Props) {
+export function SzUserMultiPickerModal({people, value, onChange, title, onClose, accent = "violet", avatars}: Props) {
     const {t} = useTranslation();
     const a = ACCENT[accent];
     const [search, setSearch] = useState("");
@@ -98,9 +101,13 @@ export function SzUserMultiPickerModal({people, value, onChange, title, onClose,
                                             checked ? `${a.border} ${a.bg}` : "border-[#c8d2e0] bg-white"}`}>
                                             {checked && <Check size={11} className="text-white" strokeWidth={3}/>}
                                         </span>
-                                        <div className={`flex h-9 w-9 flex-none items-center justify-center rounded-full ${a.tintBg} ${a.text}`}>
-                                            <UserIcon size={16}/>
-                                        </div>
+                                        {avatars ? (
+                                            <Avatar name={p.fullName} size={36}/>
+                                        ) : (
+                                            <div className={`flex h-9 w-9 flex-none items-center justify-center rounded-full ${a.tintBg} ${a.text}`}>
+                                                <UserIcon size={16}/>
+                                            </div>
+                                        )}
                                         <div className="min-w-0 flex-1">
                                             <span className={`block truncate text-[13px] font-semibold ${checked ? `${a.text}` : "text-[#26324a]"}`}>
                                                 <HighlightText text={p.fullName} query={search}/>

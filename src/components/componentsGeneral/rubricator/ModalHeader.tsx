@@ -1,4 +1,4 @@
-// Верхняя часть рубрикатора
+// Верхняя часть рубрикатора/некоторых модалок
 import {HelpTooltip} from "@/components/componentsGeneral/knowledgeBaseComponents/HelpTooltip.tsx";
 import type {Side} from "@/components/componentsGeneral/tooltips/Tooltip.tsx";
 import {X} from "lucide-react";

@@ -12,31 +12,30 @@ import {
     type CommissionMember, type SubstitutionDetails, type ApprovalStep, type ApprovalState, type SubstitutionStatus, type SubstitutionSigningState,
     substitutionPrintUrl,
 } from "@/service/substitutionService/substitutionService.ts";
-import {useAuth} from "@/context/AuthContext.ts";
 import {toast} from "@/service/toastService.ts";
-import {SzButton, szButtonClass} from "@/components/componentsSz/componentsSzCard/controls/SzButton.tsx";
-import {ConfirmActionModal} from "@/components/componentsGeneral/modal/ConfirmActionModal.tsx";
-import {ConfirmDeleteModal} from "@/components/componentsGeneral/modal/ConfirmDeleteModal.tsx";
-import {Tooltip} from "@/components/componentsGeneral/tooltips/Tooltip.tsx";
+import {useAuth} from "@/context/AuthContext.ts";
+import type {PickableUser} from "@/constants/pickableUser.ts";
+import {formatDDMMYYYY, parseDDMMYYYYToISO, parseDate} from "@/utils/dateUtils.ts";
 import {SubstitutionSigningSection} from "@/components/componentsSubstitutions/SubstitutionSigningSection.tsx";
 import {useSubstitutionSigning} from "@/components/componentsSubstitutions/useSubstitutionSigning.tsx";
-
 import {
     PersonRow, SubstitutionPersonField, personMeta,
 } from "@/components/componentsSubstitutions/SubstitutionPersonField.tsx";
+import {SzButton, szButtonClass} from "@/components/componentsSz/componentsSzCard/controls/SzButton.tsx";
+import {SzFormSection} from "@/components/componentsSz/componentsSzCard/form/SzFormSection.tsx";
 import {SelectDropdown} from "@/components/componentsGeneral/selects/SingleSelects/SelectDropdown.tsx";
 import {
     TreeSingleSelectModal
 } from "@/components/componentsGeneral/selects/SingleSelects/TreeSingleSelectModal.tsx";
 import {DatePickerInput} from "@/components/componentsGeneral/datePickers/DatePickerInput.tsx";
-import {formatDDMMYYYY, parseDDMMYYYYToISO, parseDate} from "@/utils/dateUtils.ts";
+import {ConfirmActionModal} from "@/components/componentsGeneral/modal/ConfirmActionModal.tsx";
+import {ConfirmDeleteModal} from "@/components/componentsGeneral/modal/ConfirmDeleteModal.tsx";
+import {Tooltip} from "@/components/componentsGeneral/tooltips/Tooltip.tsx";
 import {colors} from "@/design/tokens.ts";
-import {SzFormSection} from "@/components/componentsSz/componentsSzCard/form/SzFormSection.tsx";
 import {
     AlertTriangle, ArrowLeft, BadgeCheck, Building2, Check, ChevronDown, Download, FilePlus, Plus, Save, Send,
     FileSignature, FlaskConical, Trash2, Undo2, X,
 } from "lucide-react";
-import type {PickableUser} from "@/constants/pickableUser.ts";
 
 const empty: SubstitutionSaveRequest = {
     subject: "", reason: "Other", absentName: "", substituteName: "",

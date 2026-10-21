@@ -1,6 +1,6 @@
 import type {TFunction} from "i18next";
 import {PermissionCode} from "@/constants/permissions/permissions.ts";
-import type {Item} from "@/pages/ManagementPages/SettingsPages/SettingsPage.tsx";
+import type {Item} from "@/pages/ManagementPagesSection/SettingsPages/SettingsPage.tsx";
 import {
     Activity,
     Bell,

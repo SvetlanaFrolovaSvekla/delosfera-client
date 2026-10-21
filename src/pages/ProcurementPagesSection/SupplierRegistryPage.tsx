@@ -1,7 +1,7 @@
 import React, {useCallback, useEffect, useState} from "react";
 import {useTranslation} from "react-i18next";
 import {apiClient} from "@/service/apiClient.ts";
-import {SupplierRatingsModal} from "@/components/procurement/SupplierRatingsModal.tsx";
+import {SupplierRatingsModal} from "@/components/componentsProcurement/SupplierRatingsModal.tsx";
 import {CheckBoxOne} from "@/components/componentsGeneral/componentsCheckBox/CheckBoxOne.tsx";
 import {Tooltip} from "@/components/componentsGeneral/tooltips/Tooltip.tsx";
 import {SearchBar} from "@/components/componentsGeneral/SearchBar.tsx";

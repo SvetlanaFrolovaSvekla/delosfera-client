@@ -6,7 +6,7 @@ import {
     ackDocumentPath,
     type MyAck,
 } from "@/service/acknowledgementService/acknowledgementService.ts";
-import {RegulationConsentGate} from "@/components/signing/RegulationConsentGate.tsx";
+import {RegulationConsentGate} from "@/components/componentsSigning/RegulationConsentGate.tsx";
 import {formatDate, formatDateTime} from "@/utils/dateUtils.ts";
 import {PageHeader} from "@/components/componentsGeneral/PageHeader.tsx";
 import {Loader} from "@/components/componentsGeneral/Loader.tsx";

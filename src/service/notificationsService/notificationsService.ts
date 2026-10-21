@@ -56,6 +56,7 @@ class NotificationsService {
         const response = await axiosInstance.post<Notification>(
             `${this.basePath}/${id}/read`
         );
+        emitNotificationsChanged();
         return response.data;
     }
 
@@ -64,6 +65,7 @@ class NotificationsService {
         const response = await axiosInstance.post<Notification>(
             `${this.basePath}/${id}/unread`
         );
+        emitNotificationsChanged();
         return response.data;
     }
 
@@ -74,6 +76,7 @@ class NotificationsService {
             null,
             {params: category ? {category} : undefined}
         );
+        emitNotificationsChanged();
         return response.data;
     }
 
@@ -98,6 +101,7 @@ class NotificationsService {
     /** Возвращают, сколько записей сервер реально изменил (affected). */
     async bulkMarkAsRead(ids: number[]): Promise<number> {
         const response = await axiosInstance.post<{ affected: number }>(`${this.basePath}/bulk/read`, {ids});
+        emitNotificationsChanged();
         return response.data.affected;
     }
 
@@ -108,13 +112,26 @@ class NotificationsService {
 
     async bulkDelete(ids: number[]): Promise<number> {
         const response = await axiosInstance.post<{ affected: number }>(`${this.basePath}/bulk/delete`, {ids});
+        emitNotificationsChanged();
         return response.data.affected;
     }
 
     /** Удалить уведомление из своего списка (мягкое удаление) */
     async delete(id: number): Promise<void> {
         await axiosInstance.delete(`${this.basePath}/${id}`);
+        emitNotificationsChanged();
     }
 }
 
 export const notificationsService = new NotificationsService();
+
+/** Событие "у уведомлений поменялся статус прочтения/набор" - слушают счётчики (яблочко на Sidebar, колокольчик). */
+export const NOTIFICATIONS_CHANGED_EVENT = "notifications:changed";
+
+function emitNotificationsChanged() {
+    try {
+        window.dispatchEvent(new Event(NOTIFICATIONS_CHANGED_EVENT));
+    } catch {
+        // не критично
+    }
+}

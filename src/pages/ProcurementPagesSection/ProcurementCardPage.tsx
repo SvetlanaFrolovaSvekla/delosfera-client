@@ -12,11 +12,11 @@ import {attachmentService} from "@/service/documentService/attachmentService.ts"
 import {formatDate} from "@/utils/dateUtils.ts";
 import {toast} from "@/service/toastService.ts";
 
-import {ProposalsPanel} from "@/components/procurement/ProposalsPanel.tsx";
-import {ProcurementRoutePanel} from "@/components/procurement/ProcurementRoutePanel.tsx";
-import {TenderPanel} from "@/components/procurement/TenderPanel.tsx";
-import {ContractPanel} from "@/components/procurement/ContractPanel.tsx";
-import {GuaranteeClaimPanel} from "@/components/procurement/GuaranteeClaimPanel.tsx";
+import {ProposalsPanel} from "@/components/componentsProcurement/ProposalsPanel.tsx";
+import {ProcurementRoutePanel} from "@/components/componentsProcurement/ProcurementRoutePanel.tsx";
+import {TenderPanel} from "@/components/componentsProcurement/TenderPanel.tsx";
+import {ContractPanel} from "@/components/componentsProcurement/ContractPanel.tsx";
+import {GuaranteeClaimPanel} from "@/components/componentsProcurement/GuaranteeClaimPanel.tsx";
 
 import {BoardReviewCard} from "@/components/componentsGeneral/BoardReviewCard.tsx";
 import {DocumentHistory} from "@/components/componentsGeneral/DocumentHistory.tsx";

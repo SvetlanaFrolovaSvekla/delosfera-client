@@ -15,7 +15,7 @@ import {
     type MatrixTable,
 } from "@/service/procurementService/authorityMatrixService.ts";
 import {CheckBoxOne} from "@/components/componentsGeneral/componentsCheckBox/CheckBoxOne.tsx";
-import {MatrixNotesList} from "@/components/procurement/MatrixNotesList.tsx";
+import {MatrixNotesList} from "@/components/componentsProcurement/MatrixNotesList.tsx";
 import {colors} from "@/design/tokens";
 
 /** Быстрый выбор суммы — те же точки, что и в дизайне: рядом с порогами Положения. */

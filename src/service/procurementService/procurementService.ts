@@ -54,6 +54,7 @@ export interface ProcurementListItem {
     amount: number;
     isAffiliated: boolean;
     hasBudget: boolean;
+    initiatorUserId: number | null;
     initiatorName: string | null;
     initiatorUnit: string | null;
     createdAt: string;
@@ -64,6 +65,8 @@ export interface ProcurementListItem {
 export interface ProcurementCounters {
     all: number;
     drafts: number;
+    /** «Инициирую я» */
+    mine: number;
     onApproval: number;
     inProcurement: number;
     completed: number;
@@ -138,6 +141,18 @@ export interface ProcurementSearchRequest {
     mineOnly?: boolean;
     amountFrom?: number;
     amountTo?: number;
+    /** Расширенный поиск */
+    regNumber?: string;
+    subject?: string;
+    initiatorUserIds?: number[];
+    curatorUserIds?: number[];
+    methodIds?: number[];
+    subjectKind?: SubjectKind;
+    /** Дата создания: с — по, ISO (банковские сутки). */
+    createdFrom?: string;
+    createdTo?: string;
+    affiliatedOnly?: boolean;
+    offBudgetOnly?: boolean;
     page?: number;
     pageSize?: number;
 }
@@ -164,6 +179,11 @@ export interface ProcurementCreateRequest {
     curatorUserId?: number;
     preferredMethod?: string;
     methodJustification?: string;
+}
+
+export interface ProcurementMethodOption {
+    id: number;
+    shortTitle: string;
 }
 
 export interface Paged<T> {
@@ -218,6 +238,12 @@ export const procurementService = {
 
     async search(request: ProcurementSearchRequest): Promise<Paged<ProcurementListItem>> {
         const {data} = await apiClient.post<Paged<ProcurementListItem>>(`${BASE}/requests/search`, request);
+        return data;
+    },
+
+    /** Способы закупки для фильтра реестра (без права на справочники). */
+    async methodOptions(): Promise<ProcurementMethodOption[]> {
+        const {data} = await apiClient.get<ProcurementMethodOption[]>(`${BASE}/requests/methods`);
         return data;
     },
 

@@ -207,7 +207,12 @@ export function LetterRegisterModal({onClose, onSaved}: Props) {
                 <FormField
                     label={(
                         <span className="flex items-baseline justify-between">
-                            <span>{t("correspondencePage.registerModal.correspondent")}</span>
+                            {/* Звёздочка — внутри подписи: FormField ставит её после label, а здесь
+                                label — строка-флекс, и звёздочка уезжала на следующую строку. */}
+                            <span>
+                                {t("correspondencePage.registerModal.correspondent")}{" "}
+                                <span className="text-[#c0392b]">*</span>
+                            </span>
                             <button
                                 type="button"
                                 onClick={() => setNewCorrespondent((v) => !v)}
@@ -219,7 +224,6 @@ export function LetterRegisterModal({onClose, onSaved}: Props) {
                             </button>
                         </span>
                     )}
-                    required
                     className="sm:col-span-2"
                 >
                     {newCorrespondent ? (

@@ -13,15 +13,16 @@ import {szPaperService, type SzOriginal} from "@/service/szService/szPaperServic
 import {toast} from "@/service/toastService.ts";
 import {useAuth} from "@/context/AuthContext.ts";
 import {PermissionCode} from "@/constants/permissions/permissions.ts";
-import {useRowSelection} from "@/hooks/useRowSelection.ts";
 import {EMPTY_DATE_FILTER} from "@/constants/emptyDateFilter.ts";
-import type {DateFilterValue} from "@/components/componentsGeneral/datePickers/DateFilterGroup.tsx";
+import {useRowSelection} from "@/hooks/useRowSelection.ts";
+
 import {
     buildSearchParams,
     EMPTY_SZ_ADVANCED,
     hasAdvancedFilters,
     isFilterlessScope,
     scopeHasStatuses,
+    type DraftOwner,
     type ScopeId,
     type SzAdvancedFilters,
 } from "@/components/componentsSz/componentsSzRegistry/registryModel.ts";
@@ -36,6 +37,7 @@ import {MemosTable} from "../../../components/componentsSz/componentsSzRegistry/
 import {AssignmentsTable} from "../../../components/componentsSz/componentsSzRegistry/AssignmentsTable.tsx";
 import {OriginalsTable} from "../../../components/componentsSz/componentsSzRegistry/OriginalsTable.tsx";
 import {SzBulkArchiveModal} from "@/components/componentsSz/componentsModal/SzBulkArchiveModal.tsx";
+import type {DateFilterValue} from "@/components/componentsGeneral/datePickers/DateFilterGroup.tsx";
 import {SavedFiltersBar} from "@/components/componentsGeneral/SavedFiltersBar.tsx";
 import {Pagination} from "@/components/componentsGeneral/Pagination.tsx";
 import {ActiveFilterChips, type ActiveFilterChip} from "@/components/componentsGeneral/ActiveFilterChips.tsx";
@@ -74,6 +76,13 @@ export function SzRegistryPage() {
      */
     const isClerk = hasPermission(PermissionCode.RegisterSz) || hasPermission(PermissionCode.ViewAllSz);
     const hiddenScopes: ScopeId[] = isClerk ? [] : ["originals"];
+    /**
+     * Чужие черновики видит только администратор системы — у него на вкладке «Черновики»
+     * подвкладки «Мои» / «Других пользователей», как в реестре ВНД. Остальным — только свои.
+     */
+    const canSeeOthersDrafts = hasPermission(PermissionCode.ManageSystemSettings);
+    const [draftOwnerState, setDraftOwner] = useState<DraftOwner>("mine");
+    const draftOwner: DraftOwner = canSeeOthersDrafts ? draftOwnerState : "mine";
 
     const [scope, setScopeState] = useState<ScopeId>("all");
     /**
@@ -119,7 +128,7 @@ export function SzRegistryPage() {
     // Страница хранится вместе с ключом фильтров, по которым она выбрана: сменился фильтр, вкладка
     // или размер страницы - ключ не совпал, и мы автоматически на первой странице, без лишнего
     // эффекта и второго запроса.
-    const filterKey = JSON.stringify([scope, searchQuery, kindId, overdueOnly, statusFilter, advanced, pageSize]);
+    const filterKey = JSON.stringify([scope, draftOwner, searchQuery, kindId, overdueOnly, statusFilter, advanced, pageSize]);
     const [pageState, setPageState] = useState({page: 1, key: filterKey});
     const page = pageState.key === filterKey ? pageState.page : 1;
     const setPage = useCallback((next: number) => setPageState({page: next, key: filterKey}), [filterKey]);
@@ -181,7 +190,7 @@ export function SzRegistryPage() {
                 dataScope === "inbox"
                     ? szService.inbox(page, pageSize)
                     : szService.search({
-                        ...buildSearchParams(scope, {query: searchQuery, kindId, overdueOnly, statusFilter, advanced}),
+                        ...buildSearchParams(scope, {query: searchQuery, kindId, overdueOnly, statusFilter, advanced, draftOwner}),
                         page,
                         pageSize,
                     }),
@@ -197,7 +206,7 @@ export function SzRegistryPage() {
         } finally {
             if (requestId === requestRef.current) setLoading(false);
         }
-    }, [scope, dataScope, searchQuery, kindId, overdueOnly, statusFilter, advanced, page, pageSize, t]);
+    }, [scope, dataScope, draftOwner, searchQuery, kindId, overdueOnly, statusFilter, advanced, page, pageSize, t]);
 
     useEffect(() => {
         // eslint-disable-next-line react-hooks/set-state-in-effect
@@ -207,7 +216,7 @@ export function SzRegistryPage() {
     // Смена вкладки, фильтра или страницы меняет набор строк
     useEffect(() => {
         clear();
-    }, [dataScope, searchQuery, kindId, overdueOnly, statusFilter, advanced, page, pageSize, clear]);
+    }, [dataScope, draftOwner, searchQuery, kindId, overdueOnly, statusFilter, advanced, page, pageSize, clear]);
 
     // Страница опустела (убрали последнюю строку, сдали в архив, сняли звёздочку в «Избранном») -
     // возвращаемся на последнюю непустую, а не показываем пустую таблицу.
@@ -238,7 +247,7 @@ export function SzRegistryPage() {
      * Особые вкладки (поручения, оригиналы, «согласую я») — не реестр, у них кнопки нет.
      */
     const runExport = useCallback(async (ids?: number[]) => {
-        const base = buildSearchParams(scope, {query: searchQuery, kindId, overdueOnly, statusFilter, advanced});
+        const base = buildSearchParams(scope, {query: searchQuery, kindId, overdueOnly, statusFilter, advanced, draftOwner});
         setExporting(true);
         try {
             await szService.exportRegistry(ids ? {...base, ids} : base);
@@ -252,7 +261,7 @@ export function SzRegistryPage() {
         } finally {
             setExporting(false);
         }
-    }, [scope, searchQuery, kindId, overdueOnly, statusFilter, advanced, t]);
+    }, [scope, draftOwner, searchQuery, kindId, overdueOnly, statusFilter, advanced, t]);
 
     /**
      * Звёздочку в строке переключили. На вкладке «Избранное» снятая отметка убирает строку,
@@ -421,6 +430,37 @@ export function SzRegistryPage() {
             </div>
 
             <RegistryTabs scope={scope} counters={counters} onSelect={setScope} hidden={hiddenScopes}/>
+
+            {/* «Черновики»: свои или чужие — только у администратора системы, как в реестре ВНД */}
+            {scope === "drafts" && canSeeOthersDrafts && (
+                <div className="mt-3 flex items-center gap-2" role="radiogroup" aria-label={t("szRegistry.draftOwner.label")}>
+                    {([
+                        {key: "mine" as const, n: counters?.drafts},
+                        {key: "others" as const, n: counters?.othersDrafts ?? undefined},
+                    ]).map((opt) => {
+                        const active = draftOwner === opt.key;
+                        return (
+                            <button
+                                key={opt.key}
+                                type="button"
+                                role="radio"
+                                aria-checked={active}
+                                onClick={() => setDraftOwner(opt.key)}
+                                className={`inline-flex items-center gap-1.5 h-8 px-3 rounded-lg border font-semibold text-[12.5px] cursor-pointer ${
+                                    active
+                                        ? "border-[#2f68f5] bg-[#f6f8fb] text-[#2f68f5]"
+                                        : "border-[#e5e9f0] bg-white text-[#55617a] hover:bg-[#f6f8fb]"
+                                }`}
+                            >
+                                {t(`szRegistry.draftOwner.${opt.key}`)}
+                                {opt.n != null && (
+                                    <span className={`font-mono text-[11.5px] ${active ? "text-[#2f68f5]" : "text-[#a3adbd]"}`}>{opt.n}</span>
+                                )}
+                            </button>
+                        );
+                    })}
+                </div>
+            )}
 
             {/* В "Согласую я" фильтры не применяются - список формирует сам движок согласования. */}
             <RegistryFilterBar

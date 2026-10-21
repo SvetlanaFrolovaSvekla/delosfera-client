@@ -2,7 +2,7 @@ import {useEffect, useRef, useState, useCallback} from "react";
 import {createPortal} from "react-dom";
 import {useTranslation} from "react-i18next";
 import {useNavigate, Link} from "react-router-dom";
-import {notificationsService} from "@/service/notificationsService/notificationsService.ts";
+import {NOTIFICATIONS_CHANGED_EVENT, notificationsService} from "@/service/notificationsService/notificationsService.ts";
 import type {Notification} from "@/service/notificationsService/notificationsServiceType.ts";
 import {toast} from "@/service/toastService.ts";
 import {notificationPopupPreference} from "@/service/notificationPopupPreference.ts";
@@ -103,10 +103,14 @@ export function NotificationsDropdown() {
             if (!document.hidden) void pollForNew();
         };
         document.addEventListener("visibilitychange", handleVisibility);
+        // Прочитали/удалили уведомление где угодно - сразу перечитываем счётчик колокольчика
+        const handleChanged = () => void pollForNew();
+        window.addEventListener(NOTIFICATIONS_CHANGED_EVENT, handleChanged);
 
         return () => {
             window.clearInterval(intervalId);
             document.removeEventListener("visibilitychange", handleVisibility);
+            window.removeEventListener(NOTIFICATIONS_CHANGED_EVENT, handleChanged);
         };
     }, [pollForNew]);
 

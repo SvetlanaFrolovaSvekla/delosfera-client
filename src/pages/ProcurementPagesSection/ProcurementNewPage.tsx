@@ -29,7 +29,7 @@ import {OrgUnitPicker} from "@/components/componentsProcurement/OrgUnitPicker.ts
 import {PlanItemPicker} from "@/components/componentsProcurement/PlanItemPicker.tsx";
 import type {PlanItemLookup} from "@/service/procurementService/planItemLookupService.ts";
 import {AttachmentsPanel} from "@/components/componentsGeneral/attachments/AttachmentsPanel.tsx";
-import {ArrowLeft, List, Plus} from "lucide-react";
+import {ArrowLeft, List} from "lucide-react";
 import {PageHeader} from "@/components/componentsGeneral/PageHeader.tsx";
 
 // Шаги мастера: подписи берутся из переводов по ключам

@@ -211,7 +211,11 @@ export function VndEditionsTab({vnd, onVndChanged, onGoToApproval, linkFocus}: V
         setEditOpen(true);
     };
 
-    if (loading) {
+    // Лоадер - только при первой загрузке. При refetch (после действий с редакцией) список
+    // обновляется "тихо": иначе вся вкладка вместе с открытыми модалками размонтируется, а после
+    // загрузки модалки монтируются заново со старым снимком редакции (см. docs.attachments) -
+    // например, только что сформированный Титульный лист пропадал до обновления страницы.
+    if (loading && redactions.length === 0) {
         return <Loader label={t("openVndPage.editionsTab.loadingRedactions")} fullHeight={false}/>
     }
 
@@ -512,7 +516,12 @@ export function VndEditionsTab({vnd, onVndChanged, onGoToApproval, linkFocus}: V
                 docs={docs}
                 downloadingId={download.activeId}
                 onDownload={handleDownload}
-                onTitlePageChanged={() => refetch()}
+                onTitlePageChanged={(updated) => {
+                    // Окно "Вложения редакции" держит свой снимок редакции - подменяем его
+                    // свежим ответом сервера, чтобы оно не показывало старый titlePageFileId.
+                    docs.setAttachments((prev) => (prev && prev.id === updated.id ? updated : prev));
+                    refetch();
+                }}
             />
 
             {/* Просмотр и сравнение редакций - слева выбранная сейчас редакция, справа

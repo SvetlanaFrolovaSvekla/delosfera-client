@@ -144,9 +144,23 @@ export function useSzCard(id: string | undefined) {
     const formKey = kind?.formKey ?? "Other";
 
     // Правка доступна автору, пока записка не ушла дальше него: согласующий,
-    // открывший карточку, редактировать текст записки не должен.
+    // открывший карточку, редактировать текст записки не должен. Сектор
+    // делопроизводства (право EditAnySz) правит чужую записку в тех же статусах —
+    // поля и вложения — и может отправить её сам, например отозванную из-за
+    // забытого файла.
     const isAuthor = !!sz && !!user && sz.authorId === user.id;
-    const editable = isNew || (isAuthor && !!sz && EDITABLE_STATUSES.includes(sz.statusCode));
+    // Администратор системы чинит застрявшие записки целиком: отзывает, правит
+    // содержание и маршрут, отправляет снова — сервер пускает его так же.
+    const isSystemAdmin = hasPermission(PermissionCode.ManageSystemSettings);
+    const canEditAny = isSystemAdmin || hasPermission(PermissionCode.EditAnySz);
+    // Отозвать чужую записку — отдельное право (WithdrawAnySz): прервать маршрут,
+    // чтобы поправить записку, когда автора нет на месте.
+    const canWithdrawAny = isSystemAdmin || hasPermission(PermissionCode.WithdrawAnySz);
+    const editable = isNew || ((isAuthor || canEditAny) && !!sz && EDITABLE_STATUSES.includes(sz.statusCode));
+    // Согласующих, режим согласования и подписанта задаёт автор (и администратор —
+    // починить маршрут): делопроизводство, правя чужую записку, меняет содержание,
+    // но не круг согласующих. Сервер проверяет это же.
+    const routeEditable = isNew || ((isAuthor || isSystemAdmin) && editable);
 
     // Ручной перевод статуса — администратору системы. Записка застревает по
     // причинам вне системы: уволился согласующий, маршрут собрали не так. Без
@@ -167,7 +181,7 @@ export function useSzCard(id: string | undefined) {
     const applyKind = async (newKindId: number) => {
         set("kindId", newKindId);
         setApproversFromTemplate(false);
-        if (!editable || !newKindId) return;
+        if (!routeEditable || !newKindId) return;
         try {
             const preview = await szService.previewApprovers(
                 newKindId, form.correspondentUnitId ?? undefined);
@@ -334,7 +348,7 @@ export function useSzCard(id: string | undefined) {
     return {
         isNew, sz, form, setForm, set, kind, formKey, kinds, hrKinds, hrForms, hrValues, setHrValues,
         pendingFiles, setPendingFiles, loading, saving, setSaving, error, setError, notice, setNotice,
-        route, routeError, isAuthor, editable, canForceStatus, canRegister, approversFromTemplate,
+        route, routeError, isAuthor, canEditAny, canWithdrawAny, editable, routeEditable, canForceStatus, canRegister, approversFromTemplate,
         applyKind, applyDetails, reload, save, runAction, withdraw, forceStatus,
     };
 }

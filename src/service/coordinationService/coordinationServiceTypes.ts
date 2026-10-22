@@ -92,6 +92,9 @@ export interface ApprovalDecisionRequest {
     /** ТЕСТ: имитация ЭЦП (EcpSigning:AllowVndTestEcp) - подпись у ГП «Инфоком» не ставится,
      * в журнале запись помечается «ТЕСТ». */
     testEcp?: boolean;
+    /** Локальная подпись системы «Делосфера» вместо ЭЦП КР (право SignWithoutNationalEcp).
+     * ecpHash при этом — хэш, показанный в модалке подтверждения (backend сверяет). */
+    systemSign?: boolean;
 }
 
 /** Хэш резолюции для подписи (POST .../decision/resolution-hash). */
@@ -111,7 +114,9 @@ export type ResolutionSignatureErrorCode =
     | "stale_signature"
     | "identity_mismatch"
     | "provider_unavailable"
-    | "storage_integrity";
+    | "storage_integrity"
+    | "system_seal_unavailable"
+    | "system_sign_not_allowed";
 
 /** Запись журнала подписей ЭЦП по документу (GET /vnd/{vndId}/signatures). */
 export interface VndResolutionSignatureResponse {
@@ -137,6 +142,8 @@ export interface VndResolutionSignatureResponse {
     verified: boolean;
     /** Имитация ЭЦП тестового режима (EcpSigning:AllowVndTestEcp), а не настоящая подпись. */
     isTest?: boolean;
+    /** Локальная подпись системы «Делосфера» (сотрудник без ЭЦП КР), а не ЭЦП ГП «Инфоком» / Түндүк. */
+    isSystem?: boolean;
 }
 
 /** Результат повторной проверки подписи (POST /vnd/{vndId}/signatures/{id}/verify). */

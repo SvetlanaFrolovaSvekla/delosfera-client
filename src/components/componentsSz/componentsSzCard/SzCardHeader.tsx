@@ -43,11 +43,11 @@ export function SzCardHeader({card, onToggleWithdraw, onToggleForce}: SzCardHead
     const [confirmDelete, setConfirmDelete] = useState(false);
     const [confirmSubmit, setConfirmSubmit] = useState(false);
     const [confirmRegister, setConfirmRegister] = useState(false);
-    const {sz, isNew, isAuthor, editable, saving, canForceStatus, canRegister, save, runAction} = card;
+    const {sz, isNew, isAuthor, canEditAny, canWithdrawAny, editable, saving, canForceStatus, canRegister, save, runAction} = card;
 
     const tone = sz ? STATUS_TONE[sz.statusCode] ?? colors.status.draft : colors.status.draft;
-    const canSubmit = !!sz && isAuthor && EDITABLE_STATUSES.includes(sz.statusCode);
-    const canWithdraw = !!sz && isAuthor && WITHDRAWABLE_STATUSES.includes(sz.statusCode);
+    const canSubmit = !!sz && (isAuthor || canEditAny) && EDITABLE_STATUSES.includes(sz.statusCode);
+    const canWithdraw = !!sz && (isAuthor || canWithdrawAny) && WITHDRAWABLE_STATUSES.includes(sz.statusCode);
 
     return (
         <>

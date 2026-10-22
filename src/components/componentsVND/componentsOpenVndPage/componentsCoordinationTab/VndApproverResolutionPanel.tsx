@@ -2,6 +2,9 @@ import {forwardRef, useCallback, useEffect, useImperativeHandle, useMemo, useRef
 import {useTranslation} from "react-i18next";
 import type {ApprovalQuoteItem} from "@/service/coordinationService/coordinationServiceTypes.ts";
 import {ecpCredentialService} from "@/service/ecpCredentialService.ts";
+import {coordinationService} from "@/service/coordinationService/coordinationService.ts";
+import {useAuth} from "@/context/AuthContext.ts";
+import {PermissionCode} from "@/constants/permissions/permissions.ts";
 import {useEcpSession} from "@/context/EcpSessionContext.ts";
 import {
     MAX_RESOLUTION_ATTACHMENTS,
@@ -20,6 +23,7 @@ import {EcpSessionCountdown} from "./resolutionPanel/EcpSessionCountdown.tsx";
 import {ResolutionRemarksSection} from "./resolutionPanel/ResolutionRemarksSection.tsx";
 import {ResolutionAttachments} from "./resolutionPanel/ResolutionAttachments.tsx";
 import {ResolutionDecisionButtons} from "./resolutionPanel/ResolutionDecisionButtons.tsx";
+import {SystemSignConfirmModal} from "./resolutionPanel/SystemSignConfirmModal.tsx";
 import {CharCounter} from "@/components/componentsGeneral/CharCounter.tsx";
 import {ConfirmActionModal} from "@/components/componentsGeneral/modal/ConfirmActionModal.tsx";
 import {Tooltip} from "@/components/componentsGeneral/tooltips/Tooltip.tsx";
@@ -49,6 +53,9 @@ interface VndApproverResolutionPanelProps {
         withoutEcp?: boolean,
         /** ТЕСТ: имитация ЭЦП (EcpSigning:AllowVndTestEcp, backend перепроверяет настройку). */
         testEcp?: boolean,
+        /** Без ЭЦП КР: локальная подпись системы «Делосфера» (право SignWithoutNationalEcp, backend
+         * перепроверяет); hash - показанный в модалке подтверждения. */
+        systemSign?: {hash: string | null},
     ) => Promise<boolean | "resign" | "reauth" | void> | boolean | void;
     submitting?: boolean;
     error?: string | null;
@@ -249,6 +256,15 @@ export const VndApproverResolutionPanel = forwardRef<
 
     const [testMode, setTestMode] = useState(false);
     const [testEcpMode, setTestEcpMode] = useState(false);
+    // Сотрудник без ЭЦП КР (право SignWithoutNationalEcp): решения подписывает система «Делосфера» -
+    // основные кнопки открывают SystemSignConfirmModal вместо ПИН/кода ГП «Инфоком».
+    const {hasPermission} = useAuth();
+    const systemSignMode = hasPermission(PermissionCode.SignWithoutNationalEcp);
+    const [systemSealConfigured, setSystemSealConfigured] = useState(true);
+    const [pendingSystem, setPendingSystem] = useState<ResolutionChoice | null>(null);
+    const [systemHash, setSystemHash] = useState<string | null>(null);
+    const [systemHashLoading, setSystemHashLoading] = useState(false);
+    const [systemHashError, setSystemHashError] = useState<string | null>(null);
     useEffect(() => {
         let cancelled = false;
         ecpCredentialService.testMode()
@@ -256,6 +272,8 @@ export const VndApproverResolutionPanel = forwardRef<
                 if (cancelled) return;
                 setTestMode(r.allowWithoutEcp);
                 setTestEcpMode(r.allowVndTestEcp === true);
+                // Старый backend поле не отдаёт - считаем настроенным, backend всё равно перепроверит.
+                setSystemSealConfigured(r.systemSealConfigured !== false);
             })
             .catch(() => { /* нет ответа - тестовых кнопок просто не будет */ });
         return () => { cancelled = true; };
@@ -275,7 +293,8 @@ export const VndApproverResolutionPanel = forwardRef<
                 note: r.note.trim() || null,
             }));
             const ok = await onSubmit(decisionChoice, composedComment, files, quotesToSend, ecpSignature,
-                mode === "withoutEcp" || undefined, mode === "testEcp" || undefined);
+                mode === "withoutEcp" || undefined, mode === "testEcp" || undefined,
+                mode === "system" ? {hash: systemHash} : undefined);
             // Черновик стираем только после успешной отправки - при ошибке он нужен, чтобы
             // пользователь ничего не потерял.
             if (ok === true) saveDraft(draftStorageKey, null);
@@ -289,10 +308,38 @@ export const VndApproverResolutionPanel = forwardRef<
     // Кнопка решения: c - решение, mode - с подписью ЭЦП, тестовое без ЭЦП или тестовая имитация ЭЦП.
     // Для "с замечаниями"/"отклонить" нужен текст - без него показываем подсказку (commentMissing по
     // выбранному решению), запрос не отправляем. "Отклонить" - через подтверждение.
-    const busy = submitting || ecp.quietSigning || ecp.modalOpen;
+    const busy = submitting || ecp.quietSigning || ecp.modalOpen || pendingSystem !== null;
     const missingFor = (c: ResolutionChoice) => c !== "approve" && comment.trim().length === 0 && !hasRemarkNotes;
 
+    // Системная подпись: окно подтверждения с хэшем резолюции (тот же, что подписывался бы ЭЦП; backend
+    // при сохранении пересчитает его и сверит - подписывается ровно то, что показано).
+    const openSystemConfirm = (c: ResolutionChoice) => {
+        setPendingSystem(c);
+        setSystemHash(null);
+        setSystemHashError(null);
+        setSystemHashLoading(true);
+        coordinationService.getResolutionHash(vndId, stageId, composedComment, CHOICE_TO_DECISION[c])
+            .then((r) => setSystemHash(r.hash))
+            .catch((err: unknown) => {
+                const message = (err as {response?: {data?: {message?: string}}}).response?.data?.message;
+                setSystemHashError(message ?? t("resolutionPanel.systemSign.hashError"));
+            })
+            .finally(() => setSystemHashLoading(false));
+    };
+
+    const handleConfirmSystem = () => {
+        const c = pendingSystem;
+        if (c === null || !systemHash) return;
+        setPendingSystem(null);
+        setLastAction({choice: c, mode: "system"});
+        void doSubmit(c, undefined, "system");
+    };
+
     const runDecision = (c: ResolutionChoice, mode: DecisionMode) => {
+        if (mode === "system") {
+            openSystemConfirm(c);
+            return;
+        }
         setLastAction({choice: c, mode});
         if (mode !== "ecp") {
             // Без ЭЦП / имитация ЭЦП: ПИН, код и подпись пропускаются, "подпись"-имитацию (с настоящим
@@ -313,7 +360,8 @@ export const VndApproverResolutionPanel = forwardRef<
         setChoice(c);
         setResignNeeded(null);
         if (missingFor(c) || composedTooLong) return;
-        if (c === "reject") {
+        // "Отклонить" системной подписью подтверждается в том же окне системной подписи.
+        if (c === "reject" && mode !== "system") {
             setPendingReject({mode});
             return;
         }
@@ -424,7 +472,7 @@ export const VndApproverResolutionPanel = forwardRef<
                             ? t("resolutionPanel.resignStale")
                             : t("resolutionPanel.resignOtherPerson")}
                     </span>
-                    <button type="button" onClick={() => handleAction(choice, "ecp")}
+                    <button type="button" onClick={() => handleAction(choice, systemSignMode ? "system" : "ecp")}
                             disabled={busy}
                             className="cursor-pointer shrink-0 rounded-[8px] border border-[#e0c47a] bg-white px-3 py-1 text-[12px] font-semibold text-[#8a6100] disabled:opacity-50">
                         {t("resolutionPanel.resignAgain")}
@@ -439,6 +487,8 @@ export const VndApproverResolutionPanel = forwardRef<
                 phase={phase}
                 testMode={testMode}
                 testEcpMode={testEcpMode}
+                systemSignMode={systemSignMode}
+                systemSealUnavailable={!systemSealConfigured}
                 busy={busy}
                 composedTooLong={composedTooLong}
                 submitting={submitting}
@@ -477,6 +527,16 @@ export const VndApproverResolutionPanel = forwardRef<
                 loading={submitting}
                 variant="danger"
                 icon={X}
+            />
+
+            <SystemSignConfirmModal
+                choice={pendingSystem}
+                hash={systemHash}
+                hashLoading={systemHashLoading}
+                hashError={systemHashError}
+                submitting={submitting}
+                onConfirm={handleConfirmSystem}
+                onClose={() => setPendingSystem(null)}
             />
 
             {ecp.modalOpen && (

@@ -4,8 +4,9 @@ import type {RedactionViewTarget} from "@/utils/vndProcess/redactionLanguagePane
 export type ResolutionChoice = "approve" | "approveWithComment" | "reject";
 
 /** Каким способом принимается решение: с ЭЦП ГП «Инфоком»; тестовое без ЭЦП
- * (EcpSigning:AllowWithoutEcp); тестовая имитация ЭЦП (EcpSigning:AllowVndTestEcp). */
-export type DecisionMode = "ecp" | "withoutEcp" | "testEcp";
+ * (EcpSigning:AllowWithoutEcp); тестовая имитация ЭЦП (EcpSigning:AllowVndTestEcp); локальной
+ * подписью системы «Делосфера» (право SignWithoutNationalEcp — сотрудник без ЭЦП КР). */
+export type DecisionMode = "ecp" | "withoutEcp" | "testEcp" | "system";
 
 export type ResolutionPhase = "primary" | "repeated" | "finalHold";
 

@@ -52,6 +52,9 @@ export function useResolutionDecision(vndId: number, reload: () => Promise<void>
         ecpSignature?: ResolutionEcpSignature,
         withoutEcp?: boolean,
         testEcp?: boolean,
+        /** Локальная подпись системы «Делосфера» (право SignWithoutNationalEcp); hash — показанный
+         * пользователю в модалке подтверждения, backend сверяет его с пересчитанным. */
+        systemSign?: {hash: string | null},
     ): Promise<ResolutionSubmitResult> => {
         // true - резолюция сохранена (панель резолюции по нему стирает свой черновик в браузере).
         if (!myStage || decisionInFlightRef.current) return false;
@@ -67,13 +70,15 @@ export function useResolutionDecision(vndId: number, reload: () => Promise<void>
                 // ЭЦП ГП «Инфоком» - обязательна для "Согласовать" (см. EcpSignModal/useEcpApproval).
                 ecpSignatureBase64: ecpSignature?.signatureBase64,
                 ecpCertToken: ecpSignature?.certToken,
-                ecpHash: ecpSignature?.hash,
+                ecpHash: ecpSignature?.hash ?? systemSign?.hash ?? undefined,
                 ecpPersonIdnp: ecpSignature?.personIdnp,
                 ecpTimestamp: ecpSignature?.timestamp,
                 // ТЕСТ: согласование без ЭЦП для локальных учёток (backend перепроверяет Source).
                 withoutEcp: withoutEcp || undefined,
                 // ТЕСТ: имитация ЭЦП (EcpSigning:AllowVndTestEcp).
                 testEcp: testEcp || undefined,
+                // Без ЭЦП КР: подпись ставит система «Делосфера» (backend проверяет право).
+                systemSign: systemSign ? true : undefined,
             });
             await reload();
             toast.success(t("openVndPage.coordinationTab.decisionSubmittedToastTitle"), t("openVndPage.coordinationTab.decisionSubmittedToastDescription"));

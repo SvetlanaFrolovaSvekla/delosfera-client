@@ -138,6 +138,12 @@ export function VndSignatureJournal({vndId, refreshKey, currentProcessId, curren
                                 {t("ecp.journal.test")}
                             </span>
                         )}
+                        {item.isSystem && (
+                            <span className="mb-1 ml-1 inline-flex items-center gap-1 rounded-full border border-[#bfe3dd] bg-[#eef8f6] px-2 py-[1px] text-[10.5px] font-semibold text-[#0f5e5a]"
+                                  title={t("ecp.journal.systemHint")}>
+                                {t("ecp.journal.system")}
+                            </span>
+                        )}
                         <div className="font-semibold">
                             {item.personFio ?? item.certCommonName ?? item.userFullName ?? "—"}
                             {item.userFullName && item.personFio && item.userFullName !== item.personFio && (
@@ -150,7 +156,9 @@ export function VndSignatureJournal({vndId, refreshKey, currentProcessId, curren
                             {item.stageTitle && ` · ${item.stageTitle}`}
                         </div>
                         <div className="text-[11.5px] text-[#8b97ab]">
-                            {item.verified ? t("ecp.journal.verified") : t("ecp.journal.notVerified")}
+                            {item.isSystem
+                                ? t("ecp.journal.systemVerified")
+                                : item.verified ? t("ecp.journal.verified") : t("ecp.journal.notVerified")}
                             {item.certIssuerCommonName && ` · ${t("ecp.journal.issuer", {name: item.certIssuerCommonName})}`}
                         </div>
                         <div className="truncate font-mono text-[10.5px] text-[#aab3c2]" title={item.hash}>

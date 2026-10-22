@@ -317,6 +317,9 @@ export interface VndRedactionResponse {
     /** Загружен пользователем вручную — система сама его не пересобирает. */
     titlePageIsManual?: boolean;
     titlePageUpdatedAt?: string | null;
+    /** Может ли текущий пользователь формировать/загружать/убирать титульный лист этой редакции —
+     * решает сервер (VndTitlePageService.CanManage), фронт только показывает кнопки. */
+    canManageTitlePage?: boolean;
 
     requiresApproval: boolean;
     approvalStatus: RedactionApprovalStatus;

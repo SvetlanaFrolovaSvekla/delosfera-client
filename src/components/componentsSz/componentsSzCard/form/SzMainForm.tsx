@@ -34,7 +34,7 @@ export function SzMainForm({card, userList}: SzMainFormProps) {
     const {t, i18n} = useTranslation();
     const {orgUnits} = useDictionaries();
     const {
-        form, set, setForm, editable, isNew, sz, kind, kinds, approversFromTemplate,
+        form, set, setForm, editable, routeEditable, isNew, sz, kind, kinds, approversFromTemplate,
         applyKind, pendingFiles, setPendingFiles,
     } = card;
 
@@ -108,7 +108,10 @@ export function SzMainForm({card, userList}: SzMainFormProps) {
                                 // вручную подписанта или СП не трогаем.
                                 setForm((f) => {
                                     const prev = userList.find((x) => x.id === f.addresseeUserId);
-                                    const signerFollows = f.signerUserId == null || f.signerUserId === f.addresseeUserId;
+                                    // Подписант — часть маршрута, его задаёт только автор: при
+                                    // правке чужой записки он за адресатом не следует.
+                                    const signerFollows = routeEditable
+                                        && (f.signerUserId == null || f.signerUserId === f.addresseeUserId);
                                     const unitFollows = f.correspondentUnitId == null
                                         || (prev?.orgUnitId != null && f.correspondentUnitId === prev.orgUnitId);
                                     return {
@@ -212,7 +215,7 @@ export function SzMainForm({card, userList}: SzMainFormProps) {
                 users={userList}
                 parallel={form.approvalIsParallel ?? false}
                 onParallelChange={(p) => set("approvalIsParallel", p)}
-                editable={editable}
+                editable={routeEditable}
             />
 
             {/*
@@ -221,7 +224,7 @@ export function SzMainForm({card, userList}: SzMainFormProps) {
               может идти и без отдельного подписания.
             */}
             <div className="mt-4">
-                {editable ? (
+                {routeEditable ? (
                     <Field label={t("szCard.fields.signer")}>
                         <UserPickerField
                             accent="blue"

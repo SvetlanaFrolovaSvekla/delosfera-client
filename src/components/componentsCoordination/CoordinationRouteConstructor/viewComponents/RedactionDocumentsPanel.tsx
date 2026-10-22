@@ -14,9 +14,6 @@ import {useCanExportVnd} from "@/hooks/vndHooks/useCanExportVnd.ts";
 import {approvalSheetCaption, getRedactionApprovalSheets} from "@/utils/vndProcess/approvalSheets.ts";
 import {vndService} from "@/service/vndService/vndService.ts";
 import {toast} from "@/service/toastService.ts";
-import {useAuth} from "@/context/AuthContext.ts";
-import {PermissionCode} from "@/constants/permissions/permissions.ts";
-import {useEditionsPermissions} from "@/hooks/vndHooks/useEditionsPermissions.ts";
 
 interface RedactionDocumentsPanelProps {
     vnd: VndResponse;
@@ -269,19 +266,18 @@ export function TitlePageRow({
     onChanged?: (updated: VndRedactionResponse) => void;
 }) {
     const {t} = useTranslation();
-    const {hasPermission} = useAuth();
-    const {isChiefEditor, canEditLastRevision} = useEditionsPermissions();
-    // Тот же набор прав, что проверяет сервер (VndTitlePageService.LoadForEditAsync).
-    const canManage = isChiefEditor || canEditLastRevision || hasPermission(PermissionCode.EditVndRequisites);
+    // Решает сервер (VndTitlePageService.CanManage): главный редактор, право «Редактирование
+    // реквизитов ВНД» или ответственный за текущую актуализацию - у готовящейся редакции.
+    const canManage = redaction.canManageTitlePage === true;
 
-    const [state, setState] = useState(() => titlePageState(redaction));
+    const [state, setState] = useState(() => resolveTitlePageState(redaction));
     const [busy, setBusy] = useState<"generate" | "upload" | "remove" | null>(null);
     const fileInputRef = useRef<HTMLInputElement>(null);
 
     // Другая редакция или обновлённые с сервера данные - берём их.
     useEffect(() => {
         // eslint-disable-next-line react-hooks/set-state-in-effect
-        setState(titlePageState(redaction));
+        setState(resolveTitlePageState(redaction));
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [redaction.id, redaction.titlePageFileId, redaction.titlePageIsManual]);
 
@@ -290,7 +286,15 @@ export function TitlePageRow({
         setBusy(kind);
         try {
             const updated = await action();
-            setState(titlePageState(updated));
+            const next = titlePageState(updated);
+            // Запоминаем результат, пока родитель не перечитает редакцию: при перемонтировании
+            // строка со старым объектом redaction иначе "откатилась" бы к прежнему файлу.
+            const prevOverride = titlePageOverrides.get(redaction.id);
+            titlePageOverrides.set(redaction.id, {
+                staleFileId: prevOverride ? prevOverride.staleFileId : (redaction.titlePageFileId ?? null),
+                state: next,
+            });
+            setState(next);
             onChanged?.(updated);
             toast.success(t(successKey));
         } catch (e) {
@@ -396,6 +400,28 @@ function titlePageState(r: VndRedactionResponse) {
         fileName: r.titlePageFileName ?? `${r.code}_Титульный_лист.docx`,
         isManual: r.titlePageIsManual ?? false,
     };
+}
+
+type TitlePageState = ReturnType<typeof titlePageState>;
+
+/** Последний результат "Сформировать/Загрузить/Убрать" по редакции (redactionId -> состояние),
+ * пока в props ещё приходит старый объект редакции (staleFileId). Без этого после
+ * перемонтирования строка показывала прежний файл (или "не сформирован") до обновления
+ * страницы, а просмотр прежнего файла давал 403: после пересоздания он больше не привязан к
+ * редакции и доступен только тому, кто его сформировал (VndFileAccessAuthorizer). */
+const titlePageOverrides = new Map<number, { staleFileId: number | null; state: TitlePageState }>();
+
+function resolveTitlePageState(r: VndRedactionResponse): TitlePageState {
+    const fromProps = titlePageState(r);
+    const override = titlePageOverrides.get(r.id);
+    if (!override) return fromProps;
+    // В props всё ещё старые данные - показываем результат действия.
+    if (fromProps.fileId === override.staleFileId && fromProps.fileId !== override.state.fileId) {
+        return override.state;
+    }
+    // Props догнали (или файл сменили где-то ещё) - дальше верим серверу.
+    titlePageOverrides.delete(r.id);
+    return fromProps;
 }
 
 function IconAction({

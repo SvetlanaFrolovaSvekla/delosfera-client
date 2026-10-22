@@ -50,6 +50,12 @@ export function SignatureCard({vndId, signature, locale}: {
                         ? t("vndAuthenticity.signatureState.signed_this_text")
                         : t("vndAuthenticity.signatureState.signed_other_text")}
                 </span>
+                {signature.isSystem && (
+                    <span className="inline-block rounded-[8px] border border-[#bfe3dd] bg-[#eef8f6] px-2 py-0.5 text-[11px] font-semibold text-[#0f5e5a]"
+                          title={t("ecp.journal.systemHint")}>
+                        {t("ecp.journal.system")}
+                    </span>
+                )}
                 <div className="flex flex-wrap gap-1.5">
                     <Tooltip content={t("vndAuthenticity.verifyHelp")}>
                         <button type="button" onClick={() => void verify()} disabled={verifying}
@@ -82,7 +88,9 @@ export function SignatureCard({vndId, signature, locale}: {
                     {signature.stageTitle && <div className="text-[11px] text-[#8b97ab]">{signature.stageTitle}</div>}
                 </Field>
                 <Field label={t("vndAuthenticity.fields.certificate")}>
-                    {signature.verified ? t("ecp.journal.verified") : t("ecp.journal.notVerified")}
+                    {signature.isSystem
+                        ? t("ecp.journal.systemVerified")
+                        : signature.verified ? t("ecp.journal.verified") : t("ecp.journal.notVerified")}
                     <div className="text-[11px] text-[#8b97ab]">
                         {[signature.organizationName,
                             signature.certIssuerCommonName && t("ecp.journal.issuer", {name: signature.certIssuerCommonName}),

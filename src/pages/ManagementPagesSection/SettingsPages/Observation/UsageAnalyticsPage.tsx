@@ -12,7 +12,7 @@
 import {useEffect, useMemo, useState} from "react";
 import {useTranslation} from "react-i18next";
 import {
-    usageReport, downloadUsageCsv, PERIODS, type UsageReport,
+    usageReport, downloadUsageCsv, PERIODS, type UsageReport, type UsageEmployee,
 } from "@/service/usageService/usageService.ts";
 import {toast} from "@/service/toastService.ts";
 
@@ -27,8 +27,38 @@ import {EmptyState} from "@/components/componentsGeneral/emptyPanel/EmptyState.t
 import {DataTable, FilterChip} from "@/components/componentsGeneral/DataTable.tsx";
 import {Download} from "lucide-react";
 import {SearchBar} from "@/components/componentsGeneral/SearchBar.tsx";
+import {SelectDropdown} from "@/components/componentsGeneral/selects/SingleSelects/SelectDropdown.tsx";
+import {splitSearchTerms} from "@/utils/highlightText.tsx";
 
 type Filter = "all" | "visited" | "never";
+
+/**
+ * Порядок списка. По умолчанию — по числу открытий, как и раньше отдавал сервер.
+ * «Последний вход» нужен, чтобы увидеть, кто пропал: давно не заходившие уходят вниз,
+ * ни разу не заходившие — в самый конец.
+ */
+type SortKey = "opens" | "lastVisit" | "days" | "name";
+
+const SORT_OPTIONS: {value: SortKey; labelKey: string}[] = [
+    {value: "opens", labelKey: "usageAnalytics.sortOpens"},
+    {value: "lastVisit", labelKey: "usageAnalytics.sortLastVisit"},
+    {value: "days", labelKey: "usageAnalytics.sortDays"},
+    {value: "name", labelKey: "usageAnalytics.sortName"},
+];
+
+const byName = (a: UsageEmployee, b: UsageEmployee) => a.fullName.localeCompare(b.fullName, "ru");
+
+const visitTime = (e: UsageEmployee) => {
+    const time = e.lastVisit ? new Date(e.lastVisit).getTime() : NaN;
+    return Number.isNaN(time) ? -Infinity : time;
+};
+
+const COMPARATORS: Record<SortKey, (a: UsageEmployee, b: UsageEmployee) => number> = {
+    opens: (a, b) => b.opens - a.opens || byName(a, b),
+    lastVisit: (a, b) => (visitTime(b) - visitTime(a)) || byName(a, b),
+    days: (a, b) => b.days - a.days || b.opens - a.opens || byName(a, b),
+    name: byName,
+};
 
 export function UsageAnalyticsPage() {
     const {t} = useTranslation();
@@ -37,6 +67,7 @@ export function UsageAnalyticsPage() {
     const [loading, setLoading] = useState(true);
     const [filter, setFilter] = useState<Filter>("all");
     const [search, setSearch] = useState("");
+    const [sort, setSort] = useState<SortKey>("opens");
     const [saving, setSaving] = useState(false);
 
     useEffect(() => {
@@ -57,23 +88,26 @@ export function UsageAnalyticsPage() {
         };
     }, [days]);
 
+    // Слова запроса: запись подходит, если в ней есть все слова — в любом поле и порядке
+    // («иванов бухгалт» найдёт Иванова из бухгалтерии). Те же слова подсвечиваются в строках.
+    const terms = useMemo(() => splitSearchTerms(search), [search]);
+
     const employees = useMemo(() => {
         if (!report) return [];
 
-        const needle = search.trim().toLowerCase();
-
-        return report.employees.filter((e) => {
+        const filtered = report.employees.filter((e) => {
             if (filter === "visited" && e.opens === 0) return false;
             if (filter === "never" && e.opens > 0) return false;
-            if (!needle) return true;
+            if (terms.length === 0) return true;
 
             // Ищем по всему, чем человека опознают: имя, должность,
             // подразделение. Набирают обычно фамилию, но иногда отдел.
-            return `${e.fullName} ${e.position ?? ""} ${e.orgUnit ?? ""}`
-                .toLowerCase()
-                .includes(needle);
+            const haystack = `${e.fullName} ${e.position ?? ""} ${e.orgUnit ?? ""}`.toLowerCase();
+            return terms.every((term) => haystack.includes(term));
         });
-    }, [report, filter, search]);
+
+        return filtered.sort(COMPARATORS[sort]);
+    }, [report, filter, terms, sort]);
 
     const visitedCount = report?.employees.filter((e) => e.opens > 0).length ?? 0;
     const neverCount = (report?.employees.length ?? 0) - visitedCount;
@@ -149,11 +183,11 @@ export function UsageAnalyticsPage() {
                                 reached: report.summary.reached,
                                 enabled: report.summary.enabled,
                             }) /* `${report.summary.reached} из ${report.summary.enabled}` */}
-                            label={t("usageAnalytics.directoryShare") /* Охват за период */}
+                            label={t("usageAnalytics.reachedPeriod") /* Охват за период */}
                         />
                         <Figure
                             value={`${report.summary.share}%`}
-                            label={t("usageAnalytics.sectionOpens") /* Доля справочника */}
+                            label={t("usageAnalytics.directoryShare") /* Доля справочника */}
                         />
                         <Figure
                             value={report.summary.totalOpens}
@@ -204,6 +238,19 @@ export function UsageAnalyticsPage() {
                         >
                             {t("usageAnalytics.never") /* Ни разу */}
                         </FilterChip>
+
+                        <div className="ml-auto">
+                            <SelectDropdown
+                                label={t("usageAnalytics.sortLabel") /* Сортировка: */}
+                                options={SORT_OPTIONS.map((o) => ({value: o.value, label: t(o.labelKey)}))}
+                                value={sort}
+                                onChange={(v) => setSort(v as SortKey)}
+                                minWidth="220px"
+                                size="sm"
+                                className="font-semibold text-gray-500"
+                                valueClassName="font-semibold"
+                            />
+                        </div>
                     </div>
 
                     {employees.length === 0 ? (
@@ -222,7 +269,7 @@ export function UsageAnalyticsPage() {
                             ]}
                         >
                             {employees.map((e) => (
-                                <EmployeeRow key={e.userId} employee={e}/>
+                                <EmployeeRow key={e.userId} employee={e} terms={terms}/>
                             ))}
                         </DataTable>
                     )}

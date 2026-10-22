@@ -1,3 +1,4 @@
+import i18n from "i18next";
 import {apiClient} from "@/service/apiClient.ts";
 
 /**
@@ -135,15 +136,48 @@ export const infocomEcpService = {
     },
 };
 
-/** Сообщение провайдера/backend полезнее общего "Network Error". */
+/**
+ * Понятный пользователю текст ошибки ЭЦП. Порядок: сообщение провайдера/backend (например,
+ * «Неверный ПИН-код! Осталось попыток: N») → ошибка валидации → текст по HTTP-статусу.
+ * Технический текст axios («Request failed with status code 500», «Network Error») пользователю
+ * не показываем никогда — например, когда страница долго простояла открытой («уснула») и сеть,
+ * сессия или сервис ЭЦП за это время отвалились.
+ */
 export function infocomErrorText(e: unknown, запасное: string): string {
-    const body = (e as {response?: {data?: Partial<InfocomErrorBody> & {message?: string; title?: string;
-        errors?: Record<string, string[]>}}}).response?.data;
-    if (body?.errorMessage) return body.errorMessage;
-    if (body?.message) return body.message;
+    const err = e as {
+        response?: {
+            status?: number;
+            data?: unknown;
+        };
+        code?: string;
+    };
+    const raw = err.response?.data;
+    const body = raw && typeof raw === "object"
+        ? raw as Partial<InfocomErrorBody> & {message?: string; errors?: Record<string, string[]>}
+        : undefined;
+
+    const usable = (text: unknown): text is string =>
+        typeof text === "string" && text.trim() !== "" && !text.trimStart().startsWith("<")
+        // Общая заглушка ExceptionHandlingMiddleware ничего не объясняет - лучше текст по статусу.
+        && text !== "Внутренняя ошибка сервера";
+
+    if (usable(body?.errorMessage)) return body.errorMessage;
+    if (usable(body?.message)) return body.message;
     // 400 от [ApiController] (ValidationProblemDetails) — например, ПИН не из 14 цифр.
     const firstValidationError = body?.errors ? Object.values(body.errors).flat()[0] : undefined;
-    if (firstValidationError) return firstValidationError;
-    const message = (e as {message?: string}).message;
-    return message && message !== "Network Error" ? message : запасное;
+    if (usable(firstValidationError)) return firstValidationError;
+
+    const status = err.response?.status;
+    // Ответа нет вовсе: сеть пропала, компьютер просыпался, сервер перезапускался.
+    if (!err.response) {
+        return err.code === "ECONNABORTED" || err.code === "ETIMEDOUT"
+            ? i18n.t("ecp.errors.timeout")
+            : i18n.t("ecp.errors.network");
+    }
+    if (status === 401) return i18n.t("ecp.errors.sessionExpired");
+    if (status === 429) return i18n.t("ecp.errors.tooManyAttempts");
+    if (status === 504 || status === 408) return i18n.t("ecp.errors.timeout");
+    if (status === 502 || status === 503) return i18n.t("ecp.errors.unavailable");
+    if (status !== undefined && status >= 500) return i18n.t("ecp.errors.serverError");
+    return запасное;
 }

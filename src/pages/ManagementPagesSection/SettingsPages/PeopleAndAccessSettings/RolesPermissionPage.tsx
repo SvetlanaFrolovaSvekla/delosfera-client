@@ -9,6 +9,7 @@ import {CreateRoleModal, type CreateRoleData} from "@/components/componentsManag
 import {ConfirmDeleteModal} from "@/components/componentsGeneral/modal/ConfirmDeleteModal.tsx";
 import {Loader} from "@/components/componentsGeneral/Loader.tsx";
 import {SearchBar} from "@/components/componentsGeneral/SearchBar.tsx";
+import {Tooltip} from "@/components/componentsGeneral/tooltips/Tooltip.tsx";
 import {HighlightText} from "@/utils/highlightText.tsx";
 import {Check, Lock, Pencil, Plus, Shield, Trash2, User as UserIcon} from "lucide-react";
 
@@ -245,6 +246,42 @@ export function RolesPermissionPage() {
         );
     }
 
+    // Кнопки «Отмена» / «Сохранить» — и над списком прав, и под ним: список длинный,
+    // и листать к кнопкам в любую сторону неудобно.
+    const renderSaveBar = (position: "top" | "bottom") => (
+        <div className={`flex items-center justify-end gap-2.5 px-[22px] py-3 bg-[#fbfcfe] ${position === "top" ? "border-b" : "border-t"} border-[#eef2f7]`}>
+            {isDirty && (
+                <span className="mr-auto text-[12px] text-[#b3701e]">Есть несохранённые изменения</span>
+            )}
+            {justSaved && !isDirty && (
+                <span
+                    className="inline-flex items-center gap-[7px] h-9 px-2 text-[#1c7a4d] font-semibold text-[12.5px]">
+                    <Check className="w-4 h-4" strokeWidth={2.2}/>
+                    {/* "Сохранено" */}
+                    {t("rolesPermissions.saved")}
+                </span>
+            )}
+            <button
+                type="button"
+                onClick={handleCancel}
+                disabled={!isDirty || saving}
+                className="h-9 px-4 rounded-[10px] border border-[#e5e9f0] bg-white text-[#55617a] font-semibold text-[13px] cursor-pointer hover:bg-[#f6f8fb] disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+                {/* "Отмена" */}
+                {t("rolesPermissions.cancel")}
+            </button>
+            <button
+                type="button"
+                onClick={() => void handleSave()}
+                disabled={saving || !isDirty}
+                className="h-9 px-[18px] rounded-[10px] border-none bg-[#4e57d6] text-white font-semibold text-[13px] cursor-pointer shadow-[0_6px_16px_-6px_#4e57d6] hover:brightness-[1.06] disabled:opacity-60 disabled:cursor-not-allowed"
+            >
+                {/* saving ? "Сохранение…" : "Сохранить изменения" */}
+                {saving ? t("rolesPermissions.saving") : t("rolesPermissions.saveChanges")}
+            </button>
+        </div>
+    );
+
     return (
         <div className="w-full max-w-[1700px] mx-auto px-4 sm:px-6 lg:px-8 xl:px-10 pt-5 sm:pt-[26px] pb-10 sm:pb-[60px]">
             <div className="flex items-end justify-between gap-5 flex-wrap  mb-5">
@@ -359,58 +396,33 @@ export function RolesPermissionPage() {
                                     {t("rolesPermissions.permissionsEnabled")}{" "}
                                     <b className="font-mono text-[#4e57d6]">{checkedCodes.size}</b>
                                 </span>
-                                <button
-                                    type="button"
-                                    onClick={() => setIsEditModalOpen(true)}
-                                    title="Изменить название роли"
-                                    className="w-8 h-8 grid place-items-center rounded-[9px] bg-[#ececfc] text-[#4e57d6] cursor-pointer hover:bg-[#dcdefa]"
+                                <Tooltip content="Изменить название роли">
+                                    <button
+                                        type="button"
+                                        onClick={() => setIsEditModalOpen(true)}
+                                        aria-label="Изменить название роли"
+                                        className="w-8 h-8 grid place-items-center rounded-[9px] bg-[#ececfc] text-[#4e57d6] cursor-pointer hover:bg-[#dcdefa]"
+                                    >
+                                        <Pencil className="w-[14px] h-[14px]" strokeWidth={2}/>
+                                    </button>
+                                </Tooltip>
+                                <Tooltip
+                                    content={selectedRole.isSystem ? "Системную роль удалить нельзя" : "Удалить роль"}
                                 >
-                                    <Pencil className="w-[14px] h-[14px]" strokeWidth={2}/>
-                                </button>
-                                <button
-                                    type="button"
-                                    disabled={selectedRole.isSystem}
-                                    onClick={() => { setDeleteError(null); setDeleteOpen(true); }}
-                                    title={selectedRole.isSystem ? "Системную роль удалить нельзя" : "Удалить роль"}
-                                    className="w-8 h-8 grid place-items-center rounded-[9px] bg-[#fdeceb] text-[#c0392b] cursor-pointer hover:bg-[#fad9d7] disabled:opacity-40 disabled:cursor-not-allowed"
-                                >
-                                    <Trash2 className="w-[14px] h-[14px]" strokeWidth={2}/>
-                                </button>
+                                    <button
+                                        type="button"
+                                        disabled={selectedRole.isSystem}
+                                        onClick={() => { setDeleteError(null); setDeleteOpen(true); }}
+                                        aria-label="Удалить роль"
+                                        className="w-8 h-8 grid place-items-center rounded-[9px] bg-[#fdeceb] text-[#c0392b] cursor-pointer hover:bg-[#fad9d7] disabled:opacity-40 disabled:cursor-not-allowed"
+                                    >
+                                        <Trash2 className="w-[14px] h-[14px]" strokeWidth={2}/>
+                                    </button>
+                                </Tooltip>
                             </div>
                         </div>
 
-                        {/* Кнопки сохранения — над поиском, чтобы не листать длинный список прав вниз. */}
-                        <div className="flex items-center justify-end gap-2.5 px-[22px] py-3 border-b border-[#eef2f7] bg-[#fbfcfe]">
-                            {isDirty && (
-                                <span className="mr-auto text-[12px] text-[#b3701e]">Есть несохранённые изменения</span>
-                            )}
-                            {justSaved && !isDirty && (
-                                <span
-                                    className="inline-flex items-center gap-[7px] h-9 px-2 text-[#1c7a4d] font-semibold text-[12.5px]">
-                                    <Check className="w-4 h-4" strokeWidth={2.2}/>
-                                    {/* "Сохранено" */}
-                                    {t("rolesPermissions.saved")}
-                                </span>
-                            )}
-                            <button
-                                type="button"
-                                onClick={handleCancel}
-                                disabled={!isDirty || saving}
-                                className="h-9 px-4 rounded-[10px] border border-[#e5e9f0] bg-white text-[#55617a] font-semibold text-[13px] cursor-pointer hover:bg-[#f6f8fb] disabled:opacity-50 disabled:cursor-not-allowed"
-                            >
-                                {/* "Отмена" */}
-                                {t("rolesPermissions.cancel")}
-                            </button>
-                            <button
-                                type="button"
-                                onClick={() => void handleSave()}
-                                disabled={saving || !isDirty}
-                                className="h-9 px-[18px] rounded-[10px] border-none bg-[#4e57d6] text-white font-semibold text-[13px] cursor-pointer shadow-[0_6px_16px_-6px_#4e57d6] hover:brightness-[1.06] disabled:opacity-60 disabled:cursor-not-allowed"
-                            >
-                                {/* saving ? "Сохранение…" : "Сохранить изменения" */}
-                                {saving ? t("rolesPermissions.saving") : t("rolesPermissions.saveChanges")}
-                            </button>
-                        </div>
+                        {renderSaveBar("top")}
 
                         <div className="px-[22px] py-3 border-b border-[#eef2f7]">
                             <SearchBar
@@ -461,6 +473,7 @@ export function RolesPermissionPage() {
                             })}
                         </div>
 
+                        {renderSaveBar("bottom")}
                     </div>
                 )}
             </div>

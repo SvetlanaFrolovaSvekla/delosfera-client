@@ -2,7 +2,7 @@
 import {useMemo, useRef, useState} from "react";
 import {useTranslation} from "react-i18next";
 import {useAuth} from "@/context/AuthContext.ts";
-import type {ApprovalQuoteItem} from "@/service/coordinationService/coordinationServiceTypes.ts";
+import type {ApprovalProcessResponse, ApprovalQuoteItem} from "@/service/coordinationService/coordinationServiceTypes.ts";
 import type {VndRedactionResponse, VndResponse} from "@/service/vndService/vndServiceType.ts";
 import {toast} from "@/service/toastService.ts";
 import {PermissionCode} from "@/constants/permissions/permissions.ts";
@@ -60,6 +60,18 @@ interface VndCoordinationTabProps {
 // Первичное согласование, Согласование после внесённых изменений, Согласование после внесённых изменений, Доработка документа после правок
 // * approved - согласовано, rejected - отклонено;
 const CANCELLABLE_PHASE = ["primary", "repeated", "final_hold", "revision_needed"];
+
+/** Ключ перезагрузки журнала подписей. Одного process.updatedAt мало: резолюция согласующего
+ * меняет только его этап, а не процесс, - журнал не перечитывался, и новая подпись (ЭЦП или
+ * подпись системы «Делосфера») появлялась лишь после обновления страницы. Поэтому в ключ входят и
+ * моменты решений по всем этапам. */
+function signaturesRefreshKey(process: ApprovalProcessResponse): string {
+    return [
+        process.updatedAt,
+        ...process.stages.map((s) =>
+            `${s.id}:${s.primaryDecidedAt ?? ""}:${s.repeatDecidedAt ?? ""}:${s.finalHoldDecidedAt ?? ""}`),
+    ].join("|");
+}
 
 export function VndCoordinationTab({vnd, onVndChanged}: VndCoordinationTabProps) {
     const {t} = useTranslation();
@@ -316,7 +328,8 @@ export function VndCoordinationTab({vnd, onVndChanged}: VndCoordinationTabProps)
         ecpSignature?: ResolutionEcpSignature,
         withoutEcp?: boolean,
         testEcp?: boolean,
-    ) => resolutionDecision.submit(myStage, choice, comment, files, quotes, ecpSignature, withoutEcp, testEcp);
+        systemSign?: {hash: string | null},
+    ) => resolutionDecision.submit(myStage, choice, comment, files, quotes, ecpSignature, withoutEcp, testEcp, systemSign);
 
     // Конфиг шапки над установленным маршрутом
     const routeHeaderConfig = getRouteHeaderConfig(process.status, isInitiator, t);
@@ -462,7 +475,7 @@ export function VndCoordinationTab({vnd, onVndChanged}: VndCoordinationTabProps)
                 )}
 
                 <VndApprovalSheetCard vndId={vnd.id} processId={process.id} redactionCode={redaction?.code ?? vnd.code}/>
-                <VndSignatureJournal vndId={vnd.id} refreshKey={process.updatedAt}
+                <VndSignatureJournal vndId={vnd.id} refreshKey={signaturesRefreshKey(process)}
                                      currentProcessId={process.id} currentRedactionId={process.redactionId}/>
 
                 {sharedModals}
@@ -573,7 +586,7 @@ export function VndCoordinationTab({vnd, onVndChanged}: VndCoordinationTabProps)
             )}
 
             <VndApprovalSheetCard vndId={vnd.id} processId={process.id} redactionCode={redaction?.code ?? vnd.code}/>
-            <VndSignatureJournal vndId={vnd.id} refreshKey={process.updatedAt}
+            <VndSignatureJournal vndId={vnd.id} refreshKey={signaturesRefreshKey(process)}
                                      currentProcessId={process.id} currentRedactionId={process.redactionId}/>
 
             {sharedModals}

@@ -413,7 +413,13 @@
     "columnOrgUnit": "Department",
     "columnDaysVisited": "Days with visits",
     "columnOpens": "Opens",
-    "columnLastLogin": "Last login"
+    "columnLastLogin": "Last login",
+    "reachedPeriod": "Reach for the period",
+    "sortLabel": "Sort:",
+    "sortOpens": "By opens",
+    "sortLastVisit": "By last login",
+    "sortDays": "By days with visits",
+    "sortName": "By name (A–Z)"
   },
   "management": {
     "title": "Management",
@@ -651,16 +657,16 @@
   },
   "attachmentPreview": {
     "title": "Attachment preview",
-    "pageCount": "pages: {count}",
+    "pageCount": "pages: {{count}}",
     "download": "Download document",
     "loading": "Loading document…",
     "downloadForAccuracy": "For an exact view of the document, download it using the button above.",
     "warningXlsx": "Simplified table preview: formatting, formulas, and merged cells are not reproduced.",
     "warningPptx": "Approximate slide rendering: SmartArt, 3D objects, animations, and some design effects are not reproduced.",
     "warningPdf": "PDF preview without interactive elements: fillable fields, digital signature verification, embedded files, and bookmarks are unavailable.",
-    "slideLabel": "Slide {index}",
+    "slideLabel": "Slide {{index}}",
     "slideRenderFailed": "Failed to display this slide",
-    "slideRendering": "Rendering slide {current} of {total}…"
+    "slideRendering": "Rendering slide {{current}} of {{total}}…"
   },
   "tidDeveloperPickerModal": {
     "title": "Select developer",
@@ -1020,6 +1026,31 @@
       "approve": "Approve · test e-sign",
       "approveWithComment": "With comments · test e-sign",
       "reject": "Reject · test e-sign"
+    },
+    "systemLabel": {
+      "approve": "Approve (system signature)",
+      "approveWithComment": "Approve with comments (system signature)",
+      "reject": "Reject (system signature)"
+    },
+    "systemSign": {
+      "banner": "You may sign without a Kyrgyz e-signature: your decisions are signed by the Delosfera system (local signature, not via Tunduk). A confirmation window will appear before sending.",
+      "unavailable": "You may sign without a Kyrgyz e-signature, but the Delosfera system signature is not configured on the server — contact the administrator.",
+      "title": {
+        "approve": "Approve with the system signature?",
+        "approveWithComment": "Approve with comments using the system signature?",
+        "reject": "Reject with the system signature?"
+      },
+      "message": "The resolution will be signed without a Kyrgyz Republic e-signature.",
+      "noticeTitle": "Because you have the \"Sign without a Kyrgyz e-signature\" permission, you are signing without a Kyrgyz e-signature.",
+      "notice": "The stamp on the approval sheet and other documents will come from the Delosfera system — \"Signed by the Delosfera system\". The signature journal and the activity log will record that the document was signed not via Tunduk (Infocom) but with the system's local signature.",
+      "hashLabel": "Hash of the resolution being signed (SHA-256)",
+      "hashLoading": "Computing the hash…",
+      "hashError": "Could not get the resolution hash — please try again",
+      "confirm": {
+        "approve": "Sign and approve",
+        "approveWithComment": "Sign and send comments",
+        "reject": "Sign and reject"
+      }
     },
     "hints": {
       "primary": {
@@ -4812,6 +4843,14 @@
     "toggleError": "Failed to update favorites"
   },
   "ecp": {
+    "errors": {
+      "network": "No connection to the server. Check your internet connection and press “Next” again.",
+      "sessionExpired": "Your session expired while this window was open. Refresh the page and sign in again.",
+      "tooManyAttempts": "Too many attempts in a row. Wait a minute and try again.",
+      "unavailable": "The e-signature service is currently unavailable. Wait a minute and try again.",
+      "timeout": "The e-signature service did not respond in time. Please try again.",
+      "serverError": "The e-signature service returned an error. Try again in a minute; if it keeps happening, contact your administrator."
+    },
     "identity": {
       "pin": "PIN",
       "pinHint": "Personal identification number — 14 digits",
@@ -4900,6 +4939,9 @@
       "notVerified": "Signature not confirmed",
       "test": "TEST · e-signature imitation",
       "testHint": "Test imitation: the signature was neither applied nor verified by Infocom",
+      "system": "Delosfera system signature",
+      "systemHint": "Employee without a Kyrgyz e-signature: the resolution is signed with the Delosfera local system signature, not via Tunduk / Infocom",
+      "systemVerified": "Local system signature (no Kyrgyz e-signature)",
       "issuer": "Issuer: {{name}}",
       "certUntil": "Certificate until {{date}}",
       "verify": "Verify",

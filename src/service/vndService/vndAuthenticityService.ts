@@ -32,6 +32,8 @@ export interface VndAuthenticitySignature {
     signedAt: string;
     cmsSigningTime: string | null;
     verified: boolean;
+    /** Локальная подпись системы «Делосфера» (сотрудник без ЭЦП КР), а не ЭЦП ГП «Инфоком» / Түндүк. */
+    isSystem?: boolean;
     hashSchemaVersion: string;
     hash: string;
     contentDigest: string;

@@ -70,9 +70,11 @@ export const ecpCredentialService = {
 
     /** Тестовый режим сервера: разрешены ли решения без ЭЦП (EcpSigning:AllowWithoutEcp). */
     /** Тестовые режимы сервера: allowWithoutEcp - решения ВНД без ЭЦП (EcpSigning:AllowWithoutEcp),
-     * allowVndTestEcp - имитация ЭЦП при согласовании ВНД (EcpSigning:AllowVndTestEcp). */
-    async testMode(): Promise<{allowWithoutEcp: boolean; allowVndTestEcp?: boolean}> {
-        const {data} = await apiClient.get<{allowWithoutEcp: boolean; allowVndTestEcp?: boolean}>("/signing/ecp-credential/test-mode");
+     * allowVndTestEcp - имитация ЭЦП при согласовании ВНД (EcpSigning:AllowVndTestEcp),
+     * systemSealConfigured - на сервере задан ключ локальной подписи системы «Делосфера»
+     * (SystemSeal:HmacKey; нужна сотрудникам без ЭЦП КР с правом SignWithoutNationalEcp). */
+    async testMode(): Promise<{allowWithoutEcp: boolean; allowVndTestEcp?: boolean; systemSealConfigured?: boolean}> {
+        const {data} = await apiClient.get<{allowWithoutEcp: boolean; allowVndTestEcp?: boolean; systemSealConfigured?: boolean}>("/signing/ecp-credential/test-mode");
         return data;
     },
 };

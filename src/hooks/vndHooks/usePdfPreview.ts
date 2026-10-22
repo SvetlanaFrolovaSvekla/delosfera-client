@@ -204,7 +204,7 @@ export function usePdfPreview(
                 ]);
                 if (cancelled) return;
 
-                pdfjs.GlobalWorkerOptions.workerSrc = workerUrl;
+                pdfjs.GlobalWorkerOptions.workerSrc = `${workerUrl}?v=2`;
                 const assetsBase = `${import.meta.env.BASE_URL}assets/pdfjs-${pdfjs.version}/`;
 
                 const loadingTask = pdfjs.getDocument({

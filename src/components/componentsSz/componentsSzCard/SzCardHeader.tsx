@@ -46,7 +46,7 @@ export function SzCardHeader({card, onToggleWithdraw, onToggleForce}: SzCardHead
     const [confirmRegister, setConfirmRegister] = useState(false);
     const [confirmCorrect, setConfirmCorrect] = useState(false);
     const {sz, isNew, isAuthor, canEditAny, canWithdrawAny, editable, saving, canForceStatus, canRegister, save, runAction} = card;
-    // Сколько виз уже собрано в текущем круге — от этого зависит предупреждение.
+    // Сколько подписей уже собрано в текущем круге — от этого зависит предупреждение.
     const visas = card.route?.steps.reduce((n, s) => n + s.participants.filter((p) => p.resolution).length, 0) ?? 0;
 
     const tone = sz ? STATUS_TONE[sz.statusCode] ?? colors.status.draft : colors.status.draft;

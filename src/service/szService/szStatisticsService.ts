@@ -35,6 +35,28 @@ export interface SzStatisticsFilter {
 
 const BASE = "/sz/statistics";
 
+/**
+ * Имя файла из Content-Disposition. ASP.NET для кириллицы отдаёт два параметра:
+ * filename="____ __ ....xlsx" (ASCII-заглушка) и filename*=UTF-8''%D0%90... (настоящее имя).
+ * Сначала берём filename*, и только если его нет — обычный filename.
+ */
+function fileNameFrom(header: string | undefined, fallback: string): string {
+    if (!header) return fallback;
+
+    const encoded = /filename\*\s*=\s*(?:UTF-8|utf-8)?'[^']*'([^;]+)/i.exec(header)?.[1];
+    if (encoded) {
+        try {
+            return decodeURIComponent(encoded.trim().replace(/^"|"$/g, ""));
+        } catch {
+            /* битая кодировка — пробуем обычный filename ниже */
+        }
+    }
+
+    const plain = /filename\s*=\s*"?([^";]+)"?/i.exec(header)?.[1]?.trim();
+    // Подчёркивания подряд — это ASCII-заглушка вместо кириллицы, она пользователю не нужна.
+    return plain && !plain.includes("__") ? plain : fallback;
+}
+
 export const szStatisticsService = {
     async get(filter: SzStatisticsFilter): Promise<SzStatistics> {
         const {data} = await apiClient.get<SzStatistics>(BASE, {params: filter});
@@ -48,14 +70,17 @@ export const szStatisticsService = {
     async export(filter: SzStatisticsFilter): Promise<void> {
         const response = await apiClient.get(`${BASE}/export`, {params: filter, responseType: "blob"});
 
-        const имя = (response.headers as Record<string, string>)["content-disposition"]
-            ?.match(/filename\*?=(?:UTF-8'')?"?([^";]+)"?/i)?.[1];
-
         const url = URL.createObjectURL(response.data as Blob);
         const link = document.createElement("a");
         link.href = url;
-        link.download = имя ? decodeURIComponent(имя) : "Статистика служебных записок.xlsx";
+        link.download = fileNameFrom(
+            (response.headers as Record<string, string>)["content-disposition"],
+            "Аналитика служебных записок.xlsx",
+        );
+        document.body.appendChild(link);
         link.click();
-        URL.revokeObjectURL(url);
+        link.remove();
+        // Отзываем ссылку не сразу: иначе часть браузеров не успевает начать скачивание.
+        setTimeout(() => URL.revokeObjectURL(url), 1000);
     },
 };

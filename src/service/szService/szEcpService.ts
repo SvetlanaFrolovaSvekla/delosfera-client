@@ -37,6 +37,8 @@ export interface SzResolutionSignature {
     verified: boolean;
     /** Тестовая имитация ЭЦП — не подпись. */
     isTest: boolean;
+    /** Комментарий к резолюции (вошёл в подписанный хэш). */
+    comment?: string | null;
 }
 
 /** Результат повторной проверки — тот же формат, что у ВНД. */

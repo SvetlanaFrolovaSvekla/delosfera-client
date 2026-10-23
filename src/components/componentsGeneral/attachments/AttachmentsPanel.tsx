@@ -50,6 +50,9 @@ interface Props {
 
     /** Предел числа вложений в карточке. Не задан — без ограничения. Сервер проверяет его ещё раз. */
     maxFiles?: number;
+
+    /** Вызывается после изменения состава вложений (загрузка, удаление). */
+    onChanged?: () => void;
 }
 
 function extensionOf(name: string): string {
@@ -62,7 +65,7 @@ function allowedFile(file: File): boolean {
 }
 
 export function AttachmentsPanel({
-                                     documentId, editable, title, hint, pending, onPendingChange, maxFiles,
+                                     documentId, editable, title, hint, pending, onPendingChange, maxFiles, onChanged,
                                  }: Props) {
     const {t} = useTranslation();
     const panelTitle = title ?? t("attachments.title");
@@ -144,6 +147,7 @@ export function AttachmentsPanel({
             // запросов ничего не ускоряет, зато мешает показать, какой файл не прошёл.
             for (const file of files) await attachmentService.upload(documentId, file);
             reload();
+            onChanged?.();
         } catch (e) {
             // Сервер отказывает по существу — формат, размер, несоответствие
             // содержимого расширению. Общее «не удалось», скрыло бы причину, и
@@ -212,6 +216,7 @@ export function AttachmentsPanel({
         try {
             await attachmentService.remove(attachment.id);
             reload();
+            onChanged?.();
         } catch {
             setError(t("attachments.errorRemove")); // Не удалось удалить вложение
         } finally {

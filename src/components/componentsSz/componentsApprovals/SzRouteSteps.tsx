@@ -1,6 +1,6 @@
 // Подробный список этапов маршрута: участник, его решение, комментарий и компактный значок подписи.
 // Подробности подписи (хэш, сертификат, проверка у провайдера) — в журнале подписей ниже.
-import {AlertTriangle, ShieldCheck} from "lucide-react";
+import {AlertTriangle, ShieldCheck, X} from "lucide-react";
 import {useTranslation} from "react-i18next";
 import type {RouteInstance, RouteParticipant} from "@/service/workflowService/workflowService.ts";
 import type {SzResolutionSignature} from "@/service/szService/szEcpService.ts";
@@ -11,6 +11,8 @@ interface SzRouteStepsProps {
     users: Record<number, string>;
     /** Подписи ЭЦП по участникам маршрута (routeParticipantId → запись журнала). */
     ecpByParticipant?: ReadonlyMap<number, SzResolutionSignature>;
+    /** Убрать участника, ещё не вынесшего решение (право CorrectSzOnApproval). Не задан — кнопки нет. */
+    onRemove?: (participant: RouteParticipant) => void;
 }
 
 /** Цвет решения/состояния — пилюля справа от ФИО. */
@@ -29,7 +31,7 @@ function initials(name: string): string {
     return ((parts[0]?.[0] ?? "") + (parts[1]?.[0] ?? "")).toUpperCase() || "—";
 }
 
-export function SzRouteSteps({route, users, ecpByParticipant}: SzRouteStepsProps) {
+export function SzRouteSteps({route, users, ecpByParticipant, onRemove}: SzRouteStepsProps) {
     const {t} = useTranslation();
 
     const nameOf = (p: RouteParticipant) =>
@@ -62,15 +64,25 @@ export function SzRouteSteps({route, users, ecpByParticipant}: SzRouteStepsProps
                                     <div className="min-w-0 flex-1">
                                         <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1">
                                             <span className="text-[13px] font-medium text-[#1c2740]">{name}</span>
-                                            <span className={`rounded-full px-2.5 py-[2px] text-[11.5px] font-semibold ${statusTone(p)}`}>
-                                                {p.resolution
-                                                    ? t(`szCard.resolution.${p.resolution.type}`)
-                                                    : t(`szCard.participantState.${p.state}`)}
+                                            <span className="inline-flex items-center gap-1.5">
+                                                <span className={`rounded-full px-2.5 py-[2px] text-[11.5px] font-semibold ${statusTone(p)}`}>
+                                                    {p.resolution
+                                                        ? t(`szCard.resolution.${p.resolution.type}`)
+                                                        : t(`szCard.participantState.${p.state}`)}
+                                                </span>
+                                                {onRemove && !p.resolution && (p.state === "Pending" || p.state === "Active") && (
+                                                    <button type="button" onClick={() => onRemove(p)}
+                                                            title={t("szCard.correction.removeParticipant")}
+                                                            aria-label={t("szCard.correction.removeParticipant")}
+                                                            className="grid h-6 w-6 cursor-pointer place-items-center rounded-[6px] border-none bg-transparent text-[#a3adbd] hover:bg-[#fbeae7] hover:text-[#c0392b]">
+                                                        <X size={14}/>
+                                                    </button>
+                                                )}
                                             </span>
                                         </div>
 
                                         {p.resolution?.comment && (
-                                            <div className="mt-1.5 border-l-2 border-[#e5e9f0] pl-2.5 text-[12.5px] leading-[1.55] text-[#55617a]">
+                                            <div className="mt-1.5 whitespace-pre-line break-words border-l-2 border-[#e5e9f0] pl-2.5 text-[12.5px] font-normal leading-[1.55] text-[#55617a]">
                                                 {p.resolution.comment}
                                             </div>
                                         )}

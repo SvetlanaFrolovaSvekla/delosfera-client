@@ -23,7 +23,7 @@ import {ReadOnlyField} from "@/components/componentsGeneral/readOnlySelects/Read
 import {AttachmentsPanel} from "@/components/componentsGeneral/attachments/AttachmentsPanel.tsx";
 
 /** Сколько файлов можно приложить к одной записке (сервер проверяет тот же предел). */
-const MAX_ATTACHMENTS = 10;
+const MAX_ATTACHMENTS = 20;
 
 interface SzMainFormProps {
     card: SzCardState;
@@ -261,6 +261,7 @@ export function SzMainForm({card, userList}: SzMainFormProps) {
                 hint={t("szCard.fields.attachmentsHint")}
                 pending={isNew ? pendingFiles : undefined}
                 onPendingChange={isNew ? setPendingFiles : undefined}
+                onChanged={card.onAttachmentsChanged}
             />
 
             {/* Рубрикатор */}

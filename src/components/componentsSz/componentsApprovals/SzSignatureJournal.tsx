@@ -90,6 +90,13 @@ export function SzSignatureJournal({szId, items, loadError}: SzSignatureJournalP
                                 {t(`szCard.resolution.${item.decision}`)}
                             </span>
                         </div>
+                        {/* Комментарий к резолюции — сразу под решением, обычным шрифтом. */}
+                        {item.comment && (
+                            <div className={`my-1 whitespace-pre-line break-words border-l-2 border-[#e5e9f0] pl-2.5 text-[12px] font-normal leading-[1.5] ${
+                                isStale ? "text-[#a3adbd]" : "text-[#55617a]"}`}>
+                                {item.comment}
+                            </div>
+                        )}
                         <div className="text-[11.5px] text-[#8b97ab]">
                             {item.isTest
                                 ? t("szCard.signature.testNotVerified")

@@ -115,6 +115,8 @@ export interface SubstitutionAccess {
     canDelete: boolean;
     /** Отметить «Исполнено» вручную — даже если документы не подписаны. */
     canExecute: boolean;
+    /** Корректировать на согласовании/подписании (право CorrectSubstitution или УЧР). */
+    canCorrect?: boolean;
 }
 
 /* ---------- Этап «На подписании»: ЭЦП ГП «Инфоком» под приказом и договором ---------- */

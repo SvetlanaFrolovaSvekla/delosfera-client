@@ -722,6 +722,11 @@ function buildDocumentXml(form: SzPrintForm, mode: SzPrintMode, logo: LogoImage 
                     para(a.resolution
                         ? run(PRINT_RESOLUTION_LABEL[a.resolution] ?? a.resolution, {size: 9, b: true})
                         : run("Ожидает решения", {size: 9, color: LIGHT_GREY})),
+                    // Комментарий к резолюции — под решением, обычным шрифтом.
+                    ...(a.resolution && a.comment?.trim()
+                        ? a.comment.trim().split(/\r?\n/).map((line, li) =>
+                            para(run(line, {size: 8, color: GREY}), li === 0 ? {before: 40} : {}))
+                        : []),
                 ], 3),
                 cell(a.resolvedAt
                     ? [para(run(formatPrintDate(a.resolvedAt), small)), para(run(formatPrintTime(a.resolvedAt), {size: 8, color: LIGHT_GREY}))]

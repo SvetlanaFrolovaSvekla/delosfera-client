@@ -144,6 +144,9 @@ export function SzCardPage() {
                     approval={approval}
                     currentUserId={user?.id}
                     saving={saving}
+                    canEditRoute={card.canCorrectOnApproval}
+                    people={userList}
+                    onRouteChanged={card.reload}
                 />
             )}
 

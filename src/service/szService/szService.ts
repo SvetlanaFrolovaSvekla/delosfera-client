@@ -411,6 +411,18 @@ export const szService = {
     },
 
     /** Отправить записку на регистрацию делопроизводством. */
+    /** Добавить согласующего в идущий маршрут (право CorrectSzOnApproval). */
+    async addRouteParticipant(id: number, userId: number, beforeStepOrder?: number): Promise<SzDetails> {
+        const {data} = await apiClient.post<SzDetails>(`${BASE}/${id}/route/participants`, {userId, beforeStepOrder});
+        return data;
+    },
+
+    /** Убрать из маршрута участника, ещё не вынесшего решение (право CorrectSzOnApproval). */
+    async removeRouteParticipant(id: number, participantId: number): Promise<SzDetails> {
+        const {data} = await apiClient.delete<SzDetails>(`${BASE}/${id}/route/participants/${participantId}`);
+        return data;
+    },
+
     async submit(id: number): Promise<SzDetails> {
         const {data} = await apiClient.post<SzDetails>(`${BASE}/${id}/submit`);
         return data;

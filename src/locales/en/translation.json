@@ -5718,6 +5718,7 @@
       "approval": "Memos I approve",
       "pending": "Awaiting registration",
       "signing": "Awaiting signature",
+      "executed": "Executed",
       "archive": "Archive",
       "favorites": "Favorites"
     },
@@ -5916,6 +5917,14 @@
     }
   },
   "substitutionCard": {
+    "correction": {
+      "start": "Correct",
+      "cancel": "Cancel correction",
+      "confirmTitle": "Correcting a substitution request",
+      "confirmWithVisas": "The request is already partially approved ({{count}} approvals). If you save changes, approval restarts from stage 1: previous approvals become invalid, the order and contract are reissued and their signatures become outdated.",
+      "confirmNoVisas": "The request is under approval with no approvals yet. The order and contract will be reissued as a new version; the route continues as is.",
+      "confirmSigning": "The request is being signed. After saving, the order and contract are reissued as a new version: those who already signed will be asked to sign again."
+    },
     "routeNoteTitle": "The request was sent with an incomplete route",
     "printFrozenHint": "Documents open in the version frozen for signing: “With e-signatures” or “For handwritten signature”.",
     "printPage": {
@@ -6462,6 +6471,23 @@
     "empty": "No suppliers — add one manually above, or they will appear when commercial offers are registered"
   },
   "szCard": {
+    "correction": {
+      "start": "Correct",
+      "cancel": "Cancel correction",
+      "confirmTitle": "Correcting a memo under approval",
+      "confirmWithVisas": "The memo is already partially approved ({{count}} approvals). If you change the text, details or attachments, approval restarts from stage 1: collected approvals become invalid and every participant will have to approve again. Changes that do not affect the content do not reset approval.",
+      "confirmNoVisas": "The memo is under approval and has no approvals yet. Participants will see the corrected version; the route continues as is.",
+      "restarted": "Saved. The content changed — approval restarted from stage 1",
+      "addParticipant": "Add approver",
+      "positionDefault": "At the end (before signing)",
+      "positionBefore": "Before stage {{order}}",
+      "removeParticipant": "Remove from route",
+      "removeTitle": "Remove participant from route",
+      "removeMessage": "{{name}} will be removed from the approval route. If the task has already been assigned, it will be withdrawn and the route will move on.",
+      "participantsAdded": "Approvers added to the route: {{count}}",
+      "participantRemoved": "Participant removed from the route",
+      "routeChangeFailed": "Failed to change the route"
+    },
     "sections": {
       "main": "Main details",
       "mainHint": "Subject, type and addressee of the memo",

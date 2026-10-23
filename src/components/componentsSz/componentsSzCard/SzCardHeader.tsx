@@ -24,6 +24,7 @@ import {
     BadgeCheck,
     Download,
     FilePlus,
+    PencilLine,
     Save,
     Send,
     Trash2,
@@ -43,7 +44,10 @@ export function SzCardHeader({card, onToggleWithdraw, onToggleForce}: SzCardHead
     const [confirmDelete, setConfirmDelete] = useState(false);
     const [confirmSubmit, setConfirmSubmit] = useState(false);
     const [confirmRegister, setConfirmRegister] = useState(false);
+    const [confirmCorrect, setConfirmCorrect] = useState(false);
     const {sz, isNew, isAuthor, canEditAny, canWithdrawAny, editable, saving, canForceStatus, canRegister, save, runAction} = card;
+    // Сколько виз уже собрано в текущем круге — от этого зависит предупреждение.
+    const visas = card.route?.steps.reduce((n, s) => n + s.participants.filter((p) => p.resolution).length, 0) ?? 0;
 
     const tone = sz ? STATUS_TONE[sz.statusCode] ?? colors.status.draft : colors.status.draft;
     const canSubmit = !!sz && (isAuthor || canEditAny) && EDITABLE_STATUSES.includes(sz.statusCode);
@@ -143,6 +147,18 @@ export function SzCardHeader({card, onToggleWithdraw, onToggleForce}: SzCardHead
                             </Tooltip>
                         </>
                     )}
+                    {/* Корректировать на согласовании (право CorrectSzOnApproval) */}
+                    {card.canCorrectOnApproval && !card.correcting && (
+                        <SzButton icon={<PencilLine size={16}/>} onClick={() => setConfirmCorrect(true)} disabled={saving}>
+                            {t("szCard.correction.start")}
+                        </SzButton>
+                    )}
+                    {card.correcting && (
+                        <SzButton icon={<X size={16}/>} disabled={saving}
+                                  onClick={() => { card.setCorrecting(false); void card.reload(); }}>
+                            {t("szCard.correction.cancel")}
+                        </SzButton>
+                    )}
                     {/* Отозвать */}
                     {canWithdraw && (
                         <SzButton icon={<Undo2 size={16}/>} onClick={onToggleWithdraw} disabled={saving}>
@@ -181,6 +197,24 @@ export function SzCardHeader({card, onToggleWithdraw, onToggleForce}: SzCardHead
             </div>
 
             {/* Подтверждение отправки: на регистрацию (нет номера) или на согласование */}
+            <ConfirmActionModal
+                open={confirmCorrect}
+                onClose={() => setConfirmCorrect(false)}
+                onConfirm={async () => {
+                    card.setCorrecting(true);
+                    setConfirmCorrect(false);
+                }}
+                title={t("szCard.correction.confirmTitle")}
+                message={visas > 0
+                    ? t("szCard.correction.confirmWithVisas", {count: visas})
+                    : t("szCard.correction.confirmNoVisas")}
+                confirmLabel={t("szCard.correction.start")}
+                loadingLabel={t("szCard.correction.start")}
+                loading={saving}
+                variant="primary"
+                icon={PencilLine}
+            />
+
             <ConfirmActionModal
                 open={confirmSubmit}
                 onClose={() => setConfirmSubmit(false)}

@@ -21,14 +21,17 @@ import {SearchBar} from "@/components/componentsGeneral/SearchBar.tsx";
 import {SelectDropdown} from "@/components/componentsGeneral/selects/SingleSelects/SelectDropdown.tsx";
 import {CheckBoxOne} from "@/components/componentsGeneral/componentsCheckBox/CheckBoxOne.tsx";
 import {SavedFiltersBar} from "@/components/componentsGeneral/SavedFiltersBar.tsx";
+import {DatePickerInput} from "@/components/componentsGeneral/datePickers/DatePickerInput.tsx";
+import {displayToIso, isoToDisplay} from "@/utils/dateUtils.ts";
 import {Download, RotateCcw} from "lucide-react";
 
 const EMPTY_CELL: SzStatisticsCell = {total: 0, inWork: 0, overdue: 0, executed: 0, other: 0};
 
 const NUMBER_LOCALE: Record<string, string> = {ru: "ru-RU", en: "en-US", ky: "ky-KG"};
 
-const FOCUS = "outline-none focus:border-[#2f68f5] focus:ring-[3px] focus:ring-[#e9f0ff]";
-const DATE_FIELD = `h-9 w-[160px] rounded-[9px] border border-[#e5e9f0] bg-white px-3 text-[13px] text-[#0f1b2d] ${FOCUS}`;
+/** Даты периода в фильтре хранятся как «дд.мм.гггг» — в этом формате работает DatePickerInput;
+ * на сервер (и в сохранённые фильтры) уходит ISO «гггг-мм-дд». */
+const toDisplay = (v?: string): string => (v && /^\d{4}-\d{2}-\d{2}/.test(v) ? isoToDisplay(v) : v ?? "");
 
 /** Сервер отдаёт эти подписи русскими строками — по ним находим ключ перевода. */
 const NO_UNIT = "Без подразделения";
@@ -139,12 +142,17 @@ export function SzStatisticsPage({embedded}: {embedded?: boolean} = {}) {
     const [search, setSearch] = useState("");
     const [overdueOnly, setOverdueOnly] = useState(false);
 
+    // Пока дата набирается вручную («12.0»), она не распознаётся и в запрос не идёт —
+    // сводка перезапрашивается только когда дата введена полностью или очищена.
+    const fromIso = displayToIso(filter.from);
+    const toIso = displayToIso(filter.to);
+
     const request = useCallback(() => ({
-        from: filter.from || undefined,
-        to: filter.to || undefined,
+        from: fromIso || undefined,
+        to: toIso || undefined,
         orgUnitId: filter.orgUnitId || undefined,
         kindId: filter.kindId || undefined,
-    }), [filter]);
+    }), [fromIso, toIso, filter.orgUnitId, filter.kindId]);
 
     const load = useCallback(async () => {
         try {
@@ -276,14 +284,16 @@ export function SzStatisticsPage({embedded}: {embedded?: boolean} = {}) {
             <section className="rounded-[12px] border border-[#e5e9f0] bg-white p-4">
                 <div className="flex flex-wrap items-end gap-3">
                     <LabeledField label={t("szStatistics.filters.from")}>
-                        <input type="date" value={filter.from}
-                               onChange={(e) => setFilter({...filter, from: e.target.value})}
-                               className={DATE_FIELD}/>
+                        <div className="w-[160px]">
+                            <DatePickerInput accent="blue" value={filter.from}
+                                             onChange={(v) => setFilter(f => ({...f, from: v}))}/>
+                        </div>
                     </LabeledField>
                     <LabeledField label={t("szStatistics.filters.to")}>
-                        <input type="date" value={filter.to} min={filter.from || undefined}
-                               onChange={(e) => setFilter({...filter, to: e.target.value})}
-                               className={DATE_FIELD}/>
+                        <div className="w-[160px]">
+                            <DatePickerInput accent="blue" value={filter.to}
+                                             onChange={(v) => setFilter(f => ({...f, to: v}))}/>
+                        </div>
                     </LabeledField>
                     <LabeledField label={t("szStatistics.filters.unit")}>
                         <SelectDropdown
@@ -342,11 +352,11 @@ export function SzStatisticsPage({embedded}: {embedded?: boolean} = {}) {
                 <div className="mt-3">
                     <SavedFiltersBar
                         scope="sz-analytics"
-                        current={{...filter, search, overdueOnly}}
+                        current={{...filter, from: fromIso, to: toIso, search, overdueOnly}}
                         onApply={(p) => {
                             const f = p as Partial<Filter> & { search?: string; overdueOnly?: boolean };
                             setFilter({
-                                from: f.from ?? "", to: f.to ?? "",
+                                from: toDisplay(f.from), to: toDisplay(f.to),
                                 orgUnitId: f.orgUnitId ?? 0, kindId: f.kindId ?? 0,
                             });
                             setSearch(f.search ?? "");

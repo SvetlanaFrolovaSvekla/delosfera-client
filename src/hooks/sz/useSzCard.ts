@@ -156,11 +156,20 @@ export function useSzCard(id: string | undefined) {
     // Отозвать чужую записку — отдельное право (WithdrawAnySz): прервать маршрут,
     // чтобы поправить записку, когда автора нет на месте.
     const canWithdrawAny = isSystemAdmin || hasPermission(PermissionCode.WithdrawAnySz);
-    const editable = isNew || ((isAuthor || canEditAny) && !!sz && EDITABLE_STATUSES.includes(sz.statusCode));
+    // Корректировка на согласовании (право CorrectSzOnApproval): правка полей и вложений без
+    // отзыва — после подтверждения в модалке. Если изменится подписанное содержимое, а визы уже
+    // есть, сервер начнёт согласование заново с первого этапа.
+    const canCorrectOnApproval = !!sz && sz.statusCode === "OnApproval"
+        && hasPermission(PermissionCode.CorrectSzOnApproval);
+    const [correcting, setCorrecting] = useState(false);
+    useEffect(() => { setCorrecting(false); }, [sz?.id, sz?.statusCode]);
+    const editable = isNew
+        || ((isAuthor || canEditAny) && !!sz && EDITABLE_STATUSES.includes(sz.statusCode))
+        || (correcting && canCorrectOnApproval);
     // Согласующих, режим согласования и подписанта задаёт автор (и администратор —
     // починить маршрут): делопроизводство, правя чужую записку, меняет содержание,
     // но не круг согласующих. Сервер проверяет это же.
-    const routeEditable = isNew || ((isAuthor || isSystemAdmin) && editable);
+    const routeEditable = isNew || ((isAuthor || isSystemAdmin) && editable && !correcting);
 
     // Ручной перевод статуса — администратору системы. Записка застревает по
     // причинам вне системы: уволился согласующий, маршрут собрали не так. Без
@@ -232,6 +241,15 @@ export function useSzCard(id: string | undefined) {
             }
 
             applyDetails(saved);
+            if (correcting) {
+                // Круг перезапущен — маршрут новый: перечитываем карточку вместе с ним.
+                const restarted = saved.approvalRounds > (sz?.approvalRounds ?? 0);
+                setCorrecting(false);
+                await reload();
+                setNotice(null);
+                toast.success(t(restarted ? "szCard.correction.restarted" : "szCard.notices.saved"));
+                return saved;
+            }
             // Итог сохранения — всплывающим уведомлением, а не строкой над формой:
             // что делать с запиской дальше, подсказывает плашка статуса (SzStatusBanner).
             setNotice(null);
@@ -350,6 +368,9 @@ export function useSzCard(id: string | undefined) {
         pendingFiles, setPendingFiles, loading, saving, setSaving, error, setError, notice, setNotice,
         route, routeError, isAuthor, canEditAny, canWithdrawAny, editable, routeEditable, canForceStatus, canRegister, approversFromTemplate,
         applyKind, applyDetails, reload, save, runAction, withdraw, forceStatus,
+        canCorrectOnApproval, correcting, setCorrecting,
+        /** Вложения поменялись на согласовании — маршрут мог перезапуститься. */
+        onAttachmentsChanged: () => { if (correcting) void reload(); },
     };
 }
 

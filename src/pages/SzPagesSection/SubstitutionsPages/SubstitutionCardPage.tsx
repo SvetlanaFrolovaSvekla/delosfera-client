@@ -34,7 +34,7 @@ import {Tooltip} from "@/components/componentsGeneral/tooltips/Tooltip.tsx";
 import {colors} from "@/design/tokens.ts";
 import {
     AlertTriangle, ArrowLeft, BadgeCheck, Building2, Check, ChevronDown, Download, FilePlus, Plus, Save, Send,
-    FileSignature, FlaskConical, Trash2, Undo2, X,
+    FileSignature, FlaskConical, PencilLine, Trash2, Undo2, X,
 } from "lucide-react";
 
 const empty: SubstitutionSaveRequest = {
@@ -111,7 +111,9 @@ export function SubstitutionCardPage() {
     const [reassignReason, setReassignReason] = useState("");
     const [reassignError, setReassignError] = useState<string | null>(null);
     // Подтверждения действий из шапки — как в карточке СЗ.
-    const [confirm, setConfirm] = useState<null | "submit" | "execute" | "withdraw" | "delete" | "approve" | "reject">(null);
+    const [confirm, setConfirm] = useState<null | "submit" | "execute" | "withdraw" | "delete" | "approve" | "reject" | "correct">(null);
+    // Корректировка на согласовании/подписании — после подтверждения в модалке.
+    const [correcting, setCorrecting] = useState(false);
     // Зафиксированные документы и подписи ЭЦП — с отправки заявки (на согласовании подписывает
     // директор филиала и др. на своём этапе) и на этапе «На подписании».
     const [signing, setSigning] = useState<SubstitutionSigningState | null>(null);
@@ -213,13 +215,12 @@ export function SubstitutionCardPage() {
     // Переназначать этапы могут УЧР и администратор — как проверяет сервер.
     const canManageRoute = canManage;
 
-    // УЧР правит заявку после согласования Операционным управлением — в действующем круге.
-    // Нет этапа «Операционное управление» (пропущен — не настроен) — правит сразу.
-    const opsApproved = currentSteps.some(
-        (a) => a.roleLabel === "Операционное управление" && a.state === "Approved")
-        || (currentSteps.length > 0 && !currentSteps.some((a) => a.roleLabel === "Операционное управление"));
-    const hrCanEdit = canManage && opsApproved
+    // Корректировка (право CorrectSubstitution или УЧР) — на любом этапе, после «Корректировать».
+    const canCorrect = !!access?.canCorrect;
+    const hrCanEdit = canCorrect && correcting
         && (details?.status === "OnApproval" || details?.status === "OnExecution");
+    // Сколько согласований уже собрано в действующем круге — от этого зависит предупреждение.
+    const approvedInRound = currentSteps.filter((a) => a.state === "Approved").length;
     // Withdrawn — заявки, отозванные до того, как отзыв стал возвращать в черновик: их тоже можно
     // поправить и отправить заново.
     const ownDraft = isInitiator
@@ -255,6 +256,7 @@ export function SubstitutionCardPage() {
                 setDetails(d);
                 setForm(toForm(d));
                 setSigningReload((n) => n + 1);
+                setCorrecting(false);
                 toast.success(t("substitutionCard.toast.saved"));
             }
             return d.id;
@@ -428,6 +430,19 @@ export function SubstitutionCardPage() {
                     {!isNew && editable && (
                         <SzButton variant="primary" icon={<Save size={16}/>} onClick={() => void saveDraft()} disabled={busy}>
                             {hrCanEdit && !ownDraft ? t("substitutionCard.buttons.saveHr") : t("substitutionCard.buttons.save")}
+                        </SzButton>
+                    )}
+                    {/* Корректировать — право CorrectSubstitution или УЧР */}
+                    {details && canCorrect && !correcting
+                        && (details.status === "OnApproval" || details.status === "OnExecution") && (
+                        <SzButton icon={<PencilLine size={16}/>} onClick={() => setConfirm("correct")} disabled={busy}>
+                            {t("substitutionCard.correction.start")}
+                        </SzButton>
+                    )}
+                    {correcting && (
+                        <SzButton icon={<X size={16}/>} disabled={busy}
+                                  onClick={() => { setCorrecting(false); if (details) setForm(toForm(details)); }}>
+                            {t("substitutionCard.correction.cancel")}
                         </SzButton>
                     )}
                     {canSubmit && (
@@ -919,6 +934,22 @@ export function SubstitutionCardPage() {
             {routeSigning.modal}
 
             {/* Подтверждения действий из шапки */}
+            <ConfirmActionModal
+                open={confirm === "correct"}
+                onClose={() => setConfirm(null)}
+                onConfirm={async () => { setCorrecting(true); setConfirm(null); }}
+                title={t("substitutionCard.correction.confirmTitle")}
+                message={details?.status === "OnExecution"
+                    ? t("substitutionCard.correction.confirmSigning")
+                    : approvedInRound > 0
+                        ? t("substitutionCard.correction.confirmWithVisas", {count: approvedInRound})
+                        : t("substitutionCard.correction.confirmNoVisas")}
+                confirmLabel={t("substitutionCard.correction.start")}
+                loadingLabel={t("substitutionCard.correction.start")}
+                loading={busy}
+                variant="primary"
+                icon={PencilLine}
+            />
             <ConfirmActionModal
                 open={confirm === "approve"}
                 onClose={() => setConfirm(null)}

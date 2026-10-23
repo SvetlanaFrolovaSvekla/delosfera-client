@@ -19,6 +19,7 @@ function scopeCount(counters: SzCounters | null, id: ScopeId): number | undefine
     if (id === "pending") return counters.pendingRegistration;
     if (id === "archive") return counters.archived;
     if (id === "signing") return counters.byStatus["OnSigning"] ?? 0;
+    if (id === "executed") return counters.byStatus["Executed"] ?? 0;
     if (id === "mine") return counters.mine;
     if (id === "approval") return counters.inbox;
     if (id === "assignments") return counters.assignments;

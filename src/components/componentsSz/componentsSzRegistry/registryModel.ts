@@ -5,7 +5,7 @@ import {toDateRangeFilter} from "@/utils/dateUtils.ts";
 
 /** Вкладки реестра СЗ. */
 export type ScopeId = "all" | "inbox" | "assignments" | "originals" | "mine" | "drafts"
-    | "approval" | "pending" | "signing" | "archive" | "favorites";
+    | "approval" | "pending" | "signing" | "executed" | "archive" | "favorites";
 
 export const SCOPES: { id: ScopeId; statuses?: SzStatusCode[]; mineOnly?: boolean; favoritesOnly?: boolean }[] = [
     // Весь реестр
@@ -21,6 +21,8 @@ export const SCOPES: { id: ScopeId; statuses?: SzStatusCode[]; mineOnly?: boolea
     {id: "pending", statuses: ["PendingRegistration"]},
     // На подписании
     {id: "signing", statuses: ["OnSigning"]},
+    // Исполнены
+    {id: "executed", statuses: ["Executed"]},
     // Мои поручения
     {id: "assignments"},
     // Оригиналы на руках

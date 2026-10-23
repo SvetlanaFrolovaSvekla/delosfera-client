@@ -319,6 +319,12 @@ export function SzPrintSheet({form, mode, variant = "screen"}: SzPrintSheetProps
                                 {a.resolution
                                     ? <b>{PRINT_RESOLUTION_LABEL[a.resolution] ?? a.resolution}</b>
                                     : <span className="text-[#7A869A]">Ожидает решения</span>}
+                                {/* Комментарий к резолюции — под решением, обычным шрифтом. */}
+                                {a.resolution && a.comment && (
+                                    <div className="mt-[2px] whitespace-pre-line break-words text-[9.5px] font-normal leading-[1.35] text-[#3d4a63]">
+                                        {a.comment}
+                                    </div>
+                                )}
                             </td>
                             <td>
                                 {a.resolvedAt ? (

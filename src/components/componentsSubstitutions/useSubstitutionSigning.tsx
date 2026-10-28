@@ -26,8 +26,14 @@ export const signingErrorOf = (e: unknown) => {
 interface PlacementRequest {
     doc: SubstitutionSigningDocument;
     role: SubstitutionSignerRole;
+    /** Чьё место подписи (для дополнительных подписантов от Банка — их несколько). */
+    signerUserId: number | null;
     test: boolean;
 }
+
+/** Ключ места подписи: у дополнительных подписантов от Банка роль одна, мест несколько. */
+export const signingKey = (docId: number, role: SubstitutionSignerRole, signerUserId?: number | null) =>
+    `${docId}-${role}-${signerUserId ?? ""}`;
 
 export function useSubstitutionSigning(requestId: number, onChange: (state: SubstitutionSigningState) => void) {
     const {t} = useTranslation();
@@ -37,22 +43,23 @@ export function useSubstitutionSigning(requestId: number, onChange: (state: Subs
     const [placing, setPlacing] = useState<PlacementRequest | null>(null);
 
     /** «Подписать ЭЦП»: сначала выбрать место подписи на листе. */
-    function sign(doc: SubstitutionSigningDocument, role: SubstitutionSignerRole) {
-        setPlacing({doc, role, test: false});
+    function sign(doc: SubstitutionSigningDocument, role: SubstitutionSignerRole, signerUserId: number | null = null) {
+        setPlacing({doc, role, signerUserId, test: false});
     }
 
     /** «Тест»: тоже с выбором места — тестовая подпись встаёт там же, где встала бы настоящая. */
-    function signTest(doc: SubstitutionSigningDocument, role: SubstitutionSignerRole) {
-        setPlacing({doc, role, test: true});
+    function signTest(doc: SubstitutionSigningDocument, role: SubstitutionSignerRole, signerUserId: number | null = null) {
+        setPlacing({doc, role, signerUserId, test: true});
     }
 
-    async function signEcp(doc: SubstitutionSigningDocument, role: SubstitutionSignerRole, placement: SubstitutionSignPlacement) {
-        const key = `${doc.id}-${role}`;
+    async function signEcp(doc: SubstitutionSigningDocument, role: SubstitutionSignerRole, placement: SubstitutionSignPlacement,
+                           signerUserId: number | null) {
+        const key = signingKey(doc.id, role, signerUserId);
         let signature: ResolutionEcpSignature;
         try {
             signature = await ecp.requestSignature({
-                getHash: () => substitutionService.signingHash(requestId, doc.id, role),
-                signStored: () => substitutionService.signStored(requestId, doc.id, role),
+                getHash: () => substitutionService.signingHash(requestId, doc.id, role, signerUserId),
+                signStored: () => substitutionService.signStored(requestId, doc.id, role, signerUserId),
             });
         } catch (e) {
             if (e instanceof Error && e.message === CANCELLED) return;
@@ -62,7 +69,7 @@ export function useSubstitutionSigning(requestId: number, onChange: (state: Subs
 
         setBusyKey(key);
         try {
-            const next = await substitutionService.sign(requestId, doc.id, role, signature, placement);
+            const next = await substitutionService.sign(requestId, doc.id, role, signature, placement, signerUserId);
             onChange(next);
             toast.success(t("substitutionSigning.signed"), doc.title);
             if (next.allSigned) toast.success(t("substitutionSigning.allSigned"), t("substitutionSigning.allSignedText"));
@@ -81,10 +88,11 @@ export function useSubstitutionSigning(requestId: number, onChange: (state: Subs
         }
     }
 
-    async function signTestAt(doc: SubstitutionSigningDocument, role: SubstitutionSignerRole, placement: SubstitutionSignPlacement) {
-        setBusyKey(`${doc.id}-${role}`);
+    async function signTestAt(doc: SubstitutionSigningDocument, role: SubstitutionSignerRole, placement: SubstitutionSignPlacement,
+                              signerUserId: number | null) {
+        setBusyKey(signingKey(doc.id, role, signerUserId));
         try {
-            const next = await substitutionService.signTest(requestId, doc.id, role, placement);
+            const next = await substitutionService.signTest(requestId, doc.id, role, placement, signerUserId);
             onChange(next);
             toast.warning(t("substitutionSigning.signedTest"), doc.title);
         } catch (e) {
@@ -96,9 +104,9 @@ export function useSubstitutionSigning(requestId: number, onChange: (state: Subs
 
     function confirmPlacement(placement: SubstitutionSignPlacement) {
         if (!placing) return;
-        const {doc, role, test} = placing;
+        const {doc, role, signerUserId, test} = placing;
         setPlacing(null);
-        void (test ? signTestAt(doc, role, placement) : signEcp(doc, role, placement));
+        void (test ? signTestAt(doc, role, placement, signerUserId) : signEcp(doc, role, placement, signerUserId));
     }
 
     const modal: ReactNode = (
@@ -108,6 +116,7 @@ export function useSubstitutionSigning(requestId: number, onChange: (state: Subs
                     requestId={requestId}
                     doc={placing.doc}
                     role={placing.role}
+                    signerUserId={placing.signerUserId}
                     test={placing.test}
                     onCancel={() => setPlacing(null)}
                     onConfirm={confirmPlacement}

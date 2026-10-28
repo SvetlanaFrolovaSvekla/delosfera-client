@@ -62,13 +62,15 @@ interface Props {
     requestId: number;
     doc: SubstitutionSigningDocument;
     role: SubstitutionSignerRole;
+    /** Чьё место (дополнительных подписантов от Банка несколько — у них одна роль). */
+    signerUserId?: number | null;
     /** Тестовая имитация ЭЦП вместо подписи. */
     test?: boolean;
     onCancel: () => void;
     onConfirm: (placement: SubstitutionSignPlacement) => void;
 }
 
-export function SubstitutionSignPlacementModal({requestId, doc, role, test = false, onCancel, onConfirm}: Props) {
+export function SubstitutionSignPlacementModal({requestId, doc, role, signerUserId = null, test = false, onCancel, onConfirm}: Props) {
     const {t} = useTranslation();
     const areaRef = useRef<HTMLDivElement>(null);
     const containerRef = useRef<HTMLDivElement>(null);
@@ -209,17 +211,18 @@ export function SubstitutionSignPlacementModal({requestId, doc, role, test = fal
     // Серые строки следующих подписантов шире — сдвигаем их влево, чтобы не уходили за поле.
     const contentMm = 165;
     const shownIndent = (hover && hoverDiffers ? hover.indentMm : placement?.indentMm) ?? 0;
-    const roleSlot = doc.slots.find((s) => s.role === role);
+    const isMine = (s: SubstitutionSignerSlot) => s.role === role && (role !== "BankSigner" || s.userId === signerUserId);
+    const roleSlot = doc.slots.find(isMine);
     const ackSigned = doc.slots.some((s) => (s.role === "Absent" || s.role === "Substitute") && s.signature);
     // Следующие подписанты — серые места под блоком (как они встанут, если подпишут там же).
-    const after = doc.slots.slice(doc.slots.findIndex((s) => s.role === role) + 1).filter((s) => !s.signature);
+    const after = doc.slots.slice(doc.slots.findIndex(isMine) + 1).filter((s) => !s.signature);
     let headerShown = ackSigned;
     const ghostBlocks: ReactNode[] = [roleSlot, ...after].filter(Boolean).map((slot, i) => {
         const s = slot as SubstitutionSignerSlot;
         const ack = isOrder && (s.role === "Absent" || s.role === "Substitute");
         const header = ack && !headerShown;
         if (ack) headerShown = true;
-        return <GhostBlock key={s.role} kind={doc.kind} slot={s} active={i === 0} test={test} header={header}
+        return <GhostBlock key={`${s.role}-${s.userId ?? ""}`} kind={doc.kind} slot={s} active={i === 0} test={test} header={header}
                            shiftMm={Math.min(0, contentMm - shownIndent - blockWidthMm(doc.kind, s.role))}/>;
     });
 
@@ -375,14 +378,16 @@ function GhostBlock({kind, slot, active, test, header, shiftMm}: {
     // Как на листе: заголовок (или отбивка), затем строка «подпись — штамп ЭЦП (— дата)» без черты.
     const label = kind === "Order"
         ? (slot.role === "Director" ? "Директор" : shortFio(slot.userName))
-        : (slot.role === "Director" ? "Директор" : "Подпись");
+        : "Подпись";
     const labelMm = kind === "Order"
         ? (slot.role === "Director" ? LABEL_MM.orderDirector : LABEL_MM.ack)
         : LABEL_MM.liability;
     const withDate = !(kind === "Order" && slot.role === "Director");
     const title = kind === "Order"
         ? (header ? "Ознакомлены и согласны:" : null)
-        : (slot.role === "Director" ? "Банк: ОАО «Керемет Банк»" : `Работник: ${slot.userName ?? "—"}`);
+        : (slot.role === "Director" || slot.role === "BankSigner"
+            ? `Банк: ОАО «Керемет Банк»${slot.userName ? `, ${shortFio(slot.userName)}` : ""}`
+            : `Работник: ${slot.userName ?? "—"}`);
     const lines: ReactNode = (
         <>
             {title

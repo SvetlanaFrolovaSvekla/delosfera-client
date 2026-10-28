@@ -19,6 +19,7 @@ import {useUsageTracking} from "@/hooks/useUsageTracking.ts";
 // Страницы грузятся лениво — каждая попадает в отдельный чанк, а не в один общий бандл.
 // Named-экспорты оборачиваем в { default } для React.lazy.
 const AuthorizationPage = lazy(() => import("@/pages/CommonSection/AuthorizationPage.tsx").then(m => ({default: m.AuthorizationPage})));
+const NotFoundPage = lazy(() => import("@/pages/CommonSection/NotFoundPage.tsx").then(m => ({default: m.NotFoundPage})));
 const HomePage = lazy(() => import("@/pages/CommonSection/HomePage.tsx").then(m => ({default: m.HomePage})));
 const DictionariesPages = lazy(() => import("@/pages/ManagementPagesSection/SettingsPages/Dictionaries/DictionariesPages.tsx").then(m => ({default: m.DictionariesPages})));
 const ApprovalBodyPage = lazy(() => import("@/pages/ManagementPagesSection/SettingsPages/Dictionaries/DictionariesPages/General/ApprovalBodyPage.tsx").then(m => ({default: m.ApprovalBodyPage})));
@@ -314,25 +315,7 @@ function App() {
 
                         {/* Адрес, которого нет, раньше давал пустой экран — по нему было не
                             понять, сломалась система или раздел просто не открывается. */}
-                        <Route
-                            path="*"
-                            element={
-                                <div style={{padding: 24}}>
-                                    <div style={{fontSize: 19, fontWeight: 700, color: "#0f1b2d"}}>
-                                        Страница не найдена
-                                    </div>
-                                    <div style={{marginTop: 6, fontSize: 13, color: "#8b97ab"}}>
-                                        Раздел не существует или ещё не открыт для вашей роли.
-                                    </div>
-                                    <a href="/" style={{
-                                        display: "inline-block", marginTop: 14, fontSize: 12.5,
-                                        fontWeight: 600, color: "#2f68f5",
-                                    }}>
-                                        На рабочий стол
-                                    </a>
-                                </div>
-                            }
-                        />
+                        <Route path="*" element={<NotFoundPage/>}/>
                     </Routes>
                 </Suspense>
                 <ToastContainer/>

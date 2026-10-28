@@ -17,7 +17,8 @@ import {useAuth} from "@/context/AuthContext.ts";
 import type {PickableUser} from "@/constants/pickableUser.ts";
 import {formatDDMMYYYY, parseDDMMYYYYToISO, parseDate} from "@/utils/dateUtils.ts";
 import {SubstitutionSigningSection} from "@/components/componentsSubstitutions/SubstitutionSigningSection.tsx";
-import {useSubstitutionSigning} from "@/components/componentsSubstitutions/useSubstitutionSigning.tsx";
+import {signingKey, useSubstitutionSigning} from "@/components/componentsSubstitutions/useSubstitutionSigning.tsx";
+import {SubstitutionBankSignersSection} from "@/components/componentsSubstitutions/SubstitutionBankSignersSection.tsx";
 import {
     PersonRow, SubstitutionPersonField, personMeta,
 } from "@/components/componentsSubstitutions/SubstitutionPersonField.tsx";
@@ -468,6 +469,14 @@ export function SubstitutionCardPage() {
                             </a>
                         </Tooltip>
                     )}
+                    {/* «Выгрузить (все поля)» — листок самой заявки на замещение (DOCX со всеми полями) */}
+                    {details && (
+                        <SzButton variant="muted" icon={<Download size={15}/>}
+                                  onClick={() => void substitutionService.print(details.id, "card",
+                                      t("substitutionCard.files.card", {name: details.regNumber ?? details.id}))}>
+                            {t("substitutionCard.buttons.exportAll")}
+                        </SzButton>
+                    )}
                     {access?.canWithdraw && (
                         <SzButton icon={<Undo2 size={16}/>} onClick={() => setConfirm("withdraw")} disabled={busy}>
                             {t("substitutionCard.buttons.withdraw")}
@@ -859,12 +868,12 @@ export function SubstitutionCardPage() {
                                                             {t("substitutionCard.routeActions.sign")}
                                                         </span>
                                                         {items.map(({doc, slot}) => {
-                                                            const key = `${doc.id}-${slot.role}`;
+                                                            const key = signingKey(doc.id, slot.role, slot.userId);
                                                             return (
                                                                 <React.Fragment key={key}>
                                                                     <SzButton size="xs" variant="primary" icon={<FileSignature size={14}/>}
                                                                               disabled={routeSigning.busyKey !== null || routeSigning.quietSigning}
-                                                                              onClick={() => void routeSigning.sign(doc, slot.role)}>
+                                                                              onClick={() => void routeSigning.sign(doc, slot.role, slot.userId)}>
                                                                         {routeSigning.busyKey === key
                                                                             ? t("substitutionSigning.signing")
                                                                             : t(doc.kind === "Order"
@@ -874,7 +883,7 @@ export function SubstitutionCardPage() {
                                                                     {signing?.allowTestEcp && (
                                                                         <SzButton size="xs" variant="warning" icon={<FlaskConical size={14}/>}
                                                                                   disabled={routeSigning.busyKey !== null}
-                                                                                  onClick={() => void routeSigning.signTest(doc, slot.role)}>
+                                                                                  onClick={() => void routeSigning.signTest(doc, slot.role, slot.userId)}>
                                                                             {t("substitutionSigning.signTest")}
                                                                         </SzButton>
                                                                     )}
@@ -923,6 +932,16 @@ export function SubstitutionCardPage() {
 
                 {/* Подписание документов: приказ и договор, подписи ЭЦП участников, просмотр (глазик).
                     Показывается всегда, у черновика — с пояснением, что документы зафиксируются при отправке. */}
+                {/* Подписанты договора МО от имени Банка: основной (Председатель Правления из настроек)
+                    и дополнительные — их добавляет делопроизводство или УЧР. */}
+                {details && (
+                    <SubstitutionBankSignersSection details={details} users={users}
+                                                    onSaved={(d) => {
+                                                        setDetails(d);
+                                                        setSigningReload((n) => n + 1);
+                                                    }}/>
+                )}
+
                 {details && (
                     <SubstitutionSigningSection requestId={details.id} regNumber={details.regNumber}
                                                 state={signing} onChange={setSigning}/>

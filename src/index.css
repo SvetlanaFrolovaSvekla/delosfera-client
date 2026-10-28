@@ -191,9 +191,70 @@ a:hover {
     }
 }
 
+/* Страница 404 (NotFoundPage): документ уходит по маршруту и «теряется» у точки обрыва */
+@keyframes nfLost {
+    0% {
+        offset-distance: 0%;
+        opacity: 0;
+        transform: scale(1);
+    }
+    8% {
+        opacity: 1;
+    }
+    78% {
+        offset-distance: 100%;
+        opacity: 1;
+        transform: scale(1);
+    }
+    100% {
+        offset-distance: 100%;
+        opacity: 0;
+        transform: scale(2.2);
+    }
+}
+
+@keyframes nfPulse {
+    0% {
+        transform: scale(1);
+        opacity: .9;
+    }
+    70%, 100% {
+        transform: scale(3.2);
+        opacity: 0;
+    }
+}
+
+@keyframes nfSpin {
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+@keyframes nfWobble {
+    0%, 100% {
+        transform: rotate(-10deg) translateY(0);
+    }
+    50% {
+        transform: rotate(10deg) translateY(-6px);
+    }
+}
+
+@keyframes nfRise {
+    from {
+        opacity: 0;
+        transform: translateY(18px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
 /* Пользователь просил уменьшить анимацию — гасим декоративное движение */
 @media (prefers-reduced-motion: reduce) {
-    [data-auth-decor] * {
+    [data-auth-decor] *,
+    [data-nf-anim],
+    [data-nf-anim] * {
         animation: none !important;
     }
 }

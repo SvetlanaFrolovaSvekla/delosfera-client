@@ -15,10 +15,10 @@ import {
 import {SzFormSection} from "@/components/componentsSz/componentsSzCard/form/SzFormSection.tsx";
 import {SzButton} from "@/components/componentsSz/componentsSzCard/controls/SzButton.tsx";
 import {toast} from "@/service/toastService.ts";
-import {AlertTriangle, CheckCircle2, Clock, Download, Eye, FileSignature, FlaskConical, Route, ShieldCheck} from "lucide-react";
+import {AlertTriangle, CheckCircle2, Clock, Download, Eye, FileSignature, FlaskConical, Info, Route, ShieldCheck} from "lucide-react";
 import {Tooltip} from "@/components/componentsGeneral/tooltips/Tooltip.tsx";
 import {SubstitutionDocumentsModal} from "./SubstitutionDocumentsModal.tsx";
-import {signingErrorOf, useSubstitutionSigning} from "./useSubstitutionSigning.tsx";
+import {signingErrorOf, signingKey, useSubstitutionSigning} from "./useSubstitutionSigning.tsx";
 
 interface Props {
     requestId: number;
@@ -92,6 +92,13 @@ export function SubstitutionSigningSection({requestId, state, onChange, regNumbe
                 </SzButton>
             </div>
 
+            {/* Подписание ЭЦП — не обязательный шаг: документы можно подписать от руки, а УЧР может
+                отметить заявку «Исполнено» и без подписей ЭЦП. */}
+            <div className="mb-3 flex items-start gap-2 rounded-[10px] border border-[#dbe5f7] bg-[#f5f8ff] px-3 py-2 text-[12px] leading-[1.5] text-[#55617a]">
+                <Info size={15} className="mt-[1px] flex-none text-[#2f68f5]"/>
+                <span>{t("substitutionSigning.optionalHint")}</span>
+            </div>
+
             {/* Панель с двумя карточками документов */}
             <div className="flex flex-col gap-3">
                 {current.map((doc) => (
@@ -120,11 +127,11 @@ export function SubstitutionSigningSection({requestId, state, onChange, regNumbe
 
                         <div className="mt-3 flex flex-col divide-y divide-[#eef1f5]">
                             {doc.slots.map((slot) => {
-                                const key = `${doc.id}-${slot.role}`;
+                                const key = signingKey(doc.id, slot.role, slot.userId);
                                 const s = slot.signature;
                                 const stale = !s ? slot.staleSignature : null;
                                 return (
-                                    <div key={slot.role} className="flex flex-wrap items-center gap-3 py-2.5 text-[13px]">
+                                    <div key={`${slot.role}-${slot.userId ?? ""}`} className="flex flex-wrap items-center gap-3 py-2.5 text-[13px]">
                                         <span className="min-w-[230px] font-semibold text-[#3a4560]">{slot.roleTitle}</span>
                                         <span className="flex-1 min-w-[160px] text-[#55617a]">
                                             {slot.userName ?? <span className="text-[#c27c0e]">{t("substitutionSigning.noSigner")}</span>}
@@ -166,14 +173,14 @@ export function SubstitutionSigningSection({requestId, state, onChange, regNumbe
                                             <span className="flex gap-2">
                                                 <SzButton size="xs" variant="primary" icon={<FileSignature size={14}/>}
                                                           disabled={busyKey !== null || quietSigning}
-                                                          onClick={() => void sign(doc, slot.role)}>
+                                                          onClick={() => void sign(doc, slot.role, slot.userId)}>
                                                     {busyKey === key ? t("substitutionSigning.signing")
                                                         : stale ? t("substitutionSigning.signAgain") : t("substitutionSigning.sign")}
                                                 </SzButton>
                                                 {state?.allowTestEcp && (
                                                     <SzButton size="xs" variant="warning" icon={<FlaskConical size={14}/>}
                                                               disabled={busyKey !== null}
-                                                              onClick={() => void signTest(doc, slot.role)}>
+                                                              onClick={() => void signTest(doc, slot.role, slot.userId)}>
                                                         {t("substitutionSigning.signTest")}
                                                     </SzButton>
                                                 )}

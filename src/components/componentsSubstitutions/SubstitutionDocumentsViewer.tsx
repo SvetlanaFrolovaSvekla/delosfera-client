@@ -99,7 +99,8 @@ export function SubstitutionDocumentsViewer({
         setLoading(true);
         setError(null);
         setBlob(null);
-        substitutionService.printBlob(requestId, form, mode === "signed")
+        // Пустой бланк — всегда «для подписи от руки»: подписей ЭЦП в нём нет.
+        substitutionService.printBlob(requestId, form, form !== "liabilityBlank" && mode === "signed")
             .then(async (b) => {
                 if (cancelled || !containerRef.current) return;
                 setBlob(b);
@@ -134,12 +135,14 @@ export function SubstitutionDocumentsViewer({
         setTimeout(() => window.print(), 300);
     }, [autoPrint, loading, error]);
 
-    const signed = mode === "signed";
+    const blank = form === "liabilityBlank";
+    const signed = mode === "signed" && !blank;
     const current = signing?.documents.find((d) => d.isCurrent && d.kind === (form === "order" ? "Order" : "Liability"));
     const frozen = !!current;
     const number = regNumber ?? `#${requestId}`;
     const title = t(`substitutionCard.printPage.${form}`);
-    const baseName = `${form === "order" ? "Приказ о возложении обязанностей" : "Договор о матответственности"} ${number}`
+    const baseName = `${form === "order" ? "Приказ о возложении обязанностей" : "Договор о матответственности"}`
+        + `${blank ? " (пустой бланк)" : ""} ${number}`
         + (signed && frozen ? " (с подписями ЭЦП)" : "");
 
     const downloadDocx = () => {
@@ -218,7 +221,7 @@ export function SubstitutionDocumentsViewer({
 
                 {/* Какая версия — сегмент-переключатель, справа скачивание и печать */}
                 <div className="flex flex-wrap items-end justify-between gap-3">
-                    <div className="mb-2 flex items-center gap-1 rounded-[11px] border border-[#d7dee8] bg-white p-1">
+                    <div className={`mb-2 flex items-center gap-1 rounded-[11px] border border-[#d7dee8] bg-white p-1 ${blank ? "invisible" : ""}`}>
                         {([
                             {id: "signed", icon: <ShieldCheck size={15}/>, label: t("substitutionCard.printPage.signed")},
                             {id: "paper", icon: <ClipboardCheck size={15}/>, label: t("substitutionCard.printPage.paper")},
@@ -261,9 +264,12 @@ export function SubstitutionDocumentsViewer({
                     </div>
                 </div>
                 <div className="pt-2 text-[11.5px] leading-[1.5] text-[#8b97ab]">
-                    {signing && !frozen
-                        ? t("substitutionCard.printPage.notFrozenHint")
-                        : signed ? t("substitutionCard.printPage.signedHint") : t("substitutionCard.printPage.paperHint")}
+                    {blank
+                        ? t("substitutionCard.printPage.blankHint")
+                        : signing && !frozen
+                            ? t("substitutionCard.printPage.notFrozenHint")
+                            : signed ? t("substitutionCard.printPage.signedHint") : t("substitutionCard.printPage.paperHint")}
+                    {" "}{t("substitutionCard.printPage.optionalHint")}
                 </div>
             </div>
 

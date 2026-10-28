@@ -105,6 +105,19 @@ export interface SubstitutionDetails extends SubstitutionListItem {
     routeNote?: string | null;
     /** Что текущему пользователю можно делать с заявкой (считает сервер). */
     access?: SubstitutionAccess;
+    /** Дополнительные подписанты договора МО от имени Банка (добавлены делопроизводителем). */
+    extraBankSignerUserIds?: number[];
+    /** Кто подписывает договор МО от Банка: основной (из настроек) и дополнительные — по порядку. */
+    bankSigners?: BankSigner[];
+}
+
+/** Подписант договора МО от имени Банка. */
+export interface BankSigner {
+    userId: number;
+    fullName: string;
+    position: string | null;
+    /** Основной — Председатель Правления из настроек маршрута УЧР. */
+    isMain: boolean;
 }
 
 export interface SubstitutionAccess {
@@ -115,6 +128,8 @@ export interface SubstitutionAccess {
     canDelete: boolean;
     /** Отметить «Исполнено» вручную — даже если документы не подписаны. */
     canExecute: boolean;
+    /** Добавлять/убирать дополнительных подписантов договора МО от Банка (делопроизводство, УЧР). */
+    canEditBankSigners?: boolean;
     /** Корректировать на согласовании/подписании (право CorrectSubstitution или УЧР). */
     canCorrect?: boolean;
 }
@@ -122,7 +137,9 @@ export interface SubstitutionAccess {
 /* ---------- Этап «На подписании»: ЭЦП ГП «Инфоком» под приказом и договором ---------- */
 
 export type SubstitutionDocumentKind = "Order" | "Liability";
-export type SubstitutionSignerRole = "Director" | "Absent" | "Substitute";
+/** BankSigner — дополнительный подписант договора от Банка; таких мест может быть несколько
+ * (место определяется ролью и userId). */
+export type SubstitutionSignerRole = "Director" | "Absent" | "Substitute" | "BankSigner";
 
 export interface SubstitutionSignatureInfo {
     id: number;
@@ -275,6 +292,11 @@ export const substitutionService = {
         return data;
     },
     /** Переназначить непройденный этап действующего маршрута (УЧР, администратор). */
+    /** Дополнительные подписанты договора МО от Банка — список целиком; возвращает карточку. */
+    async setBankSigners(id: number, userIds: number[]) {
+        const {data} = await apiClient.put<SubstitutionDetails>(`${BASE}/${id}/bank-signers`, {userIds});
+        return data;
+    },
     async reassign(id: number, approvalId: number, userId: number, reason: string) {
         const {data} = await apiClient.post<SubstitutionDetails>(`${BASE}/${id}/approvals/${approvalId}/reassign`, {userId, reason});
         return data;
@@ -306,22 +328,26 @@ export const substitutionService = {
     signingState(id: number) {
         return apiClient.get<SubstitutionSigningState>(`${BASE}/${id}/signing`).then(r => r.data);
     },
-    async signingHash(id: number, documentId: number, role: SubstitutionSignerRole) {
+    /* signerUserId — чьё место подписывается (нужно для дополнительных подписантов от Банка:
+       мест с ролью BankSigner может быть несколько). */
+    async signingHash(id: number, documentId: number, role: SubstitutionSignerRole, signerUserId?: number | null) {
         const {data} = await apiClient.post<{hash: string; schemaVersion: string}>(
-            `${BASE}/${id}/signing/hash`, {documentId, role});
+            `${BASE}/${id}/signing/hash`, {documentId, role, signerUserId: signerUserId ?? null});
         return data.hash;
     },
-    async signStored(id: number, documentId: number, role: SubstitutionSignerRole): Promise<StoredEcpSignature> {
+    async signStored(id: number, documentId: number, role: SubstitutionSignerRole,
+                     signerUserId?: number | null): Promise<StoredEcpSignature> {
         const {data} = await apiClient.post<StoredEcpSignature>(
-            `${BASE}/${id}/signing/sign-stored`, {documentId, role});
+            `${BASE}/${id}/signing/sign-stored`, {documentId, role, signerUserId: signerUserId ?? null});
         return data;
     },
     /** Подпись ЭЦП. Ошибки проверки — { message, code } (например, "document_changed"). */
     async sign(id: number, documentId: number, role: SubstitutionSignerRole, ecp: ResolutionEcpSignature,
-               placement?: SubstitutionSignPlacement | null) {
+               placement?: SubstitutionSignPlacement | null, signerUserId?: number | null) {
         const {data} = await apiClient.post<SubstitutionSigningState>(`${BASE}/${id}/signing/sign`, {
             documentId,
             role,
+            signerUserId: signerUserId ?? null,
             placement: placement ?? null,
             signatureBase64: ecp.signatureBase64,
             hash: ecp.hash,
@@ -332,9 +358,10 @@ export const substitutionService = {
         return data;
     },
     /** ТЕСТ: имитация ЭЦП — только если сервер разрешает (allowTestEcp). */
-    async signTest(id: number, documentId: number, role: SubstitutionSignerRole, placement?: SubstitutionSignPlacement | null) {
+    async signTest(id: number, documentId: number, role: SubstitutionSignerRole, placement?: SubstitutionSignPlacement | null,
+                   signerUserId?: number | null) {
         const {data} = await apiClient.post<SubstitutionSigningState>(
-            `${BASE}/${id}/signing/sign-test`, {documentId, role, placement: placement ?? null});
+            `${BASE}/${id}/signing/sign-test`, {documentId, role, placement: placement ?? null, signerUserId: signerUserId ?? null});
         return data;
     },
     /** Макет ЭЦП-версии для окна выбора места подписи: поставленные подписи и якоря dsa_N на абзацах. */
@@ -349,8 +376,8 @@ export const substitutionService = {
         saveBlob(response.data as Blob, fileName);
     },
 
-    /** Скачать печатную форму: form = "order" (приказ) или "liability" (договор МО). */
-    async print(id: number, form: "order" | "liability" | "card", fileName: string) {
+    /** Скачать печатную форму: приказ, договор МО (в т.ч. пустой бланк) или листок заявки. */
+    async print(id: number, form: SubstitutionPrintForm | "card", fileName: string) {
         const response = await apiClient.get(`${BASE}/${id}/print/${form}`, {responseType: "blob"});
         saveBlob(response.data as Blob, fileName);
     },
@@ -366,7 +393,8 @@ export const substitutionService = {
     },
 };
 
-export type SubstitutionPrintForm = "order" | "liability";
+/** liabilityBlank — договор МО с пустыми полями (номер, «в лице …», ФИО подписантов от Банка). */
+export type SubstitutionPrintForm = "order" | "liability" | "liabilityBlank";
 export type SubstitutionPrintMode = "signed" | "paper";
 
 /** Адрес страницы «Скачать / печать» документа заявки (открывается в новой вкладке, без меню). */

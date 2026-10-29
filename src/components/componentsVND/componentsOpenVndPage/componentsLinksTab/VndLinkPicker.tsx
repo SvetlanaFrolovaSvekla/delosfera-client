@@ -8,6 +8,7 @@ import { vndService } from "@/service/vndService/vndService.ts";
 import type { VndResponse } from "@/service/vndService/vndServiceType.ts";
 import { useDictionaries } from "@/context/DictionariesContext.tsx";
 import {HighlightText} from "@/utils/highlightText.tsx";
+import {revisionTextQuery, revisionTextTooShort, REVISION_TEXT_MIN_LENGTH} from "@/utils/vndProcess/revisionTextSearch.ts";
 import { MultiSelectField } from "@/components/componentsGeneral/selects/MultiSelects/MultiSelectField.tsx";
 import { SearchBar } from "@/components/componentsGeneral/SearchBar.tsx";
 import { ChevronDown, Link2, Loader2, SlidersHorizontal, X } from "lucide-react";
@@ -40,8 +41,10 @@ export function VndLinkPicker({ excludeIds, onSelect, onClose }: VndLinkPickerPr
     const [loadedKey, setLoadedKey] = useState<string | null>(null);
     const requestIdRef = useRef(0);
 
+    // Текст редакции — с 3 символов: 1–2 набранных символа не запускают новый поиск.
+    const revisionText = revisionTextQuery(revisionTextFilter);
     const searchKey = JSON.stringify([
-        query, codeFilter, revisionTextFilter,
+        query, codeFilter, revisionText,
         docTypeFilters, rubricFilters, developerFilters, keywordFilters,
         excludeIds,
     ]);
@@ -64,7 +67,7 @@ export function VndLinkPicker({ excludeIds, onSelect, onClose }: VndLinkPickerPr
                 const response = await vndService.search({
                     name: query.trim() || undefined,
                     code: codeFilter.trim() || undefined,
-                    revisionText: revisionTextFilter.trim() || undefined,
+                    revisionText,
                     typeIds: docTypeFilters.map(Number),
                     rubricIds: rubricFilters.map(Number),
                     developerIds: developerFilters.map(Number),
@@ -165,6 +168,11 @@ export function VndLinkPicker({ excludeIds, onSelect, onClose }: VndLinkPickerPr
                                             onChange={setRevisionTextFilter}
                                             placeholder="Поиск по тексту…"
                                         />
+                                        {revisionTextTooShort(revisionTextFilter) && (
+                                            <span className="mt-1 block text-[11px] text-[#b3730a]">
+                                                Введите не меньше {REVISION_TEXT_MIN_LENGTH} символов
+                                            </span>
+                                        )}
                                     </label>
                                 </div>
 

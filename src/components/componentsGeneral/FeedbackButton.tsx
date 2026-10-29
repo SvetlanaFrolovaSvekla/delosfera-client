@@ -17,11 +17,11 @@ import {
     feedbackService,
     KIND_ORDER,
     getKindTitle,
-    type FeedbackKind,
+    type FeedbackFormKind,
 } from "@/service/feedbackService/feedbackService.ts";
 import {AlertTriangle, CircleHelp, Lightbulb, MessageSquarePlus, X} from "lucide-react";
 
-const KIND_ICON: Record<FeedbackKind, typeof AlertTriangle> = {
+const KIND_ICON: Record<FeedbackFormKind, typeof AlertTriangle> = {
     Problem: AlertTriangle,
     Wish: Lightbulb,
     Question: CircleHelp,
@@ -32,7 +32,7 @@ export function FeedbackButton() {
     const location = useLocation();
 
     const [open, setOpen] = useState(false);
-    const [kind, setKind] = useState<FeedbackKind>("Wish");
+    const [kind, setKind] = useState<FeedbackFormKind>("Wish");
     const [text, setText] = useState("");
     const [sending, setSending] = useState(false);
     const [sent, setSent] = useState(false);
@@ -40,7 +40,7 @@ export function FeedbackButton() {
 
     const textRef = useRef<HTMLTextAreaElement>(null);
 
-    const KIND_HINT: Record<FeedbackKind, string> = {
+    const KIND_HINT: Record<FeedbackFormKind, string> = {
         Problem: t("feedbackButton.kindHint.problem"),
         Wish: t("feedbackButton.kindHint.wish"),
         Question: t("feedbackButton.kindHint.question"),

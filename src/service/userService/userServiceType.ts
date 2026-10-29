@@ -126,6 +126,9 @@ export interface UserPage {
 // Лента активности пользователя (GET /users/{id}/activity)
 export interface UserActivityItem {
     type: "vnd_created" | "approval_decided" | "approval_initiated";
+    /** Точный вид действия (цвет точки, фильтр): created | processStarted | approved |
+     * approvedWithComment | rejected | autoApproved | removed | other. */
+    kind?: string;
     vndId?: number | null;
     vndCode?: string | null;
     vndTitle?: string | null;
@@ -137,5 +140,22 @@ export interface UserActivityResponse {
     vndCreatedCount: number;
     approvalsDecidedCount: number;
     approvalsInitiatedCount: number;
+    /** Действия текущей страницы, новые сверху */
     recent: UserActivityItem[];
+    /** Есть ли ещё записи после этой страницы */
+    hasMore?: boolean;
+    /** Курсор следующей страницы (передать в getActivity как cursor) */
+    nextCursor?: string | null;
+    /** Сколько действий каждого вида подходит под период и поиск — только на первой странице */
+    kindCounts?: Record<string, number> | null;
+}
+
+export interface UserActivityParams {
+    /** "гггг-мм-ддTчч:мм:сс" */
+    from?: string;
+    to?: string;
+    search?: string;
+    kinds?: string[];
+    cursor?: string;
+    pageSize?: number;
 }

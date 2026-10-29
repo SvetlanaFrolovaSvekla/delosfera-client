@@ -10,7 +10,7 @@ import {useEffect, useMemo, useState, type ReactNode} from "react";
 import {useTranslation} from "react-i18next";
 import {
     feedbackService,
-    KIND_ORDER,
+    ALL_KIND_ORDER,
     STATUS_ORDER,
     type FeedbackKind,
     type FeedbackRow,
@@ -21,13 +21,14 @@ import {PageHeader} from "@/components/componentsGeneral/PageHeader.tsx";
 import {Loader} from "@/components/componentsGeneral/Loader.tsx";
 import {EmptyState} from "@/components/componentsGeneral/emptyPanel/EmptyState.tsx";
 import {
-    AlertTriangle, CircleHelp, Inbox, Lightbulb, Loader2, MessageSquareReply, Monitor, MonitorSmartphone, Timer, X,
+    AlertTriangle, CircleHelp, Inbox, KeyRound, Lightbulb, Loader2, MessageSquareReply, Monitor, MonitorSmartphone, Timer, X,
 } from "lucide-react";
 
 const KIND_ICON: Record<FeedbackKind, typeof AlertTriangle> = {
     Problem: AlertTriangle,
     Wish: Lightbulb,
     Question: CircleHelp,
+    AccessRequest: KeyRound,
 };
 
 /** Цвет вида сообщения: иконка, её подложка и полоска слева у карточки */
@@ -35,6 +36,7 @@ const KIND_TONE: Record<FeedbackKind, { fg: string; bg: string }> = {
     Problem: {fg: "#c0392b", bg: "#fbe9e7"},
     Wish: {fg: "#2f68f5", bg: "#eaf0ff"},
     Question: {fg: "#b3730a", bg: "#fdf3e0"},
+    AccessRequest: {fg: "#4e57d6", bg: "#ececfc"},
 };
 
 const STATUS_STYLE: Record<FeedbackStatus, string> = {
@@ -233,7 +235,7 @@ export function FeedbackInboxPage() {
                             <Chip active={kind === ""} onClick={() => setKind("")}>
                                 {t("feedbackInbox.allKinds")}
                             </Chip>
-                            {KIND_ORDER.map((value) => {
+                            {ALL_KIND_ORDER.map((value) => {
                                 const Icon = KIND_ICON[value];
                                 return (
                                     <Chip key={value} active={kind === value} onClick={() => setKind(value)}

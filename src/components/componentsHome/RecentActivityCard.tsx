@@ -85,7 +85,7 @@ export function RecentActivityCard({limit = 15, module}: RecentActivityCardProps
                     </button>
                 </div>
             </div>
-            <div className={`relative min-h-0 flex-1 px-[18px] pb-[14px] pt-1.5 ${!isLoading && !error && items.length === 0 ? "overflow-hidden" : "overflow-y-auto"}`}>
+            <div className={`relative min-h-0 flex-1 pb-[14px] pt-1.5 ${!isLoading && !error && items.length === 0 ? "overflow-hidden" : "overflow-y-auto"}`}>
                 {isLoading ? (
                     // Загрузка активности…
                     <Loader label={t("home.recentActivity.loading")} fullHeight={false}/>
@@ -103,7 +103,7 @@ export function RecentActivityCard({limit = 15, module}: RecentActivityCardProps
                         <EmptyPanelPattern className="absolute inset-x-0 bottom-0 h-[430px]"/>
                     </>
                 ) : (
-                    items.map((item) => {
+                    items.map((item, idx) => {
                         const style = ICON_STYLE[item.icon] ?? ICON_STYLE.info;
                         // canOpen=false — запись о чужом черновике ВНД, который у пользователя нет
                         // прав открыть (см. ActivityLogService.CanOpenVndEntry на бэке — тот же
@@ -120,10 +120,14 @@ export function RecentActivityCard({limit = 15, module}: RecentActivityCardProps
                                 <div
                                     onClick={locked ? undefined : () => navigate(item.url)}
                                     className={
-                                        "flex gap-[11px] border-t border-[#f3f6f9] py-[9px] first:border-t-0 " +
+                                        "relative flex w-full gap-[11px] px-[18px] py-[9px] " +
+                                        // Серый разделитель с отступами по краям (как в уведомлениях), но подсветка hover на всю ширину
                                         (locked ? "cursor-not-allowed" : "cursor-pointer hover:bg-[#fafbfc]")
                                     }
                                 >
+                                {idx > 0 && (
+                                    <span className="pointer-events-none absolute inset-x-[18px] top-0 h-px bg-[#f3f6f9]"/>
+                                )}
                                 <span
                                     className="grid h-[26px] w-[26px] flex-none place-items-center rounded-[7px]"
                                     style={locked ? {background: "#eef1f5", color: "#8b97ab"} : {

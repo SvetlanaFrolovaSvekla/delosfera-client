@@ -15,6 +15,7 @@ import {DateFilterGroup, type DateFilterValue} from "@/components/componentsGene
 import {SearchBar} from "@/components/componentsGeneral/SearchBar.tsx";
 import {MultiSelectDropdown} from "@/components/componentsGeneral/selects/MultiSelects/MultiSelectDropdown.tsx";
 import {AlertTriangle, Check, ChevronDown, ChevronUp, Filter, SlidersHorizontal} from "lucide-react";
+import {revisionTextTooShort, REVISION_TEXT_MIN_LENGTH} from "@/utils/vndProcess/revisionTextSearch.ts";
 
 interface VndFiltersProps {
     scope: VndScope;
@@ -440,6 +441,11 @@ export function VndFilters(props: VndFiltersProps) {
                                             onChange={(v) => updateDraft("advSearchRevisionText", v)}
                                             placeholder={t("registry.filters.advanced.revisionTextPlaceholder")}
                                         />
+                                        {revisionTextTooShort(draft.advSearchRevisionText) && (
+                                            <span className="mt-1 block text-[11px] text-[#b3730a]">
+                                                {t("registry.filters.advanced.revisionTextMinLength", {n: REVISION_TEXT_MIN_LENGTH})}
+                                            </span>
+                                        )}
                                     </label>
 
                                     <MultiSelectField

@@ -1,6 +1,10 @@
 // Резолюция текущего пользователя: доступна только тому, чья задача сейчас активна.
-// Решение подписывается ЭЦП ГП «Инфоком» — как резолюция согласующего ВНД.
+// Решение подписывается ЭЦП ГП «Инфоком» — как резолюция согласующего ВНД. Сотрудник с правом
+// «Подпись без ЭЦП КР» (SignWithoutNationalEcp) подписывает локальной подписью системы «Делосфера».
 import {ShieldCheck} from "lucide-react";
+import type {SzSignableResolution} from "@/service/szService/szEcpService.ts";
+import type {ResolutionChoice} from "@/components/componentsVND/componentsOpenVndPage/componentsCoordinationTab/resolutionPanel/resolutionPanelTypes.ts";
+import {SystemSignConfirmModal} from "@/components/componentsVND/componentsOpenVndPage/componentsCoordinationTab/resolutionPanel/SystemSignConfirmModal.tsx";
 import {useTranslation} from "react-i18next";
 import type {SzApprovalState} from "@/hooks/sz/useSzApproval.ts";
 import {useEcpSession} from "@/context/EcpSessionContext.ts";
@@ -12,16 +16,29 @@ interface SzDecisionPanelProps {
     saving: boolean;
 }
 
+/** Решение СЗ → вариант окна подтверждения ВНД (тексты окна общие). */
+const CHOICE: Record<SzSignableResolution, ResolutionChoice> = {
+    Approved: "approve",
+    ApprovedWithRemarks: "approveWithComment",
+    Rejected: "reject",
+};
+
 export function SzDecisionPanel({approval, saving}: SzDecisionPanelProps) {
     const {t} = useTranslation();
     const {session, isValid} = useEcpSession();
     const {
         comment, setComment, commentError, commentRef, isSigningStep, needsQualified, oepAvailable, allowWithoutEcp, ecp,
         resolve, signAndResolve, testSignAndResolve, allowSzTestEcp, setOepModalOpen,
+        systemSignMode, systemSealConfigured, pendingSystem, setPendingSystem, systemHash, systemHashLoading,
+        systemHashError, openSystemConfirm, confirmSystemSign,
     } = approval;
+    // Основной путь: ЭЦП ГП «Инфоком», а у обладателя права «Подпись без ЭЦП КР» — подпись системы.
+    const decide = (type: SzSignableResolution) =>
+        systemSignMode ? openSystemConfirm(type) : void signAndResolve(type);
+    const systemBlocked = systemSignMode && !systemSealConfigured;
     const approveLabel = t(isSigningStep ? "szCard.approval.sign" : "szCard.approval.approve");
     const rejectLabel = t("szCard.approval.reject");
-    const busy = saving || ecp.quietSigning || ecp.modalOpen;
+    const busy = saving || ecp.quietSigning || ecp.modalOpen || pendingSystem !== null;
 
     return (
         <div className="mt-4 rounded-[10px] border border-[#cbddff] bg-[#f5f8ff] p-4">
@@ -56,21 +73,30 @@ export function SzDecisionPanel({approval, saving}: SzDecisionPanelProps) {
                 <div role="alert" className="mt-1 text-[12px] font-medium text-[#c0392b]">{commentError}</div>
             )}
 
-            {/* Основной путь — решение с подписью ЭЦП. */}
+            {systemSignMode && (
+                <div className={`mt-2.5 rounded-[9px] border px-3 py-2 text-[12px] leading-[1.5] ${
+                    systemBlocked
+                        ? "border-[#f2c2c2] bg-[#fdf1f1] text-[#c0392b]"
+                        : "border-[#bfe3dd] bg-[#eef8f6] text-[#0f5e5a]"}`}>
+                    {t(systemBlocked ? "resolutionPanel.systemSign.unavailable" : "resolutionPanel.systemSign.banner")}
+                </div>
+            )}
+
+            {/* Основной путь — решение с подписью ЭЦП (или подписью системы — см. decide). */}
             <div className="mt-2.5 flex flex-wrap gap-2">
-                <SzButton variant="success" size="sm" onClick={() => void signAndResolve("Approved")} disabled={busy}
+                <SzButton variant="success" size="sm" onClick={() => decide("Approved")} disabled={busy || systemBlocked}
                           className="gap-1.5">
                     <ShieldCheck size={14}/>
                     {approveLabel}
                 </SzButton>
                 {!isSigningStep && (
-                    <SzButton variant="warning" size="sm" onClick={() => void signAndResolve("ApprovedWithRemarks")}
-                              disabled={busy} className="gap-1.5">
+                    <SzButton variant="warning" size="sm" onClick={() => decide("ApprovedWithRemarks")}
+                              disabled={busy || systemBlocked} className="gap-1.5">
                         <ShieldCheck size={14}/>
                         {t("szCard.approval.withRemarks")}
                     </SzButton>
                 )}
-                <SzButton variant="danger" size="sm" onClick={() => void signAndResolve("Rejected")} disabled={busy}
+                <SzButton variant="danger" size="sm" onClick={() => decide("Rejected")} disabled={busy || systemBlocked}
                           className="gap-1.5">
                     <ShieldCheck size={14}/>
                     {rejectLabel}
@@ -139,6 +165,16 @@ export function SzDecisionPanel({approval, saving}: SzDecisionPanelProps) {
                     </SzButton>
                 </div>
             )}
+
+            <SystemSignConfirmModal
+                choice={pendingSystem ? CHOICE[pendingSystem] : null}
+                hash={systemHash}
+                hashLoading={systemHashLoading}
+                hashError={systemHashError}
+                submitting={saving}
+                onConfirm={() => void confirmSystemSign()}
+                onClose={() => setPendingSystem(null)}
+            />
         </div>
     );
 }

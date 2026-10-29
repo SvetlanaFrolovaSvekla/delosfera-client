@@ -10,7 +10,11 @@ import i18n from "i18next";
  * размер окна — система снимает сама.
  */
 
-export type FeedbackKind = "Problem" | "Wish" | "Question";
+/** Виды, которые человек выбирает в общей форме «Сообщить». */
+export type FeedbackFormKind = "Problem" | "Wish" | "Question";
+
+/** Все виды сообщений: плюс «Запрос прав» — он приходит только из профиля (кнопка у «Полномочий»). */
+export type FeedbackKind = FeedbackFormKind | "AccessRequest";
 
 // export const KIND_TITLE: Record<FeedbackKind, string> = {
 //     Problem: "Не работает",
@@ -22,11 +26,15 @@ export function getKindTitle(): Record<FeedbackKind, string> {
         Problem: i18n.t("feedbackInbox.kind.problem"),
         Wish: i18n.t("feedbackInbox.kind.wish"),
         Question: i18n.t("feedbackInbox.kind.question"),
+        AccessRequest: i18n.t("feedbackInbox.kind.accessRequest"),
     };
 }
 
 /** Порядок в форме — от того, что требует правки кода, к тому, что требует правки инструкции. */
-export const KIND_ORDER: FeedbackKind[] = ["Problem", "Wish", "Question"];
+export const KIND_ORDER: FeedbackFormKind[] = ["Problem", "Wish", "Question"];
+
+/** Все виды — для фильтров в разделе «Пожелания и замечания». */
+export const ALL_KIND_ORDER: FeedbackKind[] = [...KIND_ORDER, "AccessRequest"];
 
 export type FeedbackStatus = "New" | "InProgress" | "Accepted" | "Declined" | "Done";
 

@@ -6,6 +6,7 @@ import type {
     CreateUserRequest,
     GetUsersParams,
     UpdateUserRequest,
+    UserActivityParams,
     UserActivityResponse,
     UserResponse,
 } from "./userServiceType.ts";
@@ -118,8 +119,17 @@ export const userService = {
         return handleResponse<UserResponse>(response);
     },
 
-    async getActivity(id: number): Promise<UserActivityResponse> {
-        const response = await fetch(`${API_BASE}/users/${id}/activity`, {
+    /** Лента активности — постранично (курсор), с отбором по периоду, тексту и видам действий. */
+    async getActivity(id: number, params: UserActivityParams = {}): Promise<UserActivityResponse> {
+        const query = new URLSearchParams();
+        if (params.from) query.set("from", params.from);
+        if (params.to) query.set("to", params.to);
+        if (params.search) query.set("search", params.search);
+        params.kinds?.forEach((k) => query.append("kinds", k));
+        if (params.cursor) query.set("cursor", params.cursor);
+        if (params.pageSize) query.set("pageSize", String(params.pageSize));
+        const qs = query.toString();
+        const response = await fetch(`${API_BASE}/users/${id}/activity${qs ? `?${qs}` : ""}`, {
             headers: buildHeaders(),
         });
         return handleResponse<UserActivityResponse>(response);

@@ -331,7 +331,7 @@ const GHOST_STYLES = `
 .sub-sign-ghost.floating { position: absolute; z-index: 2; padding: 0 2mm 1.5mm; margin-left: -2mm; background: rgba(255,255,255,.94);
   border-radius: 2mm; box-shadow: 0 6px 22px -10px rgba(15,27,45,.45); }
 .sub-sign-line { position: absolute; z-index: 1; height: 0; border-top: 2px dashed #2f68f5; pointer-events: none; }
-.sub-sign-ghost .g-line { font-family: "Times New Roman", serif; font-size: 12pt; line-height: 1.25; margin: 0 0 1mm; white-space: pre; color: #000; }
+.sub-sign-ghost .g-line { font-family: "Segoe UI", system-ui, sans-serif; font-size: 10pt; line-height: 1.25; margin: 0 0 1mm; white-space: pre; color: #000; }
 .sub-sign-ghost .g-row { display: flex; align-items: center; margin: 0 0 1mm; }
 .sub-sign-ghost .g-row > .g-line { margin: 0; flex: none; overflow: hidden; }
 .sub-sign-ghost .g-row > .g-stamp { flex: none; margin: 0; }

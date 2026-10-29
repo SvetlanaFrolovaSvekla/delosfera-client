@@ -12,9 +12,12 @@ const VARIANT_META = {
     loading: { icon: Loader2, color: "#4e57d6", bg: "#f2f3fd", border: "#dadcf7" },
 } as const;
 
-// Максимум строк заголовка/описания тоста - остальное обрезается многоточием.
-const TITLE_MAX_LINES = 2;
-const DESCRIPTION_MAX_LINES = 3;
+// Размеры тоста: ширина, предел высоты и максимум строк заголовка/описания
+// (остальное обрезается многоточием). "large" - для длинных сообщений.
+const SIZE_META = {
+    default: { box: "w-[340px] max-h-[160px]", titleLines: 2, descriptionLines: 3 },
+    large: { box: "w-[460px] max-h-[260px]", titleLines: 5, descriptionLines: 6 },
+} as const;
 
 function clampStyle(lines: number): React.CSSProperties {
     return {
@@ -30,6 +33,7 @@ function ToastCard({ item }: { item: ToastItem }) {
     const [leaving, setLeaving] = useState(false);
     const meta = VARIANT_META[item.variant];
     const Icon = meta.icon;
+    const sizeMeta = SIZE_META[item.size ?? "default"];
 
     useEffect(() => {
         const raf = requestAnimationFrame(() => setVisible(true));
@@ -58,7 +62,7 @@ function ToastCard({ item }: { item: ToastItem }) {
     return (
         <div
             onClick={handleCardClick}
-            className={`pointer-events-auto flex w-[340px] max-h-[160px] items-start overflow-hidden gap-3 rounded-[12px] border px-4 py-3 shadow-[0_10px_30px_-8px_rgba(28,39,64,0.25)] transition-all duration-200 ${
+            className={`pointer-events-auto flex ${sizeMeta.box} max-w-[calc(100vw-40px)] items-start overflow-hidden gap-3 rounded-[12px] border px-4 py-3 shadow-[0_10px_30px_-8px_rgba(28,39,64,0.25)] transition-all duration-200 ${
                 item.onClick ? "cursor-pointer" : ""
             } ${visible && !leaving ? "translate-y-0 opacity-100" : "translate-y-2 opacity-0"}`}
             style={{ background: meta.bg, borderColor: meta.border }}
@@ -74,14 +78,14 @@ function ToastCard({ item }: { item: ToastItem }) {
             >
                 <div
                     className="break-words text-[13px] font-semibold text-[#1c2740]"
-                    style={clampStyle(TITLE_MAX_LINES)}
+                    style={clampStyle(sizeMeta.titleLines)}
                 >
                     {item.title}
                 </div>
                 {item.description && (
                     <div
                         className="mt-[3px] break-words text-[12px] leading-[1.5] text-[#55617a]"
-                        style={clampStyle(DESCRIPTION_MAX_LINES)}
+                        style={clampStyle(sizeMeta.descriptionLines)}
                     >
                         {item.description}
                     </div>

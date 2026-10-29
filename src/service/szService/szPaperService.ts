@@ -48,6 +48,8 @@ export interface SzPrintSignature {
     isEcp: boolean;
     /** Тестовая имитация ЭЦП — не подпись. */
     isTest: boolean;
+    /** Локальная подпись системы «Делосфера» (без ЭЦП КР). */
+    isSystem?: boolean;
     organizationName: string | null;
     /** Срок действия сертификата — как его вернул провайдер. */
     certValidNotAfter: string | null;

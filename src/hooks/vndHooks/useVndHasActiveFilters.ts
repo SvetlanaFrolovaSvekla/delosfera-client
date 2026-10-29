@@ -1,6 +1,7 @@
 // Хук для hasActiveFilters
 import {useMemo} from "react";
 import type {DateFilterValue} from "@/components/componentsGeneral/datePickers/DateFilterGroup.tsx";
+import {revisionTextQuery} from "@/utils/vndProcess/revisionTextSearch.ts";
 
 const isDateActive = (v: DateFilterValue) => Boolean(v.exact || v.from || v.to);
 
@@ -56,7 +57,7 @@ export function useVndHasActiveFilters(params: UseVndHasActiveFiltersParams): bo
             initiatorFilters.length > 0 ||
             advSearchName.trim() !== "" ||
             advSearchCode.trim() !== "" ||
-            advSearchRevisionText.trim() !== "" ||
+            revisionTextQuery(advSearchRevisionText) !== undefined ||
             adoptionCodeFilter.trim() !== "" ||
             cancelCodeFilter.trim() !== "" ||
             secrecyLevelFilters.length > 0 ||

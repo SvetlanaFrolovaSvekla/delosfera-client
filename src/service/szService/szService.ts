@@ -417,7 +417,14 @@ export const szService = {
         return data;
     },
 
-    /** Убрать из маршрута участника, ещё не вынесшего решение (право CorrectSzOnApproval). */
+    /** Заменить участника маршрута (согласующего или подписанта), ещё не вынесшего решение, —
+     *  без отзыва записки и нового круга (автор или право CorrectSzOnApproval). */
+    async replaceRouteParticipant(id: number, participantId: number, userId: number): Promise<SzDetails> {
+        const {data} = await apiClient.put<SzDetails>(`${BASE}/${id}/route/participants/${participantId}`, {userId});
+        return data;
+    },
+
+    /** Убрать из маршрута участника, ещё не вынесшего решение (автор или право CorrectSzOnApproval). */
     async removeRouteParticipant(id: number, participantId: number): Promise<SzDetails> {
         const {data} = await apiClient.delete<SzDetails>(`${BASE}/${id}/route/participants/${participantId}`);
         return data;

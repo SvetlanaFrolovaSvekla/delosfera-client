@@ -83,7 +83,7 @@ export function RecentNotificationsCard({limit = 15}: RecentNotificationsCardPro
                     </button>
                 </div>
             </div>
-            <div className={`relative min-h-0 flex-1 px-[18px] pb-[14px] pt-1.5 ${!isLoading && !error && items.length === 0 ? "overflow-hidden" : "overflow-y-auto"}`}>
+            <div className={`relative min-h-0 flex-1 pb-[14px] pt-1.5 ${!isLoading && !error && items.length === 0 ? "overflow-hidden" : "overflow-y-auto"}`}>
                 {isLoading ? (
                     // Загрузка уведомлений…
                     <Loader label={t("home.recentNotifications.loading")} fullHeight={false}/>
@@ -108,7 +108,7 @@ export function RecentNotificationsCard({limit = 15}: RecentNotificationsCardPro
                             <div
                                 key={n.id}
                                 onClick={() => handleOpen(n.id, n.isRead)}
-                                className="flex cursor-pointer gap-[11px] border-t border-[#f3f6f9] py-[9px] first:border-t-0 hover:bg-[#fafbfc]"
+                                className="flex w-full cursor-pointer gap-[11px] border-t border-[#f3f6f9] px-[18px] py-[9px] first:border-t-0 hover:bg-[#fafbfc]"
                             >
                                 <span
                                     className="grid h-[26px] w-[26px] flex-none place-items-center rounded-[7px]"

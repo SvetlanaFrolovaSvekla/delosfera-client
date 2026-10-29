@@ -1,6 +1,5 @@
-// Страница «Адрес не найден» (маршрут "*"). Визуально продолжает левую панель авторизации
-// (AuthHero): тот же тёмно-зелёный фон, светящиеся пятна и плавающие иконки делопроизводства,
-// а сюжет — маршрут документа, который «оборвался» и потерялся у знака вопроса.
+// Страница "Адрес не найден" (маршрут "*").
+// Визуально продолжает левую панель авторизации
 import {Link, useLocation, useNavigate} from "react-router-dom";
 import {useTranslation} from "react-i18next";
 import type {CSSProperties} from "react";
@@ -81,7 +80,7 @@ export function NotFoundPage() {
     const navigate = useNavigate();
     const {pathname} = useLocation();
 
-    // Если вкладку открыли сразу по битой ссылке, «назад» уведёт с сайта — тогда ведём на главную.
+    // Если вкладку открыли сразу по битой ссылке, "назад" уведёт с сайта - тогда ведём на главную.
     const goBack = () => {
         if (window.history.length > 1) navigate(-1);
         else navigate("/");
@@ -196,7 +195,7 @@ export function NotFoundPage() {
                 >
                     <span className="text-[110px] leading-none font-extrabold tracking-[-0.04em] sm:text-[170px]" style={digitStyle}>4</span>
 
-                    {/* «0» — печать согласования, которая ищет потерянный документ */}
+                    {/* "0" - печать согласования, которая ищет потерянный документ */}
                     <span className="relative grid h-[96px] w-[96px] place-items-center sm:h-[150px] sm:w-[150px]">
                         <svg viewBox="0 0 24 24" className="absolute inset-0 h-full w-full" fill="none"
                              style={{animation: "nfSpin 14s linear infinite"}}>

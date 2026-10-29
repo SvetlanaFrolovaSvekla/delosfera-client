@@ -82,6 +82,11 @@ export function SzSignatureJournal({szId, items, loadError}: SzSignatureJournalP
                                     {t("szCard.signature.testBadge")}
                                 </span>
                             )}
+                            {item.isSystem && (
+                                <span className="rounded-full border border-[#bfe3dd] bg-[#eef8f6] px-2 py-[1px] text-[10.5px] font-bold text-[#0f5e5a]">
+                                    {t("szCard.signature.systemBadge")}
+                                </span>
+                            )}
                         </div>
                         <div className="text-[11.5px] text-[#8b97ab]">
                             {formatDateTime(item.signedAt)}
@@ -100,7 +105,9 @@ export function SzSignatureJournal({szId, items, loadError}: SzSignatureJournalP
                         <div className="text-[11.5px] text-[#8b97ab]">
                             {item.isTest
                                 ? t("szCard.signature.testNotVerified")
-                                : item.verified ? t("ecp.journal.verified") : t("ecp.journal.notVerified")}
+                                : item.isSystem
+                                    ? t("szCard.signature.systemNote")
+                                    : item.verified ? t("ecp.journal.verified") : t("ecp.journal.notVerified")}
                             {item.certIssuerCommonName && ` · ${t("ecp.journal.issuer", {name: item.certIssuerCommonName})}`}
                         </div>
                         {!item.matchesCurrentContent && (

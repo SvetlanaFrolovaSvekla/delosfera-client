@@ -1,6 +1,4 @@
-// Страница "Активность на портале" — развёрнутая версия виджета "Последняя активность"
-// Та же страница открывается и в "Управление → Наблюдение" (embedded) - компактнее и с пояснением,
-// чем лента отличается от "Технического журнала действий".
+// Страница "Активность на портале" - развёрнутая версия виджета "Последняя активность"
 import {useEffect, useMemo, useState} from "react";
 import {useTranslation} from "react-i18next";
 import {Link, useNavigate} from "react-router-dom";
@@ -25,11 +23,11 @@ const ICON_STYLE: Record<ActivityIcon, { iconName: string; col: string; bg: stri
     x: {iconName: "x", col: "#c0392b", bg: "#fbe7e4"},
     doc: {iconName: "vnd", col: "#2f68f5", bg: "#e9f0ff"},
     clock: {iconName: "clock", col: "#7a5ce0", bg: "#efeafe"},
-    // Правки/изменения (записки, заявки, маршруты и т.п.) — тот же цвет, что и
+    // Правки/изменения (записки, заявки, маршруты и т.п.) - тот же цвет, что и
     // у карандаша в "Истории" на карточке документа (DocumentHistory.tsx).
     edit: {iconName: "edit", col: "#55617a", bg: "#eef1f5"},
     info: {iconName: "info", col: "#6b7280", bg: "#f1f2f4"},
-    // Удаление черновика — красная мусорка, тот же красный, что и у "x".
+    // Удаление черновика - красная мусорка, тот же красный, что и у "x".
     trash: {iconName: "trash", col: "#c0392b", bg: "#fbe7e4"},
 };
 
@@ -219,7 +217,7 @@ export function ActivityFeedPage({embedded = false}: ActivityFeedPageProps) {
                     <>
                         {items.map((item) => {
                             const style = ICON_STYLE[item.icon] ?? ICON_STYLE.info;
-                            // canOpen=false — запись о чужом черновике ВНД, который у пользователя нет
+                            // canOpen=false - запись о чужом черновике ВНД, который у пользователя нет
                             // прав открыть (см. тот же приём в RecentActivityCard.tsx на главной, и
                             // ActivityLogService.CanOpenVndEntry на бэке).
                             const locked = !item.canOpen;
@@ -227,7 +225,7 @@ export function ActivityFeedPage({embedded = false}: ActivityFeedPageProps) {
                                 <div
                                     key={`${item.module}-${item.id}`}
                                     onClick={locked ? undefined : () => navigate(item.url)}
-                                    title={locked ? "Черновик недоступен — нет прав на просмотр чужих черновиков" : undefined}
+                                    title={locked ? "Черновик недоступен - нет прав на просмотр чужих черновиков" : undefined}
                                     className={
                                         "flex gap-[11px] border-t border-[#f3f6f9] py-[9px] first:border-t-0 " +
                                         (locked ? "cursor-not-allowed opacity-60" : "cursor-pointer hover:bg-[#fafbfc]")
@@ -244,7 +242,7 @@ export function ActivityFeedPage({embedded = false}: ActivityFeedPageProps) {
                                             <Icon name={style.iconName} width={14} height={14}/>}
                                     </span>
                                     <div className="min-w-0">
-                                        {/* whitespace-pre-line — сервер разносит длинный список изменённых
+                                        {/* Whitespace-pre-line - сервер разносит длинный список изменённых
                                             реквизитов по строкам через \n (см. VndService.BuildChangedFieldsList) */}
                                         <div className="whitespace-pre-line text-[12.5px] leading-[1.4] text-[#26324a]">
                                             <HighlightSubstrings text={item.text} terms={terms}/>

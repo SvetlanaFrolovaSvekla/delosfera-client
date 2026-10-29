@@ -147,7 +147,7 @@ export function SzCardHeader({card, onToggleWithdraw, onToggleForce}: SzCardHead
                             </Tooltip>
                         </>
                     )}
-                    {/* Корректировать на согласовании (право CorrectSzOnApproval) */}
+                    {/* Корректировать на маршруте (автор или право CorrectSzOnApproval) */}
                     {card.canCorrectOnApproval && !card.correcting && (
                         <SzButton icon={<PencilLine size={16}/>} onClick={() => setConfirmCorrect(true)} disabled={saving}>
                             {t("szCard.correction.start")}
@@ -205,9 +205,11 @@ export function SzCardHeader({card, onToggleWithdraw, onToggleForce}: SzCardHead
                     setConfirmCorrect(false);
                 }}
                 title={t("szCard.correction.confirmTitle")}
-                message={visas > 0
-                    ? t("szCard.correction.confirmWithVisas", {count: visas})
-                    : t("szCard.correction.confirmNoVisas")}
+                message={sz?.statusCode === "OnSigning"
+                    ? t("szCard.correction.confirmOnSigning")
+                    : visas > 0
+                        ? t("szCard.correction.confirmWithVisas", {count: visas})
+                        : t("szCard.correction.confirmNoVisas")}
                 confirmLabel={t("szCard.correction.start")}
                 loadingLabel={t("szCard.correction.start")}
                 loading={saving}

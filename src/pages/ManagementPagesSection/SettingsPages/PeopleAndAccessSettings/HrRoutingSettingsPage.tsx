@@ -23,6 +23,8 @@ export function HrRoutingSettingsPage() {
     // Подписант от Банка приказа и договора заявок на замещение отсутствующих из Головного офиса
     // (у филиала подписывает директор филиала, у ГО директора филиала нет).
     const [headOfficeSigner, setHeadOfficeSigner] = useState<number | null>(null);
+    // Визирующие приказов о замещении — постоянный список для «Завизировали:» в приказе.
+    const [orderVisas, setOrderVisas] = useState<number[]>([]);
 
     const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState(false);
@@ -38,6 +40,7 @@ export function HrRoutingSettingsPage() {
                 setOperations(s.operationsApproverUserId ?? null);
                 setOperationsFallback(s.operationsFallbackUserId ?? null);
                 setHeadOfficeSigner(s.headOfficeSignerUserId ?? null);
+                setOrderVisas(s.orderVisaUserIds ?? []);
             })
             .catch(() => setError(t("hrRoutingSettings.errorLoad") /* Не удалось загрузить настройки */))
             .finally(() => setLoading(false));
@@ -54,6 +57,7 @@ export function HrRoutingSettingsPage() {
                 operationsApproverUserId: operations,
                 operationsFallbackUserId: operationsFallback,
                 headOfficeSignerUserId: headOfficeSigner,
+                orderVisaUserIds: orderVisas,
             });
             setSaved(true);
         } catch {
@@ -155,6 +159,39 @@ export function HrRoutingSettingsPage() {
                             onChange={(id) => { setHeadOfficeSigner(id); setSaved(false); }}
                             onClear={() => { setHeadOfficeSigner(null); setSaved(false); }}
                         />
+                    </Field>
+
+                    <Field
+                        label={t("hrRoutingSettings.orderVisasLabel") /* Визирующие приказов о замещении */}
+                        hint={t("hrRoutingSettings.orderVisasHint")}>
+                        <div className="flex flex-col gap-2">
+                            {orderVisas.map((id, i) => (
+                                <UserPickerField
+                                    key={id}
+                                    people={users.filter((u) => u.id === id || !orderVisas.includes(u.id))}
+                                    value={id}
+                                    clearable
+                                    placeholder={t("hrRoutingSettings.pickerPlaceholder")}
+                                    modalTitle={t("hrRoutingSettings.orderVisasLabel")}
+                                    searchPlaceholder={t("selectApproverModal.searchPlaceholder")}
+                                    onChange={(next) => {
+                                        setOrderVisas((list) => list.map((x, j) => (j === i ? next : x)).filter((x, j, a) => a.indexOf(x) === j));
+                                        setSaved(false);
+                                    }}
+                                    onClear={() => { setOrderVisas((list) => list.filter((_, j) => j !== i)); setSaved(false); }}
+                                />
+                            ))}
+                            {/* Пустое поле — добавить ещё одного визирующего */}
+                            <UserPickerField
+                                key={`add-${orderVisas.length}`}
+                                people={users.filter((u) => !orderVisas.includes(u.id))}
+                                value={null}
+                                placeholder={t("hrRoutingSettings.orderVisasAdd") /* Добавить визирующего */}
+                                modalTitle={t("hrRoutingSettings.orderVisasLabel")}
+                                searchPlaceholder={t("selectApproverModal.searchPlaceholder")}
+                                onChange={(id) => { setOrderVisas((list) => list.includes(id) ? list : [...list, id]); setSaved(false); }}
+                            />
+                        </div>
                     </Field>
 
                     {/* Кнопка — направо: рядом со статусом сохранения её иначе искали

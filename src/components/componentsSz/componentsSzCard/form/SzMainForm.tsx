@@ -224,7 +224,8 @@ export function SzMainForm({card, userList}: SzMainFormProps) {
               может идти и без отдельного подписания.
             */}
             <div className="mt-4">
-                {routeEditable ? (
+                {/* На маршруте подписанта меняют в режиме корректировки — без отзыва и нового круга. */}
+                {routeEditable || card.correcting ? (
                     <Field label={t("szCard.fields.signer")}>
                         <UserPickerField
                             accent="blue"

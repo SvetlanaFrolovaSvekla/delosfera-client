@@ -17,6 +17,7 @@ import {SzDecisionPanel} from "@/components/componentsSz/componentsApprovals/SzD
 import {SzRemarksPanel} from "@/components/componentsSz/componentsApprovals/SzRemarksPanel.tsx";
 import {SzUserMultiPickerModal} from "@/components/componentsSz/componentsSzCard/controls/SzUserMultiPickerModal.tsx";
 import {ConfirmActionModal} from "@/components/componentsGeneral/modal/ConfirmActionModal.tsx";
+import {UserOrgUnitPickerModal} from "@/components/componentsGeneral/userPicker/UserOrgUnitPickerModal.tsx";
 import {szService} from "@/service/szService/szService.ts";
 import {toast} from "@/service/toastService.ts";
 import {serverMessage} from "@/utils/szProcess/szCardUtils.ts";
@@ -31,7 +32,8 @@ interface SzApprovalSectionProps {
     approval: SzApprovalState;
     currentUserId: number | undefined;
     saving: boolean;
-    /** Право менять участников маршрута на согласовании (CorrectSzOnApproval). */
+    /** Право менять участников маршрута (автор записки или CorrectSzOnApproval): на согласовании —
+     *  добавить / убрать / заменить согласующего, на подписании — заменить подписанта. */
     canEditRoute?: boolean;
     /** Кого можно добавить в маршрут. */
     people?: PickableUser[];
@@ -50,8 +52,32 @@ export function SzApprovalSection({
     const [picked, setPicked] = useState<number[]>([]);
     const [beforeStep, setBeforeStep] = useState<number | "">("");
     const [removing, setRemoving] = useState<RouteParticipant | null>(null);
+    const [replacing, setReplacing] = useState<RouteParticipant | null>(null);
     const [routeBusy, setRouteBusy] = useState(false);
     const laterSteps = route.steps.filter((s) => s.order > route.currentStepOrder);
+    const routeRunning = route.status === "Running";
+    // Добавлять и убирать согласующих — на согласовании; заменить участника (в т.ч. подписанта) —
+    // и на подписании. Ни то, ни другое записку не отзывает и на новый круг не отправляет.
+    const canAddRemove = !!canEditRoute && routeRunning && sz.statusCode === "OnApproval";
+    const canReplace = !!canEditRoute && routeRunning;
+    const replacingIsSigner = !!replacing
+        && route.steps.some((s) => s.kind === "Signing" && s.participants.some((p) => p.id === replacing.id));
+
+    const confirmReplace = async (userId: number) => {
+        if (!replacing) return;
+        const participantId = replacing.id;
+        setReplacing(null);
+        setRouteBusy(true);
+        try {
+            await szService.replaceRouteParticipant(sz.id, participantId, userId);
+            toast.success(t("szCard.correction.participantReplaced"));
+        } catch (e) {
+            toast.error(serverMessage(e) ?? t("szCard.correction.routeChangeFailed"));
+        } finally {
+            setRouteBusy(false);
+            await onRouteChanged?.();
+        }
+    };
 
     const addPicked = async (ids: number[]) => {
         if (ids.length === 0) return;
@@ -121,9 +147,14 @@ export function SzApprovalSection({
             </div>
 
             <SzRouteSteps route={route} users={users} ecpByParticipant={ecpByParticipant}
-                          onRemove={canEditRoute && route.status === "Running" ? setRemoving : undefined}/>
+                          onRemove={canAddRemove && !routeBusy ? setRemoving : undefined}
+                          onReplace={canReplace && !routeBusy ? setReplacing : undefined}/>
 
-            {canEditRoute && route.status === "Running" && (
+            {canReplace && (
+                <div className="mt-2 text-[11.5px] text-[#8b97ab]">{t("szCard.correction.routeHint")}</div>
+            )}
+
+            {canAddRemove && (
                 <div className="mt-2.5 flex flex-wrap items-center gap-2">
                     <button type="button" onClick={() => setPickerOpen(true)} disabled={routeBusy || saving}
                             className="inline-flex cursor-pointer items-center gap-1.5 rounded-[8px] border border-dashed border-[#c9d3e3] bg-white px-3 py-1.5 text-[12.5px] font-semibold text-[#2f68f5] hover:bg-[#f6f8fb] disabled:opacity-50">
@@ -153,6 +184,20 @@ export function SzApprovalSection({
                     title={t("szCard.correction.addParticipant")}
                     onClose={() => { setPickerOpen(false); void addPicked(picked); }}
                     accent="blue"
+                    avatars
+                />
+            )}
+
+            {replacing && (
+                <UserOrgUnitPickerModal
+                    people={people}
+                    excludeId={replacing.userId ?? undefined}
+                    title={t(replacingIsSigner ? "szCard.correction.replaceSigner" : "szCard.correction.replaceParticipant")}
+                    searchPlaceholder={t("szCard.fields.userSearch")}
+                    onSelect={(person) => { void confirmReplace(person.id); }}
+                    onClose={() => setReplacing(null)}
+                    accent="blue"
+                    bySeniority
                     avatars
                 />
             )}

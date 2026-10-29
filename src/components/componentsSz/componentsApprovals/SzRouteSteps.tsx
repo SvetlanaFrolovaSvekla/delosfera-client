@@ -1,6 +1,6 @@
 // Подробный список этапов маршрута: участник, его решение, комментарий и компактный значок подписи.
 // Подробности подписи (хэш, сертификат, проверка у провайдера) — в журнале подписей ниже.
-import {AlertTriangle, ShieldCheck, X} from "lucide-react";
+import {AlertTriangle, ShieldCheck, UserCog, X} from "lucide-react";
 import {useTranslation} from "react-i18next";
 import type {RouteInstance, RouteParticipant} from "@/service/workflowService/workflowService.ts";
 import type {SzResolutionSignature} from "@/service/szService/szEcpService.ts";
@@ -11,8 +11,10 @@ interface SzRouteStepsProps {
     users: Record<number, string>;
     /** Подписи ЭЦП по участникам маршрута (routeParticipantId → запись журнала). */
     ecpByParticipant?: ReadonlyMap<number, SzResolutionSignature>;
-    /** Убрать участника, ещё не вынесшего решение (право CorrectSzOnApproval). Не задан — кнопки нет. */
+    /** Убрать участника, ещё не вынесшего решение (автор или право CorrectSzOnApproval). Не задан — кнопки нет. */
     onRemove?: (participant: RouteParticipant) => void;
+    /** Заменить участника (согласующего или подписанта), ещё не вынесшего решение. Не задан — кнопки нет. */
+    onReplace?: (participant: RouteParticipant) => void;
 }
 
 /** Цвет решения/состояния — пилюля справа от ФИО. */
@@ -31,7 +33,7 @@ function initials(name: string): string {
     return ((parts[0]?.[0] ?? "") + (parts[1]?.[0] ?? "")).toUpperCase() || "—";
 }
 
-export function SzRouteSteps({route, users, ecpByParticipant, onRemove}: SzRouteStepsProps) {
+export function SzRouteSteps({route, users, ecpByParticipant, onRemove, onReplace}: SzRouteStepsProps) {
     const {t} = useTranslation();
 
     const nameOf = (p: RouteParticipant) =>
@@ -70,7 +72,15 @@ export function SzRouteSteps({route, users, ecpByParticipant, onRemove}: SzRoute
                                                         ? t(`szCard.resolution.${p.resolution.type}`)
                                                         : t(`szCard.participantState.${p.state}`)}
                                                 </span>
-                                                {onRemove && !p.resolution && (p.state === "Pending" || p.state === "Active") && (
+                                                {onReplace && !p.resolution && (p.state === "Pending" || p.state === "Active") && (
+                                                    <button type="button" onClick={() => onReplace(p)}
+                                                            title={t(step.kind === "Signing" ? "szCard.correction.replaceSigner" : "szCard.correction.replaceParticipant")}
+                                                            aria-label={t(step.kind === "Signing" ? "szCard.correction.replaceSigner" : "szCard.correction.replaceParticipant")}
+                                                            className="grid h-6 w-6 cursor-pointer place-items-center rounded-[6px] border-none bg-transparent text-[#a3adbd] hover:bg-[#eaf1ff] hover:text-[#2f68f5]">
+                                                        <UserCog size={14}/>
+                                                    </button>
+                                                )}
+                                                {onRemove && step.kind !== "Signing" && !p.resolution && (p.state === "Pending" || p.state === "Active") && (
                                                     <button type="button" onClick={() => onRemove(p)}
                                                             title={t("szCard.correction.removeParticipant")}
                                                             aria-label={t("szCard.correction.removeParticipant")}
@@ -95,10 +105,14 @@ export function SzRouteSteps({route, users, ecpByParticipant, onRemove}: SzRoute
                                                     className={`inline-flex items-center gap-1.5 rounded-[7px] border px-2 py-[3px] text-[11.5px] ${
                                                         ecp.isTest
                                                             ? "border-[#f0dcae] bg-[#fffaf0] text-[#8a5a00]"
-                                                            : "border-[#d4d6f8] bg-[#f5f6fd] text-[#4e57d6]"}`}>
+                                                            // Локальная подпись системы «Делосфера» — зелёная, как в ВНД.
+                                                            : ecp.isSystem
+                                                                ? "border-[#bfe3dd] bg-[#eef8f6] text-[#0f5e5a]"
+                                                                : "border-[#d4d6f8] bg-[#f5f6fd] text-[#4e57d6]"}`}>
                                                     <ShieldCheck size={13} strokeWidth={2}/>
                                                     <span className="font-semibold">
-                                                        {ecp.isTest ? t("szCard.signature.ecpTest") : t("szCard.signature.ecp")}
+                                                        {ecp.isTest ? t("szCard.signature.ecpTest")
+                                                            : ecp.isSystem ? t("szCard.signature.system") : t("szCard.signature.ecp")}
                                                     </span>
                                                     <span className="text-[#8b97ab]">· {formatDateTime(ecp.signedAt)}</span>
                                                 </span>

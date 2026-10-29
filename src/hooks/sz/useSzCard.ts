@@ -156,11 +156,12 @@ export function useSzCard(id: string | undefined) {
     // Отозвать чужую записку — отдельное право (WithdrawAnySz): прервать маршрут,
     // чтобы поправить записку, когда автора нет на месте.
     const canWithdrawAny = isSystemAdmin || hasPermission(PermissionCode.WithdrawAnySz);
-    // Корректировка на согласовании (право CorrectSzOnApproval): правка полей и вложений без
-    // отзыва — после подтверждения в модалке. Если изменится подписанное содержимое, а визы уже
-    // есть, сервер начнёт согласование заново с первого этапа.
-    const canCorrectOnApproval = !!sz && sz.statusCode === "OnApproval"
-        && hasPermission(PermissionCode.CorrectSzOnApproval);
+    // Корректировка на маршруте (согласование, подписание): автор записки или обладатель права
+    // CorrectSzOnApproval правит поля, вложения, подписанта и согласующих без отзыва — после
+    // подтверждения в модалке. На новый круг записка уходит, только если изменился текст или
+    // реквизиты (то, под чем ставятся подписи); вложения и состав маршрута круг не сбрасывают.
+    const canCorrectOnApproval = !!sz && (sz.statusCode === "OnApproval" || sz.statusCode === "OnSigning")
+        && (isAuthor || hasPermission(PermissionCode.CorrectSzOnApproval));
     const [correcting, setCorrecting] = useState(false);
     useEffect(() => { setCorrecting(false); }, [sz?.id, sz?.statusCode]);
     const editable = isNew
@@ -306,10 +307,11 @@ export function useSzCard(id: string | undefined) {
                     : "szCard.notices.sentToApproval"));
             } else {
                 // Регистрация — тоже всплывающим уведомлением, как и отправка.
+                // Текст длинный (номер, маршрут, срок) — крупный тост и подольше на экране.
                 toast.success(t("szCard.notices.registered", {
                     regNumber: updated.regNumber,
                     dueDate: formatDate(updated.dueDate),
-                }));
+                }), {size: "large", duration: 8000});
             }
         } catch (e) {
             // Сервер объясняет отказ по существу: не выбран согласующий, не задан

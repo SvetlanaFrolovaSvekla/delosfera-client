@@ -5,6 +5,7 @@
 // кодом и описанием редакции) - подписи "Новая редакция"/"Предыдущая редакция" при этом
 // пересчитываются по номеру выбранной редакции, а не фиксированы за стороной, так что можно
 // сравнить и две более старые редакции между собой.
+// У каждой колонки своя строка поиска по тексту - искать можно в обоих документах независимо.
 import React, {useEffect, useRef, useState} from "react";
 import {createPortal} from "react-dom";
 import {useTranslation} from "react-i18next";
@@ -20,6 +21,7 @@ import {
 import {
     RedactionContentsPanel
 } from "@/components/componentsVND/componentsOpenVndPage/componentsEditionsTab/RedactionContentsPanel.tsx";
+import {SearchBar} from "@/components/componentsGeneral/SearchBar.tsx";
 import {ChevronDown, Columns2, Download, ListTree, Loader2, Table2, X, ZoomIn, ZoomOut} from "lucide-react";
 
 interface RedactionCompareModalProps {
@@ -153,6 +155,14 @@ export function RedactionCompareModal({
         `${right.id}-${rightLanguage}::${left.id}-${leftLanguage}`,
     );
 
+    // Поиск по тексту - отдельный в каждой колонке. Запрос сохраняется при смене редакции или
+    // языка в колонке: так удобно найти ту же фразу в другой редакции.
+    const [leftQuery, setLeftQuery] = useState("");
+    const [rightQuery, setRightQuery] = useState("");
+    // Пока считается подсветка различий, она перестраивает текст документов - подсветку поиска
+    // накладываем после неё, иначе одна разметка ломала бы другую.
+    const searchPaused = diffStatus === "computing";
+
     const leftMeta = columnLabel(left, right, reviewedRedactionId, t);
     const rightMeta = columnLabel(right, left, reviewedRedactionId, t);
 
@@ -212,6 +222,9 @@ export function RedactionCompareModal({
                         redactions={redactions}
                         excludeId={rightId}
                         onRedactionChange={setLeftId}
+                        searchQuery={leftQuery}
+                        onSearchChange={setLeftQuery}
+                        searchPaused={searchPaused}
                     />
                     <CompareColumn
                         vnd={vnd}
@@ -227,6 +240,9 @@ export function RedactionCompareModal({
                         redactions={redactions}
                         excludeId={leftId}
                         onRedactionChange={setRightId}
+                        searchQuery={rightQuery}
+                        onSearchChange={setRightQuery}
+                        searchPaused={searchPaused}
                     />
                 </div>
             </div>
@@ -243,6 +259,7 @@ function CompareColumn({
                            vnd, redaction, label, labelEmphasis, availableLanguages, activeLanguage,
                            onLanguageChange, downloadingId, onDownload, textViewRef,
                            redactions, excludeId, onRedactionChange,
+                           searchQuery, onSearchChange, searchPaused,
                        }: {
     vnd: VndResponse;
     redaction: VndRedactionResponse;
@@ -260,6 +277,11 @@ function CompareColumn({
      * было бы сравнить редакцию саму с собой). */
     excludeId: number;
     onRedactionChange: (id: number) => void;
+    /** Строка поиска по тексту этой колонки (своя у каждой стороны). */
+    searchQuery: string;
+    onSearchChange: (value: string) => void;
+    /** Подсветка поиска временно не накладывается - пока считаются различия документов. */
+    searchPaused: boolean;
 }) {
     const {t} = useTranslation();
     const canExportVnd = useCanExportVnd();
@@ -358,9 +380,20 @@ function CompareColumn({
                 </div>
             </div>
 
+            {/* Поиск по тексту этой редакции - независимо от второй колонки. Enter - к следующему совпадению. */}
+            <div className="flex-none border-b border-[#eef2f7] bg-white px-4 py-2">
+                <SearchBar
+                    variant="white"
+                    placeholder={t("redactionCompareModal.searchPlaceholder", {code: redaction.code})}
+                    value={searchQuery}
+                    onChange={onSearchChange}
+                    onSubmit={() => textViewRef.current?.goNext()}
+                />
+            </div>
+
             {contentsOpen && (
                 <div
-                    className="absolute right-3 top-[64px] z-30 max-h-[calc(100%-80px)] w-[280px] overflow-hidden rounded-[14px] shadow-[0_14px_38px_rgba(20,25,40,0.22)]">
+                    className="absolute right-3 top-[112px] z-30 max-h-[calc(100%-80px)] w-[280px] overflow-hidden rounded-[14px] shadow-[0_14px_38px_rgba(20,25,40,0.22)]">
                     <RedactionContentsPanel
                         fileId={activeFileId}
                         getContainer={() => textViewRef.current?.getContainer() ?? null}
@@ -454,6 +487,8 @@ function CompareColumn({
                     activeLanguage={activeLanguage}
                     downloadingId={downloadingId}
                     onDownload={onDownload}
+                    searchQuery={searchPaused ? "" : searchQuery}
+                    onClearSearch={() => onSearchChange("")}
                 />
             </div>
         </div>

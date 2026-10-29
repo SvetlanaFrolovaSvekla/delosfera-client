@@ -10,11 +10,14 @@ interface UserPickerModalShellProps {
     onClose: () => void;
     filters: ReactNode; // поиск + фильтр по СП (и что-то ещё специфичное для конкретной модалки)
     children: ReactNode; // Содержимое списка (или сами состояния — см. ниже)
+    /** Подвал окна под списком, во всю ширину (например, «Отмечено: N» + «Готово»). Не
+     *  прокручивается вместе со списком и не перекрывает его строки. */
+    footer?: ReactNode;
 }
 
 /** Общий каркас модалки-пикера пользователей: portal + header + блок фильтров + скролл-зона
  * списка. */
-export function UserPickerModalShell({title, onClose, filters, children}: UserPickerModalShellProps) {
+export function UserPickerModalShell({title, onClose, filters, children, footer}: UserPickerModalShellProps) {
     return createPortal(
         <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/30 p-4">
             <div className="flex h-[80vh] w-full max-w-[560px] flex-col overflow-hidden rounded-[16px] bg-white shadow-2xl">
@@ -30,6 +33,11 @@ export function UserPickerModalShell({title, onClose, filters, children}: UserPi
                 <div className="flex-1 overflow-y-auto px-3 py-2">
                     {children}
                 </div>
+                {footer && (
+                    <div className="flex flex-none items-center justify-between gap-3 border-t border-[#eef0f5] bg-white px-6 py-3">
+                        {footer}
+                    </div>
+                )}
             </div>
         </div>,
         document.body,

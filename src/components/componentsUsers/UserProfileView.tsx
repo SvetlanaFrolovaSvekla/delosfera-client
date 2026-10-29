@@ -1,15 +1,18 @@
 // Личный профиль пользователя
-import {useEffect, useMemo, useState} from "react";
+import {useCallback, useEffect, useMemo, useState} from "react";
 import {useTranslation} from "react-i18next";
-import {userService} from "@/service/userService/userService.ts";
-import type {UserActivityResponse, UserResponse} from "@/service/userService/userServiceType.ts";
+import type {UserResponse} from "@/service/userService/userServiceType.ts";
 import {Tabs} from "@/components/componentsGeneral/Tabs";
-import {Check, KeyRound, Pencil, User as UserIcon} from "lucide-react";
+import {Check, KeyRound, Lock, Pencil, Search, ShieldPlus, User as UserIcon, UserRound, X} from "lucide-react";
 import {useNavigate} from "react-router-dom";
 import {useAuth} from "@/context/AuthContext";
 import {PermissionCode} from "@/constants/permissions/permissions.ts";
 import {Avatar} from "@/components/componentsGeneral/Avatar.tsx";
 import {EcpCredentialCard} from "@/components/componentsUsers/EcpCredentialCard.tsx";
+import {UserActivityHistory} from "@/components/componentsUsers/UserActivityHistory.tsx";
+import {AccessRequestModal} from "@/components/componentsUsers/AccessRequestModal.tsx";
+import {HighlightSubstrings, splitSearchTerms} from "@/utils/highlightText.tsx";
+import {Tooltip} from "@/components/componentsGeneral/tooltips/Tooltip.tsx";
 
 const ALL_TAB = "all";
 
@@ -46,9 +49,10 @@ export function UserProfileView({user, isOwnProfile}: UserProfileViewProps) {
     const {hasPermission} = useAuth();
     const canEditUser = hasPermission(PermissionCode.ManageUsers);
     const [activeTab, setActiveTab] = useState<string>(ALL_TAB);
-    const [activity, setActivity] = useState<UserActivityResponse | null>(null);
-    const [activityLoading, setActivityLoading] = useState(true);
-
+    // Поиск по полномочиям (в пределах выбранной вкладки)
+    const [permissionSearch, setPermissionSearch] = useState("");
+    const permissionTerms = useMemo(() => splitSearchTerms(permissionSearch), [permissionSearch]);
+    const [accessRequestOpen, setAccessRequestOpen] = useState(false);
     // Сброс скролла при открытии профиля: страница открывается внутри общего
     // скроллящегося контейнера (main > div.overflow-y-auto в App.tsx), а не окна
     // браузера, поэтому без явного сброса остаётся там, где был скролл на предыдущей странице.
@@ -57,27 +61,11 @@ export function UserProfileView({user, isOwnProfile}: UserProfileViewProps) {
         document.getElementById("main-scroll-container")?.scrollTo({top: 0, left: 0});
         // eslint-disable-next-line react-hooks/set-state-in-effect
         setActiveTab(ALL_TAB);
+        // eslint-disable-next-line react-hooks/set-state-in-effect
+        setPermissionSearch("");
     }, [user.id]);
 
-    useEffect(() => {
-        let cancelled = false;
-        // eslint-disable-next-line react-hooks/set-state-in-effect
-        setActivityLoading(true);
-        userService
-            .getActivity(user.id)
-            .then((data) => {
-                if (!cancelled) setActivity(data);
-            })
-            .catch(() => {
-                if (!cancelled) setActivity(null);
-            })
-            .finally(() => {
-                if (!cancelled) setActivityLoading(false);
-            });
-        return () => {
-            cancelled = true;
-        };
-    }, [user.id]);
+    const closeAccessRequest = useCallback(() => setAccessRequestOpen(false), []);
 
     // все права по всем ролям пользователя, без дублей (по code)
     const allPermissions = useMemo(() => {
@@ -119,8 +107,18 @@ export function UserProfileView({user, isOwnProfile}: UserProfileViewProps) {
             : [];
     }, [user, activeTab, allPermissions, hasSingleRole]);
 
+    // Полномочия вкладки, где есть ВСЕ слова запроса
+    const visiblePermissions = useMemo(() => {
+        if (permissionTerms.length === 0) return activePermissions;
+        return activePermissions.filter((p) => {
+            const label = p.label.toLowerCase();
+            return permissionTerms.every((term) => label.includes(term));
+        });
+    }, [activePermissions, permissionTerms]);
+
     return (
         <div className="animate-[dsIn_.22s_ease]">
+            <AccessRequestModal open={accessRequestOpen} onClose={closeAccessRequest}/>
             {/* Шапка профиля */}
             <div
                 className="bg-white border border-[#e9edf3] rounded-2xl px-7 py-6 mb-[18px] flex items-center gap-[22px] flex-wrap">
@@ -129,11 +127,13 @@ export function UserProfileView({user, isOwnProfile}: UserProfileViewProps) {
                 <div className="flex-1 min-w-[220px]">
                     <h1 className="m-0 text-[23px] font-bold tracking-[-.02em]">{user.fullName}</h1>
                     <div className="mt-[9px] flex items-center gap-[10px] flex-wrap">
+                        {/* Роли: */}
+                        <span className="text-[12.5px] font-semibold text-[#8b97ab]">{t("userProfile.rolesLabel")}</span>
                         {user.roles.length > 0 ? (
                             user.roles.map((role) => (
                                 <span
                                     key={role.id}
-                                    className="inline-flex items-center gap-[7px] px-[11px] py-[5px] rounded-lg bg-[#e2f4ea] text-[#1c7a4d] font-semibold text-[12.5px]"
+                                    className="inline-flex items-center gap-[7px] px-[11px] py-[5px] rounded-lg bg-[#ececfc] text-[#4e57d6] font-semibold text-[12.5px]"
                                 >
                                     <UserIcon size={14} strokeWidth={1.9}/>
                                     {role.name}
@@ -185,52 +185,23 @@ export function UserProfileView({user, isOwnProfile}: UserProfileViewProps) {
 
             <div className="grid grid-cols-1 lg:grid-cols-[1fr_360px] gap-[18px]">
                 {/* Левая колонка - история действий */}
-                <div className="relative lg:min-h-[320px]">
-                    <div className="flex max-h-[600px] flex-col overflow-hidden rounded-2xl border border-[#e9edf3] bg-white lg:absolute lg:inset-0 lg:max-h-none">
-                        <div className="shrink-0 px-[22px] pt-[17px] pb-[14px] border-b border-[#eef2f7]">
-                            <h2 className="m-0 text-[15px] font-bold">{t("userProfile.activityTitle")}</h2>
-                        </div>
-                        <div className="min-h-0 flex-1 overflow-y-auto px-[22px] pb-[18px] pt-[2px]">                            {activityLoading ? (
-                                // <div className="py-7 text-center text-[#a3adbd] text-[13px]">Загрузка…</div>
-                                <div
-                                    className="py-7 text-center text-[#a3adbd] text-[13px]">{t("userProfile.loading")}</div>
-                            ) : !activity || activity.recent.length === 0 ? (
-                                // <div className="py-7 text-center text-[#a3adbd] text-[13px]">Действий пока нет</div>
-                                <div
-                                    className="py-7 text-center text-[#a3adbd] text-[13px]">{t("userProfile.noActivity")}</div>
-                            ) : (
-                                <ul className="flex flex-col divide-y divide-[#f1f4f8]">
-                                    {activity.recent.map((item, idx) => (
-                                        <li key={idx} className="flex items-start gap-3 py-[11px]">
-                                            <span className="mt-[3px] h-2 w-2 shrink-0 rounded-full bg-[#7c86ff]"/>
-                                            <div className="min-w-0">
-                                                <div className="text-[13px] text-[#1c2740]">
-                                                    {item.description}
-                                                    {item.vndCode && (
-                                                        <span className="text-[#6b7688]"> · {item.vndCode}</span>
-                                                    )}
-                                                </div>
-                                                {item.vndTitle && (
-                                                    <div
-                                                        className="truncate text-[12px] text-[#8b97ab]">{item.vndTitle}</div>
-                                                )}
-                                                <div
-                                                    className="text-[11px] text-[#a3adbd]">{formatDateTime(item.timestamp)}</div>
-                                            </div>
-                                        </li>
-                                    ))}
-                                </ul>
-                            )}
-                        </div>
-                    </div>
+                <div className="relative lg:min-h-[560px]">
+                    {/* key: другой профиль — свежие фильтры и лента */}
+                    <UserActivityHistory key={user.id} userId={user.id}/>
                 </div>
 
                 {/* Правая колонка */}
                 <div className="flex flex-col gap-4">
                     {/* Учётная запись */}
                     <div className="bg-white border border-[#e9edf3] rounded-2xl px-5 py-[18px]">
-                        {/* <h3 className="m-0 mb-[13px] text-[13.5px] font-bold">Учётная запись</h3> */}
-                        <h3 className="m-0 mb-[13px] text-[13.5px] font-bold">{t("userProfile.accountSectionTitle")}</h3>
+                        <div className="flex items-center gap-[9px] mb-[13px]">
+                            <span
+                                className="w-[30px] h-[30px] flex-none rounded-lg bg-[var(--soft)] text-[var(--accent)] grid place-items-center">
+                                <UserRound size={17} strokeWidth={1.8}/>
+                            </span>
+                            {/* Учётная запись */}
+                            <h3 className="m-0 text-[13.5px] font-bold">{t("userProfile.accountSectionTitle")}</h3>
+                        </div>
                         <div className="flex flex-col gap-[11px]">
                             {/* <Row label="Логин" value={user.email} /> */}
                             <Row label={t("userProfile.login")} value={user.email}/>
@@ -262,46 +233,105 @@ export function UserProfileView({user, isOwnProfile}: UserProfileViewProps) {
                                 {/* <h3 className="m-0 text-[13.5px] font-bold">Электронная подпись</h3> */}
                                 <h3 className="m-0 text-[13.5px] font-bold">{t("userProfile.signatureTitle")}</h3>
                             </div>
-                            <p className="m-0 text-[12.5px] text-[#55617a] leading-[1.55]">
-                                {/* Недоступно */}
-                                {t("userProfile.signatureUnavailable")}
-                            </p>
+                            {/* Чужой профиль: подпись сотрудника видит только он сам */}
+                            <div className="flex items-start gap-2.5 rounded-[10px] border border-[#e5e9f0] bg-[#f6f8fb] px-3 py-2.5">
+                                <span className="mt-[1px] w-[26px] h-[26px] flex-none rounded-full bg-white border border-[#e5e9f0] text-[#8b97ab] grid place-items-center">
+                                    <Lock size={13} strokeWidth={2}/>
+                                </span>
+                                <div className="min-w-0">
+                                    <div className="text-[12.5px] font-semibold text-[#26324a]">
+                                        {/* Это профиль другого сотрудника */}
+                                        {t("userProfile.signatureForeignTitle")}
+                                    </div>
+                                    <div className="mt-0.5 text-[12px] text-[#6b7891] leading-[1.5]">
+                                        {/* У вас нет права просматривать чужую электронную подпись */}
+                                        {t("userProfile.signatureForeignText")}
+                                    </div>
+                                </div>
+                            </div>
                         </div>
                     )}
 
                     {/* Полномочия */}
                     <div className="bg-white border border-[#e9edf3] rounded-2xl px-5 py-[18px]">
-                        {hasSingleRole ? (
-                            <h3 className="m-0 mb-3 text-[13.5px] font-bold">
-                                {/* {isOwnProfile ? "Полномочия моей роли" : "Полномочия роли"} «{user.roles[0].name}»: */}
-                                {isOwnProfile ? t("userProfile.permissionsOfMyRole") : t("userProfile.permissionsOfRole")}{" "}
-                                «{user.roles[0].name}»:
+                        <div className="flex items-start justify-between gap-3 mb-3">
+                            <h3 className="m-0 text-[13.5px] font-bold">
+                                {hasSingleRole ? (
+                                    <>
+                                        {/* {isOwnProfile ? "Полномочия моей роли" : "Полномочия роли"} «{user.roles[0].name}»: */}
+                                        {isOwnProfile ? t("userProfile.permissionsOfMyRole") : t("userProfile.permissionsOfRole")}{" "}
+                                        «{user.roles[0].name}»:
+                                    </>
+                                ) : (
+                                    // Полномочия
+                                    t("userProfile.permissionsTitle")
+                                )}
                             </h3>
-                        ) : (
-                            <>
-                                {/* <h3 className="m-0 text-[13.5px] font-bold">Полномочия</h3> */}
-                                <h3 className="m-0 text-[13.5px] font-bold">{t("userProfile.permissionsTitle")}</h3>
-                                <div className="overflow-x-auto -mx-1 px-1 mb-4">
-                                    <Tabs tabs={permissionTabs} value={activeTab} onChange={setActiveTab}/>
-                                </div>
-                            </>
+                            {/* Запросить себе права - заявка уходит в «Пожелания и замечания» */}
+                            {isOwnProfile && (
+                                <Tooltip content={t("userProfile.accessRequest.buttonTitle")} side="top">
+
+                                <button
+                                    type="button"
+                                    onClick={() => setAccessRequestOpen(true)}
+                                    className="flex-none inline-flex items-center gap-[5px] h-[26px] px-[9px] rounded-[7px] border border-[#e5e9f0] bg-white text-[11.5px] font-semibold text-[#4e57d6] cursor-pointer hover:bg-[#ececfc] hover:border-[#4e57d6]/40"
+                                >
+                                    <ShieldPlus size={13} strokeWidth={2}/>
+                                    {/* Запросить права */}
+                                    {t("userProfile.accessRequest.button")}
+                                </button>
+                                </Tooltip>
+
+                            )}
+                        </div>
+
+                        {!hasSingleRole && (
+                            <div className="overflow-x-auto px-1">
+                                <Tabs tabs={permissionTabs} value={activeTab} onChange={setActiveTab}/>
+                            </div>
+                        )}
+
+                        {/* Поиск по полномочиям */}
+                        {activePermissions.length > 0 && (
+                            <div className="relative mb-3">
+                                <Search size={14}
+                                        className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-[#a3adbd]"/>
+                                <input
+                                    type="text"
+                                    value={permissionSearch}
+                                    onChange={(e) => setPermissionSearch(e.target.value)}
+                                    placeholder={t("userProfile.permissionsSearchPlaceholder")}
+                                    aria-label={t("userProfile.permissionsSearchPlaceholder")}
+                                    className="h-[34px] w-full box-border rounded-[8px] border border-[#e5e9f0] bg-white  pl-8 pr-8 text-[12.5px] text-[#1c2740] outline-none focus:border-[#4e57d6] focus:bg-white"
+                                />
+                                {permissionSearch !== "" && (
+                                    <button type="button" onClick={() => setPermissionSearch("")}
+                                            aria-label={t("userProfile.activitySearchClear")}
+                                            className="absolute right-2 top-1/2 -translate-y-1/2 cursor-pointer grid h-5 w-5 place-items-center rounded-full text-[#a3adbd] hover:bg-[#ececfc] hover:text-[#4e57d6]">
+                                        <X size={13}/>
+                                    </button>
+                                )}
+                            </div>
                         )}
 
                         {/* Список полномочий может быть очень длинным - ограничиваем высоту, дальше скролл */}
                         <div className="flex flex-wrap gap-[7px] max-h-[600px] overflow-y-auto pr-1">
-                            {activePermissions.map((p) => (
+                            {visiblePermissions.map((p) => (
                                 <span
                                     key={p.code}
                                     className="inline-flex items-center gap-[6px] text-[11.5px] font-semibold text-[#3a4560] bg-[#f2f5f9] px-[10px] py-[5px] rounded-lg"
                                 >
                                     <Check size={12} strokeWidth={2.4} className="text-[#1c7a4d]"/>
-                                    {p.label}
+                                    <HighlightSubstrings text={p.label} terms={permissionTerms}/>
                                 </span>
                             ))}
-                            {activePermissions.length === 0 && (
+                            {activePermissions.length === 0 ? (
                                 // <span className="text-[12px] text-[#a3adbd]">Прав не назначено</span>
                                 <span
                                     className="text-[12px] text-[#a3adbd]">{t("userProfile.noPermissionsAssigned")}</span>
+                            ) : visiblePermissions.length === 0 && (
+                                // Ничего не найдено
+                                <span className="text-[12px] text-[#a3adbd]">{t("userProfile.activityNothingFound")}</span>
                             )}
                         </div>
                     </div>

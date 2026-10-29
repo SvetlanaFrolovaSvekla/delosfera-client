@@ -74,6 +74,22 @@ export function SzUserMultiPickerModal({people, value, onChange, title, onClose,
                     />
                 </>
             }
+            // «Отмечено / Готово» — подвал окна во всю ширину, а не плашка внутри списка: внутри
+            // прокрутки она не доходила до краёв (отступы списка), и строки выглядывали из-под неё.
+            footer={
+                <>
+                    <span className="text-[12px] text-[#8b97ab]">
+                        {t("szCard.fields.selectedCount", {count: value.length})}
+                    </span>
+                    <button
+                        type="button"
+                        onClick={onClose}
+                        className={`h-9 cursor-pointer rounded-[9px] border-none ${a.bg} px-4 text-[13px] font-semibold text-white ${a.hoverBg}`}
+                    >
+                        {t("szCard.fields.done")}
+                    </button>
+                </>
+            }
         >
             <div className="flex min-h-full flex-col">
                 <div className="flex-1">
@@ -128,18 +144,6 @@ export function SzUserMultiPickerModal({people, value, onChange, title, onClose,
                     )}
                 </div>
 
-                <div className="sticky bottom-0 mt-2 flex items-center justify-between border-t border-[#eef0f5] bg-white px-3 py-3">
-                    <span className="text-[12px] text-[#8b97ab]">
-                        {t("szCard.fields.selectedCount", {count: value.length})}
-                    </span>
-                    <button
-                        type="button"
-                        onClick={onClose}
-                        className={`h-9 cursor-pointer rounded-[9px] border-none ${a.bg} px-4 text-[13px] font-semibold text-white ${a.hoverBg}`}
-                    >
-                        {t("szCard.fields.done")}
-                    </button>
-                </div>
             </div>
         </UserPickerModalShell>
     );

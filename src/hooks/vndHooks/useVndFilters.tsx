@@ -6,6 +6,7 @@ import {type DateFilterValue} from "@/components/componentsGeneral/datePickers/D
 import {toDateRangeFilter} from "@/utils/dateUtils.ts";
 import {ALL_LINKED_TO_ME_RELATION_KEYS, type LinkedToMeRelationKey} from "@/constants/linkedToMeRelations.ts";
 import {EMPTY_DATE_FILTER} from "@/constants/emptyDateFilter.ts";
+import {revisionTextQuery} from "@/utils/vndProcess/revisionTextSearch.ts";
 
 // canCreateVnd — право создавать ВНД (CreateVndWithApproval / CreateVndWithoutApproval):
 // определяет, входят ли черновики в состав таба "Все" по умолчанию (без ручного фильтра
@@ -92,7 +93,8 @@ export function useVndFilters(scope: VndScope, draftOwnerScope?: "mine" | "other
         return {
             code: advSearchCode || undefined,
             name: advSearchName || undefined,
-            revisionText: advSearchRevisionText || undefined,
+            // Поиск по тексту редакции — только с 3 символов (см. revisionTextSearch.ts).
+            revisionText: revisionTextQuery(advSearchRevisionText),
             statuses,
             documentStatuses,
             typeIds: docTypeFilters.length ? docTypeFilters.map(Number) : undefined,

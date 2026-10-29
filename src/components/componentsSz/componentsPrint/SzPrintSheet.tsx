@@ -53,9 +53,15 @@ function EcpStamp({s}: { s: SzPrintSignature }) {
                     ТЕСТОВАЯ ИМИТАЦИЯ ЭЦП — НЕ ЯВЛЯЕТСЯ ПОДПИСЬЮ
                 </div>
             )}
-            <div className="text-center text-[9.5px] font-bold tracking-[.03em]">ПОДПИСАНО С ПОМОЩЬЮ ЭЦП</div>
+            <div className="text-center text-[9.5px] font-bold tracking-[.03em]">
+                {s.isSystem ? "ПОДПИСАНО СИСТЕМОЙ «ДЕЛОСФЕРА»" : "ПОДПИСАНО С ПОМОЩЬЮ ЭЦП"}
+            </div>
             <div className="text-center text-[8px] text-[#7A869A]">
-                {s.isTest ? "тестовый режим · у ГП «Инфоком» не проверялась" : "облачная ЭЦП ГП «Инфоком» · подпись проверена"}
+                {s.isTest
+                    ? "тестовый режим · у ГП «Инфоком» не проверялась"
+                    : s.isSystem
+                        ? "локальная подпись без ЭЦП КР · печать системы проверена"
+                        : "облачная ЭЦП ГП «Инфоком» · подпись проверена"}
             </div>
             <div className="mt-[2px] text-[8.5px]">
                 {s.fullName && <div><b>Владелец: {s.fullName}</b></div>}

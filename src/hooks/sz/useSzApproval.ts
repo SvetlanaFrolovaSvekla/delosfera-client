@@ -11,6 +11,7 @@ import {useEcpHashSigning} from "@/hooks/useEcpHashSigning.ts";
 import type {ResolutionEcpSignature} from "@/hooks/useEcpApproval.ts";
 import {toast} from "@/service/toastService.ts";
 import {serverMessage} from "@/utils/szProcess/szCardUtils.ts";
+import {PermissionCode} from "@/constants/permissions/permissions.ts";
 
 /** Код ошибки проверки подписи от backend (ResolutionSignatureErrorCodes). */
 function serverCode(e: unknown): string | undefined {
@@ -31,7 +32,7 @@ interface Params {
 
 export function useSzApproval({szId, route, actingForUserIds, setSaving, setError, setNotice, reload}: Params) {
     const {t} = useTranslation();
-    const {user} = useAuth();
+    const {user, hasPermission} = useAuth();
     const [comment, setCommentValue] = useState("");
     /** Не заполнен обязательный комментарий (замечания / отклонение) — поле подсвечивается красным. */
     const [commentError, setCommentError] = useState<string | null>(null);
@@ -65,11 +66,27 @@ export function useSzApproval({szId, route, actingForUserIds, setSaving, setErro
             .then((r) => setAllowSzTestEcp(r.allowSzTestEcp))
             .catch(() => setAllowSzTestEcp(false));
     }, []);
+    /** На сервере задан ключ локальной подписи «Делосфера» (SystemSeal:HmacKey). */
+    const [systemSealConfigured, setSystemSealConfigured] = useState(true);
     useEffect(() => {
         ecpCredentialService.testMode()
-            .then((r) => setAllowWithoutEcp(r.allowWithoutEcp))
+            .then((r) => {
+                setAllowWithoutEcp(r.allowWithoutEcp);
+                setSystemSealConfigured(r.systemSealConfigured !== false);
+            })
             .catch(() => setAllowWithoutEcp(false));
     }, []);
+
+    /**
+     * Подпись без ЭЦП КР (право SignWithoutNationalEcp — сотрудники без гражданства КР), как у ВНД:
+     * основные кнопки решения открывают окно подтверждения, и резолюцию подписывает система «Делосфера»
+     * вместо ПИН/кода ГП «Инфоком». Хэш, показанный в окне, сервер пересчитает и сверит.
+     */
+    const systemSignMode = hasPermission(PermissionCode.SignWithoutNationalEcp);
+    const [pendingSystem, setPendingSystem] = useState<SzSignableResolution | null>(null);
+    const [systemHash, setSystemHash] = useState<string | null>(null);
+    const [systemHashLoading, setSystemHashLoading] = useState(false);
+    const [systemHashError, setSystemHashError] = useState<string | null>(null);
 
     /** Открыто окно подписания: этап требует квалифицированной подписи. */
     const [qualifiedDialogOpen, setQualifiedDialogOpen] = useState(false);
@@ -145,7 +162,8 @@ export function useSzApproval({szId, route, actingForUserIds, setSaving, setErro
         try {
             await workflowService.resolve(myParticipant.id, type, comment.trim() || undefined, signatureId);
             setComment("");
-            setNotice(t("szCard.approval.decisionMade", {decision: t(`szCard.resolution.${type}`).toLowerCase()}));
+            toast.success(t("szCard.approval.decisionMade", {decision: t(`szCard.resolution.${type}`).toLowerCase()}),
+                {size: "large", duration: 6000});
             await reload();
         } catch (e) {
             // Сервер отказывает по существу — не принят регламент подписи, решение
@@ -190,7 +208,8 @@ export function useSzApproval({szId, route, actingForUserIds, setSaving, setErro
         try {
             await szEcpService.resolve(szId, participantId, type, text, signature);
             setComment("");
-            setNotice(t("szCard.approval.decisionMadeEcp", {decision: t(`szCard.resolution.${type}`).toLowerCase()}));
+            toast.success(t("szCard.approval.decisionMadeEcp", {decision: t(`szCard.resolution.${type}`).toLowerCase()}),
+                {size: "large", duration: 6000});
             await reload();
         } catch (e) {
             const code = serverCode(e);
@@ -217,10 +236,50 @@ export function useSzApproval({szId, route, actingForUserIds, setSaving, setErro
         try {
             await szEcpService.resolveTest(szId, myParticipant.id, type, text);
             setComment("");
-            setNotice(t("szCard.approval.decisionMadeTestEcp", {decision: t(`szCard.resolution.${type}`).toLowerCase()}));
+            toast.success(t("szCard.approval.decisionMadeTestEcp", {decision: t(`szCard.resolution.${type}`).toLowerCase()}),
+                {size: "large", duration: 6000});
             await reload();
         } catch (e) {
             setError(serverMessage(e) ?? t("szCard.approval.decisionFailed"));
+        } finally {
+            setSaving(false);
+        }
+    };
+
+    /** Подпись без ЭЦП КР: проверить комментарий, получить хэш резолюции и открыть окно подтверждения. */
+    const openSystemConfirm = (type: SzSignableResolution) => {
+        if (!myParticipant || szId === undefined) return;
+        const text = comment.trim();
+        if (!requireComment(type, text)) return;
+        setError(null);
+        setNotice(null);
+        setCommentError(null);
+        setPendingSystem(type);
+        setSystemHash(null);
+        setSystemHashError(null);
+        setSystemHashLoading(true);
+        szEcpService.getResolutionHash(szId, myParticipant.id, type, text)
+            .then((r) => setSystemHash(r.hash))
+            .catch((e) => setSystemHashError(serverMessage(e) ?? t("resolutionPanel.systemSign.hashError")))
+            .finally(() => setSystemHashLoading(false));
+    };
+
+    /** Подтверждено в окне — резолюцию подписывает система «Делосфера». */
+    const confirmSystemSign = async () => {
+        const type = pendingSystem;
+        if (!type || !systemHash || !myParticipant || szId === undefined) return;
+        setPendingSystem(null);
+        setSaving(true);
+        try {
+            await szEcpService.resolveSystem(szId, myParticipant.id, type, comment.trim(), systemHash);
+            setComment("");
+            toast.success(t("szCard.approval.decisionMadeSystem", {decision: t(`szCard.resolution.${type}`).toLowerCase()}),
+                {size: "large", duration: 6000});
+            await reload();
+        } catch (e) {
+            setError(serverCode(e) === "document_changed"
+                ? t("szCard.approval.ecpDocumentChanged")
+                : serverMessage(e) ?? t("szCard.approval.decisionFailed"));
         } finally {
             setSaving(false);
         }
@@ -251,6 +310,8 @@ export function useSzApproval({szId, route, actingForUserIds, setSaving, setErro
     return {
         comment, setComment, commentError, commentRef, myParticipant, isSigningStep, needsQualified, openRemarks,
         resolve, signAndResolve, testSignAndResolve, confirmRemark, ecp, allowWithoutEcp, allowSzTestEcp,
+        systemSignMode, systemSealConfigured, pendingSystem, setPendingSystem, systemHash, systemHashLoading,
+        systemHashError, openSystemConfirm, confirmSystemSign,
         qualifiedDialogOpen, setQualifiedDialogOpen, oepModalOpen, setOepModalOpen, oepAvailable,
     };
 }

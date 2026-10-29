@@ -37,6 +37,8 @@ export interface SzResolutionSignature {
     verified: boolean;
     /** Тестовая имитация ЭЦП — не подпись. */
     isTest: boolean;
+    /** Локальная подпись системы «Делосфера» (сотрудник без ЭЦП КР, право SignWithoutNationalEcp). */
+    isSystem?: boolean;
     /** Комментарий к резолюции (вошёл в подписанный хэш). */
     comment?: string | null;
 }
@@ -96,6 +98,16 @@ export const szEcpService = {
     ): Promise<SzDetails> {
         const {data} = await apiClient.post<SzDetails>(
             `${base(szId)}/resolve-test`, {participantId, decision, comment});
+        return data;
+    },
+
+    /** Резолюция локальной подписью системы «Делосфера» (право SignWithoutNationalEcp — сотрудники без ЭЦП
+     *  КР), как у ВНД: без ПИН/кода и ГП «Инфоком». hash — показанный в окне подтверждения, сервер сверит его. */
+    async resolveSystem(
+        szId: number, participantId: number, decision: SzSignableResolution, comment: string, hash: string | null,
+    ): Promise<SzDetails> {
+        const {data} = await apiClient.post<SzDetails>(
+            `${base(szId)}/resolve-system`, {participantId, decision, comment, hash});
         return data;
     },
 

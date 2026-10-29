@@ -1,5 +1,15 @@
 // Всплывающее уведомление при успехе, загрузки, предупреждении и др.
 export type ToastVariant = "success" | "error" | "info" | "warning" | "loading";
+/** "large" — шире и с большим лимитом строк: для длинных сообщений (номер, срок, тип подписи и т.п.). */
+export type ToastSize = "default" | "large";
+
+/** Параметры тоста объектом — вместо позиционных description/duration/onClick. */
+export interface ToastOptions {
+    description?: string;
+    duration?: number;
+    onClick?: () => void;
+    size?: ToastSize;
+}
 
 export interface ToastItem {
     id: number;
@@ -8,6 +18,7 @@ export interface ToastItem {
     description?: string;
     duration: number; // 0 = не скрывать автоматически (используется для "loading")
     onClick?: () => void; // если задан - тост кликабелен (например, переход к уведомлению)
+    size?: ToastSize;
 }
 
 type Listener = (toasts: ToastItem[]) => void;
@@ -25,12 +36,34 @@ function remove(id: number) {
     emit();
 }
 
-function push(variant: ToastVariant, title: string, description?: string, duration = 4500, onClick?: () => void) {
+function push(variant: ToastVariant, title: string, opts: ToastOptions = {}) {
     const id = nextId++;
-    toasts = [...toasts, { id, variant, title, description, duration, onClick }];
+    const { description, duration = 4500, onClick, size = "default" } = opts;
+    toasts = [...toasts, { id, variant, title, description, duration, onClick, size }];
     emit();
     return id;
 }
+
+/** Второй аргумент — либо описание (старый позиционный вызов), либо объект параметров. */
+function normalize(
+    descriptionOrOptions?: string | ToastOptions,
+    duration?: number,
+    onClick?: () => void,
+): ToastOptions {
+    if (typeof descriptionOrOptions === "object" && descriptionOrOptions !== null) return descriptionOrOptions;
+    return { description: descriptionOrOptions, duration, onClick };
+}
+
+type ShowFn = (
+    title: string,
+    descriptionOrOptions?: string | ToastOptions,
+    duration?: number,
+    onClick?: () => void,
+) => number;
+
+const make = (variant: Exclude<ToastVariant, "loading">): ShowFn =>
+    (title, descriptionOrOptions, duration, onClick) =>
+        push(variant, title, normalize(descriptionOrOptions, duration, onClick));
 
 function update(id: number, patch: Partial<Omit<ToastItem, "id">>) {
     toasts = toasts.map((t) => (t.id === id ? { ...t, ...patch } : t));
@@ -38,15 +71,11 @@ function update(id: number, patch: Partial<Omit<ToastItem, "id">>) {
 }
 
 export const toast = {
-    success: (title: string, description?: string, duration?: number, onClick?: () => void) =>
-        push("success", title, description, duration, onClick),
-    error: (title: string, description?: string, duration?: number, onClick?: () => void) =>
-        push("error", title, description, duration, onClick),
-    warning: (title: string, description?: string, duration?: number, onClick?: () => void) =>
-        push("warning", title, description, duration, onClick),
-    info: (title: string, description?: string, duration?: number, onClick?: () => void) =>
-        push("info", title, description, duration, onClick),
-    loading: (title: string, description?: string) => push("loading", title, description, 0), // не скрывается сам
+    success: make("success"),
+    error: make("error"),
+    warning: make("warning"),
+    info: make("info"),
+    loading: (title: string, description?: string) => push("loading", title, { description, duration: 0 }), // не скрывается сам
     update,
     dismiss: remove,
     subscribe: (listener: Listener): (() => void) => {

@@ -1807,6 +1807,7 @@
     "groups": {
       "normotvorchestvo": "Rulemaking (VND)",
       "sz": "Memos",
+      "statements": "Applications",
       "purchases": "Procurement",
       "meetings": "Meetings",
       "hr": "HR Document Flow",
@@ -1828,6 +1829,7 @@
       "tasks": "My Tasks",
       "rpt": "Reporting",
       "sz": "Memo Registry",
+      "statements": "Applications Registry",
       "szAnalytics": "Memo Analytics",
       "notifs": "Notifications",
       "prc": "Requests & Procurement",
@@ -3550,6 +3552,13 @@
         "title": "Memo Rubricator",
         "subtitle": "Topical classification of memos by area"
       }
+    },
+    "statements": {
+      "title": "Statements",
+      "statementRubric": {
+        "title": "Statement Rubricator",
+        "subtitle": "Topical classification of employee statements"
+      }
     }
   },
   "approvalBodyPage": {
@@ -4286,6 +4295,15 @@
   },
   "szRubricPage": {
     "title": "Memo Rubricator",
+    "searchPlaceholder": "Search rubrics…",
+    "emptyAction": "Add first rubric",
+    "formTitleCreate": "New Rubric",
+    "formTitleEdit": "Edit Rubric",
+    "fieldParent": "Parent rubric",
+    "deleteConfirmTitle": "Delete rubric?"
+  },
+  "statementRubricPage": {
+    "title": "Statement Rubricator",
     "searchPlaceholder": "Search rubrics…",
     "emptyAction": "Add first rubric",
     "formTitleCreate": "New Rubric",

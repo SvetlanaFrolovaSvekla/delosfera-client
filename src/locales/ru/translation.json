@@ -1810,6 +1810,7 @@
     "groups": {
       "normotvorchestvo": "Нормотворчество (ВНД)",
       "sz": "Служебные записки",
+      "statements": "Заявления",
       "purchases": "Закупки",
       "meetings": "Заседания",
       "hr": "Кадровый документооборот",
@@ -1831,6 +1832,7 @@
       "tasks": "Мои задачи",
       "rpt": "Отчётность",
       "sz": "Реестр СЗ",
+      "statements": "Реестр заявлений",
       "szAnalytics": "Аналитика СЗ",
       "notifs": "Уведомления",
       "prc": "Заявки и закупки",
@@ -3463,6 +3465,13 @@
         "title": "Рубрикатор СЗ",
         "subtitle": "Тематическая классификация служебных записок по направлениям"
       }
+    },
+    "statements": {
+      "title": "Заявления",
+      "statementRubric": {
+        "title": "Рубрикатор заявлений",
+        "subtitle": "Тематическая классификация заявлений сотрудников"
+      }
     }
   },
   "approvalBodyPage": {
@@ -4199,6 +4208,15 @@
   },
   "szRubricPage": {
     "title": "Рубрикатор СЗ",
+    "searchPlaceholder": "Поиск по рубрикам…",
+    "emptyAction": "Добавить первую рубрику",
+    "formTitleCreate": "Новая рубрика",
+    "formTitleEdit": "Изменить рубрику",
+    "fieldParent": "Родительская рубрика",
+    "deleteConfirmTitle": "Удалить рубрику?"
+  },
+  "statementRubricPage": {
+    "title": "Рубрикатор заявлений",
     "searchPlaceholder": "Поиск по рубрикам…",
     "emptyAction": "Добавить первую рубрику",
     "formTitleCreate": "Новая рубрика",

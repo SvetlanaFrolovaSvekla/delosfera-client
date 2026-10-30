@@ -58,7 +58,7 @@ export function SubstitutionBankSignersSection({details, users, onSaved}: Props)
                     {t("substitutionBankSigners.main")}
                 </div>
                 {main ? (
-                    <PersonRow name={main.fullName} meta={metaOf(main.userId, main.position)}/>
+                    <PersonRow name={main.fullName} meta={metaOf(main.userId, main.position)} userId={main.userId}/>
                 ) : (
                     <div className="rounded-[9px] border border-dashed border-[#e5c48a] bg-[#fffaf0] px-3 py-2 text-[12.5px] text-[#b3730a]">
                         {t("substitutionBankSigners.noMain")}
@@ -72,7 +72,7 @@ export function SubstitutionBankSignersSection({details, users, onSaved}: Props)
                     <div className="text-[12.5px] text-[#8b97ab]">{t("substitutionBankSigners.noExtra")}</div>
                 )}
                 {extras.map((s) => (
-                    <PersonRow key={s.userId} name={s.fullName} meta={metaOf(s.userId, s.position)}
+                    <PersonRow key={s.userId} name={s.fullName} meta={metaOf(s.userId, s.position)} userId={s.userId}
                                onClear={canEdit && !busy ? () => void save(extraIds.filter((id) => id !== s.userId)) : undefined}
                                clearLabel={t("substitutionBankSigners.remove")}/>
                 ))}

@@ -6,6 +6,8 @@
  * <table>, — чтобы реестры в системе не расходились по виду один от другого.
  */
 import {useTranslation} from "react-i18next";
+import {Avatar} from "@/components/componentsGeneral/Avatar.tsx";
+import {PersonNameLink} from "@/components/componentsGeneral/PersonNameLink.tsx";
 import type {Substitution} from "@/service/dashboardService/dashboardService.ts";
 import {formatDate} from "@/utils/dateUtils.ts";
 import {PlainCheckbox} from "@/components/componentsGeneral/componentsCheckBox/PlainCheckbox.tsx";
@@ -70,11 +72,14 @@ export function SubstitutionsTable({
                                     }`}
                                     style={{gridTemplateColumns: GRID_TEMPLATE}}
                                 >
-                                    <div className="min-w-0 truncate text-[13px] font-semibold text-[#1c2740]">
-                                        {s.userName}
+                                    {/* Кого замещают и кто замещает — аватар и ФИО-ссылка на профиль */}
+                                    <div className="flex min-w-0 items-center gap-2 text-[13px] font-semibold text-[#1c2740]">
+                                        <Avatar name={s.userName} size={24}/>
+                                        <PersonNameLink name={s.userName} userId={s.userId}/>
                                     </div>
-                                    <div className="min-w-0 truncate text-[13px] text-[#26324a]">
-                                        {s.substituteUserName}
+                                    <div className="flex min-w-0 items-center gap-2 text-[13px] font-medium text-[#26324a]">
+                                        <Avatar name={s.substituteUserName} size={24}/>
+                                        <PersonNameLink name={s.substituteUserName} userId={s.substituteUserId}/>
                                     </div>
                                     <div className="whitespace-nowrap text-[12.5px] text-[#55617a]">
                                         {formatDate(s.startsOn)} — {formatDate(s.endsOn)}

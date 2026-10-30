@@ -6,6 +6,8 @@
 // показывается неактуальной; пока новой нет — на листе ЭЦП автосогласование.
 import {useState} from "react";
 import {useTranslation} from "react-i18next";
+import {Avatar} from "@/components/componentsGeneral/Avatar.tsx";
+import {PersonNameLink} from "@/components/componentsGeneral/PersonNameLink.tsx";
 import {
     substitutionService,
     type SubstitutionSigningDocument,
@@ -134,7 +136,15 @@ export function SubstitutionSigningSection({requestId, state, onChange, regNumbe
                                     <div key={`${slot.role}-${slot.userId ?? ""}`} className="flex flex-wrap items-center gap-3 py-2.5 text-[13px]">
                                         <span className="min-w-[230px] font-semibold text-[#3a4560]">{slot.roleTitle}</span>
                                         <span className="flex-1 min-w-[160px] text-[#55617a]">
-                                            {slot.userName ?? <span className="text-[#c27c0e]">{t("substitutionSigning.noSigner")}</span>}
+                                            {/* Подписант — аватар и ФИО-ссылка на профиль */}
+                                            {slot.userName ? (
+                                                <span className="inline-flex max-w-full items-center gap-2 align-middle">
+                                                    <Avatar name={slot.userName} size={22}/>
+                                                    <span className="flex min-w-0 font-medium text-[#1c2740]">
+                                                        <PersonNameLink name={slot.userName} userId={slot.userId}/>
+                                                    </span>
+                                                </span>
+                                            ) : <span className="text-[#c27c0e]">{t("substitutionSigning.noSigner")}</span>}
                                             {/* Подпись под прежней версией — неактуальная, как у СЗ/ВНД */}
                                             {stale && (
                                                 <span className="mt-1 flex flex-col gap-0.5 text-[12px]">

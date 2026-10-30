@@ -2,6 +2,8 @@ import React, {useEffect, useMemo, useState} from "react";
 import {useTranslation} from "react-i18next";
 import type {TFunction} from "i18next";
 import {useNavigate, useParams} from "react-router-dom";
+import {Avatar} from "@/components/componentsGeneral/Avatar.tsx";
+import {PersonNameLink} from "@/components/componentsGeneral/PersonNameLink.tsx";
 import {userService} from "@/service/userService/userService.ts";
 import {
     organizationUnitService
@@ -523,7 +525,7 @@ export function SubstitutionCardPage() {
                         <Field label={t("substitutionCard.fields.author")}
                                hint={t("substitutionCard.fields.authorHint")}>
                             {authorName ? (
-                                <PersonRow name={authorName} meta={personMeta(authorPerson)} muted={!authorPerson}/>
+                                <PersonRow name={authorName} meta={personMeta(authorPerson)} muted={!authorPerson} userId={authorId}/>
                             ) : (
                                 <div className="flex h-10 items-center rounded-[9px] border border-[#e5e9f0] bg-[#f9fafc] px-3 text-[13px] text-[#a3adbd]">—</div>
                             )}
@@ -802,7 +804,15 @@ export function SubstitutionCardPage() {
                                                     style={{background: color}}>{a.order}</span>
                                                 <span className="min-w-[170px] font-semibold text-[#1c2740]">{roleTitle}</span>
                                                 <span className="flex-1 text-[#55617a]">
-                                                    {a.userName ?? "—"}
+                                                    {/* Участник согласования — аватар и ФИО-ссылка на профиль */}
+                                                    {a.userName ? (
+                                                        <span className="inline-flex max-w-full items-center gap-2 align-middle">
+                                                            <Avatar name={a.userName} size={22}/>
+                                                            <span className="flex min-w-0 font-medium text-[#1c2740]">
+                                                                <PersonNameLink name={a.userName} userId={a.userId}/>
+                                                            </span>
+                                                        </span>
+                                                    ) : "—"}
                                                     {decidedBy && (
                                                         <span className="ml-1.5 text-[12px] text-[#8b97ab]">
                                                             · {t("substitutionCard.decidedOnBehalf", {name: decidedBy})}

@@ -1,8 +1,8 @@
 // Поле выбора сотрудника в карточке заявки на замещение
 import {useState} from "react";
-import {Link} from "react-router-dom";
 import {ChevronDown, User as UserIcon, X} from "lucide-react";
 import {Avatar} from "@/components/componentsGeneral/Avatar.tsx";
+import {PersonNameLink} from "@/components/componentsGeneral/PersonNameLink.tsx";
 import {Tooltip} from "@/components/componentsGeneral/tooltips/Tooltip.tsx";
 import {UserOrgUnitPickerModal} from "@/components/componentsGeneral/userPicker/UserOrgUnitPickerModal.tsx";
 import type {PickableUser} from "@/constants/pickableUser.ts";
@@ -12,7 +12,7 @@ import type {PickableUser} from "@/constants/pickableUser.ts";
  * подразделение — как строка согласующего в карточке СЗ (SzApproversField). По должности и
  * подразделению отличают однофамильцев, поэтому показываем их сразу, а не только в модалке.
  */
-export function PersonRow({name, meta, muted, onClick, onClear, clearLabel, nameHref}: {
+export function PersonRow({name, meta, muted, onClick, onClear, clearLabel, userId}: {
     name: string;
     meta?: string | null;
     /** Сотрудника нет в справочнике (уволен, введён вручную) — серый кружок. */
@@ -21,8 +21,8 @@ export function PersonRow({name, meta, muted, onClick, onClear, clearLabel, name
     onClick?: () => void;
     onClear?: () => void;
     clearLabel?: string;
-    /** Ссылка на профиль сотрудника — ФИО становится фиолетовой кликабельной ссылкой. */
-    nameHref?: string;
+    /** id сотрудника — ФИО становится ссылкой на его профиль (/users/{id}). */
+    userId?: number | null;
 }) {
     const interactive = !!onClick;
     return (
@@ -43,14 +43,10 @@ export function PersonRow({name, meta, muted, onClick, onClear, clearLabel, name
         >
             <Avatar name={name} muted={muted} size={26}/>
             <span className="min-w-0 flex-1 leading-[1.25]">
-                {nameHref ? (
-                    <Link to={nameHref} onClick={(e) => e.stopPropagation()}
-                          className="block truncate text-[13px] font-medium text-[#7a5ce0] hover:underline underline-offset-2">
-                        {name}
-                    </Link>
-                ) : (
-                    <span className="block truncate text-[13px] font-medium text-[#1c2740]">{name}</span>
-                )}
+                {/* Клик по ФИО — профиль сотрудника; по остальной строке — смена сотрудника */}
+                <span className="flex min-w-0 text-[13px] font-medium text-[#1c2740]">
+                    <PersonNameLink name={name} userId={userId}/>
+                </span>
                 {meta && <span className="block truncate text-[11.5px] text-[#8b97ab]">{meta}</span>}
             </span>
             {onClear && (
@@ -110,6 +106,7 @@ export function SubstitutionPersonField({
                     name={name}
                     meta={personMeta(person, fallbackPosition)}
                     muted={!person}
+                    userId={person?.id}
                     onClick={disabled ? undefined : () => setOpen(true)}
                     onClear={disabled ? undefined : () => onChange(null)}
                     clearLabel={clearLabel}

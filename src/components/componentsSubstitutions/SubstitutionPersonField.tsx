@@ -12,7 +12,7 @@ import type {PickableUser} from "@/constants/pickableUser.ts";
  * подразделение — как строка согласующего в карточке СЗ (SzApproversField). По должности и
  * подразделению отличают однофамильцев, поэтому показываем их сразу, а не только в модалке.
  */
-export function PersonRow({name, meta, muted, onClick, onClear, clearLabel, userId}: {
+export function PersonRow({name, meta, muted, onClick, onClear, clearLabel, userId, nameHref}: {
     name: string;
     meta?: string | null;
     /** Сотрудника нет в справочнике (уволен, введён вручную) — серый кружок. */
@@ -23,6 +23,8 @@ export function PersonRow({name, meta, muted, onClick, onClear, clearLabel, user
     clearLabel?: string;
     /** id сотрудника — ФИО становится ссылкой на его профиль (/users/{id}). */
     userId?: number | null;
+    /** Готовая ссылка на профиль (доверенности, паспорт ВНД) — вместо userId. */
+    nameHref?: string;
 }) {
     const interactive = !!onClick;
     return (
@@ -45,7 +47,7 @@ export function PersonRow({name, meta, muted, onClick, onClear, clearLabel, user
             <span className="min-w-0 flex-1 leading-[1.25]">
                 {/* Клик по ФИО — профиль сотрудника; по остальной строке — смена сотрудника */}
                 <span className="flex min-w-0 text-[13px] font-medium text-[#1c2740]">
-                    <PersonNameLink name={name} userId={userId}/>
+                    <PersonNameLink name={name} userId={userId} href={nameHref}/>
                 </span>
                 {meta && <span className="block truncate text-[11.5px] text-[#8b97ab]">{meta}</span>}
             </span>

@@ -171,6 +171,18 @@ export function useSzCard(id: string | undefined) {
     // починить маршрут): делопроизводство, правя чужую записку, меняет содержание,
     // но не круг согласующих. Сервер проверяет это же.
     const routeEditable = isNew || ((isAuthor || isSystemAdmin) && editable && !correcting);
+    // На согласовании в режиме корректировки состав, порядок и режим согласующих правятся без
+    // отзыва: непройденную часть маршрута сервер пересобирает. Маршрут по шаблону вида (своего
+    // списка согласующих у записки нет) правят по одному участнику в блоке «Согласование».
+    const approversEditableOnRoute = correcting && canCorrectOnApproval
+        && sz?.statusCode === "OnApproval" && (sz?.approvers.length ?? 0) > 0;
+    // Кто уже высказался на текущем круге — его виза остаётся: убрать или переставить его нельзя.
+    const decidedApproverIds = useMemo(() => (route?.steps ?? [])
+        .filter((s) => s.kind === "Approval" && !s.isFinalMethodology)
+        .flatMap((s) => s.participants)
+        .filter((p) => p.resolution != null || p.state === "Done")
+        .map((p) => p.userId)
+        .filter((id): id is number => id != null), [route]);
 
     // Ручной перевод статуса — администратору системы. Записка застревает по
     // причинам вне системы: уволился согласующий, маршрут собрали не так. Без
@@ -370,7 +382,7 @@ export function useSzCard(id: string | undefined) {
         pendingFiles, setPendingFiles, loading, saving, setSaving, error, setError, notice, setNotice,
         route, routeError, isAuthor, canEditAny, canWithdrawAny, editable, routeEditable, canForceStatus, canRegister, approversFromTemplate,
         applyKind, applyDetails, reload, save, runAction, withdraw, forceStatus,
-        canCorrectOnApproval, correcting, setCorrecting,
+        canCorrectOnApproval, correcting, setCorrecting, approversEditableOnRoute, decidedApproverIds,
         /** Вложения поменялись на согласовании — маршрут мог перезапуститься. */
         onAttachmentsChanged: () => { if (correcting) void reload(); },
     };

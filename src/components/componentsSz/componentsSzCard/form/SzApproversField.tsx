@@ -34,6 +34,10 @@ interface Props {
     parallel: boolean;
     onParallelChange: (parallel: boolean) => void;
     editable: boolean;
+    /** Согласующие, уже вынесшие решение на идущем маршруте: их нельзя убрать или переставить. */
+    lockedIds?: number[];
+    /** Правка идёт по запущенному маршруту (корректировка) — показываем, как она применится. */
+    onRoute?: boolean;
 }
 
 /** Кнопка-иконка в строке согласующего: сдвинуть, убрать. */
@@ -53,7 +57,7 @@ const iconButtonClass =
  * должно быть можно, не собирая список заново.
  */
 export function SzApproversField({
-    value, onChange, users, parallel, onParallelChange, editable,
+    value, onChange, users, parallel, onParallelChange, editable, lockedIds = [], onRoute = false,
 }: Props) {
     const {t} = useTranslation();
     const [pickerOpen, setPickerOpen] = useState(false);
@@ -62,10 +66,13 @@ export function SzApproversField({
         () => Object.fromEntries(users.map((u) => [u.id, u])) as Record<number, ApproverOption>,
         [users]);
 
+    const locked = useMemo(() => new Set(lockedIds), [lockedIds]);
+
     const move = (index: number, delta: number) => {
         const next = [...value];
         const target = index + delta;
         if (target < 0 || target >= next.length) return;
+        if (locked.has(next[index]) || locked.has(next[target])) return;
         [next[index], next[target]] = [next[target], next[index]];
         onChange(next);
     };
@@ -117,7 +124,10 @@ export function SzApproversField({
                     accent="blue"
                     people={users}
                     value={value}
-                    onChange={onChange}
+                    onChange={(ids) => onChange([
+                        ...value.filter((x) => locked.has(x) && !ids.includes(x)),
+                        ...ids,
+                    ])}
                     title={t("szCard.fields.approversModalTitle")}
                     onClose={() => setPickerOpen(false)}
                 />
@@ -133,6 +143,7 @@ export function SzApproversField({
                     {editable && (
                         <div className="mt-2 mb-1.5 text-[11.5px] text-[#8b97ab]">
                             {parallel ? t("szCard.fields.approversParallelHint") : t("szCard.fields.approversSequentialHint")}
+                            {onRoute && <div className="mt-0.5">{t("szCard.fields.approversOnRouteHint")}</div>}
                         </div>
                     )}
 
@@ -141,6 +152,9 @@ export function SzApproversField({
                             const person = byId[id];
                             const name = person?.fullName ?? t("szCard.fields.approverUnknown", {id});
                             const meta = [person?.position, person?.orgUnit].filter(Boolean).join(" · ");
+                            const isLocked = locked.has(id);
+                            const upBlocked = i === 0 || isLocked || locked.has(value[i - 1]);
+                            const downBlocked = i === value.length - 1 || isLocked || locked.has(value[i + 1]);
                             return (
                                 <div
                                     key={id}
@@ -160,26 +174,29 @@ export function SzApproversField({
                                         {meta && (
                                             <span className="block truncate text-[11.5px] text-[#8b97ab]">{meta}</span>
                                         )}
+                                        {isLocked && (
+                                            <span className="block truncate text-[11.5px] text-[#1c7a4d]">{t("szCard.fields.approverDecided")}</span>
+                                        )}
                                     </span>
 
                                     {editable && !parallel && (
                                         <>
-                                            <Tooltip content={t("szCard.fields.moveUp")} side="top" disabled={i === 0}>
+                                            <Tooltip content={t("szCard.fields.moveUp")} side="top" disabled={upBlocked}>
                                                 <button
                                                     type="button"
                                                     onClick={() => move(i, -1)}
-                                                    disabled={i === 0}
+                                                    disabled={upBlocked}
                                                     aria-label={t("szCard.fields.moveUp")}
                                                     className={`${iconButtonClass} hover:bg-[#f2f5f9] hover:text-[#2f68f5]`}
                                                 >
                                                     <ArrowUp size={14}/>
                                                 </button>
                                             </Tooltip>
-                                            <Tooltip content={t("szCard.fields.moveDown")} side="top" disabled={i === value.length - 1}>
+                                            <Tooltip content={t("szCard.fields.moveDown")} side="top" disabled={downBlocked}>
                                                 <button
                                                     type="button"
                                                     onClick={() => move(i, 1)}
-                                                    disabled={i === value.length - 1}
+                                                    disabled={downBlocked}
                                                     aria-label={t("szCard.fields.moveDown")}
                                                     className={`${iconButtonClass} hover:bg-[#f2f5f9] hover:text-[#2f68f5]`}
                                                 >
@@ -188,7 +205,7 @@ export function SzApproversField({
                                             </Tooltip>
                                         </>
                                     )}
-                                    {editable && (
+                                    {editable && !isLocked && (
                                         <Tooltip content={t("szCard.fields.removeApprover")} side="top">
                                             <button
                                                 type="button"

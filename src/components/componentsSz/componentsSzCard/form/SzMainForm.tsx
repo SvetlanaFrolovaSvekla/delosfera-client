@@ -215,7 +215,9 @@ export function SzMainForm({card, userList}: SzMainFormProps) {
                 users={userList}
                 parallel={form.approvalIsParallel ?? false}
                 onParallelChange={(p) => set("approvalIsParallel", p)}
-                editable={routeEditable}
+                editable={routeEditable || card.approversEditableOnRoute}
+                lockedIds={card.approversEditableOnRoute ? card.decidedApproverIds : undefined}
+                onRoute={card.approversEditableOnRoute}
             />
 
             {/*

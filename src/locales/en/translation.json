@@ -6985,6 +6985,8 @@
       "parallel": "Parallel approval",
       "approvers": "Approvers",
       "approverUnknown": "User #{{id}}",
+      "approverDecided": "Decision made — the approval stays",
+      "approversOnRouteHint": "Changes apply to the running approval without withdrawal: those who have already decided stay, the rest receive the memo in the new order.",
       "approversChange": "Change approvers",
       "approversSequentialHint": "One by one, top to bottom: the next approver receives the memo after the previous decision",
       "approversParallelHint": "All approvers receive the memo at the same time",

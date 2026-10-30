@@ -22,6 +22,8 @@ import {UserPickerField} from "@/components/componentsGeneral/userPicker/UserPic
 import {DatePickerInput} from "@/components/componentsGeneral/datePickers/DatePickerInput.tsx";
 import {PlainCheckbox} from "@/components/componentsGeneral/componentsCheckBox/PlainCheckbox.tsx";
 import {CalendarClock, CheckCircle2, Plus, X} from "lucide-react";
+import {Avatar} from "@/components/componentsGeneral/Avatar.tsx";
+import {PersonNameLink} from "@/components/componentsGeneral/PersonNameLink.tsx";
 
 const textareaClass =
     "w-full px-3 py-2.5 rounded-[9px] border border-[#e5e9f0] bg-white text-[13px] outline-none focus:border-[#2f68f5] resize-y";
@@ -394,8 +396,15 @@ export function SzExecutionPanel({sz, onChanged}: Props) {
                                                 </span>
                                             )}
                                         </div>
-                                        <div className="mt-0.5 text-[12.5px] text-[#8b97ab]">
-                                            {a.assigneeName ?? t("szCard.execution.unknownUser", {id: a.assigneeUserId})}
+                                        <div className="mt-1 flex flex-wrap items-center gap-x-1 text-[12.5px] text-[#8b97ab]">
+                                            {/* Исполнитель — аватар и ФИО-ссылка на профиль */}
+                                            {a.assigneeName ? (
+                                                <span className="inline-flex min-w-0 items-center gap-1.5">
+                                                    <Avatar name={a.assigneeName} size={20}/>
+                                                    <PersonNameLink name={a.assigneeName} userId={a.assigneeUserId}
+                                                                    className="font-medium text-[#3a4560]"/>
+                                                </span>
+                                            ) : t("szCard.execution.unknownUser", {id: a.assigneeUserId})}
                                             {a.assigneeUnit && ` · ${a.assigneeUnit}`}
                                             {a.dueDate && ` · ${t("szCard.execution.dueTo", {date: formatDate(a.dueDate)})}`}
                                         </div>

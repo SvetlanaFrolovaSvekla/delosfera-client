@@ -6,6 +6,7 @@ import {ArrowDown, ArrowUp, ChevronRight, Users, X} from "lucide-react";
 import {SzUserMultiPickerModal} from "@/components/componentsSz/componentsSzCard/controls/SzUserMultiPickerModal.tsx";
 import {Tooltip} from "@/components/componentsGeneral/tooltips/Tooltip.tsx";
 import {Avatar} from "@/components/componentsGeneral/Avatar.tsx";
+import {PersonNameLink} from "@/components/componentsGeneral/PersonNameLink.tsx";
 
 export interface ApproverOption {
     id: number;
@@ -170,7 +171,10 @@ export function SzApproversField({
                                     <Avatar name={name} muted={!person} size={28}/>
 
                                     <span className="min-w-0 flex-1">
-                                        <span className="block truncate text-[13px] font-medium text-[#1c2740]">{name}</span>
+                                        {/* ФИО ведёт в профиль согласующего (если он известен) */}
+                                        <span className="flex min-w-0 text-[13px] font-medium text-[#1c2740]">
+                                            <PersonNameLink name={name} userId={person ? id : null}/>
+                                        </span>
                                         {meta && (
                                             <span className="block truncate text-[11.5px] text-[#8b97ab]">{meta}</span>
                                         )}

@@ -20,6 +20,7 @@ import {SelectDropdown} from "@/components/componentsGeneral/selects/SingleSelec
 import {SingleSelectListField} from "@/components/componentsGeneral/selects/SingleSelects/SingleSelectListField.tsx";
 import {PlainCheckbox} from "@/components/componentsGeneral/componentsCheckBox/PlainCheckbox.tsx";
 import {ReadOnlyField} from "@/components/componentsGeneral/readOnlySelects/ReadOnlyField.tsx";
+import {ReadOnlyPersonField} from "@/components/componentsGeneral/readOnlySelects/ReadOnlyPersonField.tsx";
 import {AttachmentsPanel} from "@/components/componentsGeneral/attachments/AttachmentsPanel.tsx";
 
 /** Сколько файлов можно приложить к одной записке (сервер проверяет тот же предел). */
@@ -92,6 +93,7 @@ export function SzMainForm({card, userList}: SzMainFormProps) {
                             people={userList}
                             value={form.addresseeUserId ?? null}
                             placeholder={t("szCard.fields.addresseePick")}
+                            profileLink
                             modalTitle={t("szCard.fields.addresseeModalTitle")}
                             searchPlaceholder={t("szCard.fields.userSearch")}
                             clearable
@@ -125,9 +127,14 @@ export function SzMainForm({card, userList}: SzMainFormProps) {
                         />
                     </Field>
                 ) : (
-                    <ReadOnlyField
+                    <ReadOnlyPersonField
                         label={t("szCard.fields.addressee")}
-                        value={userList.find((u) => u.id === form.addresseeUserId)?.fullName ?? sz?.addresseeUser ?? "—"}
+                        userId={form.addresseeUserId ?? sz?.addresseeUserId}
+                        name={userList.find((u) => u.id === form.addresseeUserId)?.fullName ?? sz?.addresseeUser}
+                        subtitle={(() => {
+                            const u = userList.find((x) => x.id === form.addresseeUserId);
+                            return [u?.position, u?.orgUnit].filter(Boolean).join(" · ");
+                        })()}
                     />
                 )}
                 <div className="min-w-0">
@@ -185,7 +192,7 @@ export function SzMainForm({card, userList}: SzMainFormProps) {
             </SzFormSection>
 
             {/* Регистрация и сроки: автор, подразделение, дата регистрации, срок исполнения */}
-            {sz && <SzRegistrationPanel sz={sz} className="!mt-0"/>}
+            {sz && <SzRegistrationPanel sz={sz} userList={userList} className="!mt-0"/>}
 
             {/* ----------- Поля, зависящие от вида записки -----------*/}
             {hasKindFields && (
@@ -234,6 +241,7 @@ export function SzMainForm({card, userList}: SzMainFormProps) {
                             people={userList}
                             value={form.signerUserId ?? null}
                             placeholder={t("szCard.fields.signerPlaceholder")}
+                            profileLink
                             modalTitle={t("szCard.fields.signerModalTitle")}
                             searchPlaceholder={t("szCard.fields.userSearch")}
                             clearable
@@ -241,11 +249,20 @@ export function SzMainForm({card, userList}: SzMainFormProps) {
                             onChange={(id) => set("signerUserId", id)}
                         />
                     </Field>
+                ) : (form.signerUserId ?? sz?.signerUserId) != null ? (
+                    <ReadOnlyPersonField
+                        label={t("szCard.fields.signer")}
+                        userId={form.signerUserId ?? sz?.signerUserId}
+                        name={userList.find((u) => u.id === form.signerUserId)?.fullName ?? sz?.signerUser}
+                        subtitle={(() => {
+                            const u = userList.find((x) => x.id === form.signerUserId);
+                            return [u?.position, u?.orgUnit].filter(Boolean).join(" · ");
+                        })()}
+                    />
                 ) : (
                     <ReadOnlyField
                         label={t("szCard.fields.signer")}
-                        value={userList.find((u) => u.id === form.signerUserId)?.fullName
-                            ?? sz?.signerUser ?? t("szCard.fields.signerPlaceholder")}
+                        value={sz?.signerUser ?? t("szCard.fields.signerPlaceholder")}
                     />
                 )}
                 <div className="mt-1 text-[11.5px] text-[#8b97ab]">{t("szCard.fields.signerHint")}</div>

@@ -4,10 +4,19 @@ import type {SzDetails} from "@/service/szService/szService.ts";
 import {SzPanel} from "@/components/componentsSz/SzPanel.tsx";
 import {formatDate} from "@/utils/szProcess/szCardUtils.ts";
 import {ReadOnlyField} from "@/components/componentsGeneral/readOnlySelects/ReadOnlyField.tsx";
+import {ReadOnlyPersonField} from "@/components/componentsGeneral/readOnlySelects/ReadOnlyPersonField.tsx";
 import {colors} from "@/design/tokens.ts";
+import type {PickableUser} from "@/constants/pickableUser.ts";
 
-export function SzRegistrationPanel({sz, className}: { sz: SzDetails; className?: string }) {
+export function SzRegistrationPanel({sz, className, userList = []}: {
+    sz: SzDetails;
+    className?: string;
+    /** Справочник сотрудников — из него берём должность и СП автора для второй строки. */
+    userList?: PickableUser[];
+}) {
     const {t} = useTranslation();
+    const author = userList.find((u) => u.id === sz.authorId);
+    const authorMeta = [author?.position, author?.orgUnit ?? sz.authorUnit].filter(Boolean).join(" · ");
 
     return (
         <SzPanel className={className}>
@@ -15,7 +24,7 @@ export function SzRegistrationPanel({sz, className}: { sz: SzDetails; className?
                 {t("szCard.registration.title")}
             </div>
             <div className="grid grid-cols-4 gap-4">
-                <ReadOnlyField label={t("szCard.registration.author")} value={sz.author ?? "—"}/>
+                <ReadOnlyPersonField label={t("szCard.registration.author")} name={sz.author} userId={sz.authorId} subtitle={authorMeta}/>
                 <ReadOnlyField label={t("szCard.registration.authorUnit")} value={sz.authorUnit ?? "—"}/>
                 <ReadOnlyField label={t("szCard.registration.registeredOn")} value={formatDate(sz.registeredOn)}/>
                 <ReadOnlyField

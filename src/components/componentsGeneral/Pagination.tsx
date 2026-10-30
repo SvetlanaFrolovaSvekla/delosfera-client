@@ -1,6 +1,8 @@
 // Панель страниц под таблицей: "Показано 1-50 из 342", выбор размера страницы и номера страниц
 import {ChevronLeft, ChevronRight} from "lucide-react";
 import {useTranslation} from "react-i18next";
+import {SelectDropdown} from "@/components/componentsGeneral/selects/SingleSelects/SelectDropdown.tsx";
+import type {Accent} from "@/constants/accent.ts";
 
 interface PaginationProps {
     /** Текущая страница, с 1 */
@@ -13,6 +15,8 @@ interface PaginationProps {
     pageSizeOptions?: number[];
     /** Пока грузятся данные - кнопки неактивны, чтобы не плодить запросы */
     disabled?: boolean;
+    /** Акцент выпадающего списка размера страницы (по умолчанию фиолетовый, "blue" — для СЗ). */
+    accent?: Accent;
 }
 
 const DEFAULT_PAGE_SIZES = [25, 50, 100];
@@ -40,6 +44,7 @@ export function Pagination({
                                onPageSizeChange,
                                pageSizeOptions = DEFAULT_PAGE_SIZES,
                                disabled = false,
+                               accent,
                            }: PaginationProps) {
     const {t} = useTranslation();
 
@@ -59,19 +64,18 @@ export function Pagination({
         <div className="mt-3.5 flex flex-wrap items-center justify-between gap-3 text-[12.5px] text-[#55617a]">
             <div className="flex flex-wrap items-center gap-4">
                 <span>{t("pager.shown", {from, to, total})}</span>
-                <label className="flex items-center gap-2">
+                <div className={`flex items-center gap-2 ${disabled ? "pointer-events-none opacity-60" : ""}`}>
                     {t("pager.pageSize")}
-                    <select
-                        value={pageSize}
-                        disabled={disabled}
-                        onChange={(e) => onPageSizeChange(Number(e.target.value))}
-                        className="h-8 cursor-pointer rounded-[8px] border border-[#e5e9f0] bg-white px-2 text-[12.5px] font-semibold text-[#26324a] outline-none focus:border-[#2f68f5]"
-                    >
-                        {pageSizeOptions.map((size) => (
-                            <option key={size} value={size}>{size}</option>
-                        ))}
-                    </select>
-                </label>
+                    {/* Свой выпадающий список вместо системного <select> */}
+                    <SelectDropdown
+                        options={pageSizeOptions.map((size) => ({value: String(size), label: String(size)}))}
+                        value={String(pageSize)}
+                        onChange={(v) => onPageSizeChange(Number(v))}
+                        minWidth="72px"
+                        valueClassName="font-semibold text-[#26324a]"
+                        accent={accent}
+                    />
+                </div>
             </div>
 
             <nav className="flex items-center gap-1" aria-label="pagination">

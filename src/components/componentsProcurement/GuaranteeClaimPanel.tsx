@@ -1,4 +1,6 @@
 import {useCallback, useEffect, useState} from "react";
+import {DatePickerInput} from "@/components/componentsGeneral/datePickers/DatePickerInput.tsx";
+import {formatDate, parseDDMMYYYYToISO} from "@/utils/dateUtils.ts";
 import {
     claimService,
     guaranteeService,
@@ -140,9 +142,16 @@ export const GuaranteeClaimPanel = ({tenderId, contractId, onChanged}: Props) =>
                 <input type="number" value={gForm.amount || ""}
                        onChange={e => setGForm({...gForm, amount: Number(e.target.value) || 0})}
                        placeholder="Сумма обеспечения" style={{...input, width: 170}}/>
-                <input type="date" value={gForm.validUntil}
-                       onChange={e => setGForm({...gForm, validUntil: e.target.value})}
-                       title="Действует до" style={{...input, width: 165}}/>
+                <div style={{width: 165}}>
+                        <DatePickerInput
+                            modal
+                            modalTitle="Действует до"
+                            placeholder="Действует до"
+                            accent="blue"
+                            value={gForm.validUntil ? formatDate(gForm.validUntil) : ""}
+                            onChange={d => setGForm({...gForm, validUntil: parseDDMMYYYYToISO(d)})}
+                        />
+                    </div>
                 <input value={gForm.ref} onChange={e => setGForm({...gForm, ref: e.target.value})}
                        placeholder="Реквизиты п/п или БГ" style={{...input, width: 190}}/>
                 <button

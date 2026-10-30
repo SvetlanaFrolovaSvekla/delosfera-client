@@ -1,4 +1,6 @@
 import {useCallback, useEffect, useState} from "react";
+import {DatePickerInput} from "@/components/componentsGeneral/datePickers/DatePickerInput.tsx";
+import {formatDate, parseDDMMYYYYToISO} from "@/utils/dateUtils.ts";
 import {contractService, type Contract} from "@/service/procurementService/contractService.ts";
 
 /**
@@ -68,11 +70,26 @@ export const ContractPanel = ({requestId, onChanged}: Props) => {
                 </div>
                 {error && <div style={{marginTop: 10, color: "#e0483d", fontSize: 12.5}}>{error}</div>}
                 <div style={{display: "flex", gap: 8, marginTop: 12, flexWrap: "wrap", alignItems: "center"}}>
-                    <input type="date" value={form.signedOn} onChange={e => setForm({...form, signedOn: e.target.value})}
-                           title="Дата подписания" style={{...input, width: 165}}/>
-                    <input type="date" value={form.deliveryDeadline}
-                           onChange={e => setForm({...form, deliveryDeadline: e.target.value})}
-                           title="Срок поставки" style={{...input, width: 165}}/>
+                    <div style={{width: 165}}>
+                        <DatePickerInput
+                            modal
+                            modalTitle="Дата подписания"
+                            placeholder="Дата подписания"
+                            accent="blue"
+                            value={form.signedOn ? formatDate(form.signedOn) : ""}
+                            onChange={d => setForm({...form, signedOn: parseDDMMYYYYToISO(d)})}
+                        />
+                    </div>
+                    <div style={{width: 165}}>
+                        <DatePickerInput
+                            modal
+                            modalTitle="Срок поставки"
+                            placeholder="Срок поставки"
+                            accent="blue"
+                            value={form.deliveryDeadline ? formatDate(form.deliveryDeadline) : ""}
+                            onChange={d => setForm({...form, deliveryDeadline: parseDDMMYYYYToISO(d)})}
+                        />
+                    </div>
                     <button
                         onClick={() => run(() => contractService.create(requestId, {
                             signedOn: form.signedOn || undefined,

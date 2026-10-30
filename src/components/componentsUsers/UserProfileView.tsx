@@ -255,7 +255,7 @@ export function UserProfileView({user, isOwnProfile}: UserProfileViewProps) {
                     {/* Полномочия */}
                     <div className="bg-white border border-[#e9edf3] rounded-2xl px-5 py-[18px]">
                         <div className="flex items-start justify-between gap-3 mb-3">
-                            <h3 className="m-0 text-[13.5px] font-bold">
+                            <h3 className="m-0 flex-1 min-w-0 text-[13.5px] font-bold">
                                 {hasSingleRole ? (
                                     <>
                                         {/* {isOwnProfile ? "Полномочия моей роли" : "Полномочия роли"} «{user.roles[0].name}»: */}
@@ -269,12 +269,11 @@ export function UserProfileView({user, isOwnProfile}: UserProfileViewProps) {
                             </h3>
                             {/* Запросить себе права - заявка уходит в «Пожелания и замечания» */}
                             {isOwnProfile && (
-                                <Tooltip content={t("userProfile.accessRequest.buttonTitle")} side="top">
-
+                                <Tooltip content={t("userProfile.accessRequest.buttonTitle")} side="top" className="flex-none">
                                 <button
                                     type="button"
                                     onClick={() => setAccessRequestOpen(true)}
-                                    className="flex-none inline-flex items-center gap-[5px] h-[26px] px-[9px] rounded-[7px] border border-[#e5e9f0] bg-white text-[11.5px] font-semibold text-[#4e57d6] cursor-pointer hover:bg-[#ececfc] hover:border-[#4e57d6]/40"
+                                    className="flex-none whitespace-nowrap inline-flex items-center gap-[5px] h-[26px] px-[9px] rounded-[7px] border border-[#e5e9f0] bg-white text-[11.5px] font-semibold text-[#4e57d6] cursor-pointer hover:bg-[#ececfc] hover:border-[#4e57d6]/40"
                                 >
                                     <ShieldPlus size={13} strokeWidth={2}/>
                                     {/* Запросить права */}

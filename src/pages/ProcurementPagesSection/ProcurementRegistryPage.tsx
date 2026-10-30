@@ -46,6 +46,8 @@ import {HighlightSubstrings, splitSearchTerms} from "@/utils/highlightText.tsx";
 import {PlainCheckbox} from "@/components/componentsGeneral/componentsCheckBox/PlainCheckbox.tsx";
 import {useRowSelection} from "@/hooks/useRowSelection.ts";
 import {colors} from "@/design/tokens";
+import {useAuth} from "@/context/AuthContext.ts";
+import {PermissionCode} from "@/constants/permissions/permissions.ts";
 
 const STATUS_TONE: Partial<Record<ProcurementStatusCode, { fg: string; bg: string }>> = {
     Draft: colors.status.draft,
@@ -102,6 +104,9 @@ interface ProcurementSavedPayload {
 
 export const ProcurementRegistryPage = () => {
     const {t} = useTranslation();
+    // С правом править чужие черновики вкладка «Черновики» показывает черновики всех.
+    const {hasPermission} = useAuth();
+    const seesAllDrafts = hasPermission(PermissionCode.EditAnyProcurementDraft);
     const navigate = useNavigate();
     const {users} = useUserLookup();
     const methods = useProcurementMethods();
@@ -149,8 +154,8 @@ export const ProcurementRegistryPage = () => {
     }, [filterKey, clear]);
 
     const buildRequest = useCallback(
-        () => buildProcurementRequest(scope, appliedQuery, status, advanced),
-        [scope, appliedQuery, status, advanced],
+        () => buildProcurementRequest(scope, appliedQuery, status, advanced, seesAllDrafts),
+        [scope, appliedQuery, status, advanced, seesAllDrafts],
     );
 
     const load = useCallback(async () => {

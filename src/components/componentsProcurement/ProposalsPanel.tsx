@@ -1,4 +1,5 @@
 import {useCallback, useEffect, useState} from "react";
+import {PlainCheckbox} from "@/components/componentsGeneral/componentsCheckBox/PlainCheckbox.tsx";
 import {Check, Plus, Trophy, X} from "lucide-react";
 import {
     proposalService,
@@ -223,16 +224,16 @@ export const ProposalsPanel = ({requestId, documentId, onChanged}: Props) => {
                             </div>
                         )}
                         {attachments.map(a => (
-                            <label key={a.id} style={{display: "flex", alignItems: "center", gap: 7, fontSize: 12.5, color: "#26324a"}}>
-                                <input
-                                    type="checkbox"
-                                    checked={sourcesDraft.ids.includes(a.id)}
-                                    onChange={() => toggleFile(a.id)}
-                                    style={{accentColor: "#2f68f5"}}
-                                />
+                            <PlainCheckbox
+                                key={a.id}
+                                tone="brand"
+                                checked={sourcesDraft.ids.includes(a.id)}
+                                onChange={() => toggleFile(a.id)}
+                                className="text-[#26324a]"
+                            >
                                 {a.fileName}
                                 <span style={{color: "#a6b0c2", fontSize: 11}}>{formatFileSize(a.size)}</span>
-                            </label>
+                            </PlainCheckbox>
                         ))}
                     </div>
 

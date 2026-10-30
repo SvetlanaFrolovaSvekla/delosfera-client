@@ -6,6 +6,8 @@
  */
 import React, {useCallback, useEffect, useMemo, useState} from "react";
 import {useTranslation} from "react-i18next";
+import {Link, useLocation} from "react-router-dom";
+import {ArrowLeft} from "lucide-react";
 import type {TFunction} from "i18next";
 import {
     authorityMatrixService,
@@ -66,6 +68,8 @@ function toneByAuthority(authority: ApprovalAuthority): { fg: string; bg: string
 
 export const AuthorityMatrixPage = () => {
     const {t} = useTranslation();
+    // Открыли из карточки заявки — туда и возвращаемся. Из меню кнопки «Назад» нет.
+    const backTo = (useLocation().state as { backTo?: string } | null)?.backTo;
     const [table, setTable] = useState<MatrixTable | null>(null);
     const [result, setResult] = useState<MatrixResolveResult | null>(null);
 
@@ -123,6 +127,16 @@ export const AuthorityMatrixPage = () => {
     return (
         <div style={{padding: "22px 26px", display: "flex", flexDirection: "column", gap: 18}}>
             <div>
+                {backTo && (
+                    <Link
+                        to={backTo}
+                        // "!" — глобальное правило "a { color }" из index.css иначе перебивает цвет
+                        className="inline-flex items-center gap-1.5 mb-3 text-[13px] font-medium text-[#55617a]! no-underline cursor-pointer hover:text-[#2f68f5]!"
+                    >
+                        {/* Назад */}
+                        <ArrowLeft className="w-4 h-4"/> {t("procurementNew.back")}
+                    </Link>
+                )}
                 <h1 style={{margin: 0, fontSize: 19, fontWeight: 700, color: "#0f1b2d"}}>
                     {/* Матрица полномочий по закупкам */}
                     {t("authorityMatrixPage.title")}

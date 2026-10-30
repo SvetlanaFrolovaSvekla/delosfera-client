@@ -3,7 +3,6 @@ import {Link, useLocation, useNavigate, useParams} from "react-router-dom";
 import {useTranslation} from "react-i18next";
 import {userService, type UserLookupItem} from "@/service/userService/userService.ts";
 import {
-    // PROCUREMENT_STATUS_LABEL,
     procurementService,
     type ProcurementCard,
     type ProcurementStatusCode,
@@ -21,7 +20,6 @@ import {GuaranteeClaimPanel} from "@/components/componentsProcurement/GuaranteeC
 import {BoardReviewCard} from "@/components/componentsGeneral/BoardReviewCard.tsx";
 import {DocumentHistory} from "@/components/componentsGeneral/DocumentHistory.tsx";
 import {AttachmentsPanel} from "@/components/componentsGeneral/attachments/AttachmentsPanel.tsx";
-import {PageHeader} from "@/components/componentsGeneral/PageHeader.tsx";
 import {Section} from "@/components/componentsGeneral/Section.tsx";
 import {Loader} from "@/components/componentsGeneral/Loader.tsx";
 import {EmptyState} from "@/components/componentsGeneral/emptyPanel/EmptyState.tsx";
@@ -31,9 +29,10 @@ import {ReadOnlyField} from "@/components/componentsGeneral/readOnlySelects/Read
 import {ConfirmDeleteModal} from "@/components/componentsGeneral/modal/ConfirmDeleteModal.tsx";
 import {UserPickerField} from "@/components/componentsGeneral/userPicker/UserPickerField.tsx";
 import {
-    AlertTriangle, ClipboardList, FileText, Paperclip, Pencil, Plus, Scale, Send, Trash2, X,
+    AlertTriangle, ArrowLeft, ClipboardList, FileText, Paperclip, Pencil, Plus, Scale, Send, Trash2, X,
 } from "lucide-react";
 import {colors} from "@/design/tokens";
+import {SzButton} from "@/components/componentsSz/componentsSzCard/controls/SzButton.tsx";
 
 /**
  * Карточка закупки (экран v8 isPrcCard): параметры заявки, решение Матрицы полномочий
@@ -126,7 +125,7 @@ export const ProcurementCardPage = () => {
 
     if (notFound && !card) {
         return (
-            <div className="px-[26px] py-[22px] max-w-[1120px]">
+            <div className="w-full max-w-[1700px] mx-auto px-4 sm:px-6 lg:px-8 xl:px-10 pt-5 sm:pt-[26px] pb-10 sm:pb-[60px]">
                 <EmptyState
                     variant="error"
                     // "Заявка не найдена"
@@ -141,12 +140,15 @@ export const ProcurementCardPage = () => {
     if (!card) return <Loader/>;
 
     const tone = STATUS_TONE[card.statusCode] ?? colors.status.draft;
-    const canSubmit = card.statusCode === "Draft" || card.statusCode === "OnRevision";
+    const editableStatus = card.statusCode === "Draft" || card.statusCode === "OnRevision";
+    // Отправить и удалить — только автор: маршрут запускается от его имени.
+    const canSubmit = editableStatus && card.isAuthor;
 
     // Заявку, сохранённую неполной, надо чем-то исправлять: без правки она
     // оставалась в реестре навсегда — отправить нельзя, изменить нечем.
-    const canEdit = canSubmit;
-    const canDelete = card.statusCode === "Draft";
+    // Чужую правит тот, у кого право EditAnyProcurementDraft (решает сервер).
+    const canEdit = card.canEdit;
+    const canDelete = card.statusCode === "Draft" && card.isAuthor;
 
     const remove = async () => {
         try {
@@ -166,33 +168,48 @@ export const ProcurementCardPage = () => {
     const blocked = card.blockers.length > 0;
 
     return (
-        <div className="px-[26px] py-[22px] max-w-[1120px]">
-            <div className="mb-2 flex flex-wrap items-center gap-2 text-[12.5px] text-[#8b97ab]">
-                <span>
-                    <Link to="/prc" className="text-[#8b97ab] no-underline hover:underline">
-                        {/* Реестр закупок */}
-                        {t("procurementCard.breadcrumbRegistry")}
-                    </Link>
-                    {" · "}
-                    {/* без номера */}
-                    {card.regNumber ?? t("procurementCard.noNumber")}
-                    {/* по записке {card.sourceSzRegNumber} */}
-                    {card.sourceSzRegNumber && ` · ${t("procurementCard.fromMemo", {number: card.sourceSzRegNumber})}`}
-                </span>
-                <span
-                    className="rounded-[7px] px-2.5 py-1 text-[12px] font-semibold"
-                    style={{color: tone.fg, background: tone.bg}}
-                >
-                    {/* PROCUREMENT_STATUS_LABEL[card.statusCode] */}
-                    {t(`procurementRegistry.statuses.${card.statusCode}`)}
-                </span>
-            </div>
+        <div className="w-full max-w-[1700px] mx-auto px-4 sm:px-6 lg:px-8 xl:px-10 pt-5 sm:pt-[26px] pb-10 sm:pb-[60px]">
+            {/* Шапка — как у служебной записки (SzCardHeader): возврат в реестр над заголовком,
+                ниже номер со статусом, заголовок и кнопки справа. */}
+            <Link
+                to="/prc"
+                // "!" — глобальное правило "a { color }" из index.css иначе перебивает цвет и ссылка всегда синяя
+                className="inline-flex items-center gap-1.5 mb-3 text-[13px] font-medium text-[#55617a]! no-underline cursor-pointer hover:text-[#2f68f5]!"
+            >
+                {/* Реестр закупок */}
+                <ArrowLeft className="w-4 h-4"/> {t("procurementCard.breadcrumbRegistry")}
+            </Link>
 
-            <PageHeader
-                title={card.subject}
-                description={`${money} · ${card.methodShortTitle}`}
-                actions={
-                    <>
+            <div className="flex items-start justify-between gap-4 mb-[18px]">
+                <div className="min-w-0">
+                    <div className="flex flex-wrap items-center gap-2.5">
+                        <span className="font-mono text-[13px] text-[#55617a]">
+                            {/* без номера */}
+                            {card.regNumber ?? t("procurementCard.noNumber")}
+                        </span>
+                        <span
+                            className="inline-flex rounded-full px-[9px] py-0.5 text-[11px] font-semibold"
+                            style={{color: tone.fg, background: tone.bg}}
+                        >
+                            {/* PROCUREMENT_STATUS_LABEL[card.statusCode] */}
+                            {t(`procurementRegistry.statuses.${card.statusCode}`)}
+                        </span>
+                        {/* по записке {card.sourceSzRegNumber} */}
+                        {card.sourceSzRegNumber && (
+                            <span className="text-[12.5px] text-[#8b97ab]">
+                                {t("procurementCard.fromMemo", {number: card.sourceSzRegNumber})}
+                            </span>
+                        )}
+                    </div>
+                    <h1 className="mt-1.5 mb-0 text-[21px] font-bold tracking-[-0.02em] [overflow-wrap:anywhere]">
+                        {card.subject}
+                    </h1>
+                    <p className="mt-1 mb-0 text-[13px] text-[#8b97ab]">
+                        {money} · {card.methodShortTitle}
+                    </p>
+                </div>
+
+                <div className="flex flex-wrap items-center justify-end gap-2 flex-none">
                         {canEdit && (
                             <button
                                 onClick={() => navigate(`/prc/${card.id}/edit`)}
@@ -232,9 +249,8 @@ export const ProcurementCardPage = () => {
                                 {busy ? t("procurementCard.submitting") : t("procurementCard.submit")}
                             </button>
                         )}
-                    </>
-                }
-            />
+                </div>
+            </div>
 
             <div className="flex flex-col gap-[18px]">
                 {attachmentError && (
@@ -268,7 +284,7 @@ export const ProcurementCardPage = () => {
                     но по карточке было не видно, дошла ли заявка до Правления. */}
                 {card.boardReview && <BoardReviewCard review={card.boardReview}/>}
 
-                <div className="grid grid-cols-[1fr_minmax(300px,380px)] items-start gap-[18px]">
+                <div className="grid grid-cols-1 xl:grid-cols-[1fr_minmax(340px,440px)] items-start gap-[18px]">
                     <Section
                         noMarginBottom
                         icon={sectionIcon(ClipboardList)}
@@ -294,7 +310,7 @@ export const ProcurementCardPage = () => {
                             {/* Позиция Плана закупок */}
                             <ReadOnlyField label={t("procurementCard.params.planItem")} value={card.planItem ?? "—"}/>
                             <div className="col-span-2">
-                                <SpecificationField card={card} editable={canSubmit} onChanged={setCard}/>
+                                <SpecificationField card={card} editable={canEdit} onChanged={setCard}/>
                             </div>
                             <div className="col-span-2">
                                 <ReadOnlyField
@@ -338,7 +354,7 @@ export const ProcurementCardPage = () => {
                         <div className="mt-5">
                             <AttachmentsPanel
                                 documentId={card.documentId}
-                                editable={canSubmit}
+                                editable={canEdit}
                                 // Вложения к обоснованию
                                 title={t("procurementCard.params.attachmentsTitle")}
                                 // необязательно
@@ -384,24 +400,29 @@ export const ProcurementCardPage = () => {
 
                             <div className="mt-5 flex flex-col gap-2">
                                 {card.protocolRequired && (
-                                    <button
+                                    <SzButton
+                                        variant="primary"
+                                        size="sm"
+                                        className="w-full"
+                                        icon={<FileText size={15}/>}
                                         onClick={() => navigate(`/prc/${card.id}/protocol`)}
-                                        className="inline-flex h-9 w-full cursor-pointer items-center justify-center gap-2 rounded-[9px] border-none bg-[#2f68f5] text-[12.5px] font-semibold text-white hover:brightness-[1.06]"
                                     >
-                                        <FileText size={15}/>
                                         {/* Протокол закупки */}
                                         {t("procurementCard.decision.openProtocol")}
-                                    </button>
+                                    </SzButton>
                                 )}
 
-                                <button
-                                    onClick={() => navigate("/prc/matrix")}
-                                    className="inline-flex h-9 w-full cursor-pointer items-center justify-center gap-2 rounded-[9px] border border-[#e5e9f0] bg-white text-[12.5px] font-semibold text-[#55617a] hover:bg-[#f6f8fb]"
+                                <SzButton
+                                    variant="muted"
+                                    size="sm"
+                                    className="w-full"
+                                    icon={<Scale size={15}/>}
+                                    // Матрица узнаёт, откуда её открыли, и показывает «Назад» в карточку
+                                    onClick={() => navigate("/prc/matrix", {state: {backTo: `/prc/${card.id}`}})}
                                 >
-                                    <Scale size={15}/>
                                     {/* Открыть матрицу полномочий */}
                                     {t("procurementCard.decision.openMatrix")}
-                                </button>
+                                </SzButton>
                             </div>
                         </Section>
                     </aside>
@@ -626,15 +647,16 @@ function SpecificationField({card, editable, onChanged}: {
                                     if (f) void pick(f);
                                 }}
                             />
-                            <button
-                                type="button"
+                            <SzButton
+                                variant="outline"
+                                size="xs"
+                                className="flex-none"
                                 disabled={busy}
                                 onClick={() => inputRef.current?.click()}
-                                className="flex-none cursor-pointer rounded-[8px] border border-[#e5e9f0] bg-white px-2.5 py-1 text-[11.5px] font-semibold text-[#2f68f5] hover:bg-[#f6f8fb] disabled:cursor-not-allowed disabled:opacity-60"
                             >
                                 {/* … / Заменить / Приложить */}
                                 {busy ? "…" : card.hasSpecification ? t("procurementCard.spec.replace") : t("procurementCard.spec.attach")}
-                            </button>
+                            </SzButton>
                         </>
                     )}
                 </span>

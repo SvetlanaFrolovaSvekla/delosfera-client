@@ -75,6 +75,10 @@ export interface ProcurementCounters {
 
 export interface ProcurementCard {
     id: number;
+    /** Текущий пользователь — автор: отправить и удалить может только он. */
+    isAuthor: boolean;
+    /** Можно править: автор или право EditAnyProcurementDraft, пока черновик/доработка. */
+    canEdit: boolean;
     documentId: number;
     regNumber: string | null;
     subject: string;

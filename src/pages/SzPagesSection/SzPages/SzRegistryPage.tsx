@@ -588,6 +588,7 @@ export function SzRegistryPage() {
                         onPageSizeChange={handlePageSizeChange}
                         pageSizeOptions={PAGE_SIZES}
                         disabled={loading}
+                        accent="blue"
                     />
                 </>
             )}

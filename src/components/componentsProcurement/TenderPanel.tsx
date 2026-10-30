@@ -1,4 +1,8 @@
 import {useCallback, useEffect, useState} from "react";
+import {DatePickerInput} from "@/components/componentsGeneral/datePickers/DatePickerInput.tsx";
+import {formatDate, parseDDMMYYYYToISO} from "@/utils/dateUtils.ts";
+import {SelectDropdown} from "@/components/componentsGeneral/selects/SingleSelects/SelectDropdown.tsx";
+import {PlainCheckbox} from "@/components/componentsGeneral/componentsCheckBox/PlainCheckbox.tsx";
 import {Trophy} from "lucide-react";
 import {tenderService, type CommissionRole, type Tender} from "@/service/procurementService/tenderService.ts";
 import {attachmentService, type Attachment} from "@/service/documentService/attachmentService.ts";
@@ -174,15 +178,13 @@ export const TenderPanel = ({requestId, documentId, onChanged}: Props) => {
                         </span>
 
                         {tender.status === "Opened" && m.isVoting && (
-                            <label style={{display: "flex", alignItems: "center", gap: 5, color: "#55617a"}}>
-                                <input
-                                    type="checkbox"
-                                    checked={m.attendedOpening}
-                                    onChange={e => run(() => tenderService.setAttendance(m.id, e.target.checked))}
-                                    style={{accentColor: "#2f68f5"}}
-                                />
+                            <PlainCheckbox
+                                tone="brand"
+                                checked={m.attendedOpening}
+                                onChange={v => run(() => tenderService.setAttendance(m.id, v))}
+                            >
                                 присутствует
-                            </label>
+                            </PlainCheckbox>
                         )}
 
                         {m.role === "Expert" && (
@@ -216,14 +218,17 @@ export const TenderPanel = ({requestId, documentId, onChanged}: Props) => {
                         style={{...input, width: "100%", height: "auto", padding: "8px 10px", resize: "vertical", marginTop: 6}}
                     />
                     <div style={{display: "flex", gap: 8, marginTop: 8, flexWrap: "wrap", alignItems: "center"}}>
-                        <select
-                            value={conclusionDraft.attachmentId}
-                            onChange={e => setConclusionDraft({...conclusionDraft, attachmentId: Number(e.target.value)})}
-                            style={{...input, width: 300}}
-                        >
-                            <option value={0}>— файл заключения не выбран —</option>
-                            {attachments.map(a => <option key={a.id} value={a.id}>{a.fileName}</option>)}
-                        </select>
+                        <SelectDropdown
+                            options={[
+                                {value: "0", label: "— файл заключения не выбран —"},
+                                ...attachments.map(a => ({value: String(a.id), label: a.fileName})),
+                            ]}
+                            value={String(conclusionDraft.attachmentId)}
+                            onChange={v => setConclusionDraft({...conclusionDraft, attachmentId: Number(v)})}
+                            searchable={attachments.length > 7}
+                            minWidth="300px"
+                            accent="blue"
+                        />
                         <button
                             onClick={() => run(async () => {
                                 const updated = await tenderService.setConclusion(conclusionFor, {
@@ -252,34 +257,38 @@ export const TenderPanel = ({requestId, documentId, onChanged}: Props) => {
 
             {tender.status === "Draft" && (
                 <div style={{display: "flex", gap: 8, marginTop: 10, flexWrap: "wrap", alignItems: "center"}}>
-                    <select
-                        value={memberForm.userId}
-                        onChange={e => setMemberForm({...memberForm, userId: Number(e.target.value)})}
-                        style={{...input, width: 220}}
-                    >
-                        <option value={0}>— сотрудник —</option>
-                        {users.map(u => <option key={u.id} value={u.id}>{u.fullName}</option>)}
-                    </select>
-                    <select
+                    <SelectDropdown
+                        options={[
+                            {value: "0", label: "— сотрудник —"},
+                            ...users.map(u => ({value: String(u.id), label: u.fullName})),
+                        ]}
+                        value={String(memberForm.userId)}
+                        onChange={v => setMemberForm({...memberForm, userId: Number(v)})}
+                        searchable
+                        searchPlaceholder="Поиск сотрудника…"
+                        minWidth="240px"
+                        accent="blue"
+                    />
+                    <SelectDropdown
+                        options={[
+                            {value: "Member", label: "Член комиссии"},
+                            {value: "Chairman", label: "Председатель"},
+                            {value: "Secretary", label: "Секретарь (без права голоса)"},
+                            {value: "Expert", label: "Эксперт без права голоса"},
+                        ]}
                         value={memberForm.role}
-                        onChange={e => setMemberForm({...memberForm, role: e.target.value})}
-                        style={{...input, width: 150}}
-                    >
-                        <option value="Member">Член комиссии</option>
-                        <option value="Chairman">Председатель</option>
-                        <option value="Secretary">Секретарь (без права голоса)</option>
-                        <option value="Expert">Эксперт без права голоса</option>
-                    </select>
-                    <label style={checkLabel}>
-                        <input type="checkbox" checked={memberForm.board}
-                               onChange={e => setMemberForm({...memberForm, board: e.target.checked})}
-                               style={{accentColor: "#2f68f5"}}/> член Правления
-                    </label>
-                    <label style={checkLabel}>
-                        <input type="checkbox" checked={memberForm.accountant}
-                               onChange={e => setMemberForm({...memberForm, accountant: e.target.checked})}
-                               style={{accentColor: "#2f68f5"}}/> УБУиО
-                    </label>
+                        onChange={v => setMemberForm({...memberForm, role: v})}
+                        minWidth="200px"
+                        accent="blue"
+                    />
+                    <PlainCheckbox tone="brand" checked={memberForm.board}
+                                   onChange={v => setMemberForm({...memberForm, board: v})}>
+                        член Правления
+                    </PlainCheckbox>
+                    <PlainCheckbox tone="brand" checked={memberForm.accountant}
+                                   onChange={v => setMemberForm({...memberForm, accountant: v})}>
+                        УБУиО
+                    </PlainCheckbox>
                     <button
                         onClick={() => run(() => tenderService.addMember(tender.id, {
                             userId: memberForm.userId,
@@ -299,7 +308,16 @@ export const TenderPanel = ({requestId, documentId, onChanged}: Props) => {
             {tender.status === "Draft" && (
                 <div style={{display: "flex", gap: 8, marginTop: 14, alignItems: "center", flexWrap: "wrap"}}>
                     <span style={{fontSize: 12.5, color: "#55617a"}}>Приём заявок до:</span>
-                    <input type="date" value={deadline} onChange={e => setDeadline(e.target.value)} style={{...input, width: 170}}/>
+                    <div style={{width: 170}}>
+                        <DatePickerInput
+                            modal
+                            modalTitle="Приём заявок до"
+                            placeholder="Приём заявок до"
+                            accent="blue"
+                            value={deadline ? formatDate(deadline) : ""}
+                            onChange={d => setDeadline(parseDDMMYYYYToISO(d))}
+                        />
+                    </div>
                     <button
                         onClick={() => run(() => tenderService.publish(tender.id, deadline))}
                         disabled={busy || !deadline}
@@ -382,9 +400,16 @@ export const TenderPanel = ({requestId, documentId, onChanged}: Props) => {
                                 <input type="number" value={bidForm.price || ""}
                                        onChange={e => setBidForm({...bidForm, price: Number(e.target.value) || 0})}
                                        placeholder="Цена" style={{...input, width: 140}}/>
-                                <input type="date" value={bidForm.submittedOn}
-                                       onChange={e => setBidForm({...bidForm, submittedOn: e.target.value})}
-                                       style={{...input, width: 160}}/>
+                                <div style={{width: 160}}>
+                        <DatePickerInput
+                            modal
+                            modalTitle="Дата подачи"
+                            placeholder="Дата подачи"
+                            accent="blue"
+                            value={bidForm.submittedOn ? formatDate(bidForm.submittedOn) : ""}
+                            onChange={d => setBidForm({...bidForm, submittedOn: parseDDMMYYYYToISO(d)})}
+                        />
+                    </div>
                                 <button
                                     onClick={() => run(() => tenderService.addBid(tender.id, {
                                         supplierTitle: bidForm.title,
@@ -488,10 +513,6 @@ const sectionTitle: React.CSSProperties = {
 const input: React.CSSProperties = {
     height: 34, padding: "0 10px", border: "1px solid #e5e9f0", borderRadius: 9,
     background: "#fff", font: "inherit", fontSize: 12.5, outline: "none",
-};
-
-const checkLabel: React.CSSProperties = {
-    display: "flex", alignItems: "center", gap: 5, fontSize: 12.5, color: "#55617a",
 };
 
 const primaryButton: React.CSSProperties = {

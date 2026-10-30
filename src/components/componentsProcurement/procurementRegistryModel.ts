@@ -91,6 +91,8 @@ export function buildProcurementRequest(
     query: string,
     status: ProcurementStatusCode | "",
     a: ProcurementAdvancedFilters,
+    /** Право EditAnyProcurementDraft: во вкладке «Черновики» — черновики всех пользователей. */
+    seesAllDrafts = false,
 ): ProcurementSearchRequest {
     const current = PROCUREMENT_SCOPES.find((s) => s.id === scope)!;
     const created = toRange(a.createdDate);
@@ -98,7 +100,7 @@ export function buildProcurementRequest(
         query: query.trim() || undefined,
         // Вкладка со своими статусами важнее выпадающего списка — он там и не показывается.
         statuses: current.statuses ?? (status ? [status] : undefined),
-        mineOnly: current.mineOnly,
+        mineOnly: scope === "drafts" && seesAllDrafts ? undefined : current.mineOnly,
         regNumber: a.regNumber.trim() || undefined,
         subject: a.subject.trim() || undefined,
         initiatorUserIds: a.initiatorIds.length ? a.initiatorIds : undefined,

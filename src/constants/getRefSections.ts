@@ -208,4 +208,21 @@ export const getRefSections = (t: TFunction): RefSection[] => [
             },
         ],
     },
+    {
+        key: "statements",
+        // Заявления
+        title: t("refSections.statements.title"),
+        items: [
+            {
+                key: "statement-rubric",
+                code: "01",
+                // Рубрикатор заявлений
+                title: t("refSections.statements.statementRubric.title"),
+                // Тематическая классификация заявлений сотрудников
+                subtitle: t("refSections.statements.statementRubric.subtitle"),
+                icon: Folder,
+                path: "/management/refs/statement-rubric",
+            },
+        ],
+    },
 ];

@@ -21,8 +21,7 @@ import {Tooltip} from "@/components/componentsGeneral/tooltips/Tooltip.tsx";
 import {ChevronRight, PanelLeftClose, PanelLeftOpen} from "lucide-react";
 
 const MODAL_ITEM_IDS = ["rubric"];
-
-type RubricVariant = "vnd" | "sz";
+type RubricVariant = "vnd" | "sz" | "statement"; // ВНД, служебные записки, заявления
 
 const COLLAPSED_KEY = "delosfera.sidebar.collapsed";
 const HIDDEN_KEY = "delosfera.sidebar.hidden";

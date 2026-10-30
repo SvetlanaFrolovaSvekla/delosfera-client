@@ -68,6 +68,13 @@ export const navGroups: NavGroup[] = [
         ],
     },
     {
+        titleKey: "sidebar.groups.statements",
+        items: [
+            // Реестр заявлений
+            { id: "statements", icon: "sz", labelKey: "sidebar.items.statements", path: "/base-statements" },
+        ],
+    },
+    {
         titleKey: "sidebar.groups.meetings",
         items: [
             // Журнал заседаний Правления, КПА и комитетов: повестка, протоколы, исполнение решений

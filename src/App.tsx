@@ -14,6 +14,7 @@ import {Sidebar} from "@/components/componentsSidebar/Sidebar.tsx";
 import {Header} from "@/components/componentsHeader/Header.tsx";
 import {RegulationConsentGate} from "@/components/componentsSigning/RegulationConsentGate.tsx";
 import {useUsageTracking} from "@/hooks/useUsageTracking.ts";
+import {BaseStatementsPage} from "@/pages/StatementsSection/BaseStatementsPage.tsx";
 // import {FeedbackButton} from "@/components/componentsGeneral/FeedbackButton.tsx";
 
 // Страницы грузятся лениво — каждая попадает в отдельный чанк, а не в один общий бандл.
@@ -34,6 +35,7 @@ const SecurityLevelPage = lazy(() => import("@/pages/ManagementPagesSection/Sett
 const UserGroupPage = lazy(() => import("@/pages/ManagementPagesSection/SettingsPages/Dictionaries/DictionariesPages/VND/UserGroupPage.tsx").then(m => ({default: m.UserGroupPage})));
 const RubricPage = lazy(() => import("@/pages/ManagementPagesSection/SettingsPages/Dictionaries/DictionariesPages/VND/VndRubricPage.tsx").then(m => ({default: m.RubricPage})));
 const SzRubricPage = lazy(() => import("@/pages/ManagementPagesSection/SettingsPages/Dictionaries/DictionariesPages/SZ/SzRubricPage.tsx").then(m => ({default: m.SzRubricPage})));
+const StatementRubricPage = lazy(() => import("@/pages/ManagementPagesSection/SettingsPages/Dictionaries/DictionariesPages/Statements/StatementRubricPage.tsx").then(m => ({default: m.StatementRubricPage})));
 const KeywordPage = lazy(() => import("@/pages/ManagementPagesSection/SettingsPages/Dictionaries/DictionariesPages/General/KeywordPage.tsx").then(m => ({default: m.KeywordPage})));
 const CoordinationApproversPage = lazy(() => import("@/pages/ManagementPagesSection/SettingsPages/Dictionaries/DictionariesPages/VND/CoordinationApproversPage.tsx").then(m => ({default: m.CoordinationApproversPage})));
 const RolesPermissionPage = lazy(() => import("@/pages/ManagementPagesSection/SettingsPages/PeopleAndAccessSettings/RolesPermissionPage.tsx").then(m => ({default: m.RolesPermissionPage})));
@@ -224,6 +226,8 @@ function App() {
                                 <Route path="/sz/:id" element={<SzCardPage/>}/>
                                 <Route path="/sz-analytics" element={<SzStatisticsPage/>}/>
 
+                                <Route path="/base-statements" element={<BaseStatementsPage/>}/>
+
                                 <Route path="/signing-workplace" element={<SigningWorkplacePage/>}/>
                                 <Route path="/hr-ack" element={<AcknowledgementPage/>}/>
                                 <Route path="/help" element={<HelpPage/>}/>
@@ -249,6 +253,7 @@ function App() {
                                     <Route path="refs/user-group" element={<UserGroupPage/>}/>
                                     <Route path="refs/rubric" element={<RubricPage/>}/>
                                     <Route path="refs/sz-rubric" element={<SzRubricPage/>}/>
+                                    <Route path="refs/statement-rubric" element={<StatementRubricPage/>}/>
                                     <Route path="refs/coordination-users" element={<CoordinationApproversPage/>}/>
                                     <Route path="refs/actualization-thresholds" element={<ActualizationBucketSettingsPage/>}/>
                                     <Route path="refs/approval-norms" element={<VndApprovalNormSettingsPage/>}/>
